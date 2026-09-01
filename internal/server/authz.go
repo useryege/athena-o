@@ -115,8 +115,8 @@ var moduleGRPCRules = map[string]grpcModuleRule{
 	"/wallet.WalletService/GetWalletStatus":          moduleRead(accountaccess.ModuleWallet),
 	"/wallet.WalletService/ListWallets":              moduleRead(accountaccess.ModuleWallet),
 	"/wallet.WalletService/GetWallet":                moduleRead(accountaccess.ModuleWallet),
-	"/wallet.WalletService/CreateWallet":             moduleWrite(accountaccess.ModuleWallet),
-	"/wallet.WalletService/ImportWallet":             moduleWrite(accountaccess.ModuleWallet),
+	"/wallet.WalletService/BatchCreateWallets":       moduleWrite(accountaccess.ModuleWallet),
+	"/wallet.WalletService/BatchImportWallets":       moduleWrite(accountaccess.ModuleWallet),
 	"/wallet.WalletService/UpdateWalletRemark":       moduleWrite(accountaccess.ModuleWallet),
 	"/wallet.WalletService/UpdateWalletAvatarPreset": moduleWrite(accountaccess.ModuleWallet),
 
@@ -184,8 +184,8 @@ var moduleGRPCRules = map[string]grpcModuleRule{
 }
 
 var interactiveLoginGRPCMethods = map[string]bool{
-	"/wallet.WalletService/CreateWallet": true,
-	"/wallet.WalletService/ImportWallet": true,
+	"/wallet.WalletService/BatchCreateWallets": true,
+	"/wallet.WalletService/BatchImportWallets": true,
 }
 
 func (server *AthenaServer) unaryAuthInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {

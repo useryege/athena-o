@@ -4,7 +4,10 @@ import (
 	"context"
 	"crypto/subtle"
 	"errors"
+	"fmt"
+	"math/big"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,6 +30,7 @@ const (
 	positionCashOutReasonCloseRejected     = "CLOSE_REJECTED"
 	positionCashOutReasonCloseUnknown      = "CLOSE_OUTCOME_UNKNOWN"
 	positionCashOutReasonProviderInvalid   = "INVALID_RESPONSE"
+	positionCashOutReasonBatchTerminated   = "BATCH_TERMINATED"
 )
 
 func (s *Service) runPositionCashOutWorker(ctx context.Context) {
@@ -101,6 +105,9 @@ func (s *Service) processClaimedPositionCashOut(
 	if cashOut == nil {
 		return errors.New("position Cash Out claim is empty")
 	}
+	if cashOut.BatchID != "" {
+		defer s.wakePositionCashOutBatchWorker()
+	}
 	client, credentialID, err := s.positionCashOutClient(ctx, *cashOut)
 	if err != nil {
 		if cashOut.Attempt != nil && cashOut.Attempt.State != wormstore.PositionCashOutAttemptStatePrepared {
@@ -116,11 +123,23 @@ func (s *Service) processClaimedPositionCashOut(
 			return s.handlePositionCashOutPreflightError(ctx, *cashOut, claimID, credentialID, observeErr)
 		}
 		providerState := positionCashOutProviderState(observed)
+		if cashOut.BatchID != "" && observed.TotalShares != cashOut.Shares {
+			return s.recordPositionCashOutFailure(ctx, *cashOut, claimID,
+				positionCashOutReasonChanged, providerState)
+		}
 		switch {
 		case observed.IsLiquidated:
+			if cashOut.BatchID != "" {
+				return s.recordPositionCashOutFailure(ctx, *cashOut, claimID,
+					positionCashOutReasonLiquidated, providerState)
+			}
 			return s.recordPositionCashOutState(ctx, *cashOut, claimID, wormstore.PositionCashOutStateFailed,
 				positionCashOutReasonLiquidated, providerState, observed, time.Time{})
 		case observed.IsClosed:
+			if cashOut.BatchID != "" {
+				return s.recordPositionCashOutFailure(ctx, *cashOut, claimID,
+					positionCashOutReasonChanged, providerState)
+			}
 			return s.recordPositionCashOutState(ctx, *cashOut, claimID, wormstore.PositionCashOutStateCompleted,
 				"", providerState, observed, time.Time{})
 		}
@@ -151,11 +170,23 @@ func (s *Service) processClaimedPositionCashOut(
 				return s.handlePositionCashOutPreflightError(ctx, *cashOut, claimID, credentialID, observeErr)
 			}
 			providerState := positionCashOutProviderState(observed)
+			if cashOut.BatchID != "" && observed.TotalShares != cashOut.Shares {
+				return s.recordPositionCashOutFailure(ctx, *cashOut, claimID,
+					positionCashOutReasonChanged, providerState)
+			}
 			switch {
 			case observed.IsLiquidated:
+				if cashOut.BatchID != "" {
+					return s.recordPositionCashOutFailure(ctx, *cashOut, claimID,
+						positionCashOutReasonLiquidated, providerState)
+				}
 				return s.recordPositionCashOutState(ctx, *cashOut, claimID, wormstore.PositionCashOutStateFailed,
 					positionCashOutReasonLiquidated, providerState, observed, time.Time{})
 			case observed.IsClosed:
+				if cashOut.BatchID != "" {
+					return s.recordPositionCashOutFailure(ctx, *cashOut, claimID,
+						positionCashOutReasonChanged, providerState)
+				}
 				return s.recordPositionCashOutState(ctx, *cashOut, claimID, wormstore.PositionCashOutStateCompleted,
 					"", providerState, observed, time.Time{})
 			}
@@ -266,11 +297,39 @@ func (s *Service) dispatchPreparedPositionCashOut(
 	} else {
 		attemptID = cashOut.Attempt.ID
 	}
-	dispatched, err := s.credentialStore.DispatchPositionCashOutAttempt(ctx, wormstore.DispatchPositionCashOutAttemptRequest{
-		AttemptID: attemptID, CashOutID: cashOut.ID, ClaimID: claimID, Now: timeNowUTC(),
-	})
+	var dispatched *wormstore.PositionCashOutAttempt
+	var err error
+	if cashOut.BatchID != "" {
+		baseline, baselineErr := s.readPositionCashOutBatchBalance(ctx, cashOut.WalletID, cashOut.WalletAddress)
+		if baselineErr != nil {
+			// No mutation has been sent. Retain the PREPARED attempt so a later
+			// recovery pass can repeat only the safe balance read and exact
+			// position GET before attempting the same durable Close.
+			return baselineErr
+		}
+		now := timeNowUTC()
+		dispatched, err = s.credentialStore.DispatchPositionCashOutBatchAttempt(ctx,
+			wormstore.DispatchPositionCashOutBatchAttemptRequest{
+				BatchID: cashOut.BatchID, ItemID: cashOut.BatchItemID,
+				AttemptID: attemptID, CashOutID: cashOut.ID, ClaimID: claimID,
+				Baseline: baseline, NextPollAt: now, Now: now,
+			})
+	} else {
+		dispatched, err = s.credentialStore.DispatchPositionCashOutAttempt(ctx, wormstore.DispatchPositionCashOutAttemptRequest{
+			AttemptID: attemptID, CashOutID: cashOut.ID, ClaimID: claimID, Now: timeNowUTC(),
+		})
+	}
 	s.recordCredentialStoreResult(err)
 	if err != nil {
+		if cashOut.BatchID != "" && errors.Is(err, wormstore.ErrPositionCashOutBatchClaim) {
+			// The parent batch rejected this still-PREPARED mutation (most
+			// importantly after TERMINATE_REQUESTED). The dispatch transaction
+			// did not commit, so it is safe to make the child terminal and let
+			// the parent mark this and all remaining items NOT_EXECUTED.
+			return s.recordPositionCashOutFailure(
+				ctx, cashOut, claimID, positionCashOutReasonBatchTerminated, cashOut.ProviderState,
+			)
+		}
 		// The transaction outcome may be unknown. Never compensate or send the
 		// Close here; recovery must inspect the database's durable attempt state.
 		return err
@@ -325,6 +384,50 @@ func (s *Service) dispatchPreparedPositionCashOut(
 	return s.reconcileClaimedPositionCashOut(ctx, client, cashOut, claimID, credentialID)
 }
 
+func (s *Service) readPositionCashOutBatchBalance(
+	ctx context.Context,
+	walletID int64,
+	walletAddress string,
+) (wormstore.PositionCashOutBatchBalanceEvidence, error) {
+	results, err := s.adapter.BatchGetBalances(ctx, []WalletBalanceReference{{
+		WalletID: walletID,
+		Address:  walletAddress,
+	}})
+	if err != nil {
+		return wormstore.PositionCashOutBatchBalanceEvidence{}, fmt.Errorf("read batch Cash Out USDC baseline: %w", err)
+	}
+	if len(results) != 1 || results[0].WalletID != walletID || results[0].Address != walletAddress {
+		return wormstore.PositionCashOutBatchBalanceEvidence{}, errors.New("batch Cash Out balance response does not match the Wallet")
+	}
+	observation := results[0].USDC
+	if observation.Availability != availabilityAvailable || observation.Decimals != USDCDecimals ||
+		observation.ObservedSlot == 0 {
+		return wormstore.PositionCashOutBatchBalanceEvidence{}, errors.New("batch Cash Out confirmed USDC balance is unavailable")
+	}
+	atomicAmount, ok := canonicalNonNegativeAtomicAmount(observation.AtomicAmount)
+	if !ok {
+		return wormstore.PositionCashOutBatchBalanceEvidence{}, errors.New("batch Cash Out confirmed USDC balance is invalid")
+	}
+	return wormstore.PositionCashOutBatchBalanceEvidence{
+		Mint:         SolanaNativeUSDCMint,
+		Decimals:     USDCDecimals,
+		AtomicAmount: atomicAmount,
+		ObservedSlot: observation.ObservedSlot,
+	}, nil
+}
+
+func canonicalNonNegativeAtomicAmount(raw string) (string, bool) {
+	value := strings.TrimSpace(raw)
+	if value == "" || value != raw || (len(value) > 1 && value[0] == '0') {
+		return "", false
+	}
+	parsed, ok := new(big.Int).SetString(value, 10)
+	if !ok || parsed.Sign() < 0 || parsed.String() != value {
+		return "", false
+	}
+	return value, true
+}
+
 func (s *Service) reconcileClaimedPositionCashOut(
 	ctx context.Context,
 	client WormAPIClient,
@@ -347,10 +450,18 @@ func (s *Service) reconcileClaimedPositionCashOut(
 	}
 	providerState := positionCashOutProviderState(observed)
 	if observed.IsLiquidated {
+		if positionCashOutBatchMutationNotDispatched(cashOut) {
+			return s.recordPositionCashOutFailure(ctx, cashOut, claimID,
+				positionCashOutReasonLiquidated, providerState)
+		}
 		return s.recordPositionCashOutState(ctx, cashOut, claimID, wormstore.PositionCashOutStateFailed,
 			positionCashOutReasonLiquidated, providerState, observed, time.Time{})
 	}
 	if observed.IsClosed {
+		if positionCashOutBatchMutationNotDispatched(cashOut) {
+			return s.recordPositionCashOutFailure(ctx, cashOut, claimID,
+				positionCashOutReasonChanged, providerState)
+		}
 		return s.recordPositionCashOutState(ctx, cashOut, claimID, wormstore.PositionCashOutStateCompleted,
 			"", providerState, observed, time.Time{})
 	}
@@ -366,6 +477,11 @@ func (s *Service) reconcileClaimedPositionCashOut(
 	}
 	return s.recordPositionCashOutState(ctx, cashOut, claimID, wormstore.PositionCashOutStateAwaitingCompletion,
 		"", providerState, observed, timeNowUTC().Add(positionCashOutPendingPoll))
+}
+
+func positionCashOutBatchMutationNotDispatched(cashOut wormstore.PositionCashOut) bool {
+	return cashOut.BatchID != "" &&
+		(cashOut.Attempt == nil || cashOut.Attempt.State == wormstore.PositionCashOutAttemptStatePrepared)
 }
 
 func (s *Service) recordPositionCashOutFailure(

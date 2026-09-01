@@ -389,6 +389,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	}
 	errorsutil.CheckError(a.enableWormExecutionAuthorization())
 	errorsutil.CheckError(a.enableWormPositionCashOutAuthorization())
+	errorsutil.CheckError(a.enableWormPositionCashOutBatchAuthorization())
 	walletSecretHTTP, err := newWalletSecretHTTPHandler(a)
 	if err != nil {
 		_ = accountStateStore.Close()
@@ -690,7 +691,7 @@ func (server *AthenaServer) translateGRPCResponseHeaders(_ context.Context, w ht
 	case *appbootstrappkg.GetAppBootstrapResponse:
 		w.Header().Set("Cache-Control", "no-store, private")
 		w.Header().Set("Vary", "Cookie, Authorization, "+common.ApplicationRealmHeader)
-	case *walletpkg.CreateWalletResponse:
+	case *walletpkg.BatchCreateWalletsResponse:
 		w.Header().Set("Cache-Control", "no-store, private")
 		w.Header().Set("Pragma", "no-cache")
 		w.Header().Set("Vary", "Cookie, Authorization, "+common.ApplicationRealmHeader)
@@ -937,6 +938,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 		publicHandlers["/auth/worm-trading/google"] = http.HandlerFunc(server.googleOIDC.WormCredentialReauthentication)
 		publicHandlers["/auth/worm-trading/executions/google"] = http.HandlerFunc(server.googleOIDC.WormExecutionAuthorization)
 		publicHandlers["/auth/worm-trading/position-cash-outs/google"] = http.HandlerFunc(server.googleOIDC.WormPositionCashOutAuthorization)
+		publicHandlers["/auth/worm-trading/position-cash-out-batches/google"] = http.HandlerFunc(server.googleOIDC.WormPositionCashOutBatchAuthorization)
 	}
 	if server.authRegistration != nil {
 		publicHandlers["/auth/registration"] = http.HandlerFunc(server.authRegistration.Registration)
@@ -1004,15 +1006,19 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	registerWormExecutionPlanHandlers(mux, server)
 	registerWormExecutionHandlers(mux, server)
 	registerWormPositionCashOutHandlers(mux, server)
+	registerWormPositionCashOutBatchHandlers(mux, server)
 	if server.phantomAuth != nil {
 		mux.Handle("POST /auth/worm-trading/executions/{runId}/solana/challenge", traceHTTP(http.HandlerFunc(server.phantomAuth.WormExecutionChallenge)))
 		mux.Handle("POST /auth/worm-trading/executions/{runId}/solana/verify", traceHTTP(http.HandlerFunc(server.phantomAuth.WormExecutionVerify)))
 		mux.Handle("POST /auth/worm-trading/position-cash-outs/{cashOutId}/solana/challenge", traceHTTP(http.HandlerFunc(server.phantomAuth.WormPositionCashOutChallenge)))
 		mux.Handle("POST /auth/worm-trading/position-cash-outs/{cashOutId}/solana/verify", traceHTTP(http.HandlerFunc(server.phantomAuth.WormPositionCashOutVerify)))
+		mux.Handle("POST /auth/worm-trading/position-cash-out-batches/{batchId}/solana/challenge", traceHTTP(http.HandlerFunc(server.phantomAuth.WormPositionCashOutBatchChallenge)))
+		mux.Handle("POST /auth/worm-trading/position-cash-out-batches/{batchId}/solana/verify", traceHTTP(http.HandlerFunc(server.phantomAuth.WormPositionCashOutBatchVerify)))
 	}
 	if server.DisableAuth {
 		mux.Handle("POST /auth/worm-trading/executions/{runId}/development", traceHTTP(http.HandlerFunc(server.developmentWormExecutionAuthorization)))
 		mux.Handle("POST /auth/worm-trading/position-cash-outs/{cashOutId}/development", traceHTTP(http.HandlerFunc(server.developmentWormPositionCashOutAuthorization)))
+		mux.Handle("POST /auth/worm-trading/position-cash-out-batches/{batchId}/development", traceHTTP(http.HandlerFunc(server.developmentWormPositionCashOutBatchAuthorization)))
 	}
 	mux.Handle("/api/", handler)
 

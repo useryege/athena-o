@@ -33,28 +33,37 @@ message GetWalletResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
 }
 
-message CreateWalletRequest {
+message BatchCreateWalletsRequest {
   string wallet_type = 1;
-  string remark = 2;
-  string avatar_preset_id = 3;
-  string requester_account_id = 4;
-}
-
-message CreateWalletResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
-  string private_key = 2;
-}
-
-message ImportWalletRequest {
-  string wallet_type = 1;
-  string private_key = 2;
+  // Number of wallets to create. The accepted range is 1 through 10.
+  int32 count = 2;
+  // A custom remark is accepted only when count is 1.
   string remark = 3;
   string avatar_preset_id = 4;
   string requester_account_id = 5;
 }
 
-message ImportWalletResponse {
+message BatchCreateWalletResult {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
+  string private_key = 2;
+}
+
+message BatchCreateWalletsResponse {
+  repeated BatchCreateWalletResult results = 1;
+}
+
+message BatchImportWalletsRequest {
+  string wallet_type = 1;
+  // Private keys are imported atomically in request order. The accepted size is 1 through 10.
+  repeated string private_keys = 2;
+  // A custom remark is accepted only when exactly one private key is supplied.
+  string remark = 3;
+  string avatar_preset_id = 4;
+  string requester_account_id = 5;
+}
+
+message BatchImportWalletsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem items = 1;
 }
 
 message UpdateWalletRemarkRequest {
@@ -204,8 +213,8 @@ service WalletService {
   rpc GetWalletStatus(GetWalletStatusRequest) returns (github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletStatus);
   rpc ListWallets(ListWalletsRequest) returns (ListWalletsResponse);
   rpc GetWallet(GetWalletRequest) returns (GetWalletResponse);
-  rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse);
-  rpc ImportWallet(ImportWalletRequest) returns (ImportWalletResponse);
+  rpc BatchCreateWallets(BatchCreateWalletsRequest) returns (BatchCreateWalletsResponse);
+  rpc BatchImportWallets(BatchImportWalletsRequest) returns (BatchImportWalletsResponse);
   rpc UpdateWalletRemark(UpdateWalletRemarkRequest) returns (UpdateWalletRemarkResponse);
   rpc UpdateWalletAvatarPreset(UpdateWalletAvatarPresetRequest) returns (UpdateWalletAvatarPresetResponse);
   rpc RevealWalletPrivateKey(RevealWalletPrivateKeyRequest) returns (RevealWalletPrivateKeyResponse);

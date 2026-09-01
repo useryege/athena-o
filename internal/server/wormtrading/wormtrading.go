@@ -386,12 +386,16 @@ func publicPositionCashOutSummary(summary *wormtradingapiclient.WormPositionCash
 		return nil
 	}
 	return &wormtradingpkg.WormPositionCashOutSummary{
-		OperationId:   summary.GetOperationId(),
-		State:         summary.GetState(),
-		ReasonCode:    summary.GetReasonCode(),
-		AllowedAction: summary.GetAllowedAction(),
-		Revision:      summary.GetRevision(),
-		UpdatedAt:     summary.GetUpdatedAt(),
+		OperationId:         summary.GetOperationId(),
+		State:               summary.GetState(),
+		ReasonCode:          summary.GetReasonCode(),
+		AllowedAction:       summary.GetAllowedAction(),
+		Revision:            summary.GetRevision(),
+		UpdatedAt:           summary.GetUpdatedAt(),
+		BatchId:             summary.GetBatchId(),
+		BatchState:          summary.GetBatchState(),
+		BatchItemState:      summary.GetBatchItemState(),
+		BatchLockReasonCode: summary.GetBatchLockReasonCode(),
 	}
 }
 

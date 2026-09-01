@@ -137,6 +137,10 @@ message WormPositionCashOutSummary {
   string allowed_action = 4 [(gogoproto.jsontag) = "allowedAction,omitempty"];
   int64 revision = 5 [(gogoproto.jsontag) = "revision,omitempty"];
   int64 updated_at = 6 [(gogoproto.jsontag) = "updatedAt,omitempty"];
+  string batch_id = 7 [(gogoproto.jsontag) = "batchId,omitempty"];
+  string batch_state = 8 [(gogoproto.jsontag) = "batchState,omitempty"];
+  string batch_item_state = 9 [(gogoproto.jsontag) = "batchItemState,omitempty"];
+  string batch_lock_reason_code = 10 [(gogoproto.jsontag) = "batchLockReasonCode,omitempty"];
 }
 
 message WormInFlightRequest {

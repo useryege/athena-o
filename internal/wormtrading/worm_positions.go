@@ -3,6 +3,7 @@ package wormtrading
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
 	"sort"
 	"strings"
@@ -236,6 +237,25 @@ func (s *Service) projectPositionCashOutAvailability(
 	if err != nil {
 		return status.Error(codes.Unavailable, "Worm execution guard store is unavailable")
 	}
+	activeBatch, batchErr := s.credentialStore.GetActivePositionCashOutBatch(ctx, ownerAccountID)
+	s.recordCredentialStoreResult(batchErr)
+	if batchErr != nil && !errors.Is(batchErr, wormstore.ErrPositionCashOutBatchNotFound) {
+		return status.Error(codes.Unavailable, "Worm position Cash Out Batch store is unavailable")
+	}
+	batchWallets := make(map[int64]struct{})
+	batchItems := make(map[string]wormstore.PositionCashOutBatchItem)
+	if batchErr == nil && activeBatch != nil {
+		for _, wallet := range activeBatch.Wallets {
+			batchWallets[wallet.WalletID] = struct{}{}
+		}
+		frozenItems, err := s.listAllPositionCashOutBatchItems(ctx, *activeBatch)
+		if err != nil {
+			return err
+		}
+		for _, frozen := range frozenItems {
+			batchItems[positionCashOutBatchProjectionKey(frozen.WalletID, frozen.PositionPubkey)] = frozen
+		}
+	}
 	activeByWallet := make(map[int64]wormstore.PositionCashOut, len(activeCashOuts))
 	for _, cashOut := range activeCashOuts {
 		activeByWallet[cashOut.WalletID] = cashOut
@@ -250,6 +270,7 @@ func (s *Service) projectPositionCashOutAvailability(
 		}
 		cashOut, hasCashOut := activeByWallet[item.GetWalletId()]
 		_, executionActive := executionWallets[item.GetWalletId()]
+		_, batchActive := batchWallets[item.GetWalletId()]
 		for _, position := range item.GetOpenPositions() {
 			if position == nil {
 				continue
@@ -262,6 +283,12 @@ func (s *Service) projectPositionCashOutAvailability(
 			case position.GetIsClosed():
 				summary.ReasonCode = "POSITION_NOT_CLOSABLE"
 				summary.AllowedAction = "NONE"
+			case batchActive:
+				frozen, frozenInBatch := batchItems[positionCashOutBatchProjectionKey(
+					item.GetWalletId(),
+					position.GetPubkey(),
+				)]
+				summary = positionCashOutBatchSummaryToProto(activeBatch, frozen, frozenInBatch)
 			case hasCashOut && cashOut.PositionPubkey == position.GetPubkey():
 				summary = positionCashOutSummaryToProto(cashOut)
 			case hasCashOut:
@@ -279,6 +306,80 @@ func (s *Service) projectPositionCashOutAvailability(
 		}
 	}
 	return nil
+}
+
+func (s *Service) listAllPositionCashOutBatchItems(
+	ctx context.Context,
+	batch wormstore.PositionCashOutBatch,
+) ([]wormstore.PositionCashOutBatchItem, error) {
+	if batch.PositionCount == 0 {
+		return nil, nil
+	}
+	result := make([]wormstore.PositionCashOutBatchItem, 0, batch.PositionCount)
+	for page := int32(1); ; page++ {
+		pageItems, total, err := s.credentialStore.ListPositionCashOutBatchItems(
+			ctx,
+			batch.OwnerAccountID,
+			batch.ID,
+			page,
+			positionCashOutBatchMaximumPageSize,
+		)
+		s.recordCredentialStoreResult(err)
+		if err != nil {
+			return nil, status.Error(codes.Unavailable, "Worm position Cash Out Batch store is unavailable")
+		}
+		if total != batch.PositionCount || len(pageItems) == 0 {
+			return nil, status.Error(codes.Internal, "Worm position Cash Out Batch store returned incomplete items")
+		}
+		result = append(result, pageItems...)
+		if int64(len(result)) >= total {
+			if int64(len(result)) != total {
+				return nil, status.Error(codes.Internal, "Worm position Cash Out Batch store returned invalid items")
+			}
+			return result, nil
+		}
+	}
+}
+
+func positionCashOutBatchProjectionKey(walletID int64, positionPubkey string) string {
+	return fmt.Sprintf("%d\x00%s", walletID, positionPubkey)
+}
+
+func positionCashOutBatchSummaryToProto(
+	batch *wormstore.PositionCashOutBatch,
+	item wormstore.PositionCashOutBatchItem,
+	frozen bool,
+) *apiclient.WormPositionCashOutSummary {
+	if batch == nil {
+		return &apiclient.WormPositionCashOutSummary{
+			ReasonCode: "WALLET_CASH_OUT_BATCH_ACTIVE", AllowedAction: "NONE",
+		}
+	}
+	reasonCode := batch.ReasonCode
+	updatedAt := batch.UpdatedAt
+	itemState := ""
+	if frozen {
+		itemState = string(item.State)
+		if item.ReasonCode != "" {
+			reasonCode = item.ReasonCode
+		}
+		if item.UpdatedAt.After(updatedAt) {
+			updatedAt = item.UpdatedAt
+		}
+	}
+	if reasonCode == "" {
+		reasonCode = "WALLET_CASH_OUT_BATCH_ACTIVE"
+	}
+	return &apiclient.WormPositionCashOutSummary{
+		ReasonCode:          reasonCode,
+		AllowedAction:       "NONE",
+		Revision:            batch.Revision,
+		UpdatedAt:           updatedAt.Unix(),
+		BatchId:             batch.ID,
+		BatchState:          string(batch.State),
+		BatchItemState:      itemState,
+		BatchLockReasonCode: "WALLET_CASH_OUT_BATCH_ACTIVE",
+	}
 }
 
 func positionCashOutSummaryToProto(cashOut wormstore.PositionCashOut) *apiclient.WormPositionCashOutSummary {

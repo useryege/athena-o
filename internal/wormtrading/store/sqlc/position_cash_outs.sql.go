@@ -23,7 +23,7 @@ WHERE id = $3::uuid
   AND claim_id = $4::uuid
   AND claim_expires_at > $2::timestamptz
   AND execution_expires_at > $2::timestamptz
-RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at
+RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at, batch_id, batch_item_id
 `
 
 type BeginPositionCashOutClosingParams struct {
@@ -72,6 +72,8 @@ func (q *Queries) BeginPositionCashOutClosing(ctx context.Context, arg BeginPosi
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BatchID,
+		&i.BatchItemID,
 	)
 	return i, err
 }
@@ -104,7 +106,7 @@ WHERE id = $5::uuid
       AND (claim_id IS NULL OR claim_expires_at <= $4::timestamptz)
     )
   )
-RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at
+RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at, batch_id, batch_item_id
 `
 
 type ClaimPositionCashOutParams struct {
@@ -155,6 +157,8 @@ func (q *Queries) ClaimPositionCashOut(ctx context.Context, arg ClaimPositionCas
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BatchID,
+		&i.BatchItemID,
 	)
 	return i, err
 }
@@ -228,7 +232,7 @@ INSERT INTO worm_position_cash_outs (
   $19::timestamptz,
   $20::timestamptz, $20::timestamptz
 )
-RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at
+RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at, batch_id, batch_item_id
 `
 
 type CreatePositionCashOutParams struct {
@@ -309,6 +313,8 @@ func (q *Queries) CreatePositionCashOut(ctx context.Context, arg CreatePositionC
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BatchID,
+		&i.BatchItemID,
 	)
 	return i, err
 }
@@ -572,7 +578,7 @@ WHERE id IN (
   LIMIT $2::integer
   FOR UPDATE SKIP LOCKED
 )
-RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at
+RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at, batch_id, batch_item_id
 `
 
 type ExpireUnauthorizedPositionCashOutsParams struct {
@@ -620,6 +626,8 @@ func (q *Queries) ExpireUnauthorizedPositionCashOuts(ctx context.Context, arg Ex
 			&i.CompletedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.BatchID,
+			&i.BatchItemID,
 		); err != nil {
 			return nil, err
 		}
@@ -650,7 +658,7 @@ WHERE cash_outs.id IN (
   LIMIT $2::integer
   FOR UPDATE OF candidates SKIP LOCKED
 )
-RETURNING cash_outs.id, cash_outs.owner_account_id, cash_outs.wallet_id, cash_outs.wallet_address, cash_outs.credential_version, cash_outs.position_pubkey, cash_outs.market_condition_id, cash_outs.is_yes, cash_outs.position_created_at, cash_outs.position_request_pubkey, cash_outs.shares, cash_outs.intent_digest_sha256, cash_outs.state, cash_outs.revision, cash_outs.reason_code, cash_outs.provider_state, cash_outs.provider_is_closed, cash_outs.provider_is_liquidated, cash_outs.authorization_expires_at, cash_outs.execution_expires_at, cash_outs.authorized_at, cash_outs.next_poll_at, cash_outs.poll_count, cash_outs.reconcile_requested_at, cash_outs.claim_id, cash_outs.claim_owner, cash_outs.claim_expires_at, cash_outs.completed_at, cash_outs.created_at, cash_outs.updated_at
+RETURNING cash_outs.id, cash_outs.owner_account_id, cash_outs.wallet_id, cash_outs.wallet_address, cash_outs.credential_version, cash_outs.position_pubkey, cash_outs.market_condition_id, cash_outs.is_yes, cash_outs.position_created_at, cash_outs.position_request_pubkey, cash_outs.shares, cash_outs.intent_digest_sha256, cash_outs.state, cash_outs.revision, cash_outs.reason_code, cash_outs.provider_state, cash_outs.provider_is_closed, cash_outs.provider_is_liquidated, cash_outs.authorization_expires_at, cash_outs.execution_expires_at, cash_outs.authorized_at, cash_outs.next_poll_at, cash_outs.poll_count, cash_outs.reconcile_requested_at, cash_outs.claim_id, cash_outs.claim_owner, cash_outs.claim_expires_at, cash_outs.completed_at, cash_outs.created_at, cash_outs.updated_at, cash_outs.batch_id, cash_outs.batch_item_id
 `
 
 type ExpireUndispatchedPositionCashOutsParams struct {
@@ -698,6 +706,8 @@ func (q *Queries) ExpireUndispatchedPositionCashOuts(ctx context.Context, arg Ex
 			&i.CompletedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.BatchID,
+			&i.BatchItemID,
 		); err != nil {
 			return nil, err
 		}
@@ -710,7 +720,7 @@ func (q *Queries) ExpireUndispatchedPositionCashOuts(ctx context.Context, arg Ex
 }
 
 const getPositionCashOut = `-- name: GetPositionCashOut :one
-SELECT id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at
+SELECT id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at, batch_id, batch_item_id
 FROM worm_position_cash_outs
 WHERE id = $1::uuid
   AND owner_account_id = $2::uuid
@@ -755,6 +765,8 @@ func (q *Queries) GetPositionCashOut(ctx context.Context, arg GetPositionCashOut
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BatchID,
+		&i.BatchItemID,
 	)
 	return i, err
 }
@@ -816,7 +828,7 @@ func (q *Queries) GetPositionCashOutAuthorization(ctx context.Context, cashOutID
 }
 
 const getPositionCashOutByID = `-- name: GetPositionCashOutByID :one
-SELECT id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at
+SELECT id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at, batch_id, batch_item_id
 FROM worm_position_cash_outs
 WHERE id = $1::uuid
 `
@@ -855,12 +867,14 @@ func (q *Queries) GetPositionCashOutByID(ctx context.Context, id pgtype.UUID) (W
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BatchID,
+		&i.BatchItemID,
 	)
 	return i, err
 }
 
 const getPositionCashOutByIDForUpdate = `-- name: GetPositionCashOutByIDForUpdate :one
-SELECT id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at
+SELECT id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at, batch_id, batch_item_id
 FROM worm_position_cash_outs
 WHERE id = $1::uuid
 FOR UPDATE
@@ -900,6 +914,8 @@ func (q *Queries) GetPositionCashOutByIDForUpdate(ctx context.Context, id pgtype
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BatchID,
+		&i.BatchItemID,
 	)
 	return i, err
 }
@@ -930,7 +946,7 @@ func (q *Queries) GetPositionCashOutCommand(ctx context.Context, id pgtype.UUID)
 }
 
 const getPositionCashOutForUpdate = `-- name: GetPositionCashOutForUpdate :one
-SELECT id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at
+SELECT id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at, batch_id, batch_item_id
 FROM worm_position_cash_outs
 WHERE id = $1::uuid
   AND owner_account_id = $2::uuid
@@ -976,12 +992,14 @@ func (q *Queries) GetPositionCashOutForUpdate(ctx context.Context, arg GetPositi
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BatchID,
+		&i.BatchItemID,
 	)
 	return i, err
 }
 
 const listActivePositionCashOuts = `-- name: ListActivePositionCashOuts :many
-SELECT id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at
+SELECT id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at, batch_id, batch_item_id
 FROM worm_position_cash_outs
 WHERE owner_account_id = $1::uuid
   AND state IN (
@@ -1031,6 +1049,8 @@ func (q *Queries) ListActivePositionCashOuts(ctx context.Context, ownerAccountID
 			&i.CompletedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.BatchID,
+			&i.BatchItemID,
 		); err != nil {
 			return nil, err
 		}
@@ -1062,6 +1082,7 @@ WHERE (
       AND (claim_id IS NULL OR claim_expires_at <= $1::timestamptz)
     )
   )
+  AND NOT (batch_id IS NOT NULL AND state = 'RECONCILIATION_REQUIRED')
 ORDER BY COALESCE(next_poll_at, updated_at), created_at, id
 LIMIT $2::integer
 `
@@ -1103,7 +1124,7 @@ WHERE id = $3::uuid
   AND revision = $5::bigint
   AND state = 'AWAITING_AUTHORIZATION'
   AND authorization_expires_at > $1::timestamptz
-RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at
+RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at, batch_id, batch_item_id
 `
 
 type QueueAuthorizedPositionCashOutParams struct {
@@ -1154,6 +1175,8 @@ func (q *Queries) QueueAuthorizedPositionCashOut(ctx context.Context, arg QueueA
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BatchID,
+		&i.BatchItemID,
 	)
 	return i, err
 }
@@ -1190,7 +1213,7 @@ WHERE id = $8::uuid
     $1::text NOT IN ('FAILED', 'RECONCILIATION_REQUIRED')
     OR $2::text <> ''
   )
-RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at
+RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at, batch_id, batch_item_id
 `
 
 type RecordPositionCashOutObservationParams struct {
@@ -1251,6 +1274,8 @@ func (q *Queries) RecordPositionCashOutObservation(ctx context.Context, arg Reco
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BatchID,
+		&i.BatchItemID,
 	)
 	return i, err
 }
@@ -1267,7 +1292,7 @@ WHERE id = $3::uuid
     'PREFLIGHTING', 'CLOSING', 'AWAITING_COMPLETION',
     'RECONCILIATION_REQUIRED'
   )
-RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at
+RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at, batch_id, batch_item_id
 `
 
 type RenewPositionCashOutClaimParams struct {
@@ -1318,6 +1343,8 @@ func (q *Queries) RenewPositionCashOutClaim(ctx context.Context, arg RenewPositi
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BatchID,
+		&i.BatchItemID,
 	)
 	return i, err
 }
@@ -1334,7 +1361,7 @@ WHERE id = $2::uuid
   AND state = 'RECONCILIATION_REQUIRED'
   AND claim_id IS NULL
   AND reconcile_requested_at IS NULL
-RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at
+RETURNING id, owner_account_id, wallet_id, wallet_address, credential_version, position_pubkey, market_condition_id, is_yes, position_created_at, position_request_pubkey, shares, intent_digest_sha256, state, revision, reason_code, provider_state, provider_is_closed, provider_is_liquidated, authorization_expires_at, execution_expires_at, authorized_at, next_poll_at, poll_count, reconcile_requested_at, claim_id, claim_owner, claim_expires_at, completed_at, created_at, updated_at, batch_id, batch_item_id
 `
 
 type RequestPositionCashOutReconciliationParams struct {
@@ -1383,6 +1410,8 @@ func (q *Queries) RequestPositionCashOutReconciliation(ctx context.Context, arg 
 		&i.CompletedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BatchID,
+		&i.BatchItemID,
 	)
 	return i, err
 }

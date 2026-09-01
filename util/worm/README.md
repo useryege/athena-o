@@ -148,6 +148,15 @@ A strictly validated Close echo with `is_closed=true`, or closed evidence from
 the exact GET, can establish completion. A successful Close response with
 `is_closed=false` means only that the close order was accepted.
 
+Athena's Assets batch Cash Out deliberately reuses these same four stages for
+each frozen position. The batch layer, outside `util/worm`, supplies complete
+position pagination, Wallet-major ordering, one-at-a-time child operations,
+durable Wallet locks, and a confirmed native-USDC gate. For a batch child, the
+caller records the pre-Close USDC baseline in the same database transaction as
+the child's `DISPATCHED` checkpoint. Neither balance observation nor batch
+policy is duplicated in this package, and batch recovery never changes the
+at-most-once Close contract.
+
 The HMAC position pubkey used by these stages is not the numeric Worm Web
 `position_id` used by `CashOutWebMarginPosition`. The HMAC stages do not perform
 Web sign-in, request a Wallet signature, or use a Web JWT.

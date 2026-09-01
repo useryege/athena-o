@@ -399,6 +399,8 @@ type WormPositionCashOut struct {
 	CompletedAt            pgtype.Timestamptz
 	CreatedAt              pgtype.Timestamptz
 	UpdatedAt              pgtype.Timestamptz
+	BatchID                pgtype.UUID
+	BatchItemID            pgtype.UUID
 }
 
 type WormPositionCashOutAttempt struct {
@@ -433,6 +435,126 @@ type WormPositionCashOutAuthorization struct {
 	EndReasonCode      string
 	CreatedAt          pgtype.Timestamptz
 	UpdatedAt          pgtype.Timestamptz
+}
+
+type WormPositionCashOutBatch struct {
+	ID                     pgtype.UUID
+	OwnerAccountID         pgtype.UUID
+	SelectionDigestSha256  []byte
+	IntentDigestSha256     []byte
+	State                  string
+	Revision               int64
+	ReasonCode             string
+	BuildStage             string
+	WalletCount            int64
+	PositionCount          int64
+	CompletedCount         int64
+	NotExecutedCount       int64
+	NextItemOrdinal        pgtype.Int8
+	CurrentItemOrdinal     pgtype.Int8
+	AuthorizationExpiresAt pgtype.Timestamptz
+	AuthorizedAt           pgtype.Timestamptz
+	ExecutionStartedAt     pgtype.Timestamptz
+	NextPollAt             pgtype.Timestamptz
+	CheckRequestedAt       pgtype.Timestamptz
+	ClaimID                pgtype.UUID
+	ClaimOwner             string
+	ClaimExpiresAt         pgtype.Timestamptz
+	CompletedAt            pgtype.Timestamptz
+	CreatedAt              pgtype.Timestamptz
+	UpdatedAt              pgtype.Timestamptz
+}
+
+type WormPositionCashOutBatchAuthorization struct {
+	ID                 pgtype.UUID
+	BatchID            pgtype.UUID
+	OwnerAccountID     pgtype.UUID
+	Scope              string
+	ProofKind          string
+	SessionJtiDigest   []byte
+	AccessRevision     int64
+	IntentDigestSha256 []byte
+	State              string
+	AuthorizedAt       pgtype.Timestamptz
+	EndedAt            pgtype.Timestamptz
+	EndReasonCode      string
+	CreatedAt          pgtype.Timestamptz
+	UpdatedAt          pgtype.Timestamptz
+}
+
+type WormPositionCashOutBatchCommand struct {
+	ID                 pgtype.UUID
+	BatchID            pgtype.UUID
+	OwnerAccountID     pgtype.UUID
+	Kind               string
+	State              string
+	RequestSha256      []byte
+	BatchRevisionAfter int64
+	ResultCode         string
+	CompletedAt        pgtype.Timestamptz
+	CreatedAt          pgtype.Timestamptz
+	UpdatedAt          pgtype.Timestamptz
+}
+
+type WormPositionCashOutBatchItem struct {
+	ID                       pgtype.UUID
+	BatchID                  pgtype.UUID
+	Ordinal                  int64
+	WalletOrdinal            int32
+	PositionOrdinal          int32
+	WalletID                 int64
+	WalletAddress            string
+	WalletRemark             string
+	CredentialVersion        int64
+	PositionPubkey           string
+	PositionRequestPubkey    string
+	MarketConditionID        string
+	MarketTitle              string
+	IsYes                    bool
+	Shares                   string
+	PositionCreatedAt        pgtype.Timestamptz
+	ProviderState            string
+	State                    string
+	ReasonCode               string
+	ChildCashOutID           pgtype.UUID
+	BaselineUsdcMint         string
+	BaselineUsdcDecimals     pgtype.Int4
+	BaselineUsdcAtomicAmount string
+	BaselineUsdcObservedSlot pgtype.Int8
+	ObservedUsdcMint         string
+	ObservedUsdcDecimals     pgtype.Int4
+	ObservedUsdcAtomicAmount string
+	ObservedUsdcSlot         pgtype.Int8
+	DeltaUsdcAtomicAmount    string
+	BalanceStartedAt         pgtype.Timestamptz
+	BalanceDeadlineAt        pgtype.Timestamptz
+	BalanceConfirmedAt       pgtype.Timestamptz
+	CompletedAt              pgtype.Timestamptz
+	CreatedAt                pgtype.Timestamptz
+	UpdatedAt                pgtype.Timestamptz
+}
+
+type WormPositionCashOutBatchWallet struct {
+	BatchID           pgtype.UUID
+	Ordinal           int32
+	WalletID          int64
+	Address           string
+	CredentialVersion int64
+	Remark            string
+	AvatarKind        string
+	AvatarPresetID    string
+	AvatarUrl         string
+	PositionCount     int64
+	CompletedCount    int64
+	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+}
+
+type WormPositionCashOutBatchWalletLock struct {
+	WalletID   int64
+	BatchID    pgtype.UUID
+	Address    string
+	AcquiredAt pgtype.Timestamptz
 }
 
 type WormPositionCashOutCommand struct {

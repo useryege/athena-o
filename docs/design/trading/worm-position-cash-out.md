@@ -27,6 +27,12 @@ the authoritative account-to-Wallet relationship but performs no Cash-Out
 signing. The Assets browser owns explicit confirmation, proof interaction,
 polling, and read-only `Check status`; it never drives or retries the Worm Close.
 
+The same operation can also be created as the single active child of a
+[Worm Position Cash Out Batch](worm-position-cash-out-batches.md). In that
+case the batch freezes the target and owns user authorization, Wallet locks,
+ordering, and the post-Close USDC gate. This worker still owns the only Close
+dispatch; it atomically binds the batch baseline to its `DISPATCHED` attempt.
+
 ## Source Locations
 
 | Concern | Source | Key symbols |
@@ -39,6 +45,7 @@ polling, and read-only `Check status`; it never drives or retries the Worm Close
 | Background execution and recovery | [internal/wormtrading/position_cash_out_worker.go](../../../internal/wormtrading/position_cash_out_worker.go), [internal/wormtrading/service.go](../../../internal/wormtrading/service.go) | `runPositionCashOutWorker`, `processClaimedPositionCashOut`, `dispatchPreparedPositionCashOut`, `reconcileClaimedPositionCashOut` |
 | Activity-row action projection | [internal/wormtrading/worm_positions.go](../../../internal/wormtrading/worm_positions.go), [internal/server/wormtrading/wormtrading.proto](../../../internal/server/wormtrading/wormtrading.proto) | `projectPositionCashOutAvailability`, `WormPositionCashOutSummary`, `cashOut` |
 | Durable state and Wallet isolation | [internal/wormtrading/store/migrations/000009_position_cash_outs.sql](../../../internal/wormtrading/store/migrations/000009_position_cash_outs.sql), [internal/wormtrading/store/position_cash_outs.go](../../../internal/wormtrading/store/position_cash_outs.go), [internal/wormtrading/store/queries/position_cash_outs.sql](../../../internal/wormtrading/store/queries/position_cash_outs.sql), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go) | `worm_position_cash_outs`, authorizations, commands, attempts, `GetPositionCashOutCreation`, `CompletePositionCashOutDispatch`, `beginWalletTransaction`, execution-Run interlock |
+| Batch child integration | [internal/wormtrading/store/migrations/000010_position_cash_out_batches.sql](../../../internal/wormtrading/store/migrations/000010_position_cash_out_batches.sql), [internal/wormtrading/store/position_cash_out_batches.go](../../../internal/wormtrading/store/position_cash_out_batches.go), [internal/wormtrading/position_cash_out_batch_worker.go](../../../internal/wormtrading/position_cash_out_batch_worker.go) | nullable batch/item source, atomic USDC baseline plus attempt dispatch, serial child progress |
 | Stateless HMAC protocol stages | [util/worm/margin_position_cash_out_stages.go](../../../util/worm/margin_position_cash_out_stages.go), [util/worm/worm.go](../../../util/worm/worm.go), [util/worm/README.md](../../../util/worm/README.md) | `InspectMarginPositionCashOutTarget`, `PrepareMarginPositionCashOut`, `DispatchMarginPositionCashOut`, `ObserveMarginPositionCashOut`, `CloseMarginPosition` |
 | Assets interaction | [ui/src/app/member/pages/worm-trading.tsx](../../../ui/src/app/member/pages/worm-trading.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts), [ui/src/app/styles/member-features.css](../../../ui/src/app/styles/member-features.css) | `PositionCashOutManagement`, `PositionCashOutButton`, strict operation normalizers, responsive Actions presentation |
 
@@ -230,6 +237,13 @@ adds four Worm-Trading-owned tables:
   closed/liquidated evidence, authorization and execution deadlines, worker
   claim, poll schedule, and completion time. Partial unique indexes admit one
   non-terminal Cash Out per Wallet and per position pubkey.
+
+Migration `000010` adds a nullable, paired `batch_id`/`batch_item_id` source.
+A batch child is still this same operation and attempt state machine, but its
+proof and Wallet admission belong to the parent batch. Its pre-Close USDC
+baseline and attempt `DISPATCHED` transition are committed atomically by the
+batch store boundary before this worker may send DELETE.
+
 - `worm_position_cash_out_authorizations` stores one scope-specific proof per
   operation, including proof kind, Session-JTI digest, access revision, intent
   digest, and authorization/end times. It stores no Google token, SIWS message,
@@ -268,11 +282,12 @@ lifecycle times. Neither projection contains the owner UUID, credential
 version, intent digest, Session digest, HMAC keys, HMAC signature, raw response,
 or attempt request digest.
 
-Run and Cash-Out creation share the numeric Wallet-ID advisory-lock namespace.
-A Cash Out checks the execution Wallet-lock table while holding that lock. Run
-creation sorts all selected Wallet IDs, acquires the same advisory locks in
-order, then checks for non-terminal Cash Outs. `RECONCILIATION_REQUIRED`
-remains active in both checks, preventing a second uncertain mutation. This is
+Run, single Cash-Out, and batch creation share the numeric Wallet-ID advisory-
+lock namespace. A single Cash Out checks the execution locks and durable batch
+Wallet locks while holding that advisory lock. Run and batch creation acquire
+all selected Wallet locks in sorted ID order and check both other capabilities.
+`RECONCILIATION_REQUIRED` remains active in every check, preventing a second
+uncertain mutation. This is
 an admission lock, not a long-held database lock; durable rows and indexes carry
 the isolation after each transaction commits.
 
@@ -398,7 +413,7 @@ gRPC health.
 - [ ] Matching CREATE replay returns its committed operation before provider access.
 - [ ] Attempt checkpointing preserves one DELETE after durable `DISPATCHED`, atomic closed-response completion, CLOSING safe-GET recovery before dispatch, and exact-GET-only reconciliation afterward.
 - [ ] Closed, liquidated, rejected, pending, unknown, 404, and connection-drift semantics remain current.
-- [ ] One-Cash-Out-per-Wallet and Run/Cash-Out bidirectional Wallet isolation remain transactionally race-free.
+- [ ] Single-Cash-Out, batch Wallet locks, and Run admission remain transactionally race-free in the shared advisory-lock namespace.
 - [ ] Assets desktop/mobile actions, confirmation disclosure, redirect recovery, polling, Alerts, and refresh behavior remain current.
 - [ ] Source links and named symbols resolve to the implementation.
 - [ ] The [design index](../README.md) contains the correct entry.

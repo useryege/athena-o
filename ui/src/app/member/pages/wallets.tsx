@@ -11,6 +11,7 @@ import {
     Empty,
     Form,
     Input,
+    InputNumber,
     Modal,
     Pagination,
     Skeleton,
@@ -30,7 +31,6 @@ import {AccountIdentityProvider} from '../../shared/models';
 import {SensitiveWriteScope, useSensitiveWriteLease} from '../../shared/sensitive-write-scope';
 import {memberServices as services} from '../services';
 import {
-    CreateWalletInput,
     CreateWalletResult,
     ListWalletsResult,
     WALLET_LOGIN_SESSION_REQUIRED,
@@ -46,6 +46,7 @@ import {realmBoundResourceURL, requestErrorDetails, requestErrorMessage} from '.
 import {useKeywordParam, usePagedParams} from '../../shared/pages/shared';
 
 const walletPageSizes = [12, 24, 48];
+const maxWalletBatchSize = 10;
 const pendingWalletSecretActionKey = 'athena.member.wallet-secret.pending-action';
 const acceptedAvatarTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
@@ -105,6 +106,65 @@ const copyText = async (value: string) => {
         throw new Error('Nothing to copy');
     }
     await navigator.clipboard.writeText(value);
+};
+
+interface ImportedPrivateKeyLine {
+    privateKey: string;
+    lineNumber: number;
+}
+
+const parseImportedPrivateKeys = (value: string): ImportedPrivateKeyLine[] =>
+    value
+        .split(/\r\n|\n|\r/)
+        .map((line, index) => ({privateKey: line.trim(), lineNumber: index + 1}))
+        .filter(line => Boolean(line.privateKey));
+
+const findPrivateKeyFieldIndex = (value: unknown, depth = 0): number | undefined => {
+    if (depth > 6 || !value) {
+        return undefined;
+    }
+    if (typeof value === 'string') {
+        const match = value.match(/privateKeys\[(\d+)]/);
+        return match ? Number(match[1]) : undefined;
+    }
+    if (Array.isArray(value)) {
+        for (const item of value) {
+            const index = findPrivateKeyFieldIndex(item, depth + 1);
+            if (index !== undefined) {
+                return index;
+            }
+        }
+        return undefined;
+    }
+    if (typeof value !== 'object') {
+        return undefined;
+    }
+    for (const nested of Object.values(value as Record<string, unknown>)) {
+        const index = findPrivateKeyFieldIndex(nested, depth + 1);
+        if (index !== undefined) {
+            return index;
+        }
+    }
+    return undefined;
+};
+
+const importWalletErrorMessage = (error: unknown, lines: ImportedPrivateKeyLine[], fallback: string) => {
+    const message = walletErrorMessage(error, fallback);
+    const messageMatch = message.match(/privateKeys\[(\d+)]/);
+    const errorRecord = error && typeof error === 'object' ? (error as Record<string, unknown>) : {};
+    const response = errorRecord.response && typeof errorRecord.response === 'object' ? (errorRecord.response as Record<string, unknown>) : {};
+    const index = messageMatch ? Number(messageMatch[1]) : findPrivateKeyFieldIndex(response.body) ?? findPrivateKeyFieldIndex(errorRecord.body);
+    const sourceLine = index === undefined ? undefined : lines[index];
+    if (!sourceLine) {
+        return message;
+    }
+    if (messageMatch) {
+        return message.replace(/privateKeys\[(\d+)]/g, (field, rawIndex: string) => {
+            const line = lines[Number(rawIndex)];
+            return line ? `Line ${line.lineNumber}` : field;
+        });
+    }
+    return `Line ${sourceLine.lineNumber}: ${message}`;
 };
 
 const hashWallet = (value: string) => {
@@ -174,9 +234,10 @@ const AvatarPresetPicker = (props: {value?: string; onChange?: (value: string) =
 
 interface WalletFormValues {
     walletType: WalletType;
+    count?: number;
     remark?: string;
     avatarPresetId?: string;
-    privateKey?: string;
+    privateKeys?: string;
 }
 
 const WalletCreateImportModal = (props: {
@@ -187,21 +248,40 @@ const WalletCreateImportModal = (props: {
 }) => {
     const [form] = Form.useForm<WalletFormValues>();
     const walletType = Form.useWatch('walletType', form) || 'EVM';
+    const createCount = Form.useWatch('count', form) || 1;
+    const privateKeys = Form.useWatch('privateKeys', form) || '';
+    const importedLines = React.useMemo(() => parseImportedPrivateKeys(privateKeys), [privateKeys]);
+    const batchSize = props.mode === 'import' ? importedLines.length : createCount;
+    const isBatch = batchSize > 1;
 
     React.useEffect(() => {
         if (props.mode) {
-            form.setFieldsValue({walletType: 'EVM', remark: '', avatarPresetId: '', privateKey: ''});
+            form.setFieldsValue({walletType: 'EVM', count: 1, remark: '', avatarPresetId: '', privateKeys: ''});
         } else {
             form.resetFields();
         }
     }, [form, props.mode]);
 
-    const title = props.mode === 'import' ? 'Import Wallet' : 'Create Wallet';
+    React.useEffect(() => {
+        if (isBatch && form.getFieldValue('remark')) {
+            form.setFieldValue('remark', '');
+        }
+    }, [form, isBatch]);
+
+    const title = props.mode === 'import' ? 'Import Wallets' : 'Create Wallets';
+    const submitLabel =
+        props.mode === 'import'
+            ? importedLines.length
+                ? `Import ${importedLines.length} ${importedLines.length === 1 ? 'wallet' : 'wallets'}`
+                : 'Import wallets'
+            : `Create ${createCount} ${createCount === 1 ? 'wallet' : 'wallets'}`;
     return (
         <Modal
             destroyOnHidden={true}
+            rootClassName='wallet-create-import-modal'
             open={Boolean(props.mode)}
             title={title}
+            width={600}
             footer={null}
             mask={{closable: !props.submitting}}
             closable={!props.submitting}
@@ -211,6 +291,79 @@ const WalletCreateImportModal = (props: {
                 <Form.Item name='walletType' label='Wallet type' rules={[{required: true, message: 'Choose a wallet type.'}]}>
                     <ChoiceGroup<WalletType> ariaLabel='Wallet type' className='choice-group--form' options={walletTypeOptions} disabled={props.submitting} />
                 </Form.Item>
+                {props.mode === 'create' && (
+                    <Form.Item
+                        name='count'
+                        label='Quantity'
+                        rules={[
+                            {required: true, message: 'Enter how many wallets to create.'},
+                            {type: 'number', min: 1, max: maxWalletBatchSize, message: `Create between 1 and ${maxWalletBatchSize} wallets at a time.`},
+                            {
+                                validator: (_, value?: number) =>
+                                    value === undefined || Number.isInteger(value) ? Promise.resolve() : Promise.reject(new Error('Quantity must be a whole number.'))
+                            }
+                        ]}
+                        extra={
+                            <span className='wallet-batch-count' aria-live='polite' aria-atomic='true'>
+                                {createCount} of {maxWalletBatchSize} wallets selected.
+                            </span>
+                        }>
+                        <InputNumber autoFocus={true} min={1} max={maxWalletBatchSize} precision={0} step={1} disabled={props.submitting} />
+                    </Form.Item>
+                )}
+                {props.mode === 'import' && (
+                    <Form.Item
+                        name='privateKeys'
+                        label='Private keys'
+                        validateTrigger={['onChange', 'onBlur']}
+                        rules={[
+                            {
+                                validator: (_, value?: string) => {
+                                    const lines = parseImportedPrivateKeys(value || '');
+                                    if (!lines.length) {
+                                        return Promise.reject(new Error('Enter at least one private key.'));
+                                    }
+                                    if (lines.length > maxWalletBatchSize) {
+                                        return Promise.reject(new Error(`Import up to ${maxWalletBatchSize} private keys at a time.`));
+                                    }
+                                    return Promise.resolve();
+                                }
+                            }
+                        ]}
+                        extra={
+                            <span className='wallet-private-keys-help'>
+                                <span id='wallet-private-keys-guidance'>
+                                    One private key per line; blank lines are ignored. Keys remain visible in this dialog, so protect your screen.{' '}
+                                    {walletType === 'SOLANA'
+                                        ? 'Keep each Base58 key, JSON byte array, or 32/64-byte hexadecimal value on one line.'
+                                        : 'Use one 32-byte hexadecimal private key per line, with or without 0x.'}
+                                </span>
+                                <span
+                                    id='wallet-private-keys-count'
+                                    className={
+                                        importedLines.length > maxWalletBatchSize ? 'wallet-private-keys-count wallet-private-keys-count--error' : 'wallet-private-keys-count'
+                                    }
+                                    aria-live='polite'
+                                    aria-atomic='true'>
+                                    {importedLines.length} of {maxWalletBatchSize} private keys ready.
+                                </span>
+                            </span>
+                        }>
+                        <Input.TextArea
+                            className='wallet-private-keys-input'
+                            autoFocus={true}
+                            autoComplete='off'
+                            autoCapitalize='none'
+                            autoCorrect='off'
+                            spellCheck={false}
+                            wrap='off'
+                            rows={8}
+                            disabled={props.submitting}
+                            aria-describedby='wallet-private-keys-guidance wallet-private-keys-count'
+                            placeholder={walletType === 'SOLANA' ? 'One Solana private key per line' : '0x…\n0x…'}
+                        />
+                    </Form.Item>
+                )}
                 <Form.Item
                     name='remark'
                     label='Remark'
@@ -218,31 +371,29 @@ const WalletCreateImportModal = (props: {
                     rules={[
                         {
                             validator: (_, value?: string) => {
+                                if (isBatch && value?.trim()) {
+                                    return Promise.reject(new Error('Batch wallets use automatic sequential remarks.'));
+                                }
                                 const message = remarkValidationMessage(value || '', false);
                                 return message ? Promise.reject(new Error(message)) : Promise.resolve();
                             }
                         }
                     ]}
-                    extra='Optional. Leave blank to use the next default name, such as EVM-1 or SOL-1. You can edit it later.'>
-                    <Input
-                        autoFocus={true}
-                        placeholder='Optional custom remark'
-                        disabled={props.submitting}
-                        showCount={{formatter: info => `${unicodeCharacterCount(info.value)}/50`}}
-                    />
+                    extra={
+                        isBatch
+                            ? `Automatic sequential names will be assigned to all ${batchSize} wallets.`
+                            : 'Optional. Leave blank to use the next default name, such as EVM-1 or SOL-1. You can edit it later.'
+                    }>
+                    <Input placeholder='Optional custom remark' disabled={props.submitting || isBatch} showCount={{formatter: info => `${unicodeCharacterCount(info.value)}/50`}} />
                 </Form.Item>
-                {props.mode === 'import' && (
-                    <Form.Item
-                        name='privateKey'
-                        label='Private key'
-                        rules={[{required: true, whitespace: true, message: 'Enter the wallet private key.'}]}
-                        extra={
-                            walletType === 'SOLANA' ? 'Base58, a JSON byte array, or 32/64-byte hexadecimal material.' : 'A 32-byte hexadecimal private key, with or without 0x.'
-                        }>
-                        <Input.Password autoComplete='off' spellCheck={false} disabled={props.submitting} placeholder={walletType === 'SOLANA' ? 'Solana private key' : '0x…'} />
-                    </Form.Item>
-                )}
-                <Form.Item name='avatarPresetId' label='Avatar' extra='Custom images can be uploaded after the wallet is saved.'>
+                <Form.Item
+                    name='avatarPresetId'
+                    label='Avatar'
+                    extra={
+                        isBatch
+                            ? 'This avatar is shared by every wallet in this batch. Custom images can be uploaded later.'
+                            : 'Custom images can be uploaded after the wallet is saved.'
+                    }>
                     <AvatarPresetPicker disabled={props.submitting} />
                 </Form.Item>
                 <div className='wallet-modal-actions'>
@@ -250,7 +401,7 @@ const WalletCreateImportModal = (props: {
                         Cancel
                     </Button>
                     <Button type='primary' htmlType='submit' loading={props.submitting}>
-                        {props.mode === 'import' ? 'Import wallet' : 'Create wallet'}
+                        {submitLabel}
                     </Button>
                 </div>
             </Form>
@@ -259,7 +410,7 @@ const WalletCreateImportModal = (props: {
 };
 
 const WalletBackupModal = (props: {
-    result?: CreateWalletResult;
+    results?: CreateWalletResult[];
     confirmed: boolean;
     onConfirmedChange: (value: boolean) => void;
     onDone: () => void;
@@ -267,9 +418,10 @@ const WalletBackupModal = (props: {
 }) => (
     <Modal
         destroyOnHidden={true}
-        open={Boolean(props.result)}
-        title='Back Up Your Wallet'
-        width={680}
+        rootClassName='wallet-batch-backup-modal'
+        open={Boolean(props.results?.length)}
+        title={props.results?.length === 1 ? 'Back Up Your Wallet' : 'Back Up Your Wallets'}
+        width={760}
         closable={false}
         keyboard={false}
         mask={{closable: false}}
@@ -278,33 +430,70 @@ const WalletBackupModal = (props: {
                 Done
             </Button>
         }>
-        <Space orientation='vertical' size='middle' className='wallet-secret-stack'>
+        <Space orientation='vertical' size='middle' className='wallet-secret-stack wallet-batch-backup'>
             <Alert
                 showIcon={true}
                 type='warning'
                 title='This is the only automatic display after creation'
-                description='Store the private key somewhere secure. Anyone with this key can control the wallet. Athena will never ask you to share it.'
+                description={
+                    props.results?.length === 1
+                        ? 'Store this private key somewhere secure. Anyone with the key can control the wallet. Athena will never ask you to share it.'
+                        : `Store all ${props.results?.length || 0} private keys somewhere secure. Anyone with a key can control its wallet. Athena will never ask you to share them.`
+                }
             />
-            <div className='wallet-secret-field'>
-                <Typography.Text type='secondary'>Address</Typography.Text>
-                <Space.Compact block={true}>
-                    <Input readOnly={true} value={props.result?.item.address || ''} />
-                    <Tooltip title='Copy address'>
-                        <Button aria-label='Copy wallet address' icon={<CopyOutlined />} onClick={() => props.onCopy('Address', props.result?.item.address || '')} />
-                    </Tooltip>
-                </Space.Compact>
+            <div className='wallet-batch-backup__toolbar'>
+                <Typography.Text type='secondary'>Results are shown in creation order.</Typography.Text>
+                <Button
+                    icon={<CopyOutlined />}
+                    disabled={!props.results?.length}
+                    aria-label='Copy all private keys, one per line'
+                    onClick={() => props.onCopy('All private keys', (props.results || []).map(result => result.privateKey).join('\n'))}>
+                    Copy all private keys
+                </Button>
             </div>
-            <div className='wallet-secret-field'>
-                <Typography.Text type='secondary'>Private key</Typography.Text>
-                <Space.Compact block={true}>
-                    <Input.Password readOnly={true} autoComplete='off' value={props.result?.privateKey || ''} />
-                    <Tooltip title='Copy private key'>
-                        <Button aria-label='Copy private key' icon={<CopyOutlined />} onClick={() => props.onCopy('Private key', props.result?.privateKey || '')} />
-                    </Tooltip>
-                </Space.Compact>
+            <div className='wallet-batch-backup__list' role='list' aria-label='Created wallet private keys'>
+                {(props.results || []).map((result, index) => (
+                    <section className='wallet-batch-backup__item' role='listitem' key={result.item.id || index} aria-labelledby={`wallet-backup-${index}-heading`}>
+                        <div className='wallet-secret-heading'>
+                            <WalletAvatar item={result.item} size={42} />
+                            <span>
+                                <strong id={`wallet-backup-${index}-heading`}>
+                                    {index + 1}. {result.item.remark}
+                                </strong>
+                                <small>{result.item.walletType === 'SOLANA' ? 'Solana' : 'EVM'} wallet</small>
+                            </span>
+                        </div>
+                        <div className='wallet-secret-field'>
+                            <Typography.Text type='secondary'>Address</Typography.Text>
+                            <Space.Compact block={true}>
+                                <Input readOnly={true} value={result.item.address} />
+                                <Tooltip title='Copy address'>
+                                    <Button
+                                        aria-label={`Copy ${result.item.remark} address`}
+                                        icon={<CopyOutlined />}
+                                        onClick={() => props.onCopy('Address', result.item.address)}
+                                    />
+                                </Tooltip>
+                            </Space.Compact>
+                        </div>
+                        <div className='wallet-secret-field'>
+                            <Typography.Text type='secondary'>Private key</Typography.Text>
+                            <Space.Compact block={true}>
+                                <Input.Password readOnly={true} autoComplete='off' value={result.privateKey} />
+                                <Tooltip title='Copy private key'>
+                                    <Button
+                                        aria-label={`Copy ${result.item.remark} private key`}
+                                        icon={<CopyOutlined />}
+                                        onClick={() => props.onCopy('Private key', result.privateKey)}
+                                    />
+                                </Tooltip>
+                            </Space.Compact>
+                        </div>
+                    </section>
+                ))}
             </div>
             <Checkbox checked={props.confirmed} onChange={event => props.onConfirmedChange(event.target.checked)}>
-                I have securely backed up this private key
+                {props.results?.length === 1 ? 'I have securely backed up this private key' : 'I have securely backed up every private key in this batch'}
             </Checkbox>
         </Space>
     </Modal>
@@ -613,7 +802,7 @@ const WalletWriteSurface = React.forwardRef<
     const lease = useSensitiveWriteLease();
     const [editorMode, setEditorMode] = React.useState<'create' | 'import'>();
     const [submitting, setSubmitting] = React.useState(false);
-    const [backup, setBackup] = React.useState<CreateWalletResult>();
+    const [backup, setBackup] = React.useState<CreateWalletResult[]>();
     const [backupConfirmed, setBackupConfirmed] = React.useState(false);
     const [secret, setSecret] = React.useState<RevealedWalletSecret>();
     const [revealingID, setRevealingID] = React.useState<number>();
@@ -847,33 +1036,70 @@ const WalletWriteSurface = React.forwardRef<
 
     const submitWallet = async (mode: 'create' | 'import', values: WalletFormValues) => {
         setSubmitting(true);
-        const input: CreateWalletInput = {
+        const importedLines = parseImportedPrivateKeys(values.privateKeys || '');
+        const batchSize = mode === 'create' ? values.count || 1 : importedLines.length;
+        const input = {
             walletType: values.walletType,
-            remark: values.remark?.trim() || '',
+            remark: batchSize === 1 ? values.remark?.trim() || '' : '',
             avatarPresetId: values.avatarPresetId || ''
         };
         const result =
             mode === 'create'
-                ? await lease.runTask(() => services.wallet.createWallet(input))
-                : await lease.runTask(() => services.wallet.importWallet({...input, privateKey: values.privateKey?.trim() || ''}));
+                ? await lease.runTask(() => services.wallet.batchCreateWallets({...input, count: batchSize}))
+                : await lease.runTask(() => services.wallet.batchImportWallets({...input, privateKeys: importedLines.map(line => line.privateKey)}));
         if (result.status === 'discarded') {
             return;
         }
         setSubmitting(false);
         if (result.status === 'rejected') {
-            ctx.notifications.error(mode === 'create' ? 'Wallet creation failed' : 'Wallet import failed', walletErrorMessage(result.error, 'Could not save this wallet.'));
+            const status = requestErrorDetails(result.error).status;
+            if (status === undefined || status === 0 || status === 408 || status >= 500) {
+                props.onReload();
+                ctx.notifications.warning(
+                    mode === 'create' ? 'Wallet creation result is unknown' : 'Wallet import result is unknown',
+                    mode === 'create'
+                        ? 'Athena could not confirm the final result. The wallet list was refreshed; check it before trying again. Any committed key can be revealed later after reauthentication.'
+                        : 'Athena could not confirm the final result. The wallet list was refreshed; check it before trying again.'
+                );
+                return;
+            }
+            const fallback = batchSize === 1 ? 'Could not save this wallet.' : `Could not save this batch of ${batchSize} wallets.`;
+            ctx.notifications.error(
+                mode === 'create' ? 'Wallet creation failed' : 'Wallet import failed',
+                mode === 'import' ? importWalletErrorMessage(result.error, importedLines, fallback) : walletErrorMessage(result.error, fallback)
+            );
             return;
         }
-        setEditorMode(undefined);
-        props.onReload();
         if (mode === 'create') {
+            const results = result.value as CreateWalletResult[];
+            const complete =
+                results.length === batchSize && results.every(saved => saved.item.id > 0 && Boolean(saved.item.address) && Boolean(saved.item.remark) && Boolean(saved.privateKey));
+            if (!complete) {
+                props.onReload();
+                ctx.notifications.warning(
+                    'Wallet creation result is incomplete',
+                    'Athena did not return every expected wallet and private key. The wallet list was refreshed; check it before trying again. Any committed key can be revealed later after reauthentication.'
+                );
+                return;
+            }
+            setEditorMode(undefined);
+            props.onReload();
             setBackupConfirmed(false);
-            setBackup(result.value as CreateWalletResult);
+            setBackup(results);
         } else {
-            const item = result.value as WalletItem;
-            props.onWalletChanged(item);
-            props.onSelectedChange(item);
-            ctx.notifications.success('Wallet imported');
+            const items = result.value as WalletItem[];
+            const complete = items.length === batchSize && items.every(item => item.id > 0 && Boolean(item.address) && Boolean(item.remark));
+            if (!complete) {
+                props.onReload();
+                ctx.notifications.warning(
+                    'Wallet import result is incomplete',
+                    'Athena did not return every expected wallet. The wallet list was refreshed; check it before trying again.'
+                );
+                return;
+            }
+            setEditorMode(undefined);
+            props.onReload();
+            ctx.notifications.success(`${items.length} ${items.length === 1 ? 'wallet' : 'wallets'} imported`);
         }
     };
 
@@ -881,12 +1107,14 @@ const WalletWriteSurface = React.forwardRef<
         if (!backup || !backupConfirmed) {
             return;
         }
-        const item = backup.item;
+        const item = backup[0]?.item;
         setBackup(undefined);
         setBackupConfirmed(false);
-        props.onWalletChanged(item);
-        props.onSelectedChange(item);
-        ctx.notifications.success('Wallet created');
+        if (item) {
+            props.onWalletChanged(item);
+            props.onSelectedChange(item);
+        }
+        ctx.notifications.success(`${backup.length} ${backup.length === 1 ? 'wallet' : 'wallets'} created`);
     };
 
     const applyWalletUpdate = async (kind: 'remark' | 'avatar', start: () => ReturnType<typeof services.wallet.updateRemark>, successMessage: string) => {
@@ -974,7 +1202,7 @@ const WalletWriteSurface = React.forwardRef<
             />
             <WalletCreateImportModal mode={editorMode} submitting={submitting} onCancel={() => !submitting && setEditorMode(undefined)} onSubmit={submitWallet} />
             <WalletBackupModal
-                result={backup}
+                results={backup}
                 confirmed={backupConfirmed}
                 onConfirmedChange={setBackupConfirmed}
                 onDone={completeBackup}
@@ -1113,17 +1341,17 @@ export const WalletsPage = () => {
     };
 
     const writeMenu: MenuProps['items'] = [
-        {key: 'create', label: 'Create wallet', icon: <PlusOutlined />},
-        {key: 'import', label: 'Import wallet', icon: <ImportOutlined />}
+        {key: 'create', label: 'Create wallets', icon: <PlusOutlined />},
+        {key: 'import', label: 'Import wallets', icon: <ImportOutlined />}
     ];
     const writeActions = canWrite ? (
         <>
             <Space className='wallet-header-actions wallet-header-actions--desktop'>
                 <Button icon={<ImportOutlined />} onClick={() => writeHandle.current?.openImport()}>
-                    Import
+                    Import Wallets
                 </Button>
                 <Button type='primary' icon={<PlusOutlined />} onClick={() => writeHandle.current?.openCreate()}>
-                    Create Wallet
+                    Create Wallets
                 </Button>
             </Space>
             <Dropdown

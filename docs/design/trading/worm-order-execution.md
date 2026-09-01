@@ -40,8 +40,10 @@ position, set TP/SL, claim a settlement, or delete execution history. The
 implementation has not placed a real order as part of repository validation;
 live orders begin only through an explicitly authorized Run. Independently,
 [Worm Position Cash Out](worm-position-cash-out.md) closes one exact HMAC
-position from Assets. Its non-terminal operations and Runs exclude each other
-per Wallet before either can create a new provider mutation.
+position from Assets, while [Worm Position Cash Out Batches](worm-position-cash-out-batches.md)
+holds durable locks for every selected Wallet. Runs, single Cash Outs, and
+batches exclude each other per Wallet before any can create a new provider
+mutation.
 
 ## Source Locations
 
@@ -56,6 +58,7 @@ per Wallet before either can create a new provider mutation.
 | No-replay recovery, position completion, polling, and reconciliation | [internal/wormtrading/execution_worker.go](../../../internal/wormtrading/execution_worker.go) | `recoverSuccessfulOpen`, `recoverFinalizingExecution`, `observeExecutionOpenPosition`, `matchExecutionOpenPosition`, `recordExecutionOpenPositionCompletion`, `reconcileAmbiguousFinalize`, `recordExecutionAwaiting`, `reconcileWormExecutionStep` |
 | Durable state and transitions | [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | Run/Step lifecycle operations, `RecordExecutionStepOpened`, commands, coordinator leases, mutation attempts, isolation, recovery claims |
 | Schema and generated-query source | [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql](../../../internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql), [internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql), [internal/wormtrading/store/migrations/000009_position_cash_outs.sql](../../../internal/wormtrading/store/migrations/000009_position_cash_outs.sql), [internal/wormtrading/store/queries/execution_runs.sql](../../../internal/wormtrading/store/queries/execution_runs.sql), [internal/wormtrading/store/queries/position_cash_outs.sql](../../../internal/wormtrading/store/queries/position_cash_outs.sql), [internal/wormtrading/store/queries/market_combinations.sql](../../../internal/wormtrading/store/queries/market_combinations.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | execution tables, mandatory-guard schema reset, Open Position completion evidence, one-active-Run constraint, sorted Wallet advisory locks, Cash-Out interlock, recovery selection, consumed-plan retention |
+| Batch Wallet admission | [internal/wormtrading/store/migrations/000010_position_cash_out_batches.sql](../../../internal/wormtrading/store/migrations/000010_position_cash_out_batches.sql), [internal/wormtrading/store/queries/position_cash_out_batches.sql](../../../internal/wormtrading/store/queries/position_cash_out_batches.sql) | durable batch Wallet locks and the reciprocal Run admission check in the shared advisory-lock namespace |
 | Stateless Worm Web protocol stages | [util/worm/web_market_position_stages.go](../../../util/worm/web_market_position_stages.go), [util/worm/web_signing_validation.go](../../../util/worm/web_signing_validation.go), [util/worm/web_client.go](../../../util/worm/web_client.go), [util/worm/README.md](../../../util/worm/README.md) | `AuthenticateWebWallet`, `PrepareWebMarketPositionOpen`, `DispatchWebMarketPositionOpen`, `ObserveWebPositionRequest`, `InspectWebPositionRequestTransaction`, `PrepareWebPositionFinalize`, `DispatchWebPositionFinalize`, typed transport/API/edge errors |
 | Capability-scoped Wallet signer | [internal/wallet/wallet.proto](../../../internal/wallet/wallet.proto), [internal/wallet/worm_execution_signer.go](../../../internal/wallet/worm_execution_signer.go), [internal/wallet/server.go](../../../internal/wallet/server.go), [internal/wallet/apiclient](../../../internal/wallet/apiclient) | `WormExecutionSignerService`, `SignWormWebSignInMessage`, `SignWormPositionRequestTransaction`, independent Bearer dispatch |
 | Process construction and secrets | [cmd/athena-worm-trading/commands/athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go), [cmd/athena-wallet/commands/athena_wallet.go](../../../cmd/athena-wallet/commands/athena_wallet.go), [Procfile](../../../Procfile), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | fixed Web client, signer-only Wallet clientset, dedicated signer token, service lifecycle |
@@ -135,13 +138,13 @@ application Origin. The browser supplies a UUID `commandId` and positive
 `expectedRevision` for optimistic command application. It supplies an exact
 expected Step ordinal and coordinator token only for execute-next.
 
-Run creation and Assets Cash-Out creation share a PostgreSQL advisory-lock
+Run creation and both Assets Cash-Out creation paths share a PostgreSQL advisory-lock
 namespace keyed by numeric Wallet ID. Run creation sorts every frozen Wallet
-ID, acquires those locks in order, and rejects any non-terminal Cash Out before
-copying the plan. Cash-Out creation acquires the same one-Wallet lock and
-rejects an execution Wallet lock. `RECONCILIATION_REQUIRED` remains active on
-both sides, so an uncertain Close cannot race a new Open Run and an unfinished
-Run cannot race a Close.
+ID, acquires those locks in order, and rejects any non-terminal single Cash Out
+or batch Wallet lock before copying the plan. Single Cash-Out creation acquires
+the same one-Wallet lock; batch creation sorts all selected IDs. Both reject an
+execution Wallet lock. `RECONCILIATION_REQUIRED` remains active, so an uncertain
+Close cannot race a new Open Run and an unfinished Run cannot race a Close.
 
 The execution-history page loads only owner-scoped Runs until the authoritative
 Run total is zero. Its empty state then performs one owner-scoped, one-row
@@ -171,7 +174,8 @@ empty state and does not replace the successfully loaded empty Run history.
 3. The same transaction acquires the source Combination lock and each selected
    Wallet lock after confirming its saved connection snapshot is still valid.
    It sorts the selected Wallet IDs, acquires their transaction advisory locks,
-   and rejects any non-terminal position Cash Out while those locks are held.
+   and rejects any non-terminal single position Cash Out or batch Wallet lock
+   while those locks are held.
    It also rejects an unresolved Wallet-market isolation. A unique partial
    index admits at most one non-terminal Run per owner, and the plan UUID can
    belong to only one Run. The resulting state is `AWAITING_AUTHORIZATION`.
@@ -459,9 +463,10 @@ distinct secrets. Only Wallet and Worm Trading receive the signer token.
   result. Every execution intent comes from the immutable server-side plan.
 - One plan creates at most one permanent Run, one owner has at most one
   non-terminal Run, and an active Run locks its source Combination and selected
-  Wallets. A selected Wallet with a non-terminal position Cash Out cannot enter
-  the Run; the shared advisory-lock transaction prevents a create race. The
-  reciprocal Cash-Out boundary rejects every Wallet held by an unfinished Run.
+  Wallets. A selected Wallet with a non-terminal single Cash Out or a durable
+  batch Wallet lock cannot enter the Run; the shared advisory-lock transaction
+  prevents a create race. The reciprocal single- and batch-Cash-Out boundaries
+  reject every Wallet held by an unfinished Run.
 - Wallet and item order never change after Run creation. Only the next
   server-projected Wallet-major `PENDING` ordinal can be claimed, and the
   backend never automatically claims the following Step.
@@ -502,10 +507,11 @@ distinct secrets. Only Wallet and Worm Trading receive the signer token.
 
 Invalid UUIDs, JSON, Origin, access, owner, revision, stale/expired plan,
 zero-actionable preview, already consumed plan, active owner Run, changed Wallet
-connection, locked Combination/Wallet, non-terminal Cash Out on any selected
-Wallet, or unresolved isolation fail before a partial Run commits. Sorted
-Wallet advisory locks make the Cash-Out check and Run creation atomic against a
-concurrent Cash-Out create. The creation command is idempotent only for the same
+connection, locked Combination/Wallet, non-terminal single Cash Out or batch
+Wallet lock on any selected Wallet, or unresolved isolation fail before a
+partial Run commits. Sorted Wallet advisory locks make both Cash-Out checks and
+Run creation atomic against concurrent single or batch creation. The creation
+command is idempotent only for the same
 owner and exact request digest; reuse with different input is a conflict.
 
 Google and Phantom proof state is one-time and consumed before later provider,

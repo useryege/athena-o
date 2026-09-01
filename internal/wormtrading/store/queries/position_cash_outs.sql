@@ -165,6 +165,7 @@ WHERE (
       AND (claim_id IS NULL OR claim_expires_at <= sqlc.arg(now)::timestamptz)
     )
   )
+  AND NOT (batch_id IS NOT NULL AND state = 'RECONCILIATION_REQUIRED')
 ORDER BY COALESCE(next_poll_at, updated_at), created_at, id
 LIMIT sqlc.arg(recovery_limit)::integer;
 

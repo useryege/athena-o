@@ -5,6 +5,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -60,15 +61,26 @@ var (
 	ErrExecutionRunAuthorization            = fmt.Errorf("%w: execution authorization", ErrConflict)
 	ErrExecutionRunIsolation                = fmt.Errorf("%w: wallet-market execution isolation", ErrConflict)
 	ErrExecutionRunWalletCashOutActive      = fmt.Errorf("%w: execution wallet has an active position Cash Out", ErrConflict)
+	ErrExecutionRunWalletCashOutBatchActive = fmt.Errorf("%w: execution wallet is locked by a position Cash Out batch", ErrConflict)
 	ErrInvalidExecutionRun                  = fmt.Errorf("%w: invalid execution run", ErrInvalidState)
 	ErrPositionCashOutNotFound              = fmt.Errorf("%w: position Cash Out", ErrNotFound)
 	ErrPositionCashOutRevision              = fmt.Errorf("%w: position Cash Out revision", ErrConflict)
 	ErrPositionCashOutCommandConflict       = fmt.Errorf("%w: position Cash Out command", ErrConflict)
 	ErrPositionCashOutWalletActive          = fmt.Errorf("%w: Wallet already has an active position Cash Out", ErrConflict)
 	ErrPositionCashOutExecutionActive       = fmt.Errorf("%w: Wallet has an active execution Run", ErrConflict)
+	ErrPositionCashOutBatchActive           = fmt.Errorf("%w: Wallet is locked by a position Cash Out batch", ErrConflict)
 	ErrPositionCashOutConnectionChanged     = fmt.Errorf("%w: position Cash Out Wallet connection changed", ErrConflict)
 	ErrPositionCashOutClaim                 = fmt.Errorf("%w: position Cash Out worker claim", ErrConflict)
 	ErrInvalidPositionCashOut               = fmt.Errorf("%w: invalid position Cash Out", ErrInvalidState)
+	ErrPositionCashOutBatchNotFound         = fmt.Errorf("%w: position Cash Out batch", ErrNotFound)
+	ErrPositionCashOutBatchRevision         = fmt.Errorf("%w: position Cash Out batch revision", ErrConflict)
+	ErrPositionCashOutBatchCommandConflict  = fmt.Errorf("%w: position Cash Out batch command", ErrConflict)
+	ErrPositionCashOutBatchOwnerActive      = fmt.Errorf("%w: account already has an active position Cash Out batch", ErrConflict)
+	ErrPositionCashOutBatchWalletActive     = fmt.Errorf("%w: Wallet is locked by another position Cash Out batch", ErrConflict)
+	ErrPositionCashOutBatchExecutionActive  = fmt.Errorf("%w: batch Wallet has an active execution Run", ErrConflict)
+	ErrPositionCashOutBatchCashOutActive    = fmt.Errorf("%w: batch Wallet has an active position Cash Out", ErrConflict)
+	ErrPositionCashOutBatchClaim            = fmt.Errorf("%w: position Cash Out batch worker claim", ErrConflict)
+	ErrInvalidPositionCashOutBatch          = fmt.Errorf("%w: invalid position Cash Out batch", ErrInvalidState)
 )
 
 type SQLStore struct {
@@ -126,21 +138,52 @@ func (s *SQLStore) Ping(ctx context.Context) error {
 }
 
 func (s *SQLStore) beginWalletTransaction(ctx context.Context, walletID int64) (pgx.Tx, *wormtradingsqlc.Queries, error) {
+	return s.beginWalletsTransaction(ctx, []int64{walletID})
+}
+
+func (s *SQLStore) beginWalletsTransaction(ctx context.Context, walletIDs []int64) (pgx.Tx, *wormtradingsqlc.Queries, error) {
 	if err := s.requireDatabase(); err != nil {
 		return nil, nil, err
 	}
-	if walletID <= 0 {
-		return nil, nil, fmt.Errorf("wallet ID must be positive")
+	normalized, err := normalizeWalletOperationIDs(walletIDs)
+	if err != nil {
+		return nil, nil, err
 	}
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return nil, nil, fmt.Errorf("begin Worm Trading wallet transaction: %w", err)
 	}
-	if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock($1::bigint)", walletID); err != nil {
+	if err := lockWalletOperations(ctx, tx, normalized); err != nil {
 		_ = tx.Rollback(context.Background())
-		return nil, nil, fmt.Errorf("lock Worm Trading wallet operation: %w", err)
+		return nil, nil, err
 	}
 	return tx, wormtradingsqlc.New(tx), nil
+}
+
+func normalizeWalletOperationIDs(walletIDs []int64) ([]int64, error) {
+	if len(walletIDs) == 0 {
+		return nil, fmt.Errorf("Wallet IDs must not be empty")
+	}
+	normalized := append([]int64(nil), walletIDs...)
+	sort.Slice(normalized, func(left, right int) bool { return normalized[left] < normalized[right] })
+	for index, walletID := range normalized {
+		if walletID <= 0 {
+			return nil, fmt.Errorf("Wallet IDs must be positive")
+		}
+		if index > 0 && normalized[index-1] == walletID {
+			return nil, fmt.Errorf("Wallet IDs must be unique")
+		}
+	}
+	return normalized, nil
+}
+
+func lockWalletOperations(ctx context.Context, tx pgx.Tx, sortedWalletIDs []int64) error {
+	for _, walletID := range sortedWalletIDs {
+		if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock($1::bigint)", walletID); err != nil {
+			return fmt.Errorf("lock Worm Trading Wallet %d operation: %w", walletID, err)
+		}
+	}
+	return nil
 }
 
 func commitWalletTransaction(ctx context.Context, tx pgx.Tx) error {

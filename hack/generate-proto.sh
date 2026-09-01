@@ -220,12 +220,12 @@ EOF
           rename_definition_property("v1alpha1WalletItem"; "updated_at"; "updatedAt") |
           wallet_integer_property("v1alpha1WalletItem"; "revision") |
           rename_definition_property("walletListWalletsResponse"; "page_size"; "pageSize") |
-          rename_definition_property("walletCreateWalletRequest"; "wallet_type"; "walletType") |
-          rename_definition_property("walletCreateWalletRequest"; "avatar_preset_id"; "avatarPresetId") |
-          rename_definition_property("walletCreateWalletResponse"; "private_key"; "privateKey") |
-          rename_definition_property("walletImportWalletRequest"; "wallet_type"; "walletType") |
-          rename_definition_property("walletImportWalletRequest"; "private_key"; "privateKey") |
-          rename_definition_property("walletImportWalletRequest"; "avatar_preset_id"; "avatarPresetId") |
+          rename_definition_property("walletBatchCreateWalletsRequest"; "wallet_type"; "walletType") |
+          rename_definition_property("walletBatchCreateWalletsRequest"; "avatar_preset_id"; "avatarPresetId") |
+          rename_definition_property("walletBatchCreateWalletResult"; "private_key"; "privateKey") |
+          rename_definition_property("walletBatchImportWalletsRequest"; "wallet_type"; "walletType") |
+          rename_definition_property("walletBatchImportWalletsRequest"; "private_keys"; "privateKeys") |
+          rename_definition_property("walletBatchImportWalletsRequest"; "avatar_preset_id"; "avatarPresetId") |
           rename_definition_property("walletUpdateWalletRemarkRequest"; "expected_revision"; "expectedRevision") |
           wallet_integer_property("walletUpdateWalletRemarkRequest"; "expectedRevision") |
           require_delete_definition_property("walletUpdateWalletRemarkRequest"; "id") |

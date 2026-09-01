@@ -47,14 +47,18 @@ export interface ListWalletsResult {
     pageSize: number;
 }
 
-export interface CreateWalletInput {
+export interface BatchCreateWalletsInput {
     walletType: WalletType;
+    count: number;
     remark?: string;
     avatarPresetId?: string;
 }
 
-export interface ImportWalletInput extends CreateWalletInput {
-    privateKey: string;
+export interface BatchImportWalletsInput {
+    walletType: WalletType;
+    privateKeys: string[];
+    remark?: string;
+    avatarPresetId?: string;
 }
 
 export interface CreateWalletResult {
@@ -226,26 +230,29 @@ export class WalletService {
         return abortableRequest(req, response => normalizeWallet((response.body || {}).item || response.body || {}));
     }
 
-    public createWallet(input: CreateWalletInput): AbortablePromise<CreateWalletResult> {
-        const req = requests.post('/wallets', writeScope).send({
+    public batchCreateWallets(input: BatchCreateWalletsInput): AbortablePromise<CreateWalletResult[]> {
+        const req = requests.post('/wallets:batchCreate', writeScope).send({
             walletType: input.walletType,
+            count: input.count,
             remark: input.remark?.trim() || '',
             avatarPresetId: input.avatarPresetId || ''
         });
-        return abortableRequest(req, response => ({
-            item: normalizeWallet((response.body || {}).item || {}),
-            privateKey: readString(response.body, 'privateKey', 'private_key')
-        }));
+        return abortableRequest(req, response =>
+            ((response.body || {}).results || []).map((result: any) => ({
+                item: normalizeWallet(result?.item || {}),
+                privateKey: readString(result, 'privateKey', 'private_key')
+            }))
+        );
     }
 
-    public importWallet(input: ImportWalletInput): AbortablePromise<WalletItem> {
-        const req = requests.post('/wallets:import', writeScope).send({
+    public batchImportWallets(input: BatchImportWalletsInput): AbortablePromise<WalletItem[]> {
+        const req = requests.post('/wallets:batchImport', writeScope).send({
             walletType: input.walletType,
-            privateKey: input.privateKey,
+            privateKeys: input.privateKeys,
             remark: input.remark?.trim() || '',
             avatarPresetId: input.avatarPresetId || ''
         });
-        return abortableRequest(req, response => normalizeWallet((response.body || {}).item || {}));
+        return abortableRequest(req, response => ((response.body || {}).items || []).map(normalizeWallet));
     }
 
     public updateRemark(id: number, remark: string, expectedRevision: number): AbortablePromise<WalletItem> {

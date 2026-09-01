@@ -35,26 +35,35 @@ message GetWalletResponse {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
 }
 
-message CreateWalletRequest {
+message BatchCreateWalletsRequest {
   string wallet_type = 1 [(gogoproto.jsontag) = "walletType,omitempty"];
-  string remark = 2;
-  string avatar_preset_id = 3 [(gogoproto.jsontag) = "avatarPresetId,omitempty"];
-}
-
-message CreateWalletResponse {
-  github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
-  string private_key = 2 [(gogoproto.jsontag) = "privateKey,omitempty"];
-}
-
-message ImportWalletRequest {
-  string wallet_type = 1 [(gogoproto.jsontag) = "walletType,omitempty"];
-  string private_key = 2 [(gogoproto.jsontag) = "privateKey,omitempty"];
+  // Number of wallets to create. The accepted range is 1 through 10.
+  int32 count = 2;
+  // A custom remark is accepted only when count is 1.
   string remark = 3;
   string avatar_preset_id = 4 [(gogoproto.jsontag) = "avatarPresetId,omitempty"];
 }
 
-message ImportWalletResponse {
+message BatchCreateWalletResult {
   github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem item = 1;
+  string private_key = 2 [(gogoproto.jsontag) = "privateKey,omitempty"];
+}
+
+message BatchCreateWalletsResponse {
+  repeated BatchCreateWalletResult results = 1;
+}
+
+message BatchImportWalletsRequest {
+  string wallet_type = 1 [(gogoproto.jsontag) = "walletType,omitempty"];
+  // Private keys are imported atomically in request order. The accepted size is 1 through 10.
+  repeated string private_keys = 2 [(gogoproto.jsontag) = "privateKeys,omitempty"];
+  // A custom remark is accepted only when exactly one private key is supplied.
+  string remark = 3;
+  string avatar_preset_id = 4 [(gogoproto.jsontag) = "avatarPresetId,omitempty"];
+}
+
+message BatchImportWalletsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.WalletItem items = 1;
 }
 
 message UpdateWalletRemarkRequest {
@@ -90,16 +99,16 @@ service WalletService {
     option (google.api.http) = {get: "/api/v1/wallets/{id}"};
   }
 
-  rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse) {
+  rpc BatchCreateWallets(BatchCreateWalletsRequest) returns (BatchCreateWalletsResponse) {
     option (google.api.http) = {
-      post: "/api/v1/wallets"
+      post: "/api/v1/wallets:batchCreate"
       body: "*"
     };
   }
 
-  rpc ImportWallet(ImportWalletRequest) returns (ImportWalletResponse) {
+  rpc BatchImportWallets(BatchImportWalletsRequest) returns (BatchImportWalletsResponse) {
     option (google.api.http) = {
-      post: "/api/v1/wallets:import"
+      post: "/api/v1/wallets:batchImport"
       body: "*"
     };
   }

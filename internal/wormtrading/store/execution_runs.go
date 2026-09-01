@@ -118,14 +118,19 @@ func (s *SQLStore) CreateExecutionRun(
 		if walletID <= 0 || (index > 0 && walletIDs[index-1] == walletID) {
 			return nil, ErrExecutionRunConflict
 		}
-		if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock($1::bigint)", walletID); err != nil {
-			return nil, fmt.Errorf("lock execution Run Wallet %d: %w", walletID, err)
-		}
+	}
+	if err := lockWalletOperations(ctx, tx, walletIDs); err != nil {
+		return nil, fmt.Errorf("lock execution Run Wallets: %w", err)
 	}
 	if count, err := queries.CountActivePositionCashOutsForWallets(ctx, walletIDs); err != nil {
 		return nil, fmt.Errorf("count active position Cash Outs for execution Run: %w", err)
 	} else if count != 0 {
 		return nil, ErrExecutionRunWalletCashOutActive
+	}
+	if count, err := queries.CountActivePositionCashOutBatchWalletLocks(ctx, walletIDs); err != nil {
+		return nil, fmt.Errorf("count active position Cash Out batch Wallet locks for execution Run: %w", err)
+	} else if count != 0 {
+		return nil, ErrExecutionRunWalletCashOutBatchActive
 	}
 	stepRows, err := queries.ListExecutionRunSourcePlanSteps(ctx, planID)
 	if err != nil {

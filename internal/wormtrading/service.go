@@ -27,23 +27,24 @@ const (
 type Service struct {
 	apiclient.UnimplementedWormTradingServiceServer
 
-	adapter               *SolanaBalanceAdapter
-	setHealthStatus       func(grpc_health_v1.HealthCheckResponse_ServingStatus)
-	credentialStore       wormstore.Store
-	credentialCipher      *credentialCipher
-	wormClientFactory     WormAPIClientFactory
-	wormAPIAttemptTimeout time.Duration
-	wormPositionBudget    time.Duration
-	wormPositionSemaphore chan struct{}
-	wormCapabilities      wormCapabilityStatus
-	wormMarketsClientset  wormmarketsapiclient.Clientset
-	wormWebClient         utilworm.WebClient
-	walletSignerClientset walletapiclient.WormExecutionSignerClientset
-	walletOperationLocks  sync.Map
-	wormWebSessionMu      sync.Mutex
-	wormWebSessions       map[string]*utilworm.WebAuthenticatedSession
-	executionWorkerWake   chan struct{}
-	positionCashOutWake   chan struct{}
+	adapter                  *SolanaBalanceAdapter
+	setHealthStatus          func(grpc_health_v1.HealthCheckResponse_ServingStatus)
+	credentialStore          wormstore.Store
+	credentialCipher         *credentialCipher
+	wormClientFactory        WormAPIClientFactory
+	wormAPIAttemptTimeout    time.Duration
+	wormPositionBudget       time.Duration
+	wormPositionSemaphore    chan struct{}
+	wormCapabilities         wormCapabilityStatus
+	wormMarketsClientset     wormmarketsapiclient.Clientset
+	wormWebClient            utilworm.WebClient
+	walletSignerClientset    walletapiclient.WormExecutionSignerClientset
+	walletOperationLocks     sync.Map
+	wormWebSessionMu         sync.Mutex
+	wormWebSessions          map[string]*utilworm.WebAuthenticatedSession
+	executionWorkerWake      chan struct{}
+	positionCashOutWake      chan struct{}
+	positionCashOutBatchWake chan struct{}
 
 	startStopMu sync.Mutex
 	started     bool
@@ -98,18 +99,19 @@ func NewServiceWithOptions(opts ServiceOptions) (*Service, error) {
 	}
 
 	service := &Service{
-		adapter:               opts.BalanceAdapter,
-		setHealthStatus:       opts.SetHealthStatus,
-		credentialStore:       opts.CredentialStore,
-		wormAPIAttemptTimeout: opts.WormAPIAttemptTimeout,
-		wormPositionBudget:    opts.WormPositionBudget,
-		wormPositionSemaphore: make(chan struct{}, opts.WormPositionConcurrency),
-		wormMarketsClientset:  opts.WormMarketsClientset,
-		wormWebClient:         opts.WormWebClient,
-		walletSignerClientset: opts.WalletSignerClientset,
-		wormWebSessions:       make(map[string]*utilworm.WebAuthenticatedSession),
-		executionWorkerWake:   make(chan struct{}, 1),
-		positionCashOutWake:   make(chan struct{}, 1),
+		adapter:                  opts.BalanceAdapter,
+		setHealthStatus:          opts.SetHealthStatus,
+		credentialStore:          opts.CredentialStore,
+		wormAPIAttemptTimeout:    opts.WormAPIAttemptTimeout,
+		wormPositionBudget:       opts.WormPositionBudget,
+		wormPositionSemaphore:    make(chan struct{}, opts.WormPositionConcurrency),
+		wormMarketsClientset:     opts.WormMarketsClientset,
+		wormWebClient:            opts.WormWebClient,
+		walletSignerClientset:    opts.WalletSignerClientset,
+		wormWebSessions:          make(map[string]*utilworm.WebAuthenticatedSession),
+		executionWorkerWake:      make(chan struct{}, 1),
+		positionCashOutWake:      make(chan struct{}, 1),
+		positionCashOutBatchWake: make(chan struct{}, 1),
 	}
 	service.wormCapabilities.configureStore(true)
 
@@ -174,6 +176,8 @@ func (s *Service) Start() error {
 		go s.runExecutionWorker(runCtx)
 		s.runWG.Add(1)
 		go s.runPositionCashOutWorker(runCtx)
+		s.runWG.Add(1)
+		go s.runPositionCashOutBatchWorker(runCtx)
 	}
 	return nil
 }

@@ -323,6 +323,8 @@ func positionCashOutToProto(cashOut *wormstore.PositionCashOut) *apiclient.Posit
 		UpdatedAt:              executionPlanUnix(cashOut.UpdatedAt),
 		AllowedActions:         positionCashOutAllowedActions(cashOut),
 		TotalShares:            cashOut.Shares,
+		BatchId:                cashOut.BatchID,
+		BatchItemId:            cashOut.BatchItemID,
 	}
 }
 

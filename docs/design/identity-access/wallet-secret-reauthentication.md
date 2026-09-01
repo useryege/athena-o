@@ -2,7 +2,7 @@
 
 ## Scope
 
-This capability owns four independent additional identity-proof boundaries.
+This capability owns five independent additional identity-proof boundaries.
 Wallet private-key reveal and Athena-created Worm API-credential management use
 separate fixed five-minute authorization leases. A live Worm order Execution
 instead records one durable authorization for one immutable Run and plan digest;
@@ -10,7 +10,10 @@ its short-lived Google or Solana provider state is not a lease and the durable
 authorization has no time TTL. An Assets position Cash Out records a separate
 durable authorization for one immutable HMAC-position intent; its proof state,
 pre-authorization window, and post-authorization pre-dispatch window are each
-five minutes, and successful proof queues work without a Start action. All four distinguish an interactive login
+five minutes, and successful proof queues work without a Start action. A
+Wallet-major Assets Cash-Out batch uses a fifth scope bound to its complete
+ordered position digest; a changed Session JTI or access revision requires a
+fresh batch proof before a paused batch can continue. All five distinguish an interactive login
 session from an API Key through server-side typed credential metadata and bind
 proof to the current account, login JTI, and access revision. Their cookies,
 Redis namespaces, routes, stable errors, and persisted scopes are independent,
@@ -31,6 +34,8 @@ Execution](../trading/worm-order-execution.md) owns the authorized Run state,
 coordinator, Web JWT mutation flow, and terminal reconciliation.
 [Worm Position Cash Out](../trading/worm-position-cash-out.md) owns the exact-
 position HMAC Close, durable attempt, observation, and Run/Cash-Out isolation.
+[Worm Position Cash Out Batches](../trading/worm-position-cash-out-batches.md)
+owns ordered batch execution, balance gates, and batch Wallet locks.
 
 ## Source Locations
 
@@ -48,6 +53,7 @@ position HMAC Close, durable attempt, observation, and Run/Cash-Out isolation.
 | Position-Cash-Out Google proof | [internal/googleoidc/worm_position_cash_out_authorization.go](../../../internal/googleoidc/worm_position_cash_out_authorization.go), [internal/googleoidc/worm_position_cash_out_store.go](../../../internal/googleoidc/worm_position_cash_out_store.go) | `WormPositionCashOutAuthorization`, `wco.` state, intent-bound five-minute OIDC transaction |
 | Position-Cash-Out Phantom proof | [internal/phantomauth/worm_position_cash_out_authorization.go](../../../internal/phantomauth/worm_position_cash_out_authorization.go), [internal/phantomauth/worm_position_cash_out_store.go](../../../internal/phantomauth/worm_position_cash_out_store.go) | `WormPositionCashOutChallenge`, `WormPositionCashOutVerify`, identity-only SIWS statement, single-use challenge |
 | Position-Cash-Out development proof and projection | [internal/server/worm_position_cash_out_authorization.go](../../../internal/server/worm_position_cash_out_authorization.go), [internal/server/worm_position_cash_outs.go](../../../internal/server/worm_position_cash_outs.go), [internal/server/athena-server.go](../../../internal/server/athena-server.go) | `developmentWormPositionCashOutAuthorization`, `authorizeWormPositionCashOutProof`, stable Cash-Out proof errors and route wiring |
+| Batch-Cash-Out proof and projection | [internal/googleoidc/worm_position_cash_out_batch_authorization.go](../../../internal/googleoidc/worm_position_cash_out_batch_authorization.go), [internal/phantomauth/worm_position_cash_out_batch_authorization.go](../../../internal/phantomauth/worm_position_cash_out_batch_authorization.go), [internal/server/worm_position_cash_out_batch_authorization.go](../../../internal/server/worm_position_cash_out_batch_authorization.go), [internal/server/worm_position_cash_out_batches.go](../../../internal/server/worm_position_cash_out_batches.go) | independent Google/Phantom/development state, `WORM_POSITION_CASH_OUT_BATCH`, intent-bound authorization, credential-bound Continue admission |
 | Logout invalidation | [internal/server/logout/logout.go](../../../internal/server/logout/logout.go) | `Handler.ServeHTTP`, `clearSensitiveCookies` |
 | Browser flow and cleanup | [ui/src/app/member/pages/wallets.tsx](../../../ui/src/app/member/pages/wallets.tsx), [ui/src/app/member/pages/worm-trading.tsx](../../../ui/src/app/member/pages/worm-trading.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | Wallet reveal flow, Worm full-account bootstrap, Run and position-Cash-Out intent-only redirect recovery |
 | Process and route wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go), [internal/server/authz.go](../../../internal/server/authz.go) | `NewServer`, `newHTTPServer`, `interactiveLoginGRPCMethods` |
@@ -61,6 +67,7 @@ flowchart LR
     P --> R2["worm.api_credential.manage lease"]
     P --> R3["one durable Run + plan-digest authorization"]
     P --> R4["one durable position Cash Out + intent authorization"]
+    P --> R5["one durable Cash Out batch + ordered-intent authorization"]
     B --> H1["Same-origin reveal handler"]
     B --> I["Native lease-free owner Worm inventory"]
     B --> H2["Same-origin Worm mutation handler"]
@@ -70,11 +77,14 @@ flowchart LR
     H3 --> R3
     B --> H4["Position-Cash-Out authorization endpoint"]
     H4 --> R4
+    B --> H5["Batch-Cash-Out authorization endpoint"]
+    H5 --> R5
     H1 -->|"Wallet READ_WRITE + service Bearer"| W1["RevealWalletPrivateKey"]
     I -->|"Interactive + Worm Trading READ_WRITE"| W2["Owner-scoped Solana refs + connection projection"]
     H2 -->|"Worm Trading READ_WRITE + lease + service Bearers"| W3["Owner lookup + purpose-bound signer"]
     R3 -->|"Run command + Session/access binding"| E["Worm Trading execution state"]
     R4 -->|"Cash-Out command + Session/access/intent binding"| C["Worm Trading Cash-Out state"]
+    R5 -->|"Batch command + Session/access/ordered-intent binding"| CB["Worm Trading batch state"]
 ```
 
 `SessionManager.AuthenticateToken` returns both ordinary JWT claims and an
@@ -134,6 +144,14 @@ pre-dispatch window: it cannot authorize another position, another operation,
 credential management, Run execution, or Wallet secret reveal. Phantom signs
 only the proof's SIWS identity message; the HMAC Close needs no custodial
 private-key signature and no network fee.
+
+Batch Cash Out has a fifth, independent provider namespace and durable scope.
+Its immutable digest covers the complete Wallet-major position order produced
+by the authoritative build. One proof queues the whole batch; individual child
+positions do not request separate browser proofs. A paused batch may continue
+under the same Session-JTI/access binding. If either binding changed, the
+Native API projects `AUTHORIZE_BATCH` and rejects `Continue` until a new proof
+supersedes the prior authorization for the unchanged batch intent.
 
 ## Runtime Flow
 
@@ -350,6 +368,21 @@ private-key signature and no network fee.
     individually. No target, proof material, HMAC request, or mutation is
     restored or replayed by the browser. Expired/cancelled proof sends no Close,
     and manual `Check status` after an unknown mutation is read-only.
+29. After a batch `BUILDING` worker freezes its complete ordered position set,
+    `AWAITING_AUTHORIZATION` exposes `AUTHORIZE_BATCH`. Google starts at the
+    batch-specific same-origin POST route; Phantom uses the batch UUID's own
+    challenge/verify routes; disabled-auth uses only the loopback development
+    route. Each flow reloads the immutable batch descriptor and binds owner,
+    Session digest, access revision, expected revision, and full intent digest.
+30. Successful proof stores scope `WORM_POSITION_CASH_OUT_BATCH` and queues the
+    batch without a Start action. It authorizes serial child creation but does
+    not relax each child's durable no-replay checkpoint. The child HMAC Close
+    requires no Wallet signature and does not consume the proof protocol state.
+31. When a balance gate pauses the batch, a matching current Session/access
+    binding may issue `Continue`. A changed binding projects
+    `AUTHORIZE_BATCH`; the server rejects Continue and requires a new proof for
+    the same immutable batch. Google redirect recovery stores only the batch
+    UUID and reloads `/active`; no command or mutation is restored.
 
 ## State / Data
 
@@ -435,6 +468,14 @@ operation and ends on completion, failure, or pre-dispatch expiry. The operation
 has five minutes to await proof and, after proof, five minutes to reach a safe
 dispatch checkpoint. Neither record contains Google tokens/codes, SIWS message
 or signature, Wallet private key, Worm HMAC credential, or provider Close body.
+
+Batch-Cash-Out Google transactions and Phantom challenges use the separate
+`wcob.` state namespace, batch-specific cookies and routes, and scope
+`WORM_POSITION_CASH_OUT_BATCH`. They bind the batch UUID and full ordered intent
+digest rather than one position UUID. Their Redis records are five-minute,
+single-use proof protocol state; the durable PostgreSQL authorization is the
+only permission to queue or reauthorize the immutable batch. The browser keeps
+only the batch UUID in its own `sessionStorage` key for redirect recovery.
 
 The Cash-Out-specific browser `sessionStorage` value contains only a bounded,
 deduplicated list of at most 100 operation UUIDs needed to recover different

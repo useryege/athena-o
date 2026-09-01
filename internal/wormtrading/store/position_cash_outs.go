@@ -176,6 +176,11 @@ func (s *SQLStore) CreatePositionCashOut(
 	} else if count != 0 {
 		return nil, ErrPositionCashOutWalletActive
 	}
+	if count, err := queries.CountActivePositionCashOutBatchWalletLock(ctx, req.WalletID); err != nil {
+		return nil, fmt.Errorf("count active position Cash Out batch lock for Wallet: %w", err)
+	} else if count != 0 {
+		return nil, ErrPositionCashOutBatchActive
+	}
 
 	state := PositionCashOutStateAwaitingAuthorization
 	reasonCode := ""
@@ -1064,6 +1069,7 @@ func mapPositionCashOut(row wormtradingsqlc.WormPositionCashOut) PositionCashOut
 		ClaimID: uuidValue(row.ClaimID), ClaimOwner: row.ClaimOwner,
 		ClaimExpiresAt: timestampValue(row.ClaimExpiresAt), CompletedAt: timestampValue(row.CompletedAt),
 		CreatedAt: timestampValue(row.CreatedAt), UpdatedAt: timestampValue(row.UpdatedAt),
+		BatchID: uuidValue(row.BatchID), BatchItemID: uuidValue(row.BatchItemID),
 	}
 }
 

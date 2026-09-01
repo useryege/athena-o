@@ -220,6 +220,10 @@ message WormPositionCashOutSummary {
   string allowed_action = 4;
   int64 revision = 5;
   int64 updated_at = 6;
+  string batch_id = 7;
+  string batch_state = 8;
+  string batch_item_state = 9;
+  string batch_lock_reason_code = 10;
 }
 
 message WormInFlightPositionRequest {
@@ -844,6 +848,8 @@ message PositionCashOut {
   int64 updated_at = 26;
   repeated string allowed_actions = 27;
   string total_shares = 28;
+  string batch_id = 29;
+  string batch_item_id = 30;
 }
 
 message CreatePositionCashOutRequest {
@@ -892,6 +898,164 @@ message ReconcilePositionCashOutResponse {
   PositionCashOut cash_out = 1;
 }
 
+// PositionCashOutBatchWalletInput is an API-Server-verified Wallet identity
+// and presentation snapshot. Repeated order is the Assets display order and
+// therefore the immutable batch execution order.
+message PositionCashOutBatchWalletInput {
+  int64 wallet_id = 1;
+  string address = 2;
+  string remark = 3;
+  string avatar_kind = 4;
+  string avatar_preset_id = 5;
+  string avatar_url = 6;
+}
+
+message PositionCashOutBatchWallet {
+  int32 ordinal = 1;
+  int64 wallet_id = 2;
+  string address = 3;
+  string remark = 4;
+  string avatar_kind = 5;
+  string avatar_preset_id = 6;
+  string avatar_url = 7;
+  int64 position_count = 8;
+  int64 completed_count = 9;
+}
+
+message PositionCashOutBatchBalanceEvidence {
+  string mint = 1;
+  int32 decimals = 2;
+  string atomic_amount = 3;
+  uint64 observed_slot = 4;
+}
+
+// PositionCashOutBatchItem is one immutable HMAC position target frozen by
+// the BUILDING worker. A child PositionCashOut is created only when this item
+// becomes the single current item.
+message PositionCashOutBatchItem {
+  string id = 1;
+  int64 ordinal = 2;
+  int32 wallet_ordinal = 3;
+  int32 position_ordinal = 4;
+  int64 wallet_id = 5;
+  string wallet_address = 6;
+  string wallet_remark = 7;
+  string position_pubkey = 8;
+  string position_request_pubkey = 9;
+  string market_condition_id = 10;
+  string market_title = 11;
+  bool is_yes = 12;
+  string shares = 13;
+  int64 position_created_at = 14;
+  string state = 15;
+  string reason_code = 16;
+  string child_operation_id = 17;
+  PositionCashOutBatchBalanceEvidence baseline = 18;
+  PositionCashOutBatchBalanceEvidence observed = 19;
+  string delta_atomic_amount = 20;
+  int64 balance_deadline_at = 21;
+  int64 completed_at = 22;
+  int64 updated_at = 23;
+}
+
+// PositionCashOutBatch is an owner-scoped, strictly serial whole-position
+// market-exit operation. The internal projection includes the immutable intent
+// digest solely for proof binding; native HTTP omits it.
+message PositionCashOutBatch {
+  string id = 1;
+  string owner_account_id = 2;
+  string state = 3;
+  string reason_code = 4;
+  int64 revision = 5;
+  bytes intent_sha256 = 6;
+  string proof_kind = 7;
+  int64 wallet_count = 8;
+  int64 position_count = 9;
+  int64 completed_count = 10;
+  int64 not_executed_count = 11;
+  int32 current_wallet_ordinal = 12;
+  int32 current_position_ordinal = 13;
+  PositionCashOutBatchItem current_item = 14;
+  repeated PositionCashOutBatchWallet wallets = 15;
+  int64 authorization_expires_at = 16;
+  int64 execution_started_at = 17;
+  int64 completed_at = 18;
+  int64 created_at = 19;
+  int64 updated_at = 20;
+  repeated string allowed_actions = 21;
+  // Internal-only authorization binding used by the Native HTTP facade to
+  // require a fresh proof before a paused batch continues under a different
+  // interactive session or access revision. Native JSON never projects it.
+  bytes authorization_session_jti_digest = 22;
+  int64 authorization_access_revision = 23;
+}
+
+message CreatePositionCashOutBatchRequest {
+  string owner_account_id = 1;
+  string command_id = 2;
+  repeated PositionCashOutBatchWalletInput wallets = 3;
+}
+
+message CreatePositionCashOutBatchResponse {
+  PositionCashOutBatch batch = 1;
+}
+
+message GetPositionCashOutBatchRequest {
+  string owner_account_id = 1;
+  string id = 2;
+}
+
+message GetPositionCashOutBatchResponse {
+  PositionCashOutBatch batch = 1;
+}
+
+message GetActivePositionCashOutBatchRequest {
+  string owner_account_id = 1;
+}
+
+message GetActivePositionCashOutBatchResponse {
+  PositionCashOutBatch batch = 1;
+}
+
+message ListPositionCashOutBatchItemsRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListPositionCashOutBatchItemsResponse {
+  repeated PositionCashOutBatchItem items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message AuthorizePositionCashOutBatchRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  string command_id = 3;
+  int64 expected_revision = 4;
+  string proof_kind = 5;
+  bytes session_jti_digest = 6;
+  int64 access_revision = 7;
+}
+
+message AuthorizePositionCashOutBatchResponse {
+  PositionCashOutBatch batch = 1;
+}
+
+message PositionCashOutBatchCommandRequest {
+  string owner_account_id = 1;
+  string id = 2;
+  string command_id = 3;
+  int64 expected_revision = 4;
+}
+
+message PositionCashOutBatchCommandResponse {
+  PositionCashOutBatch batch = 1;
+}
+
 service WormTradingService {
   rpc GetWormTradingStatus(GetWormTradingStatusRequest) returns (GetWormTradingStatusResponse);
   rpc BatchGetWalletBalances(BatchGetWalletBalancesRequest) returns (BatchGetWalletBalancesResponse);
@@ -924,4 +1088,14 @@ service WormTradingService {
   rpc GetPositionCashOut(GetPositionCashOutRequest) returns (GetPositionCashOutResponse);
   rpc AuthorizePositionCashOut(AuthorizePositionCashOutRequest) returns (AuthorizePositionCashOutResponse);
   rpc ReconcilePositionCashOut(ReconcilePositionCashOutRequest) returns (ReconcilePositionCashOutResponse);
+  rpc CreatePositionCashOutBatch(CreatePositionCashOutBatchRequest) returns (CreatePositionCashOutBatchResponse);
+  rpc GetPositionCashOutBatch(GetPositionCashOutBatchRequest) returns (GetPositionCashOutBatchResponse);
+  rpc GetActivePositionCashOutBatch(GetActivePositionCashOutBatchRequest) returns (GetActivePositionCashOutBatchResponse);
+  rpc ListPositionCashOutBatchItems(ListPositionCashOutBatchItemsRequest) returns (ListPositionCashOutBatchItemsResponse);
+  rpc AuthorizePositionCashOutBatch(AuthorizePositionCashOutBatchRequest) returns (AuthorizePositionCashOutBatchResponse);
+  rpc CancelPositionCashOutBatch(PositionCashOutBatchCommandRequest) returns (PositionCashOutBatchCommandResponse);
+  rpc PausePositionCashOutBatch(PositionCashOutBatchCommandRequest) returns (PositionCashOutBatchCommandResponse);
+  rpc ContinuePositionCashOutBatch(PositionCashOutBatchCommandRequest) returns (PositionCashOutBatchCommandResponse);
+  rpc TerminatePositionCashOutBatch(PositionCashOutBatchCommandRequest) returns (PositionCashOutBatchCommandResponse);
+  rpc CheckPositionCashOutBatchStatus(PositionCashOutBatchCommandRequest) returns (PositionCashOutBatchCommandResponse);
 }

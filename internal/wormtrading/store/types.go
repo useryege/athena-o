@@ -927,6 +927,8 @@ type PositionCashOut struct {
 	CompletedAt            time.Time
 	CreatedAt              time.Time
 	UpdatedAt              time.Time
+	BatchID                string
+	BatchItemID            string
 	Authorization          *PositionCashOutAuthorization
 	Attempt                *PositionCashOutAttempt
 }
@@ -1065,6 +1067,348 @@ type RecordPositionCashOutObservationRequest struct {
 	Now                  time.Time
 }
 
+// PositionCashOutBatchState is the durable lifecycle of one owner-authorized,
+// Wallet-major batch. PAUSED and RECONCILIATION_REQUIRED retain every selected
+// Wallet lock. Terminal states release them.
+type PositionCashOutBatchState string
+
+const (
+	PositionCashOutBatchStateBuilding               PositionCashOutBatchState = "BUILDING"
+	PositionCashOutBatchStateAwaitingAuthorization  PositionCashOutBatchState = "AWAITING_AUTHORIZATION"
+	PositionCashOutBatchStateQueued                 PositionCashOutBatchState = "QUEUED"
+	PositionCashOutBatchStateRunning                PositionCashOutBatchState = "RUNNING"
+	PositionCashOutBatchStatePauseRequested         PositionCashOutBatchState = "PAUSE_REQUESTED"
+	PositionCashOutBatchStatePaused                 PositionCashOutBatchState = "PAUSED"
+	PositionCashOutBatchStateTerminateRequested     PositionCashOutBatchState = "TERMINATE_REQUESTED"
+	PositionCashOutBatchStateCompleted              PositionCashOutBatchState = "COMPLETED"
+	PositionCashOutBatchStateFailed                 PositionCashOutBatchState = "FAILED"
+	PositionCashOutBatchStateReconciliationRequired PositionCashOutBatchState = "RECONCILIATION_REQUIRED"
+	PositionCashOutBatchStateTerminated             PositionCashOutBatchState = "TERMINATED"
+	PositionCashOutBatchStateCancelled              PositionCashOutBatchState = "CANCELLED"
+	PositionCashOutBatchStateExpired                PositionCashOutBatchState = "EXPIRED"
+)
+
+type PositionCashOutBatchItemState string
+
+const (
+	PositionCashOutBatchItemStatePending                PositionCashOutBatchItemState = "PENDING"
+	PositionCashOutBatchItemStatePreflighting           PositionCashOutBatchItemState = "PREFLIGHTING"
+	PositionCashOutBatchItemStateClosing                PositionCashOutBatchItemState = "CLOSING"
+	PositionCashOutBatchItemStateAwaitingPosition       PositionCashOutBatchItemState = "AWAITING_POSITION"
+	PositionCashOutBatchItemStateAwaitingBalance        PositionCashOutBatchItemState = "AWAITING_BALANCE"
+	PositionCashOutBatchItemStateCompleted              PositionCashOutBatchItemState = "COMPLETED"
+	PositionCashOutBatchItemStateFailed                 PositionCashOutBatchItemState = "FAILED"
+	PositionCashOutBatchItemStateReconciliationRequired PositionCashOutBatchItemState = "RECONCILIATION_REQUIRED"
+	PositionCashOutBatchItemStateNotExecuted            PositionCashOutBatchItemState = "NOT_EXECUTED"
+)
+
+type PositionCashOutBatchAuthorizationState string
+
+const (
+	PositionCashOutBatchAuthorizationStateAuthorized PositionCashOutBatchAuthorizationState = "AUTHORIZED"
+	PositionCashOutBatchAuthorizationStateConsumed   PositionCashOutBatchAuthorizationState = "CONSUMED"
+	PositionCashOutBatchAuthorizationStateRevoked    PositionCashOutBatchAuthorizationState = "REVOKED"
+	PositionCashOutBatchAuthorizationStateSuperseded PositionCashOutBatchAuthorizationState = "SUPERSEDED"
+)
+
+type PositionCashOutBatchCommandKind string
+
+const (
+	PositionCashOutBatchCommandKindCreate      PositionCashOutBatchCommandKind = "CREATE"
+	PositionCashOutBatchCommandKindAuthorize   PositionCashOutBatchCommandKind = "AUTHORIZE"
+	PositionCashOutBatchCommandKindCancel      PositionCashOutBatchCommandKind = "CANCEL"
+	PositionCashOutBatchCommandKindPause       PositionCashOutBatchCommandKind = "PAUSE"
+	PositionCashOutBatchCommandKindContinue    PositionCashOutBatchCommandKind = "CONTINUE"
+	PositionCashOutBatchCommandKindTerminate   PositionCashOutBatchCommandKind = "TERMINATE"
+	PositionCashOutBatchCommandKindCheckStatus PositionCashOutBatchCommandKind = "CHECK_STATUS"
+)
+
+type PositionCashOutBatchBalanceEvidence struct {
+	Mint         string
+	Decimals     int32
+	AtomicAmount string
+	ObservedSlot uint64
+}
+
+type PositionCashOutBatchWalletInput struct {
+	WalletID       int64
+	Address        string
+	Remark         string
+	AvatarKind     string
+	AvatarPresetID string
+	AvatarURL      string
+}
+
+type PositionCashOutBatchWallet struct {
+	Ordinal           int32
+	WalletID          int64
+	Address           string
+	CredentialVersion int64
+	Remark            string
+	AvatarKind        string
+	AvatarPresetID    string
+	AvatarURL         string
+	PositionCount     int64
+	CompletedCount    int64
+}
+
+type PositionCashOutBatchItemInput struct {
+	WalletOrdinal         int32
+	PositionOrdinal       int32
+	WalletID              int64
+	WalletAddress         string
+	WalletRemark          string
+	CredentialVersion     int64
+	PositionPubkey        string
+	PositionRequestPubkey string
+	MarketConditionID     string
+	MarketTitle           string
+	IsYes                 bool
+	Shares                string
+	PositionCreatedAt     time.Time
+	ProviderState         string
+}
+
+type PositionCashOutBatchItem struct {
+	ID                    string
+	BatchID               string
+	Ordinal               int64
+	WalletOrdinal         int32
+	PositionOrdinal       int32
+	WalletID              int64
+	WalletAddress         string
+	WalletRemark          string
+	CredentialVersion     int64
+	PositionPubkey        string
+	PositionRequestPubkey string
+	MarketConditionID     string
+	MarketTitle           string
+	IsYes                 bool
+	Shares                string
+	PositionCreatedAt     time.Time
+	ProviderState         string
+	State                 PositionCashOutBatchItemState
+	ReasonCode            string
+	ChildCashOutID        string
+	Baseline              *PositionCashOutBatchBalanceEvidence
+	Observed              *PositionCashOutBatchBalanceEvidence
+	DeltaUSDCAtomicAmount string
+	BalanceStartedAt      time.Time
+	BalanceDeadlineAt     time.Time
+	BalanceConfirmedAt    time.Time
+	CompletedAt           time.Time
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+}
+
+type PositionCashOutBatchAuthorization struct {
+	ID                 string
+	State              PositionCashOutBatchAuthorizationState
+	Scope              string
+	ProofKind          string
+	SessionJTIDigest   []byte
+	AccessRevision     int64
+	IntentDigestSHA256 []byte
+	AuthorizedAt       time.Time
+	EndedAt            time.Time
+	EndReasonCode      string
+}
+
+type PositionCashOutBatch struct {
+	ID                     string
+	OwnerAccountID         string
+	SelectionDigestSHA256  []byte
+	IntentDigestSHA256     []byte
+	State                  PositionCashOutBatchState
+	Revision               int64
+	ReasonCode             string
+	BuildStage             string
+	WalletCount            int64
+	PositionCount          int64
+	CompletedCount         int64
+	NotExecutedCount       int64
+	NextItemOrdinal        int64
+	CurrentItemOrdinal     int64
+	AuthorizationExpiresAt time.Time
+	AuthorizedAt           time.Time
+	ExecutionStartedAt     time.Time
+	NextPollAt             time.Time
+	CheckRequestedAt       time.Time
+	ClaimID                string
+	ClaimOwner             string
+	ClaimExpiresAt         time.Time
+	CompletedAt            time.Time
+	CreatedAt              time.Time
+	UpdatedAt              time.Time
+	Wallets                []PositionCashOutBatchWallet
+	CurrentItem            *PositionCashOutBatchItem
+	Authorization          *PositionCashOutBatchAuthorization
+}
+
+func (b PositionCashOutBatch) Clone() PositionCashOutBatch {
+	b.SelectionDigestSHA256 = append([]byte(nil), b.SelectionDigestSHA256...)
+	b.IntentDigestSHA256 = append([]byte(nil), b.IntentDigestSHA256...)
+	b.Wallets = append([]PositionCashOutBatchWallet(nil), b.Wallets...)
+	if b.CurrentItem != nil {
+		item := clonePositionCashOutBatchItem(*b.CurrentItem)
+		b.CurrentItem = &item
+	}
+	if b.Authorization != nil {
+		authorization := *b.Authorization
+		authorization.SessionJTIDigest = append([]byte(nil), authorization.SessionJTIDigest...)
+		authorization.IntentDigestSHA256 = append([]byte(nil), authorization.IntentDigestSHA256...)
+		b.Authorization = &authorization
+	}
+	return b
+}
+
+func clonePositionCashOutBatchItem(item PositionCashOutBatchItem) PositionCashOutBatchItem {
+	if item.Baseline != nil {
+		baseline := *item.Baseline
+		item.Baseline = &baseline
+	}
+	if item.Observed != nil {
+		observed := *item.Observed
+		item.Observed = &observed
+	}
+	return item
+}
+
+type CreatePositionCashOutBatchRequest struct {
+	OwnerAccountID         string
+	CommandID              string
+	Wallets                []PositionCashOutBatchWalletInput
+	AuthorizationExpiresAt time.Time
+	Now                    time.Time
+}
+
+type CompletePositionCashOutBatchBuildRequest struct {
+	BatchID                string
+	ClaimID                string
+	Items                  []PositionCashOutBatchItemInput
+	AuthorizationExpiresAt time.Time
+	Now                    time.Time
+}
+
+type FailPositionCashOutBatchBuildRequest struct {
+	BatchID    string
+	ClaimID    string
+	BuildStage string
+	ReasonCode string
+	Now        time.Time
+}
+
+type AuthorizePositionCashOutBatchRequest struct {
+	OwnerAccountID   string
+	BatchID          string
+	CommandID        string
+	ExpectedRevision int64
+	ProofKind        string
+	SessionJTIDigest []byte
+	AccessRevision   int64
+	Now              time.Time
+}
+
+type PositionCashOutBatchCommandRequest struct {
+	OwnerAccountID   string
+	BatchID          string
+	CommandID        string
+	ExpectedRevision int64
+	Kind             PositionCashOutBatchCommandKind
+	Now              time.Time
+}
+
+type PositionCashOutBatchClaimRequest struct {
+	BatchID        string
+	ClaimID        string
+	WorkerID       string
+	LeaseExpiresAt time.Time
+	Now            time.Time
+}
+
+type ActivatePositionCashOutBatchItemRequest struct {
+	BatchID       string
+	ItemID        string
+	ClaimID       string
+	CashOutID     string
+	ProviderState string
+	NextPollAt    time.Time
+	Now           time.Time
+}
+
+type DeferPositionCashOutBatchPreflightRequest struct {
+	BatchID string
+	ItemID  string
+	ClaimID string
+	Now     time.Time
+}
+
+type DeferPositionCashOutBatchCheckRequest struct {
+	BatchID string
+	ClaimID string
+	Now     time.Time
+}
+
+// DispatchPositionCashOutBatchAttemptRequest binds the confirmed USDC
+// baseline to the same transaction that commits the child Close attempt as
+// DISPATCHED. A caller must never send Close unless this operation succeeds.
+type DispatchPositionCashOutBatchAttemptRequest struct {
+	BatchID    string
+	ItemID     string
+	AttemptID  string
+	CashOutID  string
+	ClaimID    string
+	Baseline   PositionCashOutBatchBalanceEvidence
+	NextPollAt time.Time
+	Now        time.Time
+}
+
+type RecordPositionCashOutBatchItemStateRequest struct {
+	BatchID           string
+	ItemID            string
+	ClaimID           string
+	ExpectedState     PositionCashOutBatchItemState
+	NextState         PositionCashOutBatchItemState
+	ReasonCode        string
+	ProviderState     string
+	BalanceDeadlineAt time.Time
+	NextPollAt        time.Time
+	Now               time.Time
+}
+
+type RecordPositionCashOutBatchBalanceRequest struct {
+	BatchID  string
+	ItemID   string
+	ClaimID  string
+	Observed PositionCashOutBatchBalanceEvidence
+	TimedOut bool
+	Now      time.Time
+}
+
+type DeferPositionCashOutBatchBalanceRequest struct {
+	BatchID  string
+	ItemID   string
+	ClaimID  string
+	TimedOut bool
+	Now      time.Time
+}
+
+type RecordPositionCashOutBatchBlockingRequest struct {
+	BatchID    string
+	ItemID     string
+	ClaimID    string
+	ItemState  PositionCashOutBatchItemState
+	BatchState PositionCashOutBatchState
+	ReasonCode string
+	Now        time.Time
+}
+
+type CompletePositionCashOutBatchBoundaryRequest struct {
+	BatchID string
+	ClaimID string
+	Now     time.Time
+}
+
 func (l ExecutionCoordinatorLease) Clone() ExecutionCoordinatorLease {
 	l.Run = l.Run.Clone()
 	l.Token = append([]byte(nil), l.Token...)
@@ -1185,5 +1529,26 @@ type Store interface {
 	RequestPositionCashOutReconciliation(context.Context, PositionCashOutCommandRequest) (*PositionCashOut, error)
 	ListRecoverablePositionCashOuts(context.Context, time.Time, int32) ([]PositionCashOut, error)
 	ExpirePositionCashOuts(context.Context, time.Time, int32) (int64, error)
+	CreatePositionCashOutBatch(context.Context, CreatePositionCashOutBatchRequest) (*PositionCashOutBatch, error)
+	GetPositionCashOutBatch(context.Context, string, string) (*PositionCashOutBatch, error)
+	GetActivePositionCashOutBatch(context.Context, string) (*PositionCashOutBatch, error)
+	ListPositionCashOutBatchItems(context.Context, string, string, int32, int32) ([]PositionCashOutBatchItem, int64, error)
+	CompletePositionCashOutBatchBuild(context.Context, CompletePositionCashOutBatchBuildRequest) (*PositionCashOutBatch, error)
+	FailPositionCashOutBatchBuild(context.Context, FailPositionCashOutBatchBuildRequest) (*PositionCashOutBatch, error)
+	AuthorizePositionCashOutBatch(context.Context, AuthorizePositionCashOutBatchRequest) (*PositionCashOutBatch, error)
+	ControlPositionCashOutBatch(context.Context, PositionCashOutBatchCommandRequest) (*PositionCashOutBatch, error)
+	ClaimPositionCashOutBatch(context.Context, PositionCashOutBatchClaimRequest) (*PositionCashOutBatch, error)
+	RenewPositionCashOutBatchClaim(context.Context, PositionCashOutBatchClaimRequest) (*PositionCashOutBatch, error)
+	DeferPositionCashOutBatchPreflight(context.Context, DeferPositionCashOutBatchPreflightRequest) (*PositionCashOutBatch, error)
+	DeferPositionCashOutBatchCheck(context.Context, DeferPositionCashOutBatchCheckRequest) (*PositionCashOutBatch, error)
+	ActivatePositionCashOutBatchItem(context.Context, ActivatePositionCashOutBatchItemRequest) (*PositionCashOutBatch, error)
+	DispatchPositionCashOutBatchAttempt(context.Context, DispatchPositionCashOutBatchAttemptRequest) (*PositionCashOutAttempt, error)
+	RecordPositionCashOutBatchItemState(context.Context, RecordPositionCashOutBatchItemStateRequest) (*PositionCashOutBatch, error)
+	RecordPositionCashOutBatchBalance(context.Context, RecordPositionCashOutBatchBalanceRequest) (*PositionCashOutBatch, error)
+	DeferPositionCashOutBatchBalance(context.Context, DeferPositionCashOutBatchBalanceRequest) (*PositionCashOutBatch, error)
+	RecordPositionCashOutBatchBlocking(context.Context, RecordPositionCashOutBatchBlockingRequest) (*PositionCashOutBatch, error)
+	CompletePositionCashOutBatchBoundary(context.Context, CompletePositionCashOutBatchBoundaryRequest) (*PositionCashOutBatch, error)
+	ListRecoverablePositionCashOutBatches(context.Context, time.Time, int32) ([]PositionCashOutBatch, error)
+	ExpirePositionCashOutBatches(context.Context, time.Time, int32) (int64, error)
 	Close() error
 }

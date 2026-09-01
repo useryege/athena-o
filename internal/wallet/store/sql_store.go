@@ -38,6 +38,21 @@ var (
 	ErrWalletRevisionConflict = errors.New("wallet revision conflict")
 )
 
+const MaxWalletBatchSize = 10
+
+type WalletBatchItemError struct {
+	Index int
+	Err   error
+}
+
+func (e *WalletBatchItemError) Error() string {
+	return fmt.Sprintf("wallet batch item %d: %v", e.Index+1, e.Err)
+}
+
+func (e *WalletBatchItemError) Unwrap() error {
+	return e.Err
+}
+
 type CreateWalletRecordRequest struct {
 	OwnerAccountID       string
 	WalletType           string
@@ -117,18 +132,38 @@ func (s *SQLStore) Close() error {
 	return nil
 }
 
-func (s *SQLStore) CreateWallet(ctx context.Context, req CreateWalletRecordRequest) (*WalletRecord, error) {
+func (s *SQLStore) CreateWallets(ctx context.Context, requests []CreateWalletRecordRequest) ([]*WalletRecord, error) {
 	if s.pool == nil || s.queries == nil {
 		return nil, fmt.Errorf("wallet postgres database is not configured")
 	}
-	ownerAccountID, err := requiredUUID(req.OwnerAccountID)
+	if len(requests) < 1 || len(requests) > MaxWalletBatchSize {
+		return nil, fmt.Errorf("wallet batch size must be between 1 and %d", MaxWalletBatchSize)
+	}
+
+	ownerAccountID, err := requiredUUID(requests[0].OwnerAccountID)
 	if err != nil {
 		return nil, fmt.Errorf("validate wallet owner account ID: %w", err)
+	}
+	walletType := requests[0].WalletType
+	for index, request := range requests[1:] {
+		requestOwnerAccountID, err := requiredUUID(request.OwnerAccountID)
+		if err != nil {
+			return nil, &WalletBatchItemError{
+				Index: index + 1,
+				Err:   fmt.Errorf("validate wallet owner account ID: %w", err),
+			}
+		}
+		if requestOwnerAccountID != ownerAccountID {
+			return nil, &WalletBatchItemError{Index: index + 1, Err: errors.New("owner account ID does not match batch")}
+		}
+		if request.WalletType != walletType {
+			return nil, &WalletBatchItemError{Index: index + 1, Err: errors.New("wallet type does not match batch")}
+		}
 	}
 
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
-		return nil, fmt.Errorf("begin wallet creation transaction: %w", err)
+		return nil, fmt.Errorf("begin wallet batch creation transaction: %w", err)
 	}
 	defer func() {
 		_ = tx.Rollback(ctx)
@@ -137,49 +172,65 @@ func (s *SQLStore) CreateWallet(ctx context.Context, req CreateWalletRecordReque
 	queries := walletsqlc.New(tx)
 	if err := queries.LockWalletCreationSequence(ctx, walletsqlc.LockWalletCreationSequenceParams{
 		OwnerAccountID: ownerAccountID,
-		WalletType:     req.WalletType,
+		WalletType:     walletType,
 	}); err != nil {
 		return nil, fmt.Errorf("lock wallet creation sequence: %w", err)
 	}
 
-	remark := req.Remark
-	if remark == "" {
-		total, err := queries.CountWallets(ctx, walletsqlc.CountWalletsParams{
-			OwnerAccountID: ownerAccountID,
-			WalletType:     nullableTrimmedText(req.WalletType),
-		})
-		if err != nil {
-			return nil, fmt.Errorf("count wallets for default remark: %w", err)
-		}
-		remark, err = defaultWalletRemark(req.WalletType, total)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	row, err := queries.CreateWallet(ctx, walletsqlc.CreateWalletParams{
-		OwnerAccountID:       ownerAccountID,
-		WalletType:           req.WalletType,
-		Address:              req.Address,
-		AddressKey:           req.AddressKey,
-		Remark:               remark,
-		Source:               req.Source,
-		PrivateKeyCiphertext: req.PrivateKeyCiphertext,
-		AvatarPresetID:       req.AvatarPresetID,
+	total, err := queries.CountWallets(ctx, walletsqlc.CountWalletsParams{
+		OwnerAccountID: ownerAccountID,
+		WalletType:     nullableTrimmedText(walletType),
 	})
 	if err != nil {
-		if isUniqueViolation(err) {
-			return nil, ErrWalletAlreadyExists
+		return nil, fmt.Errorf("count wallets for default remarks: %w", err)
+	}
+
+	records := make([]*WalletRecord, 0, len(requests))
+	for index, request := range requests {
+		remark := request.Remark
+		if remark == "" {
+			sequenceTotal, err := walletSequenceTotal(total, index)
+			if err != nil {
+				return nil, &WalletBatchItemError{Index: index, Err: err}
+			}
+			remark, err = defaultWalletRemark(walletType, sequenceTotal)
+			if err != nil {
+				return nil, &WalletBatchItemError{Index: index, Err: err}
+			}
 		}
-		return nil, fmt.Errorf("create wallet: %w", err)
+
+		row, err := queries.CreateWallet(ctx, walletsqlc.CreateWalletParams{
+			OwnerAccountID:       ownerAccountID,
+			WalletType:           walletType,
+			Address:              request.Address,
+			AddressKey:           request.AddressKey,
+			Remark:               remark,
+			Source:               request.Source,
+			PrivateKeyCiphertext: request.PrivateKeyCiphertext,
+			AvatarPresetID:       request.AvatarPresetID,
+		})
+		if err != nil {
+			if isUniqueViolation(err) {
+				return nil, &WalletBatchItemError{Index: index, Err: ErrWalletAlreadyExists}
+			}
+			return nil, &WalletBatchItemError{Index: index, Err: fmt.Errorf("create wallet: %w", err)}
+		}
+		records = append(records, walletRecordFromSQLC(row))
 	}
 	if err := tx.Commit(ctx); err != nil {
 		if isUniqueViolation(err) {
 			return nil, ErrWalletAlreadyExists
 		}
-		return nil, fmt.Errorf("commit wallet creation: %w", err)
+		return nil, fmt.Errorf("commit wallet batch creation: %w", err)
 	}
-	return walletRecordFromSQLC(row), nil
+	return records, nil
+}
+
+func walletSequenceTotal(currentTotal int64, batchIndex int) (int64, error) {
+	if currentTotal < 0 || batchIndex < 0 || int64(batchIndex) > math.MaxInt64-currentTotal {
+		return 0, fmt.Errorf("wallet default remark sequence is exhausted")
+	}
+	return currentTotal + int64(batchIndex), nil
 }
 
 func defaultWalletRemark(walletType string, currentTotal int64) (string, error) {

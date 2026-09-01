@@ -4,12 +4,15 @@ import {
     CopyOutlined,
     DisconnectOutlined,
     LinkOutlined,
+    PauseCircleOutlined,
+    PlayCircleOutlined,
     ReloadOutlined,
     SafetyCertificateOutlined,
+    StopOutlined,
     SyncOutlined,
     WalletOutlined
 } from '@ant-design/icons';
-import {Alert, Avatar, Button, Card, Empty, Pagination, Progress, Result, Skeleton, Space, Tag, Tooltip, Typography} from 'antd';
+import {Alert, Avatar, Button, Card, Checkbox, Empty, Pagination, Progress, Result, Skeleton, Space, Tag, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {useLocation, useNavigate} from 'react-router-dom';
@@ -25,6 +28,11 @@ import type {
     WormInFlightRequest,
     WormOpenPosition,
     WormPositionCashOutAllowedAction,
+    WormPositionCashOutBatch,
+    WormPositionCashOutBatchAllowedAction,
+    WormPositionCashOutBatchBalanceEvidence,
+    WormPositionCashOutBatchItem,
+    WormPositionCashOutBatchItemState,
     WormPositionCashOutOperation,
     WormPositionCashOutProjection,
     WormTradingAssetBalance,
@@ -47,11 +55,33 @@ const wormConnectionInventoryPageSize = 100;
 const wormConnectionStartIntervalMS = 12_000;
 const pendingConnectionActionKey = 'athena.member.worm-trading.pending-connection-action';
 const pendingPositionCashOutKey = 'athena.member.worm-trading.pending-position-cash-out';
+const pendingPositionCashOutBatchKey = 'athena.member.worm-trading.pending-position-cash-out-batch';
 const positionCashOutReasonQuery = 'wormPositionCashOutReason';
+const positionCashOutBatchReasonQuery = 'wormPositionCashOutBatchReason';
 const positionCashOutPollIntervalMS = 2_000;
+const positionCashOutBatchItemPageSize = 20;
+const maximumSelectedPositionCashOutBatchWallets = 100;
 const maximumRememberedPositionCashOuts = 100;
 const canonicalPositionCashOutIDPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const connectOutcomeUnknownWarning = 'CONNECT_OUTCOME_UNKNOWN';
+
+const rememberedPositionCashOutBatchID = (): string => {
+    const id = window.sessionStorage.getItem(pendingPositionCashOutBatchKey) || '';
+    return canonicalPositionCashOutIDPattern.test(id) ? id : '';
+};
+
+const rememberPositionCashOutBatchID = (id: string) => {
+    if (!canonicalPositionCashOutIDPattern.test(id)) {
+        throw new Error('Athena returned an invalid Cash Out batch ID.');
+    }
+    window.sessionStorage.setItem(pendingPositionCashOutBatchKey, id);
+};
+
+const forgetPositionCashOutBatchID = (id?: string) => {
+    if (!id || rememberedPositionCashOutBatchID() === id) {
+        window.sessionStorage.removeItem(pendingPositionCashOutBatchKey);
+    }
+};
 
 const rememberedPositionCashOutIDs = (): string[] => {
     try {
@@ -1240,36 +1270,53 @@ const WalletBalanceCard = (props: {
     connection?: WormWalletConnection;
     activityStatus?: WormTradingWalletActivityItem['status'];
     manager?: ConnectionManager;
+    batchManager?: PositionCashOutBatchManager;
     activityLoading?: boolean;
     onCopy: () => void;
-}) => (
-    <Card className='worm-trading-balance-card' size='small'>
-        <div className='worm-trading-balance-card__header'>
-            <WalletIdentity wallet={props.item.wallet} compact={true} onCopy={props.onCopy} />
-            <BalanceStatusTag status={props.item.status} />
-        </div>
-        <div className='worm-trading-balance-card__assets'>
-            <div>
-                <span>SOL balance</span>
-                <AssetValue asset={props.item.sol} symbol='SOL' />
+}) => {
+    const walletID = props.item.wallet.walletId;
+    const selected = props.batchManager?.selectedWalletIDs.has(walletID) || false;
+    const selectionDisabled = props.batchManager?.selectionDisabled(walletID) || false;
+    return (
+        <Card className='worm-trading-balance-card' size='small'>
+            {props.batchManager && (
+                <div className='worm-position-cash-out-batch-wallet-select'>
+                    <Checkbox
+                        checked={selected}
+                        disabled={selectionDisabled}
+                        aria-label={`Include ${props.item.wallet.remark || shortAddress(props.item.wallet.address)} in Cash Out batch`}
+                        onChange={event => props.batchManager?.toggleWallet(walletID, event.target.checked)}>
+                        Include this wallet
+                    </Checkbox>
+                </div>
+            )}
+            <div className='worm-trading-balance-card__header'>
+                <WalletIdentity wallet={props.item.wallet} compact={true} onCopy={props.onCopy} />
+                <BalanceStatusTag status={props.item.status} />
             </div>
-            <div>
-                <span>USDC balance</span>
-                <AssetValue asset={props.item.usdc} symbol='USDC' token={props.item.usdc} />
+            <div className='worm-trading-balance-card__assets'>
+                <div>
+                    <span>SOL balance</span>
+                    <AssetValue asset={props.item.sol} symbol='SOL' />
+                </div>
+                <div>
+                    <span>USDC balance</span>
+                    <AssetValue asset={props.item.usdc} symbol='USDC' token={props.item.usdc} />
+                </div>
             </div>
-        </div>
-        <div className='worm-trading-balance-card__connection'>
-            <span>Worm access</span>
-            <ConnectionCell
-                wallet={props.item.wallet}
-                connection={props.connection}
-                activityStatus={props.activityStatus}
-                manager={props.manager}
-                loading={props.activityLoading}
-            />
-        </div>
-    </Card>
-);
+            <div className='worm-trading-balance-card__connection'>
+                <span>Worm access</span>
+                <ConnectionCell
+                    wallet={props.item.wallet}
+                    connection={props.connection}
+                    activityStatus={props.activityStatus}
+                    manager={props.manager}
+                    loading={props.activityLoading}
+                />
+            </div>
+        </Card>
+    );
+};
 
 const EmptyWalletBalances = () => {
     const authorization = useAuthorization();
@@ -1449,8 +1496,24 @@ interface PositionCashOutView {
     state: WormPositionCashOutProjection['state'];
     reasonCode: string;
     allowedAction: WormPositionCashOutAllowedAction;
+    batchId: string;
+    batchState: WormPositionCashOutProjection['batchState'];
+    batchItemState: WormPositionCashOutProjection['batchItemState'];
+    batchLockReasonCode: string;
     revision: number;
     updatedAt: number;
+}
+
+interface PositionCashOutBatchManager {
+    batch?: WormPositionCashOutBatch;
+    selectedWalletIDs: ReadonlySet<number>;
+    toggleWallet(walletID: number, selected: boolean): void;
+    clearSelection(): void;
+    selectionDisabled(walletID: number): boolean;
+    walletLocked(walletID: number): boolean;
+    itemStateFor(row: PositionRow): WormPositionCashOutBatchItemState | '';
+    selectionSummary: React.ReactNode;
+    panel: React.ReactNode;
 }
 
 interface PositionCashOutManager {
@@ -1481,6 +1544,9 @@ const cashOutReasonMessage = (reasonCode: string) => {
         case 'WALLET_CASH_OUT_ACTIVE':
         case 'WALLET_POSITION_CASH_OUT_ACTIVE':
             return 'Another position in this wallet already has an unfinished Cash Out.';
+        case 'WALLET_CASH_OUT_BATCH_ACTIVE':
+        case 'WALLET_POSITION_CASH_OUT_BATCH_ACTIVE':
+            return 'This wallet is locked by an unfinished batch Cash Out. Use the batch controls before starting another operation.';
         case 'POSITION_NOT_FOUND':
             return 'Worm no longer returns this exact position. Refresh positions before taking another action.';
         case 'POSITION_LIQUIDATED':
@@ -1496,6 +1562,10 @@ const cashOutViewFromOperation = (operation: WormPositionCashOutOperation): Posi
     state: operation.state,
     reasonCode: operation.reasonCode,
     allowedAction: operation.allowedActions.includes('CHECK_STATUS') ? 'CHECK_STATUS' : operation.allowedActions.includes('AUTHORIZE_CASH_OUT') ? 'AUTHORIZE_CASH_OUT' : 'NONE',
+    batchId: '',
+    batchState: '',
+    batchItemState: '',
+    batchLockReasonCode: '',
     revision: operation.revision,
     updatedAt: operation.updatedAt
 });
@@ -1550,6 +1620,28 @@ const PositionCashOutButton = (props: {row: PositionRow; manager: PositionCashOu
             </Button>
         );
     }
+    if (view.batchId) {
+        const batchLabel =
+            view.batchItemState === ''
+                ? 'Batch locked'
+                : view.batchItemState === 'PENDING'
+                  ? 'Queued'
+                  : view.batchItemState === 'AWAITING_BALANCE'
+                    ? 'Verifying balance…'
+                    : view.batchItemState === 'COMPLETED'
+                      ? 'Closed'
+                      : view.batchItemState === 'NOT_EXECUTED'
+                        ? 'Not executed'
+                        : view.batchItemState === 'FAILED' || view.batchItemState === 'RECONCILIATION_REQUIRED'
+                          ? 'Check batch'
+                          : 'Closing…';
+        const button = (
+            <Button {...buttonProps} danger={view.batchItemState !== 'COMPLETED' && view.batchItemState !== 'NOT_EXECUTED'} loading={false} disabled={true}>
+                {batchLabel}
+            </Button>
+        );
+        return <Tooltip title={cashOutReasonMessage(view.reasonCode || 'WALLET_CASH_OUT_BATCH_ACTIVE')}>{button}</Tooltip>;
+    }
     const active = cashOutPollStates.has(view.state) && view.reasonCode !== 'WALLET_CASH_OUT_ACTIVE' && view.reasonCode !== 'WALLET_POSITION_CASH_OUT_ACTIVE';
     const label = active ? (view.state === 'RECONCILIATION_REQUIRED' ? 'Checking…' : 'Closing…') : view.state === 'COMPLETED' ? 'Closed' : 'Cash out unavailable';
     const button = (
@@ -1564,6 +1656,7 @@ const PositionCashOutManagement = (props: {
     rows: PositionRow[];
     activityFetchedAt: number;
     onRefreshAssets: () => void;
+    batchManager?: PositionCashOutBatchManager;
     children: (manager: PositionCashOutManager) => React.ReactNode;
 }) => {
     const ctx = React.useContext(Context);
@@ -1623,12 +1716,24 @@ const PositionCashOutManagement = (props: {
         (row: PositionRow): PositionCashOutView => {
             const projection = row.position.cashOut;
             const tracked = operations.get(positionCashOutRowKey(row));
-            if (!tracked || (projection.operationId && (projection.operationId !== tracked.id || projection.revision >= tracked.revision))) {
-                return projection;
+            const current =
+                !tracked || projection.batchId || (projection.operationId && (projection.operationId !== tracked.id || projection.revision >= tracked.revision))
+                    ? projection
+                    : cashOutViewFromOperation(tracked);
+            if (!props.batchManager?.walletLocked(row.wallet.walletId)) {
+                return current;
             }
-            return cashOutViewFromOperation(tracked);
+            const itemState = current.batchItemState || props.batchManager.itemStateFor(row);
+            return {
+                ...current,
+                reasonCode: current.reasonCode || current.batchLockReasonCode || 'WALLET_CASH_OUT_BATCH_ACTIVE',
+                allowedAction: 'NONE',
+                batchId: current.batchId || props.batchManager.batch?.id || '',
+                batchState: current.batchState || props.batchManager.batch?.state || '',
+                batchItemState: itemState
+            };
         },
-        [operations]
+        [operations, props.batchManager]
     );
 
     const authorizeOperation = React.useCallback(
@@ -2048,6 +2153,825 @@ const PositionCashOutManagement = (props: {
     return <>{props.children(manager)}</>;
 };
 
+const terminalPositionCashOutBatchStates = new Set<WormPositionCashOutBatch['state']>(['TERMINATED', 'COMPLETED', 'FAILED', 'CANCELLED', 'EXPIRED']);
+
+const positionCashOutBatchReasonMessage = (reasonCode: string) => {
+    switch (reasonCode) {
+        case 'BALANCE_NOT_UPDATED':
+        case 'USDC_BALANCE_NOT_UPDATED':
+            return 'The exact position is closed, but Athena has not observed a newer confirmed USDC balance that is strictly higher than the pre-Close baseline.';
+        case 'BALANCE_UNAVAILABLE':
+        case 'USDC_BALANCE_UNAVAILABLE':
+            return 'Confirmed USDC balance evidence is unavailable. No later position was activated.';
+        case 'POSITION_CHANGED':
+        case 'POSITION_IDENTITY_CHANGED':
+        case 'POSITION_NOT_FOUND':
+            return 'A frozen position no longer matches the authoritative Worm snapshot. Terminate the remaining batch and build a new one.';
+        case 'WALLET_EXECUTION_ACTIVE':
+            return 'A selected wallet is used by an unfinished execution Run.';
+        case 'WALLET_POSITION_CASH_OUT_ACTIVE':
+            return 'A selected wallet already has an unfinished single-position Cash Out.';
+        case 'WALLET_POSITION_CASH_OUT_BATCH_ACTIVE':
+            return 'A selected wallet is already locked by another Cash Out batch.';
+        default:
+            return titleCase(reasonCode) || 'Athena stopped before activating another position.';
+    }
+};
+
+const positionCashOutBatchStateColor = (state: WormPositionCashOutBatch['state']) => {
+    if (state === 'COMPLETED') {
+        return 'green';
+    }
+    if (state === 'FAILED' || state === 'RECONCILIATION_REQUIRED') {
+        return 'red';
+    }
+    if (state === 'PAUSED' || state === 'PAUSE_REQUESTED' || state === 'AWAITING_AUTHORIZATION' || state === 'EXPIRED') {
+        return 'gold';
+    }
+    if (state === 'CANCELLED' || state === 'TERMINATED') {
+        return 'default';
+    }
+    return 'processing';
+};
+
+const positionCashOutBatchItemStateColor = (state: WormPositionCashOutBatchItemState) => {
+    if (state === 'COMPLETED') {
+        return 'green';
+    }
+    if (state === 'FAILED' || state === 'RECONCILIATION_REQUIRED') {
+        return 'red';
+    }
+    if (state === 'AWAITING_BALANCE') {
+        return 'gold';
+    }
+    if (state === 'NOT_EXECUTED') {
+        return 'default';
+    }
+    return state === 'PENDING' ? 'default' : 'processing';
+};
+
+const formatUSDCAtomicAmount = (value: string) => {
+    if (!/^-?\d+$/.test(value)) {
+        return '-';
+    }
+    const negative = value.startsWith('-');
+    const digits = (negative ? value.slice(1) : value).padStart(7, '0');
+    const whole = digits.slice(0, -6).replace(/^0+(?=\d)/, '');
+    const fraction = digits.slice(-6).replace(/0+$/, '');
+    return `${negative ? '-' : ''}${whole}${fraction ? `.${fraction}` : ''} USDC`;
+};
+
+const PositionCashOutBatchEvidence = (props: {baseline?: WormPositionCashOutBatchBalanceEvidence; observed?: WormPositionCashOutBatchBalanceEvidence; delta: string}) => (
+    <dl className='worm-position-cash-out-batch-evidence'>
+        <div>
+            <dt>Before Close</dt>
+            <dd>{props.baseline ? formatUSDCAtomicAmount(props.baseline.atomicAmount) : 'Not captured'}</dd>
+            <small>{props.baseline ? `Confirmed slot ${formatIntegerString(props.baseline.observedSlot)}` : 'The baseline is captured immediately before dispatch.'}</small>
+        </div>
+        <div>
+            <dt>Latest observed</dt>
+            <dd>{props.observed ? formatUSDCAtomicAmount(props.observed.atomicAmount) : 'Waiting for evidence'}</dd>
+            <small>{props.observed ? `Confirmed slot ${formatIntegerString(props.observed.observedSlot)}` : 'No newer confirmed balance has been accepted.'}</small>
+        </div>
+        <div>
+            <dt>Net increase</dt>
+            <dd className={props.delta && !props.delta.startsWith('-') && props.delta !== '0' ? 'is-positive' : ''}>{props.delta ? formatUSDCAtomicAmount(props.delta) : '-'}</dd>
+            <small>Must be strictly greater than zero.</small>
+        </div>
+    </dl>
+);
+
+const PositionCashOutBatchManagement = (props: {
+    visibleWallets: WormTradingWalletBalanceItem[];
+    onRefreshAssets: () => void;
+    children: (manager: PositionCashOutBatchManager) => React.ReactNode;
+}) => {
+    const ctx = React.useContext(Context);
+    const authorization = useAuthorization();
+    const location = useLocation();
+    const lease = useSensitiveWriteLease();
+    const [selectedWalletIDs, setSelectedWalletIDs] = React.useState<Set<number>>(() => new Set());
+    const [batch, setBatch] = React.useState<WormPositionCashOutBatch>();
+    const [items, setItems] = React.useState<WormPositionCashOutBatchItem[]>([]);
+    const [itemsTotal, setItemsTotal] = React.useState(0);
+    const [itemsPage, setItemsPage] = React.useState(1);
+    const [busyAction, setBusyAction] = React.useState('');
+    const [statusError, setStatusError] = React.useState('');
+    const [restoring, setRestoring] = React.useState(true);
+    const [restoreNonce, setRestoreNonce] = React.useState(0);
+    const [pendingReviewID, setPendingReviewID] = React.useState('');
+    const reviewModalIDRef = React.useRef('');
+    const latestBatchRef = React.useRef<WormPositionCashOutBatch>();
+    const notifiedRef = React.useRef(new Set<string>());
+    const completedCountRef = React.useRef(new Map<string, number>());
+
+    const runSensitive = React.useCallback(
+        async <T,>(start: () => Promise<T> & {abort?: () => void}) => {
+            const result = await lease.runTask(start);
+            if (result.status === 'fulfilled') {
+                return result.value;
+            }
+            if (result.status === 'rejected') {
+                throw result.error;
+            }
+            throw new DOMException('The Cash Out batch request is no longer current.', 'AbortError');
+        },
+        [lease]
+    );
+
+    const publishBatch = React.useCallback(
+        (next: WormPositionCashOutBatch) => {
+            const previous = latestBatchRef.current;
+            if (previous?.id === next.id && previous.revision > next.revision) {
+                return;
+            }
+            latestBatchRef.current = next;
+            setBatch(next);
+            setStatusError('');
+            if (terminalPositionCashOutBatchStates.has(next.state)) {
+                forgetPositionCashOutBatchID(next.id);
+            } else {
+                rememberPositionCashOutBatchID(next.id);
+            }
+            const previousCompletedCount = completedCountRef.current.get(next.id) || 0;
+            completedCountRef.current.set(next.id, next.completedCount);
+            if (next.completedCount > previousCompletedCount) {
+                props.onRefreshAssets();
+            }
+            if (terminalPositionCashOutBatchStates.has(next.state) && !notifiedRef.current.has(`${next.id}:${next.state}`)) {
+                notifiedRef.current.add(`${next.id}:${next.state}`);
+                if (next.state === 'COMPLETED') {
+                    ctx.notifications.success('Cash Out batch completed', `All ${next.completedCount} frozen positions passed the confirmed USDC balance gate.`);
+                } else if (next.state === 'FAILED') {
+                    ctx.notifications.error('Cash Out batch failed safely', positionCashOutBatchReasonMessage(next.reasonCode));
+                }
+                props.onRefreshAssets();
+            }
+        },
+        [ctx.notifications, props.onRefreshAssets]
+    );
+
+    const loadItems = React.useCallback(async (batchID: string, page: number) => {
+        const result = await services.wormTrading.listPositionCashOutBatchItems(batchID, page, positionCashOutBatchItemPageSize);
+        if (latestBatchRef.current?.id !== batchID) {
+            return;
+        }
+        setItems(result.items);
+        setItemsTotal(result.total);
+    }, []);
+
+    const refreshBatch = React.useCallback(
+        async (batchID: string, page = itemsPage) => {
+            const next = await services.wormTrading.getPositionCashOutBatch(batchID);
+            publishBatch(next);
+            if (next.positionCount > 0) {
+                await loadItems(next.id, page);
+            } else {
+                setItems([]);
+                setItemsTotal(0);
+            }
+            return next;
+        },
+        [itemsPage, loadItems, publishBatch]
+    );
+
+    const authorizeBatch = React.useCallback(
+        async (current: WormPositionCashOutBatch) => {
+            if (!current.allowedActions.includes('AUTHORIZE_BATCH')) {
+                throw new Error('This Cash Out batch is not awaiting authorization.');
+            }
+            const command = {commandId: window.crypto.randomUUID(), expectedRevision: current.revision};
+            const identity = authorization.user.identity;
+            rememberPositionCashOutBatchID(current.id);
+            if (identity.provider === AccountIdentityProvider.Google) {
+                const returnURL = new URL(window.location.href);
+                returnURL.searchParams.delete(positionCashOutBatchReasonQuery);
+                const returnTo = `${returnURL.pathname}${returnURL.search}${returnURL.hash}`;
+                const authorizationURL = new URL(services.wormTrading.googlePositionCashOutBatchAuthorizationURL(current.id, command, returnTo), window.location.origin);
+                if (authorizationURL.origin !== window.location.origin) {
+                    throw new Error('Athena returned an invalid Cash Out batch authorization route.');
+                }
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = authorizationURL.toString();
+                form.hidden = true;
+                document.body.appendChild(form);
+                form.submit();
+                form.remove();
+                return;
+            }
+            let authorized: WormPositionCashOutBatch;
+            if (identity.provider === AccountIdentityProvider.SolanaWallet) {
+                const provider = phantomProvider();
+                if (!provider) {
+                    throw new Error('Phantom is required to authorize this Cash Out batch.');
+                }
+                const connected = provider.publicKey ? {publicKey: provider.publicKey} : await provider.connect();
+                if (connected.publicKey.toString() !== identity.solanaAddress) {
+                    throw new Error('Phantom is connected to a different login address.');
+                }
+                const challenge = await runSensitive(() => services.wormTrading.createSolanaPositionCashOutBatchAuthorizationChallenge(current.id, command));
+                const signed = await provider.signMessage(new TextEncoder().encode(challenge.message), 'utf8');
+                authorized = await runSensitive(() => services.wormTrading.verifySolanaPositionCashOutBatchAuthorization(current.id, rawBase64URL(signed.signature)));
+            } else if (identity.provider === AccountIdentityProvider.Development) {
+                authorized = await runSensitive(() => services.wormTrading.authorizeDevelopmentPositionCashOutBatch(current.id, command));
+            } else {
+                throw new Error('This login identity cannot authorize a Cash Out batch.');
+            }
+            publishBatch(authorized);
+        },
+        [authorization.user.identity, publishBatch, runSensitive]
+    );
+
+    const applyCommand = React.useCallback(
+        async (
+            current: WormPositionCashOutBatch,
+            action: 'cancel' | 'pause' | 'continue' | 'terminate' | 'check-status',
+            requiredAction: WormPositionCashOutBatchAllowedAction
+        ) => {
+            if (busyAction || !current.allowedActions.includes(requiredAction)) {
+                return;
+            }
+            setBusyAction(action);
+            try {
+                const next = await runSensitive(() =>
+                    services.wormTrading.commandPositionCashOutBatch(current.id, action, {
+                        commandId: window.crypto.randomUUID(),
+                        expectedRevision: current.revision
+                    })
+                );
+                publishBatch(next);
+                if (next.positionCount > 0) {
+                    await loadItems(next.id, itemsPage);
+                }
+            } catch (reason) {
+                if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
+                    ctx.notifications.error('Could not update Cash Out batch', requestErrorMessage(reason, 'No Worm Close request was replayed.'));
+                    try {
+                        await refreshBatch(current.id);
+                    } catch {
+                        setStatusError('Cash Out batch status could not be refreshed after the command failed.');
+                    }
+                }
+            } finally {
+                setBusyAction('');
+            }
+        },
+        [busyAction, ctx.notifications, itemsPage, loadItems, publishBatch, refreshBatch, runSensitive]
+    );
+
+    const cancelBatch = React.useCallback((current: WormPositionCashOutBatch) => applyCommand(current, 'cancel', 'CANCEL'), [applyCommand]);
+
+    const openReview = React.useCallback(
+        (current: WormPositionCashOutBatch) => {
+            if (reviewModalIDRef.current || !current.allowedActions.includes('AUTHORIZE_BATCH')) {
+                return;
+            }
+            reviewModalIDRef.current = current.id;
+            const closeReview = () => {
+                reviewModalIDRef.current = '';
+            };
+            const reauthorizing = current.state === 'PAUSED';
+            ctx.modal.confirm({
+                width: 720,
+                title: reauthorizing ? 'Reauthorize paused Cash Out batch?' : 'Authorize serial Cash Out batch?',
+                content: (
+                    <div className='worm-position-cash-out-batch-confirmation'>
+                        <div className='worm-position-cash-out-batch-confirmation__summary'>
+                            <strong>
+                                {current.walletCount} {current.walletCount === 1 ? 'wallet' : 'wallets'} · {current.positionCount}{' '}
+                                {current.positionCount === 1 ? 'position' : 'positions'}
+                            </strong>
+                            <span>Wallet order is fixed below. Each wallet closes positions from newest to oldest.</span>
+                        </div>
+                        <ol className='worm-position-cash-out-batch-confirmation__wallets'>
+                            {current.wallets.map(wallet => (
+                                <li key={wallet.walletId}>
+                                    <span>
+                                        {wallet.ordinal}. {wallet.remark || shortAddress(wallet.address)}
+                                    </span>
+                                    <strong>{wallet.positionCount} positions</strong>
+                                </li>
+                            ))}
+                        </ol>
+                        <Alert
+                            type='warning'
+                            showIcon={true}
+                            title='Every position is a full market exit'
+                            description='Final prices are not guaranteed and partial Cash Out is not supported. Athena sends at most one Close for each frozen position.'
+                        />
+                        <Alert
+                            type='warning'
+                            showIcon={true}
+                            title='Strict confirmed USDC gate after every Close'
+                            description='The next position starts only after confirmed USDC is newer and strictly higher than the pre-Close baseline. After two minutes without a net increase, the whole batch pauses. Check status never resumes it; you must click Continue after credit is observed.'
+                        />
+                        <Typography.Paragraph type='secondary'>
+                            Worm does not provide a payout transaction ID. An unrelated incoming transfer can create a false positive, while an outgoing transfer can hide the
+                            payout and create a false negative.
+                        </Typography.Paragraph>
+                        <Typography.Paragraph type='secondary'>
+                            Pause and Terminate do not cancel a Close that was already dispatched. You will confirm your identity once for this exact frozen batch.
+                        </Typography.Paragraph>
+                    </div>
+                ),
+                okText: 'Continue to one-time authorization',
+                cancelText: reauthorizing ? 'Keep paused' : 'Cancel batch',
+                onOk: async () => {
+                    try {
+                        await authorizeBatch(current);
+                    } catch (reason) {
+                        if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
+                            ctx.notifications.error('Could not authorize Cash Out batch', requestErrorMessage(reason, 'No Close request was sent.'));
+                            try {
+                                await refreshBatch(current.id);
+                            } catch {
+                                setStatusError('Cash Out batch status could not be refreshed after authorization failed.');
+                            }
+                        }
+                        throw reason;
+                    } finally {
+                        closeReview();
+                    }
+                },
+                onCancel: async () => {
+                    closeReview();
+                    if (!reauthorizing) {
+                        await cancelBatch(current);
+                    }
+                }
+            });
+        },
+        [authorizeBatch, cancelBatch, ctx.modal, ctx.notifications, refreshBatch]
+    );
+
+    const createBatch = React.useCallback(async () => {
+        if (busyAction || restoring || (!batch && statusError !== '') || selectedWalletIDs.size < 1 || selectedWalletIDs.size > maximumSelectedPositionCashOutBatchWallets) {
+            return;
+        }
+        setBusyAction('create');
+        try {
+            const created = await runSensitive(() =>
+                services.wormTrading.createPositionCashOutBatch({commandId: window.crypto.randomUUID(), walletIds: Array.from(selectedWalletIDs)})
+            );
+            setSelectedWalletIDs(new Set());
+            setItemsPage(1);
+            setItems([]);
+            setItemsTotal(0);
+            publishBatch(created);
+            setPendingReviewID(created.id);
+        } catch (reason) {
+            if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
+                ctx.notifications.error('Could not build Cash Out batch', requestErrorMessage(reason, 'No Close request was sent.'));
+            }
+        } finally {
+            setBusyAction('');
+        }
+    }, [batch, busyAction, ctx.notifications, publishBatch, restoring, runSensitive, selectedWalletIDs, statusError]);
+
+    React.useEffect(() => {
+        setSelectedWalletIDs(new Set());
+        setBatch(undefined);
+        setItems([]);
+        setItemsTotal(0);
+        setItemsPage(1);
+        setStatusError('');
+        setRestoring(true);
+        setPendingReviewID('');
+        latestBatchRef.current = undefined;
+    }, [authorization.revision, authorization.user.accountId, location.pathname]);
+
+    React.useEffect(() => {
+        const url = new URL(window.location.href);
+        const reason = url.searchParams.get(positionCashOutBatchReasonQuery) || '';
+        if (reason) {
+            ctx.notifications.error('Could not authorize Cash Out batch', positionCashOutBatchReasonMessage(reason));
+            url.searchParams.delete(positionCashOutBatchReasonQuery);
+            window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+        }
+        let active = true;
+        const pendingID = rememberedPositionCashOutBatchID();
+        void (async () => {
+            try {
+                let restored: WormPositionCashOutBatch | undefined;
+                let rememberedTerminal: WormPositionCashOutBatch | undefined;
+                if (pendingID) {
+                    try {
+                        restored = await services.wormTrading.getPositionCashOutBatch(pendingID);
+                    } catch (error) {
+                        const status = requestErrorDetails(error).status;
+                        if (status === 403 || status === 404) {
+                            forgetPositionCashOutBatchID(pendingID);
+                        } else {
+                            throw error;
+                        }
+                    }
+                }
+                if (restored && terminalPositionCashOutBatchStates.has(restored.state)) {
+                    rememberedTerminal = restored;
+                    restored = undefined;
+                }
+                restored = restored || (await services.wormTrading.getActivePositionCashOutBatch());
+                if (rememberedTerminal) {
+                    // Keep the remembered terminal ID durable until the active
+                    // lookup has also succeeded. A transient /active failure
+                    // can then be retried without losing the redirect result.
+                    forgetPositionCashOutBatchID(rememberedTerminal.id);
+                }
+                restored = restored || rememberedTerminal;
+                if (!active || !restored) {
+                    return;
+                }
+                publishBatch(restored);
+                if (restored.positionCount > 0) {
+                    await loadItems(restored.id, 1);
+                }
+            } catch (error) {
+                if (active && !(error instanceof DOMException && error.name === 'AbortError')) {
+                    setStatusError(requestErrorMessage(error, 'Active Cash Out batch could not be restored.'));
+                }
+            } finally {
+                if (active) {
+                    setRestoring(false);
+                }
+            }
+        })();
+        return () => {
+            active = false;
+        };
+    }, [authorization.revision, authorization.user.accountId, ctx.notifications, loadItems, publishBatch, restoreNonce]);
+
+    React.useEffect(() => {
+        if (!batch || terminalPositionCashOutBatchStates.has(batch.state)) {
+            return;
+        }
+        let active = true;
+        let timer: number | undefined;
+        const poll = async () => {
+            try {
+                const next = await services.wormTrading.getPositionCashOutBatch(batch.id);
+                if (!active) {
+                    return;
+                }
+                publishBatch(next);
+                if (next.positionCount > 0) {
+                    await loadItems(next.id, itemsPage);
+                }
+            } catch (error) {
+                if (active && !(error instanceof DOMException && error.name === 'AbortError')) {
+                    setStatusError(requestErrorMessage(error, 'Cash Out batch status could not be refreshed. No Close request was replayed.'));
+                }
+            }
+            if (active) {
+                timer = window.setTimeout(poll, positionCashOutPollIntervalMS);
+            }
+        };
+        timer = window.setTimeout(poll, positionCashOutPollIntervalMS);
+        return () => {
+            active = false;
+            if (timer !== undefined) {
+                window.clearTimeout(timer);
+            }
+        };
+    }, [batch?.id, batch?.state, itemsPage, loadItems, publishBatch]);
+
+    React.useEffect(() => {
+        if (!batch || batch.id !== pendingReviewID) {
+            return;
+        }
+        if (batch.state === 'AWAITING_AUTHORIZATION' && batch.allowedActions.includes('AUTHORIZE_BATCH')) {
+            setPendingReviewID('');
+            openReview(batch);
+        } else if (terminalPositionCashOutBatchStates.has(batch.state)) {
+            setPendingReviewID('');
+        }
+    }, [batch, openReview, pendingReviewID]);
+
+    const toggleWallet = React.useCallback(
+        (walletID: number, selected: boolean) => {
+            if (restoring || (!batch && statusError !== '') || !props.visibleWallets.some(item => item.wallet.walletId === walletID)) {
+                return;
+            }
+            setSelectedWalletIDs(current => {
+                const next = new Set(current);
+                if (selected) {
+                    if (next.size >= maximumSelectedPositionCashOutBatchWallets) {
+                        return current;
+                    }
+                    next.add(walletID);
+                } else {
+                    next.delete(walletID);
+                }
+                return next;
+            });
+        },
+        [batch, props.visibleWallets, restoring, statusError]
+    );
+
+    const activeBatch = batch && !terminalPositionCashOutBatchStates.has(batch.state) ? batch : undefined;
+    const batchWalletIDs = new Set(activeBatch?.wallets.map(wallet => wallet.walletId) || []);
+    const itemStateFor = React.useCallback(
+        (row: PositionRow): WormPositionCashOutBatchItemState | '' => {
+            const current = batch?.currentItem;
+            if (current?.walletId === row.wallet.walletId && current.positionPubkey === row.position.pubkey) {
+                return current.state;
+            }
+            return items.find(item => item.walletId === row.wallet.walletId && item.positionPubkey === row.position.pubkey)?.state || '';
+        },
+        [batch?.currentItem, items]
+    );
+
+    const selectionSummary = selectedWalletIDs.size > 0 && !activeBatch && (
+        <div className='worm-position-cash-out-batch-selection' role='region' aria-label='Cash Out batch wallet selection'>
+            <div>
+                <strong>{selectedWalletIDs.size} wallets selected</strong>
+                <span>The backend will scan and freeze every Open Position in these wallets, including positions not visible on this page.</span>
+            </div>
+            <Space wrap={true}>
+                <Button disabled={Boolean(busyAction)} onClick={() => setSelectedWalletIDs(new Set())}>
+                    Clear
+                </Button>
+                <Button
+                    type='primary'
+                    danger={true}
+                    icon={<CloseCircleOutlined />}
+                    loading={busyAction === 'create'}
+                    disabled={Boolean(busyAction)}
+                    onClick={() => void createBatch()}>
+                    Review &amp; cash out wallets
+                </Button>
+            </Space>
+        </div>
+    );
+
+    const currentItem = batch?.currentItem;
+    const completedPercent = batch && batch.positionCount > 0 ? Math.round((batch.completedCount / batch.positionCount) * 100) : 0;
+    const liveMessage = batch
+        ? `${titleCase(batch.state)}. ${batch.completedCount} of ${batch.positionCount} positions completed.${
+              currentItem ? ` Current position ${currentItem.ordinal} in wallet ${currentItem.walletOrdinal}: ${titleCase(currentItem.state)}.` : ''
+          }`
+        : '';
+    const panel = batch && (
+        <Card className='worm-position-cash-out-batch-panel' title='Serial Cash Out batch'>
+            <div className='worm-position-cash-out-batch-panel__heading'>
+                <div>
+                    <Space size={6} wrap={true}>
+                        <Tag color={positionCashOutBatchStateColor(batch.state)}>{titleCase(batch.state)}</Tag>
+                        <Typography.Text strong={true}>
+                            {batch.completedCount}/{batch.positionCount} positions completed
+                        </Typography.Text>
+                        {batch.notExecutedCount > 0 && <Tag>{batch.notExecutedCount} not executed</Tag>}
+                    </Space>
+                    <Typography.Text type='secondary'>{batch.walletCount} wallets · Strictly serial · Confirmed USDC balance gate after every Close</Typography.Text>
+                </div>
+                <Typography.Text type='secondary'>Updated {formatBeijingUnixSeconds(batch.updatedAt)}</Typography.Text>
+            </div>
+            <Progress
+                percent={completedPercent}
+                status={
+                    batch.state === 'FAILED' || batch.state === 'RECONCILIATION_REQUIRED'
+                        ? 'exception'
+                        : batch.state === 'COMPLETED'
+                          ? 'success'
+                          : terminalPositionCashOutBatchStates.has(batch.state)
+                            ? 'normal'
+                            : 'active'
+                }
+            />
+            <div className='worm-position-cash-out-batch-live-region' role='status' aria-live='polite' aria-atomic='true'>
+                {liveMessage}
+            </div>
+            {statusError && (
+                <Alert type='warning' showIcon={true} title='Batch status could not be refreshed' description={`${statusError} Refreshing and Check status never resend Close.`} />
+            )}
+            {(batch.state === 'PAUSED' ||
+                batch.state === 'RECONCILIATION_REQUIRED' ||
+                batch.state === 'FAILED' ||
+                (batch.state === 'TERMINATE_REQUESTED' && batch.reasonCode !== '')) && (
+                <Alert
+                    className='worm-position-cash-out-batch-panel__alert'
+                    type={batch.state === 'PAUSED' ? 'warning' : 'error'}
+                    showIcon={true}
+                    title={
+                        batch.state === 'PAUSED'
+                            ? 'Later Cash Outs are paused'
+                            : batch.state === 'FAILED'
+                              ? 'Batch stopped safely'
+                              : batch.state === 'TERMINATE_REQUESTED'
+                                ? 'Termination is waiting for safe reconciliation'
+                                : 'Close outcome requires read-only reconciliation'
+                    }
+                    description={`${positionCashOutBatchReasonMessage(batch.reasonCode)} Pending or unknown does not mean Closed. Do not create another Cash Out for a locked wallet.`}
+                />
+            )}
+            {currentItem ? (
+                <section className='worm-position-cash-out-batch-current' aria-labelledby='worm-position-cash-out-batch-current-heading'>
+                    <div className='worm-position-cash-out-batch-current__heading'>
+                        <div>
+                            <Typography.Title id='worm-position-cash-out-batch-current-heading' level={4}>
+                                Current target
+                            </Typography.Title>
+                            <Typography.Text type='secondary'>
+                                Wallet {currentItem.walletOrdinal}/{batch.walletCount} · Position {currentItem.positionOrdinal} in wallet · Global {currentItem.ordinal}/
+                                {batch.positionCount}
+                            </Typography.Text>
+                        </div>
+                        <Tag color={positionCashOutBatchItemStateColor(currentItem.state)}>{titleCase(currentItem.state)}</Tag>
+                    </div>
+                    <div className='worm-position-cash-out-batch-current__target'>
+                        <div>
+                            <small>Wallet</small>
+                            <strong>{currentItem.walletRemark || shortAddress(currentItem.walletAddress)}</strong>
+                            <code>{shortAddress(currentItem.walletAddress)}</code>
+                        </div>
+                        <div>
+                            <small>Market position</small>
+                            <strong>
+                                {currentItem.isYes ? 'YES' : 'NO'} · {currentItem.shares} shares
+                            </strong>
+                            <span>{currentItem.marketTitle || shortAddress(currentItem.marketConditionId, 8, 8)}</span>
+                        </div>
+                        <div>
+                            <small>Frozen position</small>
+                            <code title={currentItem.positionPubkey}>{shortAddress(currentItem.positionPubkey, 8, 8)}</code>
+                            <span>{formatBeijingUnixSeconds(currentItem.positionCreatedAt)}</span>
+                        </div>
+                    </div>
+                    <PositionCashOutBatchEvidence baseline={currentItem.baseline} observed={currentItem.observed} delta={currentItem.deltaAtomicAmount} />
+                </section>
+            ) : (
+                <Alert
+                    className='worm-position-cash-out-batch-panel__alert'
+                    type={batch.state === 'COMPLETED' ? 'success' : 'info'}
+                    showIcon={true}
+                    title={
+                        batch.state === 'BUILDING'
+                            ? 'Building authoritative position snapshot'
+                            : terminalPositionCashOutBatchStates.has(batch.state)
+                              ? titleCase(batch.state)
+                              : 'Waiting for the next safe boundary'
+                    }
+                    description={
+                        batch.state === 'BUILDING' ? 'Athena is fully paging every selected wallet. Authorization remains unavailable until all targets are frozen.' : undefined
+                    }
+                />
+            )}
+            {items.length > 0 && (
+                <section className='worm-position-cash-out-batch-items' aria-labelledby='worm-position-cash-out-batch-items-heading'>
+                    <div className='worm-position-cash-out-batch-items__heading'>
+                        <Typography.Title id='worm-position-cash-out-batch-items-heading' level={4}>
+                            Frozen execution order
+                        </Typography.Title>
+                        <Typography.Text type='secondary'>Newest position first within each wallet</Typography.Text>
+                    </div>
+                    <ol start={(itemsPage - 1) * positionCashOutBatchItemPageSize + 1}>
+                        {items.map(item => (
+                            <li key={item.id} className={item.id === currentItem?.id ? 'is-current' : ''}>
+                                <span className='worm-position-cash-out-batch-items__ordinal'>{item.ordinal}</span>
+                                <div>
+                                    <strong>{item.walletRemark || shortAddress(item.walletAddress)}</strong>
+                                    <span>
+                                        {item.isYes ? 'YES' : 'NO'} · {item.shares} shares · {item.marketTitle || shortAddress(item.marketConditionId, 8, 8)}
+                                    </span>
+                                </div>
+                                <Tag color={positionCashOutBatchItemStateColor(item.state)}>{titleCase(item.state)}</Tag>
+                            </li>
+                        ))}
+                    </ol>
+                    {itemsTotal > positionCashOutBatchItemPageSize && (
+                        <Pagination
+                            size='small'
+                            responsive={true}
+                            current={itemsPage}
+                            pageSize={positionCashOutBatchItemPageSize}
+                            total={itemsTotal}
+                            showSizeChanger={false}
+                            onChange={page => {
+                                setItemsPage(page);
+                                void loadItems(batch.id, page).catch(reason => setStatusError(requestErrorMessage(reason, 'Batch items could not be loaded.')));
+                            }}
+                        />
+                    )}
+                </section>
+            )}
+            {batch.allowedActions.length > 0 && (
+                <div className='worm-position-cash-out-batch-controls' aria-label='Cash Out batch controls'>
+                    <Space wrap={true}>
+                        {batch.allowedActions.includes('AUTHORIZE_BATCH') && (
+                            <Button type='primary' danger={true} icon={<SafetyCertificateOutlined />} disabled={Boolean(busyAction)} onClick={() => openReview(batch)}>
+                                Review &amp; authorize
+                            </Button>
+                        )}
+                        {batch.allowedActions.includes('CANCEL') && (
+                            <Button disabled={Boolean(busyAction)} loading={busyAction === 'cancel'} onClick={() => void cancelBatch(batch)}>
+                                Cancel batch
+                            </Button>
+                        )}
+                        {batch.allowedActions.includes('PAUSE') && (
+                            <Button
+                                icon={<PauseCircleOutlined />}
+                                disabled={Boolean(busyAction)}
+                                loading={busyAction === 'pause'}
+                                onClick={() => void applyCommand(batch, 'pause', 'PAUSE')}>
+                                Pause after current
+                            </Button>
+                        )}
+                        {batch.allowedActions.includes('CONTINUE') && (
+                            <Button
+                                type='primary'
+                                icon={<PlayCircleOutlined />}
+                                disabled={Boolean(busyAction)}
+                                loading={busyAction === 'continue'}
+                                onClick={() => void applyCommand(batch, 'continue', 'CONTINUE')}>
+                                Continue
+                            </Button>
+                        )}
+                        {batch.allowedActions.includes('CHECK_STATUS') && (
+                            <Button
+                                icon={<ReloadOutlined />}
+                                disabled={Boolean(busyAction)}
+                                loading={busyAction === 'check-status'}
+                                onClick={() => void applyCommand(batch, 'check-status', 'CHECK_STATUS')}>
+                                Check status
+                            </Button>
+                        )}
+                        {batch.allowedActions.includes('TERMINATE') && (
+                            <Button
+                                danger={true}
+                                icon={<StopOutlined />}
+                                disabled={Boolean(busyAction)}
+                                loading={busyAction === 'terminate'}
+                                onClick={() =>
+                                    ctx.modal.confirm({
+                                        title: 'Terminate remaining Cash Outs?',
+                                        content:
+                                            'A Close already dispatched for the current position cannot be cancelled. Athena will finish its safe reconciliation and mark every later frozen position Not executed.',
+                                        okText: 'Terminate remaining',
+                                        okButtonProps: {danger: true},
+                                        onOk: () => applyCommand(batch, 'terminate', 'TERMINATE')
+                                    })
+                                }>
+                                Terminate remaining
+                            </Button>
+                        )}
+                    </Space>
+                </div>
+            )}
+        </Card>
+    );
+
+    const recoveryPanel = !batch ? (
+        restoring ? (
+            <Alert
+                type='info'
+                showIcon={true}
+                title='Checking for an active Cash Out batch'
+                description='Wallet selection remains locked until authoritative batch status is known.'
+            />
+        ) : statusError ? (
+            <Alert
+                type='error'
+                showIcon={true}
+                title='Active Cash Out batch status is unavailable'
+                description={`${statusError} Wallet selection is disabled to prevent a conflicting batch.`}
+                action={
+                    <Button
+                        size='small'
+                        icon={<ReloadOutlined />}
+                        onClick={() => {
+                            setStatusError('');
+                            setRestoring(true);
+                            setRestoreNonce(value => value + 1);
+                        }}>
+                        Retry
+                    </Button>
+                }
+            />
+        ) : undefined
+    ) : undefined;
+    const manager: PositionCashOutBatchManager = {
+        batch,
+        selectedWalletIDs,
+        toggleWallet,
+        clearSelection: () => setSelectedWalletIDs(new Set()),
+        selectionDisabled: walletID =>
+            restoring ||
+            (!batch && statusError !== '') ||
+            Boolean(activeBatch) ||
+            (!selectedWalletIDs.has(walletID) && selectedWalletIDs.size >= maximumSelectedPositionCashOutBatchWallets),
+        walletLocked: walletID => batchWalletIDs.has(walletID),
+        itemStateFor,
+        selectionSummary,
+        panel: (
+            <>
+                {recoveryPanel}
+                {panel}
+            </>
+        )
+    };
+    return <>{props.children(manager)}</>;
+};
+
 export const WormTradingPage = () => {
     const ctx = React.useContext(Context);
     const authorization = useAuthorization();
@@ -2127,7 +3051,7 @@ export const WormTradingPage = () => {
         .sort((left, right) => right.request.createdAt - left.request.createdAt);
     const total = Math.max(balances.data?.total || 0, activity.data?.total || 0);
 
-    const renderContent = (manager?: ConnectionManager, cashOutManager?: PositionCashOutManager) => {
+    const renderContent = (manager?: ConnectionManager, cashOutManager?: PositionCashOutManager, batchManager?: PositionCashOutBatchManager) => {
         const connectionFor = (walletId: number) => manager?.connections.get(walletId) || activityByWallet.get(walletId)?.connection;
         const balanceColumns: ColumnsType<WormTradingWalletBalanceItem> = [
             {
@@ -2154,6 +3078,22 @@ export const WormTradingPage = () => {
                 )
             }
         ];
+        if (batchManager) {
+            balanceColumns.unshift({
+                title: 'Include',
+                key: 'batchSelection',
+                width: 76,
+                align: 'center',
+                render: (_, item) => (
+                    <Checkbox
+                        checked={batchManager.selectedWalletIDs.has(item.wallet.walletId)}
+                        disabled={batchManager.selectionDisabled(item.wallet.walletId)}
+                        aria-label={`Include ${item.wallet.remark || shortAddress(item.wallet.address)} in Cash Out batch`}
+                        onChange={event => batchManager.toggleWallet(item.wallet.walletId, event.target.checked)}
+                    />
+                )
+            });
+        }
         const positionColumns: ColumnsType<PositionRow> = [
             {title: 'Wallet', key: 'wallet', width: 245, render: (_, row) => <WalletIdentity wallet={row.wallet} onCopy={() => void copyAddress(row.wallet)} />},
             {title: 'Market', key: 'market', width: 330, render: (_, row) => <MarketIdentity market={row.position.market} />},
@@ -2337,21 +3277,25 @@ export const WormTradingPage = () => {
                             items={balanceItems}
                             loading={balances.loading && !balances.data}
                             columns={balanceColumns}
-                            scrollX={1080}
+                            scrollX={batchManager ? 1156 : 1080}
                             compactRender={item => (
                                 <WalletBalanceCard
                                     item={item}
                                     connection={connectionFor(item.wallet.walletId)}
                                     activityStatus={activityByWallet.get(item.wallet.walletId)?.status}
                                     manager={manager}
+                                    batchManager={batchManager}
                                     activityLoading={activity.loading && !activity.data}
                                     onCopy={() => void copyAddress(item.wallet)}
                                 />
                             )}
                             compactEmptyDescription='No Solana wallets are available.'
                         />
+                        {batchManager?.selectionSummary}
                     </section>
                 )}
+
+                {batchManager?.panel}
 
                 {activity.error && (
                     <Alert
@@ -2466,7 +3410,7 @@ export const WormTradingPage = () => {
         );
     };
 
-    const renderPage = (manager?: ConnectionManager, cashOutManager?: PositionCashOutManager) => (
+    const renderPage = (manager?: ConnectionManager, cashOutManager?: PositionCashOutManager, batchManager?: PositionCashOutBatchManager) => (
         <AppPage
             title='Worm Trading Assets'
             subtitle='Review confirmed wallet balances and official Worm position activity. Balances are not Worm collateral or available-to-order limits.'
@@ -2478,7 +3422,7 @@ export const WormTradingPage = () => {
                 refresh();
                 manager?.refreshInventory();
             }}>
-            {renderContent(manager, cashOutManager)}
+            {renderContent(manager, cashOutManager, batchManager)}
         </AppPage>
     );
 
@@ -2486,9 +3430,17 @@ export const WormTradingPage = () => {
         <SensitiveWriteScope module={AccountDataModule.WormTrading}>
             <ConnectionManagement onReload={reloadConnections}>
                 {manager => (
-                    <PositionCashOutManagement rows={positionRows} activityFetchedAt={activity.data?.fetchedAt || 0} onRefreshAssets={refreshAssets}>
-                        {cashOutManager => renderPage(manager, cashOutManager)}
-                    </PositionCashOutManagement>
+                    <PositionCashOutBatchManagement visibleWallets={balanceItems} onRefreshAssets={refreshAssets}>
+                        {batchManager => (
+                            <PositionCashOutManagement
+                                rows={positionRows}
+                                activityFetchedAt={activity.data?.fetchedAt || 0}
+                                onRefreshAssets={refreshAssets}
+                                batchManager={batchManager}>
+                                {cashOutManager => renderPage(manager, cashOutManager, batchManager)}
+                            </PositionCashOutManagement>
+                        )}
+                    </PositionCashOutBatchManagement>
                 )}
             </ConnectionManagement>
         </SensitiveWriteScope>

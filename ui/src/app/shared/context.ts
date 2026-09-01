@@ -19,7 +19,16 @@ export interface ModalHandle {
 }
 
 export interface ModalApi {
-    confirm(options: {title: string; content?: React.ReactNode; okText?: string; cancelText?: string; onOk?: () => void | Promise<void>; onCancel?: () => void}): ModalHandle;
+    confirm(options: {
+        title: string;
+        content?: React.ReactNode;
+        width?: number | string;
+        okText?: string;
+        cancelText?: string;
+        okButtonProps?: {danger?: boolean};
+        onOk?: () => void | Promise<void>;
+        onCancel?: () => void;
+    }): ModalHandle;
     info(options: {title: string; content?: React.ReactNode}): void;
     error(options: {title: string; content?: React.ReactNode}): void;
 }

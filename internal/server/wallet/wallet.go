@@ -63,13 +63,14 @@ func (s *Server) GetWallet(ctx context.Context, req *walletpkg.GetWalletRequest)
 	return &walletpkg.GetWalletResponse{Item: resp.GetItem()}, nil
 }
 
-func (s *Server) CreateWallet(ctx context.Context, req *walletpkg.CreateWalletRequest) (*walletpkg.CreateWalletResponse, error) {
+func (s *Server) BatchCreateWallets(ctx context.Context, req *walletpkg.BatchCreateWalletsRequest) (*walletpkg.BatchCreateWalletsResponse, error) {
 	accountID, err := requesterAccountID(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := s.walletClientSet.Wallet().CreateWallet(ctx, &walletapiclient.CreateWalletRequest{
+	resp, err := s.walletClientSet.Wallet().BatchCreateWallets(ctx, &walletapiclient.BatchCreateWalletsRequest{
 		WalletType:         req.GetWalletType(),
+		Count:              req.GetCount(),
 		Remark:             req.GetRemark(),
 		AvatarPresetId:     req.GetAvatarPresetId(),
 		RequesterAccountId: accountID,
@@ -77,20 +78,24 @@ func (s *Server) CreateWallet(ctx context.Context, req *walletpkg.CreateWalletRe
 	if err != nil {
 		return nil, err
 	}
-	return &walletpkg.CreateWalletResponse{
-		Item:       resp.GetItem(),
-		PrivateKey: resp.GetPrivateKey(),
-	}, nil
+	results := make([]*walletpkg.BatchCreateWalletResult, 0, len(resp.GetResults()))
+	for _, result := range resp.GetResults() {
+		results = append(results, &walletpkg.BatchCreateWalletResult{
+			Item:       result.GetItem(),
+			PrivateKey: result.GetPrivateKey(),
+		})
+	}
+	return &walletpkg.BatchCreateWalletsResponse{Results: results}, nil
 }
 
-func (s *Server) ImportWallet(ctx context.Context, req *walletpkg.ImportWalletRequest) (*walletpkg.ImportWalletResponse, error) {
+func (s *Server) BatchImportWallets(ctx context.Context, req *walletpkg.BatchImportWalletsRequest) (*walletpkg.BatchImportWalletsResponse, error) {
 	accountID, err := requesterAccountID(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := s.walletClientSet.Wallet().ImportWallet(ctx, &walletapiclient.ImportWalletRequest{
+	resp, err := s.walletClientSet.Wallet().BatchImportWallets(ctx, &walletapiclient.BatchImportWalletsRequest{
 		WalletType:         req.GetWalletType(),
-		PrivateKey:         req.GetPrivateKey(),
+		PrivateKeys:        req.GetPrivateKeys(),
 		Remark:             req.GetRemark(),
 		AvatarPresetId:     req.GetAvatarPresetId(),
 		RequesterAccountId: accountID,
@@ -98,7 +103,7 @@ func (s *Server) ImportWallet(ctx context.Context, req *walletpkg.ImportWalletRe
 	if err != nil {
 		return nil, err
 	}
-	return &walletpkg.ImportWalletResponse{Item: resp.GetItem()}, nil
+	return &walletpkg.BatchImportWalletsResponse{Items: resp.GetItems()}, nil
 }
 
 func (s *Server) UpdateWalletRemark(ctx context.Context, req *walletpkg.UpdateWalletRemarkRequest) (*walletpkg.UpdateWalletRemarkResponse, error) {

@@ -3,13 +3,13 @@
 ## Scope
 
 Wallet Ownership and Custody owns Athena-managed EVM and Solana keypairs,
-UUID-account ownership, optional create/import remark input with persistently
-non-empty wallet remarks, avatar metadata, encrypted private-key persistence,
-and the safe Wallet API projection. Every wallet belongs to exactly one
-account. Application administrators have no cross-user Wallet read or write
-path and no own-account Wallet path: their fixed access aggregate gives Wallet
-`NONE`, and the administrator application constructs no Wallet service or
-route.
+UUID-account ownership, bounded atomic batch creation and import, optional
+single-wallet remark input with persistently non-empty wallet remarks, avatar
+metadata, encrypted private-key persistence, and the safe Wallet API
+projection. Every wallet belongs to exactly one account. Application
+administrators have no cross-user Wallet read or write path and no own-account
+Wallet path: their fixed access aggregate gives Wallet `NONE`, and the
+administrator application constructs no Wallet service or route.
 
 [Wallet Secret Reauthentication](wallet-secret-reauthentication.md) owns the
 independent browser proofs required before a stored private key is revealed or
@@ -22,7 +22,10 @@ position reads plus its owner-scoped summary projection; it consumes only safe
 Wallet metadata selected by the API Server. Assets position Cash Out repeats an
 owner-scoped Wallet lookup for the submitted Wallet ID, requires Solana type and
 canonical address, and then uses Worm Trading's HMAC credential; Wallet does not
-reveal or sign anything for that Close. Worm execution-preview creation
+reveal or sign anything for that Close. Assets batch Cash Out fully pages the
+same owner-scoped Solana inventory, preserves its display order for up to 100
+selected Wallets, and forwards only safe presentation metadata; neither batch
+building nor any child Close calls a Wallet signer. Worm execution-preview creation
 also resolves every selected Wallet through this owner-scoped safe boundary and
 freezes only its ID, address, remark, and avatar presentation; preview building
 does not ask Wallet to reveal or sign anything. Wallet additionally owns two
@@ -41,13 +44,13 @@ deletion, and blockchain RPC calls remain outside this capability.
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| Public safe API | [internal/server/wallet/wallet.proto](../../../internal/server/wallet/wallet.proto), [internal/server/wallet/wallet.go](../../../internal/server/wallet/wallet.go) | `WalletService`, `CreateWallet`, `ImportWallet`, `UpdateWalletRemark`, `UpdateWalletAvatarPreset` |
+| Public safe API | [internal/server/wallet/wallet.proto](../../../internal/server/wallet/wallet.proto), [internal/server/wallet/wallet.go](../../../internal/server/wallet/wallet.go) | `WalletService`, `BatchCreateWallets`, `BatchImportWallets`, `UpdateWalletRemark`, `UpdateWalletAvatarPreset` |
 | Trusted internal API and custody service | [internal/wallet/wallet.proto](../../../internal/wallet/wallet.proto), [internal/wallet/server.go](../../../internal/wallet/server.go), [internal/wallet/service.go](../../../internal/wallet/service.go), [internal/wallet/keys.go](../../../internal/wallet/keys.go), [internal/wallet/worm_execution_signer.go](../../../internal/wallet/worm_execution_signer.go) | service Bearer dispatch, `RevealWalletPrivateKey`, `SignWormAuthChallenge`, `WormExecutionSignerService`, execution sign-in/transaction signing, key normalization, owner-scoped avatar metadata methods |
-| Durable state | [internal/wallet/store/migrations/000001_init.sql](../../../internal/wallet/store/migrations/000001_init.sql), [internal/wallet/store/queries/wallets.sql](../../../internal/wallet/store/queries/wallets.sql), [internal/wallet/store/sql_store.go](../../../internal/wallet/store/sql_store.go) | `wallets`, owner predicates, optimistic revision updates |
+| Durable state | [internal/wallet/store/migrations/000001_init.sql](../../../internal/wallet/store/migrations/000001_init.sql), [internal/wallet/store/queries/wallets.sql](../../../internal/wallet/store/queries/wallets.sql), [internal/wallet/store/sql_store.go](../../../internal/wallet/store/sql_store.go) | `wallets`, `SQLStore.CreateWallets`, owner predicates, optimistic revision updates |
 | Shared safe model | [pkg/apis/application/v1alpha1/wallet_types.go](../../../pkg/apis/application/v1alpha1/wallet_types.go) | `WalletItem`, `WalletStatus` |
 | Public JSON and Swagger generation | [internal/server/wallet/wallet.proto](../../../internal/server/wallet/wallet.proto), [hack/generate-proto.sh](../../../hack/generate-proto.sh), [assets/swagger.json](../../../assets/swagger.json) | Wallet camelCase JSON tags, Wallet-only Swagger normalization |
 | Private avatar HTTP boundary | [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go), [internal/server/walletavatarhttp/handler.go](../../../internal/server/walletavatarhttp/handler.go) | upload, authenticated delivery, reset, compensation, garbage collection |
-| Owner-scoped Worm Trading projection, preview/Cash-Out resolution, and management | [internal/server/wormtrading/wormtrading.proto](../../../internal/server/wormtrading/wormtrading.proto), [internal/server/wormtrading](../../../internal/server/wormtrading), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/server/worm_execution_plans.go](../../../internal/server/worm_execution_plans.go), [internal/server/worm_position_cash_outs.go](../../../internal/server/worm_position_cash_outs.go) | `ListWalletBalances`, `ListWalletTradingActivity`, `TradingWalletSummary`, `listWormWalletConnections`, `resolveWormExecutionPlanWallets`, `resolveOwnedPositionCashOutWallet`, `completeWormConnection` |
+| Owner-scoped Worm Trading projection, preview/Cash-Out resolution, and management | [internal/server/wormtrading/wormtrading.proto](../../../internal/server/wormtrading/wormtrading.proto), [internal/server/wormtrading](../../../internal/server/wormtrading), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/server/worm_execution_plans.go](../../../internal/server/worm_execution_plans.go), [internal/server/worm_position_cash_outs.go](../../../internal/server/worm_position_cash_outs.go), [internal/server/worm_position_cash_out_batches.go](../../../internal/server/worm_position_cash_out_batches.go) | `ListWalletBalances`, `ListWalletTradingActivity`, `TradingWalletSummary`, `listWormWalletConnections`, `resolveWormExecutionPlanWallets`, `resolveOwnedPositionCashOutWallet`, `resolveOwnedPositionCashOutBatchWallets`, `completeWormConnection` |
 | Browser management surface | [ui/src/app/member/pages/wallets.tsx](../../../ui/src/app/member/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | card grid, detail drawer, create/import, remark/avatar updates, secret backup/reveal |
 | Process configuration | [cmd/athena-wallet/commands/athena_wallet.go](../../../cmd/athena-wallet/commands/athena_wallet.go), [internal/wallet/apiclient](../../../internal/wallet/apiclient) | `ATHENA_WALLET_ENCRYPTION_KEY`, general internal token, independent Worm execution-signer token and clientset |
 
@@ -74,8 +77,8 @@ have the same not-found result.
 
 `WalletItem` is safe metadata only: ID, wallet type, address, remark, source,
 avatar presentation, revision, and timestamps. Private keys appear only in the
-one-time create response or the separately protected native HTTP reveal
-response. Import never echoes submitted material.
+one-time successful batch-create response or the separately protected native
+HTTP reveal response. Import never echoes submitted material.
 
 Public Worm Trading balance and activity reads accept no browser-supplied owner
 UUID or wallet address. The API Server derives the authenticated account UUID, lists that owner's
@@ -95,6 +98,13 @@ the position and submits Close with its separate HMAC credential. This path
 never calls private-key reveal, `SignWormAuthChallenge`, or
 `WormExecutionSignerService`; Phantom proof signs the persisted login identity,
 which is independent from the selected custodial Wallet.
+
+The batch create path accepts only unique Wallet IDs. It fully pages
+owner-scoped `ListWallets(SOLANA)` in authoritative display order, rejects any
+missing selection, and forwards at most 100 ID/address/presentation snapshots.
+Worm Trading then freezes provider positions and creates each HMAC child Close;
+Wallet performs no reveal, credential challenge, Web sign-in, transaction
+signature, balance read, or Close.
 
 The native Worm connection inventory applies the same server-derived owner and
 fixed Solana filter across pages of at most 100 wallets. It is restricted to an
@@ -139,12 +149,23 @@ representation from signature completeness. The deliberate Worm trust model
 does not add program, account, instruction, or spending-policy inspection.
 
 Wallet HTTP JSON uses the reviewed camelCase field names, including
-`walletType`, `privateKey`, `avatarPresetId`, `expectedRevision`, and
-`pageSize`. Gogo JSON tags make the standard Gateway decoder authoritative for
-request and response bodies. Swagger generation applies the same Wallet-only
-naming projection, documents revisions as JSON integers, and removes the path
-`id` from PATCH body schemas; protobuf field names remain snake_case on the
-wire.
+`walletType`, `privateKeys`, `privateKey`, `avatarPresetId`,
+`expectedRevision`, and `pageSize`. Gogo JSON tags make the standard Gateway
+decoder authoritative for request and response bodies. Swagger generation
+applies the same Wallet-only naming projection, documents revisions as JSON
+integers, and removes the path `id` from PATCH body schemas; protobuf field
+names remain snake_case on the wire.
+
+The member create form supplies a count from one through ten. The import form
+uses a visible, non-persistent monospace text area, trims each physical line,
+ignores blank lines, retains source-line positions for safe indexed errors, and
+sends the remaining one-to-ten strings as `privateKeys`. A batch shares one
+wallet type and avatar. The remark field remains available for one item and is
+cleared and disabled for larger batches. A successful create opens a
+non-dismissible, scrollable in-memory backup list with per-item copy controls,
+one-line-per-key bulk copy, and one acknowledgement covering every returned
+key. It offers no plaintext download. Import success clears the form and
+reloads safe state without rendering submitted keys.
 
 The Wallet service stores ciphertext but never depends on account role.
 Application administrator status is deliberately absent from its contract.
@@ -163,25 +184,32 @@ this is a server-custodied design.
    `WalletItem`. The interactive Worm Trading `READ_WRITE` connection inventory
    pages the same safe Solana projection without granting the public Wallet list
    API or requiring a Worm management lease.
-2. `CreateWallet` requires a login-session credential plus Wallet
-   `READ_WRITE`. It trims an optional remark, accepts either empty input or
-   1–50 runes, validates the optional fixed avatar preset, generates a random
-   secp256k1 or Ed25519 keypair, encrypts the canonical private-key text, and
-   commits the wallet. The private key is returned once beside the safe item.
-3. `ImportWallet` has the same credential and metadata requirements. EVM accepts
-   one 32-byte hexadecimal scalar with optional `0x`. Solana accepts canonical
-   Base58, a JSON byte array, or hexadecimal for a 32-byte seed or verified
-   64-byte keypair. Import derives and canonicalizes the address before insert
-   and returns no private key.
-4. Every create/import insert opens a transaction and acquires an advisory lock
-   scoped to the owner UUID and wallet type, including requests with a custom
-   remark. An empty or whitespace-only remark is assigned `EVM-<n>` for EVM or
-   `SOL-<n>` for Solana, where `<n>` is one plus the committed wallet count for
-   that owner and type. Custom-remark wallets participate in the same count, so
-   the default name describes creation order within that owner/type scope rather
-   than the number of previously generated defaults. The count, generated
-   remark, and insert share the transaction, serializing concurrent allocations
-   without making remarks unique.
+2. `BatchCreateWallets` requires a login-session credential plus Wallet
+   `READ_WRITE`. One request selects one wallet type and one shared optional
+   avatar preset and creates between one and ten wallets. A one-wallet request
+   may supply an empty or trimmed 1–50-rune remark; a larger request must leave
+   the remark empty. The service validates the complete request, generates all
+   random secp256k1 or Ed25519 keypairs, encrypts their canonical private-key
+   text, and commits them atomically. The ordered response pairs each safe item
+   with the private key that produced it and is returned only after commit.
+3. `BatchImportWallets` has the same credential, wallet-type, shared-avatar,
+   remark, size, and atomicity requirements. It accepts one to ten private-key
+   strings in order. EVM accepts a 32-byte hexadecimal scalar with optional
+   `0x`. Solana accepts canonical Base58, a JSON byte array, or hexadecimal for
+   a 32-byte seed or verified 64-byte keypair. The service validates and
+   canonicalizes every key and rejects duplicate derived addresses before
+   opening the transaction. Its ordered response contains only safe items and
+   never echoes submitted keys.
+4. Each batch opens one transaction and acquires one advisory lock scoped to the
+   owner UUID and wallet type. It reads the committed owner/type wallet count
+   once and inserts every item in request order. An empty remark is assigned
+   `EVM-<n>` for EVM or `SOL-<n>` for Solana, with `<n>` equal to the prior
+   committed count plus the item's one-based batch position. A committed
+   custom-remark wallet participates in later counts, so default names describe
+   creation order within that owner/type scope rather than the number of
+   previously generated defaults. The lock, count, naming, all inserts, and
+   commit share the transaction; no partial batch is durable and remarks remain
+   non-unique.
 5. EVM addresses are displayed with EIP-55 checksum casing and indexed through
    lowercase `address_key`. Solana addresses and duplicate keys use canonical
    Base58. Duplicate `(owner, wallet_type, address_key)` inserts return already
@@ -240,6 +268,11 @@ this is a server-custodied design.
     operation identity; it does not ask the selected custody Wallet to reveal or
     sign. A missing, foreign, non-Solana, mismatched, or malformed Wallet fails
     before the operation or Close can proceed.
+14. Assets batch creation accepts up to 100 unique Wallet IDs and fully pages
+    the current account's Solana inventory. The API Server preserves the
+    inventory display order, rejects every unresolved ID, and forwards safe
+    ID/address/presentation snapshots only. The later batch build, HMAC Close,
+    and confirmed-USDC reads are owned by Worm Trading and do not call Wallet.
 
 ## State / Data
 
@@ -247,11 +280,12 @@ this is a server-custodied design.
 `wallet_type` restricted to `EVM` or `SOLANA`, canonical display and lookup
 addresses, non-null 1–50-rune remark, source (`created` or `imported`), encrypted
 private key, mutually exclusive preset/upload avatar metadata, positive
-revision, and timestamps. Create/import input may omit the remark, but the
-transaction resolves it before insertion, so `WalletItem.remark` and every
-durable row remain non-empty. Default-name allocation uses no counter table or
-remark uniqueness constraint; it derives the next suffix from the committed
-owner/type wallet count while holding the transaction-scoped advisory lock. A
+revision, and timestamps. A single-item create/import may omit the remark, and
+multi-item batches always do; the transaction resolves every empty value before
+insertion, so `WalletItem.remark` and every durable row remain non-empty.
+Default-name allocation uses no counter table or remark uniqueness constraint;
+it derives each suffix from the committed owner/type wallet count and batch
+position while holding the transaction-scoped advisory lock. A
 check constraint requires uploaded object key, content type, ETag, and positive
 size to be either complete or all empty. A preset and upload cannot coexist.
 
@@ -283,7 +317,7 @@ Wallet and no Cash-Out signer record is created there.
 Private-key canonical forms are `0x` plus 64 lowercase hexadecimal digits for
 EVM and Base58 of the complete 64-byte Ed25519 keypair for Solana. Ciphertext is
 produced by the existing scrypt-derived AES-GCM utility using the process master
-key. Plaintext is held only for the current create/import/reveal/sign call and
+key. Plaintext is held only for the current batch-create/import/reveal/sign call and
 must not enter logs, metrics, durable audit records, safe models, or avatar
 state. Neither Worm signer persists a challenge, transaction, signature,
 signed transaction, Run binding, or digest in the Wallet database.
@@ -314,20 +348,22 @@ signed transaction, Run binding, or digest in the Wallet database.
   activity, connection state, and uploaded-avatar GET without granting other
   Wallet operations. API Keys cannot list the Worm management inventory, invoke
   the Worm challenge signer, or manage a connection.
-- Create/import require login or isolated development-session capability.
-- Create/import remark input may be omitted, empty, or whitespace-only; the
-  persisted safe item still has a non-empty remark. A supplied non-empty remark
-  is trimmed and limited to 50 runes, while remark updates require an explicit
-  trimmed 1–50-rune value.
-- Every create/import insert, including one with a custom remark, holds the
-  owner-and-wallet-type advisory lock through insertion. Empty-remark requests
-  count and allocate while holding that lock; committed custom-remark wallets
-  therefore consume positions in later counts. EVM and Solana scopes allocate
-  `EVM-<n>` and `SOL-<n>` independently, and duplicate remark text remains
-  allowed.
+- Batch create/import require login or isolated development-session capability,
+  contain one wallet type, and contain between one and ten items.
+- A single-item create/import remark may be omitted, empty, or whitespace-only;
+  a multi-item batch rejects a supplied non-empty remark. Every persisted safe
+  item still has a non-empty remark. A supplied single-item remark is trimmed
+  and limited to 50 runes, while remark updates require an explicit trimmed
+  1–50-rune value.
+- Every batch, including a single custom-remark item, holds the owner-and-wallet-
+  type advisory lock through all inserts. Empty-remark items allocate from one
+  committed count in batch order; committed custom-remark wallets therefore
+  consume positions in later counts. EVM and Solana scopes allocate `EVM-<n>`
+  and `SOL-<n>` independently, and duplicate remark text remains allowed.
 - Public safe models never contain owner UUID, ciphertext, object key, private
   key, mnemonic, or role.
-- Create reveals the canonical private key once; import never echoes it.
+- A successful batch create reveals every canonical private key once in result
+  order; import never echoes submitted keys.
 - Every mutation uses optimistic revision control.
 - External Solana login identity and Athena-managed Solana wallets remain
   independent; neither automatically creates or claims the other.
@@ -364,13 +400,17 @@ both the Wallet service and API Server Wallet client from starting. A missing or
 mismatched RPC Bearer returns unauthenticated before any Wallet handler executes;
 standard gRPC health checks remain credential-free.
 
-Invalid input fails before encryption or SQL. Encryption or insert failure
-leaves no wallet row; duplicate constraints preserve the original record. The
-owner/type advisory lock, count, default-name assignment, and insert share one
-transaction, so concurrent create/import requests receive distinct committed
-suffixes while a duplicate-address or failed insert rolls back without
-consuming a suffix. Decryption failure returns no partial secret. PostgreSQL
-transaction failure preserves the previous remark/avatar revision.
+Invalid batch fields and imported key material fail before SQL. Key generation,
+encryption, canonicalization, or intra-batch duplicate failure returns no
+partial item or secret. The owner/type advisory lock, count, default-name
+assignment, and all inserts share one transaction, so concurrent batches
+receive distinct committed suffix ranges while an existing-address conflict or
+failed insert rolls back the whole batch without consuming a suffix. A missing,
+timed-out, 5xx, or structurally incomplete client response is treated as an
+unknown write outcome rather than an automatic retry; the browser reloads safe
+wallet state, and an already committed wallet can use the existing
+reauthenticated reveal path. Decryption failure returns no partial secret.
+PostgreSQL transaction failure preserves the previous remark/avatar revision.
 
 Worm challenge validation fails before decrypting the key. A decryption,
 keypair, derived-address, signing, or response-validation failure returns no
@@ -430,13 +470,15 @@ response. Wallet logs receive no Cash-Out signing request because none exists.
 - [ ] Every durable query and mutation remains owner scoped without role bypass.
 - [ ] Key canonicalization, encryption, duplicate constraints, and remark rules remain current.
 - [ ] Avatar validation, CAS, compensation, private delivery, and collection remain current.
-- [ ] Create/import/reveal credential restrictions match API Server authorization.
+- [ ] Batch create/import/reveal credential restrictions match API Server authorization.
 - [ ] Worm Trading summary reads, interactive management inventory, and the uploaded-avatar GET alternative remain owner scoped without broadening Wallet writes.
 - [ ] The Worm challenge signer remains internal, owner scoped, Solana-only, exact-message-bound, and unavailable to API Keys.
 - [ ] Execution-preview Wallet resolution remains owner-scoped, Solana-only, ordered, safe-metadata-only, and free of reveal or signing calls.
 - [ ] Position-Cash-Out Wallet resolution remains current-account, exact-ID, Solana-only, canonical-address, and free of every Wallet secret/signing path.
 - [ ] The independent execution-signer token reaches only Wallet and Worm Trading, differs from the general Wallet token, and exposes only its two purpose-bound RPCs.
 - [ ] Live signing keeps Run/Step/intent/request/transaction bindings, required-signer validation, signature self-verification, and the documented Worm transaction trust boundary aligned with the implementation.
-- [ ] UI secret state remains memory-only and is cleared on close, route, account, or permission change.
+- [ ] Batch-create UI secret state remains memory-only, requires one explicit
+      all-keys backup acknowledgement, and is cleared on completion, route,
+      account, or permission change.
 - [ ] Configuration, reset guidance, and source links match the implementation.
 - [ ] The [design index](../README.md) contains the current summary.

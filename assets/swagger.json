@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "v1.0.0-1100-g598f6108-dirty"
+    "version": "v1.0.0-1102-gd54a4993-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -2857,36 +2857,6 @@
             }
           }
         }
-      },
-      "post": {
-        "tags": [
-          "WalletService"
-        ],
-        "operationId": "WalletService_CreateWallet",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/walletCreateWalletRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/walletCreateWalletResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
       }
     },
     "/api/v1/wallets/{id}": {
@@ -2998,19 +2968,19 @@
         }
       }
     },
-    "/api/v1/wallets:import": {
+    "/api/v1/wallets:batchCreate": {
       "post": {
         "tags": [
           "WalletService"
         ],
-        "operationId": "WalletService_ImportWallet",
+        "operationId": "WalletService_BatchCreateWallets",
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/walletImportWalletRequest"
+              "$ref": "#/definitions/walletBatchCreateWalletsRequest"
             }
           }
         ],
@@ -3018,7 +2988,39 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/walletImportWalletResponse"
+              "$ref": "#/definitions/walletBatchCreateWalletsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/wallets:batchImport": {
+      "post": {
+        "tags": [
+          "WalletService"
+        ],
+        "operationId": "WalletService_BatchImportWallets",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/walletBatchImportWalletsRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/walletBatchImportWalletsResponse"
             }
           },
           "default": {
@@ -8136,10 +8138,27 @@
         }
       }
     },
-    "walletCreateWalletRequest": {
+    "walletBatchCreateWalletResult": {
       "type": "object",
       "properties": {
+        "item": {
+          "$ref": "#/definitions/v1alpha1WalletItem"
+        },
+        "privateKey": {
+          "type": "string"
+        }
+      }
+    },
+    "walletBatchCreateWalletsRequest": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "description": "Number of wallets to create. The accepted range is 1 through 10.",
+          "type": "integer",
+          "format": "int32"
+        },
         "remark": {
+          "description": "A custom remark is accepted only when count is 1.",
           "type": "string"
         },
         "walletType": {
@@ -8150,43 +8169,51 @@
         }
       }
     },
-    "walletCreateWalletResponse": {
+    "walletBatchCreateWalletsResponse": {
       "type": "object",
       "properties": {
-        "item": {
-          "$ref": "#/definitions/v1alpha1WalletItem"
-        },
-        "privateKey": {
+        "results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/walletBatchCreateWalletResult"
+          }
+        }
+      }
+    },
+    "walletBatchImportWalletsRequest": {
+      "type": "object",
+      "properties": {
+        "remark": {
+          "description": "A custom remark is accepted only when exactly one private key is supplied.",
           "type": "string"
+        },
+        "walletType": {
+          "type": "string"
+        },
+        "privateKeys": {
+          "description": "Private keys are imported atomically in request order. The accepted size is 1 through 10.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "avatarPresetId": {
+          "type": "string"
+        }
+      }
+    },
+    "walletBatchImportWalletsResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1WalletItem"
+          }
         }
       }
     },
     "walletGetWalletResponse": {
-      "type": "object",
-      "properties": {
-        "item": {
-          "$ref": "#/definitions/v1alpha1WalletItem"
-        }
-      }
-    },
-    "walletImportWalletRequest": {
-      "type": "object",
-      "properties": {
-        "remark": {
-          "type": "string"
-        },
-        "walletType": {
-          "type": "string"
-        },
-        "privateKey": {
-          "type": "string"
-        },
-        "avatarPresetId": {
-          "type": "string"
-        }
-      }
-    },
-    "walletImportWalletResponse": {
       "type": "object",
       "properties": {
         "item": {
@@ -8807,6 +8834,18 @@
       "type": "object",
       "properties": {
         "allowed_action": {
+          "type": "string"
+        },
+        "batch_id": {
+          "type": "string"
+        },
+        "batch_item_state": {
+          "type": "string"
+        },
+        "batch_lock_reason_code": {
+          "type": "string"
+        },
+        "batch_state": {
           "type": "string"
         },
         "operation_id": {

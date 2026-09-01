@@ -158,10 +158,17 @@ func (s *Service) GetWallet(ctx context.Context, req *apiclient.GetWalletRequest
 	return &apiclient.GetWalletResponse{Item: record.ToItem()}, nil
 }
 
-func (s *Service) CreateWallet(ctx context.Context, req *apiclient.CreateWalletRequest) (*apiclient.CreateWalletResponse, error) {
+func (s *Service) BatchCreateWallets(ctx context.Context, req *apiclient.BatchCreateWalletsRequest) (*apiclient.BatchCreateWalletsResponse, error) {
+	if err := s.requireWalletBatchDependencies(); err != nil {
+		return nil, err
+	}
 	accountID, err := requireWalletRequester(req.GetRequesterAccountId())
 	if err != nil {
 		return nil, err
+	}
+	count := int(req.GetCount())
+	if !validWalletBatchSize(count) {
+		return nil, status.Errorf(codes.InvalidArgument, "count must be between 1 and %d", walletstore.MaxWalletBatchSize)
 	}
 	walletType, err := normalizeWalletType(req.GetWalletType())
 	if err != nil {
@@ -175,24 +182,57 @@ func (s *Service) CreateWallet(ctx context.Context, req *apiclient.CreateWalletR
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	material, err := createWalletKeyMaterial(walletType)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create wallet key: %v", err)
+	if err := validateWalletBatchRemark(count, remark); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	record, err := s.storeWalletMaterial(ctx, accountID, material, remark, avatarPresetID)
+
+	materials := make([]walletKeyMaterial, 0, count)
+	addressIndexes := make(map[string]int, count)
+	for index := 0; index < count; index++ {
+		material, err := createWalletKeyMaterial(walletType)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to create wallet item %d key: %v", index+1, err)
+		}
+		if previousIndex, ok := addressIndexes[material.addressKey]; ok {
+			return nil, status.Errorf(
+				codes.Internal,
+				"generated wallet items %d and %d have the same address",
+				previousIndex+1,
+				index+1,
+			)
+		}
+		addressIndexes[material.addressKey] = index
+		materials = append(materials, material)
+	}
+
+	records, err := s.storeWalletMaterials(ctx, accountID, materials, remark, avatarPresetID, "wallets")
 	if err != nil {
 		return nil, err
 	}
-	return &apiclient.CreateWalletResponse{
-		Item:       record.ToItem(),
-		PrivateKey: material.privateKey,
-	}, nil
+	if len(records) != len(materials) {
+		return nil, status.Error(codes.Internal, "stored wallet batch result count does not match request")
+	}
+	results := make([]*apiclient.BatchCreateWalletResult, 0, len(records))
+	for index, record := range records {
+		results = append(results, &apiclient.BatchCreateWalletResult{
+			Item:       record.ToItem(),
+			PrivateKey: materials[index].privateKey,
+		})
+	}
+	return &apiclient.BatchCreateWalletsResponse{Results: results}, nil
 }
 
-func (s *Service) ImportWallet(ctx context.Context, req *apiclient.ImportWalletRequest) (*apiclient.ImportWalletResponse, error) {
+func (s *Service) BatchImportWallets(ctx context.Context, req *apiclient.BatchImportWalletsRequest) (*apiclient.BatchImportWalletsResponse, error) {
+	if err := s.requireWalletBatchDependencies(); err != nil {
+		return nil, err
+	}
 	accountID, err := requireWalletRequester(req.GetRequesterAccountId())
 	if err != nil {
 		return nil, err
+	}
+	privateKeys := req.GetPrivateKeys()
+	if !validWalletBatchSize(len(privateKeys)) {
+		return nil, status.Errorf(codes.InvalidArgument, "privateKeys must contain between 1 and %d items", walletstore.MaxWalletBatchSize)
 	}
 	walletType, err := normalizeWalletType(req.GetWalletType())
 	if err != nil {
@@ -206,15 +246,41 @@ func (s *Service) ImportWallet(ctx context.Context, req *apiclient.ImportWalletR
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	material, err := importedWalletKeyMaterial(walletType, req.GetPrivateKey())
-	if err != nil {
+	if err := validateWalletBatchRemark(len(privateKeys), remark); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	record, err := s.storeWalletMaterial(ctx, accountID, material, remark, avatarPresetID)
+
+	materials := make([]walletKeyMaterial, 0, len(privateKeys))
+	addressIndexes := make(map[string]int, len(privateKeys))
+	for index, privateKey := range privateKeys {
+		material, err := importedWalletKeyMaterial(walletType, privateKey)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "privateKeys[%d]: %v", index, err)
+		}
+		if previousIndex, ok := addressIndexes[material.addressKey]; ok {
+			return nil, status.Errorf(
+				codes.InvalidArgument,
+				"privateKeys[%d] duplicates privateKeys[%d]",
+				index,
+				previousIndex,
+			)
+		}
+		addressIndexes[material.addressKey] = index
+		materials = append(materials, material)
+	}
+
+	records, err := s.storeWalletMaterials(ctx, accountID, materials, remark, avatarPresetID, "privateKeys")
 	if err != nil {
 		return nil, err
 	}
-	return &apiclient.ImportWalletResponse{Item: record.ToItem()}, nil
+	if len(records) != len(materials) {
+		return nil, status.Error(codes.Internal, "stored wallet batch result count does not match request")
+	}
+	items := make([]*v1alpha1.WalletItem, 0, len(records))
+	for _, record := range records {
+		items = append(items, record.ToItem())
+	}
+	return &apiclient.BatchImportWalletsResponse{Items: items}, nil
 }
 
 func (s *Service) UpdateWalletRemark(ctx context.Context, req *apiclient.UpdateWalletRemarkRequest) (*apiclient.UpdateWalletRemarkResponse, error) {
@@ -460,34 +526,78 @@ func (s *Service) walletRecord(ctx context.Context, id int64, requesterAccountID
 	return record, nil
 }
 
-func (s *Service) storeWalletMaterial(ctx context.Context, ownerAccountID string, material walletKeyMaterial, remark, avatarPresetID string) (*walletstore.WalletRecord, error) {
+func (s *Service) requireWalletBatchDependencies() error {
 	if s.store == nil {
-		return nil, status.Error(codes.FailedPrecondition, "wallet store is required")
+		return status.Error(codes.FailedPrecondition, "wallet store is required")
 	}
 	if len(s.encryptionKey) == 0 {
-		return nil, status.Error(codes.FailedPrecondition, "wallet encryption key is required")
+		return status.Error(codes.FailedPrecondition, "wallet encryption key is required")
 	}
-	privateKeyCiphertext, err := utilcrypto.Encrypt([]byte(material.privateKey), s.encryptionKey)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to encrypt private key: %v", err)
-	}
-	record, err := s.store.CreateWallet(ctx, walletstore.CreateWalletRecordRequest{
-		OwnerAccountID:       ownerAccountID,
-		WalletType:           material.walletType,
-		Address:              material.address,
-		AddressKey:           material.addressKey,
-		Remark:               remark,
-		Source:               material.source,
-		PrivateKeyCiphertext: privateKeyCiphertext,
-		AvatarPresetID:       avatarPresetID,
-	})
-	if err != nil {
-		if errors.Is(err, walletstore.ErrWalletAlreadyExists) {
-			return nil, status.Errorf(codes.AlreadyExists, "%s wallet %s already exists", material.walletType, material.address)
+	return nil
+}
+
+func (s *Service) storeWalletMaterials(
+	ctx context.Context,
+	ownerAccountID string,
+	materials []walletKeyMaterial,
+	remark string,
+	avatarPresetID string,
+	itemField string,
+) ([]*walletstore.WalletRecord, error) {
+	requests := make([]walletstore.CreateWalletRecordRequest, 0, len(materials))
+	defer func() {
+		for index := range requests {
+			clear(requests[index].PrivateKeyCiphertext)
 		}
-		return nil, status.Errorf(codes.Internal, "failed to store wallet: %v", err)
+	}()
+	for index, material := range materials {
+		privateKeyBytes := []byte(material.privateKey)
+		privateKeyCiphertext, err := utilcrypto.Encrypt(privateKeyBytes, s.encryptionKey)
+		clear(privateKeyBytes)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to encrypt %s[%d]", itemField, index)
+		}
+		requests = append(requests, walletstore.CreateWalletRecordRequest{
+			OwnerAccountID:       ownerAccountID,
+			WalletType:           material.walletType,
+			Address:              material.address,
+			AddressKey:           material.addressKey,
+			Remark:               remark,
+			Source:               material.source,
+			PrivateKeyCiphertext: privateKeyCiphertext,
+			AvatarPresetID:       avatarPresetID,
+		})
 	}
-	return record, nil
+	records, err := s.store.CreateWallets(ctx, requests)
+	if err != nil {
+		return nil, walletBatchStoreError(itemField, err)
+	}
+	return records, nil
+}
+
+func validWalletBatchSize(size int) bool {
+	return size >= 1 && size <= walletstore.MaxWalletBatchSize
+}
+
+func validateWalletBatchRemark(size int, remark string) error {
+	if size > 1 && remark != "" {
+		return errors.New("remark must be empty when the batch contains more than one wallet")
+	}
+	return nil
+}
+
+func walletBatchStoreError(itemField string, err error) error {
+	var itemError *walletstore.WalletBatchItemError
+	if errors.As(err, &itemError) {
+		if errors.Is(itemError, walletstore.ErrWalletAlreadyExists) {
+			return status.Errorf(codes.AlreadyExists, "%s[%d] already belongs to an existing wallet", itemField, itemError.Index)
+		}
+		return status.Errorf(codes.Internal, "failed to store %s[%d]", itemField, itemError.Index)
+	}
+	if errors.Is(err, walletstore.ErrWalletAlreadyExists) {
+		return status.Error(codes.AlreadyExists, "wallet batch conflicts with an existing wallet")
+	}
+	return status.Error(codes.Internal, "failed to store wallet batch")
 }
 
 func requireWalletRequester(accountID string) (string, error) {
