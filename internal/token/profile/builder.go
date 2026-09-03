@@ -21,7 +21,7 @@ func Build(input BuildInput, builtAt time.Time) (ProjectProfile, error) {
 	if builtAt.IsZero() {
 		return ProjectProfile{}, fmt.Errorf("project profile requires a build time")
 	}
-	builtAt = builtAt.UTC()
+	builtAt = normalizeProfileTime(builtAt)
 	indexed, err := validateBuildInput(input)
 	if err != nil {
 		return ProjectProfile{}, err
@@ -192,7 +192,7 @@ func validateBuildInput(input BuildInput) (indexedBuildInput, error) {
 				return indexedBuildInput{}, fmt.Errorf("project %d succeeded collection task %s is missing its result", input.Project.ID, dataType)
 			}
 			hash := result.ContentHash
-			collectedAt := result.CollectedAt.UTC()
+			collectedAt := normalizeProfileTime(result.CollectedAt)
 			evidence.ResultSchemaVersion = result.SchemaVersion
 			evidence.ResultContentHash = &hash
 			evidence.BlockNumber = cloneUint64(result.BlockNumber)
@@ -265,8 +265,8 @@ func applyAve(target *ProjectProfileV1, project ProjectSnapshot, result collecti
 		TVLUSD:            cloneDecimal(value.Token.TVL),
 		MainPairTVLUSD:    cloneDecimal(value.Token.MainPairTVL),
 		Holders:           int64(value.Token.Holders),
-		LaunchAt:          utcTimePtr(value.Token.LaunchAt),
-		ProviderUpdatedAt: utcTimePtr(value.Token.UpdatedAt),
+		LaunchAt:          normalizeOptionalProfileTime(value.Token.LaunchAt),
+		ProviderUpdatedAt: normalizeOptionalProfileTime(value.Token.UpdatedAt),
 		AveRisk: AveRiskProfileV1{
 			RiskLevel:             value.AveRisk.RiskLevel,
 			RiskScore:             cloneDecimal(value.AveRisk.RiskScore),
@@ -303,7 +303,7 @@ func applyAve(target *ProjectProfileV1, project ProjectSnapshot, result collecti
 			Token1Symbol: strings.TrimSpace(pair.Token1Symbol), Reserve0: cloneDecimal(pair.Reserve0),
 			Reserve1: cloneDecimal(pair.Reserve1), VolumeUSD: cloneDecimal(pair.VolumeUSD),
 			MarketCapUSD: cloneDecimal(pair.MarketCap), FDVUSD: cloneDecimal(pair.FDV), IsFake: pair.IsFake,
-			CreatedAt: utcTimePtr(pair.CreatedAt), UpdatedAt: utcTimePtr(pair.UpdatedAt),
+			CreatedAt: normalizeOptionalProfileTime(pair.CreatedAt), UpdatedAt: normalizeOptionalProfileTime(pair.UpdatedAt),
 		}
 	}
 	if market, ok := markets[project.WrappedNativePair]; ok {
@@ -630,11 +630,15 @@ func cloneUint64(value *uint64) *uint64 {
 	return &copy
 }
 
-func utcTimePtr(value *time.Time) *time.Time {
+func normalizeProfileTime(value time.Time) time.Time {
+	return value.UTC().Truncate(time.Microsecond)
+}
+
+func normalizeOptionalProfileTime(value *time.Time) *time.Time {
 	if value == nil {
 		return nil
 	}
-	copy := value.UTC()
+	copy := normalizeProfileTime(*value)
 	return &copy
 }
 

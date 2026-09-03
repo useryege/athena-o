@@ -78,9 +78,12 @@ RPC and HTTP calls run outside transactions.
    inserts the project's unique profile build task with conflict ignored.
 8. The Profile Builder claims one task with the same 90-second lease and
    30-second heartbeat, loads only persisted inputs, and builds a canonical V1
-   profile. The successful assembly time is included as `builtAt` in the
-   immutable profile content. All-success evidence yields
-   `complete`; any failed source yields `incomplete` with its data types.
+   profile. Every `time.Time` value in the immutable profile is normalized to
+   UTC and truncated to microsecond precision before JSON encoding and hashing.
+   The successful assembly time is included as `builtAt`; its JSON value and
+   `TIMESTAMPTZ` projection therefore compare exactly after a database round
+   trip. All-success evidence yields `complete`; any failed source yields
+   `incomplete` with its data types.
 9. Profile insertion and build-task completion share one fenced transaction.
    Replaying the completed generation with an equal hash is idempotent success;
    a different hash is an integrity failure. Build failures retry after one and
