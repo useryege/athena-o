@@ -8,7 +8,7 @@ import (
 
 type Service struct {
 	apiclient.UnimplementedTokenCatalogServiceServer
-	apiclient.UnimplementedTokenResearchServiceServer
+	apiclient.UnimplementedTokenCollectionServiceServer
 	apiclient.UnimplementedTokenPolicyServiceServer
 	apiclient.UnimplementedTokenOperationsServiceServer
 	applications Applications
@@ -41,14 +41,11 @@ func requiredApplication[T any](application T, configured bool) (T, error) {
 func (s *Service) catalogApplication() (CatalogApplication, error) {
 	return requiredApplication(s.applications.Catalog, s.applications.Catalog != nil)
 }
-func (s *Service) researchApplication() (ResearchApplication, error) {
-	return requiredApplication(s.applications.Research, s.applications.Research != nil)
+func (s *Service) collectionApplication() (CollectionApplication, error) {
+	return requiredApplication(s.applications.Collection, s.applications.Collection != nil)
 }
-func (s *Service) reportingApplication() (ReportingApplication, error) {
-	return requiredApplication(s.applications.Reporting, s.applications.Reporting != nil)
-}
-func (s *Service) selectionApplication() (SelectionApplication, error) {
-	return requiredApplication(s.applications.Selection, s.applications.Selection != nil)
+func (s *Service) profileApplication() (ProfileApplication, error) {
+	return requiredApplication(s.applications.Profile, s.applications.Profile != nil)
 }
 func (s *Service) projectViewApplication() (ProjectViewApplication, error) {
 	return requiredApplication(s.applications.ProjectView, s.applications.ProjectView != nil)

@@ -1,6 +1,6 @@
 -- Chain block processing attempt audit and read model.
 -- name: LockChainProcessingCheckpoint :one
-SELECT cursor_block_number, updated_at
+SELECT *
 FROM chain_processing_checkpoint
 WHERE chain_id = @chain_id
 FOR UPDATE;
@@ -57,7 +57,6 @@ SET block_time = sqlc.narg('block_time')::bigint,
   candidate_count = sqlc.narg('candidate_count')::int,
   validated_count = sqlc.narg('validated_count')::int,
   rejected_count = sqlc.narg('rejected_count')::int,
-  expired_research_state_count = sqlc.narg('expired_research_state_count')::bigint,
   timing_complete = @timing_complete,
   completed_at = now(),
   updated_at = now()

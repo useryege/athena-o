@@ -29,7 +29,7 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: UpdateContractCodeSource :one
 UPDATE contract_code
-SET source_code = sqlc.narg('source_code')::text,
+SET source_code = COALESCE(contract_code.source_code, sqlc.narg('source_code')::text),
   source_code_fetched_at = sqlc.narg('source_code_fetched_at')::timestamptz
 WHERE code_hash = @code_hash
 RETURNING *;

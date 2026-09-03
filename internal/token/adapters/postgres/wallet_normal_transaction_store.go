@@ -6,7 +6,7 @@ import (
 	"time"
 
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
-	"github.com/useryege/athena/internal/token/research"
+	"github.com/useryege/athena/internal/token/collection"
 )
 
 func insertWalletNormalTransactions(
@@ -14,7 +14,7 @@ func insertWalletNormalTransactions(
 	queries *tokensqlc.Queries,
 	projectID int64,
 	collectedAt time.Time,
-	transactions []research.WalletNormalTransaction,
+	transactions []collection.WalletNormalTransaction,
 ) error {
 	for index, transaction := range transactions {
 		blockNumber, err := uint64ToInt64("block_number", transaction.BlockNumber)

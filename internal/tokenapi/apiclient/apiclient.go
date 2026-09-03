@@ -14,7 +14,7 @@ var MaxGRPCMessageSize = env.ParseNumFromEnv(common.EnvGRPCMaxSizeMB, 100, 0, ma
 
 type Clientset interface {
 	Catalog() TokenCatalogServiceClient
-	Research() TokenResearchServiceClient
+	Collection() TokenCollectionServiceClient
 	Policy() TokenPolicyServiceClient
 	Operations() TokenOperationsServiceClient
 	CheckHealth(context.Context) (grpc_health_v1.HealthCheckResponse_ServingStatus, error)
@@ -24,7 +24,7 @@ type Clientset interface {
 type clientSet struct {
 	connection *utilgrpc.ClientConnection
 	catalog    TokenCatalogServiceClient
-	research   TokenResearchServiceClient
+	collection TokenCollectionServiceClient
 	policy     TokenPolicyServiceClient
 	operations TokenOperationsServiceClient
 }
@@ -38,7 +38,7 @@ func NewTokenAPIClientset(address string) (Clientset, error) {
 	return &clientSet{
 		connection: connection,
 		catalog:    NewTokenCatalogServiceClient(conn),
-		research:   NewTokenResearchServiceClient(conn),
+		collection: NewTokenCollectionServiceClient(conn),
 		policy:     NewTokenPolicyServiceClient(conn),
 		operations: NewTokenOperationsServiceClient(conn),
 	}, nil
@@ -48,8 +48,8 @@ func (c *clientSet) Catalog() TokenCatalogServiceClient {
 	return c.catalog
 }
 
-func (c *clientSet) Research() TokenResearchServiceClient {
-	return c.research
+func (c *clientSet) Collection() TokenCollectionServiceClient {
+	return c.collection
 }
 
 func (c *clientSet) Policy() TokenPolicyServiceClient {

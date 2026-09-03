@@ -2,535 +2,145 @@
 
 ## Scope
 
-This capability exposes the project-centered Token Intelligence read surface and
-renders it in the ATHENA UI. It owns the unified paginated project list, its
-current research, Report, Evaluation, and trusted Selection projection, the
-aggregate project-detail snapshot, metric trends, paginated histories, and
-pre-deployment wallet transaction reads. It also exposes independent WETH and
-USDT Swap activity summaries plus paginated events for one sampled block. The
-capability owns the Projects page's single grouped list and the project detail
-page's polling, manual-refresh, lazy-loading, and return-navigation
-behavior. It also owns the Projects page's tab-local stale-while-revalidate
-cache so a detail round trip can reuse the last successful list snapshot.
-
-Project discovery, collection scheduling and execution, observation writes,
-report construction, selection decisions, contract-source acquisition, and
-transaction ingestion remain owned by their existing subsystems. The project
-read model only composes their committed state.
+The Token project read model exposes validated projects, their six-source
+collection progress, one immutable ProjectProfile, contract source, related
+wallets, bounded pre-deployment transactions, and independent Swap activity.
+It owns list filtering and projection, project-detail assembly, public Token
+API mapping, and the member UI's Token pages. It does not schedule work or call
+external market, explorer, or chain providers.
 
 ## Source Locations
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| Read-model types and query logic | [`internal/token/projectview/model.go`](../../../internal/token/projectview/model.go), [`internal/token/projectview/application/queries.go`](../../../internal/token/projectview/application/queries.go) | `ProjectListFilter`, `ProjectListPairFilter`, `ProjectListItem`, `ProjectReportSummary`, `Detail`, `SwapActivity`, `TrendResult`, `Queries` |
-| PostgreSQL composition | [`internal/token/adapters/postgres/project_list_view_store.go`](../../../internal/token/adapters/postgres/project_list_view_store.go), [`internal/token/adapters/postgres/project_view_store.go`](../../../internal/token/adapters/postgres/project_view_store.go), [`internal/token/adapters/postgres/project_swap_view_store.go`](../../../internal/token/adapters/postgres/project_swap_view_store.go) | `ProjectViewRepository`, `ListProjectsPage`, `GetProjectDetail`, `GetProjectSwapActivity`, `ListProjectSwapEventsPage` |
-| SQL queries | [`internal/token/adapters/postgres/queries/project_view.sql`](../../../internal/token/adapters/postgres/queries/project_view.sql), [`internal/token/adapters/postgres/queries/project_observation.sql`](../../../internal/token/adapters/postgres/queries/project_observation.sql), [`internal/token/adapters/postgres/queries/project_data_collection_schedule.sql`](../../../internal/token/adapters/postgres/queries/project_data_collection_schedule.sql), [`internal/token/adapters/postgres/queries/project_wallet_normal_transaction.sql`](../../../internal/token/adapters/postgres/queries/project_wallet_normal_transaction.sql), [`internal/token/adapters/postgres/queries/project_swap_view.sql`](../../../internal/token/adapters/postgres/queries/project_swap_view.sql) | unified project page, trend, history, Swap aggregate, and Swap event queries |
-| Fixed Swap assets | [`internal/token/chainregistry/registry.go`](../../../internal/token/chainregistry/registry.go) | `AssetMetadata`, `ChainAssets`, `FixedAssets` |
-| Token API application boundary | [`internal/tokenapi/project_service.go`](../../../internal/tokenapi/project_service.go), [`internal/tokenapi/project_detail_service.go`](../../../internal/tokenapi/project_detail_service.go), [`internal/tokenapi/helpers.go`](../../../internal/tokenapi/helpers.go) | `ListProjects`, `GetProjectDetail`, `GetProjectSwapActivity`, `ListProjectSwapEvents`, project-view mappers |
-| Public HTTP and authorization boundary | [`internal/server/tokenapi/catalog.proto`](../../../internal/server/tokenapi/catalog.proto), [`internal/server/tokenapi/tokenapi.go`](../../../internal/server/tokenapi/tokenapi.go), [`internal/server/authz.go`](../../../internal/server/authz.go) | project HTTP bindings, proxy methods, `moduleGRPCRules`, `ModuleToken`, and `authorizeGRPC` |
-| Public data contract | [`pkg/apis/application/v1alpha1/tokenapi_types.go`](../../../pkg/apis/application/v1alpha1/tokenapi_types.go) | `TokenProjectListItem`, `TokenProjectReportSummary`, `TokenProjectPairRiskSummary`, `TokenProjectDetail`, `TokenReportRevision`, `TokenProjectSwapActivity` |
-| UI data client | [`ui/src/app/shared/services/token-service.ts`](../../../ui/src/app/shared/services/token-service.ts) | `listProjects`, `getProjectDetail`, `listReportRevisions`, `getProjectSwapActivity` |
-| UI pages and visualizations | [`ui/src/app/member/pages/projects.tsx`](../../../ui/src/app/member/pages/projects.tsx), [`ui/src/app/member/pages/projects-filters-modal.tsx`](../../../ui/src/app/member/pages/projects-filters-modal.tsx), [`ui/src/app/member/pages/project-detail.tsx`](../../../ui/src/app/member/pages/project-detail.tsx), [`ui/src/app/member/pages/project-report-tab.tsx`](../../../ui/src/app/member/pages/project-report-tab.tsx), [`ui/src/app/member/pages/project-detail-chart.tsx`](../../../ui/src/app/member/pages/project-detail-chart.tsx), [`ui/src/app/member/pages/project-swap-activity.tsx`](../../../ui/src/app/member/pages/project-swap-activity.tsx) | `ProjectsPage`, `ProjectsFiltersModal`, `ProjectDetailPage`, `ProjectReportTab`, `ProjectTrendChart`, `ProjectSwapActivityTab` |
-| UI request cache and return context | [`ui/src/app/components/data.ts`](../../../ui/src/app/components/data.ts), [`ui/src/app/member/pages/project-navigation.tsx`](../../../ui/src/app/member/pages/project-navigation.tsx) | `useCachedAsyncData`, `clearAsyncDataCache`, Projects return snapshots |
-| Shared detail values | [`ui/src/app/member/pages/project-detail-values.tsx`](../../../ui/src/app/member/pages/project-detail-values.tsx) | `ProjectTimeValue`, `ProjectExplorerValue`, `ProjectExactValue`, `ProjectRawTokenAmount` |
+| Read-domain models | [internal/token/projectview/model.go](../../../internal/token/projectview/model.go) | `ProjectListItem`, `ProjectListFilter`, `Detail` |
+| Application queries | [internal/token/projectview/application/queries.go](../../../internal/token/projectview/application/queries.go) | `Queries` |
+| PostgreSQL projection | [internal/token/adapters/postgres/project_list_view_store.go](../../../internal/token/adapters/postgres/project_list_view_store.go), [internal/token/adapters/postgres/project_view_store.go](../../../internal/token/adapters/postgres/project_view_store.go) | `ListProjectsPage`, `GetProjectDetail` |
+| Profile read application | [internal/token/profile/application/queries.go](../../../internal/token/profile/application/queries.go) | `Queries.GetProjectProfile` |
+| API handlers and mapping | [internal/tokenapi/project_service.go](../../../internal/tokenapi/project_service.go), [internal/tokenapi/project_detail_service.go](../../../internal/tokenapi/project_detail_service.go), [internal/tokenapi/helpers.go](../../../internal/tokenapi/helpers.go) | `ListProjects`, `GetProjectDetail`, `GetProjectProfile` |
+| Collection API | [internal/tokenapi/project_data_collection_task_service.go](../../../internal/tokenapi/project_data_collection_task_service.go) | `GetCollectionTask`, `ListCollectionTasks` |
+| Public contracts | [internal/server/tokenapi/catalog.proto](../../../internal/server/tokenapi/catalog.proto), [internal/server/tokenapi/collection.proto](../../../internal/server/tokenapi/collection.proto), [internal/server/tokenapi/types.proto](../../../internal/server/tokenapi/types.proto) | `TokenCatalogService`, `TokenCollectionService` |
+| Shared API types | [pkg/apis/application/v1alpha1/tokenapi_types.go](../../../pkg/apis/application/v1alpha1/tokenapi_types.go) | `TokenProjectListItem`, `TokenProjectDetail`, `TokenProjectProfile`, `TokenCollectionTask` |
+| Member UI | [ui/src/app/member/pages](../../../ui/src/app/member/pages), [ui/src/app/shared/services/token-service.ts](../../../ui/src/app/shared/services/token-service.ts) | project list/detail and collection-task pages, `tokenService` |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    UI["Projects and project detail UI"] --> GW["Server HTTP gateway"]
-    GW --> API["Token API service"]
-    API --> Q["Project-view queries"]
-    Q --> PG["Token PostgreSQL"]
-    API --> DTO["Public project read types"]
-    DTO --> UI
+    DB["Token PostgreSQL"] --> PV["projectview repositories"]
+    DB --> PQ["profile queries"]
+    DB --> CQ["collection queries"]
+    PV --> API["TokenCatalogService"]
+    PQ --> API
+    CQ --> CA["TokenCollectionService"]
+    API --> GW["public gRPC/HTTP gateway"]
+    CA --> GW
+    GW --> UI["member Token UI"]
 ```
 
-The server exposes one paginated project collection read and six project-scoped
-reads:
-
-- `GET /api/v1/tokens/projects` returns one filtered project page with its
-  current Report and Evaluation projection.
-- `GET /api/v1/tokens/projects/{project_id}` returns the current aggregate.
-- `GET /api/v1/tokens/projects/{project_id}/trends` returns typed metric series.
-- `GET /api/v1/tokens/projects/{project_id}/observations` returns one filtered
-  observation-history page.
-- `GET /api/v1/tokens/projects/{project_id}/wallet-normal-transactions` returns
-  one filtered transaction page.
-- `GET /api/v1/tokens/projects/{project_id}/swap-activity` returns both Pair
-  targets and at most 100 sampled blocks for each target.
-- `GET /api/v1/tokens/projects/{project_id}/swap-pairs/{pair_kind}/blocks/{block_number}/events`
-  returns one sampled block's decoded events in transaction and log order.
-
-All seven methods require Token module `READ`. Report revision, Selection, and
-collection-task history retain their existing endpoints and use the same Token
-level. There are no project-specific or history-specific grants.
-
-`ProjectViewRepository` is a read adapter over the existing SQLC query set. It
-returns domain models rather than API types. Project pagination belongs to this
-aggregate instead of `catalog`; `catalog.Project` continues to represent only
-the project entity. The Token API mapper decodes the five current observation
-payloads into typed snapshot sections and preserves the observation metadata and
-raw JSON for history consumers.
+List reads use denormalized profile columns for market and pair summaries, so
+they do not decode profile JSON per row. Detail reads assemble canonical
+project data, the optional single profile, six task details, related wallets,
+initial recipients, per-wallet transaction association counts, and the
+distinct transaction-hash total. Full normalized result payloads are returned
+by the single collection-task endpoint.
 
 ## Runtime Flow
 
-### Unified project page
-
-1. The UI requests one page through `ListProjects`. Accepted filters are chain,
-   project ID, contract, code hash, research status, Report state, Evaluation
-   status, trusted Selection outcome, and independent WETH/WBNB and USDT Report
-   Pair filters for Remove Liquidity, Mint, and Quote USDT. Empty strings and
-   empty state lists mean no filter; the API rejects values outside the public
-   status sets before querying PostgreSQL.
-2. `ProjectViewRepository.ListProjectsPage` opens a read-only, repeatable-read
-   transaction. `CountProjectListItems` and `ListProjectListItems` execute with
-   identical filters inside that transaction, so `total` and rows describe the
-   same committed snapshot.
-3. The query starts from `project` and uses one-to-zero-or-one `LEFT JOIN`s to
-   `project_research_state`, its `current_report_revision`, the Evaluation task
-   for that exact Report revision, `current_selection_id`, and the current Ave
-   observation. A schema-V1 Ave observation contributes only its
-   `token.logoUrl` projection. Every project remains eligible for the page even
-   when it has no research state, Report, or Ave observation.
-   The Evaluation join is one-to-one because
-   `(project_id, report_revision)` is unique.
-4. A Selection outcome is current and trustworthy only when the joined task is
-   `succeeded`, `last_evaluated_report_revision` equals the current Report
-   revision, and `current_selection_id` resolves to a Selection owned by the
-   project. The Selection row's own `report_revision` is intentionally not
-   compared: a repeated decision can reuse an older Selection row while the
-   research state atomically records that the current Report was evaluated.
-   Pending, running, and failed tasks therefore expose no old outcome.
-5. `report_state=none`, `evaluation_status=none`, and
-   `selection_outcome=none` match missing current state rather than a stored
-   literal. Report Pair boolean filters accept `detected`, `clear`,
-   `no_report`, and `risk_unavailable`; Quote accepts inclusive non-negative
-   integer bounds plus the two missing states. States within one field are ORed,
-   the numeric range is ORed with selected Quote missing states, and the three
-   fields within one Pair are ANDed. The WETH/WBNB and USDT filter groups are
-   also ANDed, so a row must satisfy both non-empty groups. `no_report` requires
-   no current Report, while `risk_unavailable` requires a Report whose selected
-   Pair projection is absent. All other status filters are exact. Rows are ordered by
-   `project.created_at DESC, project.id DESC`.
-6. Each WETH/WBNB or USDT Pair risk projection is independently either absent
-   or contains all five fields. The outer risk summary is absent only when both
-   Pair projections are absent. A partially populated Pair fails the read as a
-   storage invariant error instead of mapping database `NULL` to a safe-looking
-   boolean or zero. Quote projections must be finite exact integers; `NaN`,
-   infinity, or fractional values fail the read. Valid quote values cross the
-   API boundary as decimal integer strings.
-
-The Projects page renders one row per project. The list response uses a
-lightweight flat project identity instead of embedding the complete
-`TokenProject`: project ID, chain ID, name, symbol, deployment block time,
-project creation time, logo, research status, and current Report are the only
-list fields. Contract and code hash remain accepted request filters and
-PostgreSQL predicates but are not returned in list items.
-
-The desktop table fixes Logo and Project on the left and groups the remaining
-columns under Overview, Report Status, WETH/WBNB, and USDT headers. Overview
-contains Chain, Block Time, and Created; Report Status contains Research,
-Report, Evaluation, and trusted Selection; each Pair contains Created, Remove
-Liquidity, Mint, Quote USDT, and Last Swap. The UI converts the authoritative
-deployment-block Unix seconds and all other timestamps to Beijing time. The
-table preserves the server's deterministic order and exposes no presentation-
-only or current-page sort controls.
-
-At widths up to 1100 pixels, the table becomes one semantic card per project.
-Every card contains Overview, Report Status, WETH/WBNB, and USDT without a view
-switch or collapsed section. The two Pair panels are side by side until 768
-pixels and stack below that breakpoint. The Ave logo remains first in the table
-and card title, is 32 pixels square, and falls back to the project symbol or `?`
-when the observation has no URL or the browser cannot load it.
-
-All global and Pair filters are edited as one draft in a centered `Filters`
-modal with General, WETH/WBNB, and USDT tabs. Applying commits every filter to
-the URL atomically and returns to page one; closing discards the draft. Both
-Pair groups always enter the list request, cache identity, active count, and
-removable toolbar summaries. Clearing filters preserves page size and removes
-the global and both Pair groups. The canonical URL contains only filter and
-pagination state; presentation and sort state are not encoded.
-
-The Projects list uses an opt-in, tab-local stale-while-revalidate cache. Its
-key contains only the server request fields: page, page size, chain, project,
-contract, code hash, research status, Report state, Evaluation status, trusted
-Selection outcome, and both Pair filter groups.
-A successful list response is fresh for 30 seconds. A fresh hit
-renders synchronously without a request; a stale hit keeps its rows, total, and
-paginator visible while one deduplicated request refreshes the key in the
-background. Runtime configuration uses the same mechanism with a fixed key and
-a five-minute fresh window. An explicit Refresh forces both reads.
-
-The cache retains at most 20 inactive least-recently-used entries and has no
-durable backing. A background failure preserves the last successful snapshot
-and exposes the error without applying the table or compact-card loading mask.
-Login-session boundaries clear every entry. Requests are shared per key,
-cancelled after the final subscriber leaves, and guarded so cancelled or
-cleared requests cannot write late results into a new cache generation.
-
-### Current snapshot
-
-1. The UI enters `/token/projects/:projectID` after navigation from the Projects
-   table or card. A normal same-tab detail link records the exact list URL,
-   router history-entry key, a per-navigation return marker, and document
-   scroll position before navigation.
-2. The server validates a positive project ID and queries the project. A missing
-   row becomes a successful `found: false` response.
-3. The read adapter composes the current research state, current Report, the
-   Evaluation task for that exact Report revision, `current_selection_id`, five
-   current observation pointers, related wallets, initial recipients,
-   collection schedules, per-wallet transaction counts, and the project-wide
-   transaction count. The same trusted-outcome rules used by the list apply to
-   the detail Evaluation summary.
-4. The API mapper exposes the project identity, its deployment transaction
-   nonce, and typed observation content, including the Ave token `logoUrl`.
-   `TokenResearchState` exposes the deployment block as the attention start,
-   the fixed chain-time deadline, and the actual expiry block position when the
-   state is `expired`; all block times cross the boundary as Unix seconds.
-   Collection schedules expose
-   `retryIntervalSecs`, their terminal status, and `nextRunAt` only while
-   another attempt remains possible. Integer and decimal values that may exceed
-   JavaScript precision remain strings.
-5. While the document is visible, the UI reloads only this current snapshot
-   every 30 seconds. Returning to a visible document triggers an immediate
-   snapshot reload.
-6. The Market tab matches Ave pairs to the project's canonical wrapped-native
-   and USDT pair addresses. It displays one pair detail card at a time, defaults
-   to wrapped native, and falls back to USDT when the wrapped-native pair is
-   absent. Unavailable pair choices are disabled.
-
-The detail page's Back action uses browser history when the location contains a
-validated Projects source; a direct detail entry falls back to
-`/token/projects`. Browser Back follows the same history path. On the resulting
-POP navigation, the Projects page restores the recorded document scroll only
-after the matching list response has rendered. The return snapshot is isolated
-by history-entry key and a marker stored on that exact browser history entry,
-must match the exact pathname and query, and is consumed after restoration.
-This prevents React Router's reusable initial `default` key from matching a
-later full-page entry. Filter, pagination, view, section, and canonicalization
-PUSH/REPLACE navigation never applies an old scroll snapshot. The snapshot is
-stored in tab-scoped `sessionStorage`; project business data remains in memory
-only.
-
-The detail tabs are ordered `Overview`, `Report`, `Market & Liquidity`, `Swap
-Activity`, `Wallets`, `Transactions`, `Contract`, and `Research`. The Report tab
-uses only the current Report's stored risk snapshot; it never substitutes the
-newer live `chainState` observation. Wrapped-native labels come from chain
-metadata, so BSC presents WBNB while the internal Pair kind remains `weth`.
-
-The Overview deployment summary shows Contract and Deployment tx, Deployer and
-Block, Deployer nonce and Block time, Total asset value (USDT) and Report
-freshness, then Code hash and Project created. The nonce is the immutable nonce
-of the contract-creation transaction, not the Deployer account's latest nonce.
-The total asset value matches the Deployer address case-insensitively against
-the current `wallet_asset_state` observation and uses the same USDT-decimal
-formatting as the Wallets tab; an absent observation renders `Not collected`.
-The stored transaction index remains part of project identity and ordering but
-is not displayed in this summary.
-
-The detail identity heading renders the current Ave logo at 52 pixels square.
-It retains the existing symbol tile as the fallback when the URL is missing or
-the browser image request fails. The UI loads vendor URLs directly without an
-image proxy or local cache and suppresses the page URL as the request referrer.
-
-The Research lifecycle summary displays status, report and Selection context,
-then the attention start block and time, chain-time deadline, and actual expiry
-block and time. The UI converts Unix seconds for presentation only. A
-non-expired state renders the two actual-expiry values as `Not expired`; browser
-or server wall-clock time never changes lifecycle status.
-
-The Wallets tab merges roles, initial-recipient allocation, current asset
-balances, pre-deployment transaction counts, and simulation results by wallet.
-It renders every wallet as a fully expanded semantic profile card instead of a
-horizontally scrolling table. Cards are displayed in two columns at viewport
-widths of 1440 pixels and above and in one column below that breakpoint; their
-field grids collapse to one column below 768 pixels. The Assets section displays
-native, wrapped-native, and USDT balances separately, followed by `Total asset
-value (USDT)`. The corresponding `totalAssetUsdtValue` API field is their
-aggregate USDT-denominated value, not the wallet's USDT balance or the value of
-untracked token holdings.
-
-The Transactions tab renders a compact explorer-style table at viewport widths
-of 1440 pixels and above. Transaction hashes and wallet addresses retain their
-first ten and last six characters in the visible row while their exact values
-remain available through tooltips, copy actions, and block-explorer links. The
-primary row shows transaction hash, method, block, relative age, associated
-wallet, sender, recipient, native value, and receipt status. Transaction index,
-nonce, the complete function signature, method ID, gas values, input, and
-collection time remain in the expandable technical details. Below 1440 pixels,
-the same paginated rows render as one transaction profile card per row with the
-same technical details in a collapsible section; neither projection uses
-horizontal scrolling.
-
-The Report tab's Revision History renders a fixed-layout comparison table at
-viewport widths of 1440 pixels and above. Each row keeps revision metadata and
-JSON actions as dedicated columns, combines Built and Created into one vertical
-Times cell, and renders each Pair's Created, Remove LP, Mint, Quote USDT, and
-Last swap values as one complete vertical summary. Content hashes remain
-copyable and use a single-line visual truncation. Below 1440 pixels, the same
-paginated revisions render as complete profile cards; the two Pair snapshots
-remain side by side until the existing 900-pixel compact layout stacks them.
-Neither projection uses horizontal scrolling.
-
-The aggregate consists of independent read queries and is not a
-transaction-level database snapshot. Each returned entity is committed state,
-but a collection or report transition can become visible between component
-queries.
-
-The collection summary renders `failed` as an error state, labels the configured
-delay as `Retry interval`, and displays `Next attempt` only for active schedules.
-
-### Trends and history
-
-1. A tab performs its first request only when the tab is opened.
-2. Trend range defaults to `24h`; accepted ranges are `1h`, `6h`, `24h`, and
-   `7d`.
-3. Trend queries read Ave and chain-state observations from the start of the
-   range, decode V1 payloads, sort each metric by observation time, and preserve
-   the original decimal string in every point.
-4. A series with more than 500 points is reduced with Largest-Triangle-Three-
-   Buckets. The first and last points are always retained.
-5. Observation and wallet-transaction endpoints apply their filters before
-   pagination. Transactions are ordered by block number and transaction
-   position descending.
-6. Report, selection, task, observation, source, trend, and transaction history
-   do not participate in the 30-second snapshot refresh. Report revision history
-   moved from Research to the dedicated Report tab; it loads only on the first
-   Report-tab entry, pagination, or an explicit Refresh while Report is active.
-   A history failure remains local and does not hide the current Report.
-7. Manual Refresh always reloads the current detail snapshot and increments only
-   the active tab's refresh counter. Counters are retained per tab, so switching
-   tabs cannot make a previously active tab observe a counter rollback and issue
-   an extra request. Research retains the collection plan, Selection timeline,
-   observation history, and collection-task history.
-
-### Swap activity
-
-1. The UI does not request Swap data until the `Swap Activity` tab becomes
-   active.
-2. `GetProjectSwapActivity` opens a read-only, repeatable-read PostgreSQL
-   transaction. Project identity, the two Pair targets, Pair-wide totals, and
-   both sampled-block lists therefore come from one committed snapshot even
-   while the Swap Processor commits another block.
-3. The adapter requires exactly one `weth` and one `usdt` target. It resolves
-   the Project token as Base and the chain's fixed wrapped-native or USDT asset
-   as Quote, then derives the Base token index by EVM address ordering.
-4. PostgreSQL maps token0/token1 amounts to Base/Quote flows, classifies every
-   event, and aggregates Pair and block counts without loading all event rows
-   into Go. A simple buy has Quote In and Base Out only; a simple sell has Base
-   In and Quote Out only. Every other shape is `complex`.
-5. Simple events produce Quote-per-Base execution prices. Block OHLC follows
-   transaction index, log index, and event ID order. VWAP divides total simple
-   Quote flow by total simple Base flow. Numeric arithmetic is retained through
-   100 decimal places and never uses binary floating point at the API boundary.
-6. The UI renders two Pair cards keyed by Pair kind, two independent
-   100-cell activity grids, two sparse timeline panels with a shared Time or
-   Block X range, and a client-paginated sampled-block table. It never joins
-   WETH/WBNB and USDT values or connects sparse observations.
-7. Opening a sampled block requests a server-paginated event page, ordered by
-   transaction index, log index, and event ID. Closing the drawer cancels the
-   request; event pages do not participate in polling.
-8. While the tab and document are visible, at least one Pair is `collecting`,
-   and no request is in flight, the activity reloads every 30 seconds.
-   Activating the tab or returning to the visible document reloads immediately.
-   Both terminal Pair states stop polling. Refresh failures retain the last
-   successful activity snapshot.
+1. `GET /api/v1/tokens/projects` validates paging, identity, status, numeric
+   quote, and tri-state pair filters before issuing one paged list query.
+2. Every list item exposes discovery identity; collection progress as `x/6`;
+   `collectionStatus`; `profileState`; optional profile completeness and build
+   time; Ave market projection; and wrapped-native and USDT pair projections.
+3. `GET /api/v1/tokens/projects/{project_id}` returns the same optional profile
+   as the dedicated profile route, all six collection task summaries/results,
+   wallet context, and pre-deployment transaction counts.
+4. `GET /api/v1/tokens/projects/{project_id}/profile` returns the immutable
+   profile or `found=false` while its build is pending or permanently failed.
+5. `GET /api/v1/tokens/collection-tasks` returns paged task summaries filtered
+   by project, data type, and status. The task-ID route adds the complete
+   versioned evidence payload and content hash when collection succeeded.
+6. Contract source, wallet transaction, Swap activity, and Swap event routes
+   remain separate bounded reads linked from project detail.
+7. The UI polls only while at least one collection or profile build task is
+   pending/running. Terminal pages stop automatically and retain manual refresh.
 
 ## State / Data
 
-This capability adds no durable tables and performs no writes. It reads:
+`collection_status` is derived from exactly six task rows:
 
-- `project` and `contract_code` for identity and source availability;
-- `project_research_state`, `project_report_revision`,
-  `project_selection_evaluation_task`, and `project_selection` for current
-  Report, Evaluation, and trusted outcome state;
-- `project_current_observation` and `project_observation` for typed current
-  state and historical trend points;
-- `project_data_collection_schedule` and
-  `project_data_collection_task` for collection status and history;
-- `project_related_wallet` and `project_initial_recipient` for wallet roles;
-- `project_wallet_normal_transaction` for counts and paginated transaction
-  rows.
-- `project_swap_pair`, `project_swap_block`, and `project_swap_event` for
-  independent Pair lifecycle, sampled blocks, and decoded event detail.
+- `queued`: six are pending and none is running or terminal.
+- `collecting`: at least one is pending/running and none has failed terminally.
+- `complete`: all six succeeded.
+- `needs_attention`: at least one failed, including while another task remains
+  nonterminal.
 
-The API transmits total supply, balances, reserves, liquidity, gas price,
-transaction value, market values, and high-precision decimal metrics as
-strings. JavaScript converts values to floating point only for compact visual
-formatting and SVG coordinates; raw values remain available in tooltips, copied
-text, and JSON.
+`profile_state` is derived from the immutable profile and its build task:
 
-`TokenProjectListItem` is a list-specific flat contract. Its block time is the
-stored deployment-block Unix-second value; the UI formats it in Beijing time.
-Deployment contract, sender, transaction identity, block number, code hash,
-token supply, and Pair addresses remain available through project detail but
-are not queried or serialized for list rows.
+- `pending`: no profile exists and the build task is absent, pending, or running.
+- `complete`: the profile exists with completeness `complete`.
+- `incomplete`: the profile exists with completeness `incomplete`.
+- `failed`: no profile exists and the build task exhausted three failures.
 
-The list and revision contracts share `TokenProjectReportRiskSummary`. Its Pair
-objects are optional so missing Report-time chain state remains unknown.
-Whenever a Pair object exists, Created, Remove Liquidity, Mint, Quote USDT, and
-Last Swap are all present. `TokenProjectReportEvaluationSummary` separates task
-status, failed attempts, last error, and update time from the optional trusted
-outcome and its evaluation time.
+Pair filters use factual V1 profile projections. Each of
+`pairTokenBalanceExceedsTotalSupply`, `lpMinimumSupplyOnly`, and
+`fixedFeeAddressLpShareGte90Percent` accepts tri-state values. Quote filters
+accept inclusive minimum/maximum raw USDT value and an explicit missing-state
+filter. Wrapped-native and USDT pair filters are independent.
 
-The current Ave observation exposes at most the canonical wrapped-native and
-USDT pairs. The UI still matches by contract address instead of relying on array
-position, so pair identity remains explicit at the presentation boundary.
-
-Swap Base and Quote amounts, block numbers, block and time gaps, transaction and
-log positions, and execution prices are decimal strings in the public
-contract. Counts bounded by the 100-block view remain numeric. The UI uses
-`BigInt` and string slicing for exact quantity display; conversion to
-JavaScript `Number` is restricted to SVG coordinates. Tooltips, tables, and
-event detail retain the exact source string.
-
-The fixed assets are Ethereum WETH with 18 decimals and USDT with 6 decimals,
-and BSC WBNB and USDT with 18 decimals each. Their addresses match the ATHENA
-contract's Pair derivation inputs. These values provide units and token
-ordering; the read model does not request token metadata from an EVM node.
-Wallet asset observations and `TokenWalletAssetState` expose
-`totalAssetUsdtValue` as a decimal integer string scaled by the applicable USDT
-decimals.
-
-`TokenProject.deploymentNonce` exposes the sender nonce captured from the
-contract-creation transaction. It is persisted with the project and does not
-require an EVM read when loading the detail page.
+The typed profile response contains completeness, failed sources, market and
+`aveRisk`, contract-source status, both pair summaries, wallet totals,
+pre-deployment transaction summary, and six evidence references. `profileJson`
+contains the full canonical V1 content, including per-wallet roles, allocation,
+assets, simulation call-success signals, top methods, and counterparties.
 
 ## Configuration
 
-There is no runtime configuration specific to this read model.
-
-| Constant | Value | Behavior |
-| --- | --- | --- |
-| Current snapshot interval | 30 seconds | Reloads while the browser document is visible. |
-| Projects list fresh window | 30 seconds | Fresh cache hits issue no request; stale hits render immediately and refresh in the background. |
-| Runtime-configuration fresh window | 5 minutes | Reuses chain options across Projects route round trips; explicit Refresh bypasses freshness. |
-| Projects cache capacity | 20 inactive entries | Least-recently-used inactive entries are evicted; active entries are never evicted. |
-| Swap activity interval | 30 seconds | Reloads only while its tab and document are visible and either Pair is collecting. |
-| Swap activity block target | 100 per Pair | WETH and USDT targets remain independent, including when their addresses match. |
-| Swap event page size | 50 in the UI, maximum 200 in the API | Event detail is loaded only for the opened block. |
-| Execution-price decimal places | 100 | PostgreSQL and event-detail mapping use decimal round-half-up and trim trailing zeroes. |
-| Default trend range | 24 hours | Used when the request omits `range`. |
-| Accepted trend ranges | `1h`, `6h`, `24h`, `7d` | Other values are rejected before querying. |
-| Maximum points per trend series | 500 | Applies LTTB when a series exceeds the limit. |
-| Default Ave pair selection | Wrapped native, then USDT | Keeps the current selection while it remains available and otherwise falls back in priority order. |
-| Wallet profile card breakpoint | 1440 pixels | The Wallets tab displays two complete profile cards per row at and above the breakpoint and one card per row below it. |
-| Transactions compact layout breakpoint | 1440 pixels | The Transactions tab uses the compact table at and above the breakpoint and complete transaction cards below it. |
-| Revision History compact layout breakpoint | 1440 pixels | Revision History uses the fixed comparison table at and above the breakpoint and complete revision cards below it. |
-| Projects compact layout breakpoint | 1100 pixels | The grouped table becomes one complete semantic project card; overlay navigation still begins at 900 pixels. |
-| Projects Pair stack breakpoint | 768 pixels | WETH/WBNB and USDT card panels stack vertically and the filter modal becomes a near-full-width single-column form. |
+The API uses the shared Token PostgreSQL DSN and Token API gRPC/listen settings.
+Paging defaults and limits are enforced by the existing API helpers. The UI
+uses the shared authenticated request client and module-aware cache. All read
+endpoints are side-effect free.
 
 ## Invariants
 
-- Project pagination starts from `project`; missing research, Report, Evaluation,
-  or Selection rows never remove an otherwise matching project.
-- Project page count and rows use identical filters in one read-only,
-  repeatable-read transaction and use the same deterministic ordering.
-- List rows expose only the flat list identity and presentation fields;
-  contract and code hash affect filtering without entering the response.
-- A current outcome requires the exact current Report task to be succeeded, the
-  research state's last evaluated revision to match, and `current_selection_id`
-  to resolve. A Selection row's original Report revision is not a freshness
-  signal.
-- Report-time Pair risk is absent or complete. Unknown storage values are never
-  serialized as `false`, zero, `Clear`, or `Not created`.
-- Every project-detail read is scoped by one positive project ID.
-- The aggregate endpoint does not mutate collection, report, selection, or
-  transaction state.
-- Projects cache identity is derived only from list request fields and always
-  includes both Pair filter groups. Any change to either group creates the
-  corresponding request identity.
-- Cached project data never crosses a login-session boundary. Return scroll
-  snapshots contain only URL, history-entry identity, a random return marker,
-  and scroll position.
-- Missing observation sections remain absent; the UI renders them as
-  `Not collected` or `Unknown` and does not convert absence to `false` or zero.
-- Collection schedules expose retry timing rather than a periodic refresh
-  cadence. Completed, failed, and paused schedules have no next attempt.
-- Research attention fields preserve exact block numbers and Unix seconds. The
-  UI does not derive expiry from the current browser time.
-- Ave key-pair choices are enabled only when the current observation contains
-  the exact project pair contract, and the detail card never displays an
-  unrelated Ave pair.
-- High-precision values cross the API boundary as strings.
-- Observation history excludes wallet normal transactions because those rows
-  have their own normalized, filterable endpoint.
-- Every returned trend series is chronological, contains no more than 500
-  points, and retains its first and last observation.
-- Project-level and adjacent history reads require Token module `READ`.
-- Report revision history is lazy and independent from the 30-second current
-  snapshot poll. Refresh counters are monotonic per tab.
-- Swap activity contains exactly two independently identified targets ordered
-  `weth`, then `usdt`; Pair address is never a UI or aggregation identity.
-- A Pair's block count equals its returned block rows, sample indexes are
-  continuous from one, and every sampled block contains at least one event.
-- A completed Pair contains exactly 100 blocks. An expired Pair contains fewer
-  than 100 and retains all collected observations.
-- Buy, sell, and complex counts partition the event count. Complex events never
-  contribute to simple-trade Quote volume or execution price.
-- Pair-wide transaction origins use a global distinct `tx_from` count; they are
-  not calculated by summing block-level distinct counts.
-- Swap metrics describe Pair-accounting flows and execution prices. They are
-  not user receipts, reserve spot prices, historical USD values, slippage, or
-  price impact.
+- Project list/detail/profile/task views use the collection/profile vocabulary
+  consistently across domain, transport, and UI layers.
+- The list's market and pair data are projections of the same immutable profile
+  returned by detail and profile routes.
+- Project detail contains at most one profile and at most six logical tasks.
+- Collection-task list responses omit no task status fields; a single-task read
+  is the authoritative full evidence response.
+- The transaction total is distinct by transaction hash even when a transaction
+  is associated with multiple related wallets.
+- Swap terminal states remain visible but never change collection or profile
+  status.
 
 ## Failure Recovery
 
-The capability is read-only, so retrying cannot create duplicate state. Invalid
-IDs, ranges, data types, addresses, and receipt statuses return gRPC validation
-errors that the HTTP gateway maps to request failures.
+Invalid filters fail before database access. Malformed persisted addresses,
+hashes, numeric projections, payloads, or inconsistent optional projection
+groups fail the request rather than fabricating a partial view. A missing
+project/profile/task returns `found=false`; storage failures are mapped to an
+internal API error.
 
-Invalid project-list status or Pair filters, malformed Quote bounds, and a
-minimum above the maximum in either Pair group return `InvalidArgument` before
-a database read. A malformed stored Pair risk projection fails the page or
-revision request instead of presenting a partial matrix. The repeatable-read
-page transaction is rolled back on count, list, mapping, or context failure and
-is safe to retry.
-
-A missing project renders a dedicated Not Found state. Failure of the aggregate
-request leaves any previously loaded aggregate visible through the shared
-asynchronous state hook. Trend, source, transaction, observation, Report
-history, Selection, and task failures render within their own section and do not
-clear the current project snapshot or other successful sections. No Report, no
-risk snapshot, empty history, and failed history remain separate UI states.
-
-An invalid stored trend payload fails that trend request instead of emitting a
-partially decoded series. A subsequent reload re-runs the read without any
-cleanup requirement.
-
-A missing project returns `found: false` for Swap activity. A missing Project,
-Pair kind, or sampled block returns an empty event page. Stored Swap invariant
-violations fail the activity request as an internal error instead of exposing a
-partial or misleading visualization. Activity retries are read-only and keep
-the previous successful snapshot visible.
+Read endpoints are side-effect free. UI request caches are invalidated by
+manual refresh or active-work polling. A failed poll leaves the last successful
+view available with an error surface and does not mutate backend state.
 
 ## Observability
 
-The endpoints use the existing server and Token API request logging, gRPC status
-mapping, health checks, and PostgreSQL readiness behavior. The current snapshot
-and the activity and trend responses include generation timestamps. Project
-Report and Evaluation summaries expose independent built, task-updated, and
-trusted-evaluated timestamps. Observation, schedule, task, Selection, source,
-and transaction records expose their own checked, observed, decided, collected,
-or updated timestamps for diagnosis.
+Token API request tracing and standard gRPC/HTTP status logging cover each
+route. Worker health and queue metrics explain why a list item remains queued,
+collecting, or pending. The data-source cards expose failure count, lease and
+terminal timestamps, last error, schema version, content hash, source block,
+and collection time for per-project diagnosis.
 
 ## Change Checklist
 
-- [ ] The unified project page and six project-scoped endpoints remain aligned with Token module `READ` in `moduleGRPCRules`.
-- [ ] Project list joins remain one-to-one `LEFT JOIN`s, filters apply before pagination, and count/list share a repeatable-read transaction.
-- [ ] Current Evaluation and outcome trust use the current Report revision and `current_selection_id`, never `selection.report_revision`.
-- [ ] The Projects page has one grouped table with fixed Logo and Project columns and no view or current-page sort state.
-- [ ] The list omits Contract, sender, and block number; it displays deployment Block Time in Beijing time while Contract and Code Hash remain filterable.
-- [ ] The centered filter modal owns all global and Pair drafts, and both Pair groups enter the request and cache identity with AND semantics.
-- [ ] Compact cards contain Overview, Report Status, WETH/WBNB, and USDT together; Pair panels stack below 768 pixels.
-- [ ] Report risk absence remains distinguishable from safe boolean values in lists, detail, and revision history.
-- [ ] Aggregate composition matches the typed public contract and observation V1 schemas.
-- [ ] Precision-sensitive values remain strings across the API and UI boundary.
-- [ ] Trend ranges, metric extraction, ordering, and 500-point LTTB limit remain current.
-- [ ] Current-snapshot polling, per-tab manual refresh, and lazy Report history retain their separate behavior.
-- [ ] Missing and partial-failure states remain distinguishable in the UI.
-- [ ] WETH/USDT Pair identity, exact integer strings, strict Swap semantics,
-      sparse charts, terminal polling, and lazy event pagination remain aligned.
-- [ ] Source links and named symbols resolve.
-- [ ] The [design index](../README.md) contains the correct entry.
+- [ ] Recheck list-status SQL against the four collection and four profile states.
+- [ ] Recheck profile projection columns against canonical profile construction.
+- [ ] Recheck every filter across public proto, facade, internal handler,
+      repository, UI service, and UI controls.
+- [ ] Recheck project detail and standalone profile equality.
+- [ ] Recheck active-only polling and manual refresh behavior.
+- [ ] Keep the [design index](../README.md) current.

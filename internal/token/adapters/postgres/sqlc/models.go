@@ -16,28 +16,27 @@ type Chain struct {
 }
 
 type ChainBlockProcessingAttempt struct {
-	ID                        int64
-	ChainID                   int64
-	BlockNumber               int64
-	AttemptNumber             int32
-	BlockTime                 pgtype.Int8
-	Status                    string
-	TerminalStage             pgtype.Text
-	ErrorMessage              pgtype.Text
-	CheckpointReadDurationUs  pgtype.Int8
-	DiscoveryDurationUs       pgtype.Int8
-	ValidationDurationUs      pgtype.Int8
-	PersistenceDurationUs     pgtype.Int8
-	TotalDurationUs           pgtype.Int8
-	CandidateCount            pgtype.Int4
-	ValidatedCount            pgtype.Int4
-	RejectedCount             pgtype.Int4
-	ExpiredResearchStateCount pgtype.Int8
-	TimingComplete            bool
-	StartedAt                 pgtype.Timestamptz
-	CompletedAt               pgtype.Timestamptz
-	CreatedAt                 pgtype.Timestamptz
-	UpdatedAt                 pgtype.Timestamptz
+	ID                       int64
+	ChainID                  int64
+	BlockNumber              int64
+	AttemptNumber            int32
+	BlockTime                pgtype.Int8
+	Status                   string
+	TerminalStage            pgtype.Text
+	ErrorMessage             pgtype.Text
+	CheckpointReadDurationUs pgtype.Int8
+	DiscoveryDurationUs      pgtype.Int8
+	ValidationDurationUs     pgtype.Int8
+	PersistenceDurationUs    pgtype.Int8
+	TotalDurationUs          pgtype.Int8
+	CandidateCount           pgtype.Int4
+	ValidatedCount           pgtype.Int4
+	RejectedCount            pgtype.Int4
+	TimingComplete           bool
+	StartedAt                pgtype.Timestamptz
+	CompletedAt              pgtype.Timestamptz
+	CreatedAt                pgtype.Timestamptz
+	UpdatedAt                pgtype.Timestamptz
 }
 
 type ChainProcessingCheckpoint struct {
@@ -107,33 +106,32 @@ type ProjectCandidate struct {
 	CreatedAt       pgtype.Timestamptz
 }
 
-type ProjectDataCollectionSchedule struct {
-	ProjectID            int64
-	DataType             string
-	Status               string
-	RetryIntervalSeconds int64
-	NextRunAt            pgtype.Timestamptz
-	LatestTaskRevision   int64
-	ConsecutiveFailures  int32
-	LastError            pgtype.Text
-	LastCheckedAt        pgtype.Timestamptz
-	CreatedAt            pgtype.Timestamptz
-	UpdatedAt            pgtype.Timestamptz
+type ProjectDataCollectionResult struct {
+	TaskID        int64
+	ProjectID     int64
+	DataType      string
+	SchemaVersion int32
+	Payload       []byte
+	ContentHash   []byte
+	BlockNumber   pgtype.Int8
+	CollectedAt   pgtype.Timestamptz
+	CreatedAt     pgtype.Timestamptz
 }
 
 type ProjectDataCollectionTask struct {
-	ID             int64
-	ProjectID      int64
-	DataType       string
-	Revision       int64
-	Status         string
-	Attempts       int32
-	AvailableAt    pgtype.Timestamptz
-	LockedAt       pgtype.Timestamptz
-	LeaseExpiresAt pgtype.Timestamptz
-	LastError      pgtype.Text
-	CreatedAt      pgtype.Timestamptz
-	UpdatedAt      pgtype.Timestamptz
+	ID              int64
+	ProjectID       int64
+	DataType        string
+	Status          string
+	FailureCount    int32
+	AvailableAt     pgtype.Timestamptz
+	ClaimGeneration int64
+	LockedAt        pgtype.Timestamptz
+	LeaseExpiresAt  pgtype.Timestamptz
+	LastError       pgtype.Text
+	FinishedAt      pgtype.Timestamptz
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
 }
 
 type ProjectInitialRecipient struct {
@@ -147,24 +145,48 @@ type ProjectInitialRecipient struct {
 	CreatedAt         pgtype.Timestamptz
 }
 
-type ProjectObservation struct {
-	ID            int64
-	ProjectID     int64
-	DataType      string
-	SchemaVersion int32
-	ContentHash   []byte
-	Payload       []byte
-	BlockNumber   pgtype.Int8
-	ObservedAt    pgtype.Timestamptz
-	CreatedAt     pgtype.Timestamptz
+type ProjectProfile struct {
+	ProjectID                                  int64
+	SchemaVersion                              int32
+	CompletenessStatus                         string
+	FailedDataTypes                            []string
+	Profile                                    []byte
+	ContentHash                                []byte
+	LogoUrl                                    string
+	CurrentPriceUsd                            pgtype.Numeric
+	MarketCapUsd                               pgtype.Numeric
+	FdvUsd                                     pgtype.Numeric
+	TvlUsd                                     pgtype.Numeric
+	Holders                                    pgtype.Int8
+	ContractSourceStatus                       pgtype.Text
+	WethPairIsCreated                          pgtype.Bool
+	WethPairTokenBalanceExceedsTotalSupply     pgtype.Bool
+	WethPairLpMinimumSupplyOnly                pgtype.Bool
+	WethPairFixedFeeAddressLpShareGte90Percent pgtype.Bool
+	WethPairQuoteUsdtValueInt                  pgtype.Numeric
+	WethPairReserveUpdatedAt                   pgtype.Int8
+	UsdtPairIsCreated                          pgtype.Bool
+	UsdtPairTokenBalanceExceedsTotalSupply     pgtype.Bool
+	UsdtPairLpMinimumSupplyOnly                pgtype.Bool
+	UsdtPairFixedFeeAddressLpShareGte90Percent pgtype.Bool
+	UsdtPairQuoteUsdtValueInt                  pgtype.Numeric
+	UsdtPairReserveUpdatedAt                   pgtype.Int8
+	BuiltAt                                    pgtype.Timestamptz
+	CreatedAt                                  pgtype.Timestamptz
 }
 
-type ProjectObservationCurrent struct {
-	ProjectID     int64
-	DataType      string
-	ObservationID int64
-	LastCheckedAt pgtype.Timestamptz
-	UpdatedAt     pgtype.Timestamptz
+type ProjectProfileBuildTask struct {
+	ProjectID       int64
+	Status          string
+	FailureCount    int32
+	AvailableAt     pgtype.Timestamptz
+	ClaimGeneration int64
+	LockedAt        pgtype.Timestamptz
+	LeaseExpiresAt  pgtype.Timestamptz
+	LastError       pgtype.Text
+	FinishedAt      pgtype.Timestamptz
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
 }
 
 type ProjectRelatedWallet struct {
@@ -172,86 +194,6 @@ type ProjectRelatedWallet struct {
 	Wallet    []byte
 	Role      string
 	CreatedAt pgtype.Timestamptz
-}
-
-type ProjectReportBuildTask struct {
-	ID               int64
-	ProjectID        int64
-	EvidenceRevision int64
-	Status           string
-	Attempts         int32
-	AvailableAt      pgtype.Timestamptz
-	LockedAt         pgtype.Timestamptz
-	LeaseExpiresAt   pgtype.Timestamptz
-	LastError        pgtype.Text
-	CreatedAt        pgtype.Timestamptz
-	UpdatedAt        pgtype.Timestamptz
-}
-
-type ProjectReportRevision struct {
-	ID                        int64
-	ProjectID                 int64
-	Revision                  int64
-	SchemaVersion             int32
-	ContentHash               []byte
-	CompletenessStatus        string
-	Evidence                  []byte
-	Report                    []byte
-	ObservedBlockNumber       pgtype.Int8
-	WethPairIsCreated         pgtype.Bool
-	WethPairIsRemoveLiquidity pgtype.Bool
-	WethPairIsMint            pgtype.Bool
-	WethPairQuoteUsdtValueInt pgtype.Numeric
-	WethPairLastSwapTimestamp pgtype.Int8
-	UsdtPairIsCreated         pgtype.Bool
-	UsdtPairIsRemoveLiquidity pgtype.Bool
-	UsdtPairIsMint            pgtype.Bool
-	UsdtPairQuoteUsdtValueInt pgtype.Numeric
-	UsdtPairLastSwapTimestamp pgtype.Int8
-	BuiltAt                   pgtype.Timestamptz
-	CreatedAt                 pgtype.Timestamptz
-}
-
-type ProjectResearchState struct {
-	ProjectID                   int64
-	Status                      string
-	EvidenceRevision            int64
-	CurrentReportRevision       pgtype.Int8
-	CurrentSelectionID          pgtype.Int8
-	LastEvaluatedReportRevision pgtype.Int8
-	LastEvaluatedAt             pgtype.Timestamptz
-	AttentionExpiryBlockTime    int64
-	ExpiredBlockNumber          pgtype.Int8
-	ExpiredBlockTime            pgtype.Int8
-	CreatedAt                   pgtype.Timestamptz
-	UpdatedAt                   pgtype.Timestamptz
-}
-
-type ProjectSelection struct {
-	ID              int64
-	ProjectID       int64
-	Outcome         string
-	StrategyKey     string
-	StrategyVersion string
-	ReportRevision  int64
-	ReasonCodes     []string
-	ReasonDetail    string
-	DecidedAt       pgtype.Timestamptz
-	CreatedAt       pgtype.Timestamptz
-}
-
-type ProjectSelectionEvaluationTask struct {
-	ID             int64
-	ProjectID      int64
-	ReportRevision int64
-	Status         string
-	Attempts       int32
-	AvailableAt    pgtype.Timestamptz
-	LockedAt       pgtype.Timestamptz
-	LeaseExpiresAt pgtype.Timestamptz
-	LastError      pgtype.Text
-	CreatedAt      pgtype.Timestamptz
-	UpdatedAt      pgtype.Timestamptz
 }
 
 type ProjectSwapBlock struct {

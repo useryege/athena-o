@@ -16,7 +16,6 @@ const (
 	initialBlockTimeSampleSize = uint64(100)
 	maxCandidateBatchSize      = 100
 	maxCandidateConcurrency    = 10
-	defaultResearchTTL         = 24 * time.Hour
 )
 
 type ChainProcessorRepository interface {
@@ -65,23 +64,15 @@ type InitialRecipient struct {
 	SourceBlockNumber uint64
 }
 
-type CollectionScheduleSeed struct {
-	DataType      string
-	RetryInterval time.Duration
-	NextRunAt     time.Time
-}
-
 type CommitProcessedBlockCommand struct {
 	Checkpoint  discovery.ChainProcessingCheckpoint
 	Block       discovery.BlockHeader
 	Inspections []CandidateInspection
-	Schedules   []CollectionScheduleSeed
-	ResearchTTL time.Duration
 }
 
 type CommitProcessedBlockResult struct {
-	Checkpoint            discovery.ChainProcessingCheckpoint
-	ExpiredResearchStates int64
+	Checkpoint       discovery.ChainProcessingCheckpoint
+	AlreadyProcessed bool
 }
 
 type ProcessChainCommand struct {
@@ -90,18 +81,15 @@ type ProcessChainCommand struct {
 }
 
 type ProcessResult struct {
-	Blocks                uint64
-	Candidates            int
-	Validated             int
-	Rejected              int
-	ExpiredResearchStates int64
+	Blocks     uint64
+	Candidates int
+	Validated  int
+	Rejected   int
 }
 
 type ChainProcessorOptions struct {
 	CandidateBatchSize   int
 	CandidateConcurrency int
-	ResearchTTL          time.Duration
-	Now                  func() time.Time
 }
 
 type initialBlockEstimate struct {
@@ -122,14 +110,13 @@ type ChainProcessor struct {
 }
 
 type blockAttemptMetrics struct {
-	checkpointRead            *time.Duration
-	discovery                 *time.Duration
-	validation                *time.Duration
-	persistence               *time.Duration
-	candidateCount            *int32
-	validatedCount            *int32
-	rejectedCount             *int32
-	expiredResearchStateCount *int64
+	checkpointRead *time.Duration
+	discovery      *time.Duration
+	validation     *time.Duration
+	persistence    *time.Duration
+	candidateCount *int32
+	validatedCount *int32
+	rejectedCount  *int32
 }
 
 func NewChainProcessor(repository ChainProcessorRepository, blocks BlockSource, inspector CandidateInspector, options ChainProcessorOptions) *ChainProcessor {
@@ -138,12 +125,6 @@ func NewChainProcessor(repository ChainProcessorRepository, blocks BlockSource, 
 	}
 	if options.CandidateConcurrency <= 0 || options.CandidateConcurrency > maxCandidateConcurrency {
 		options.CandidateConcurrency = maxCandidateConcurrency
-	}
-	if options.ResearchTTL <= 0 {
-		options.ResearchTTL = defaultResearchTTL
-	}
-	if options.Now == nil {
-		options.Now = time.Now
 	}
 	return &ChainProcessor{repository: repository, blocks: blocks, inspector: inspector, options: options}
 }
@@ -172,9 +153,6 @@ func (processor *ChainProcessor) RunOnce(ctx context.Context, command ProcessCha
 	}
 	if command.InitialLookbackDuration < time.Second {
 		return ProcessResult{}, fmt.Errorf("token chain processor initial lookback duration must be at least 1s")
-	}
-	if processor.options.ResearchTTL <= 0 || processor.options.ResearchTTL%time.Second != 0 {
-		return ProcessResult{}, fmt.Errorf("token project research ttl must be a positive whole number of seconds")
 	}
 	runStartedAt := time.Now()
 	checkpointReadStartedAt := time.Now()
@@ -316,7 +294,7 @@ func (processor *ChainProcessor) RunOnce(ctx context.Context, command ProcessCha
 		validatedCount, rejectedCount := int32(validated), int32(rejected)
 		metrics.validatedCount, metrics.rejectedCount = &validatedCount, &rejectedCount
 		persistenceStartedAt := time.Now()
-		committed, err := processor.repository.CommitProcessedBlock(ctx, CommitProcessedBlockCommand{
+		commitResult, err := processor.repository.CommitProcessedBlock(ctx, CommitProcessedBlockCommand{
 			Checkpoint: discovery.ChainProcessingCheckpoint{
 				ChainID:           command.ChainID,
 				CursorBlockNumber: next,
@@ -324,8 +302,6 @@ func (processor *ChainProcessor) RunOnce(ctx context.Context, command ProcessCha
 			},
 			Block:       discoveredBlock.Header,
 			Inspections: inspections,
-			Schedules:   defaultResearchSchedules(processor.options.Now().UTC()),
-			ResearchTTL: processor.options.ResearchTTL,
 		})
 		persistenceDuration := time.Since(persistenceStartedAt)
 		metrics.persistence = durationPointer(persistenceDuration)
@@ -334,31 +310,35 @@ func (processor *ChainProcessor) RunOnce(ctx context.Context, command ProcessCha
 			logProcessorBlockFailure(ctx, command.ChainID, next, "persistence", blockStartedAt, persistenceDuration, err)
 			return result, err
 		}
-		metrics.expiredResearchStateCount = &committed.ExpiredResearchStates
+		if commitResult == nil {
+			err = fmt.Errorf("commit token chain block %d returned no result", next)
+			err = processor.finishBlockAttempt(ctx, attempt.ID, discoveredBlock.Header.Timestamp, discovery.ChainBlockProcessingAttemptStatusFailed, discovery.ChainBlockProcessingStagePersistence, err, metrics, false)
+			return result, err
+		}
 		if err := processor.finishBlockAttempt(ctx, attempt.ID, discoveredBlock.Header.Timestamp, discovery.ChainBlockProcessingAttemptStatusSucceeded, discovery.ChainBlockProcessingStagePersistence, nil, metrics, true); err != nil {
 			logProcessorBlockFailure(ctx, command.ChainID, next, "attempt_completion", blockStartedAt, time.Since(blockStartedAt), err)
 			return result, err
 		}
 		log.WithFields(log.Fields{
-			"block_number":                 next,
-			"block_time":                   discoveredBlock.Header.Timestamp,
-			"candidate_count":              len(candidates),
-			"validated_count":              validated,
-			"rejected_count":               rejected,
-			"expired_research_state_count": committed.ExpiredResearchStates,
-			"chain_id":                     command.ChainID,
-			"checkpoint_read_duration_ms":  blockCheckpointReadDuration.Milliseconds(),
-			"discovery_duration_ms":        discoveryDuration.Milliseconds(),
-			"validation_duration_ms":       validationDuration.Milliseconds(),
-			"persistence_duration_ms":      persistenceDuration.Milliseconds(),
-			"duration_ms":                  blockAttemptDuration(metrics).Milliseconds(),
+			"block_number":                next,
+			"block_time":                  discoveredBlock.Header.Timestamp,
+			"candidate_count":             len(candidates),
+			"validated_count":             validated,
+			"rejected_count":              rejected,
+			"chain_id":                    command.ChainID,
+			"checkpoint_read_duration_ms": blockCheckpointReadDuration.Milliseconds(),
+			"discovery_duration_ms":       discoveryDuration.Milliseconds(),
+			"validation_duration_ms":      validationDuration.Milliseconds(),
+			"persistence_duration_ms":     persistenceDuration.Milliseconds(),
+			"duration_ms":                 blockAttemptDuration(metrics).Milliseconds(),
 		}).Info("token chain block processing completed")
-		result.Blocks++
-		result.Candidates += len(candidates)
-		result.Validated += validated
-		result.Rejected += rejected
-		result.ExpiredResearchStates += committed.ExpiredResearchStates
-		next++
+		if !commitResult.AlreadyProcessed {
+			result.Blocks++
+			result.Candidates += len(candidates)
+			result.Validated += validated
+			result.Rejected += rejected
+		}
+		next = commitResult.Checkpoint.CursorBlockNumber + 1
 	}
 	return result, nil
 }
@@ -384,20 +364,19 @@ func (processor *ChainProcessor) finishBlockAttempt(
 		errorMessage = processingErr.Error()
 	}
 	_, completionErr := processor.repository.CompleteChainBlockProcessingAttempt(completionCtx, discovery.ChainBlockProcessingAttemptCompletion{
-		AttemptID:                 attemptID,
-		BlockTime:                 blockTime,
-		Status:                    status,
-		TerminalStage:             stage,
-		ErrorMessage:              errorMessage,
-		CheckpointReadDuration:    metrics.checkpointRead,
-		DiscoveryDuration:         metrics.discovery,
-		ValidationDuration:        metrics.validation,
-		PersistenceDuration:       metrics.persistence,
-		CandidateCount:            metrics.candidateCount,
-		ValidatedCount:            metrics.validatedCount,
-		RejectedCount:             metrics.rejectedCount,
-		ExpiredResearchStateCount: metrics.expiredResearchStateCount,
-		TimingComplete:            timingComplete,
+		AttemptID:              attemptID,
+		BlockTime:              blockTime,
+		Status:                 status,
+		TerminalStage:          stage,
+		ErrorMessage:           errorMessage,
+		CheckpointReadDuration: metrics.checkpointRead,
+		DiscoveryDuration:      metrics.discovery,
+		ValidationDuration:     metrics.validation,
+		PersistenceDuration:    metrics.persistence,
+		CandidateCount:         metrics.candidateCount,
+		ValidatedCount:         metrics.validatedCount,
+		RejectedCount:          metrics.rejectedCount,
+		TimingComplete:         timingComplete,
 	})
 	if processingErr != nil && completionErr != nil {
 		return errors.Join(processingErr, fmt.Errorf("record token chain block processing attempt: %w", completionErr))
@@ -470,17 +449,6 @@ func countInspectionOutcomes(inspections []CandidateInspection) (validated, reje
 		}
 	}
 	return validated, rejected
-}
-
-func defaultResearchSchedules(now time.Time) []CollectionScheduleSeed {
-	return []CollectionScheduleSeed{
-		{DataType: "chain_state", RetryInterval: 15 * time.Second, NextRunAt: now},
-		{DataType: "wallet_asset_state", RetryInterval: time.Minute, NextRunAt: now},
-		{DataType: "simulation_result", RetryInterval: time.Minute, NextRunAt: now},
-		{DataType: "ave", RetryInterval: 5 * time.Minute, NextRunAt: now},
-		{DataType: "contract_code_source", RetryInterval: 10 * time.Minute, NextRunAt: now},
-		{DataType: "wallet_normal_transactions", RetryInterval: 10 * time.Minute, NextRunAt: now},
-	}
 }
 
 func logProcessorRunFailure(ctx context.Context, chainID int64, stage string, startedAt time.Time, phaseDuration time.Duration, err error) {

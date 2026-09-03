@@ -38,6 +38,9 @@ func NewCandidateInspector(registry *chainregistry.Registry, clients *ChainClien
 }
 
 func (inspector *CandidateInspector) InspectCandidates(ctx context.Context, chainID int64, candidates []discovery.ProjectCandidate, concurrency int) ([]discoveryapp.CandidateInspection, error) {
+	if len(candidates) == 0 {
+		return []discoveryapp.CandidateInspection{}, nil
+	}
 	client, err := inspector.clients.Client(ctx, chainID)
 	if err != nil {
 		return nil, err
@@ -52,6 +55,9 @@ func (inspector *CandidateInspector) InspectCandidates(ctx context.Context, chai
 	}
 	contracts := make([]common.Address, 0, len(candidates))
 	for _, candidate := range candidates {
+		if candidate.ChainID != chainID || candidate.BlockNumber != candidates[0].BlockNumber {
+			return nil, fmt.Errorf("candidate %s is outside inspection batch chain_id=%d block=%d", candidate.Contract.Hex(), chainID, candidates[0].BlockNumber)
+		}
 		contracts = append(contracts, common.Address(candidate.Contract))
 	}
 	validations, err := caller.ValidateERC20(&bind.CallOpts{Context: ctx}, contracts)

@@ -482,104 +482,6 @@ message SystemNotificationDeliveryItem {
   optional string telegram_chat = 14;
 }
 
-message TokenAveObservation {
-  optional int64 chainId = 1;
-
-  optional TokenAveToken token = 2;
-
-  repeated TokenAvePair pairs = 3;
-
-  optional bool isAudited = 4;
-}
-
-message TokenAvePair {
-  optional string pair = 1;
-
-  optional int64 chainId = 2;
-
-  optional string amm = 3;
-
-  optional string token0Address = 4;
-
-  optional string token0Symbol = 5;
-
-  optional string token1Address = 6;
-
-  optional string token1Symbol = 7;
-
-  optional string reserve0 = 8;
-
-  optional string reserve1 = 9;
-
-  optional string volumeUsd = 10;
-
-  optional string marketCap = 11;
-
-  optional string fdv = 12;
-
-  optional bool isFake = 13;
-
-  optional string createdAt = 14;
-
-  optional string updatedAt = 15;
-}
-
-message TokenAveToken {
-  optional string address = 1;
-
-  optional string name = 2;
-
-  optional string symbol = 3;
-
-  optional string logoUrl = 27;
-
-  optional int32 decimals = 4;
-
-  optional string totalSupply = 5;
-
-  optional string currentPriceUsd = 6;
-
-  optional string currentPriceEth = 7;
-
-  optional string marketCap = 8;
-
-  optional string fdv = 9;
-
-  optional string tvl = 10;
-
-  optional string mainPairTvl = 11;
-
-  optional int32 holders = 12;
-
-  optional int32 riskLevel = 13;
-
-  optional string riskScore = 14;
-
-  optional string riskInfo = 15;
-
-  optional bool isMintableKnown = 16;
-
-  optional bool isMintable = 17;
-
-  optional bool hasMintMethod = 18;
-
-  optional bool isLpNotLocked = 19;
-
-  optional bool hasNotRenounced = 20;
-
-  optional bool hasNotAudited = 21;
-
-  optional bool hasNotOpenSource = 22;
-
-  optional bool isInBlacklist = 23;
-
-  optional bool isHoneypot = 24;
-
-  optional string launchAt = 25;
-
-  optional string updatedAt = 26;
-}
-
 message TokenChain {
   optional int64 chainId = 1;
 
@@ -600,38 +502,6 @@ message TokenChainCheckpoint {
   optional string createdAt = 6;
 
   optional string updatedAt = 7;
-}
-
-message TokenChainPair {
-  optional string pairContract = 1;
-
-  optional bool isCreated = 2;
-
-  optional TokenChainPairLiquidity liquidity = 3;
-
-  optional string baseBalance = 4;
-
-  optional string quoteBalance = 5;
-
-  optional string quoteUsdtValue = 6;
-
-  optional string quoteUsdtValueInt = 7;
-
-  optional string lastSwapAt = 8;
-
-  optional bool isRemoveLiquidity = 9;
-
-  optional bool isMint = 10;
-}
-
-message TokenChainPairLiquidity {
-  optional string totalSupply = 1;
-
-  optional string lockedLiquidity = 2;
-
-  optional string feeAddressHoldLiquidityBalance = 3;
-
-  optional string feeAddressHoldLiquidityRatio = 4;
 }
 
 message TokenChainProcessingAttempt {
@@ -667,17 +537,15 @@ message TokenChainProcessingAttempt {
 
   optional int32 rejectedCount = 16;
 
-  optional int64 expiredResearchStateCount = 17;
+  optional bool timingComplete = 17;
 
-  optional bool timingComplete = 18;
+  optional string startedAt = 18;
 
-  optional string startedAt = 19;
+  optional string completedAt = 19;
 
-  optional string completedAt = 20;
+  optional string createdAt = 20;
 
-  optional string createdAt = 21;
-
-  optional string updatedAt = 22;
+  optional string updatedAt = 21;
 }
 
 message TokenChainProcessingSummary {
@@ -724,58 +592,22 @@ message TokenChainProcessingSummary {
   optional int64 slowestDurationUs = 21;
 }
 
-message TokenChainStateObservation {
-  optional string tokenContract = 1;
+message TokenCollectionResult {
+  optional int64 taskId = 1;
 
-  optional string updatedAt = 2;
+  optional int64 projectId = 2;
 
-  optional TokenChainToken token = 3;
+  optional string dataType = 3;
 
-  optional bool isValidErc20 = 4;
+  optional int32 schemaVersion = 4;
 
-  optional TokenChainPair wethPair = 5;
+  optional string payloadJson = 5;
 
-  optional TokenChainPair usdtPair = 6;
-}
+  optional string contentHash = 6;
 
-message TokenChainToken {
-  optional bool isValidErc20 = 1;
+  optional uint64 blockNumber = 7;
 
-  optional string name = 2;
-
-  optional string symbol = 3;
-
-  optional int32 decimals = 4;
-
-  optional string totalSupply = 5;
-
-  optional string wethPair = 6;
-
-  optional string usdtPair = 7;
-}
-
-message TokenCollectionSchedule {
-  optional int64 projectId = 1;
-
-  optional string dataType = 2;
-
-  optional string status = 3;
-
-  optional int64 retryIntervalSecs = 4;
-
-  optional string nextRunAt = 5;
-
-  optional int64 latestTaskRevision = 6;
-
-  optional int32 consecutiveFailures = 7;
-
-  optional string lastError = 8;
-
-  optional string lastCheckedAt = 9;
-
-  optional string createdAt = 10;
-
-  optional string updatedAt = 11;
+  optional string collectedAt = 8;
 }
 
 message TokenCollectionTask {
@@ -787,19 +619,25 @@ message TokenCollectionTask {
 
   optional string status = 4;
 
-  optional int64 revision = 5;
+  optional int32 failureCount = 5;
 
-  optional int32 attempts = 6;
+  optional string availableAt = 6;
 
-  optional string availableAt = 7;
+  optional int64 claimGeneration = 7;
 
-  optional string leaseExpiresAt = 8;
+  optional string lockedAt = 8;
 
-  optional string lastError = 9;
+  optional string leaseExpiresAt = 9;
 
-  optional string createdAt = 10;
+  optional string lastError = 10;
 
-  optional string updatedAt = 11;
+  optional string finishedAt = 11;
+
+  optional string createdAt = 12;
+
+  optional string updatedAt = 13;
+
+  optional TokenCollectionResult result = 14;
 }
 
 message TokenContractCode {
@@ -824,12 +662,6 @@ message TokenContractCodeBlocklistEntry {
   optional string sourceContract = 4;
 
   optional string createdAt = 5;
-}
-
-message TokenContractSourceObservation {
-  optional string codeHash = 1;
-
-  optional bool sourceAvailable = 2;
 }
 
 message TokenNodeStatus {
@@ -899,37 +731,19 @@ message TokenProject {
 message TokenProjectDetail {
   optional TokenProject project = 1;
 
-  optional TokenResearchState researchState = 2;
+  optional TokenProjectProfile profile = 2;
 
-  optional TokenReportRevision currentReport = 3;
+  repeated TokenCollectionTask collectionTasks = 3;
 
-  optional TokenSelection currentSelection = 4;
+  repeated TokenProjectRelatedWallet relatedWallets = 4;
 
-  optional TokenAveObservation ave = 5;
+  repeated TokenProjectInitialRecipient initialRecipients = 5;
 
-  optional TokenChainStateObservation chainState = 6;
+  repeated TokenWalletTransactionCount walletTransactionCounts = 6;
 
-  repeated TokenWalletAssetState walletAssets = 7;
+  optional int64 transactionCount = 7;
 
-  repeated TokenSimulationResult simulations = 8;
-
-  optional TokenContractSourceObservation contractSource = 9;
-
-  repeated TokenProjectRelatedWallet relatedWallets = 10;
-
-  repeated TokenProjectInitialRecipient initialRecipients = 11;
-
-  repeated TokenCollectionSchedule collectionSchedules = 12;
-
-  repeated TokenWalletTransactionCount walletTransactionCounts = 13;
-
-  optional int64 transactionCount = 14;
-
-  repeated TokenProjectObservation currentObservations = 15;
-
-  optional string generatedAt = 16;
-
-  optional TokenProjectReportEvaluationSummary currentReportEvaluation = 17;
+  optional string generatedAt = 8;
 }
 
 message TokenProjectInitialRecipient {
@@ -959,49 +773,361 @@ message TokenProjectListItem {
 
   optional string symbol = 4;
 
-  optional uint64 blockTime = 5;
+  optional string contract = 5;
 
-  optional string createdAt = 6;
-
-  optional string logoUrl = 7;
-
-  optional string researchStatus = 8;
-
-  optional TokenProjectReportSummary currentReport = 9;
-}
-
-message TokenProjectObservation {
-  optional int64 observationId = 1;
-
-  optional int64 projectId = 2;
-
-  optional string dataType = 3;
-
-  optional int32 schemaVersion = 4;
-
-  optional string contentHash = 5;
-
-  optional string payloadJson = 6;
+  optional string codeHash = 6;
 
   optional uint64 blockNumber = 7;
 
-  optional string observedAt = 8;
+  optional uint64 blockTime = 8;
 
-  optional string lastCheckedAt = 9;
+  optional string txHash = 9;
 
   optional string createdAt = 10;
+
+  optional string collectionStatus = 11;
+
+  optional int32 collectionSucceededCount = 12;
+
+  optional int32 collectionTerminalCount = 13;
+
+  optional int32 collectionTotalCount = 14;
+
+  optional string profileState = 15;
+
+  optional string completenessStatus = 16;
+
+  optional string profileBuiltAt = 17;
+
+  optional TokenProjectMarketSummary market = 18;
+
+  optional TokenProjectPairProfileSummary wrappedNativePair = 19;
+
+  optional TokenProjectPairProfileSummary usdtPair = 20;
 }
 
-message TokenProjectPairRiskSummary {
-  optional bool isCreated = 1;
+message TokenProjectMarketSummary {
+  optional string logoUrl = 1;
 
-  optional bool isRemoveLiquidity = 2;
+  optional string currentPriceUsd = 2;
 
-  optional bool isMint = 3;
+  optional string marketCapUsd = 3;
+
+  optional string fdvUsd = 4;
+
+  optional string tvlUsd = 5;
+
+  optional int64 holders = 6;
+}
+
+message TokenProjectPairProfileSummary {
+  optional string kind = 1;
+
+  optional string address = 2;
+
+  optional bool isCreated = 3;
 
   optional string quoteUsdtValueInt = 4;
 
-  optional string lastSwapAt = 5;
+  optional uint64 reserveUpdatedAt = 5;
+
+  optional bool pairTokenBalanceExceedsTotalSupply = 6;
+
+  optional bool lpMinimumSupplyOnly = 7;
+
+  optional bool fixedFeeAddressLpShareGte90Percent = 8;
+}
+
+message TokenProjectProfile {
+  optional int64 projectId = 1;
+
+  optional int32 schemaVersion = 2;
+
+  optional string completenessStatus = 3;
+
+  repeated string failedDataTypes = 4;
+
+  optional TokenProjectProfileMarket market = 5;
+
+  optional TokenProjectProfileSource contractSource = 6;
+
+  optional TokenProjectProfilePair wrappedNativePair = 7;
+
+  optional TokenProjectProfilePair usdtPair = 8;
+
+  optional TokenProjectProfileWalletSummary walletSummary = 9;
+
+  optional TokenProjectProfileTransactions transactions = 10;
+
+  repeated TokenProjectProfileEvidence evidence = 11;
+
+  optional string profileJson = 12;
+
+  optional string contentHash = 13;
+
+  optional string builtAt = 14;
+
+  optional string createdAt = 15;
+
+  repeated TokenProjectProfileWallet wallets = 16;
+}
+
+message TokenProjectProfileAveRisk {
+  optional int32 riskLevel = 1;
+
+  optional string riskScore = 2;
+
+  optional string riskInfo = 3;
+
+  optional bool audited = 4;
+
+  optional bool mintable = 5;
+
+  optional bool hasMintMethod = 6;
+
+  optional bool liquidityPoolUnlocked = 7;
+
+  optional bool ownershipNotRenounced = 8;
+
+  optional bool notAudited = 9;
+
+  optional bool notOpenSource = 10;
+
+  optional bool inBlacklist = 11;
+
+  optional bool honeypot = 12;
+}
+
+message TokenProjectProfileEvidence {
+  optional int64 taskId = 1;
+
+  optional string dataType = 2;
+
+  optional string status = 3;
+
+  optional int32 failureCount = 4;
+
+  optional string lastError = 5;
+
+  optional int32 resultSchemaVersion = 6;
+
+  optional string resultContentHash = 7;
+
+  optional uint64 blockNumber = 8;
+
+  optional string collectedAt = 9;
+}
+
+message TokenProjectProfileInitialRecipient {
+  optional int32 rank = 1;
+
+  optional uint64 ratioBps = 2;
+}
+
+message TokenProjectProfileMarket {
+  optional string logoUrl = 1;
+
+  optional string currentPriceUsd = 2;
+
+  optional string currentPriceEth = 3;
+
+  optional string marketCapUsd = 4;
+
+  optional string fdvUsd = 5;
+
+  optional string tvlUsd = 6;
+
+  optional string mainPairTvlUsd = 7;
+
+  optional int64 holders = 8;
+
+  optional string launchAt = 9;
+
+  optional string providerUpdatedAt = 10;
+
+  optional TokenProjectProfileAveRisk aveRisk = 11;
+}
+
+message TokenProjectProfilePair {
+  optional string kind = 1;
+
+  optional string address = 2;
+
+  optional TokenProjectProfilePairChainState chainState = 3;
+
+  optional TokenProjectProfilePairMarket market = 4;
+}
+
+message TokenProjectProfilePairChainState {
+  optional bool isCreated = 1;
+
+  optional string baseBalance = 2;
+
+  optional string quoteBalance = 3;
+
+  optional string quoteUsdtValue = 4;
+
+  optional string quoteUsdtValueInt = 5;
+
+  optional uint64 reserveUpdatedAt = 6;
+
+  optional TokenProjectProfilePairLiquidity liquidity = 7;
+
+  optional TokenProjectProfilePairSignals signals = 8;
+}
+
+message TokenProjectProfilePairLiquidity {
+  optional string totalSupply = 1;
+
+  optional string lockedLiquidity = 2;
+
+  optional string fixedFeeAddressBalance = 3;
+
+  optional string fixedFeeAddressShare = 4;
+}
+
+message TokenProjectProfilePairMarket {
+  optional string amm = 1;
+
+  optional string token0Address = 2;
+
+  optional string token0Symbol = 3;
+
+  optional string token1Address = 4;
+
+  optional string token1Symbol = 5;
+
+  optional string reserve0 = 6;
+
+  optional string reserve1 = 7;
+
+  optional string volumeUsd = 8;
+
+  optional string marketCapUsd = 9;
+
+  optional string fdvUsd = 10;
+
+  optional bool isFake = 11;
+
+  optional string createdAt = 12;
+
+  optional string updatedAt = 13;
+}
+
+message TokenProjectProfilePairSignals {
+  optional bool pairTokenBalanceExceedsTotalSupply = 1;
+
+  optional bool lpMinimumSupplyOnly = 2;
+
+  optional bool fixedFeeAddressLpShareGte90Percent = 3;
+}
+
+message TokenProjectProfileSource {
+  optional string codeHash = 1;
+
+  optional string verificationStatus = 2;
+
+  optional string artifactReference = 3;
+}
+
+message TokenProjectProfileTransactionCounterparty {
+  optional string address = 1;
+
+  optional int64 count = 2;
+}
+
+message TokenProjectProfileTransactionMethod {
+  optional string methodId = 1;
+
+  optional string functionName = 2;
+
+  optional int64 count = 3;
+}
+
+message TokenProjectProfileTransactions {
+  optional int32 walletCount = 1;
+
+  optional int64 transactionAssociationCount = 2;
+
+  optional int64 uniqueTransactionCount = 3;
+
+  optional int64 succeededTransactionCount = 4;
+
+  optional int64 failedTransactionCount = 5;
+
+  optional string totalInflowNativeValue = 6;
+
+  optional string totalOutflowNativeValue = 7;
+
+  repeated string cappedWallets = 8;
+
+  repeated TokenProjectProfileTransactionMethod topMethods = 9;
+
+  repeated TokenProjectProfileTransactionCounterparty topCounterparties = 10;
+}
+
+message TokenProjectProfileWallet {
+  optional string address = 1;
+
+  repeated string roles = 2;
+
+  optional TokenProjectProfileInitialRecipient initialRecipient = 3;
+
+  optional TokenProjectProfileWalletAssets assets = 4;
+
+  optional TokenProjectProfileWalletSimulation simulation = 5;
+
+  optional bool transactionSampleCapped = 6;
+}
+
+message TokenProjectProfileWalletAssets {
+  optional string nativeBalance = 1;
+
+  optional string wrappedNativeBalance = 2;
+
+  optional string usdtBalance = 3;
+
+  optional string trackedAssetUsdtValue = 4;
+}
+
+message TokenProjectProfileWalletRoleCount {
+  optional string role = 1;
+
+  optional int32 count = 2;
+}
+
+message TokenProjectProfileWalletSimulation {
+  optional bool transferFromDeadToWalletCallSucceeded = 1;
+
+  optional bool transferFromZeroToWalletCallSucceeded = 2;
+
+  optional bool transferFromWethPairToWalletCallSucceeded = 3;
+
+  optional bool transferFromUsdtPairToWalletCallSucceeded = 4;
+
+  optional bool transferFromWalletToWethPairCallSucceeded = 5;
+
+  optional bool transferFromWalletToUsdtPairCallSucceeded = 6;
+}
+
+message TokenProjectProfileWalletSummary {
+  optional int32 walletCount = 1;
+
+  optional string nativeBalanceTotal = 2;
+
+  optional string wrappedNativeBalanceTotal = 3;
+
+  optional string usdtBalanceTotal = 4;
+
+  optional string trackedAssetUsdtValueTotal = 5;
+
+  optional int32 initialRecipientCount = 6;
+
+  optional uint64 initialRecipientAllocationBps = 7;
+
+  optional int32 walletsWithSimulationSignals = 8;
+
+  repeated TokenProjectProfileWalletRoleCount roleCounts = 9;
 }
 
 message TokenProjectRelatedWallet {
@@ -1012,38 +1138,6 @@ message TokenProjectRelatedWallet {
   optional string role = 3;
 
   optional string createdAt = 4;
-}
-
-message TokenProjectReportEvaluationSummary {
-  optional string status = 1;
-
-  optional int32 failedAttempts = 2;
-
-  optional string lastError = 3;
-
-  optional string updatedAt = 4;
-
-  optional string outcome = 5;
-
-  optional string evaluatedAt = 6;
-}
-
-message TokenProjectReportRiskSummary {
-  optional TokenProjectPairRiskSummary wethPair = 1;
-
-  optional TokenProjectPairRiskSummary usdtPair = 2;
-}
-
-message TokenProjectReportSummary {
-  optional int64 revision = 1;
-
-  optional string completenessStatus = 2;
-
-  optional string builtAt = 3;
-
-  optional TokenProjectReportRiskSummary riskSummary = 4;
-
-  optional TokenProjectReportEvaluationSummary evaluation = 5;
 }
 
 message TokenProjectSwapActivity {
@@ -1214,156 +1308,8 @@ message TokenProjectSwapPairActivity {
   repeated TokenProjectSwapBlock blocks = 33;
 }
 
-message TokenProjectTrendPoint {
-  optional string observedAt = 1;
-
-  optional string value = 2;
-}
-
-message TokenProjectTrendSeries {
-  optional string key = 1;
-
-  optional string label = 2;
-
-  optional string unit = 3;
-
-  optional string dataType = 4;
-
-  repeated TokenProjectTrendPoint points = 5;
-}
-
-message TokenProjectTrends {
-  optional string range = 1;
-
-  optional string observedFrom = 2;
-
-  optional string generatedAt = 3;
-
-  repeated TokenProjectTrendSeries series = 4;
-}
-
-message TokenReportRevision {
-  optional int64 reportRevisionId = 1;
-
-  optional int64 projectId = 2;
-
-  optional int64 chainId = 3;
-
-  optional string contract = 4;
-
-  optional int64 revision = 5;
-
-  optional string contentHash = 6;
-
-  optional string completenessStatus = 7;
-
-  optional string evidenceJson = 8;
-
-  optional string reportJson = 9;
-
-  optional uint64 observedBlockNumber = 10;
-
-  optional TokenProjectReportRiskSummary riskSummary = 11;
-
-  optional string builtAt = 21;
-
-  optional string createdAt = 22;
-}
-
-message TokenResearchState {
-  optional int64 projectId = 1;
-
-  optional int64 chainId = 2;
-
-  optional string contract = 3;
-
-  optional string status = 4;
-
-  optional int64 evidenceRevision = 5;
-
-  optional int64 currentReportRevision = 6;
-
-  optional string currentSelectionOutcome = 7;
-
-  optional int64 lastEvaluatedRevision = 8;
-
-  optional string lastEvaluatedAt = 9;
-
-  optional uint64 attentionStartBlockNumber = 10;
-
-  optional uint64 attentionStartBlockTime = 11;
-
-  optional uint64 attentionExpiryBlockTime = 12;
-
-  optional uint64 expiredBlockNumber = 13;
-
-  optional uint64 expiredBlockTime = 14;
-
-  optional string createdAt = 15;
-
-  optional string updatedAt = 16;
-}
-
 message TokenRuntimeConfiguration {
   repeated TokenChain chains = 1;
-}
-
-message TokenSelection {
-  optional int64 selectionId = 1;
-
-  optional int64 projectId = 2;
-
-  optional int64 chainId = 3;
-
-  optional string contract = 4;
-
-  optional string outcome = 5;
-
-  optional string strategyKey = 6;
-
-  optional string strategyVersion = 7;
-
-  optional int64 reportRevision = 8;
-
-  repeated string reasonCodes = 9;
-
-  optional string reasonDetail = 10;
-
-  optional string decidedAt = 11;
-
-  optional string createdAt = 12;
-}
-
-message TokenSimulationResult {
-  optional int64 projectId = 1;
-
-  optional string wallet = 2;
-
-  optional bool canMintFromDeadViaTransferFrom = 3;
-
-  optional bool canMintFromZeroViaTransferFrom = 4;
-
-  optional bool canMintFromWethPairViaTransferFrom = 5;
-
-  optional bool canMintFromUsdtPairViaTransferFrom = 6;
-
-  optional bool canMintViaTransferToWethPair = 7;
-
-  optional bool canMintViaTransferToUsdtPair = 8;
-}
-
-message TokenWalletAssetState {
-  optional int64 chainId = 1;
-
-  optional string wallet = 2;
-
-  optional string wethBalance = 3;
-
-  optional string usdtBalance = 4;
-
-  optional string nativeBalance = 5;
-
-  optional string totalAssetUsdtValue = 6;
 }
 
 message TokenWalletBlocklistEntry {

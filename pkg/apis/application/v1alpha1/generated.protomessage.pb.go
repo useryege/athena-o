@@ -43,37 +43,21 @@ func (*SystemNotificationDeliveryDetail) ProtoMessage() {}
 
 func (*SystemNotificationDeliveryItem) ProtoMessage() {}
 
-func (*TokenAveObservation) ProtoMessage() {}
-
-func (*TokenAvePair) ProtoMessage() {}
-
-func (*TokenAveToken) ProtoMessage() {}
-
 func (*TokenChain) ProtoMessage() {}
 
 func (*TokenChainCheckpoint) ProtoMessage() {}
-
-func (*TokenChainPair) ProtoMessage() {}
-
-func (*TokenChainPairLiquidity) ProtoMessage() {}
 
 func (*TokenChainProcessingAttempt) ProtoMessage() {}
 
 func (*TokenChainProcessingSummary) ProtoMessage() {}
 
-func (*TokenChainStateObservation) ProtoMessage() {}
-
-func (*TokenChainToken) ProtoMessage() {}
-
-func (*TokenCollectionSchedule) ProtoMessage() {}
+func (*TokenCollectionResult) ProtoMessage() {}
 
 func (*TokenCollectionTask) ProtoMessage() {}
 
 func (*TokenContractCode) ProtoMessage() {}
 
 func (*TokenContractCodeBlocklistEntry) ProtoMessage() {}
-
-func (*TokenContractSourceObservation) ProtoMessage() {}
 
 func (*TokenNodeStatus) ProtoMessage() {}
 
@@ -85,17 +69,49 @@ func (*TokenProjectInitialRecipient) ProtoMessage() {}
 
 func (*TokenProjectListItem) ProtoMessage() {}
 
-func (*TokenProjectObservation) ProtoMessage() {}
+func (*TokenProjectMarketSummary) ProtoMessage() {}
 
-func (*TokenProjectPairRiskSummary) ProtoMessage() {}
+func (*TokenProjectPairProfileSummary) ProtoMessage() {}
+
+func (*TokenProjectProfile) ProtoMessage() {}
+
+func (*TokenProjectProfileAveRisk) ProtoMessage() {}
+
+func (*TokenProjectProfileEvidence) ProtoMessage() {}
+
+func (*TokenProjectProfileInitialRecipient) ProtoMessage() {}
+
+func (*TokenProjectProfileMarket) ProtoMessage() {}
+
+func (*TokenProjectProfilePair) ProtoMessage() {}
+
+func (*TokenProjectProfilePairChainState) ProtoMessage() {}
+
+func (*TokenProjectProfilePairLiquidity) ProtoMessage() {}
+
+func (*TokenProjectProfilePairMarket) ProtoMessage() {}
+
+func (*TokenProjectProfilePairSignals) ProtoMessage() {}
+
+func (*TokenProjectProfileSource) ProtoMessage() {}
+
+func (*TokenProjectProfileTransactionCounterparty) ProtoMessage() {}
+
+func (*TokenProjectProfileTransactionMethod) ProtoMessage() {}
+
+func (*TokenProjectProfileTransactions) ProtoMessage() {}
+
+func (*TokenProjectProfileWallet) ProtoMessage() {}
+
+func (*TokenProjectProfileWalletAssets) ProtoMessage() {}
+
+func (*TokenProjectProfileWalletRoleCount) ProtoMessage() {}
+
+func (*TokenProjectProfileWalletSimulation) ProtoMessage() {}
+
+func (*TokenProjectProfileWalletSummary) ProtoMessage() {}
 
 func (*TokenProjectRelatedWallet) ProtoMessage() {}
-
-func (*TokenProjectReportEvaluationSummary) ProtoMessage() {}
-
-func (*TokenProjectReportRiskSummary) ProtoMessage() {}
-
-func (*TokenProjectReportSummary) ProtoMessage() {}
 
 func (*TokenProjectSwapActivity) ProtoMessage() {}
 
@@ -107,23 +123,7 @@ func (*TokenProjectSwapEvent) ProtoMessage() {}
 
 func (*TokenProjectSwapPairActivity) ProtoMessage() {}
 
-func (*TokenProjectTrendPoint) ProtoMessage() {}
-
-func (*TokenProjectTrendSeries) ProtoMessage() {}
-
-func (*TokenProjectTrends) ProtoMessage() {}
-
-func (*TokenReportRevision) ProtoMessage() {}
-
-func (*TokenResearchState) ProtoMessage() {}
-
 func (*TokenRuntimeConfiguration) ProtoMessage() {}
-
-func (*TokenSelection) ProtoMessage() {}
-
-func (*TokenSimulationResult) ProtoMessage() {}
-
-func (*TokenWalletAssetState) ProtoMessage() {}
 
 func (*TokenWalletBlocklistEntry) ProtoMessage() {}
 

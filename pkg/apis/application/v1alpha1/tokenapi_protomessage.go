@@ -7,6 +7,5 @@ func (*TokenChainProcessingAttempt) ProtoMessage()     {}
 func (*TokenChainProcessingSummary) ProtoMessage()     {}
 func (*TokenContractCode) ProtoMessage()               {}
 func (*TokenCollectionTask) ProtoMessage()             {}
-func (*TokenResearchState) ProtoMessage()              {}
-func (*TokenReportRevision) ProtoMessage()             {}
-func (*TokenSelection) ProtoMessage()                  {}
+func (*TokenCollectionResult) ProtoMessage()           {}
+func (*TokenProjectProfile) ProtoMessage()             {}

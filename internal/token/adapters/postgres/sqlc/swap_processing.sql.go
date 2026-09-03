@@ -236,6 +236,12 @@ INSERT INTO project_swap_pair (
   $7,
   $8::bigint
 )
+ON CONFLICT (project_id, pair_kind) DO UPDATE
+SET project_id = project_swap_pair.project_id
+WHERE project_swap_pair.chain_id = EXCLUDED.chain_id
+  AND project_swap_pair.pair_address = EXCLUDED.pair_address
+  AND project_swap_pair.start_block_number = EXCLUDED.start_block_number
+  AND project_swap_pair.start_block_time = EXCLUDED.start_block_time
 RETURNING id, project_id, chain_id, pair_kind, pair_address, start_block_number, start_block_time, swap_block_count, status, first_swap_block_number, first_swap_block_time, last_swap_block_number, last_swap_block_time, absolute_expiry_block_time, next_expiry_block_time, completed_block_number, completed_block_time, expired_block_number, expired_block_time, expired_reason, created_at, updated_at
 `
 

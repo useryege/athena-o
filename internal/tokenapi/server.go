@@ -39,7 +39,7 @@ func (s *Server) CreateGRPC() *grpc.Server {
 	})
 	versionpkg.RegisterVersionServiceServer(server, versionService)
 	apiclient.RegisterTokenCatalogServiceServer(server, s.service)
-	apiclient.RegisterTokenResearchServiceServer(server, s.service)
+	apiclient.RegisterTokenCollectionServiceServer(server, s.service)
 	apiclient.RegisterTokenPolicyServiceServer(server, s.service)
 	apiclient.RegisterTokenOperationsServiceServer(server, s.service)
 	grpc_health_v1.RegisterHealthServer(server, s.healthService)

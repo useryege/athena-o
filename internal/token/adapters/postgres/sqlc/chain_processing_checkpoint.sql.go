@@ -11,6 +11,35 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const advanceChainProcessingCheckpoint = `-- name: AdvanceChainProcessingCheckpoint :one
+UPDATE chain_processing_checkpoint
+SET cursor_block_number = $1,
+  updated_at = now()
+WHERE chain_id = $2
+  AND cursor_block_number = $3
+  AND status = 'running'
+RETURNING chain_id, cursor_block_number, status, created_at, updated_at
+`
+
+type AdvanceChainProcessingCheckpointParams struct {
+	CursorBlockNumber         int64
+	ChainID                   int64
+	ExpectedCursorBlockNumber int64
+}
+
+func (q *Queries) AdvanceChainProcessingCheckpoint(ctx context.Context, arg AdvanceChainProcessingCheckpointParams) (ChainProcessingCheckpoint, error) {
+	row := q.db.QueryRow(ctx, advanceChainProcessingCheckpoint, arg.CursorBlockNumber, arg.ChainID, arg.ExpectedCursorBlockNumber)
+	var i ChainProcessingCheckpoint
+	err := row.Scan(
+		&i.ChainID,
+		&i.CursorBlockNumber,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getChainProcessingCheckpoint = `-- name: GetChainProcessingCheckpoint :one
 SELECT
   c.id AS chain_id,
@@ -154,41 +183,6 @@ type UpsertChainProcessingCheckpointParams struct {
 
 func (q *Queries) UpsertChainProcessingCheckpoint(ctx context.Context, arg UpsertChainProcessingCheckpointParams) (ChainProcessingCheckpoint, error) {
 	row := q.db.QueryRow(ctx, upsertChainProcessingCheckpoint, arg.ChainID, arg.CursorBlockNumber, arg.Status)
-	var i ChainProcessingCheckpoint
-	err := row.Scan(
-		&i.ChainID,
-		&i.CursorBlockNumber,
-		&i.Status,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const upsertChainProcessingCheckpointCursor = `-- name: UpsertChainProcessingCheckpointCursor :one
-INSERT INTO chain_processing_checkpoint (
-  chain_id,
-  cursor_block_number,
-  status
-) VALUES (
-  $1,
-  $2,
-  COALESCE(NULLIF($3::text, ''), 'running')
-)
-ON CONFLICT (chain_id) DO UPDATE
-SET cursor_block_number = EXCLUDED.cursor_block_number,
-  updated_at = now()
-RETURNING chain_id, cursor_block_number, status, created_at, updated_at
-`
-
-type UpsertChainProcessingCheckpointCursorParams struct {
-	ChainID           int64
-	CursorBlockNumber int64
-	Status            string
-}
-
-func (q *Queries) UpsertChainProcessingCheckpointCursor(ctx context.Context, arg UpsertChainProcessingCheckpointCursorParams) (ChainProcessingCheckpoint, error) {
-	row := q.db.QueryRow(ctx, upsertChainProcessingCheckpointCursor, arg.ChainID, arg.CursorBlockNumber, arg.Status)
 	var i ChainProcessingCheckpoint
 	err := row.Scan(
 		&i.ChainID,

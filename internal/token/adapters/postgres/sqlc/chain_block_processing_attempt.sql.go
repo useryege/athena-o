@@ -45,30 +45,28 @@ SET block_time = $1::bigint,
   candidate_count = $10::int,
   validated_count = $11::int,
   rejected_count = $12::int,
-  expired_research_state_count = $13::bigint,
-  timing_complete = $14,
+  timing_complete = $13,
   completed_at = now(),
   updated_at = now()
-WHERE id = $15
-RETURNING id, chain_id, block_number, attempt_number, block_time, status, terminal_stage, error_message, checkpoint_read_duration_us, discovery_duration_us, validation_duration_us, persistence_duration_us, total_duration_us, candidate_count, validated_count, rejected_count, expired_research_state_count, timing_complete, started_at, completed_at, created_at, updated_at
+WHERE id = $14
+RETURNING id, chain_id, block_number, attempt_number, block_time, status, terminal_stage, error_message, checkpoint_read_duration_us, discovery_duration_us, validation_duration_us, persistence_duration_us, total_duration_us, candidate_count, validated_count, rejected_count, timing_complete, started_at, completed_at, created_at, updated_at
 `
 
 type CompleteChainBlockProcessingAttemptParams struct {
-	BlockTime                 pgtype.Int8
-	Status                    string
-	TerminalStage             string
-	ErrorMessage              string
-	CheckpointReadDurationUs  pgtype.Int8
-	DiscoveryDurationUs       pgtype.Int8
-	ValidationDurationUs      pgtype.Int8
-	PersistenceDurationUs     pgtype.Int8
-	TotalDurationUs           pgtype.Int8
-	CandidateCount            pgtype.Int4
-	ValidatedCount            pgtype.Int4
-	RejectedCount             pgtype.Int4
-	ExpiredResearchStateCount pgtype.Int8
-	TimingComplete            bool
-	ID                        int64
+	BlockTime                pgtype.Int8
+	Status                   string
+	TerminalStage            string
+	ErrorMessage             string
+	CheckpointReadDurationUs pgtype.Int8
+	DiscoveryDurationUs      pgtype.Int8
+	ValidationDurationUs     pgtype.Int8
+	PersistenceDurationUs    pgtype.Int8
+	TotalDurationUs          pgtype.Int8
+	CandidateCount           pgtype.Int4
+	ValidatedCount           pgtype.Int4
+	RejectedCount            pgtype.Int4
+	TimingComplete           bool
+	ID                       int64
 }
 
 func (q *Queries) CompleteChainBlockProcessingAttempt(ctx context.Context, arg CompleteChainBlockProcessingAttemptParams) (ChainBlockProcessingAttempt, error) {
@@ -85,7 +83,6 @@ func (q *Queries) CompleteChainBlockProcessingAttempt(ctx context.Context, arg C
 		arg.CandidateCount,
 		arg.ValidatedCount,
 		arg.RejectedCount,
-		arg.ExpiredResearchStateCount,
 		arg.TimingComplete,
 		arg.ID,
 	)
@@ -107,7 +104,6 @@ func (q *Queries) CompleteChainBlockProcessingAttempt(ctx context.Context, arg C
 		&i.CandidateCount,
 		&i.ValidatedCount,
 		&i.RejectedCount,
-		&i.ExpiredResearchStateCount,
 		&i.TimingComplete,
 		&i.StartedAt,
 		&i.CompletedAt,
@@ -177,7 +173,7 @@ SELECT
 FROM chain_block_processing_attempt
 WHERE chain_id = $1
   AND block_number = $2
-RETURNING id, chain_id, block_number, attempt_number, block_time, status, terminal_stage, error_message, checkpoint_read_duration_us, discovery_duration_us, validation_duration_us, persistence_duration_us, total_duration_us, candidate_count, validated_count, rejected_count, expired_research_state_count, timing_complete, started_at, completed_at, created_at, updated_at
+RETURNING id, chain_id, block_number, attempt_number, block_time, status, terminal_stage, error_message, checkpoint_read_duration_us, discovery_duration_us, validation_duration_us, persistence_duration_us, total_duration_us, candidate_count, validated_count, rejected_count, timing_complete, started_at, completed_at, created_at, updated_at
 `
 
 type CreateChainBlockProcessingAttemptParams struct {
@@ -205,7 +201,6 @@ func (q *Queries) CreateChainBlockProcessingAttempt(ctx context.Context, arg Cre
 		&i.CandidateCount,
 		&i.ValidatedCount,
 		&i.RejectedCount,
-		&i.ExpiredResearchStateCount,
 		&i.TimingComplete,
 		&i.StartedAt,
 		&i.CompletedAt,
@@ -269,7 +264,7 @@ WITH anchor AS (
   FROM chain_block_processing_attempt
   WHERE chain_id = $1
 ), filtered AS (
-  SELECT attempt.id, attempt.chain_id, attempt.block_number, attempt.attempt_number, attempt.block_time, attempt.status, attempt.terminal_stage, attempt.error_message, attempt.checkpoint_read_duration_us, attempt.discovery_duration_us, attempt.validation_duration_us, attempt.persistence_duration_us, attempt.total_duration_us, attempt.candidate_count, attempt.validated_count, attempt.rejected_count, attempt.expired_research_state_count, attempt.timing_complete, attempt.started_at, attempt.completed_at, attempt.created_at, attempt.updated_at
+  SELECT attempt.id, attempt.chain_id, attempt.block_number, attempt.attempt_number, attempt.block_time, attempt.status, attempt.terminal_stage, attempt.error_message, attempt.checkpoint_read_duration_us, attempt.discovery_duration_us, attempt.validation_duration_us, attempt.persistence_duration_us, attempt.total_duration_us, attempt.candidate_count, attempt.validated_count, attempt.rejected_count, attempt.timing_complete, attempt.started_at, attempt.completed_at, attempt.created_at, attempt.updated_at
   FROM chain_block_processing_attempt attempt
   CROSS JOIN anchor
   WHERE attempt.chain_id = $1
@@ -403,7 +398,7 @@ WITH anchor AS (
   FROM chain_processing_checkpoint
   WHERE chain_id = $1
 )
-SELECT attempt.id, attempt.chain_id, attempt.block_number, attempt.attempt_number, attempt.block_time, attempt.status, attempt.terminal_stage, attempt.error_message, attempt.checkpoint_read_duration_us, attempt.discovery_duration_us, attempt.validation_duration_us, attempt.persistence_duration_us, attempt.total_duration_us, attempt.candidate_count, attempt.validated_count, attempt.rejected_count, attempt.expired_research_state_count, attempt.timing_complete, attempt.started_at, attempt.completed_at, attempt.created_at, attempt.updated_at
+SELECT attempt.id, attempt.chain_id, attempt.block_number, attempt.attempt_number, attempt.block_time, attempt.status, attempt.terminal_stage, attempt.error_message, attempt.checkpoint_read_duration_us, attempt.discovery_duration_us, attempt.validation_duration_us, attempt.persistence_duration_us, attempt.total_duration_us, attempt.candidate_count, attempt.validated_count, attempt.rejected_count, attempt.timing_complete, attempt.started_at, attempt.completed_at, attempt.created_at, attempt.updated_at
 FROM chain_block_processing_attempt attempt
 CROSS JOIN anchor
 CROSS JOIN checkpoint
@@ -466,7 +461,6 @@ func (q *Queries) ListChainBlockProcessingAttempts(ctx context.Context, arg List
 			&i.CandidateCount,
 			&i.ValidatedCount,
 			&i.RejectedCount,
-			&i.ExpiredResearchStateCount,
 			&i.TimingComplete,
 			&i.StartedAt,
 			&i.CompletedAt,
@@ -484,22 +478,23 @@ func (q *Queries) ListChainBlockProcessingAttempts(ctx context.Context, arg List
 }
 
 const lockChainProcessingCheckpoint = `-- name: LockChainProcessingCheckpoint :one
-SELECT cursor_block_number, updated_at
+SELECT chain_id, cursor_block_number, status, created_at, updated_at
 FROM chain_processing_checkpoint
 WHERE chain_id = $1
 FOR UPDATE
 `
 
-type LockChainProcessingCheckpointRow struct {
-	CursorBlockNumber int64
-	UpdatedAt         pgtype.Timestamptz
-}
-
 // Chain block processing attempt audit and read model.
-func (q *Queries) LockChainProcessingCheckpoint(ctx context.Context, chainID int64) (LockChainProcessingCheckpointRow, error) {
+func (q *Queries) LockChainProcessingCheckpoint(ctx context.Context, chainID int64) (ChainProcessingCheckpoint, error) {
 	row := q.db.QueryRow(ctx, lockChainProcessingCheckpoint, chainID)
-	var i LockChainProcessingCheckpointRow
-	err := row.Scan(&i.CursorBlockNumber, &i.UpdatedAt)
+	var i ChainProcessingCheckpoint
+	err := row.Scan(
+		&i.ChainID,
+		&i.CursorBlockNumber,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }
 

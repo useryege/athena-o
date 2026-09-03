@@ -17,10 +17,13 @@ type Worker interface {
 }
 
 type QueueMetric struct {
-	Queue             string
-	Status            string
-	Count             int64
-	OldestAvailableAt time.Time
+	Queue                  string
+	Status                 string
+	Count                  int64
+	OldestAvailableAt      time.Time
+	FailureCount           int64
+	LeaseRecoveryCount     int64
+	AverageDurationSeconds float64
 }
 
 type Options struct {
@@ -129,7 +132,15 @@ func (h *Host) refreshDiagnostics(parent context.Context) {
 	}
 	h.tracker.ResetQueues()
 	for _, metric := range metrics {
-		h.tracker.UpdateQueue(metric.Queue, metric.Status, metric.Count, metric.OldestAvailableAt)
+		h.tracker.UpdateQueue(
+			metric.Queue,
+			metric.Status,
+			metric.Count,
+			metric.OldestAvailableAt,
+			metric.FailureCount,
+			metric.LeaseRecoveryCount,
+			metric.AverageDurationSeconds,
+		)
 	}
 	h.tracker.SetDiagnosticsSuccess(true)
 }

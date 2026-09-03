@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	etherscanmanagerapiclient "github.com/useryege/athena/internal/etherscanmanager/apiclient"
-	"github.com/useryege/athena/internal/token/research"
+	"github.com/useryege/athena/internal/token/collection"
 	"github.com/useryege/athena/internal/token/shared"
 )
 
@@ -35,7 +35,7 @@ func (provider *Provider) ListNormalTransactions(
 	chainID int64,
 	wallet shared.Address,
 	endBlock uint64,
-) ([]research.WalletNormalTransaction, error) {
+) ([]collection.WalletNormalTransaction, error) {
 	response, err := provider.client.ListNormalTransactions(ctx, &etherscanmanagerapiclient.ListNormalTransactionsRequest{
 		ChainId: chainID,
 		Address: wallet.Hex(),
@@ -74,7 +74,7 @@ func (provider *Provider) ListNormalTransactions(
 			normalTransactionPageSize,
 		)
 	}
-	result := make([]research.WalletNormalTransaction, 0, len(items))
+	result := make([]collection.WalletNormalTransaction, 0, len(items))
 	for index, item := range items {
 		if item != nil && item.GetBlockNumber() > endBlock {
 			return nil, fmt.Errorf(
@@ -104,38 +104,38 @@ func (provider *Provider) ListNormalTransactions(
 func mapNormalTransaction(
 	wallet shared.Address,
 	item *etherscanmanagerapiclient.NormalTransaction,
-) (research.WalletNormalTransaction, error) {
+) (collection.WalletNormalTransaction, error) {
 	if item == nil {
-		return research.WalletNormalTransaction{}, fmt.Errorf("transaction is required")
+		return collection.WalletNormalTransaction{}, fmt.Errorf("transaction is required")
 	}
 	transactionHash, err := shared.HexToHash(item.GetTransactionHash())
 	if err != nil {
-		return research.WalletNormalTransaction{}, fmt.Errorf("transaction_hash: %w", err)
+		return collection.WalletNormalTransaction{}, fmt.Errorf("transaction_hash: %w", err)
 	}
 	fromAddress, err := shared.HexToAddress(item.GetFromAddress())
 	if err != nil {
-		return research.WalletNormalTransaction{}, fmt.Errorf("from_address: %w", err)
+		return collection.WalletNormalTransaction{}, fmt.Errorf("from_address: %w", err)
 	}
 	var toAddress shared.Address
 	if text := strings.TrimSpace(item.GetToAddress()); text != "" {
 		toAddress, err = shared.HexToAddress(text)
 		if err != nil {
-			return research.WalletNormalTransaction{}, fmt.Errorf("to_address: %w", err)
+			return collection.WalletNormalTransaction{}, fmt.Errorf("to_address: %w", err)
 		}
 	}
 	value, err := parseUnsignedDecimal("value", item.GetValue())
 	if err != nil {
-		return research.WalletNormalTransaction{}, err
+		return collection.WalletNormalTransaction{}, err
 	}
 	gasPrice, err := parseUnsignedDecimal("gas_price", item.GetGasPrice())
 	if err != nil {
-		return research.WalletNormalTransaction{}, err
+		return collection.WalletNormalTransaction{}, err
 	}
 	receiptStatus, err := mapReceiptStatus(item.GetReceiptStatus())
 	if err != nil {
-		return research.WalletNormalTransaction{}, err
+		return collection.WalletNormalTransaction{}, err
 	}
-	return research.WalletNormalTransaction{
+	return collection.WalletNormalTransaction{
 		Wallet:           wallet,
 		TransactionHash:  transactionHash,
 		BlockNumber:      item.GetBlockNumber(),
@@ -166,14 +166,14 @@ func parseUnsignedDecimal(field, value string) (*big.Int, error) {
 
 func mapReceiptStatus(
 	status etherscanmanagerapiclient.NormalTransactionReceiptStatus,
-) (research.NormalTransactionReceiptStatus, error) {
+) (collection.NormalTransactionReceiptStatus, error) {
 	switch status {
 	case etherscanmanagerapiclient.NormalTransactionReceiptStatus_NORMAL_TRANSACTION_RECEIPT_STATUS_UNSPECIFIED:
-		return research.NormalTransactionReceiptStatusUnspecified, nil
+		return collection.NormalTransactionReceiptStatusUnspecified, nil
 	case etherscanmanagerapiclient.NormalTransactionReceiptStatus_NORMAL_TRANSACTION_RECEIPT_STATUS_FAILED:
-		return research.NormalTransactionReceiptStatusFailed, nil
+		return collection.NormalTransactionReceiptStatusFailed, nil
 	case etherscanmanagerapiclient.NormalTransactionReceiptStatus_NORMAL_TRANSACTION_RECEIPT_STATUS_SUCCESS:
-		return research.NormalTransactionReceiptStatusSuccess, nil
+		return collection.NormalTransactionReceiptStatusSuccess, nil
 	default:
 		return "", fmt.Errorf("receipt_status is invalid")
 	}

@@ -28,19 +28,13 @@ SET cursor_block_number = EXCLUDED.cursor_block_number,
   updated_at = now()
 RETURNING *;
 
--- name: UpsertChainProcessingCheckpointCursor :one
-INSERT INTO chain_processing_checkpoint (
-  chain_id,
-  cursor_block_number,
-  status
-) VALUES (
-  @chain_id,
-  @cursor_block_number,
-  COALESCE(NULLIF(sqlc.arg('status')::text, ''), 'running')
-)
-ON CONFLICT (chain_id) DO UPDATE
-SET cursor_block_number = EXCLUDED.cursor_block_number,
+-- name: AdvanceChainProcessingCheckpoint :one
+UPDATE chain_processing_checkpoint
+SET cursor_block_number = @cursor_block_number,
   updated_at = now()
+WHERE chain_id = @chain_id
+  AND cursor_block_number = @expected_cursor_block_number
+  AND status = 'running'
 RETURNING *;
 
 -- name: UpdateChainProcessingCheckpointStatus :one

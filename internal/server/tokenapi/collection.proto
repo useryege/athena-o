@@ -1,0 +1,10 @@
+syntax = "proto3";
+package tokenapi;
+import "internal/server/tokenapi/types.proto";
+import "google/api/annotations.proto";
+option go_package = "github.com/useryege/athena/pkg/apiclient/tokenapi";
+
+service TokenCollectionService {
+  rpc GetCollectionTask(GetCollectionTaskRequest) returns (GetCollectionTaskResponse) { option (google.api.http) = {get: "/api/v1/tokens/collection-tasks/{task_id}"}; }
+  rpc ListCollectionTasks(ListCollectionTasksRequest) returns (ListCollectionTasksResponse) { option (google.api.http) = {get: "/api/v1/tokens/collection-tasks"}; }
+}

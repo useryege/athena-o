@@ -11,11 +11,11 @@ expiration, numeric Swap checkpoints, and process health reporting.
 
 The Token Chain Processor creates the two pair targets atomically with each
 accepted project. The project-detail read model exposes committed Swap
-observations through read-only activity and event-detail endpoints. It derives
+samples through read-only activity and event-detail endpoints. It derives
 trade classification, pair-accounting flows, and execution-price summaries at
-read time; those concerns do not feed back into this processor. Research
-collection schedules, report generation, and project selection do not consume
-Swap observations.
+read time; those concerns do not feed back into this processor. The one-time
+six-source collection barrier and ProjectProfile Builder do not consume Swap
+samples, and a Swap pair's terminal state is not a project-expiry state.
 
 ## Source Locations
 
@@ -280,6 +280,6 @@ without credentials.
 - [ ] Recheck the atomic block transaction, retries, shutdown, health,
       readiness, logs, and metrics.
 - [ ] Recheck target initialization inside the Chain Processor block transaction.
-- [ ] Keep the raw observation contract aligned with the read-only project-detail
+- [ ] Keep the raw Swap sample contract aligned with the read-only project-detail
       Swap view.
 - [ ] Keep the [design index](../README.md) entry current.

@@ -69,7 +69,12 @@ func (f *CommonFlags) Open(ctx context.Context, name string) (*tokenpostgres.Con
 			}
 			result := make([]workerhost.QueueMetric, 0, len(metrics))
 			for _, metric := range metrics {
-				result = append(result, workerhost.QueueMetric{Queue: metric.Queue, Status: metric.Status, Count: metric.Count, OldestAvailableAt: metric.OldestAvailableAt})
+				result = append(result, workerhost.QueueMetric{
+					Queue: metric.Queue, Status: metric.Status, Count: metric.Count,
+					OldestAvailableAt: metric.OldestAvailableAt,
+					FailureCount:      metric.FailureCount, LeaseRecoveryCount: metric.LeaseRecoveryCount,
+					AverageDurationSeconds: metric.AverageDurationSeconds,
+				})
 			}
 			return result, nil
 		},

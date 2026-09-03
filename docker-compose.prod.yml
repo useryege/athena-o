@@ -369,14 +369,6 @@ services:
       ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8111
     expose: ["8111"]
 
-  athena-token-scheduler:
-    <<: *token-worker
-    environment:
-      <<: *token-worker-environment
-      ATHENA_BINARY_NAME: athena-token-scheduler
-      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8112
-    expose: ["8112"]
-
   athena-token-collector-ave:
     <<: *token-worker
     command: ["athena", "--data-type", "ave"]
@@ -449,21 +441,13 @@ services:
       ATHENA_TOKEN_ETHERSCAN_MANAGER_SERVER_ADDRESS: athena-etherscan-manager:8100
     expose: ["8120"]
 
-  athena-token-report-builder:
+  athena-token-profile-builder:
     <<: *token-worker
     environment:
       <<: *token-worker-environment
-      ATHENA_BINARY_NAME: athena-token-report-builder
+      ATHENA_BINARY_NAME: athena-token-profile-builder
       ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8118
     expose: ["8118"]
-
-  athena-token-selector:
-    <<: *token-worker
-    environment:
-      <<: *token-worker-environment
-      ATHENA_BINARY_NAME: athena-token-selector
-      ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8119
-    expose: ["8119"]
 
   athena-migrate:
     image: ${PROD_IMAGE:-athena:local}

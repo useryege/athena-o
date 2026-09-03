@@ -123,7 +123,7 @@ func (q *Queries) ListContractCodesByDeploymentCount(ctx context.Context, arg Li
 
 const updateContractCodeSource = `-- name: UpdateContractCodeSource :one
 UPDATE contract_code
-SET source_code = $1::text,
+SET source_code = COALESCE(contract_code.source_code, $1::text),
   source_code_fetched_at = $2::timestamptz
 WHERE code_hash = $3
 RETURNING code_hash, source_code, source_code_fetched_at, deployment_count, created_at

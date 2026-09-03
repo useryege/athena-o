@@ -1,6 +1,6 @@
 # Athena API Overview
 
-Athena is a permissioned platform for market intelligence, token research, operational wallets, notifications, and governed collaboration. Its browser application and HTTP API are served from the same origin.
+Athena is a permissioned platform for market intelligence, token project profiling, operational wallets, notifications, and governed collaboration. Its browser application and HTTP API are served from the same origin.
 
 ## Capabilities
 
@@ -8,7 +8,7 @@ Athena's public API covers:
 
 - Polymarket discovery, realtime price windows, movers, live sports, recently completed tennis events, and price histories.
 - Managed Optimistic Oracle proposals and disputes, Worm sports markets, and a World Cup corners dataset.
-- Token projects, research state, reports, market and swap activity, collection diagnostics, policy lists, and chain-processing state.
+- Token projects, one-time collection evidence, immutable project profiles, market and swap activity, collection diagnostics, policy lists, and chain-processing state.
 - Account-owned operational wallets plus live Solana SOL and Circle native USDC balances.
 - Profit Sharing rounds, proposals, ballots, and votes under a separate entitlement and membership model.
 

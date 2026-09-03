@@ -102,6 +102,12 @@ INSERT INTO project_swap_pair (
   @absolute_expiry_block_time,
   sqlc.arg('next_expiry_block_time')::bigint
 )
+ON CONFLICT (project_id, pair_kind) DO UPDATE
+SET project_id = project_swap_pair.project_id
+WHERE project_swap_pair.chain_id = EXCLUDED.chain_id
+  AND project_swap_pair.pair_address = EXCLUDED.pair_address
+  AND project_swap_pair.start_block_number = EXCLUDED.start_block_number
+  AND project_swap_pair.start_block_time = EXCLUDED.start_block_time
 RETURNING *;
 
 -- name: CreateProjectSwapBlock :one

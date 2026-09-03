@@ -65,12 +65,9 @@ func (repository *baseRepository) querier() (tokensqlc.Querier, error) {
 }
 
 type ChainRepository struct{ *baseRepository }
-type SchedulerRepository struct{ *baseRepository }
 type CollectionRepository struct{ *baseRepository }
 type CatalogRepository struct{ *baseRepository }
-type ReportingRepository struct{ *baseRepository }
-type ResearchReadRepository struct{ *baseRepository }
-type SelectionRepository struct{ *baseRepository }
+type ProfileRepository struct{ *baseRepository }
 type ProjectViewRepository struct{ *baseRepository }
 type PolicyRepository struct{ *baseRepository }
 type DiagnosticsRepository struct{ *baseRepository }
@@ -78,23 +75,14 @@ type DiagnosticsRepository struct{ *baseRepository }
 func NewChainRepository(connection *Connection) *ChainRepository {
 	return &ChainRepository{newBaseRepository(connection)}
 }
-func NewSchedulerRepository(connection *Connection) *SchedulerRepository {
-	return &SchedulerRepository{newBaseRepository(connection)}
-}
 func NewCollectionRepository(connection *Connection) *CollectionRepository {
 	return &CollectionRepository{newBaseRepository(connection)}
 }
 func NewCatalogRepository(connection *Connection) *CatalogRepository {
 	return &CatalogRepository{newBaseRepository(connection)}
 }
-func NewReportingRepository(connection *Connection) *ReportingRepository {
-	return &ReportingRepository{newBaseRepository(connection)}
-}
-func NewResearchReadRepository(connection *Connection) *ResearchReadRepository {
-	return &ResearchReadRepository{newBaseRepository(connection)}
-}
-func NewSelectionRepository(connection *Connection) *SelectionRepository {
-	return &SelectionRepository{newBaseRepository(connection)}
+func NewProfileRepository(connection *Connection) *ProfileRepository {
+	return &ProfileRepository{newBaseRepository(connection)}
 }
 func NewProjectViewRepository(connection *Connection) *ProjectViewRepository {
 	return &ProjectViewRepository{newBaseRepository(connection)}

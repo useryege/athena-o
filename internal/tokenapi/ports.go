@@ -3,12 +3,11 @@ package tokenapi
 import (
 	"context"
 	"github.com/useryege/athena/internal/token/catalog"
+	"github.com/useryege/athena/internal/token/collection"
 	"github.com/useryege/athena/internal/token/discovery"
 	"github.com/useryege/athena/internal/token/policy"
+	"github.com/useryege/athena/internal/token/profile"
 	"github.com/useryege/athena/internal/token/projectview"
-	"github.com/useryege/athena/internal/token/reporting"
-	"github.com/useryege/athena/internal/token/research"
-	"github.com/useryege/athena/internal/token/selection"
 	"github.com/useryege/athena/internal/token/shared"
 	"github.com/useryege/athena/internal/token/swap"
 )
@@ -19,18 +18,13 @@ type CatalogApplication interface {
 	ListContractCodesByDeploymentCount(context.Context, int32, int32) (*catalog.ContractCodePage, error)
 }
 
-type ResearchApplication interface {
-	GetProjectDataCollectionTask(context.Context, int64) (*research.ProjectDataCollectionTask, error)
-	ListProjectDataCollectionTasks(context.Context, int64, string, string, int32, int32) (*research.CollectionTaskPage, error)
-	ListProjectResearchStatesPage(context.Context, int64, int64, string, int32, int32) (*research.ResearchStatePage, error)
+type CollectionApplication interface {
+	GetCollectionTask(context.Context, int64) (*collection.TaskDetail, error)
+	ListCollectionTasks(context.Context, int64, string, string, int32, int32) (*collection.TaskPage, error)
 }
 
-type ReportingApplication interface {
-	ListProjectReportRevisionsPage(context.Context, int64, int64, int32, int32) (*reporting.ReportRevisionPage, error)
-}
-
-type SelectionApplication interface {
-	ListProjectSelectionsPage(context.Context, int64, int64, string, int32, int32) (*selection.Page, error)
+type ProfileApplication interface {
+	GetProjectProfile(context.Context, int64) (*profile.ProjectProfile, error)
 }
 
 type ProjectViewApplication interface {
@@ -38,8 +32,6 @@ type ProjectViewApplication interface {
 	GetProjectDetail(context.Context, int64) (*projectview.Detail, error)
 	GetProjectSwapActivity(context.Context, int64) (*projectview.SwapActivity, error)
 	ListProjectSwapEventsPage(context.Context, int64, swap.PairKind, uint64, int32, int32) (*projectview.SwapEventPage, error)
-	ListProjectObservationsPage(context.Context, int64, string, int32, int32) (*projectview.ObservationPage, error)
-	ListProjectTrends(context.Context, int64, string) (*projectview.TrendResult, error)
 	ListProjectWalletNormalTransactionsPage(context.Context, int64, shared.Address, string, string, int32, int32) (*projectview.WalletNormalTransactionPage, error)
 }
 
@@ -68,9 +60,8 @@ type OperationsApplication interface {
 
 type Applications struct {
 	Catalog     CatalogApplication
-	Research    ResearchApplication
-	Reporting   ReportingApplication
-	Selection   SelectionApplication
+	Collection  CollectionApplication
+	Profile     ProfileApplication
 	ProjectView ProjectViewApplication
 	Policy      PolicyApplication
 	Operations  OperationsApplication

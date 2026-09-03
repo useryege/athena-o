@@ -39,7 +39,6 @@ CREATE TABLE chain_block_processing_attempt (
   candidate_count INT,
   validated_count INT,
   rejected_count INT,
-  expired_research_state_count BIGINT,
   timing_complete BOOLEAN NOT NULL DEFAULT false,
   started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   completed_at TIMESTAMPTZ,
@@ -63,7 +62,6 @@ CREATE TABLE chain_block_processing_attempt (
   CONSTRAINT chain_block_processing_attempt_candidate_count_check CHECK (candidate_count IS NULL OR candidate_count >= 0),
   CONSTRAINT chain_block_processing_attempt_validated_count_check CHECK (validated_count IS NULL OR validated_count >= 0),
   CONSTRAINT chain_block_processing_attempt_rejected_count_check CHECK (rejected_count IS NULL OR rejected_count >= 0),
-  CONSTRAINT chain_block_processing_attempt_expired_count_check CHECK (expired_research_state_count IS NULL OR expired_research_state_count >= 0),
   CONSTRAINT chain_block_processing_attempt_completion_check CHECK (
     (status = 'running' AND completed_at IS NULL AND timing_complete = false)
     OR (status <> 'running' AND completed_at IS NOT NULL)
@@ -485,261 +483,159 @@ CREATE INDEX project_initial_recipient_project_id_rank_index_idx
 CREATE INDEX project_initial_recipient_wallet_ratio_bps_idx
   ON project_initial_recipient (wallet, ratio_bps DESC, project_id);
 
--- Research
-CREATE TABLE project_research_state (
-  project_id BIGINT,
-  status TEXT NOT NULL DEFAULT 'researching',
-  evidence_revision BIGINT NOT NULL DEFAULT 0,
-  current_report_revision BIGINT,
-  current_selection_id BIGINT,
-  last_evaluated_report_revision BIGINT,
-  last_evaluated_at TIMESTAMPTZ,
-  attention_expiry_block_time BIGINT NOT NULL,
-  expired_block_number BIGINT,
-  expired_block_time BIGINT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_research_state_project_id_uidx PRIMARY KEY (project_id),
-  CONSTRAINT project_research_state_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_research_state_status_check CHECK (status IN ('researching', 'selected', 'rejected', 'expired')),
-  CONSTRAINT project_research_state_evidence_revision_check CHECK (evidence_revision >= 0),
-  CONSTRAINT project_research_state_current_report_revision_check CHECK (current_report_revision IS NULL OR current_report_revision > 0),
-  CONSTRAINT project_research_state_last_evaluated_report_revision_check CHECK (last_evaluated_report_revision IS NULL OR last_evaluated_report_revision > 0),
-  CONSTRAINT project_research_state_attention_expiry_block_time_check CHECK (attention_expiry_block_time >= 0),
-  CONSTRAINT project_research_state_expired_block_number_check CHECK (expired_block_number IS NULL OR expired_block_number >= 0),
-  CONSTRAINT project_research_state_expired_block_time_check CHECK (expired_block_time IS NULL OR expired_block_time >= 0),
-  CONSTRAINT project_research_state_expired_position_check CHECK (
-    (
-      status = 'expired'
-      AND expired_block_number IS NOT NULL
-      AND expired_block_time IS NOT NULL
-      AND expired_block_time >= attention_expiry_block_time
-    )
-    OR
-    (
-      status <> 'expired'
-      AND expired_block_number IS NULL
-      AND expired_block_time IS NULL
-    )
-  )
-);
-
-CREATE INDEX project_research_state_status_attention_expiry_block_time_idx
-  ON project_research_state (status, attention_expiry_block_time, project_id);
-
-CREATE TABLE project_data_collection_schedule (
-  project_id BIGINT NOT NULL,
-  data_type TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'active',
-  retry_interval_seconds BIGINT NOT NULL,
-  next_run_at TIMESTAMPTZ DEFAULT now(),
-  latest_task_revision BIGINT NOT NULL DEFAULT 0,
-  consecutive_failures INT NOT NULL DEFAULT 0,
-  last_error TEXT,
-  last_checked_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_data_collection_schedule_project_id_data_type_uidx PRIMARY KEY (project_id, data_type),
-  CONSTRAINT project_data_collection_schedule_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_data_collection_schedule_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source', 'wallet_normal_transactions')),
-  CONSTRAINT project_data_collection_schedule_status_check CHECK (status IN ('active', 'completed', 'failed', 'paused')),
-  CONSTRAINT project_data_collection_schedule_retry_interval_seconds_check CHECK (retry_interval_seconds > 0),
-  CONSTRAINT project_data_collection_schedule_next_run_at_check CHECK (
-    (status = 'active' AND next_run_at IS NOT NULL)
-    OR (status IN ('completed', 'failed', 'paused') AND next_run_at IS NULL)
-  ),
-  CONSTRAINT project_data_collection_schedule_latest_task_revision_check CHECK (latest_task_revision >= 0),
-  CONSTRAINT project_data_collection_schedule_consecutive_failures_check CHECK (consecutive_failures >= 0)
-);
-
-CREATE INDEX project_data_collection_schedule_status_next_run_at_idx
-  ON project_data_collection_schedule (status, next_run_at, data_type, project_id);
-
+-- One-time project data collection
 CREATE TABLE project_data_collection_task (
   id BIGSERIAL,
   project_id BIGINT NOT NULL,
   data_type TEXT NOT NULL,
-  revision BIGINT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending',
-  attempts INT NOT NULL DEFAULT 0,
+  failure_count INT NOT NULL DEFAULT 0,
   available_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  claim_generation BIGINT NOT NULL DEFAULT 0,
   locked_at TIMESTAMPTZ,
   lease_expires_at TIMESTAMPTZ,
   last_error TEXT,
+  finished_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT project_data_collection_task_id_uidx PRIMARY KEY (id),
   CONSTRAINT project_data_collection_task_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_data_collection_task_project_id_data_type_revision_uidx UNIQUE (project_id, data_type, revision),
+  CONSTRAINT project_data_collection_task_project_id_data_type_uidx UNIQUE (project_id, data_type),
+  CONSTRAINT project_data_collection_task_identity_uidx UNIQUE (id, project_id, data_type),
   CONSTRAINT project_data_collection_task_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source', 'wallet_normal_transactions')),
   CONSTRAINT project_data_collection_task_status_check CHECK (status IN ('pending', 'running', 'succeeded', 'failed')),
-  CONSTRAINT project_data_collection_task_revision_check CHECK (revision > 0),
-  CONSTRAINT project_data_collection_task_attempts_check CHECK (attempts BETWEEN 0 AND 10)
+  CONSTRAINT project_data_collection_task_failure_count_check CHECK (failure_count BETWEEN 0 AND 3),
+  CONSTRAINT project_data_collection_task_claim_generation_check CHECK (claim_generation >= 0),
+  CONSTRAINT project_data_collection_task_state_check CHECK (
+    (status = 'pending' AND failure_count < 3 AND locked_at IS NULL AND lease_expires_at IS NULL AND finished_at IS NULL)
+    OR (status = 'running' AND failure_count < 3 AND locked_at IS NOT NULL AND lease_expires_at IS NOT NULL AND finished_at IS NULL)
+    OR (status = 'succeeded' AND failure_count < 3 AND locked_at IS NOT NULL AND lease_expires_at IS NULL AND finished_at IS NOT NULL)
+    OR (status = 'failed' AND failure_count = 3 AND locked_at IS NOT NULL AND lease_expires_at IS NULL AND finished_at IS NOT NULL)
+  )
 );
 
-CREATE INDEX project_data_collection_task_status_available_at_idx
-  ON project_data_collection_task (status, available_at, data_type, project_id);
-CREATE INDEX project_data_collection_task_lease_expires_at_idx
-  ON project_data_collection_task (lease_expires_at) WHERE status = 'running';
+CREATE INDEX project_data_collection_task_pending_claim_idx
+  ON project_data_collection_task (data_type, available_at, id)
+  WHERE status = 'pending';
+CREATE INDEX project_data_collection_task_running_lease_idx
+  ON project_data_collection_task (data_type, lease_expires_at, id)
+  WHERE status = 'running';
 
-CREATE TABLE project_observation (
-  id BIGSERIAL,
+CREATE TABLE project_data_collection_result (
+  task_id BIGINT,
   project_id BIGINT NOT NULL,
   data_type TEXT NOT NULL,
   schema_version INT NOT NULL,
-  content_hash BYTEA NOT NULL,
   payload JSONB NOT NULL,
-  block_number BIGINT,
-  observed_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_observation_id_uidx PRIMARY KEY (id),
-  CONSTRAINT project_observation_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_observation_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source')),
-  CONSTRAINT project_observation_schema_version_check CHECK (schema_version > 0),
-  CONSTRAINT project_observation_content_hash_length_check CHECK (length(content_hash) = 32),
-  CONSTRAINT project_observation_block_number_check CHECK (block_number IS NULL OR block_number >= 0)
-);
-
-CREATE INDEX project_observation_project_id_data_type_created_at_idx
-  ON project_observation (project_id, data_type, created_at DESC, id DESC);
-
-CREATE TABLE project_observation_current (
-  project_id BIGINT NOT NULL,
-  data_type TEXT NOT NULL,
-  observation_id BIGINT NOT NULL,
-  last_checked_at TIMESTAMPTZ NOT NULL,
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_observation_current_project_id_data_type_uidx PRIMARY KEY (project_id, data_type),
-  CONSTRAINT project_observation_current_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_observation_current_observation_fk FOREIGN KEY (observation_id) REFERENCES project_observation(id) ON DELETE CASCADE,
-  CONSTRAINT project_observation_current_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source'))
-);
-
-CREATE INDEX project_observation_current_observation_id_idx
-  ON project_observation_current (observation_id);
-
--- Reporting
-CREATE TABLE project_report_revision (
-  id BIGSERIAL,
-  project_id BIGINT NOT NULL,
-  revision BIGINT NOT NULL,
-  schema_version INT NOT NULL,
   content_hash BYTEA NOT NULL,
+  block_number BIGINT,
+  collected_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_data_collection_result_task_id_uidx PRIMARY KEY (task_id),
+  CONSTRAINT project_data_collection_result_project_id_data_type_uidx UNIQUE (project_id, data_type),
+  CONSTRAINT project_data_collection_result_task_fk
+    FOREIGN KEY (task_id, project_id, data_type)
+    REFERENCES project_data_collection_task(id, project_id, data_type) ON DELETE CASCADE,
+  CONSTRAINT project_data_collection_result_data_type_check CHECK (data_type IN ('ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source', 'wallet_normal_transactions')),
+  CONSTRAINT project_data_collection_result_schema_version_check CHECK (schema_version > 0),
+  CONSTRAINT project_data_collection_result_content_hash_length_check CHECK (length(content_hash) = 32),
+  CONSTRAINT project_data_collection_result_block_number_check CHECK (block_number IS NULL OR block_number >= 0)
+);
+
+-- Unique project profile construction
+CREATE TABLE project_profile_build_task (
+  project_id BIGINT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  failure_count INT NOT NULL DEFAULT 0,
+  available_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  claim_generation BIGINT NOT NULL DEFAULT 0,
+  locked_at TIMESTAMPTZ,
+  lease_expires_at TIMESTAMPTZ,
+  last_error TEXT,
+  finished_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT project_profile_build_task_project_id_uidx PRIMARY KEY (project_id),
+  CONSTRAINT project_profile_build_task_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_profile_build_task_status_check CHECK (status IN ('pending', 'running', 'succeeded', 'failed')),
+  CONSTRAINT project_profile_build_task_failure_count_check CHECK (failure_count BETWEEN 0 AND 3),
+  CONSTRAINT project_profile_build_task_claim_generation_check CHECK (claim_generation >= 0),
+  CONSTRAINT project_profile_build_task_state_check CHECK (
+    (status = 'pending' AND failure_count < 3 AND locked_at IS NULL AND lease_expires_at IS NULL AND finished_at IS NULL)
+    OR (status = 'running' AND failure_count < 3 AND locked_at IS NOT NULL AND lease_expires_at IS NOT NULL AND finished_at IS NULL)
+    OR (status = 'succeeded' AND failure_count < 3 AND locked_at IS NOT NULL AND lease_expires_at IS NULL AND finished_at IS NOT NULL)
+    OR (status = 'failed' AND failure_count = 3 AND locked_at IS NOT NULL AND lease_expires_at IS NULL AND finished_at IS NOT NULL)
+  )
+);
+
+CREATE INDEX project_profile_build_task_pending_claim_idx
+  ON project_profile_build_task (available_at, project_id)
+  WHERE status = 'pending';
+CREATE INDEX project_profile_build_task_running_lease_idx
+  ON project_profile_build_task (lease_expires_at, project_id)
+  WHERE status = 'running';
+
+CREATE TABLE project_profile (
+  project_id BIGINT,
+  schema_version INT NOT NULL,
   completeness_status TEXT NOT NULL,
-  evidence JSONB NOT NULL DEFAULT '{}'::jsonb,
-  report JSONB NOT NULL DEFAULT '{}'::jsonb,
-  observed_block_number BIGINT,
+  failed_data_types TEXT[] NOT NULL DEFAULT '{}',
+  profile JSONB NOT NULL,
+  content_hash BYTEA NOT NULL,
+  logo_url TEXT NOT NULL DEFAULT '',
+  current_price_usd NUMERIC,
+  market_cap_usd NUMERIC,
+  fdv_usd NUMERIC,
+  tvl_usd NUMERIC,
+  holders BIGINT,
+  contract_source_status TEXT,
   weth_pair_is_created BOOLEAN,
-  weth_pair_is_remove_liquidity BOOLEAN,
-  weth_pair_is_mint BOOLEAN,
+  weth_pair_token_balance_exceeds_total_supply BOOLEAN,
+  weth_pair_lp_minimum_supply_only BOOLEAN,
+  weth_pair_fixed_fee_address_lp_share_gte_90_percent BOOLEAN,
   weth_pair_quote_usdt_value_int NUMERIC(78, 0),
-  weth_pair_last_swap_timestamp BIGINT,
+  weth_pair_reserve_updated_at BIGINT,
   usdt_pair_is_created BOOLEAN,
-  usdt_pair_is_remove_liquidity BOOLEAN,
-  usdt_pair_is_mint BOOLEAN,
+  usdt_pair_token_balance_exceeds_total_supply BOOLEAN,
+  usdt_pair_lp_minimum_supply_only BOOLEAN,
+  usdt_pair_fixed_fee_address_lp_share_gte_90_percent BOOLEAN,
   usdt_pair_quote_usdt_value_int NUMERIC(78, 0),
-  usdt_pair_last_swap_timestamp BIGINT,
+  usdt_pair_reserve_updated_at BIGINT,
   built_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_report_revision_id_uidx PRIMARY KEY (id),
-  CONSTRAINT project_report_revision_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_report_revision_project_id_revision_uidx UNIQUE (project_id, revision),
-  CONSTRAINT project_report_revision_revision_check CHECK (revision > 0),
-  CONSTRAINT project_report_revision_schema_version_check CHECK (schema_version > 0),
-  CONSTRAINT project_report_revision_content_hash_length_check CHECK (length(content_hash) = 32),
-  CONSTRAINT project_report_revision_completeness_status_check CHECK (completeness_status IN ('incomplete', 'complete')),
-  CONSTRAINT project_report_revision_observed_block_number_check CHECK (observed_block_number IS NULL OR observed_block_number >= 0),
-  CONSTRAINT project_report_revision_weth_pair_quote_usdt_value_int_check CHECK (weth_pair_quote_usdt_value_int IS NULL OR weth_pair_quote_usdt_value_int >= 0),
-  CONSTRAINT project_report_revision_weth_pair_last_swap_timestamp_check CHECK (weth_pair_last_swap_timestamp IS NULL OR weth_pair_last_swap_timestamp >= 0),
-  CONSTRAINT project_report_revision_usdt_pair_quote_usdt_value_int_check CHECK (usdt_pair_quote_usdt_value_int IS NULL OR usdt_pair_quote_usdt_value_int >= 0),
-  CONSTRAINT project_report_revision_usdt_pair_last_swap_timestamp_check CHECK (usdt_pair_last_swap_timestamp IS NULL OR usdt_pair_last_swap_timestamp >= 0)
+  CONSTRAINT project_profile_project_id_uidx PRIMARY KEY (project_id),
+  CONSTRAINT project_profile_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
+  CONSTRAINT project_profile_schema_version_check CHECK (schema_version > 0),
+  CONSTRAINT project_profile_completeness_status_check CHECK (completeness_status IN ('complete', 'incomplete')),
+  CONSTRAINT project_profile_failed_data_types_check CHECK (
+    failed_data_types <@ ARRAY['ave', 'chain_state', 'wallet_asset_state', 'simulation_result', 'contract_code_source', 'wallet_normal_transactions']::text[]
+    AND cardinality(failed_data_types) <= 6
+    AND (
+      (completeness_status = 'complete' AND cardinality(failed_data_types) = 0)
+      OR (completeness_status = 'incomplete' AND cardinality(failed_data_types) > 0)
+    )
+  ),
+  CONSTRAINT project_profile_content_hash_length_check CHECK (length(content_hash) = 32),
+  CONSTRAINT project_profile_market_values_check CHECK (
+    (current_price_usd IS NULL OR current_price_usd >= 0)
+    AND (market_cap_usd IS NULL OR market_cap_usd >= 0)
+    AND (fdv_usd IS NULL OR fdv_usd >= 0)
+    AND (tvl_usd IS NULL OR tvl_usd >= 0)
+    AND (holders IS NULL OR holders >= 0)
+  ),
+  CONSTRAINT project_profile_contract_source_status_check CHECK (contract_source_status IS NULL OR contract_source_status IN ('verified', 'unverified')),
+  CONSTRAINT project_profile_weth_pair_values_check CHECK (
+    (weth_pair_quote_usdt_value_int IS NULL OR weth_pair_quote_usdt_value_int >= 0)
+    AND (weth_pair_reserve_updated_at IS NULL OR weth_pair_reserve_updated_at >= 0)
+  ),
+  CONSTRAINT project_profile_usdt_pair_values_check CHECK (
+    (usdt_pair_quote_usdt_value_int IS NULL OR usdt_pair_quote_usdt_value_int >= 0)
+    AND (usdt_pair_reserve_updated_at IS NULL OR usdt_pair_reserve_updated_at >= 0)
+  )
 );
 
-CREATE INDEX project_report_revision_project_id_revision_idx
-  ON project_report_revision (project_id, revision DESC);
-
-CREATE TABLE project_report_build_task (
-  id BIGSERIAL,
-  project_id BIGINT NOT NULL,
-  evidence_revision BIGINT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending',
-  attempts INT NOT NULL DEFAULT 0,
-  available_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  locked_at TIMESTAMPTZ,
-  lease_expires_at TIMESTAMPTZ,
-  last_error TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_report_build_task_id_uidx PRIMARY KEY (id),
-  CONSTRAINT project_report_build_task_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_report_build_task_project_id_evidence_revision_uidx UNIQUE (project_id, evidence_revision),
-  CONSTRAINT project_report_build_task_evidence_revision_check CHECK (evidence_revision > 0),
-  CONSTRAINT project_report_build_task_status_check CHECK (status IN ('pending', 'running', 'succeeded', 'failed')),
-  CONSTRAINT project_report_build_task_attempts_check CHECK (attempts BETWEEN 0 AND 5)
-);
-
-CREATE INDEX project_report_build_task_status_available_at_idx
-  ON project_report_build_task (status, available_at, project_id);
-
--- Selection
-CREATE TABLE project_selection (
-  id BIGSERIAL,
-  project_id BIGINT NOT NULL,
-  outcome TEXT NOT NULL,
-  strategy_key TEXT NOT NULL,
-  strategy_version TEXT NOT NULL,
-  report_revision BIGINT NOT NULL,
-  reason_codes TEXT[] NOT NULL DEFAULT '{}',
-  reason_detail TEXT NOT NULL DEFAULT '',
-  decided_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_selection_id_uidx PRIMARY KEY (id),
-  CONSTRAINT project_selection_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_selection_project_report_fk FOREIGN KEY (project_id, report_revision) REFERENCES project_report_revision(project_id, revision) ON DELETE CASCADE,
-  CONSTRAINT project_selection_outcome_check CHECK (outcome IN ('selected', 'rejected', 'deferred')),
-  CONSTRAINT project_selection_strategy_key_check CHECK (btrim(strategy_key) <> ''),
-  CONSTRAINT project_selection_strategy_version_check CHECK (btrim(strategy_version) <> ''),
-  CONSTRAINT project_selection_report_revision_check CHECK (report_revision > 0)
-);
-
-CREATE INDEX project_selection_project_id_decided_at_idx
-  ON project_selection (project_id, decided_at DESC, id DESC);
-CREATE INDEX project_selection_outcome_decided_at_idx
-  ON project_selection (outcome, decided_at DESC, id DESC);
-
-CREATE TABLE project_selection_evaluation_task (
-  id BIGSERIAL,
-  project_id BIGINT NOT NULL,
-  report_revision BIGINT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending',
-  attempts INT NOT NULL DEFAULT 0,
-  available_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  locked_at TIMESTAMPTZ,
-  lease_expires_at TIMESTAMPTZ,
-  last_error TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT project_selection_evaluation_task_id_uidx PRIMARY KEY (id),
-  CONSTRAINT project_selection_evaluation_task_project_fk FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE,
-  CONSTRAINT project_selection_evaluation_task_project_report_fk FOREIGN KEY (project_id, report_revision) REFERENCES project_report_revision(project_id, revision) ON DELETE CASCADE,
-  CONSTRAINT project_selection_evaluation_task_project_report_uidx UNIQUE (project_id, report_revision),
-  CONSTRAINT project_selection_evaluation_task_report_revision_check CHECK (report_revision > 0),
-  CONSTRAINT project_selection_evaluation_task_status_check CHECK (status IN ('pending', 'running', 'succeeded', 'failed')),
-  CONSTRAINT project_selection_evaluation_task_attempts_check CHECK (attempts BETWEEN 0 AND 5)
-);
-
-CREATE INDEX project_selection_evaluation_task_status_available_at_idx
-  ON project_selection_evaluation_task (status, available_at, project_id);
-
-ALTER TABLE project_research_state
-  ADD CONSTRAINT project_research_state_current_report_fk
-  FOREIGN KEY (project_id, current_report_revision)
-  REFERENCES project_report_revision(project_id, revision);
-
-ALTER TABLE project_research_state
-  ADD CONSTRAINT project_research_state_current_selection_fk
-  FOREIGN KEY (current_selection_id)
-  REFERENCES project_selection(id);
+CREATE INDEX project_profile_completeness_built_at_idx
+  ON project_profile (completeness_status, built_at DESC, project_id);
 
 -- Policy
 CREATE TABLE contract_code_blocklist (
@@ -766,17 +662,10 @@ CREATE TABLE wallet_blocklist (
 
 DROP TABLE IF EXISTS wallet_blocklist;
 DROP TABLE IF EXISTS contract_code_blocklist;
-ALTER TABLE IF EXISTS project_research_state DROP CONSTRAINT IF EXISTS project_research_state_current_selection_fk;
-ALTER TABLE IF EXISTS project_research_state DROP CONSTRAINT IF EXISTS project_research_state_current_report_fk;
-DROP TABLE IF EXISTS project_selection_evaluation_task;
-DROP TABLE IF EXISTS project_selection;
-DROP TABLE IF EXISTS project_report_build_task;
-DROP TABLE IF EXISTS project_report_revision;
-DROP TABLE IF EXISTS project_observation_current;
-DROP TABLE IF EXISTS project_observation;
+DROP TABLE IF EXISTS project_profile;
+DROP TABLE IF EXISTS project_profile_build_task;
+DROP TABLE IF EXISTS project_data_collection_result;
 DROP TABLE IF EXISTS project_data_collection_task;
-DROP TABLE IF EXISTS project_data_collection_schedule;
-DROP TABLE IF EXISTS project_research_state;
 DROP TABLE IF EXISTS project_initial_recipient;
 DROP TABLE IF EXISTS project_wallet_normal_transaction;
 DROP TABLE IF EXISTS project_related_wallet;

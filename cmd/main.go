@@ -20,9 +20,7 @@ import (
 	athenaTokenAPICommands "github.com/useryege/athena/cmd/athena-token-api/commands"
 	athenaTokenChainProcessorCommands "github.com/useryege/athena/cmd/athena-token-chain-processor/commands"
 	athenaTokenCollectorCommands "github.com/useryege/athena/cmd/athena-token-collector/commands"
-	athenaTokenReportBuilderCommands "github.com/useryege/athena/cmd/athena-token-report-builder/commands"
-	athenaTokenSchedulerCommands "github.com/useryege/athena/cmd/athena-token-scheduler/commands"
-	athenaTokenSelectorCommands "github.com/useryege/athena/cmd/athena-token-selector/commands"
+	athenaTokenProfileBuilderCommands "github.com/useryege/athena/cmd/athena-token-profile-builder/commands"
 	athenaTokenSwapProcessorCommands "github.com/useryege/athena/cmd/athena-token-swap-processor/commands"
 	athenaWalletCommands "github.com/useryege/athena/cmd/athena-wallet/commands"
 	athenaWormMarketsCommands "github.com/useryege/athena/cmd/athena-worm-markets/commands"
@@ -74,14 +72,10 @@ func main() {
 		command = athenaTokenChainProcessorCommands.NewCommand()
 	case "athena-token-swap-processor":
 		command = athenaTokenSwapProcessorCommands.NewCommand()
-	case "athena-token-scheduler":
-		command = athenaTokenSchedulerCommands.NewCommand()
 	case "athena-token-collector":
 		command = athenaTokenCollectorCommands.NewCommand()
-	case "athena-token-report-builder":
-		command = athenaTokenReportBuilderCommands.NewCommand()
-	case "athena-token-selector":
-		command = athenaTokenSelectorCommands.NewCommand()
+	case "athena-token-profile-builder":
+		command = athenaTokenProfileBuilderCommands.NewCommand()
 	case "athena-wallet":
 		command = athenaWalletCommands.NewCommand()
 	case "athena-worm-markets":

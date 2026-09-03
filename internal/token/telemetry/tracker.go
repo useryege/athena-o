@@ -52,6 +52,9 @@ type Tracker struct {
 	runs                *prometheus.CounterVec
 	queueItems          *prometheus.GaugeVec
 	queueOldestAge      *prometheus.GaugeVec
+	pipelineFailures    *prometheus.GaugeVec
+	pipelineRecoveries  *prometheus.GaugeVec
+	pipelineDuration    *prometheus.GaugeVec
 	diagnosticsSuccess  prometheus.Gauge
 }
 
@@ -89,13 +92,29 @@ func NewTracker(mode string, staleAfter time.Duration) *Tracker {
 			Name: "athena_token_queue_oldest_available_age_seconds",
 			Help: "Age in seconds of the oldest Token pipeline queue item.",
 		}, []string{"mode", "queue", "status"}),
+		pipelineFailures: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "athena_token_pipeline_failure_attempts",
+			Help: "Current cumulative real failure attempts represented by Token pipeline items.",
+		}, []string{"mode", "queue", "status"}),
+		pipelineRecoveries: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "athena_token_pipeline_lease_recoveries",
+			Help: "Current cumulative expired-lease recoveries represented by Token pipeline items.",
+		}, []string{"mode", "queue", "status"}),
+		pipelineDuration: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "athena_token_pipeline_average_duration_seconds",
+			Help: "Average final-attempt duration for terminal Token pipeline items.",
+		}, []string{"mode", "queue", "status"}),
 		diagnosticsSuccess: prometheus.NewGauge(prometheus.GaugeOpts{
 			Name:        "athena_token_diagnostics_snapshot_success",
 			Help:        "Whether the latest Token diagnostics database snapshot succeeded.",
 			ConstLabels: prometheus.Labels{"mode": mode},
 		}),
 	}
-	t.registry.MustRegister(t.lastSuccess, t.lastError, t.consecutiveFailures, t.runs, t.queueItems, t.queueOldestAge, t.diagnosticsSuccess)
+	t.registry.MustRegister(
+		t.lastSuccess, t.lastError, t.consecutiveFailures, t.runs,
+		t.queueItems, t.queueOldestAge, t.pipelineFailures,
+		t.pipelineRecoveries, t.pipelineDuration, t.diagnosticsSuccess,
+	)
 	return t
 }
 
@@ -189,8 +208,17 @@ func (t *Tracker) ScopeStatuses(now time.Time) ([]ScopeStatus, bool) {
 	return statuses, ready
 }
 
-func (t *Tracker) UpdateQueue(queue, status string, count int64, oldestAvailableAt time.Time) {
+func (t *Tracker) UpdateQueue(
+	queue, status string,
+	count int64,
+	oldestAvailableAt time.Time,
+	failureCount, leaseRecoveryCount int64,
+	averageDurationSeconds float64,
+) {
 	t.queueItems.WithLabelValues(t.mode, queue, status).Set(float64(count))
+	t.pipelineFailures.WithLabelValues(t.mode, queue, status).Set(float64(failureCount))
+	t.pipelineRecoveries.WithLabelValues(t.mode, queue, status).Set(float64(leaseRecoveryCount))
+	t.pipelineDuration.WithLabelValues(t.mode, queue, status).Set(averageDurationSeconds)
 	age := float64(0)
 	if !oldestAvailableAt.IsZero() {
 		age = time.Since(oldestAvailableAt).Seconds()
@@ -204,6 +232,9 @@ func (t *Tracker) UpdateQueue(queue, status string, count int64, oldestAvailable
 func (t *Tracker) ResetQueues() {
 	t.queueItems.Reset()
 	t.queueOldestAge.Reset()
+	t.pipelineFailures.Reset()
+	t.pipelineRecoveries.Reset()
+	t.pipelineDuration.Reset()
 }
 
 func (t *Tracker) SetDiagnosticsSuccess(success bool) {

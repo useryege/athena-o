@@ -7,10 +7,13 @@ import (
 )
 
 type PipelineQueueMetric struct {
-	Queue             string
-	Status            string
-	Count             int64
-	OldestAvailableAt time.Time
+	Queue                  string
+	Status                 string
+	Count                  int64
+	OldestAvailableAt      time.Time
+	FailureCount           int64
+	LeaseRecoveryCount     int64
+	AverageDurationSeconds float64
 }
 
 func (s *DiagnosticsRepository) Ping(ctx context.Context) error {
@@ -31,7 +34,12 @@ func (s *DiagnosticsRepository) ListPipelineQueueMetrics(ctx context.Context) ([
 	}
 	metrics := make([]PipelineQueueMetric, 0, len(rows))
 	for _, row := range rows {
-		metrics = append(metrics, PipelineQueueMetric{Queue: row.Queue, Status: row.Status, Count: row.ItemCount, OldestAvailableAt: timeValue(row.OldestAvailableAt)})
+		metrics = append(metrics, PipelineQueueMetric{
+			Queue: row.Queue, Status: row.Status, Count: row.ItemCount,
+			OldestAvailableAt: timeValue(row.OldestAvailableAt),
+			FailureCount:      row.FailureCount, LeaseRecoveryCount: row.LeaseRecoveryCount,
+			AverageDurationSeconds: row.AverageDurationSeconds,
+		})
 	}
 	return metrics, nil
 }

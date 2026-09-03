@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	"github.com/useryege/athena/internal/token/projectview"
-	"github.com/useryege/athena/internal/token/research"
-	"github.com/useryege/athena/internal/token/selection"
 	"github.com/useryege/athena/internal/tokenapi/apiclient"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,37 +30,31 @@ func (s *Service) ListProjects(ctx context.Context, req *apiclient.ListProjectsR
 	if err != nil {
 		return nil, err
 	}
-	researchStatus := strings.TrimSpace(req.GetResearchStatus())
-	if err := validateProjectListResearchStatus(researchStatus); err != nil {
+	collectionStatus := strings.TrimSpace(req.GetCollectionStatus())
+	if err := validateProjectCollectionStatus(collectionStatus); err != nil {
 		return nil, err
 	}
-	reportState := strings.TrimSpace(req.GetReportState())
-	if err := validateProjectListReportState(reportState); err != nil {
+	profileState := strings.TrimSpace(req.GetProfileState())
+	if err := validateProjectProfileState(profileState); err != nil {
 		return nil, err
 	}
-	evaluationStatus := strings.TrimSpace(req.GetEvaluationStatus())
-	if err := validateProjectListEvaluationStatus(evaluationStatus); err != nil {
-		return nil, err
-	}
-	selectionOutcome := strings.TrimSpace(req.GetSelectionOutcome())
-	if err := validateProjectListSelectionOutcome(selectionOutcome); err != nil {
-		return nil, err
-	}
-	wethPairFilter, err := parseProjectListPairFilter(
-		"weth_pair",
-		req.GetWethPairRemoveLiquidityStates(),
-		req.GetWethPairMintStates(),
-		req.GetWethPairQuoteUsdtMin(),
-		req.GetWethPairQuoteUsdtMax(),
-		req.GetWethPairQuoteMissingStates(),
+	wrappedNativePairFilter, err := parseProjectListPairFilter(
+		"wrapped_native_pair",
+		req.GetWrappedNativePairBalanceSupplyStates(),
+		req.GetWrappedNativePairMinimumLpStates(),
+		req.GetWrappedNativePairFeeLpShareStates(),
+		req.GetWrappedNativePairQuoteUsdtMin(),
+		req.GetWrappedNativePairQuoteUsdtMax(),
+		req.GetWrappedNativePairQuoteMissingStates(),
 	)
 	if err != nil {
 		return nil, err
 	}
 	usdtPairFilter, err := parseProjectListPairFilter(
 		"usdt_pair",
-		req.GetUsdtPairRemoveLiquidityStates(),
-		req.GetUsdtPairMintStates(),
+		req.GetUsdtPairBalanceSupplyStates(),
+		req.GetUsdtPairMinimumLpStates(),
+		req.GetUsdtPairFeeLpShareStates(),
 		req.GetUsdtPairQuoteUsdtMin(),
 		req.GetUsdtPairQuoteUsdtMax(),
 		req.GetUsdtPairQuoteMissingStates(),
@@ -71,16 +63,14 @@ func (s *Service) ListProjects(ctx context.Context, req *apiclient.ListProjectsR
 		return nil, err
 	}
 	page, err := application.ListProjectsPage(ctx, projectview.ProjectListFilter{
-		ChainID:          req.GetChainId(),
-		ProjectID:        req.GetProjectId(),
-		CodeHash:         codeHash,
-		Contract:         contract,
-		ResearchStatus:   research.ProjectResearchStatus(researchStatus),
-		ReportState:      reportState,
-		EvaluationStatus: selection.TaskStatus(evaluationStatus),
-		SelectionOutcome: selection.SelectionOutcome(selectionOutcome),
-		WethPair:         wethPairFilter,
-		UsdtPair:         usdtPairFilter,
+		ChainID:           req.GetChainId(),
+		ProjectID:         req.GetProjectId(),
+		CodeHash:          codeHash,
+		Contract:          contract,
+		CollectionStatus:  projectview.ProjectCollectionStatus(collectionStatus),
+		ProfileState:      projectview.ProjectProfileState(profileState),
+		WrappedNativePair: wrappedNativePairFilter,
+		USDTPair:          usdtPairFilter,
 	}, req.GetPage(), req.GetPageSize())
 	if err != nil {
 		return nil, wrapStoreError("list projects", err)
@@ -93,75 +83,58 @@ func (s *Service) ListProjects(ctx context.Context, req *apiclient.ListProjectsR
 	}, nil
 }
 
-func validateProjectListResearchStatus(value string) error {
-	switch value {
+func validateProjectCollectionStatus(value string) error {
+	switch projectview.ProjectCollectionStatus(value) {
 	case "",
-		string(research.ProjectResearchStatusResearching),
-		string(research.ProjectResearchStatusSelected),
-		string(research.ProjectResearchStatusRejected),
-		string(research.ProjectResearchStatusExpired):
+		projectview.ProjectCollectionStatusQueued,
+		projectview.ProjectCollectionStatusCollecting,
+		projectview.ProjectCollectionStatusComplete,
+		projectview.ProjectCollectionStatusNeedsAttention:
 		return nil
 	default:
-		return status.Error(codes.InvalidArgument, "research_status must be empty, researching, selected, rejected, or expired")
+		return status.Error(codes.InvalidArgument, "collection_status must be empty, queued, collecting, complete, or needs_attention")
 	}
 }
 
-func validateProjectListReportState(value string) error {
-	switch value {
-	case "", "none", "incomplete", "complete":
+func validateProjectProfileState(value string) error {
+	switch projectview.ProjectProfileState(value) {
+	case "",
+		projectview.ProjectProfileStatePending,
+		projectview.ProjectProfileStateComplete,
+		projectview.ProjectProfileStateIncomplete,
+		projectview.ProjectProfileStateFailed:
 		return nil
 	default:
-		return status.Error(codes.InvalidArgument, "report_state must be empty, none, incomplete, or complete")
-	}
-}
-
-func validateProjectListEvaluationStatus(value string) error {
-	switch value {
-	case "none",
-		string(selection.TaskStatusPending),
-		string(selection.TaskStatusRunning),
-		string(selection.TaskStatusSucceeded),
-		string(selection.TaskStatusFailed):
-		return nil
-	case "":
-		return nil
-	default:
-		return status.Error(codes.InvalidArgument, "evaluation_status must be empty, none, pending, running, succeeded, or failed")
-	}
-}
-
-func validateProjectListSelectionOutcome(value string) error {
-	switch value {
-	case "none",
-		string(selection.SelectionOutcomeSelected),
-		string(selection.SelectionOutcomeRejected),
-		string(selection.SelectionOutcomeDeferred):
-		return nil
-	case "":
-		return nil
-	default:
-		return status.Error(codes.InvalidArgument, "selection_outcome must be empty, none, selected, rejected, or deferred")
+		return status.Error(codes.InvalidArgument, "profile_state must be empty, pending, complete, incomplete, or failed")
 	}
 }
 
 func parseProjectListPairFilter(
 	prefix string,
-	removeLiquidityStates, mintStates []string,
+	balanceSupplyStates, minimumLPStates, feeLPShareStates []string,
 	quoteUSDTMinValue, quoteUSDTMaxValue string,
 	quoteMissingStates []string,
 ) (projectview.ProjectListPairFilter, error) {
-	removeLiquidity, err := normalizeProjectListReportPairStates(
-		prefix+"_remove_liquidity_states",
-		removeLiquidityStates,
-		[]string{"detected", "clear", "no_report", "risk_unavailable"},
+	balanceSupply, err := normalizeProjectListPairStates(
+		prefix+"_balance_supply_states",
+		balanceSupplyStates,
+		[]string{"detected", "clear", "no_profile", "signal_unavailable"},
 	)
 	if err != nil {
 		return projectview.ProjectListPairFilter{}, err
 	}
-	mint, err := normalizeProjectListReportPairStates(
-		prefix+"_mint_states",
-		mintStates,
-		[]string{"detected", "clear", "no_report", "risk_unavailable"},
+	minimumLP, err := normalizeProjectListPairStates(
+		prefix+"_minimum_lp_states",
+		minimumLPStates,
+		[]string{"detected", "clear", "no_profile", "signal_unavailable"},
+	)
+	if err != nil {
+		return projectview.ProjectListPairFilter{}, err
+	}
+	feeLPShare, err := normalizeProjectListPairStates(
+		prefix+"_fee_lp_share_states",
+		feeLPShareStates,
+		[]string{"detected", "clear", "no_profile", "signal_unavailable"},
 	)
 	if err != nil {
 		return projectview.ProjectListPairFilter{}, err
@@ -177,24 +150,25 @@ func parseProjectListPairFilter(
 	if quoteUSDTMin != nil && quoteUSDTMax != nil && quoteUSDTMin.Cmp(quoteUSDTMax) > 0 {
 		return projectview.ProjectListPairFilter{}, status.Errorf(codes.InvalidArgument, "%s_quote_usdt_min must not exceed %s_quote_usdt_max", prefix, prefix)
 	}
-	quoteMissing, err := normalizeProjectListReportPairStates(
+	quoteMissing, err := normalizeProjectListPairStates(
 		prefix+"_quote_missing_states",
 		quoteMissingStates,
-		[]string{"no_report", "risk_unavailable"},
+		[]string{"no_profile", "value_unavailable"},
 	)
 	if err != nil {
 		return projectview.ProjectListPairFilter{}, err
 	}
 	return projectview.ProjectListPairFilter{
-		RemoveLiquidityStates: removeLiquidity,
-		MintStates:            mint,
-		QuoteUSDTMin:          quoteUSDTMin,
-		QuoteUSDTMax:          quoteUSDTMax,
-		QuoteMissingStates:    quoteMissing,
+		PairTokenBalanceExceedsTotalSupplyStates: balanceSupply,
+		LPMinimumSupplyOnlyStates:                minimumLP,
+		FixedFeeAddressLPShareGte90PercentStates: feeLPShare,
+		QuoteUSDTMin:                             quoteUSDTMin,
+		QuoteUSDTMax:                             quoteUSDTMax,
+		QuoteMissingStates:                       quoteMissing,
 	}, nil
 }
 
-func normalizeProjectListReportPairStates(field string, values, allowed []string) ([]string, error) {
+func normalizeProjectListPairStates(field string, values, allowed []string) ([]string, error) {
 	selected := make(map[string]struct{}, len(values))
 	for _, value := range values {
 		value = strings.TrimSpace(value)

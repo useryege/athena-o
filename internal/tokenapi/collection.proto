@@ -1,0 +1,9 @@
+syntax = "proto3";
+package athena.internal.tokenapi;
+import "internal/tokenapi/types.proto";
+option go_package = "github.com/useryege/athena/internal/tokenapi/apiclient";
+
+service TokenCollectionService {
+  rpc GetCollectionTask(GetCollectionTaskRequest) returns (GetCollectionTaskResponse);
+  rpc ListCollectionTasks(ListCollectionTasksRequest) returns (ListCollectionTasksResponse);
+}

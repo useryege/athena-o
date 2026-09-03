@@ -7,20 +7,9 @@ export interface ProjectJSONDrawerValue {
     value: string;
 }
 
-const prettyJSON = (value?: string) => {
-    if (!value) {
-        return '';
-    }
-    try {
-        return JSON.stringify(JSON.parse(value), null, 2);
-    } catch {
-        return value;
-    }
-};
-
 export const ProjectJSONDrawer = (props: {content?: ProjectJSONDrawerValue; onClose: () => void}) => {
     const {message} = App.useApp();
-    const formatted = prettyJSON(props.content?.value);
+    const raw = props.content?.value || '';
     const open = Boolean(props.content);
     const wasOpen = React.useRef(false);
     const restoreFocusRef = React.useRef<HTMLElement | null>(null);
@@ -38,7 +27,7 @@ export const ProjectJSONDrawer = (props: {content?: ProjectJSONDrawerValue; onCl
             if (!navigator.clipboard?.writeText) {
                 throw new Error('Clipboard access is unavailable');
             }
-            await navigator.clipboard.writeText(formatted);
+            await navigator.clipboard.writeText(raw);
             message.success('JSON copied');
         } catch {
             message.error('Could not copy JSON');
@@ -65,15 +54,15 @@ export const ProjectJSONDrawer = (props: {content?: ProjectJSONDrawerValue; onCl
                 }
             }}
             extra={
-                formatted ? (
+                raw ? (
                     <Button icon={<CopyOutlined />} onClick={copy}>
                         Copy
                     </Button>
                 ) : undefined
             }>
-            {formatted ? (
+            {raw ? (
                 <pre className='code-block project-json-viewer' tabIndex={0} aria-label={`${props.content?.title || 'Raw JSON'} content`}>
-                    {formatted}
+                    {raw}
                 </pre>
             ) : (
                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No JSON payload' />

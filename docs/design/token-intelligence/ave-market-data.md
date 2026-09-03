@@ -2,101 +2,91 @@
 
 ## Scope
 
-Ave Market Data Collection retrieves vendor token-detail data for Token Intelligence projects, normalizes the token snapshot including its display-logo URL, retains only the project's canonical wrapped-native and USDT V2 pairs, and commits versioned Ave observations. The research scheduler owns when collection runs, the ATHENA contract and Token Chain Processor own pair-address derivation and persistence, and the project-detail read model owns presentation.
+The `ave` collector performs one Ave Token Detail request for a validated
+project and persists normalized market evidence. It validates the provider's
+chain and Token contract, retains only pair data that exactly matches the
+project's canonical wrapped-native or USDT pair, and keeps provider risk claims
+under the `aveRisk` namespace. It does not schedule refreshes or make Ave data
+authoritative for on-chain facts.
 
 ## Source Locations
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| Collector process composition | [cmd/athena-token-collector/commands/athena-token-collector.go](../../../cmd/athena-token-collector/commands/athena-token-collector.go) | `NewCommand` |
-| Collection application boundary | [internal/token/research/application/collector.go](../../../internal/token/research/application/collector.go) | `AveMarketDataRequest`, `AveProcessor` |
-| Ave response normalization | [internal/token/adapters/ave/provider.go](../../../internal/token/adapters/ave/provider.go) | `Provider.GetMarketData`, `normalizeObservation`, `normalizePair` |
-| Ave HTTP client | [util/ave/ave.go](../../../util/ave/ave.go) | `Client`, `GetTokenDetail` |
-| Observation contract | [internal/token/research/observation.go](../../../internal/token/research/observation.go) | `AveObservationV1`, `AveTokenV1`, `AvePairV1` |
-| Observation persistence | [internal/token/adapters/postgres/observation_store.go](../../../internal/token/adapters/postgres/observation_store.go) | `CommitCollection`, `persistObservation` |
+| Provider adapter | [internal/token/adapters/ave/provider.go](../../../internal/token/adapters/ave/provider.go) | `Provider.GetMarketData`, `normalizeResult` |
+| Result contract | [internal/token/collection/payload.go](../../../internal/token/collection/payload.go) | `AveResultV1`, `AveTokenV1`, `AveRiskV1`, `AvePairV1` |
+| Collector processor | [internal/token/collection/application/processors.go](../../../internal/token/collection/application/processors.go) | `AveProcessor` |
+| Process composition | [cmd/athena-token-collector/commands/athena-token-collector.go](../../../cmd/athena-token-collector/commands/athena-token-collector.go) | Ave branch in `NewCommand` |
+| Profile projection | [internal/token/profile/builder.go](../../../internal/token/profile/builder.go) | Ave evidence mapping in `Build` |
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    T["Ave collection task"] --> P["AveProcessor"]
-    P --> A["Ave Provider"]
-    A --> V["Ave token-detail API"]
-    A --> F["Canonical pair filter"]
-    F --> O["AveObservationV1"]
-    O --> D["PostgreSQL observations"]
-```
-
-The claimed project context supplies the token contract, chain ID, and canonical wrapped-native and USDT pair addresses. The Ave adapter requests token data by token contract and chain, then uses the project pair addresses as the only accepted pair identities. Pair symbols and Ave's main-pair selection do not affect retention.
+The Ave collector claims only `ave` tasks from PostgreSQL. It calls the shared
+Ave client once, validates the response, converts optional decimal strings to
+lossless decimal values, and returns a V1 payload to the generic fenced
+collector commit. ProjectProfile construction later combines this provider
+evidence with the independently collected on-chain evidence.
 
 ## Runtime Flow
 
-1. The Ave collector claims a due task together with its `ProjectCollectionContext`.
-2. `AveProcessor` constructs an `AveMarketDataRequest` from the project's chain, token contract, WETH/WBNB pair, and USDT pair.
-3. The provider requests `/v2/tokens/{contract}-{chain}` and validates that the returned token contract and chain match the request.
-4. Token-level identity, trimmed logo URL, supply, price, valuation, TVL, holder, and risk fields are normalized independently of pair selection.
-5. The provider scans Ave's pair list and considers only entries whose parsed pair contract exactly equals one of the two project pair addresses. Other entries are skipped without parsing their chain, reserves, volume, valuation, or token addresses.
-6. The first matching wrapped-native pair and first matching USDT pair are normalized. The observation stores them in wrapped-native-then-USDT order; absent pairs are omitted.
-7. The collector canonicalizes the observation JSON and computes its content hash. A changed result creates a new observation, updates the current pointer and evidence revision, and enqueues a report build. An unchanged result only refreshes the current observation check time.
-8. Either successful result marks the collection task succeeded and the Ave schedule completed in the same PostgreSQL transaction. Ave is not collected again for that project.
+1. The process claims one eligible `ave` task and receives the project's chain,
+   Token contract, and two canonical pair addresses.
+2. The adapter requests Ave Token Detail with the chain and contract.
+3. The response Token address must equal the requested contract and its chain
+   name must map to the requested chain ID.
+4. Market, supply, holder, timestamp, and risk values are normalized. Invalid
+   present decimals, booleans, addresses, or pair chains fail the task attempt.
+5. Provider pairs are scanned in response order. At most one exact match for
+   each canonical pair is retained; unrelated or malformed-address pair entries
+   are ignored.
+6. The generic collector hashes and commits the normalized payload. The result
+   records no EVM block because it is a provider snapshot.
 
 ## State / Data
 
-`AveObservationV1` keeps the existing token object and `pairs` array. The array contains zero, one, or two entries:
+The V1 payload contains `chainId`, Token identity and market values, zero to two
+canonical pair market records, and `aveRisk`. Optional provider values remain
+absent rather than becoming zero. Provider timestamps are converted from
+positive Unix seconds to UTC.
 
-- index zero is the wrapped-native pair when present;
-- the USDT pair follows the wrapped-native pair, or occupies index zero when it is the only match;
-- no other Ave pair is persisted.
-
-The token object's optional `logoUrl` is Ave's trimmed `logo_url` value. An empty value is omitted. The collector stores the URL as vendor data and does not download, proxy, cache, or validate the remote image; presentation clients own image loading and fallback behavior.
-
-Token-level `TVL` and `MainPairTVL` remain Ave-provided token metrics and are not recalculated from the retained pair entries.
-
-Observations are immutable versioned rows. `project_observation_current` identifies the latest committed Ave snapshot for each project.
+Risk fields are explicitly provider-owned: audit flag, level, score, text,
+optional mintable flag, mint-method claim, LP-unlocked claim, ownership,
+audit/source, blocklist, and honeypot claims. The ProjectProfile may present
+these values but does not reinterpret them as chain-derived proof.
 
 ## Configuration
 
-| Setting | Behavior |
-| --- | --- |
-| `ATHENA_TOKEN_AVE_API_KEY` / `--ave-api-key` | Required Ave API key used in the `X-API-KEY` request header. |
-| `ATHENA_TOKEN_AVE_API_BASE_URL` / `--ave-api-base-url` | Ave API origin. Defaults to `https://prod.ave-api.com`. |
-| Ave HTTP timeout | Fixed at 60 seconds in the adapter and client defaults. |
-| `ATHENA_TOKEN_AVE_RETRY_INTERVAL` / `--ave-retry-interval` | Delay after a failed Ave collection attempt. Defaults to 5 minutes. |
-| `ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS` / `--health-listen-address` | Shared collector telemetry listener. The Ave collector default is `127.0.0.1:8113`. |
+`ATHENA_TOKEN_AVE_API_KEY` must be nonempty. `ATHENA_TOKEN_AVE_API_BASE_URL`
+defaults to the shared Ave client base URL. HTTP timeout is 60 seconds. The
+collector polls each second and retries real Ave failures after five minutes;
+its queue lease and heartbeat are 90 and 30 seconds.
 
 ## Invariants
 
-- Pair identity is exact contract-address equality against the persisted project pair addresses.
-- Alternative AMMs, symbol matches, and Ave's `main_pair` value never substitute for a canonical project pair.
-- A committed observation contains at most one wrapped-native pair and at most one USDT pair.
-- Retained pair order is deterministic: wrapped native before USDT.
-- Missing key pairs are valid and produce no placeholder entries.
-- Missing or unusable token logo URLs do not fail collection.
-- The optional logo field remains part of the V1 observation schema.
-- The first successful Ave response completes the schedule, whether or not its normalized content differs from an existing observation.
+- The normalized Token address and chain match the requested project.
+- Only exact project canonical-pair addresses enter evidence.
+- Ave risk claims remain namespaced and never replace on-chain signals.
+- A project has one `ave` task and at most one immutable Ave result.
+- Ave collection occurs once; ProjectProfile Builder never calls Ave.
 
 ## Failure Recovery
 
-Missing configuration or client construction failure prevents the Ave collector from starting. HTTP failures, an invalid token identity, invalid token-level data, malformed retained-pair data, or persistence failures fail the current attempt. The same task becomes available after the five-minute default retry interval. The tenth failed attempt marks both the task and Ave schedule failed, so no later task revision is created.
-
-Malformed or mismatched non-key pairs are ignored because they cannot affect the persisted observation. Observation insertion, current-pointer replacement, evidence revision, report enqueueing, task success, and schedule advancement remain transactional.
+Transport, provider, response-shape, identity, or normalization failure consumes
+one real collection attempt. The first two attempts return to pending after the
+five-minute interval; the third becomes failed and allows an incomplete profile.
+No partial Ave result is saved. Lease loss discards the response without
+consuming a provider failure.
 
 ## Observability
 
-The Ave collector uses the shared worker telemetry endpoints:
-
-- `GET /healthz` reports process liveness.
-- `GET /readyz` reports PostgreSQL readiness and the Ave data-collector job state.
-- `GET /metrics` exposes loop results, queue diagnostics, last success and error times, and consecutive failures.
-
-Failed loops emit the shared `token periodic job failed` log with the Ave data type. Task and schedule rows retain the attempt count, schedule failure count, last collection error, next attempt, and successful check time.
+Collector health, readiness, loop metrics, queue counts/age, task failure count,
+last error, and timestamps identify Ave work. The task-detail API exposes the
+complete normalized evidence and content hash.
 
 ## Change Checklist
 
-- [ ] Token identity and chain validation still match the Ave request.
-- [ ] Canonical pair filtering uses persisted project addresses and retains deterministic order.
-- [ ] Token-level metrics remain independent from pair retention.
-- [ ] Observation hashing, persistence, task completion, and retry behavior remain aligned.
-- [ ] API configuration, health endpoints, logs, and metrics remain current.
-- [ ] Source links and named symbols resolve to the implementation.
-- [ ] The [design index](../README.md) contains the correct entry.
+- [ ] Recheck chain and contract validation against Ave mappings.
+- [ ] Recheck lossless optional decimal and boolean parsing.
+- [ ] Recheck exact canonical-pair matching and deterministic order.
+- [ ] Keep provider risk fields inside `aveRisk`.
+- [ ] Keep the [design index](../README.md) current.

@@ -2,13 +2,14 @@ package tokenapi
 
 import (
 	"context"
+
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
 	tokenapipkg "github.com/useryege/athena/pkg/apiclient/tokenapi"
 )
 
 type Server struct {
 	tokenapipkg.UnimplementedTokenCatalogServiceServer
-	tokenapipkg.UnimplementedTokenResearchServiceServer
+	tokenapipkg.UnimplementedTokenCollectionServiceServer
 	tokenapipkg.UnimplementedTokenPolicyServiceServer
 	tokenapipkg.UnimplementedTokenOperationsServiceServer
 	tokenAPIClientSet tokenapiapiclient.Clientset
@@ -187,31 +188,39 @@ func (s *Server) ListContractCodes(ctx context.Context, req *tokenapipkg.ListCon
 func (s *Server) ListProjects(ctx context.Context, req *tokenapipkg.ListProjectsRequest) (*tokenapipkg.ListProjectsResponse, error) {
 	client := s.tokenAPIClientSet.Catalog()
 	r, e := client.ListProjects(ctx, &tokenapiapiclient.ListProjectsRequest{
-		ChainId:                       req.GetChainId(),
-		CodeHash:                      req.GetCodeHash(),
-		Contract:                      req.GetContract(),
-		Page:                          req.GetPage(),
-		PageSize:                      req.GetPageSize(),
-		ProjectId:                     req.GetProjectId(),
-		ResearchStatus:                req.GetResearchStatus(),
-		ReportState:                   req.GetReportState(),
-		EvaluationStatus:              req.GetEvaluationStatus(),
-		SelectionOutcome:              req.GetSelectionOutcome(),
-		WethPairRemoveLiquidityStates: req.GetWethPairRemoveLiquidityStates(),
-		WethPairMintStates:            req.GetWethPairMintStates(),
-		WethPairQuoteUsdtMin:          req.GetWethPairQuoteUsdtMin(),
-		WethPairQuoteUsdtMax:          req.GetWethPairQuoteUsdtMax(),
-		WethPairQuoteMissingStates:    req.GetWethPairQuoteMissingStates(),
-		UsdtPairRemoveLiquidityStates: req.GetUsdtPairRemoveLiquidityStates(),
-		UsdtPairMintStates:            req.GetUsdtPairMintStates(),
-		UsdtPairQuoteUsdtMin:          req.GetUsdtPairQuoteUsdtMin(),
-		UsdtPairQuoteUsdtMax:          req.GetUsdtPairQuoteUsdtMax(),
-		UsdtPairQuoteMissingStates:    req.GetUsdtPairQuoteMissingStates(),
+		ChainId:                              req.GetChainId(),
+		CodeHash:                             req.GetCodeHash(),
+		Contract:                             req.GetContract(),
+		Page:                                 req.GetPage(),
+		PageSize:                             req.GetPageSize(),
+		ProjectId:                            req.GetProjectId(),
+		CollectionStatus:                     req.GetCollectionStatus(),
+		ProfileState:                         req.GetProfileState(),
+		WrappedNativePairBalanceSupplyStates: req.GetWrappedNativePairBalanceSupplyStates(),
+		WrappedNativePairMinimumLpStates:     req.GetWrappedNativePairMinimumLpStates(),
+		WrappedNativePairFeeLpShareStates:    req.GetWrappedNativePairFeeLpShareStates(),
+		WrappedNativePairQuoteUsdtMin:        req.GetWrappedNativePairQuoteUsdtMin(),
+		WrappedNativePairQuoteUsdtMax:        req.GetWrappedNativePairQuoteUsdtMax(),
+		WrappedNativePairQuoteMissingStates:  req.GetWrappedNativePairQuoteMissingStates(),
+		UsdtPairBalanceSupplyStates:          req.GetUsdtPairBalanceSupplyStates(),
+		UsdtPairMinimumLpStates:              req.GetUsdtPairMinimumLpStates(),
+		UsdtPairFeeLpShareStates:             req.GetUsdtPairFeeLpShareStates(),
+		UsdtPairQuoteUsdtMin:                 req.GetUsdtPairQuoteUsdtMin(),
+		UsdtPairQuoteUsdtMax:                 req.GetUsdtPairQuoteUsdtMax(),
+		UsdtPairQuoteMissingStates:           req.GetUsdtPairQuoteMissingStates(),
 	})
 	if e != nil {
 		return nil, e
 	}
 	return &tokenapipkg.ListProjectsResponse{Projects: r.GetProjects(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
+}
+func (s *Server) GetProjectProfile(ctx context.Context, req *tokenapipkg.GetProjectProfileRequest) (*tokenapipkg.GetProjectProfileResponse, error) {
+	client := s.tokenAPIClientSet.Catalog()
+	r, e := client.GetProjectProfile(ctx, &tokenapiapiclient.GetProjectProfileRequest{ProjectId: req.GetProjectId()})
+	if e != nil {
+		return nil, e
+	}
+	return &tokenapipkg.GetProjectProfileResponse{Found: r.GetFound(), Profile: r.GetProfile()}, nil
 }
 func (s *Server) GetProjectDetail(ctx context.Context, req *tokenapipkg.GetProjectDetailRequest) (*tokenapipkg.GetProjectDetailResponse, error) {
 	client := s.tokenAPIClientSet.Catalog()
@@ -248,22 +257,6 @@ func (s *Server) ListProjectSwapEvents(ctx context.Context, req *tokenapipkg.Lis
 		PageSize: r.GetPageSize(),
 	}, nil
 }
-func (s *Server) ListProjectTrends(ctx context.Context, req *tokenapipkg.ListProjectTrendsRequest) (*tokenapipkg.ListProjectTrendsResponse, error) {
-	client := s.tokenAPIClientSet.Catalog()
-	r, e := client.ListProjectTrends(ctx, &tokenapiapiclient.ListProjectTrendsRequest{ProjectId: req.GetProjectId(), Range: req.GetRange()})
-	if e != nil {
-		return nil, e
-	}
-	return &tokenapipkg.ListProjectTrendsResponse{Trends: r.GetTrends()}, nil
-}
-func (s *Server) ListProjectObservations(ctx context.Context, req *tokenapipkg.ListProjectObservationsRequest) (*tokenapipkg.ListProjectObservationsResponse, error) {
-	client := s.tokenAPIClientSet.Catalog()
-	r, e := client.ListProjectObservations(ctx, &tokenapiapiclient.ListProjectObservationsRequest{ProjectId: req.GetProjectId(), DataType: req.GetDataType(), Page: req.GetPage(), PageSize: req.GetPageSize()})
-	if e != nil {
-		return nil, e
-	}
-	return &tokenapipkg.ListProjectObservationsResponse{Observations: r.GetObservations(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
-}
 func (s *Server) ListProjectWalletNormalTransactions(ctx context.Context, req *tokenapipkg.ListProjectWalletNormalTransactionsRequest) (*tokenapipkg.ListProjectWalletNormalTransactionsResponse, error) {
 	client := s.tokenAPIClientSet.Catalog()
 	r, e := client.ListProjectWalletNormalTransactions(ctx, &tokenapiapiclient.ListProjectWalletNormalTransactionsRequest{ProjectId: req.GetProjectId(), Wallet: req.GetWallet(), ReceiptStatus: req.GetReceiptStatus(), MethodId: req.GetMethodId(), Page: req.GetPage(), PageSize: req.GetPageSize()})
@@ -273,7 +266,7 @@ func (s *Server) ListProjectWalletNormalTransactions(ctx context.Context, req *t
 	return &tokenapipkg.ListProjectWalletNormalTransactionsResponse{Transactions: r.GetTransactions(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
 }
 func (s *Server) GetCollectionTask(ctx context.Context, req *tokenapipkg.GetCollectionTaskRequest) (*tokenapipkg.GetCollectionTaskResponse, error) {
-	client := s.tokenAPIClientSet.Research()
+	client := s.tokenAPIClientSet.Collection()
 	r, e := client.GetCollectionTask(ctx, &tokenapiapiclient.GetCollectionTaskRequest{TaskId: req.GetTaskId()})
 	if e != nil {
 		return nil, e
@@ -281,34 +274,10 @@ func (s *Server) GetCollectionTask(ctx context.Context, req *tokenapipkg.GetColl
 	return &tokenapipkg.GetCollectionTaskResponse{Found: r.GetFound(), Task: r.GetTask()}, nil
 }
 func (s *Server) ListCollectionTasks(ctx context.Context, req *tokenapipkg.ListCollectionTasksRequest) (*tokenapipkg.ListCollectionTasksResponse, error) {
-	client := s.tokenAPIClientSet.Research()
+	client := s.tokenAPIClientSet.Collection()
 	r, e := client.ListCollectionTasks(ctx, &tokenapiapiclient.ListCollectionTasksRequest{ProjectId: req.GetProjectId(), DataType: req.GetDataType(), Status: req.GetStatus(), Page: req.GetPage(), PageSize: req.GetPageSize()})
 	if e != nil {
 		return nil, e
 	}
 	return &tokenapipkg.ListCollectionTasksResponse{Tasks: r.GetTasks(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
-}
-func (s *Server) ListResearchStates(ctx context.Context, req *tokenapipkg.ListResearchStatesRequest) (*tokenapipkg.ListResearchStatesResponse, error) {
-	client := s.tokenAPIClientSet.Research()
-	r, e := client.ListResearchStates(ctx, &tokenapiapiclient.ListResearchStatesRequest{ProjectId: req.GetProjectId(), ChainId: req.GetChainId(), Status: req.GetStatus(), Page: req.GetPage(), PageSize: req.GetPageSize()})
-	if e != nil {
-		return nil, e
-	}
-	return &tokenapipkg.ListResearchStatesResponse{ResearchStates: r.GetResearchStates(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
-}
-func (s *Server) ListReportRevisions(ctx context.Context, req *tokenapipkg.ListReportRevisionsRequest) (*tokenapipkg.ListReportRevisionsResponse, error) {
-	client := s.tokenAPIClientSet.Research()
-	r, e := client.ListReportRevisions(ctx, &tokenapiapiclient.ListReportRevisionsRequest{ProjectId: req.GetProjectId(), ChainId: req.GetChainId(), Page: req.GetPage(), PageSize: req.GetPageSize()})
-	if e != nil {
-		return nil, e
-	}
-	return &tokenapipkg.ListReportRevisionsResponse{ReportRevisions: r.GetReportRevisions(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
-}
-func (s *Server) ListSelections(ctx context.Context, req *tokenapipkg.ListSelectionsRequest) (*tokenapipkg.ListSelectionsResponse, error) {
-	client := s.tokenAPIClientSet.Research()
-	r, e := client.ListSelections(ctx, &tokenapiapiclient.ListSelectionsRequest{ProjectId: req.GetProjectId(), ChainId: req.GetChainId(), Outcome: req.GetOutcome(), Page: req.GetPage(), PageSize: req.GetPageSize()})
-	if e != nil {
-		return nil, e
-	}
-	return &tokenapipkg.ListSelectionsResponse{Selections: r.GetSelections(), Total: r.GetTotal(), Page: r.GetPage(), PageSize: r.GetPageSize()}, nil
 }

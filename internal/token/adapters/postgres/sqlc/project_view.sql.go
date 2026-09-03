@@ -12,85 +12,112 @@ import (
 )
 
 const countProjectListItems = `-- name: CountProjectListItems :one
+
+WITH collection_summary AS (
+  SELECT
+    project_id,
+    COUNT(*)::bigint AS task_count,
+    COUNT(*) FILTER (WHERE status IN ('succeeded', 'failed'))::bigint AS terminal_count,
+    COUNT(*) FILTER (WHERE status = 'succeeded')::bigint AS succeeded_count,
+    COUNT(*) FILTER (WHERE status = 'failed')::bigint AS failed_count,
+    COUNT(*) FILTER (WHERE status = 'running')::bigint AS running_count
+  FROM project_data_collection_task
+  GROUP BY project_id
+), project_state AS (
+  SELECT
+    project.id, project.chain_id, project.contract, project.tx_sender, project.tx_hash, project.tx_index, project.deployment_nonce, project.block_number, project.block_time, project.code_hash, project.name, project.symbol, project.decimals, project.total_supply, project.weth_pair, project.usdt_pair, project.created_at,
+    profile.project_id AS profile_project_id,
+    profile.completeness_status,
+    profile.weth_pair_token_balance_exceeds_total_supply,
+    profile.weth_pair_lp_minimum_supply_only,
+    profile.weth_pair_fixed_fee_address_lp_share_gte_90_percent,
+    profile.weth_pair_quote_usdt_value_int,
+    profile.usdt_pair_token_balance_exceeds_total_supply,
+    profile.usdt_pair_lp_minimum_supply_only,
+    profile.usdt_pair_fixed_fee_address_lp_share_gte_90_percent,
+    profile.usdt_pair_quote_usdt_value_int,
+    CASE
+      WHEN COALESCE(collection.failed_count, 0) > 0 THEN 'needs_attention'
+      WHEN COALESCE(collection.succeeded_count, 0) = 6 THEN 'complete'
+      WHEN COALESCE(collection.running_count, 0) > 0 OR COALESCE(collection.succeeded_count, 0) > 0 THEN 'collecting'
+      ELSE 'queued'
+    END::text AS collection_status,
+    CASE
+      WHEN profile.project_id IS NOT NULL THEN profile.completeness_status
+      WHEN profile_build.status = 'failed' THEN 'failed'
+      ELSE 'pending'
+    END::text AS profile_state
+  FROM project
+  LEFT JOIN collection_summary AS collection ON collection.project_id = project.id
+  LEFT JOIN project_profile_build_task AS profile_build ON profile_build.project_id = project.id
+  LEFT JOIN project_profile AS profile ON profile.project_id = project.id
+)
 SELECT COUNT(*)::bigint
-FROM project
-LEFT JOIN project_research_state AS research
-  ON research.project_id = project.id
-LEFT JOIN project_report_revision AS report
-  ON report.project_id = project.id
-  AND report.revision = research.current_report_revision
-LEFT JOIN project_selection_evaluation_task AS evaluation
-  ON evaluation.project_id = report.project_id
-  AND evaluation.report_revision = report.revision
-LEFT JOIN project_selection AS selection
-  ON selection.id = research.current_selection_id
-  AND selection.project_id = project.id
-  AND evaluation.status = 'succeeded'
-  AND research.last_evaluated_report_revision = report.revision
-WHERE ($1::bigint = 0 OR project.chain_id = $1::bigint)
-  AND ($2::bigint = 0 OR project.id = $2::bigint)
-  AND ($3::bytea IS NULL OR project.code_hash = $3::bytea)
-  AND ($4::bytea IS NULL OR project.contract = $4::bytea)
-  AND ($5::text = '' OR research.status = $5::text)
+FROM project_state
+WHERE ($1::bigint = 0 OR chain_id = $1::bigint)
+  AND ($2::bigint = 0 OR id = $2::bigint)
+  AND ($3::bytea IS NULL OR code_hash = $3::bytea)
+  AND ($4::bytea IS NULL OR contract = $4::bytea)
+  AND ($5::text = '' OR collection_status = $5::text)
+  AND ($6::text = '' OR profile_state = $6::text)
   AND (
-    $6::text = ''
-    OR ($6::text = 'none' AND report.id IS NULL)
-    OR report.completeness_status = $6::text
+    COALESCE(cardinality($7::text[]), 0) = 0
+    OR ('detected' = ANY($7::text[]) AND weth_pair_token_balance_exceeds_total_supply IS TRUE)
+    OR ('clear' = ANY($7::text[]) AND weth_pair_token_balance_exceeds_total_supply IS FALSE)
+    OR ('no_profile' = ANY($7::text[]) AND profile_project_id IS NULL)
+    OR ('signal_unavailable' = ANY($7::text[]) AND profile_project_id IS NOT NULL AND weth_pair_token_balance_exceeds_total_supply IS NULL)
   )
   AND (
-    $7::text = ''
-    OR ($7::text = 'none' AND evaluation.id IS NULL)
-    OR evaluation.status = $7::text
-  )
-  AND (
-    $8::text = ''
-    OR ($8::text = 'none' AND selection.id IS NULL)
-    OR selection.outcome = $8::text
+    COALESCE(cardinality($8::text[]), 0) = 0
+    OR ('detected' = ANY($8::text[]) AND weth_pair_lp_minimum_supply_only IS TRUE)
+    OR ('clear' = ANY($8::text[]) AND weth_pair_lp_minimum_supply_only IS FALSE)
+    OR ('no_profile' = ANY($8::text[]) AND profile_project_id IS NULL)
+    OR ('signal_unavailable' = ANY($8::text[]) AND profile_project_id IS NOT NULL AND weth_pair_lp_minimum_supply_only IS NULL)
   )
   AND (
     COALESCE(cardinality($9::text[]), 0) = 0
-    OR ('detected' = ANY($9::text[]) AND report.weth_pair_is_remove_liquidity IS TRUE)
-    OR ('clear' = ANY($9::text[]) AND report.weth_pair_is_remove_liquidity IS FALSE)
-    OR ('no_report' = ANY($9::text[]) AND report.id IS NULL)
-    OR ('risk_unavailable' = ANY($9::text[]) AND report.id IS NOT NULL AND report.weth_pair_is_remove_liquidity IS NULL)
-  )
-  AND (
-    COALESCE(cardinality($10::text[]), 0) = 0
-    OR ('detected' = ANY($10::text[]) AND report.weth_pair_is_mint IS TRUE)
-    OR ('clear' = ANY($10::text[]) AND report.weth_pair_is_mint IS FALSE)
-    OR ('no_report' = ANY($10::text[]) AND report.id IS NULL)
-    OR ('risk_unavailable' = ANY($10::text[]) AND report.id IS NOT NULL AND report.weth_pair_is_mint IS NULL)
+    OR ('detected' = ANY($9::text[]) AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS TRUE)
+    OR ('clear' = ANY($9::text[]) AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS FALSE)
+    OR ('no_profile' = ANY($9::text[]) AND profile_project_id IS NULL)
+    OR ('signal_unavailable' = ANY($9::text[]) AND profile_project_id IS NOT NULL AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS NULL)
   )
   AND (
     (
-      $11::numeric IS NULL
-      AND $12::numeric IS NULL
-      AND COALESCE(cardinality($13::text[]), 0) = 0
+      $10::numeric IS NULL
+      AND $11::numeric IS NULL
+      AND COALESCE(cardinality($12::text[]), 0) = 0
     )
     OR (
       (
-        ($11::numeric IS NOT NULL OR $12::numeric IS NOT NULL)
-        AND report.weth_pair_quote_usdt_value_int IS NOT NULL
-        AND ($11::numeric IS NULL OR report.weth_pair_quote_usdt_value_int >= $11::numeric)
-        AND ($12::numeric IS NULL OR report.weth_pair_quote_usdt_value_int <= $12::numeric)
+        ($10::numeric IS NOT NULL OR $11::numeric IS NOT NULL)
+        AND weth_pair_quote_usdt_value_int IS NOT NULL
+        AND ($10::numeric IS NULL OR weth_pair_quote_usdt_value_int >= $10::numeric)
+        AND ($11::numeric IS NULL OR weth_pair_quote_usdt_value_int <= $11::numeric)
       )
-      OR ('no_report' = ANY($13::text[]) AND report.id IS NULL)
-      OR ('risk_unavailable' = ANY($13::text[]) AND report.id IS NOT NULL AND report.weth_pair_quote_usdt_value_int IS NULL)
+      OR ('no_profile' = ANY($12::text[]) AND profile_project_id IS NULL)
+      OR ('value_unavailable' = ANY($12::text[]) AND profile_project_id IS NOT NULL AND weth_pair_quote_usdt_value_int IS NULL)
     )
   )
   AND (
+    COALESCE(cardinality($13::text[]), 0) = 0
+    OR ('detected' = ANY($13::text[]) AND usdt_pair_token_balance_exceeds_total_supply IS TRUE)
+    OR ('clear' = ANY($13::text[]) AND usdt_pair_token_balance_exceeds_total_supply IS FALSE)
+    OR ('no_profile' = ANY($13::text[]) AND profile_project_id IS NULL)
+    OR ('signal_unavailable' = ANY($13::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_token_balance_exceeds_total_supply IS NULL)
+  )
+  AND (
     COALESCE(cardinality($14::text[]), 0) = 0
-    OR ('detected' = ANY($14::text[]) AND report.usdt_pair_is_remove_liquidity IS TRUE)
-    OR ('clear' = ANY($14::text[]) AND report.usdt_pair_is_remove_liquidity IS FALSE)
-    OR ('no_report' = ANY($14::text[]) AND report.id IS NULL)
-    OR ('risk_unavailable' = ANY($14::text[]) AND report.id IS NOT NULL AND report.usdt_pair_is_remove_liquidity IS NULL)
+    OR ('detected' = ANY($14::text[]) AND usdt_pair_lp_minimum_supply_only IS TRUE)
+    OR ('clear' = ANY($14::text[]) AND usdt_pair_lp_minimum_supply_only IS FALSE)
+    OR ('no_profile' = ANY($14::text[]) AND profile_project_id IS NULL)
+    OR ('signal_unavailable' = ANY($14::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_lp_minimum_supply_only IS NULL)
   )
   AND (
     COALESCE(cardinality($15::text[]), 0) = 0
-    OR ('detected' = ANY($15::text[]) AND report.usdt_pair_is_mint IS TRUE)
-    OR ('clear' = ANY($15::text[]) AND report.usdt_pair_is_mint IS FALSE)
-    OR ('no_report' = ANY($15::text[]) AND report.id IS NULL)
-    OR ('risk_unavailable' = ANY($15::text[]) AND report.id IS NOT NULL AND report.usdt_pair_is_mint IS NULL)
+    OR ('detected' = ANY($15::text[]) AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS TRUE)
+    OR ('clear' = ANY($15::text[]) AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS FALSE)
+    OR ('no_profile' = ANY($15::text[]) AND profile_project_id IS NULL)
+    OR ('signal_unavailable' = ANY($15::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS NULL)
   )
   AND (
     (
@@ -101,12 +128,12 @@ WHERE ($1::bigint = 0 OR project.chain_id = $1::bigint)
     OR (
       (
         ($16::numeric IS NOT NULL OR $17::numeric IS NOT NULL)
-        AND report.usdt_pair_quote_usdt_value_int IS NOT NULL
-        AND ($16::numeric IS NULL OR report.usdt_pair_quote_usdt_value_int >= $16::numeric)
-        AND ($17::numeric IS NULL OR report.usdt_pair_quote_usdt_value_int <= $17::numeric)
+        AND usdt_pair_quote_usdt_value_int IS NOT NULL
+        AND ($16::numeric IS NULL OR usdt_pair_quote_usdt_value_int >= $16::numeric)
+        AND ($17::numeric IS NULL OR usdt_pair_quote_usdt_value_int <= $17::numeric)
       )
-      OR ('no_report' = ANY($18::text[]) AND report.id IS NULL)
-      OR ('risk_unavailable' = ANY($18::text[]) AND report.id IS NOT NULL AND report.usdt_pair_quote_usdt_value_int IS NULL)
+      OR ('no_profile' = ANY($18::text[]) AND profile_project_id IS NULL)
+      OR ('value_unavailable' = ANY($18::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_quote_usdt_value_int IS NULL)
     )
   )
 `
@@ -116,40 +143,40 @@ type CountProjectListItemsParams struct {
 	ProjectID                     int64
 	CodeHash                      []byte
 	Contract                      []byte
-	ResearchStatus                string
-	ReportState                   string
-	EvaluationStatus              string
-	SelectionOutcome              string
-	WethPairRemoveLiquidityStates []string
-	WethPairMintStates            []string
+	CollectionStatus              string
+	ProfileState                  string
+	WethPairTokenBalanceStates    []string
+	WethPairLpMinimumSupplyStates []string
+	WethPairFixedFeeLpShareStates []string
 	WethPairQuoteUsdtMin          pgtype.Numeric
 	WethPairQuoteUsdtMax          pgtype.Numeric
 	WethPairQuoteMissingStates    []string
-	UsdtPairRemoveLiquidityStates []string
-	UsdtPairMintStates            []string
+	UsdtPairTokenBalanceStates    []string
+	UsdtPairLpMinimumSupplyStates []string
+	UsdtPairFixedFeeLpShareStates []string
 	UsdtPairQuoteUsdtMin          pgtype.Numeric
 	UsdtPairQuoteUsdtMax          pgtype.Numeric
 	UsdtPairQuoteMissingStates    []string
 }
 
-// Project-centered current read model.
+// Project-centered collection and profile read model.
 func (q *Queries) CountProjectListItems(ctx context.Context, arg CountProjectListItemsParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countProjectListItems,
 		arg.ChainID,
 		arg.ProjectID,
 		arg.CodeHash,
 		arg.Contract,
-		arg.ResearchStatus,
-		arg.ReportState,
-		arg.EvaluationStatus,
-		arg.SelectionOutcome,
-		arg.WethPairRemoveLiquidityStates,
-		arg.WethPairMintStates,
+		arg.CollectionStatus,
+		arg.ProfileState,
+		arg.WethPairTokenBalanceStates,
+		arg.WethPairLpMinimumSupplyStates,
+		arg.WethPairFixedFeeLpShareStates,
 		arg.WethPairQuoteUsdtMin,
 		arg.WethPairQuoteUsdtMax,
 		arg.WethPairQuoteMissingStates,
-		arg.UsdtPairRemoveLiquidityStates,
-		arg.UsdtPairMintStates,
+		arg.UsdtPairTokenBalanceStates,
+		arg.UsdtPairLpMinimumSupplyStates,
+		arg.UsdtPairFixedFeeLpShareStates,
 		arg.UsdtPairQuoteUsdtMin,
 		arg.UsdtPairQuoteUsdtMax,
 		arg.UsdtPairQuoteMissingStates,
@@ -160,129 +187,144 @@ func (q *Queries) CountProjectListItems(ctx context.Context, arg CountProjectLis
 }
 
 const listProjectListItems = `-- name: ListProjectListItems :many
-SELECT
-  project.id,
-  project.chain_id,
-  project.block_time,
-  project.name,
-  project.symbol,
-  project.created_at,
-  COALESCE(
+WITH collection_summary AS (
+  SELECT
+    project_id,
+    COUNT(*)::bigint AS task_count,
+    COUNT(*) FILTER (WHERE status IN ('succeeded', 'failed'))::bigint AS terminal_count,
+    COUNT(*) FILTER (WHERE status = 'succeeded')::bigint AS succeeded_count,
+    COUNT(*) FILTER (WHERE status = 'failed')::bigint AS failed_count,
+    COUNT(*) FILTER (WHERE status = 'running')::bigint AS running_count
+  FROM project_data_collection_task
+  GROUP BY project_id
+), project_state AS (
+  SELECT
+    project.id,
+    project.chain_id,
+    project.contract,
+	project.code_hash,
+	project.tx_hash,
+    project.block_number,
+    project.block_time,
+    project.name,
+    project.symbol,
+	project.weth_pair,
+	project.usdt_pair,
+    project.created_at,
+    COALESCE(collection.task_count, 0)::bigint AS collection_task_count,
+    COALESCE(collection.terminal_count, 0)::bigint AS collection_terminal_count,
+    COALESCE(collection.succeeded_count, 0)::bigint AS collection_succeeded_count,
+    COALESCE(collection.failed_count, 0)::bigint AS collection_failed_count,
     CASE
-      WHEN ave_observation.schema_version = 1
-      THEN ave_observation.payload #>> '{token,logoUrl}'
-    END,
-    ''
-  )::text AS logo_url,
-  COALESCE(research.status, '')::text AS research_status,
-  report.revision AS report_revision,
-  COALESCE(report.completeness_status, '')::text AS report_completeness_status,
-  report.built_at AS report_built_at,
-  report.weth_pair_is_created,
-  report.weth_pair_is_remove_liquidity,
-  report.weth_pair_is_mint,
-  report.weth_pair_quote_usdt_value_int,
-  report.weth_pair_last_swap_timestamp,
-  report.usdt_pair_is_created,
-  report.usdt_pair_is_remove_liquidity,
-  report.usdt_pair_is_mint,
-  report.usdt_pair_quote_usdt_value_int,
-  report.usdt_pair_last_swap_timestamp,
-  COALESCE(evaluation.status, '')::text AS evaluation_status,
-  COALESCE(evaluation.attempts, 0)::int AS evaluation_failed_attempts,
-  COALESCE(evaluation.last_error, '')::text AS evaluation_last_error,
-  evaluation.updated_at AS evaluation_updated_at,
-  COALESCE(selection.outcome, '')::text AS selection_outcome,
-  CASE
-    WHEN selection.id IS NOT NULL
-    THEN research.last_evaluated_at
-    ELSE NULL::timestamptz
-  END AS evaluated_at
-FROM project
-LEFT JOIN project_research_state AS research
-  ON research.project_id = project.id
-LEFT JOIN project_report_revision AS report
-  ON report.project_id = project.id
-  AND report.revision = research.current_report_revision
-LEFT JOIN project_selection_evaluation_task AS evaluation
-  ON evaluation.project_id = report.project_id
-  AND evaluation.report_revision = report.revision
-LEFT JOIN project_selection AS selection
-  ON selection.id = research.current_selection_id
-  AND selection.project_id = project.id
-  AND evaluation.status = 'succeeded'
-  AND research.last_evaluated_report_revision = report.revision
-LEFT JOIN project_observation_current AS ave_current
-  ON ave_current.project_id = project.id
-  AND ave_current.data_type = 'ave'
-LEFT JOIN project_observation AS ave_observation
-  ON ave_observation.id = ave_current.observation_id
-  AND ave_observation.project_id = project.id
-  AND ave_observation.data_type = 'ave'
-WHERE ($1::bigint = 0 OR project.chain_id = $1::bigint)
-  AND ($2::bigint = 0 OR project.id = $2::bigint)
-  AND ($3::bytea IS NULL OR project.code_hash = $3::bytea)
-  AND ($4::bytea IS NULL OR project.contract = $4::bytea)
-  AND ($5::text = '' OR research.status = $5::text)
+      WHEN COALESCE(collection.failed_count, 0) > 0 THEN 'needs_attention'
+      WHEN COALESCE(collection.succeeded_count, 0) = 6 THEN 'complete'
+      WHEN COALESCE(collection.running_count, 0) > 0 OR COALESCE(collection.succeeded_count, 0) > 0 THEN 'collecting'
+      ELSE 'queued'
+    END::text AS collection_status,
+    CASE
+      WHEN profile.project_id IS NOT NULL THEN profile.completeness_status
+      WHEN profile_build.status = 'failed' THEN 'failed'
+      ELSE 'pending'
+    END::text AS profile_state,
+    COALESCE(profile_build.status, '')::text AS profile_build_status,
+    COALESCE(profile_build.failure_count, 0)::int AS profile_build_failure_count,
+    COALESCE(profile_build.last_error, '')::text AS profile_build_last_error,
+    profile_build.updated_at AS profile_build_updated_at,
+    profile.project_id AS profile_project_id,
+    COALESCE(profile.logo_url, '')::text AS logo_url,
+    profile.completeness_status,
+    profile.current_price_usd,
+    profile.market_cap_usd,
+    profile.fdv_usd,
+    profile.tvl_usd,
+    profile.holders,
+    profile.contract_source_status,
+    profile.weth_pair_is_created,
+    profile.weth_pair_token_balance_exceeds_total_supply,
+    profile.weth_pair_lp_minimum_supply_only,
+    profile.weth_pair_fixed_fee_address_lp_share_gte_90_percent,
+    profile.weth_pair_quote_usdt_value_int,
+    profile.weth_pair_reserve_updated_at,
+    profile.usdt_pair_is_created,
+    profile.usdt_pair_token_balance_exceeds_total_supply,
+    profile.usdt_pair_lp_minimum_supply_only,
+    profile.usdt_pair_fixed_fee_address_lp_share_gte_90_percent,
+    profile.usdt_pair_quote_usdt_value_int,
+    profile.usdt_pair_reserve_updated_at,
+    profile.built_at AS profile_built_at
+  FROM project
+  LEFT JOIN collection_summary AS collection ON collection.project_id = project.id
+  LEFT JOIN project_profile_build_task AS profile_build ON profile_build.project_id = project.id
+  LEFT JOIN project_profile AS profile ON profile.project_id = project.id
+)
+SELECT id, chain_id, contract, code_hash, tx_hash, block_number, block_time, name, symbol, weth_pair, usdt_pair, created_at, collection_task_count, collection_terminal_count, collection_succeeded_count, collection_failed_count, collection_status, profile_state, profile_build_status, profile_build_failure_count, profile_build_last_error, profile_build_updated_at, profile_project_id, logo_url, completeness_status, current_price_usd, market_cap_usd, fdv_usd, tvl_usd, holders, contract_source_status, weth_pair_is_created, weth_pair_token_balance_exceeds_total_supply, weth_pair_lp_minimum_supply_only, weth_pair_fixed_fee_address_lp_share_gte_90_percent, weth_pair_quote_usdt_value_int, weth_pair_reserve_updated_at, usdt_pair_is_created, usdt_pair_token_balance_exceeds_total_supply, usdt_pair_lp_minimum_supply_only, usdt_pair_fixed_fee_address_lp_share_gte_90_percent, usdt_pair_quote_usdt_value_int, usdt_pair_reserve_updated_at, profile_built_at
+FROM project_state
+WHERE ($1::bigint = 0 OR chain_id = $1::bigint)
+  AND ($2::bigint = 0 OR id = $2::bigint)
+  AND ($3::bytea IS NULL OR EXISTS (
+    SELECT 1 FROM project WHERE project.id = project_state.id AND project.code_hash = $3::bytea
+  ))
+  AND ($4::bytea IS NULL OR contract = $4::bytea)
+  AND ($5::text = '' OR collection_status = $5::text)
+  AND ($6::text = '' OR profile_state = $6::text)
   AND (
-    $6::text = ''
-    OR ($6::text = 'none' AND report.id IS NULL)
-    OR report.completeness_status = $6::text
+    COALESCE(cardinality($7::text[]), 0) = 0
+    OR ('detected' = ANY($7::text[]) AND weth_pair_token_balance_exceeds_total_supply IS TRUE)
+    OR ('clear' = ANY($7::text[]) AND weth_pair_token_balance_exceeds_total_supply IS FALSE)
+    OR ('no_profile' = ANY($7::text[]) AND profile_project_id IS NULL)
+    OR ('signal_unavailable' = ANY($7::text[]) AND profile_project_id IS NOT NULL AND weth_pair_token_balance_exceeds_total_supply IS NULL)
   )
   AND (
-    $7::text = ''
-    OR ($7::text = 'none' AND evaluation.id IS NULL)
-    OR evaluation.status = $7::text
-  )
-  AND (
-    $8::text = ''
-    OR ($8::text = 'none' AND selection.id IS NULL)
-    OR selection.outcome = $8::text
+    COALESCE(cardinality($8::text[]), 0) = 0
+    OR ('detected' = ANY($8::text[]) AND weth_pair_lp_minimum_supply_only IS TRUE)
+    OR ('clear' = ANY($8::text[]) AND weth_pair_lp_minimum_supply_only IS FALSE)
+    OR ('no_profile' = ANY($8::text[]) AND profile_project_id IS NULL)
+    OR ('signal_unavailable' = ANY($8::text[]) AND profile_project_id IS NOT NULL AND weth_pair_lp_minimum_supply_only IS NULL)
   )
   AND (
     COALESCE(cardinality($9::text[]), 0) = 0
-    OR ('detected' = ANY($9::text[]) AND report.weth_pair_is_remove_liquidity IS TRUE)
-    OR ('clear' = ANY($9::text[]) AND report.weth_pair_is_remove_liquidity IS FALSE)
-    OR ('no_report' = ANY($9::text[]) AND report.id IS NULL)
-    OR ('risk_unavailable' = ANY($9::text[]) AND report.id IS NOT NULL AND report.weth_pair_is_remove_liquidity IS NULL)
-  )
-  AND (
-    COALESCE(cardinality($10::text[]), 0) = 0
-    OR ('detected' = ANY($10::text[]) AND report.weth_pair_is_mint IS TRUE)
-    OR ('clear' = ANY($10::text[]) AND report.weth_pair_is_mint IS FALSE)
-    OR ('no_report' = ANY($10::text[]) AND report.id IS NULL)
-    OR ('risk_unavailable' = ANY($10::text[]) AND report.id IS NOT NULL AND report.weth_pair_is_mint IS NULL)
+    OR ('detected' = ANY($9::text[]) AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS TRUE)
+    OR ('clear' = ANY($9::text[]) AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS FALSE)
+    OR ('no_profile' = ANY($9::text[]) AND profile_project_id IS NULL)
+    OR ('signal_unavailable' = ANY($9::text[]) AND profile_project_id IS NOT NULL AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS NULL)
   )
   AND (
     (
-      $11::numeric IS NULL
-      AND $12::numeric IS NULL
-      AND COALESCE(cardinality($13::text[]), 0) = 0
+      $10::numeric IS NULL
+      AND $11::numeric IS NULL
+      AND COALESCE(cardinality($12::text[]), 0) = 0
     )
     OR (
       (
-        ($11::numeric IS NOT NULL OR $12::numeric IS NOT NULL)
-        AND report.weth_pair_quote_usdt_value_int IS NOT NULL
-        AND ($11::numeric IS NULL OR report.weth_pair_quote_usdt_value_int >= $11::numeric)
-        AND ($12::numeric IS NULL OR report.weth_pair_quote_usdt_value_int <= $12::numeric)
+        ($10::numeric IS NOT NULL OR $11::numeric IS NOT NULL)
+        AND weth_pair_quote_usdt_value_int IS NOT NULL
+        AND ($10::numeric IS NULL OR weth_pair_quote_usdt_value_int >= $10::numeric)
+        AND ($11::numeric IS NULL OR weth_pair_quote_usdt_value_int <= $11::numeric)
       )
-      OR ('no_report' = ANY($13::text[]) AND report.id IS NULL)
-      OR ('risk_unavailable' = ANY($13::text[]) AND report.id IS NOT NULL AND report.weth_pair_quote_usdt_value_int IS NULL)
+      OR ('no_profile' = ANY($12::text[]) AND profile_project_id IS NULL)
+      OR ('value_unavailable' = ANY($12::text[]) AND profile_project_id IS NOT NULL AND weth_pair_quote_usdt_value_int IS NULL)
     )
   )
   AND (
+    COALESCE(cardinality($13::text[]), 0) = 0
+    OR ('detected' = ANY($13::text[]) AND usdt_pair_token_balance_exceeds_total_supply IS TRUE)
+    OR ('clear' = ANY($13::text[]) AND usdt_pair_token_balance_exceeds_total_supply IS FALSE)
+    OR ('no_profile' = ANY($13::text[]) AND profile_project_id IS NULL)
+    OR ('signal_unavailable' = ANY($13::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_token_balance_exceeds_total_supply IS NULL)
+  )
+  AND (
     COALESCE(cardinality($14::text[]), 0) = 0
-    OR ('detected' = ANY($14::text[]) AND report.usdt_pair_is_remove_liquidity IS TRUE)
-    OR ('clear' = ANY($14::text[]) AND report.usdt_pair_is_remove_liquidity IS FALSE)
-    OR ('no_report' = ANY($14::text[]) AND report.id IS NULL)
-    OR ('risk_unavailable' = ANY($14::text[]) AND report.id IS NOT NULL AND report.usdt_pair_is_remove_liquidity IS NULL)
+    OR ('detected' = ANY($14::text[]) AND usdt_pair_lp_minimum_supply_only IS TRUE)
+    OR ('clear' = ANY($14::text[]) AND usdt_pair_lp_minimum_supply_only IS FALSE)
+    OR ('no_profile' = ANY($14::text[]) AND profile_project_id IS NULL)
+    OR ('signal_unavailable' = ANY($14::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_lp_minimum_supply_only IS NULL)
   )
   AND (
     COALESCE(cardinality($15::text[]), 0) = 0
-    OR ('detected' = ANY($15::text[]) AND report.usdt_pair_is_mint IS TRUE)
-    OR ('clear' = ANY($15::text[]) AND report.usdt_pair_is_mint IS FALSE)
-    OR ('no_report' = ANY($15::text[]) AND report.id IS NULL)
-    OR ('risk_unavailable' = ANY($15::text[]) AND report.id IS NOT NULL AND report.usdt_pair_is_mint IS NULL)
+    OR ('detected' = ANY($15::text[]) AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS TRUE)
+    OR ('clear' = ANY($15::text[]) AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS FALSE)
+    OR ('no_profile' = ANY($15::text[]) AND profile_project_id IS NULL)
+    OR ('signal_unavailable' = ANY($15::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS NULL)
   )
   AND (
     (
@@ -293,15 +335,15 @@ WHERE ($1::bigint = 0 OR project.chain_id = $1::bigint)
     OR (
       (
         ($16::numeric IS NOT NULL OR $17::numeric IS NOT NULL)
-        AND report.usdt_pair_quote_usdt_value_int IS NOT NULL
-        AND ($16::numeric IS NULL OR report.usdt_pair_quote_usdt_value_int >= $16::numeric)
-        AND ($17::numeric IS NULL OR report.usdt_pair_quote_usdt_value_int <= $17::numeric)
+        AND usdt_pair_quote_usdt_value_int IS NOT NULL
+        AND ($16::numeric IS NULL OR usdt_pair_quote_usdt_value_int >= $16::numeric)
+        AND ($17::numeric IS NULL OR usdt_pair_quote_usdt_value_int <= $17::numeric)
       )
-      OR ('no_report' = ANY($18::text[]) AND report.id IS NULL)
-      OR ('risk_unavailable' = ANY($18::text[]) AND report.id IS NOT NULL AND report.usdt_pair_quote_usdt_value_int IS NULL)
+      OR ('no_profile' = ANY($18::text[]) AND profile_project_id IS NULL)
+      OR ('value_unavailable' = ANY($18::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_quote_usdt_value_int IS NULL)
     )
   )
-ORDER BY project.created_at DESC, project.id DESC
+ORDER BY created_at DESC, id DESC
 LIMIT $20 OFFSET $19
 `
 
@@ -310,17 +352,17 @@ type ListProjectListItemsParams struct {
 	ProjectID                     int64
 	CodeHash                      []byte
 	Contract                      []byte
-	ResearchStatus                string
-	ReportState                   string
-	EvaluationStatus              string
-	SelectionOutcome              string
-	WethPairRemoveLiquidityStates []string
-	WethPairMintStates            []string
+	CollectionStatus              string
+	ProfileState                  string
+	WethPairTokenBalanceStates    []string
+	WethPairLpMinimumSupplyStates []string
+	WethPairFixedFeeLpShareStates []string
 	WethPairQuoteUsdtMin          pgtype.Numeric
 	WethPairQuoteUsdtMax          pgtype.Numeric
 	WethPairQuoteMissingStates    []string
-	UsdtPairRemoveLiquidityStates []string
-	UsdtPairMintStates            []string
+	UsdtPairTokenBalanceStates    []string
+	UsdtPairLpMinimumSupplyStates []string
+	UsdtPairFixedFeeLpShareStates []string
 	UsdtPairQuoteUsdtMin          pgtype.Numeric
 	UsdtPairQuoteUsdtMax          pgtype.Numeric
 	UsdtPairQuoteMissingStates    []string
@@ -329,33 +371,50 @@ type ListProjectListItemsParams struct {
 }
 
 type ListProjectListItemsRow struct {
-	ID                        int64
-	ChainID                   int64
-	BlockTime                 int64
-	Name                      string
-	Symbol                    string
-	CreatedAt                 pgtype.Timestamptz
-	LogoUrl                   string
-	ResearchStatus            string
-	ReportRevision            pgtype.Int8
-	ReportCompletenessStatus  string
-	ReportBuiltAt             pgtype.Timestamptz
-	WethPairIsCreated         pgtype.Bool
-	WethPairIsRemoveLiquidity pgtype.Bool
-	WethPairIsMint            pgtype.Bool
-	WethPairQuoteUsdtValueInt pgtype.Numeric
-	WethPairLastSwapTimestamp pgtype.Int8
-	UsdtPairIsCreated         pgtype.Bool
-	UsdtPairIsRemoveLiquidity pgtype.Bool
-	UsdtPairIsMint            pgtype.Bool
-	UsdtPairQuoteUsdtValueInt pgtype.Numeric
-	UsdtPairLastSwapTimestamp pgtype.Int8
-	EvaluationStatus          string
-	EvaluationFailedAttempts  int32
-	EvaluationLastError       string
-	EvaluationUpdatedAt       pgtype.Timestamptz
-	SelectionOutcome          string
-	EvaluatedAt               pgtype.Timestamptz
+	ID                                         int64
+	ChainID                                    int64
+	Contract                                   []byte
+	CodeHash                                   []byte
+	TxHash                                     []byte
+	BlockNumber                                int64
+	BlockTime                                  int64
+	Name                                       string
+	Symbol                                     string
+	WethPair                                   []byte
+	UsdtPair                                   []byte
+	CreatedAt                                  pgtype.Timestamptz
+	CollectionTaskCount                        int64
+	CollectionTerminalCount                    int64
+	CollectionSucceededCount                   int64
+	CollectionFailedCount                      int64
+	CollectionStatus                           string
+	ProfileState                               string
+	ProfileBuildStatus                         string
+	ProfileBuildFailureCount                   int32
+	ProfileBuildLastError                      string
+	ProfileBuildUpdatedAt                      pgtype.Timestamptz
+	ProfileProjectID                           pgtype.Int8
+	LogoUrl                                    string
+	CompletenessStatus                         pgtype.Text
+	CurrentPriceUsd                            pgtype.Numeric
+	MarketCapUsd                               pgtype.Numeric
+	FdvUsd                                     pgtype.Numeric
+	TvlUsd                                     pgtype.Numeric
+	Holders                                    pgtype.Int8
+	ContractSourceStatus                       pgtype.Text
+	WethPairIsCreated                          pgtype.Bool
+	WethPairTokenBalanceExceedsTotalSupply     pgtype.Bool
+	WethPairLpMinimumSupplyOnly                pgtype.Bool
+	WethPairFixedFeeAddressLpShareGte90Percent pgtype.Bool
+	WethPairQuoteUsdtValueInt                  pgtype.Numeric
+	WethPairReserveUpdatedAt                   pgtype.Int8
+	UsdtPairIsCreated                          pgtype.Bool
+	UsdtPairTokenBalanceExceedsTotalSupply     pgtype.Bool
+	UsdtPairLpMinimumSupplyOnly                pgtype.Bool
+	UsdtPairFixedFeeAddressLpShareGte90Percent pgtype.Bool
+	UsdtPairQuoteUsdtValueInt                  pgtype.Numeric
+	UsdtPairReserveUpdatedAt                   pgtype.Int8
+	ProfileBuiltAt                             pgtype.Timestamptz
 }
 
 func (q *Queries) ListProjectListItems(ctx context.Context, arg ListProjectListItemsParams) ([]ListProjectListItemsRow, error) {
@@ -364,17 +423,17 @@ func (q *Queries) ListProjectListItems(ctx context.Context, arg ListProjectListI
 		arg.ProjectID,
 		arg.CodeHash,
 		arg.Contract,
-		arg.ResearchStatus,
-		arg.ReportState,
-		arg.EvaluationStatus,
-		arg.SelectionOutcome,
-		arg.WethPairRemoveLiquidityStates,
-		arg.WethPairMintStates,
+		arg.CollectionStatus,
+		arg.ProfileState,
+		arg.WethPairTokenBalanceStates,
+		arg.WethPairLpMinimumSupplyStates,
+		arg.WethPairFixedFeeLpShareStates,
 		arg.WethPairQuoteUsdtMin,
 		arg.WethPairQuoteUsdtMax,
 		arg.WethPairQuoteMissingStates,
-		arg.UsdtPairRemoveLiquidityStates,
-		arg.UsdtPairMintStates,
+		arg.UsdtPairTokenBalanceStates,
+		arg.UsdtPairLpMinimumSupplyStates,
+		arg.UsdtPairFixedFeeLpShareStates,
 		arg.UsdtPairQuoteUsdtMin,
 		arg.UsdtPairQuoteUsdtMax,
 		arg.UsdtPairQuoteMissingStates,
@@ -391,31 +450,48 @@ func (q *Queries) ListProjectListItems(ctx context.Context, arg ListProjectListI
 		if err := rows.Scan(
 			&i.ID,
 			&i.ChainID,
+			&i.Contract,
+			&i.CodeHash,
+			&i.TxHash,
+			&i.BlockNumber,
 			&i.BlockTime,
 			&i.Name,
 			&i.Symbol,
+			&i.WethPair,
+			&i.UsdtPair,
 			&i.CreatedAt,
+			&i.CollectionTaskCount,
+			&i.CollectionTerminalCount,
+			&i.CollectionSucceededCount,
+			&i.CollectionFailedCount,
+			&i.CollectionStatus,
+			&i.ProfileState,
+			&i.ProfileBuildStatus,
+			&i.ProfileBuildFailureCount,
+			&i.ProfileBuildLastError,
+			&i.ProfileBuildUpdatedAt,
+			&i.ProfileProjectID,
 			&i.LogoUrl,
-			&i.ResearchStatus,
-			&i.ReportRevision,
-			&i.ReportCompletenessStatus,
-			&i.ReportBuiltAt,
+			&i.CompletenessStatus,
+			&i.CurrentPriceUsd,
+			&i.MarketCapUsd,
+			&i.FdvUsd,
+			&i.TvlUsd,
+			&i.Holders,
+			&i.ContractSourceStatus,
 			&i.WethPairIsCreated,
-			&i.WethPairIsRemoveLiquidity,
-			&i.WethPairIsMint,
+			&i.WethPairTokenBalanceExceedsTotalSupply,
+			&i.WethPairLpMinimumSupplyOnly,
+			&i.WethPairFixedFeeAddressLpShareGte90Percent,
 			&i.WethPairQuoteUsdtValueInt,
-			&i.WethPairLastSwapTimestamp,
+			&i.WethPairReserveUpdatedAt,
 			&i.UsdtPairIsCreated,
-			&i.UsdtPairIsRemoveLiquidity,
-			&i.UsdtPairIsMint,
+			&i.UsdtPairTokenBalanceExceedsTotalSupply,
+			&i.UsdtPairLpMinimumSupplyOnly,
+			&i.UsdtPairFixedFeeAddressLpShareGte90Percent,
 			&i.UsdtPairQuoteUsdtValueInt,
-			&i.UsdtPairLastSwapTimestamp,
-			&i.EvaluationStatus,
-			&i.EvaluationFailedAttempts,
-			&i.EvaluationLastError,
-			&i.EvaluationUpdatedAt,
-			&i.SelectionOutcome,
-			&i.EvaluatedAt,
+			&i.UsdtPairReserveUpdatedAt,
+			&i.ProfileBuiltAt,
 		); err != nil {
 			return nil, err
 		}

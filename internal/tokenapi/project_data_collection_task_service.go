@@ -8,14 +8,14 @@ import (
 )
 
 func (s *Service) GetCollectionTask(ctx context.Context, req *apiclient.GetCollectionTaskRequest) (*apiclient.GetCollectionTaskResponse, error) {
-	store, err := s.researchApplication()
+	application, err := s.collectionApplication()
 	if err != nil {
 		return nil, err
 	}
 	if err := validatePositiveInt64Field("task_id", req.GetTaskId()); err != nil {
 		return nil, err
 	}
-	item, err := store.GetProjectDataCollectionTask(ctx, req.GetTaskId())
+	item, err := application.GetCollectionTask(ctx, req.GetTaskId())
 	if err != nil {
 		return nil, wrapStoreError("get project data collection task", err)
 	}
@@ -24,12 +24,12 @@ func (s *Service) GetCollectionTask(ctx context.Context, req *apiclient.GetColle
 	}
 	return &apiclient.GetCollectionTaskResponse{
 		Found: true,
-		Task:  mapProjectDataCollectionTask(*item),
+		Task:  mapCollectionTaskDetail(*item),
 	}, nil
 }
 
 func (s *Service) ListCollectionTasks(ctx context.Context, req *apiclient.ListCollectionTasksRequest) (*apiclient.ListCollectionTasksResponse, error) {
-	store, err := s.researchApplication()
+	application, err := s.collectionApplication()
 	if err != nil {
 		return nil, err
 	}
@@ -44,12 +44,12 @@ func (s *Service) ListCollectionTasks(ctx context.Context, req *apiclient.ListCo
 	if err := validateProjectDataCollectionStatus(taskStatus); err != nil {
 		return nil, err
 	}
-	page, err := store.ListProjectDataCollectionTasks(ctx, req.GetProjectId(), dataType, taskStatus, req.GetPage(), req.GetPageSize())
+	page, err := application.ListCollectionTasks(ctx, req.GetProjectId(), dataType, taskStatus, req.GetPage(), req.GetPageSize())
 	if err != nil {
 		return nil, wrapStoreError("list project data collection tasks", err)
 	}
 	return &apiclient.ListCollectionTasksResponse{
-		Tasks:    mapProjectDataCollectionTasks(page.Items),
+		Tasks:    mapCollectionTasks(page.Items),
 		Total:    page.Total,
 		Page:     page.Page,
 		PageSize: page.PageSize,

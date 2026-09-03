@@ -45,7 +45,6 @@ export interface TokenChainProcessingAttempt {
     candidateCount?: number;
     validatedCount?: number;
     rejectedCount?: number;
-    expiredResearchStateCount?: number;
     timingComplete?: boolean;
     startedAt?: string;
     completedAt?: string;
@@ -130,34 +129,24 @@ export interface TokenProject {
     usdtPair?: string;
 }
 
-export interface TokenProjectReportPairRisk {
+export interface TokenProjectMarketSummary {
+    logoURL?: string;
+    currentPriceUSD?: string;
+    marketCapUSD?: string;
+    fdvUSD?: string;
+    tvlUSD?: string;
+    holders?: number;
+}
+
+export interface TokenProjectPairProfileSummary {
+    kind?: string;
+    address?: string;
     isCreated?: boolean;
-    isRemoveLiquidity?: boolean;
-    isMint?: boolean;
     quoteUsdtValueInt?: string;
-    lastSwapAt?: string;
-}
-
-export interface TokenProjectReportRiskSummary {
-    wethPair?: TokenProjectReportPairRisk;
-    usdtPair?: TokenProjectReportPairRisk;
-}
-
-export interface TokenProjectReportEvaluation {
-    status?: string;
-    failedAttempts?: number;
-    lastError?: string;
-    updatedAt?: string;
-    outcome?: string;
-    evaluatedAt?: string;
-}
-
-export interface TokenProjectCurrentReport {
-    revision?: number;
-    completenessStatus?: string;
-    builtAt?: string;
-    riskSummary?: TokenProjectReportRiskSummary;
-    evaluation?: TokenProjectReportEvaluation;
+    reserveUpdatedAt?: number;
+    pairTokenBalanceExceedsTotalSupply?: boolean;
+    lpMinimumSupplyOnly?: boolean;
+    fixedFeeAddressLpShareGte90Percent?: boolean;
 }
 
 export interface TokenProjectListItem {
@@ -165,11 +154,33 @@ export interface TokenProjectListItem {
     chainID?: number;
     name?: string;
     symbol?: string;
+    contract?: string;
+    codeHash?: string;
+    blockNumber?: number;
     blockTime?: number;
+    txHash?: string;
     createdAt?: string;
-    researchStatus?: string;
-    currentReport?: TokenProjectCurrentReport;
-    logoURL?: string;
+    collectionStatus?: string;
+    collectionSucceededCount?: number;
+    collectionTerminalCount?: number;
+    collectionTotalCount?: number;
+    profileState?: string;
+    completenessStatus?: string;
+    profileBuiltAt?: string;
+    market?: TokenProjectMarketSummary;
+    wrappedNativePair?: TokenProjectPairProfileSummary;
+    usdtPair?: TokenProjectPairProfileSummary;
+}
+
+export interface TokenCollectionResult {
+    taskID?: number;
+    projectID?: number;
+    dataType?: string;
+    schemaVersion?: number;
+    payloadJSON?: string;
+    contentHash?: string;
+    blockNumber?: number;
+    collectedAt?: string;
 }
 
 export interface TokenCollectionTask {
@@ -177,111 +188,79 @@ export interface TokenCollectionTask {
     projectID?: number;
     dataType?: string;
     status?: string;
-    attempts?: number;
-    revision?: number;
+    failureCount?: number;
     availableAt?: string;
+    claimGeneration?: number;
+    lockedAt?: string;
     leaseExpiresAt?: string;
     lastError?: string;
+    finishedAt?: string;
     createdAt?: string;
     updatedAt?: string;
+    result?: TokenCollectionResult;
 }
 
-export interface TokenResearchState {
-    projectID?: number;
-    chainID?: number;
-    contract?: string;
-    status?: string;
-    evidenceRevision?: number;
-    currentReportRevision?: number;
-    currentSelectionOutcome?: string;
-    lastEvaluatedRevision?: number;
-    lastEvaluatedAt?: string;
-    attentionStartBlockNumber?: number;
-    attentionStartBlockTime?: number;
-    attentionExpiryBlockTime?: number;
-    expiredBlockNumber?: number;
-    expiredBlockTime?: number;
-    createdAt?: string;
-    updatedAt?: string;
-}
-
-export interface TokenReportRevision {
-    reportRevisionID?: number;
-    projectID?: number;
-    chainID?: number;
-    contract?: string;
-    revision?: number;
-    contentHash?: string;
-    completenessStatus?: string;
-    evidenceJSON?: string;
-    reportJSON?: string;
-    observedBlockNumber?: number;
-    riskSummary?: TokenProjectReportRiskSummary;
-    builtAt?: string;
-    createdAt?: string;
-}
-
-export interface TokenSelection {
-    selectionID?: number;
-    projectID?: number;
-    chainID?: number;
-    contract?: string;
-    outcome?: string;
-    strategyKey?: string;
-    strategyVersion?: string;
-    reportRevision?: number;
-    reasonCodes: string[];
-    reasonDetail?: string;
-    decidedAt?: string;
-    createdAt?: string;
-}
-
-export interface TokenProjectObservation {
-    observationID?: number;
-    projectID?: number;
-    dataType?: string;
-    schemaVersion?: number;
-    contentHash?: string;
-    payloadJSON?: string;
-    blockNumber?: number;
-    observedAt?: string;
-    lastCheckedAt?: string;
-    createdAt?: string;
-}
-
-export interface TokenAveToken {
-    address?: string;
-    name?: string;
-    symbol?: string;
-    logoURL?: string;
-    decimals?: number;
-    totalSupply?: string;
-    currentPriceUSD?: string;
+export interface TokenProjectProfileMarket extends TokenProjectMarketSummary {
     currentPriceETH?: string;
-    marketCap?: string;
-    fdv?: string;
-    tvl?: string;
-    mainPairTVL?: string;
-    holders?: number;
+    mainPairTVLUSD?: string;
+    launchAt?: string;
+    providerUpdatedAt?: string;
+    aveRisk?: TokenProjectProfileAveRisk;
+}
+
+export interface TokenProjectProfileAveRisk {
     riskLevel?: number;
     riskScore?: string;
     riskInfo?: string;
-    isMintableKnown?: boolean;
-    isMintable?: boolean;
+    audited?: boolean;
+    mintable?: boolean;
     hasMintMethod?: boolean;
-    isLPNotLocked?: boolean;
-    hasNotRenounced?: boolean;
-    hasNotAudited?: boolean;
-    hasNotOpenSource?: boolean;
-    isInBlacklist?: boolean;
-    isHoneypot?: boolean;
-    launchAt?: string;
-    updatedAt?: string;
+    liquidityPoolUnlocked?: boolean;
+    ownershipNotRenounced?: boolean;
+    notAudited?: boolean;
+    notOpenSource?: boolean;
+    inBlacklist?: boolean;
+    honeypot?: boolean;
 }
 
-export interface TokenAvePair {
-    pair?: string;
-    chainID?: number;
+export interface TokenProjectProfileSource {
+    codeHash?: string;
+    verificationStatus?: string;
+    artifactReference?: string;
+}
+
+export interface TokenProjectProfilePair {
+    kind?: string;
+    address?: string;
+    chainState?: TokenProjectProfilePairChainState;
+    market?: TokenProjectProfilePairMarket;
+}
+
+export interface TokenProjectProfilePairChainState {
+    isCreated?: boolean;
+    baseBalance?: string;
+    quoteBalance?: string;
+    quoteUsdtValue?: string;
+    quoteUsdtValueInt?: string;
+    reserveUpdatedAt?: number;
+    liquidity?: TokenProjectProfilePairLiquidity;
+    signals?: TokenProjectProfilePairSignals;
+}
+
+export interface TokenProjectProfilePairLiquidity {
+    totalSupply?: string;
+    lockedLiquidity?: string;
+    fixedFeeAddressBalance?: string;
+    fixedFeeAddressShare?: string;
+}
+
+export interface TokenProjectProfilePairSignals {
+    pairTokenBalanceExceedsTotalSupply?: boolean;
+    lpMinimumSupplyOnly?: boolean;
+    fixedFeeAddressLpShareGte90Percent?: boolean;
+}
+
+export interface TokenProjectProfilePairMarket {
     amm?: string;
     token0Address?: string;
     token0Symbol?: string;
@@ -290,73 +269,113 @@ export interface TokenAvePair {
     reserve0?: string;
     reserve1?: string;
     volumeUSD?: string;
-    marketCap?: string;
-    fdv?: string;
+    marketCapUSD?: string;
+    fdvUSD?: string;
     isFake?: boolean;
     createdAt?: string;
     updatedAt?: string;
 }
 
-export interface TokenAveObservation {
-    chainID?: number;
-    token?: TokenAveToken;
-    pairs: TokenAvePair[];
-    isAudited?: boolean;
+export interface TokenProjectProfileWalletSummary {
+    walletCount?: number;
+    nativeBalanceTotal?: string;
+    wrappedNativeBalanceTotal?: string;
+    usdtBalanceTotal?: string;
+    trackedAssetUsdtValueTotal?: string;
+    initialRecipientCount?: number;
+    initialRecipientAllocationBPS?: number;
+    walletsWithSimulationSignals?: number;
+    roleCounts: TokenProjectProfileWalletRoleCount[];
 }
 
-export interface TokenChainPair {
-    pairContract?: string;
-    isCreated?: boolean;
-    liquidity?: {
-        totalSupply?: string;
-        lockedLiquidity?: string;
-        feeAddressHoldLiquidityBalance?: string;
-        feeAddressHoldLiquidityRatio?: string;
-    };
-    baseBalance?: string;
-    quoteBalance?: string;
-    quoteUsdtValue?: string;
-    quoteUsdtValueInt?: string;
-    lastSwapAt?: string;
-    isRemoveLiquidity?: boolean;
-    isMint?: boolean;
+export interface TokenProjectProfileWalletRoleCount {
+    role?: string;
+    count?: number;
 }
 
-export interface TokenChainStateObservation {
-    tokenContract?: string;
-    updatedAt?: string;
-    token?: {
-        isValidERC20?: boolean;
-        name?: string;
-        symbol?: string;
-        decimals?: number;
-        totalSupply?: string;
-        wethPair?: string;
-        usdtPair?: string;
-    };
-    isValidERC20?: boolean;
-    wethPair?: TokenChainPair;
-    usdtPair?: TokenChainPair;
+export interface TokenProjectProfileWallet {
+    address?: string;
+    roles: string[];
+    initialRecipient?: TokenProjectProfileInitialRecipient;
+    assets?: TokenProjectProfileWalletAssets;
+    simulation?: TokenProjectProfileWalletSimulation;
+    transactionSampleCapped?: boolean;
 }
 
-export interface TokenWalletAssetState {
-    chainID?: number;
-    wallet?: string;
-    wethBalance?: string;
-    usdtBalance?: string;
+export interface TokenProjectProfileInitialRecipient {
+    rank?: number;
+    ratioBPS?: number;
+}
+
+export interface TokenProjectProfileWalletAssets {
     nativeBalance?: string;
-    totalAssetUsdtValue?: string;
+    wrappedNativeBalance?: string;
+    usdtBalance?: string;
+    trackedAssetUsdtValue?: string;
 }
 
-export interface TokenSimulationResult {
+export interface TokenProjectProfileWalletSimulation {
+    transferFromDeadToWalletCallSucceeded?: boolean;
+    transferFromZeroToWalletCallSucceeded?: boolean;
+    transferFromWethPairToWalletCallSucceeded?: boolean;
+    transferFromUsdtPairToWalletCallSucceeded?: boolean;
+    transferFromWalletToWethPairCallSucceeded?: boolean;
+    transferFromWalletToUsdtPairCallSucceeded?: boolean;
+}
+
+export interface TokenProjectProfileTransactions {
+    walletCount?: number;
+    transactionAssociationCount?: number;
+    uniqueTransactionCount?: number;
+    succeededTransactionCount?: number;
+    failedTransactionCount?: number;
+    totalInflowNativeValue?: string;
+    totalOutflowNativeValue?: string;
+    cappedWallets: string[];
+    topMethods: TokenProjectProfileTransactionMethod[];
+    topCounterparties: TokenProjectProfileTransactionCounterparty[];
+}
+
+export interface TokenProjectProfileTransactionMethod {
+    methodID?: string;
+    functionName?: string;
+    count?: number;
+}
+
+export interface TokenProjectProfileTransactionCounterparty {
+    address?: string;
+    count?: number;
+}
+
+export interface TokenProjectProfileEvidence {
+    taskID?: number;
+    dataType?: string;
+    status?: string;
+    failureCount?: number;
+    lastError?: string;
+    resultSchemaVersion?: number;
+    resultContentHash?: string;
+    blockNumber?: number;
+    collectedAt?: string;
+}
+
+export interface TokenProjectProfile {
     projectID?: number;
-    wallet?: string;
-    canMintFromDeadViaTransferFrom?: boolean;
-    canMintFromZeroViaTransferFrom?: boolean;
-    canMintFromWethPairViaTransferFrom?: boolean;
-    canMintFromUsdtPairViaTransferFrom?: boolean;
-    canMintViaTransferToWethPair?: boolean;
-    canMintViaTransferToUsdtPair?: boolean;
+    schemaVersion?: number;
+    completenessStatus?: string;
+    failedDataTypes: string[];
+    market?: TokenProjectProfileMarket;
+    contractSource?: TokenProjectProfileSource;
+    wrappedNativePair?: TokenProjectProfilePair;
+    usdtPair?: TokenProjectProfilePair;
+    walletSummary?: TokenProjectProfileWalletSummary;
+    wallets: TokenProjectProfileWallet[];
+    transactions?: TokenProjectProfileTransactions;
+    evidence: TokenProjectProfileEvidence[];
+    profileJSON?: string;
+    contentHash?: string;
+    builtAt?: string;
+    createdAt?: string;
 }
 
 export interface TokenProjectRelatedWallet {
@@ -377,37 +396,14 @@ export interface TokenProjectInitialRecipient {
     createdAt?: string;
 }
 
-export interface TokenCollectionSchedule {
-    projectID?: number;
-    dataType?: string;
-    status?: string;
-    retryIntervalSecs?: number;
-    nextRunAt?: string;
-    latestTaskRevision?: number;
-    consecutiveFailures?: number;
-    lastError?: string;
-    lastCheckedAt?: string;
-    createdAt?: string;
-    updatedAt?: string;
-}
-
 export interface TokenProjectDetail {
     project?: TokenProject;
-    researchState?: TokenResearchState;
-    currentReport?: TokenReportRevision;
-    currentReportEvaluation?: TokenProjectReportEvaluation;
-    currentSelection?: TokenSelection;
-    ave?: TokenAveObservation;
-    chainState?: TokenChainStateObservation;
-    walletAssets: TokenWalletAssetState[];
-    simulations: TokenSimulationResult[];
-    contractSource?: {codeHash?: string; sourceAvailable?: boolean};
+    profile?: TokenProjectProfile;
+    collectionTasks: TokenCollectionTask[];
     relatedWallets: TokenProjectRelatedWallet[];
     initialRecipients: TokenProjectInitialRecipient[];
-    collectionSchedules: TokenCollectionSchedule[];
     walletTransactionCounts: Array<{wallet?: string; transactionCount?: number}>;
     transactionCount?: number;
-    currentObservations: TokenProjectObservation[];
     generatedAt?: string;
 }
 
@@ -509,26 +505,6 @@ export interface TokenProjectSwapEvent {
     effectivePrice?: string;
 }
 
-export interface TokenProjectTrendPoint {
-    observedAt?: string;
-    value?: string;
-}
-
-export interface TokenProjectTrendSeries {
-    key?: string;
-    label?: string;
-    unit?: string;
-    dataType?: string;
-    points: TokenProjectTrendPoint[];
-}
-
-export interface TokenProjectTrends {
-    range?: string;
-    observedFrom?: string;
-    generatedAt?: string;
-    series: TokenProjectTrendSeries[];
-}
-
 export interface TokenWalletNormalTransaction {
     wallet?: string;
     transactionHash?: string;
@@ -623,7 +599,6 @@ function normalizeChainProcessingAttempt(item: any): TokenChainProcessingAttempt
         candidateCount: numberValue(item.candidateCount ?? item.candidate_count),
         validatedCount: numberValue(item.validatedCount ?? item.validated_count),
         rejectedCount: numberValue(item.rejectedCount ?? item.rejected_count),
-        expiredResearchStateCount: numberValue(item.expiredResearchStateCount ?? item.expired_research_state_count),
         timingComplete: item.timingComplete ?? item.timing_complete,
         startedAt: item.startedAt ?? item.started_at,
         completedAt: item.completedAt ?? item.completed_at,
@@ -715,53 +690,34 @@ function normalizeProject(item: any): TokenProject {
     };
 }
 
-function normalizeProjectReportPairRisk(item: any): TokenProjectReportPairRisk | undefined {
+function normalizeProjectMarketSummary(item: any): TokenProjectMarketSummary | undefined {
     if (!item) {
         return undefined;
     }
     return {
+        logoURL: item.logoURL ?? item.logoUrl ?? item.logo_url,
+        currentPriceUSD: item.currentPriceUSD ?? item.currentPriceUsd ?? item.current_price_usd,
+        marketCapUSD: item.marketCapUSD ?? item.marketCapUsd ?? item.market_cap_usd,
+        fdvUSD: item.fdvUSD ?? item.fdvUsd ?? item.fdv_usd,
+        tvlUSD: item.tvlUSD ?? item.tvlUsd ?? item.tvl_usd,
+        holders: numberValue(item.holders)
+    };
+}
+
+function normalizeProjectPairProfileSummary(item: any): TokenProjectPairProfileSummary | undefined {
+    if (!item) {
+        return undefined;
+    }
+    return {
+        kind: item.kind,
+        address: item.address,
         isCreated: item.isCreated ?? item.is_created,
-        isRemoveLiquidity: item.isRemoveLiquidity ?? item.is_remove_liquidity,
-        isMint: item.isMint ?? item.is_mint,
         quoteUsdtValueInt: item.quoteUsdtValueInt ?? item.quote_usdt_value_int,
-        lastSwapAt: item.lastSwapAt ?? item.last_swap_at
-    };
-}
-
-function normalizeProjectReportRiskSummary(item: any): TokenProjectReportRiskSummary | undefined {
-    if (!item) {
-        return undefined;
-    }
-    return {
-        wethPair: normalizeProjectReportPairRisk(item.wethPair ?? item.weth_pair),
-        usdtPair: normalizeProjectReportPairRisk(item.usdtPair ?? item.usdt_pair)
-    };
-}
-
-function normalizeProjectReportEvaluation(item: any): TokenProjectReportEvaluation | undefined {
-    if (!item) {
-        return undefined;
-    }
-    return {
-        status: item.status,
-        failedAttempts: numberValue(item.failedAttempts ?? item.failed_attempts),
-        lastError: item.lastError ?? item.last_error,
-        updatedAt: item.updatedAt ?? item.updated_at,
-        outcome: item.outcome,
-        evaluatedAt: item.evaluatedAt ?? item.evaluated_at
-    };
-}
-
-function normalizeProjectCurrentReport(item: any): TokenProjectCurrentReport | undefined {
-    if (!item) {
-        return undefined;
-    }
-    return {
-        revision: numberValue(item.revision),
-        completenessStatus: item.completenessStatus ?? item.completeness_status,
-        builtAt: item.builtAt ?? item.built_at,
-        riskSummary: normalizeProjectReportRiskSummary(item.riskSummary ?? item.risk_summary),
-        evaluation: normalizeProjectReportEvaluation(item.evaluation)
+        reserveUpdatedAt: numberValue(item.reserveUpdatedAt ?? item.reserve_updated_at),
+        pairTokenBalanceExceedsTotalSupply: item.pairTokenBalanceExceedsTotalSupply ?? item.pair_token_balance_exceeds_total_supply,
+        lpMinimumSupplyOnly: item.lpMinimumSupplyOnly ?? item.lp_minimum_supply_only,
+        fixedFeeAddressLpShareGte90Percent:
+            item.fixedFeeAddressLpShareGte90Percent ?? item.fixedFeeAddressLPShareGte90Percent ?? item.fixed_fee_address_lp_share_gte_90_percent
     };
 }
 
@@ -771,11 +727,38 @@ function normalizeProjectListItem(item: any): TokenProjectListItem {
         chainID: numberValue(item.chainID ?? item.chainId ?? item.chain_id),
         name: item.name,
         symbol: item.symbol,
+        contract: item.contract,
+        codeHash: item.codeHash ?? item.code_hash,
+        blockNumber: numberValue(item.blockNumber ?? item.block_number),
         blockTime: numberValue(item.blockTime ?? item.block_time),
+        txHash: item.txHash ?? item.tx_hash,
         createdAt: item.createdAt ?? item.created_at,
-        researchStatus: item.researchStatus ?? item.research_status,
-        currentReport: normalizeProjectCurrentReport(item.currentReport ?? item.current_report),
-        logoURL: item.logoURL ?? item.logoUrl ?? item.logo_url
+        collectionStatus: item.collectionStatus ?? item.collection_status,
+        collectionSucceededCount: numberValue(item.collectionSucceededCount ?? item.collection_succeeded_count),
+        collectionTerminalCount: numberValue(item.collectionTerminalCount ?? item.collection_terminal_count),
+        collectionTotalCount: numberValue(item.collectionTotalCount ?? item.collection_total_count),
+        profileState: item.profileState ?? item.profile_state,
+        completenessStatus: item.completenessStatus ?? item.completeness_status,
+        profileBuiltAt: item.profileBuiltAt ?? item.profile_built_at,
+        market: normalizeProjectMarketSummary(item.market),
+        wrappedNativePair: normalizeProjectPairProfileSummary(item.wrappedNativePair ?? item.wrapped_native_pair),
+        usdtPair: normalizeProjectPairProfileSummary(item.usdtPair ?? item.usdt_pair)
+    };
+}
+
+function normalizeCollectionResult(item: any): TokenCollectionResult | undefined {
+    if (!item) {
+        return undefined;
+    }
+    return {
+        taskID: numberValue(item.taskID ?? item.taskId ?? item.task_id),
+        projectID: numberValue(item.projectID ?? item.projectId ?? item.project_id),
+        dataType: item.dataType ?? item.data_type,
+        schemaVersion: numberValue(item.schemaVersion ?? item.schema_version),
+        payloadJSON: item.payloadJSON ?? item.payloadJson ?? item.payload_json,
+        contentHash: item.contentHash ?? item.content_hash,
+        blockNumber: numberValue(item.blockNumber ?? item.block_number),
+        collectedAt: item.collectedAt ?? item.collected_at
     };
 }
 
@@ -785,124 +768,100 @@ function normalizeTask(item: any): TokenCollectionTask {
         projectID: numberValue(item.projectID ?? item.projectId ?? item.project_id),
         dataType: item.dataType ?? item.data_type,
         status: item.status,
-        revision: numberValue(item.revision),
-        attempts: numberValue(item.attempts),
+        failureCount: numberValue(item.failureCount ?? item.failure_count),
         availableAt: item.availableAt ?? item.available_at,
+        claimGeneration: numberValue(item.claimGeneration ?? item.claim_generation),
+        lockedAt: item.lockedAt ?? item.locked_at,
         leaseExpiresAt: item.leaseExpiresAt ?? item.lease_expires_at,
         lastError: item.lastError ?? item.last_error,
+        finishedAt: item.finishedAt ?? item.finished_at,
         createdAt: item.createdAt ?? item.created_at,
-        updatedAt: item.updatedAt ?? item.updated_at
+        updatedAt: item.updatedAt ?? item.updated_at,
+        result: normalizeCollectionResult(item.result)
     };
 }
 
-function normalizeResearchState(item: any): TokenResearchState {
+function normalizeProjectProfileMarket(item: any): TokenProjectProfileMarket | undefined {
+    const summary = normalizeProjectMarketSummary(item);
+    if (!summary) {
+        return undefined;
+    }
     return {
-        projectID: numberValue(item.projectID ?? item.projectId ?? item.project_id),
-        chainID: numberValue(item.chainID ?? item.chainId ?? item.chain_id),
-        contract: item.contract,
-        status: item.status,
-        evidenceRevision: numberValue(item.evidenceRevision ?? item.evidence_revision),
-        currentReportRevision: numberValue(item.currentReportRevision ?? item.current_report_revision),
-        currentSelectionOutcome: item.currentSelectionOutcome ?? item.current_selection_outcome,
-        lastEvaluatedRevision: numberValue(item.lastEvaluatedRevision ?? item.last_evaluated_revision),
-        lastEvaluatedAt: item.lastEvaluatedAt ?? item.last_evaluated_at,
-        attentionStartBlockNumber: numberValue(item.attentionStartBlockNumber ?? item.attention_start_block_number),
-        attentionStartBlockTime: numberValue(item.attentionStartBlockTime ?? item.attention_start_block_time),
-        attentionExpiryBlockTime: numberValue(item.attentionExpiryBlockTime ?? item.attention_expiry_block_time),
-        expiredBlockNumber: numberValue(item.expiredBlockNumber ?? item.expired_block_number),
-        expiredBlockTime: numberValue(item.expiredBlockTime ?? item.expired_block_time),
-        createdAt: item.createdAt ?? item.created_at,
-        updatedAt: item.updatedAt ?? item.updated_at
-    };
-}
-
-function normalizeReportRevision(item: any): TokenReportRevision {
-    return {
-        reportRevisionID: numberValue(item.reportRevisionID ?? item.reportRevisionId ?? item.report_revision_id),
-        projectID: numberValue(item.projectID ?? item.projectId ?? item.project_id),
-        chainID: numberValue(item.chainID ?? item.chainId ?? item.chain_id),
-        contract: item.contract,
-        revision: numberValue(item.revision),
-        contentHash: item.contentHash ?? item.content_hash,
-        completenessStatus: item.completenessStatus ?? item.completeness_status,
-        evidenceJSON: item.evidenceJSON ?? item.evidenceJson ?? item.evidence_json,
-        reportJSON: item.reportJSON ?? item.reportJson ?? item.report_json,
-        observedBlockNumber: numberValue(item.observedBlockNumber ?? item.observed_block_number),
-        riskSummary: normalizeProjectReportRiskSummary(item.riskSummary ?? item.risk_summary),
-        builtAt: item.builtAt ?? item.built_at,
-        createdAt: item.createdAt ?? item.created_at
-    };
-}
-
-function normalizeSelection(item: any): TokenSelection {
-    return {
-        selectionID: numberValue(item.selectionID ?? item.selectionId ?? item.selection_id),
-        projectID: numberValue(item.projectID ?? item.projectId ?? item.project_id),
-        chainID: numberValue(item.chainID ?? item.chainId ?? item.chain_id),
-        contract: item.contract,
-        outcome: item.outcome,
-        strategyKey: item.strategyKey ?? item.strategy_key,
-        strategyVersion: item.strategyVersion ?? item.strategy_version,
-        reportRevision: numberValue(item.reportRevision ?? item.report_revision),
-        reasonCodes: item.reasonCodes ?? item.reason_codes ?? [],
-        reasonDetail: item.reasonDetail ?? item.reason_detail,
-        decidedAt: item.decidedAt ?? item.decided_at,
-        createdAt: item.createdAt ?? item.created_at
-    };
-}
-
-function normalizeObservation(item: any): TokenProjectObservation {
-    return {
-        observationID: numberValue(item.observationID ?? item.observationId ?? item.observation_id),
-        projectID: numberValue(item.projectID ?? item.projectId ?? item.project_id),
-        dataType: item.dataType ?? item.data_type,
-        schemaVersion: numberValue(item.schemaVersion ?? item.schema_version),
-        contentHash: item.contentHash ?? item.content_hash,
-        payloadJSON: item.payloadJSON ?? item.payloadJson ?? item.payload_json,
-        blockNumber: numberValue(item.blockNumber ?? item.block_number),
-        observedAt: item.observedAt ?? item.observed_at,
-        lastCheckedAt: item.lastCheckedAt ?? item.last_checked_at,
-        createdAt: item.createdAt ?? item.created_at
-    };
-}
-
-function normalizeAveToken(item: any): TokenAveToken {
-    return {
-        address: item.address,
-        name: item.name,
-        symbol: item.symbol,
-        logoURL: item.logoURL ?? item.logoUrl ?? item.logo_url,
-        decimals: numberValue(item.decimals),
-        totalSupply: item.totalSupply ?? item.total_supply,
-        currentPriceUSD: item.currentPriceUSD ?? item.currentPriceUsd ?? item.current_price_usd,
+        ...summary,
         currentPriceETH: item.currentPriceETH ?? item.currentPriceEth ?? item.current_price_eth,
-        marketCap: item.marketCap ?? item.market_cap,
-        fdv: item.fdv,
-        tvl: item.tvl,
-        mainPairTVL: item.mainPairTVL ?? item.mainPairTvl ?? item.main_pair_tvl,
-        holders: numberValue(item.holders),
+        mainPairTVLUSD: item.mainPairTVLUSD ?? item.mainPairTvlUsd ?? item.main_pair_tvl_usd,
+        launchAt: item.launchAt ?? item.launch_at,
+        providerUpdatedAt: item.providerUpdatedAt ?? item.provider_updated_at,
+        aveRisk: normalizeProjectProfileAveRisk(item.aveRisk ?? item.ave_risk)
+    };
+}
+
+function normalizeProjectProfileAveRisk(item: any): TokenProjectProfileAveRisk | undefined {
+    if (!item) {
+        return undefined;
+    }
+    return {
         riskLevel: numberValue(item.riskLevel ?? item.risk_level),
         riskScore: item.riskScore ?? item.risk_score,
         riskInfo: item.riskInfo ?? item.risk_info,
-        isMintableKnown: item.isMintableKnown ?? item.is_mintable_known,
-        isMintable: item.isMintable ?? item.is_mintable,
+        audited: item.audited,
+        mintable: item.mintable,
         hasMintMethod: item.hasMintMethod ?? item.has_mint_method,
-        isLPNotLocked: item.isLPNotLocked ?? item.isLpNotLocked ?? item.is_lp_not_locked,
-        hasNotRenounced: item.hasNotRenounced ?? item.has_not_renounced,
-        hasNotAudited: item.hasNotAudited ?? item.has_not_audited,
-        hasNotOpenSource: item.hasNotOpenSource ?? item.has_not_open_source,
-        isInBlacklist: item.isInBlacklist ?? item.is_in_blacklist,
-        isHoneypot: item.isHoneypot ?? item.is_honeypot,
-        launchAt: item.launchAt ?? item.launch_at,
-        updatedAt: item.updatedAt ?? item.updated_at
+        liquidityPoolUnlocked: item.liquidityPoolUnlocked ?? item.liquidity_pool_unlocked,
+        ownershipNotRenounced: item.ownershipNotRenounced ?? item.ownership_not_renounced,
+        notAudited: item.notAudited ?? item.not_audited,
+        notOpenSource: item.notOpenSource ?? item.not_open_source,
+        inBlacklist: item.inBlacklist ?? item.in_blacklist,
+        honeypot: item.honeypot
     };
 }
 
-function normalizeAvePair(item: any): TokenAvePair {
+function normalizeProjectProfilePairLiquidity(item: any): TokenProjectProfilePairLiquidity | undefined {
+    if (!item) {
+        return undefined;
+    }
     return {
-        pair: item.pair,
-        chainID: numberValue(item.chainID ?? item.chainId ?? item.chain_id),
-        amm: item.amm,
+        totalSupply: item.totalSupply ?? item.total_supply,
+        lockedLiquidity: item.lockedLiquidity ?? item.locked_liquidity,
+        fixedFeeAddressBalance: item.fixedFeeAddressBalance ?? item.fixed_fee_address_balance,
+        fixedFeeAddressShare: item.fixedFeeAddressShare ?? item.fixed_fee_address_share
+    };
+}
+
+function normalizeProjectProfilePairSignals(item: any): TokenProjectProfilePairSignals | undefined {
+    if (!item) {
+        return undefined;
+    }
+    return {
+        pairTokenBalanceExceedsTotalSupply: item.pairTokenBalanceExceedsTotalSupply ?? item.pair_token_balance_exceeds_total_supply,
+        lpMinimumSupplyOnly: item.lpMinimumSupplyOnly ?? item.lp_minimum_supply_only,
+        fixedFeeAddressLpShareGte90Percent:
+            item.fixedFeeAddressLpShareGte90Percent ?? item.fixedFeeAddressLPShareGte90Percent ?? item.fixed_fee_address_lp_share_gte_90_percent
+    };
+}
+
+function normalizeProjectProfilePairChainState(item: any): TokenProjectProfilePairChainState | undefined {
+    if (!item) {
+        return undefined;
+    }
+    return {
+        isCreated: item.isCreated ?? item.is_created,
+        baseBalance: item.baseBalance ?? item.base_balance,
+        quoteBalance: item.quoteBalance ?? item.quote_balance,
+        quoteUsdtValue: item.quoteUsdtValue ?? item.quote_usdt_value,
+        quoteUsdtValueInt: item.quoteUsdtValueInt ?? item.quote_usdt_value_int,
+        reserveUpdatedAt: numberValue(item.reserveUpdatedAt ?? item.reserve_updated_at),
+        liquidity: normalizeProjectProfilePairLiquidity(item.liquidity),
+        signals: normalizeProjectProfilePairSignals(item.signals)
+    };
+}
+
+function normalizeProjectProfilePairMarket(item: any): TokenProjectProfilePairMarket | undefined {
+    if (!item) {
+        return undefined;
+    }
+    return {
+        amm: item.amm ?? item.AMM,
         token0Address: item.token0Address ?? item.token0_address,
         token0Symbol: item.token0Symbol ?? item.token0_symbol,
         token1Address: item.token1Address ?? item.token1_address,
@@ -910,100 +869,154 @@ function normalizeAvePair(item: any): TokenAvePair {
         reserve0: item.reserve0,
         reserve1: item.reserve1,
         volumeUSD: item.volumeUSD ?? item.volumeUsd ?? item.volume_usd,
-        marketCap: item.marketCap ?? item.market_cap,
-        fdv: item.fdv,
+        marketCapUSD: item.marketCapUSD ?? item.marketCapUsd ?? item.market_cap_usd,
+        fdvUSD: item.fdvUSD ?? item.fdvUsd ?? item.fdv_usd,
         isFake: item.isFake ?? item.is_fake,
         createdAt: item.createdAt ?? item.created_at,
         updatedAt: item.updatedAt ?? item.updated_at
     };
 }
 
-function normalizeChainPair(item: any): TokenChainPair {
-    const liquidity = item?.liquidity;
+function normalizeProjectProfilePair(item: any): TokenProjectProfilePair | undefined {
+    if (!item) {
+        return undefined;
+    }
     return {
-        pairContract: item?.pairContract ?? item?.pair_contract,
-        isCreated: item?.isCreated ?? item?.is_created,
-        liquidity: liquidity
+        kind: item.kind,
+        address: item.address,
+        chainState: normalizeProjectProfilePairChainState(item.chainState ?? item.chain_state),
+        market: normalizeProjectProfilePairMarket(item.market)
+    };
+}
+
+function normalizeProjectProfileWalletSummary(item: any): TokenProjectProfileWalletSummary | undefined {
+    if (!item) {
+        return undefined;
+    }
+    return {
+        walletCount: numberValue(item.walletCount ?? item.wallet_count),
+        nativeBalanceTotal: item.nativeBalanceTotal ?? item.native_balance_total,
+        wrappedNativeBalanceTotal: item.wrappedNativeBalanceTotal ?? item.wrapped_native_balance_total,
+        usdtBalanceTotal: item.usdtBalanceTotal ?? item.usdt_balance_total,
+        trackedAssetUsdtValueTotal: item.trackedAssetUsdtValueTotal ?? item.tracked_asset_usdt_value_total,
+        initialRecipientCount: numberValue(item.initialRecipientCount ?? item.initial_recipient_count),
+        initialRecipientAllocationBPS: numberValue(item.initialRecipientAllocationBPS ?? item.initialRecipientAllocationBps ?? item.initial_recipient_allocation_bps),
+        walletsWithSimulationSignals: numberValue(item.walletsWithSimulationSignals ?? item.wallets_with_simulation_signals),
+        roleCounts: ((item.roleCounts ?? item.role_counts ?? []) as any[]).map(roleCount => ({
+            role: roleCount.role,
+            count: numberValue(roleCount.count)
+        }))
+    };
+}
+
+function normalizeProjectProfileWallet(item: any): TokenProjectProfileWallet {
+    const initialRecipient = item.initialRecipient ?? item.initial_recipient;
+    const assets = item.assets;
+    const simulation = item.simulation;
+    return {
+        address: item.address,
+        roles: item.roles ?? [],
+        initialRecipient: initialRecipient
             ? {
-                  totalSupply: liquidity.totalSupply ?? liquidity.total_supply,
-                  lockedLiquidity: liquidity.lockedLiquidity ?? liquidity.locked_liquidity,
-                  feeAddressHoldLiquidityBalance: liquidity.feeAddressHoldLiquidityBalance ?? liquidity.fee_address_hold_liquidity_balance,
-                  feeAddressHoldLiquidityRatio: liquidity.feeAddressHoldLiquidityRatio ?? liquidity.fee_address_hold_liquidity_ratio
+                  rank: numberValue(initialRecipient.rank),
+                  ratioBPS: numberValue(initialRecipient.ratioBPS ?? initialRecipient.ratioBps ?? initialRecipient.ratio_bps)
               }
             : undefined,
-        baseBalance: item?.baseBalance ?? item?.base_balance,
-        quoteBalance: item?.quoteBalance ?? item?.quote_balance,
-        quoteUsdtValue: item?.quoteUsdtValue ?? item?.quote_usdt_value,
-        quoteUsdtValueInt: item?.quoteUsdtValueInt ?? item?.quote_usdt_value_int,
-        lastSwapAt: item?.lastSwapAt ?? item?.last_swap_at,
-        isRemoveLiquidity: item?.isRemoveLiquidity ?? item?.is_remove_liquidity,
-        isMint: item?.isMint ?? item?.is_mint
+        assets: assets
+            ? {
+                  nativeBalance: assets.nativeBalance ?? assets.native_balance,
+                  wrappedNativeBalance: assets.wrappedNativeBalance ?? assets.wrapped_native_balance,
+                  usdtBalance: assets.usdtBalance ?? assets.usdt_balance,
+                  trackedAssetUsdtValue: assets.trackedAssetUsdtValue ?? assets.tracked_asset_usdt_value
+              }
+            : undefined,
+        simulation: simulation
+            ? {
+                  transferFromDeadToWalletCallSucceeded:
+                      simulation.transferFromDeadToWalletCallSucceeded ?? simulation.transfer_from_dead_to_wallet_call_succeeded,
+                  transferFromZeroToWalletCallSucceeded:
+                      simulation.transferFromZeroToWalletCallSucceeded ?? simulation.transfer_from_zero_to_wallet_call_succeeded,
+                  transferFromWethPairToWalletCallSucceeded:
+                      simulation.transferFromWethPairToWalletCallSucceeded ?? simulation.transfer_from_weth_pair_to_wallet_call_succeeded,
+                  transferFromUsdtPairToWalletCallSucceeded:
+                      simulation.transferFromUsdtPairToWalletCallSucceeded ?? simulation.transfer_from_usdt_pair_to_wallet_call_succeeded,
+                  transferFromWalletToWethPairCallSucceeded:
+                      simulation.transferFromWalletToWethPairCallSucceeded ?? simulation.transfer_from_wallet_to_weth_pair_call_succeeded,
+                  transferFromWalletToUsdtPairCallSucceeded:
+                      simulation.transferFromWalletToUsdtPairCallSucceeded ?? simulation.transfer_from_wallet_to_usdt_pair_call_succeeded
+              }
+            : undefined,
+        transactionSampleCapped: item.transactionSampleCapped ?? item.transaction_sample_capped
+    };
+}
+
+function normalizeProjectProfile(item: any): TokenProjectProfile | undefined {
+    if (!item) {
+        return undefined;
+    }
+    const source = item.contractSource ?? item.contract_source;
+    const transactions = item.transactions;
+    return {
+        projectID: numberValue(item.projectID ?? item.projectId ?? item.project_id),
+        schemaVersion: numberValue(item.schemaVersion ?? item.schema_version),
+        completenessStatus: item.completenessStatus ?? item.completeness_status,
+        failedDataTypes: item.failedDataTypes ?? item.failed_data_types ?? [],
+        market: normalizeProjectProfileMarket(item.market),
+        contractSource: source
+            ? {
+                  codeHash: source.codeHash ?? source.code_hash,
+                  verificationStatus: source.verificationStatus ?? source.verification_status,
+                  artifactReference: source.artifactReference ?? source.artifact_reference
+              }
+            : undefined,
+        wrappedNativePair: normalizeProjectProfilePair(item.wrappedNativePair ?? item.wrapped_native_pair),
+        usdtPair: normalizeProjectProfilePair(item.usdtPair ?? item.usdt_pair),
+        walletSummary: normalizeProjectProfileWalletSummary(item.walletSummary ?? item.wallet_summary),
+        wallets: ((item.wallets || []) as any[]).map(normalizeProjectProfileWallet),
+        transactions: transactions
+            ? {
+                  walletCount: numberValue(transactions.walletCount ?? transactions.wallet_count),
+                  transactionAssociationCount: numberValue(transactions.transactionAssociationCount ?? transactions.transaction_association_count),
+                  uniqueTransactionCount: numberValue(transactions.uniqueTransactionCount ?? transactions.unique_transaction_count),
+                  succeededTransactionCount: numberValue(transactions.succeededTransactionCount ?? transactions.succeeded_transaction_count),
+                  failedTransactionCount: numberValue(transactions.failedTransactionCount ?? transactions.failed_transaction_count),
+                  totalInflowNativeValue: transactions.totalInflowNativeValue ?? transactions.total_inflow_native_value,
+                  totalOutflowNativeValue: transactions.totalOutflowNativeValue ?? transactions.total_outflow_native_value,
+                  cappedWallets: transactions.cappedWallets ?? transactions.capped_wallets ?? [],
+                  topMethods: ((transactions.topMethods ?? transactions.top_methods ?? []) as any[]).map(method => ({
+                      methodID: method.methodID ?? method.methodId ?? method.method_id,
+                      functionName: method.functionName ?? method.function_name,
+                      count: numberValue(method.count)
+                  })),
+                  topCounterparties: ((transactions.topCounterparties ?? transactions.top_counterparties ?? []) as any[]).map(counterparty => ({
+                      address: counterparty.address,
+                      count: numberValue(counterparty.count)
+                  }))
+              }
+            : undefined,
+        evidence: ((item.evidence || []) as any[]).map(evidence => ({
+            taskID: numberValue(evidence.taskID ?? evidence.taskId ?? evidence.task_id),
+            dataType: evidence.dataType ?? evidence.data_type,
+            status: evidence.status,
+            failureCount: numberValue(evidence.failureCount ?? evidence.failure_count),
+            lastError: evidence.lastError ?? evidence.last_error,
+            resultSchemaVersion: numberValue(evidence.resultSchemaVersion ?? evidence.result_schema_version),
+            resultContentHash: evidence.resultContentHash ?? evidence.result_content_hash,
+            blockNumber: numberValue(evidence.blockNumber ?? evidence.block_number),
+            collectedAt: evidence.collectedAt ?? evidence.collected_at
+        })),
+        profileJSON: item.profileJSON ?? item.profileJson ?? item.profile_json,
+        contentHash: item.contentHash ?? item.content_hash,
+        builtAt: item.builtAt ?? item.built_at,
+        createdAt: item.createdAt ?? item.created_at
     };
 }
 
 function normalizeProjectDetail(item: any): TokenProjectDetail {
-    const ave = item.ave;
-    const chainState = item.chainState ?? item.chain_state;
-    const chainToken = chainState?.token;
     return {
         project: item.project ? normalizeProject(item.project) : undefined,
-        researchState: item.researchState || item.research_state ? normalizeResearchState(item.researchState ?? item.research_state) : undefined,
-        currentReport: item.currentReport || item.current_report ? normalizeReportRevision(item.currentReport ?? item.current_report) : undefined,
-        currentReportEvaluation: normalizeProjectReportEvaluation(item.currentReportEvaluation ?? item.current_report_evaluation),
-        currentSelection: item.currentSelection || item.current_selection ? normalizeSelection(item.currentSelection ?? item.current_selection) : undefined,
-        ave: ave
-            ? {
-                  chainID: numberValue(ave.chainID ?? ave.chainId ?? ave.chain_id),
-                  token: ave.token ? normalizeAveToken(ave.token) : undefined,
-                  pairs: ((ave.pairs || []) as any[]).map(normalizeAvePair),
-                  isAudited: ave.isAudited ?? ave.is_audited
-              }
-            : undefined,
-        chainState: chainState
-            ? {
-                  tokenContract: chainState.tokenContract ?? chainState.token_contract,
-                  updatedAt: chainState.updatedAt ?? chainState.updated_at,
-                  token: chainToken
-                      ? {
-                            isValidERC20: chainToken.isValidERC20 ?? chainToken.isValidErc20 ?? chainToken.is_valid_erc20,
-                            name: chainToken.name,
-                            symbol: chainToken.symbol,
-                            decimals: numberValue(chainToken.decimals),
-                            totalSupply: chainToken.totalSupply ?? chainToken.total_supply,
-                            wethPair: chainToken.wethPair ?? chainToken.weth_pair,
-                            usdtPair: chainToken.usdtPair ?? chainToken.usdt_pair
-                        }
-                      : undefined,
-                  isValidERC20: chainState.isValidERC20 ?? chainState.isValidErc20 ?? chainState.is_valid_erc20,
-                  wethPair: chainState.wethPair || chainState.weth_pair ? normalizeChainPair(chainState.wethPair ?? chainState.weth_pair) : undefined,
-                  usdtPair: chainState.usdtPair || chainState.usdt_pair ? normalizeChainPair(chainState.usdtPair ?? chainState.usdt_pair) : undefined
-              }
-            : undefined,
-        walletAssets: ((item.walletAssets ?? item.wallet_assets ?? []) as any[]).map(asset => ({
-            chainID: numberValue(asset.chainID ?? asset.chainId ?? asset.chain_id),
-            wallet: asset.wallet,
-            wethBalance: asset.wethBalance ?? asset.weth_balance,
-            usdtBalance: asset.usdtBalance ?? asset.usdt_balance,
-            nativeBalance: asset.nativeBalance ?? asset.native_balance,
-            totalAssetUsdtValue: asset.totalAssetUsdtValue ?? asset.total_asset_usdt_value
-        })),
-        simulations: ((item.simulations || []) as any[]).map(simulation => ({
-            projectID: numberValue(simulation.projectID ?? simulation.projectId ?? simulation.project_id),
-            wallet: simulation.wallet,
-            canMintFromDeadViaTransferFrom: simulation.canMintFromDeadViaTransferFrom ?? simulation.can_mint_from_dead_via_transfer_from,
-            canMintFromZeroViaTransferFrom: simulation.canMintFromZeroViaTransferFrom ?? simulation.can_mint_from_zero_via_transfer_from,
-            canMintFromWethPairViaTransferFrom: simulation.canMintFromWethPairViaTransferFrom ?? simulation.can_mint_from_weth_pair_via_transfer_from,
-            canMintFromUsdtPairViaTransferFrom: simulation.canMintFromUsdtPairViaTransferFrom ?? simulation.can_mint_from_usdt_pair_via_transfer_from,
-            canMintViaTransferToWethPair: simulation.canMintViaTransferToWethPair ?? simulation.can_mint_via_transfer_to_weth_pair,
-            canMintViaTransferToUsdtPair: simulation.canMintViaTransferToUsdtPair ?? simulation.can_mint_via_transfer_to_usdt_pair
-        })),
-        contractSource:
-            item.contractSource || item.contract_source
-                ? {
-                      codeHash: (item.contractSource ?? item.contract_source).codeHash ?? (item.contractSource ?? item.contract_source).code_hash,
-                      sourceAvailable: (item.contractSource ?? item.contract_source).sourceAvailable ?? (item.contractSource ?? item.contract_source).source_available
-                  }
-                : undefined,
+        profile: normalizeProjectProfile(item.profile),
+        collectionTasks: ((item.collectionTasks ?? item.collection_tasks ?? []) as any[]).map(normalizeTask),
         relatedWallets: ((item.relatedWallets ?? item.related_wallets ?? []) as any[]).map(wallet => ({
             projectID: numberValue(wallet.projectID ?? wallet.projectId ?? wallet.project_id),
             wallet: wallet.wallet,
@@ -1020,25 +1033,11 @@ function normalizeProjectDetail(item: any): TokenProjectDetail {
             sourceBlockNumber: numberValue(recipient.sourceBlockNumber ?? recipient.source_block_number),
             createdAt: recipient.createdAt ?? recipient.created_at
         })),
-        collectionSchedules: ((item.collectionSchedules ?? item.collection_schedules ?? []) as any[]).map(schedule => ({
-            projectID: numberValue(schedule.projectID ?? schedule.projectId ?? schedule.project_id),
-            dataType: schedule.dataType ?? schedule.data_type,
-            status: schedule.status,
-            retryIntervalSecs: numberValue(schedule.retryIntervalSecs ?? schedule.retry_interval_secs),
-            nextRunAt: schedule.nextRunAt ?? schedule.next_run_at,
-            latestTaskRevision: numberValue(schedule.latestTaskRevision ?? schedule.latest_task_revision),
-            consecutiveFailures: numberValue(schedule.consecutiveFailures ?? schedule.consecutive_failures),
-            lastError: schedule.lastError ?? schedule.last_error,
-            lastCheckedAt: schedule.lastCheckedAt ?? schedule.last_checked_at,
-            createdAt: schedule.createdAt ?? schedule.created_at,
-            updatedAt: schedule.updatedAt ?? schedule.updated_at
-        })),
         walletTransactionCounts: ((item.walletTransactionCounts ?? item.wallet_transaction_counts ?? []) as any[]).map(count => ({
             wallet: count.wallet,
             transactionCount: numberValue(count.transactionCount ?? count.transaction_count)
         })),
         transactionCount: numberValue(item.transactionCount ?? item.transaction_count),
-        currentObservations: ((item.currentObservations ?? item.current_observations ?? []) as any[]).map(normalizeObservation),
         generatedAt: item.generatedAt ?? item.generated_at
     };
 }
@@ -1351,17 +1350,17 @@ export class TokenService {
             projectID?: number;
             codeHash?: string;
             contract?: string;
-            researchStatus?: string;
-            reportState?: string;
-            evaluationStatus?: string;
-            selectionOutcome?: string;
-            wethPairRemoveLiquidityStates?: string[];
-            wethPairMintStates?: string[];
-            wethPairQuoteUSDTMin?: string;
-            wethPairQuoteUSDTMax?: string;
-            wethPairQuoteMissingStates?: string[];
-            usdtPairRemoveLiquidityStates?: string[];
-            usdtPairMintStates?: string[];
+            collectionStatus?: string;
+            profileState?: string;
+            wrappedNativePairBalanceSupplyStates?: string[];
+            wrappedNativePairMinimumLPStates?: string[];
+            wrappedNativePairFeeLPShareStates?: string[];
+            wrappedNativePairQuoteUSDTMin?: string;
+            wrappedNativePairQuoteUSDTMax?: string;
+            wrappedNativePairQuoteMissingStates?: string[];
+            usdtPairBalanceSupplyStates?: string[];
+            usdtPairMinimumLPStates?: string[];
+            usdtPairFeeLPShareStates?: string[];
             usdtPairQuoteUSDTMin?: string;
             usdtPairQuoteUSDTMax?: string;
             usdtPairQuoteMissingStates?: string[];
@@ -1372,17 +1371,17 @@ export class TokenService {
             project_id: options.projectID,
             code_hash: options.codeHash || undefined,
             contract: options.contract || undefined,
-            research_status: options.researchStatus || undefined,
-            report_state: options.reportState || undefined,
-            evaluation_status: options.evaluationStatus || undefined,
-            selection_outcome: options.selectionOutcome || undefined,
-            weth_pair_remove_liquidity_states: options.wethPairRemoveLiquidityStates?.length ? options.wethPairRemoveLiquidityStates : undefined,
-            weth_pair_mint_states: options.wethPairMintStates?.length ? options.wethPairMintStates : undefined,
-            weth_pair_quote_usdt_min: options.wethPairQuoteUSDTMin || undefined,
-            weth_pair_quote_usdt_max: options.wethPairQuoteUSDTMax || undefined,
-            weth_pair_quote_missing_states: options.wethPairQuoteMissingStates?.length ? options.wethPairQuoteMissingStates : undefined,
-            usdt_pair_remove_liquidity_states: options.usdtPairRemoveLiquidityStates?.length ? options.usdtPairRemoveLiquidityStates : undefined,
-            usdt_pair_mint_states: options.usdtPairMintStates?.length ? options.usdtPairMintStates : undefined,
+            collection_status: options.collectionStatus || undefined,
+            profile_state: options.profileState || undefined,
+            wrapped_native_pair_balance_supply_states: options.wrappedNativePairBalanceSupplyStates?.length ? options.wrappedNativePairBalanceSupplyStates : undefined,
+            wrapped_native_pair_minimum_lp_states: options.wrappedNativePairMinimumLPStates?.length ? options.wrappedNativePairMinimumLPStates : undefined,
+            wrapped_native_pair_fee_lp_share_states: options.wrappedNativePairFeeLPShareStates?.length ? options.wrappedNativePairFeeLPShareStates : undefined,
+            wrapped_native_pair_quote_usdt_min: options.wrappedNativePairQuoteUSDTMin || undefined,
+            wrapped_native_pair_quote_usdt_max: options.wrappedNativePairQuoteUSDTMax || undefined,
+            wrapped_native_pair_quote_missing_states: options.wrappedNativePairQuoteMissingStates?.length ? options.wrappedNativePairQuoteMissingStates : undefined,
+            usdt_pair_balance_supply_states: options.usdtPairBalanceSupplyStates?.length ? options.usdtPairBalanceSupplyStates : undefined,
+            usdt_pair_minimum_lp_states: options.usdtPairMinimumLPStates?.length ? options.usdtPairMinimumLPStates : undefined,
+            usdt_pair_fee_lp_share_states: options.usdtPairFeeLPShareStates?.length ? options.usdtPairFeeLPShareStates : undefined,
             usdt_pair_quote_usdt_min: options.usdtPairQuoteUSDTMin || undefined,
             usdt_pair_quote_usdt_max: options.usdtPairQuoteUSDTMax || undefined,
             usdt_pair_quote_missing_states: options.usdtPairQuoteMissingStates?.length ? options.usdtPairQuoteMissingStates : undefined,
@@ -1407,6 +1406,16 @@ export class TokenService {
         const promise = req.then(res => {
             const body = res.body || {};
             return body.found === false || !body.detail ? undefined : normalizeProjectDetail(body.detail);
+        }) as any;
+        promise.abort = () => req.abort();
+        return promise;
+    }
+
+    public getProjectProfile(projectID: number): Promise<TokenProjectProfile | undefined> & {abort?: () => void} {
+        const req = requests.get(`/tokens/projects/${encodeURIComponent(String(projectID))}/profile`, readScope);
+        const promise = req.then(res => {
+            const body = res.body || {};
+            return body.found === false || !body.profile ? undefined : normalizeProjectProfile(body.profile);
         }) as any;
         promise.abort = () => req.abort();
         return promise;
@@ -1441,52 +1450,6 @@ export class TokenService {
                 total: numberValue(body.total) || 0,
                 page: numberValue(body.page) || options.page || 1,
                 pageSize: numberValue(body.pageSize ?? body.page_size) || options.pageSize || 50
-            };
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public listProjectTrends(projectID: number, range = '24h'): Promise<TokenProjectTrends> & {abort?: () => void} {
-        const req = requests.get(`/tokens/projects/${encodeURIComponent(String(projectID))}/trends`, readScope).query({range});
-        const promise = req.then(res => {
-            const item = res.body?.trends || {};
-            return {
-                range: item.range,
-                observedFrom: item.observedFrom ?? item.observed_from,
-                generatedAt: item.generatedAt ?? item.generated_at,
-                series: ((item.series || []) as any[]).map(series => ({
-                    key: series.key,
-                    label: series.label,
-                    unit: series.unit,
-                    dataType: series.dataType ?? series.data_type,
-                    points: ((series.points || []) as any[]).map(point => ({
-                        observedAt: point.observedAt ?? point.observed_at,
-                        value: point.value
-                    }))
-                }))
-            };
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public listProjectObservations(
-        projectID: number,
-        options: {dataType?: string; page?: number; pageSize?: number} = {}
-    ): Promise<PagedResponse<TokenProjectObservation>> & {abort?: () => void} {
-        const req = requests.get(`/tokens/projects/${encodeURIComponent(String(projectID))}/observations`, readScope).query({
-            data_type: options.dataType || undefined,
-            page: options.page,
-            page_size: options.pageSize
-        });
-        const promise = req.then(res => {
-            const body = res.body || {};
-            return {
-                items: ((body.observations || []) as any[]).map(normalizeObservation),
-                total: numberValue(body.total) || 0,
-                page: numberValue(body.page) || options.page || 1,
-                pageSize: numberValue(body.pageSize ?? body.page_size) || options.pageSize || 20
             };
         }) as any;
         promise.abort = () => req.abort();
@@ -1540,46 +1503,11 @@ export class TokenService {
         return promise;
     }
 
-    public listReportRevisions(
-        options: {projectID?: number; chainID?: number; page?: number; pageSize?: number} = {}
-    ): Promise<PagedResponse<TokenReportRevision>> & {abort?: () => void} {
-        const req = requests.get('/tokens/report-revisions', readScope).query({
-            project_id: options.projectID,
-            chain_id: options.chainID,
-            page: options.page,
-            page_size: options.pageSize
-        });
+    public getCollectionTask(taskID: number): Promise<TokenCollectionTask | undefined> & {abort?: () => void} {
+        const req = requests.get(`/tokens/collection-tasks/${encodeURIComponent(String(taskID))}`, readScope);
         const promise = req.then(res => {
             const body = res.body || {};
-            return {
-                items: ((body.reportRevisions ?? body.report_revisions ?? []) as any[]).map(normalizeReportRevision),
-                total: numberValue(body.total) || 0,
-                page: numberValue(body.page) || options.page || 1,
-                pageSize: numberValue(body.pageSize ?? body.page_size) || options.pageSize || 20
-            };
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public listSelections(
-        options: {projectID?: number; chainID?: number; outcome?: string; page?: number; pageSize?: number} = {}
-    ): Promise<PagedResponse<TokenSelection>> & {abort?: () => void} {
-        const req = requests.get('/tokens/selections', readScope).query({
-            project_id: options.projectID,
-            chain_id: options.chainID,
-            outcome: options.outcome || undefined,
-            page: options.page,
-            page_size: options.pageSize
-        });
-        const promise = req.then(res => {
-            const body = res.body || {};
-            return {
-                items: ((body.selections || []) as any[]).map(normalizeSelection),
-                total: numberValue(body.total) || 0,
-                page: numberValue(body.page) || options.page || 1,
-                pageSize: numberValue(body.pageSize ?? body.page_size) || options.pageSize || 20
-            };
+            return body.found === false || !body.task ? undefined : normalizeTask(body.task);
         }) as any;
         promise.abort = () => req.abort();
         return promise;

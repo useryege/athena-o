@@ -19,13 +19,12 @@ import (
 	"github.com/useryege/athena/internal/token/adapters/evm"
 	tokenpostgres "github.com/useryege/athena/internal/token/adapters/postgres"
 	catalogapp "github.com/useryege/athena/internal/token/catalog/application"
+	collectionapp "github.com/useryege/athena/internal/token/collection/application"
 	"github.com/useryege/athena/internal/token/discovery"
 	discoveryapp "github.com/useryege/athena/internal/token/discovery/application"
 	policyapp "github.com/useryege/athena/internal/token/policy/application"
+	profileapp "github.com/useryege/athena/internal/token/profile/application"
 	projectviewapp "github.com/useryege/athena/internal/token/projectview/application"
-	reportingapp "github.com/useryege/athena/internal/token/reporting/application"
-	researchapp "github.com/useryege/athena/internal/token/research/application"
-	selectionapp "github.com/useryege/athena/internal/token/selection/application"
 	"github.com/useryege/athena/internal/tokenapi"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
@@ -87,9 +86,8 @@ func NewCommand() *cobra.Command {
 			server, err := tokenapi.NewServer(tokenapi.ServerOpts{
 				Applications: tokenapi.Applications{
 					Catalog:     catalogapp.NewQueries(tokenpostgres.NewCatalogRepository(connection)),
-					Research:    researchapp.NewQueries(tokenpostgres.NewResearchReadRepository(connection)),
-					Reporting:   reportingapp.NewQueries(tokenpostgres.NewReportingRepository(connection)),
-					Selection:   selectionapp.NewQueries(tokenpostgres.NewSelectionRepository(connection)),
+					Collection:  collectionapp.NewQueries(tokenpostgres.NewCollectionRepository(connection)),
+					Profile:     profileapp.NewQueries(tokenpostgres.NewProfileRepository(connection)),
 					ProjectView: projectviewapp.NewQueries(tokenpostgres.NewProjectViewRepository(connection)),
 					Policy:      policyapp.NewService(tokenpostgres.NewPolicyRepository(connection), evmRegistry),
 					Operations:  discoveryapp.NewOperations(chainRepository, evmRegistry),

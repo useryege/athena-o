@@ -82,7 +82,6 @@ const AttemptDetails = (props: {item: TokenChainProcessingAttempt}) => (
                 {label: 'Terminal stage', value: props.item.terminalStage || '-'},
                 {label: 'Validated', value: formatInteger(props.item.validatedCount)},
                 {label: 'Rejected', value: formatInteger(props.item.rejectedCount)},
-                {label: 'Research expired', value: formatInteger(props.item.expiredResearchStateCount)},
                 {label: 'Timing', value: props.item.timingComplete ? 'Complete' : 'Incomplete'},
                 {label: 'Last updated', value: formatBeijingDateTime(props.item.updatedAt) || '-'},
                 {label: 'Error', value: props.item.errorMessage || '-'}

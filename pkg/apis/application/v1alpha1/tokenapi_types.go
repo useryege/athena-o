@@ -25,28 +25,27 @@ type TokenChainCheckpoint struct {
 }
 
 type TokenChainProcessingAttempt struct {
-	AttemptID                 int64  `protobuf:"varint,1,opt,name=attemptId" json:"attemptId"`
-	ChainID                   int64  `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
-	BlockNumber               uint64 `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`
-	AttemptNumber             int32  `protobuf:"varint,4,opt,name=attemptNumber" json:"attemptNumber"`
-	BlockTime                 uint64 `protobuf:"varint,5,opt,name=blockTime" json:"blockTime"`
-	Status                    string `protobuf:"bytes,6,opt,name=status" json:"status"`
-	TerminalStage             string `protobuf:"bytes,7,opt,name=terminalStage" json:"terminalStage"`
-	ErrorMessage              string `protobuf:"bytes,8,opt,name=errorMessage" json:"errorMessage"`
-	CheckpointReadDurationUS  int64  `protobuf:"varint,9,opt,name=checkpointReadDurationUs" json:"checkpointReadDurationUs"`
-	DiscoveryDurationUS       int64  `protobuf:"varint,10,opt,name=discoveryDurationUs" json:"discoveryDurationUs"`
-	ValidationDurationUS      int64  `protobuf:"varint,11,opt,name=validationDurationUs" json:"validationDurationUs"`
-	PersistenceDurationUS     int64  `protobuf:"varint,12,opt,name=persistenceDurationUs" json:"persistenceDurationUs"`
-	TotalDurationUS           int64  `protobuf:"varint,13,opt,name=totalDurationUs" json:"totalDurationUs"`
-	CandidateCount            int32  `protobuf:"varint,14,opt,name=candidateCount" json:"candidateCount"`
-	ValidatedCount            int32  `protobuf:"varint,15,opt,name=validatedCount" json:"validatedCount"`
-	RejectedCount             int32  `protobuf:"varint,16,opt,name=rejectedCount" json:"rejectedCount"`
-	ExpiredResearchStateCount int64  `protobuf:"varint,17,opt,name=expiredResearchStateCount" json:"expiredResearchStateCount"`
-	TimingComplete            bool   `protobuf:"varint,18,opt,name=timingComplete" json:"timingComplete"`
-	StartedAt                 string `protobuf:"bytes,19,opt,name=startedAt" json:"startedAt"`
-	CompletedAt               string `protobuf:"bytes,20,opt,name=completedAt" json:"completedAt"`
-	CreatedAt                 string `protobuf:"bytes,21,opt,name=createdAt" json:"createdAt"`
-	UpdatedAt                 string `protobuf:"bytes,22,opt,name=updatedAt" json:"updatedAt"`
+	AttemptID                int64  `protobuf:"varint,1,opt,name=attemptId" json:"attemptId"`
+	ChainID                  int64  `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
+	BlockNumber              uint64 `protobuf:"varint,3,opt,name=blockNumber" json:"blockNumber"`
+	AttemptNumber            int32  `protobuf:"varint,4,opt,name=attemptNumber" json:"attemptNumber"`
+	BlockTime                uint64 `protobuf:"varint,5,opt,name=blockTime" json:"blockTime"`
+	Status                   string `protobuf:"bytes,6,opt,name=status" json:"status"`
+	TerminalStage            string `protobuf:"bytes,7,opt,name=terminalStage" json:"terminalStage"`
+	ErrorMessage             string `protobuf:"bytes,8,opt,name=errorMessage" json:"errorMessage"`
+	CheckpointReadDurationUS int64  `protobuf:"varint,9,opt,name=checkpointReadDurationUs" json:"checkpointReadDurationUs"`
+	DiscoveryDurationUS      int64  `protobuf:"varint,10,opt,name=discoveryDurationUs" json:"discoveryDurationUs"`
+	ValidationDurationUS     int64  `protobuf:"varint,11,opt,name=validationDurationUs" json:"validationDurationUs"`
+	PersistenceDurationUS    int64  `protobuf:"varint,12,opt,name=persistenceDurationUs" json:"persistenceDurationUs"`
+	TotalDurationUS          int64  `protobuf:"varint,13,opt,name=totalDurationUs" json:"totalDurationUs"`
+	CandidateCount           int32  `protobuf:"varint,14,opt,name=candidateCount" json:"candidateCount"`
+	ValidatedCount           int32  `protobuf:"varint,15,opt,name=validatedCount" json:"validatedCount"`
+	RejectedCount            int32  `protobuf:"varint,16,opt,name=rejectedCount" json:"rejectedCount"`
+	TimingComplete           bool   `protobuf:"varint,17,opt,name=timingComplete" json:"timingComplete"`
+	StartedAt                string `protobuf:"bytes,18,opt,name=startedAt" json:"startedAt"`
+	CompletedAt              string `protobuf:"bytes,19,opt,name=completedAt" json:"completedAt"`
+	CreatedAt                string `protobuf:"bytes,20,opt,name=createdAt" json:"createdAt"`
+	UpdatedAt                string `protobuf:"bytes,21,opt,name=updatedAt" json:"updatedAt"`
 }
 
 type TokenChainProcessingSummary struct {
@@ -127,241 +126,258 @@ type TokenProject struct {
 }
 
 type TokenProjectListItem struct {
-	ProjectID      int64                      `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
-	ChainID        int64                      `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
-	Name           string                     `protobuf:"bytes,3,opt,name=name" json:"name"`
-	Symbol         string                     `protobuf:"bytes,4,opt,name=symbol" json:"symbol"`
-	BlockTime      uint64                     `protobuf:"varint,5,opt,name=blockTime" json:"blockTime"`
-	CreatedAt      string                     `protobuf:"bytes,6,opt,name=createdAt" json:"createdAt"`
-	LogoURL        string                     `protobuf:"bytes,7,opt,name=logoUrl" json:"logoUrl"`
-	ResearchStatus string                     `protobuf:"bytes,8,opt,name=researchStatus" json:"researchStatus"`
-	CurrentReport  *TokenProjectReportSummary `protobuf:"bytes,9,opt,name=currentReport" json:"currentReport"`
+	ProjectID                int64                           `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
+	ChainID                  int64                           `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
+	Name                     string                          `protobuf:"bytes,3,opt,name=name" json:"name"`
+	Symbol                   string                          `protobuf:"bytes,4,opt,name=symbol" json:"symbol"`
+	Contract                 string                          `protobuf:"bytes,5,opt,name=contract" json:"contract"`
+	CodeHash                 string                          `protobuf:"bytes,6,opt,name=codeHash" json:"codeHash"`
+	BlockNumber              uint64                          `protobuf:"varint,7,opt,name=blockNumber" json:"blockNumber"`
+	BlockTime                uint64                          `protobuf:"varint,8,opt,name=blockTime" json:"blockTime"`
+	TxHash                   string                          `protobuf:"bytes,9,opt,name=txHash" json:"txHash"`
+	CreatedAt                string                          `protobuf:"bytes,10,opt,name=createdAt" json:"createdAt"`
+	CollectionStatus         string                          `protobuf:"bytes,11,opt,name=collectionStatus" json:"collectionStatus"`
+	CollectionSucceededCount int32                           `protobuf:"varint,12,opt,name=collectionSucceededCount" json:"collectionSucceededCount"`
+	CollectionTerminalCount  int32                           `protobuf:"varint,13,opt,name=collectionTerminalCount" json:"collectionTerminalCount"`
+	CollectionTotalCount     int32                           `protobuf:"varint,14,opt,name=collectionTotalCount" json:"collectionTotalCount"`
+	ProfileState             string                          `protobuf:"bytes,15,opt,name=profileState" json:"profileState"`
+	CompletenessStatus       string                          `protobuf:"bytes,16,opt,name=completenessStatus" json:"completenessStatus"`
+	ProfileBuiltAt           string                          `protobuf:"bytes,17,opt,name=profileBuiltAt" json:"profileBuiltAt"`
+	Market                   *TokenProjectMarketSummary      `protobuf:"bytes,18,opt,name=market" json:"market"`
+	WrappedNativePair        *TokenProjectPairProfileSummary `protobuf:"bytes,19,opt,name=wrappedNativePair" json:"wrappedNativePair"`
+	UsdtPair                 *TokenProjectPairProfileSummary `protobuf:"bytes,20,opt,name=usdtPair" json:"usdtPair"`
 }
 
-type TokenProjectReportSummary struct {
-	Revision           int64                                `protobuf:"varint,1,opt,name=revision" json:"revision"`
-	CompletenessStatus string                               `protobuf:"bytes,2,opt,name=completenessStatus" json:"completenessStatus"`
-	BuiltAt            string                               `protobuf:"bytes,3,opt,name=builtAt" json:"builtAt"`
-	RiskSummary        *TokenProjectReportRiskSummary       `protobuf:"bytes,4,opt,name=riskSummary" json:"riskSummary"`
-	Evaluation         *TokenProjectReportEvaluationSummary `protobuf:"bytes,5,opt,name=evaluation" json:"evaluation"`
+type TokenProjectMarketSummary struct {
+	LogoURL         string `protobuf:"bytes,1,opt,name=logoUrl" json:"logoUrl"`
+	CurrentPriceUSD string `protobuf:"bytes,2,opt,name=currentPriceUsd" json:"currentPriceUsd"`
+	MarketCapUSD    string `protobuf:"bytes,3,opt,name=marketCapUsd" json:"marketCapUsd"`
+	FDVUSD          string `protobuf:"bytes,4,opt,name=fdvUsd" json:"fdvUsd"`
+	TVLUSD          string `protobuf:"bytes,5,opt,name=tvlUsd" json:"tvlUsd"`
+	Holders         int64  `protobuf:"varint,6,opt,name=holders" json:"holders"`
 }
 
-type TokenProjectReportRiskSummary struct {
-	WethPair *TokenProjectPairRiskSummary `protobuf:"bytes,1,opt,name=wethPair" json:"wethPair"`
-	UsdtPair *TokenProjectPairRiskSummary `protobuf:"bytes,2,opt,name=usdtPair" json:"usdtPair"`
-}
-
-type TokenProjectPairRiskSummary struct {
-	IsCreated         bool   `protobuf:"varint,1,opt,name=isCreated" json:"isCreated"`
-	IsRemoveLiquidity bool   `protobuf:"varint,2,opt,name=isRemoveLiquidity" json:"isRemoveLiquidity"`
-	IsMint            bool   `protobuf:"varint,3,opt,name=isMint" json:"isMint"`
-	QuoteUsdtValueInt string `protobuf:"bytes,4,opt,name=quoteUsdtValueInt" json:"quoteUsdtValueInt"`
-	LastSwapAt        string `protobuf:"bytes,5,opt,name=lastSwapAt" json:"lastSwapAt"`
-}
-
-type TokenProjectReportEvaluationSummary struct {
-	Status         string `protobuf:"bytes,1,opt,name=status" json:"status"`
-	FailedAttempts int32  `protobuf:"varint,2,opt,name=failedAttempts" json:"failedAttempts"`
-	LastError      string `protobuf:"bytes,3,opt,name=lastError" json:"lastError"`
-	UpdatedAt      string `protobuf:"bytes,4,opt,name=updatedAt" json:"updatedAt"`
-	Outcome        string `protobuf:"bytes,5,opt,name=outcome" json:"outcome"`
-	EvaluatedAt    string `protobuf:"bytes,6,opt,name=evaluatedAt" json:"evaluatedAt"`
+type TokenProjectPairProfileSummary struct {
+	Kind                               string `protobuf:"bytes,1,opt,name=kind" json:"kind"`
+	Address                            string `protobuf:"bytes,2,opt,name=address" json:"address"`
+	IsCreated                          bool   `protobuf:"varint,3,opt,name=isCreated" json:"isCreated"`
+	QuoteUsdtValueInt                  string `protobuf:"bytes,4,opt,name=quoteUsdtValueInt" json:"quoteUsdtValueInt"`
+	ReserveUpdatedAt                   uint64 `protobuf:"varint,5,opt,name=reserveUpdatedAt" json:"reserveUpdatedAt"`
+	PairTokenBalanceExceedsTotalSupply bool   `protobuf:"varint,6,opt,name=pairTokenBalanceExceedsTotalSupply" json:"pairTokenBalanceExceedsTotalSupply"`
+	LPMinimumSupplyOnly                bool   `protobuf:"varint,7,opt,name=lpMinimumSupplyOnly" json:"lpMinimumSupplyOnly"`
+	FixedFeeAddressLPShareGte90Percent bool   `protobuf:"varint,8,opt,name=fixedFeeAddressLpShareGte90Percent" json:"fixedFeeAddressLpShareGte90Percent"`
 }
 
 type TokenCollectionTask struct {
-	TaskID         int64  `protobuf:"varint,1,opt,name=taskId" json:"taskId"`
-	ProjectID      int64  `protobuf:"varint,2,opt,name=projectId" json:"projectId"`
-	DataType       string `protobuf:"bytes,3,opt,name=dataType" json:"dataType"`
-	Status         string `protobuf:"bytes,4,opt,name=status" json:"status"`
-	Revision       int64  `protobuf:"varint,5,opt,name=revision" json:"revision"`
-	Attempts       int32  `protobuf:"varint,6,opt,name=attempts" json:"attempts"`
-	AvailableAt    string `protobuf:"bytes,7,opt,name=availableAt" json:"availableAt"`
-	LeaseExpiresAt string `protobuf:"bytes,8,opt,name=leaseExpiresAt" json:"leaseExpiresAt"`
-	LastError      string `protobuf:"bytes,9,opt,name=lastError" json:"lastError"`
-	CreatedAt      string `protobuf:"bytes,10,opt,name=createdAt" json:"createdAt"`
-	UpdatedAt      string `protobuf:"bytes,11,opt,name=updatedAt" json:"updatedAt"`
+	TaskID          int64                  `protobuf:"varint,1,opt,name=taskId" json:"taskId"`
+	ProjectID       int64                  `protobuf:"varint,2,opt,name=projectId" json:"projectId"`
+	DataType        string                 `protobuf:"bytes,3,opt,name=dataType" json:"dataType"`
+	Status          string                 `protobuf:"bytes,4,opt,name=status" json:"status"`
+	FailureCount    int32                  `protobuf:"varint,5,opt,name=failureCount" json:"failureCount"`
+	AvailableAt     string                 `protobuf:"bytes,6,opt,name=availableAt" json:"availableAt"`
+	ClaimGeneration int64                  `protobuf:"varint,7,opt,name=claimGeneration" json:"claimGeneration"`
+	LockedAt        string                 `protobuf:"bytes,8,opt,name=lockedAt" json:"lockedAt"`
+	LeaseExpiresAt  string                 `protobuf:"bytes,9,opt,name=leaseExpiresAt" json:"leaseExpiresAt"`
+	LastError       string                 `protobuf:"bytes,10,opt,name=lastError" json:"lastError"`
+	FinishedAt      string                 `protobuf:"bytes,11,opt,name=finishedAt" json:"finishedAt"`
+	CreatedAt       string                 `protobuf:"bytes,12,opt,name=createdAt" json:"createdAt"`
+	UpdatedAt       string                 `protobuf:"bytes,13,opt,name=updatedAt" json:"updatedAt"`
+	Result          *TokenCollectionResult `protobuf:"bytes,14,opt,name=result" json:"result"`
 }
 
-type TokenResearchState struct {
-	ProjectID                 int64  `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
-	ChainID                   int64  `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
-	Contract                  string `protobuf:"bytes,3,opt,name=contract" json:"contract"`
-	Status                    string `protobuf:"bytes,4,opt,name=status" json:"status"`
-	EvidenceRevision          int64  `protobuf:"varint,5,opt,name=evidenceRevision" json:"evidenceRevision"`
-	CurrentReportRevision     int64  `protobuf:"varint,6,opt,name=currentReportRevision" json:"currentReportRevision"`
-	CurrentSelectionOutcome   string `protobuf:"bytes,7,opt,name=currentSelectionOutcome" json:"currentSelectionOutcome"`
-	LastEvaluatedRevision     int64  `protobuf:"varint,8,opt,name=lastEvaluatedRevision" json:"lastEvaluatedRevision"`
-	LastEvaluatedAt           string `protobuf:"bytes,9,opt,name=lastEvaluatedAt" json:"lastEvaluatedAt"`
-	AttentionStartBlockNumber uint64 `protobuf:"varint,10,opt,name=attentionStartBlockNumber" json:"attentionStartBlockNumber"`
-	AttentionStartBlockTime   uint64 `protobuf:"varint,11,opt,name=attentionStartBlockTime" json:"attentionStartBlockTime"`
-	AttentionExpiryBlockTime  uint64 `protobuf:"varint,12,opt,name=attentionExpiryBlockTime" json:"attentionExpiryBlockTime"`
-	ExpiredBlockNumber        uint64 `protobuf:"varint,13,opt,name=expiredBlockNumber" json:"expiredBlockNumber"`
-	ExpiredBlockTime          uint64 `protobuf:"varint,14,opt,name=expiredBlockTime" json:"expiredBlockTime"`
-	CreatedAt                 string `protobuf:"bytes,15,opt,name=createdAt" json:"createdAt"`
-	UpdatedAt                 string `protobuf:"bytes,16,opt,name=updatedAt" json:"updatedAt"`
+type TokenCollectionResult struct {
+	TaskID        int64   `protobuf:"varint,1,opt,name=taskId" json:"taskId"`
+	ProjectID     int64   `protobuf:"varint,2,opt,name=projectId" json:"projectId"`
+	DataType      string  `protobuf:"bytes,3,opt,name=dataType" json:"dataType"`
+	SchemaVersion int32   `protobuf:"varint,4,opt,name=schemaVersion" json:"schemaVersion"`
+	PayloadJSON   string  `protobuf:"bytes,5,opt,name=payloadJson" json:"payloadJson"`
+	ContentHash   string  `protobuf:"bytes,6,opt,name=contentHash" json:"contentHash"`
+	BlockNumber   *uint64 `protobuf:"varint,7,opt,name=blockNumber" json:"blockNumber,omitempty"`
+	CollectedAt   string  `protobuf:"bytes,8,opt,name=collectedAt" json:"collectedAt"`
 }
 
-type TokenReportRevision struct {
-	ReportRevisionID    int64                          `protobuf:"varint,1,opt,name=reportRevisionId" json:"reportRevisionId"`
-	ProjectID           int64                          `protobuf:"varint,2,opt,name=projectId" json:"projectId"`
-	ChainID             int64                          `protobuf:"varint,3,opt,name=chainId" json:"chainId"`
-	Contract            string                         `protobuf:"bytes,4,opt,name=contract" json:"contract"`
-	Revision            int64                          `protobuf:"varint,5,opt,name=revision" json:"revision"`
-	ContentHash         string                         `protobuf:"bytes,6,opt,name=contentHash" json:"contentHash"`
-	CompletenessStatus  string                         `protobuf:"bytes,7,opt,name=completenessStatus" json:"completenessStatus"`
-	EvidenceJSON        string                         `protobuf:"bytes,8,opt,name=evidenceJson" json:"evidenceJson"`
-	ReportJSON          string                         `protobuf:"bytes,9,opt,name=reportJson" json:"reportJson"`
-	ObservedBlockNumber uint64                         `protobuf:"varint,10,opt,name=observedBlockNumber" json:"observedBlockNumber"`
-	RiskSummary         *TokenProjectReportRiskSummary `protobuf:"bytes,11,opt,name=riskSummary" json:"riskSummary"`
-	BuiltAt             string                         `protobuf:"bytes,21,opt,name=builtAt" json:"builtAt"`
-	CreatedAt           string                         `protobuf:"bytes,22,opt,name=createdAt" json:"createdAt"`
+type TokenProjectProfile struct {
+	ProjectID          int64                             `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
+	SchemaVersion      int32                             `protobuf:"varint,2,opt,name=schemaVersion" json:"schemaVersion"`
+	CompletenessStatus string                            `protobuf:"bytes,3,opt,name=completenessStatus" json:"completenessStatus"`
+	FailedDataTypes    []string                          `protobuf:"bytes,4,rep,name=failedDataTypes" json:"failedDataTypes"`
+	Market             *TokenProjectProfileMarket        `protobuf:"bytes,5,opt,name=market" json:"market"`
+	ContractSource     *TokenProjectProfileSource        `protobuf:"bytes,6,opt,name=contractSource" json:"contractSource"`
+	WrappedNativePair  *TokenProjectProfilePair          `protobuf:"bytes,7,opt,name=wrappedNativePair" json:"wrappedNativePair"`
+	UsdtPair           *TokenProjectProfilePair          `protobuf:"bytes,8,opt,name=usdtPair" json:"usdtPair"`
+	WalletSummary      *TokenProjectProfileWalletSummary `protobuf:"bytes,9,opt,name=walletSummary" json:"walletSummary"`
+	Transactions       *TokenProjectProfileTransactions  `protobuf:"bytes,10,opt,name=transactions" json:"transactions"`
+	Evidence           []*TokenProjectProfileEvidence    `protobuf:"bytes,11,rep,name=evidence" json:"evidence"`
+	ProfileJSON        string                            `protobuf:"bytes,12,opt,name=profileJson" json:"profileJson"`
+	ContentHash        string                            `protobuf:"bytes,13,opt,name=contentHash" json:"contentHash"`
+	BuiltAt            string                            `protobuf:"bytes,14,opt,name=builtAt" json:"builtAt"`
+	CreatedAt          string                            `protobuf:"bytes,15,opt,name=createdAt" json:"createdAt"`
+	Wallets            []*TokenProjectProfileWallet      `protobuf:"bytes,16,rep,name=wallets" json:"wallets"`
 }
 
-type TokenSelection struct {
-	SelectionID     int64    `protobuf:"varint,1,opt,name=selectionId" json:"selectionId"`
-	ProjectID       int64    `protobuf:"varint,2,opt,name=projectId" json:"projectId"`
-	ChainID         int64    `protobuf:"varint,3,opt,name=chainId" json:"chainId"`
-	Contract        string   `protobuf:"bytes,4,opt,name=contract" json:"contract"`
-	Outcome         string   `protobuf:"bytes,5,opt,name=outcome" json:"outcome"`
-	StrategyKey     string   `protobuf:"bytes,6,opt,name=strategyKey" json:"strategyKey"`
-	StrategyVersion string   `protobuf:"bytes,7,opt,name=strategyVersion" json:"strategyVersion"`
-	ReportRevision  int64    `protobuf:"varint,8,opt,name=reportRevision" json:"reportRevision"`
-	ReasonCodes     []string `protobuf:"bytes,9,rep,name=reasonCodes" json:"reasonCodes"`
-	ReasonDetail    string   `protobuf:"bytes,10,opt,name=reasonDetail" json:"reasonDetail"`
-	DecidedAt       string   `protobuf:"bytes,11,opt,name=decidedAt" json:"decidedAt"`
-	CreatedAt       string   `protobuf:"bytes,12,opt,name=createdAt" json:"createdAt"`
+type TokenProjectProfileMarket struct {
+	LogoURL           string                      `protobuf:"bytes,1,opt,name=logoUrl" json:"logoUrl"`
+	CurrentPriceUSD   string                      `protobuf:"bytes,2,opt,name=currentPriceUsd" json:"currentPriceUsd"`
+	CurrentPriceETH   string                      `protobuf:"bytes,3,opt,name=currentPriceEth" json:"currentPriceEth"`
+	MarketCapUSD      string                      `protobuf:"bytes,4,opt,name=marketCapUsd" json:"marketCapUsd"`
+	FDVUSD            string                      `protobuf:"bytes,5,opt,name=fdvUsd" json:"fdvUsd"`
+	TVLUSD            string                      `protobuf:"bytes,6,opt,name=tvlUsd" json:"tvlUsd"`
+	MainPairTVLUSD    string                      `protobuf:"bytes,7,opt,name=mainPairTvlUsd" json:"mainPairTvlUsd"`
+	Holders           int64                       `protobuf:"varint,8,opt,name=holders" json:"holders"`
+	LaunchAt          string                      `protobuf:"bytes,9,opt,name=launchAt" json:"launchAt"`
+	ProviderUpdatedAt string                      `protobuf:"bytes,10,opt,name=providerUpdatedAt" json:"providerUpdatedAt"`
+	AveRisk           *TokenProjectProfileAveRisk `protobuf:"bytes,11,opt,name=aveRisk" json:"aveRisk"`
 }
 
-type TokenProjectObservation struct {
-	ObservationID int64  `protobuf:"varint,1,opt,name=observationId" json:"observationId"`
-	ProjectID     int64  `protobuf:"varint,2,opt,name=projectId" json:"projectId"`
-	DataType      string `protobuf:"bytes,3,opt,name=dataType" json:"dataType"`
-	SchemaVersion int32  `protobuf:"varint,4,opt,name=schemaVersion" json:"schemaVersion"`
-	ContentHash   string `protobuf:"bytes,5,opt,name=contentHash" json:"contentHash"`
-	PayloadJSON   string `protobuf:"bytes,6,opt,name=payloadJson" json:"payloadJson"`
-	BlockNumber   uint64 `protobuf:"varint,7,opt,name=blockNumber" json:"blockNumber"`
-	ObservedAt    string `protobuf:"bytes,8,opt,name=observedAt" json:"observedAt"`
-	LastCheckedAt string `protobuf:"bytes,9,opt,name=lastCheckedAt" json:"lastCheckedAt"`
-	CreatedAt     string `protobuf:"bytes,10,opt,name=createdAt" json:"createdAt"`
+type TokenProjectProfileAveRisk struct {
+	RiskLevel             int32  `protobuf:"varint,1,opt,name=riskLevel" json:"riskLevel"`
+	RiskScore             string `protobuf:"bytes,2,opt,name=riskScore" json:"riskScore"`
+	RiskInfo              string `protobuf:"bytes,3,opt,name=riskInfo" json:"riskInfo"`
+	Audited               bool   `protobuf:"varint,4,opt,name=audited" json:"audited"`
+	Mintable              *bool  `protobuf:"varint,5,opt,name=mintable" json:"mintable,omitempty"`
+	HasMintMethod         bool   `protobuf:"varint,6,opt,name=hasMintMethod" json:"hasMintMethod"`
+	LiquidityPoolUnlocked bool   `protobuf:"varint,7,opt,name=liquidityPoolUnlocked" json:"liquidityPoolUnlocked"`
+	OwnershipNotRenounced bool   `protobuf:"varint,8,opt,name=ownershipNotRenounced" json:"ownershipNotRenounced"`
+	NotAudited            bool   `protobuf:"varint,9,opt,name=notAudited" json:"notAudited"`
+	NotOpenSource         bool   `protobuf:"varint,10,opt,name=notOpenSource" json:"notOpenSource"`
+	InBlacklist           bool   `protobuf:"varint,11,opt,name=inBlacklist" json:"inBlacklist"`
+	Honeypot              bool   `protobuf:"varint,12,opt,name=honeypot" json:"honeypot"`
 }
 
-type TokenAveToken struct {
-	Address          string `protobuf:"bytes,1,opt,name=address" json:"address"`
-	Name             string `protobuf:"bytes,2,opt,name=name" json:"name"`
-	Symbol           string `protobuf:"bytes,3,opt,name=symbol" json:"symbol"`
-	LogoURL          string `protobuf:"bytes,27,opt,name=logoUrl" json:"logoUrl"`
-	Decimals         int32  `protobuf:"varint,4,opt,name=decimals" json:"decimals"`
-	TotalSupply      string `protobuf:"bytes,5,opt,name=totalSupply" json:"totalSupply"`
-	CurrentPriceUSD  string `protobuf:"bytes,6,opt,name=currentPriceUsd" json:"currentPriceUsd"`
-	CurrentPriceETH  string `protobuf:"bytes,7,opt,name=currentPriceEth" json:"currentPriceEth"`
-	MarketCap        string `protobuf:"bytes,8,opt,name=marketCap" json:"marketCap"`
-	FDV              string `protobuf:"bytes,9,opt,name=fdv" json:"fdv"`
-	TVL              string `protobuf:"bytes,10,opt,name=tvl" json:"tvl"`
-	MainPairTVL      string `protobuf:"bytes,11,opt,name=mainPairTvl" json:"mainPairTvl"`
-	Holders          int32  `protobuf:"varint,12,opt,name=holders" json:"holders"`
-	RiskLevel        int32  `protobuf:"varint,13,opt,name=riskLevel" json:"riskLevel"`
-	RiskScore        string `protobuf:"bytes,14,opt,name=riskScore" json:"riskScore"`
-	RiskInfo         string `protobuf:"bytes,15,opt,name=riskInfo" json:"riskInfo"`
-	IsMintableKnown  bool   `protobuf:"varint,16,opt,name=isMintableKnown" json:"isMintableKnown"`
-	IsMintable       bool   `protobuf:"varint,17,opt,name=isMintable" json:"isMintable"`
-	HasMintMethod    bool   `protobuf:"varint,18,opt,name=hasMintMethod" json:"hasMintMethod"`
-	IsLPNotLocked    bool   `protobuf:"varint,19,opt,name=isLpNotLocked" json:"isLpNotLocked"`
-	HasNotRenounced  bool   `protobuf:"varint,20,opt,name=hasNotRenounced" json:"hasNotRenounced"`
-	HasNotAudited    bool   `protobuf:"varint,21,opt,name=hasNotAudited" json:"hasNotAudited"`
-	HasNotOpenSource bool   `protobuf:"varint,22,opt,name=hasNotOpenSource" json:"hasNotOpenSource"`
-	IsInBlacklist    bool   `protobuf:"varint,23,opt,name=isInBlacklist" json:"isInBlacklist"`
-	IsHoneypot       bool   `protobuf:"varint,24,opt,name=isHoneypot" json:"isHoneypot"`
-	LaunchAt         string `protobuf:"bytes,25,opt,name=launchAt" json:"launchAt"`
-	UpdatedAt        string `protobuf:"bytes,26,opt,name=updatedAt" json:"updatedAt"`
+type TokenProjectProfileSource struct {
+	CodeHash           string `protobuf:"bytes,1,opt,name=codeHash" json:"codeHash"`
+	VerificationStatus string `protobuf:"bytes,2,opt,name=verificationStatus" json:"verificationStatus"`
+	ArtifactReference  string `protobuf:"bytes,3,opt,name=artifactReference" json:"artifactReference"`
 }
 
-type TokenAvePair struct {
-	Pair          string `protobuf:"bytes,1,opt,name=pair" json:"pair"`
-	ChainID       int64  `protobuf:"varint,2,opt,name=chainId" json:"chainId"`
-	AMM           string `protobuf:"bytes,3,opt,name=amm" json:"amm"`
-	Token0Address string `protobuf:"bytes,4,opt,name=token0Address" json:"token0Address"`
-	Token0Symbol  string `protobuf:"bytes,5,opt,name=token0Symbol" json:"token0Symbol"`
-	Token1Address string `protobuf:"bytes,6,opt,name=token1Address" json:"token1Address"`
-	Token1Symbol  string `protobuf:"bytes,7,opt,name=token1Symbol" json:"token1Symbol"`
-	Reserve0      string `protobuf:"bytes,8,opt,name=reserve0" json:"reserve0"`
-	Reserve1      string `protobuf:"bytes,9,opt,name=reserve1" json:"reserve1"`
-	VolumeUSD     string `protobuf:"bytes,10,opt,name=volumeUsd" json:"volumeUsd"`
-	MarketCap     string `protobuf:"bytes,11,opt,name=marketCap" json:"marketCap"`
-	FDV           string `protobuf:"bytes,12,opt,name=fdv" json:"fdv"`
-	IsFake        bool   `protobuf:"varint,13,opt,name=isFake" json:"isFake"`
-	CreatedAt     string `protobuf:"bytes,14,opt,name=createdAt" json:"createdAt"`
-	UpdatedAt     string `protobuf:"bytes,15,opt,name=updatedAt" json:"updatedAt"`
+type TokenProjectProfilePair struct {
+	Kind       string                             `protobuf:"bytes,1,opt,name=kind" json:"kind"`
+	Address    string                             `protobuf:"bytes,2,opt,name=address" json:"address"`
+	ChainState *TokenProjectProfilePairChainState `protobuf:"bytes,3,opt,name=chainState" json:"chainState"`
+	Market     *TokenProjectProfilePairMarket     `protobuf:"bytes,4,opt,name=market" json:"market"`
 }
 
-type TokenAveObservation struct {
-	ChainID   int64           `protobuf:"varint,1,opt,name=chainId" json:"chainId"`
-	Token     *TokenAveToken  `protobuf:"bytes,2,opt,name=token" json:"token"`
-	Pairs     []*TokenAvePair `protobuf:"bytes,3,rep,name=pairs" json:"pairs"`
-	IsAudited bool            `protobuf:"varint,4,opt,name=isAudited" json:"isAudited"`
+type TokenProjectProfilePairChainState struct {
+	IsCreated         bool                              `protobuf:"varint,1,opt,name=isCreated" json:"isCreated"`
+	BaseBalance       string                            `protobuf:"bytes,2,opt,name=baseBalance" json:"baseBalance"`
+	QuoteBalance      string                            `protobuf:"bytes,3,opt,name=quoteBalance" json:"quoteBalance"`
+	QuoteUsdtValue    string                            `protobuf:"bytes,4,opt,name=quoteUsdtValue" json:"quoteUsdtValue"`
+	QuoteUsdtValueInt string                            `protobuf:"bytes,5,opt,name=quoteUsdtValueInt" json:"quoteUsdtValueInt"`
+	ReserveUpdatedAt  uint64                            `protobuf:"varint,6,opt,name=reserveUpdatedAt" json:"reserveUpdatedAt"`
+	Liquidity         *TokenProjectProfilePairLiquidity `protobuf:"bytes,7,opt,name=liquidity" json:"liquidity"`
+	Signals           *TokenProjectProfilePairSignals   `protobuf:"bytes,8,opt,name=signals" json:"signals"`
 }
 
-type TokenChainToken struct {
-	IsValidERC20 bool   `protobuf:"varint,1,opt,name=isValidErc20" json:"isValidErc20"`
-	Name         string `protobuf:"bytes,2,opt,name=name" json:"name"`
-	Symbol       string `protobuf:"bytes,3,opt,name=symbol" json:"symbol"`
-	Decimals     int32  `protobuf:"varint,4,opt,name=decimals" json:"decimals"`
-	TotalSupply  string `protobuf:"bytes,5,opt,name=totalSupply" json:"totalSupply"`
-	WethPair     string `protobuf:"bytes,6,opt,name=wethPair" json:"wethPair"`
-	UsdtPair     string `protobuf:"bytes,7,opt,name=usdtPair" json:"usdtPair"`
+type TokenProjectProfilePairLiquidity struct {
+	TotalSupply            string `protobuf:"bytes,1,opt,name=totalSupply" json:"totalSupply"`
+	LockedLiquidity        string `protobuf:"bytes,2,opt,name=lockedLiquidity" json:"lockedLiquidity"`
+	FixedFeeAddressBalance string `protobuf:"bytes,3,opt,name=fixedFeeAddressBalance" json:"fixedFeeAddressBalance"`
+	FixedFeeAddressShare   string `protobuf:"bytes,4,opt,name=fixedFeeAddressShare" json:"fixedFeeAddressShare"`
 }
 
-type TokenChainPairLiquidity struct {
-	TotalSupply                    string `protobuf:"bytes,1,opt,name=totalSupply" json:"totalSupply"`
-	LockedLiquidity                string `protobuf:"bytes,2,opt,name=lockedLiquidity" json:"lockedLiquidity"`
-	FeeAddressHoldLiquidityBalance string `protobuf:"bytes,3,opt,name=feeAddressHoldLiquidityBalance" json:"feeAddressHoldLiquidityBalance"`
-	FeeAddressHoldLiquidityRatio   string `protobuf:"bytes,4,opt,name=feeAddressHoldLiquidityRatio" json:"feeAddressHoldLiquidityRatio"`
+type TokenProjectProfilePairSignals struct {
+	PairTokenBalanceExceedsTotalSupply bool `protobuf:"varint,1,opt,name=pairTokenBalanceExceedsTotalSupply" json:"pairTokenBalanceExceedsTotalSupply"`
+	LPMinimumSupplyOnly                bool `protobuf:"varint,2,opt,name=lpMinimumSupplyOnly" json:"lpMinimumSupplyOnly"`
+	FixedFeeAddressLPShareGte90Percent bool `protobuf:"varint,3,opt,name=fixedFeeAddressLpShareGte90Percent" json:"fixedFeeAddressLpShareGte90Percent"`
 }
 
-type TokenChainPair struct {
-	PairContract      string                   `protobuf:"bytes,1,opt,name=pairContract" json:"pairContract"`
-	IsCreated         bool                     `protobuf:"varint,2,opt,name=isCreated" json:"isCreated"`
-	Liquidity         *TokenChainPairLiquidity `protobuf:"bytes,3,opt,name=liquidity" json:"liquidity"`
-	BaseBalance       string                   `protobuf:"bytes,4,opt,name=baseBalance" json:"baseBalance"`
-	QuoteBalance      string                   `protobuf:"bytes,5,opt,name=quoteBalance" json:"quoteBalance"`
-	QuoteUsdtValue    string                   `protobuf:"bytes,6,opt,name=quoteUsdtValue" json:"quoteUsdtValue"`
-	QuoteUsdtValueInt string                   `protobuf:"bytes,7,opt,name=quoteUsdtValueInt" json:"quoteUsdtValueInt"`
-	LastSwapAt        string                   `protobuf:"bytes,8,opt,name=lastSwapAt" json:"lastSwapAt"`
-	IsRemoveLiquidity bool                     `protobuf:"varint,9,opt,name=isRemoveLiquidity" json:"isRemoveLiquidity"`
-	IsMint            bool                     `protobuf:"varint,10,opt,name=isMint" json:"isMint"`
+type TokenProjectProfilePairMarket struct {
+	AMM           string `protobuf:"bytes,1,opt,name=amm" json:"amm"`
+	Token0Address string `protobuf:"bytes,2,opt,name=token0Address" json:"token0Address"`
+	Token0Symbol  string `protobuf:"bytes,3,opt,name=token0Symbol" json:"token0Symbol"`
+	Token1Address string `protobuf:"bytes,4,opt,name=token1Address" json:"token1Address"`
+	Token1Symbol  string `protobuf:"bytes,5,opt,name=token1Symbol" json:"token1Symbol"`
+	Reserve0      string `protobuf:"bytes,6,opt,name=reserve0" json:"reserve0"`
+	Reserve1      string `protobuf:"bytes,7,opt,name=reserve1" json:"reserve1"`
+	VolumeUSD     string `protobuf:"bytes,8,opt,name=volumeUsd" json:"volumeUsd"`
+	MarketCapUSD  string `protobuf:"bytes,9,opt,name=marketCapUsd" json:"marketCapUsd"`
+	FDVUSD        string `protobuf:"bytes,10,opt,name=fdvUsd" json:"fdvUsd"`
+	IsFake        bool   `protobuf:"varint,11,opt,name=isFake" json:"isFake"`
+	CreatedAt     string `protobuf:"bytes,12,opt,name=createdAt" json:"createdAt"`
+	UpdatedAt     string `protobuf:"bytes,13,opt,name=updatedAt" json:"updatedAt"`
 }
 
-type TokenChainStateObservation struct {
-	TokenContract string           `protobuf:"bytes,1,opt,name=tokenContract" json:"tokenContract"`
-	UpdatedAt     string           `protobuf:"bytes,2,opt,name=updatedAt" json:"updatedAt"`
-	Token         *TokenChainToken `protobuf:"bytes,3,opt,name=token" json:"token"`
-	IsValidERC20  bool             `protobuf:"varint,4,opt,name=isValidErc20" json:"isValidErc20"`
-	WethPair      *TokenChainPair  `protobuf:"bytes,5,opt,name=wethPair" json:"wethPair"`
-	UsdtPair      *TokenChainPair  `protobuf:"bytes,6,opt,name=usdtPair" json:"usdtPair"`
+type TokenProjectProfileWalletSummary struct {
+	WalletCount                   int32                                 `protobuf:"varint,1,opt,name=walletCount" json:"walletCount"`
+	NativeBalanceTotal            string                                `protobuf:"bytes,2,opt,name=nativeBalanceTotal" json:"nativeBalanceTotal"`
+	WrappedNativeBalanceTotal     string                                `protobuf:"bytes,3,opt,name=wrappedNativeBalanceTotal" json:"wrappedNativeBalanceTotal"`
+	UsdtBalanceTotal              string                                `protobuf:"bytes,4,opt,name=usdtBalanceTotal" json:"usdtBalanceTotal"`
+	TrackedAssetUsdtValueTotal    string                                `protobuf:"bytes,5,opt,name=trackedAssetUsdtValueTotal" json:"trackedAssetUsdtValueTotal"`
+	InitialRecipientCount         int32                                 `protobuf:"varint,6,opt,name=initialRecipientCount" json:"initialRecipientCount"`
+	InitialRecipientAllocationBPS uint64                                `protobuf:"varint,7,opt,name=initialRecipientAllocationBps" json:"initialRecipientAllocationBps"`
+	WalletsWithSimulationSignals  int32                                 `protobuf:"varint,8,opt,name=walletsWithSimulationSignals" json:"walletsWithSimulationSignals"`
+	RoleCounts                    []*TokenProjectProfileWalletRoleCount `protobuf:"bytes,9,rep,name=roleCounts" json:"roleCounts"`
 }
 
-type TokenWalletAssetState struct {
-	ChainID             int64  `protobuf:"varint,1,opt,name=chainId" json:"chainId"`
-	Wallet              string `protobuf:"bytes,2,opt,name=wallet" json:"wallet"`
-	WethBalance         string `protobuf:"bytes,3,opt,name=wethBalance" json:"wethBalance"`
-	UsdtBalance         string `protobuf:"bytes,4,opt,name=usdtBalance" json:"usdtBalance"`
-	NativeBalance       string `protobuf:"bytes,5,opt,name=nativeBalance" json:"nativeBalance"`
-	TotalAssetUsdtValue string `protobuf:"bytes,6,opt,name=totalAssetUsdtValue" json:"totalAssetUsdtValue"`
+type TokenProjectProfileWalletRoleCount struct {
+	Role  string `protobuf:"bytes,1,opt,name=role" json:"role"`
+	Count int32  `protobuf:"varint,2,opt,name=count" json:"count"`
 }
 
-type TokenSimulationResult struct {
-	ProjectID                          int64  `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
-	Wallet                             string `protobuf:"bytes,2,opt,name=wallet" json:"wallet"`
-	CanMintFromDeadViaTransferFrom     bool   `protobuf:"varint,3,opt,name=canMintFromDeadViaTransferFrom" json:"canMintFromDeadViaTransferFrom"`
-	CanMintFromZeroViaTransferFrom     bool   `protobuf:"varint,4,opt,name=canMintFromZeroViaTransferFrom" json:"canMintFromZeroViaTransferFrom"`
-	CanMintFromWethPairViaTransferFrom bool   `protobuf:"varint,5,opt,name=canMintFromWethPairViaTransferFrom" json:"canMintFromWethPairViaTransferFrom"`
-	CanMintFromUsdtPairViaTransferFrom bool   `protobuf:"varint,6,opt,name=canMintFromUsdtPairViaTransferFrom" json:"canMintFromUsdtPairViaTransferFrom"`
-	CanMintViaTransferToWethPair       bool   `protobuf:"varint,7,opt,name=canMintViaTransferToWethPair" json:"canMintViaTransferToWethPair"`
-	CanMintViaTransferToUsdtPair       bool   `protobuf:"varint,8,opt,name=canMintViaTransferToUsdtPair" json:"canMintViaTransferToUsdtPair"`
+type TokenProjectProfileWallet struct {
+	Address                 string                               `protobuf:"bytes,1,opt,name=address" json:"address"`
+	Roles                   []string                             `protobuf:"bytes,2,rep,name=roles" json:"roles"`
+	InitialRecipient        *TokenProjectProfileInitialRecipient `protobuf:"bytes,3,opt,name=initialRecipient" json:"initialRecipient"`
+	Assets                  *TokenProjectProfileWalletAssets     `protobuf:"bytes,4,opt,name=assets" json:"assets"`
+	Simulation              *TokenProjectProfileWalletSimulation `protobuf:"bytes,5,opt,name=simulation" json:"simulation"`
+	TransactionSampleCapped bool                                 `protobuf:"varint,6,opt,name=transactionSampleCapped" json:"transactionSampleCapped"`
 }
 
-type TokenContractSourceObservation struct {
-	CodeHash        string `protobuf:"bytes,1,opt,name=codeHash" json:"codeHash"`
-	SourceAvailable bool   `protobuf:"varint,2,opt,name=sourceAvailable" json:"sourceAvailable"`
+type TokenProjectProfileInitialRecipient struct {
+	Rank     int32  `protobuf:"varint,1,opt,name=rank" json:"rank"`
+	RatioBPS uint64 `protobuf:"varint,2,opt,name=ratioBps" json:"ratioBps"`
+}
+
+type TokenProjectProfileWalletAssets struct {
+	NativeBalance         string `protobuf:"bytes,1,opt,name=nativeBalance" json:"nativeBalance"`
+	WrappedNativeBalance  string `protobuf:"bytes,2,opt,name=wrappedNativeBalance" json:"wrappedNativeBalance"`
+	UsdtBalance           string `protobuf:"bytes,3,opt,name=usdtBalance" json:"usdtBalance"`
+	TrackedAssetUsdtValue string `protobuf:"bytes,4,opt,name=trackedAssetUsdtValue" json:"trackedAssetUsdtValue"`
+}
+
+type TokenProjectProfileWalletSimulation struct {
+	TransferFromDeadToWalletCallSucceeded     bool `protobuf:"varint,1,opt,name=transferFromDeadToWalletCallSucceeded" json:"transferFromDeadToWalletCallSucceeded"`
+	TransferFromZeroToWalletCallSucceeded     bool `protobuf:"varint,2,opt,name=transferFromZeroToWalletCallSucceeded" json:"transferFromZeroToWalletCallSucceeded"`
+	TransferFromWethPairToWalletCallSucceeded bool `protobuf:"varint,3,opt,name=transferFromWethPairToWalletCallSucceeded" json:"transferFromWethPairToWalletCallSucceeded"`
+	TransferFromUsdtPairToWalletCallSucceeded bool `protobuf:"varint,4,opt,name=transferFromUsdtPairToWalletCallSucceeded" json:"transferFromUsdtPairToWalletCallSucceeded"`
+	TransferFromWalletToWethPairCallSucceeded bool `protobuf:"varint,5,opt,name=transferFromWalletToWethPairCallSucceeded" json:"transferFromWalletToWethPairCallSucceeded"`
+	TransferFromWalletToUsdtPairCallSucceeded bool `protobuf:"varint,6,opt,name=transferFromWalletToUsdtPairCallSucceeded" json:"transferFromWalletToUsdtPairCallSucceeded"`
+}
+
+type TokenProjectProfileTransactions struct {
+	WalletCount                 int32                                         `protobuf:"varint,1,opt,name=walletCount" json:"walletCount"`
+	TransactionAssociationCount int64                                         `protobuf:"varint,2,opt,name=transactionAssociationCount" json:"transactionAssociationCount"`
+	UniqueTransactionCount      int64                                         `protobuf:"varint,3,opt,name=uniqueTransactionCount" json:"uniqueTransactionCount"`
+	SucceededTransactionCount   int64                                         `protobuf:"varint,4,opt,name=succeededTransactionCount" json:"succeededTransactionCount"`
+	FailedTransactionCount      int64                                         `protobuf:"varint,5,opt,name=failedTransactionCount" json:"failedTransactionCount"`
+	TotalInflowNativeValue      string                                        `protobuf:"bytes,6,opt,name=totalInflowNativeValue" json:"totalInflowNativeValue"`
+	TotalOutflowNativeValue     string                                        `protobuf:"bytes,7,opt,name=totalOutflowNativeValue" json:"totalOutflowNativeValue"`
+	CappedWallets               []string                                      `protobuf:"bytes,8,rep,name=cappedWallets" json:"cappedWallets"`
+	TopMethods                  []*TokenProjectProfileTransactionMethod       `protobuf:"bytes,9,rep,name=topMethods" json:"topMethods"`
+	TopCounterparties           []*TokenProjectProfileTransactionCounterparty `protobuf:"bytes,10,rep,name=topCounterparties" json:"topCounterparties"`
+}
+
+type TokenProjectProfileTransactionMethod struct {
+	MethodID     string `protobuf:"bytes,1,opt,name=methodId" json:"methodId"`
+	FunctionName string `protobuf:"bytes,2,opt,name=functionName" json:"functionName"`
+	Count        int64  `protobuf:"varint,3,opt,name=count" json:"count"`
+}
+
+type TokenProjectProfileTransactionCounterparty struct {
+	Address string `protobuf:"bytes,1,opt,name=address" json:"address"`
+	Count   int64  `protobuf:"varint,2,opt,name=count" json:"count"`
+}
+
+type TokenProjectProfileEvidence struct {
+	TaskID              int64   `protobuf:"varint,1,opt,name=taskId" json:"taskId"`
+	DataType            string  `protobuf:"bytes,2,opt,name=dataType" json:"dataType"`
+	Status              string  `protobuf:"bytes,3,opt,name=status" json:"status"`
+	FailureCount        int32   `protobuf:"varint,4,opt,name=failureCount" json:"failureCount"`
+	LastError           string  `protobuf:"bytes,5,opt,name=lastError" json:"lastError"`
+	ResultSchemaVersion int32   `protobuf:"varint,6,opt,name=resultSchemaVersion" json:"resultSchemaVersion"`
+	ResultContentHash   string  `protobuf:"bytes,7,opt,name=resultContentHash" json:"resultContentHash"`
+	BlockNumber         *uint64 `protobuf:"varint,8,opt,name=blockNumber" json:"blockNumber,omitempty"`
+	CollectedAt         string  `protobuf:"bytes,9,opt,name=collectedAt" json:"collectedAt"`
 }
 
 type TokenProjectRelatedWallet struct {
@@ -382,43 +398,20 @@ type TokenProjectInitialRecipient struct {
 	CreatedAt         string `protobuf:"bytes,8,opt,name=createdAt" json:"createdAt"`
 }
 
-type TokenCollectionSchedule struct {
-	ProjectID           int64  `protobuf:"varint,1,opt,name=projectId" json:"projectId"`
-	DataType            string `protobuf:"bytes,2,opt,name=dataType" json:"dataType"`
-	Status              string `protobuf:"bytes,3,opt,name=status" json:"status"`
-	RetryIntervalSecs   int64  `protobuf:"varint,4,opt,name=retryIntervalSecs" json:"retryIntervalSecs"`
-	NextRunAt           string `protobuf:"bytes,5,opt,name=nextRunAt" json:"nextRunAt"`
-	LatestTaskRevision  int64  `protobuf:"varint,6,opt,name=latestTaskRevision" json:"latestTaskRevision"`
-	ConsecutiveFailures int32  `protobuf:"varint,7,opt,name=consecutiveFailures" json:"consecutiveFailures"`
-	LastError           string `protobuf:"bytes,8,opt,name=lastError" json:"lastError"`
-	LastCheckedAt       string `protobuf:"bytes,9,opt,name=lastCheckedAt" json:"lastCheckedAt"`
-	CreatedAt           string `protobuf:"bytes,10,opt,name=createdAt" json:"createdAt"`
-	UpdatedAt           string `protobuf:"bytes,11,opt,name=updatedAt" json:"updatedAt"`
-}
-
 type TokenWalletTransactionCount struct {
 	Wallet           string `protobuf:"bytes,1,opt,name=wallet" json:"wallet"`
 	TransactionCount int64  `protobuf:"varint,2,opt,name=transactionCount" json:"transactionCount"`
 }
 
 type TokenProjectDetail struct {
-	Project                 *TokenProject                        `protobuf:"bytes,1,opt,name=project" json:"project"`
-	ResearchState           *TokenResearchState                  `protobuf:"bytes,2,opt,name=researchState" json:"researchState"`
-	CurrentReport           *TokenReportRevision                 `protobuf:"bytes,3,opt,name=currentReport" json:"currentReport"`
-	CurrentSelection        *TokenSelection                      `protobuf:"bytes,4,opt,name=currentSelection" json:"currentSelection"`
-	Ave                     *TokenAveObservation                 `protobuf:"bytes,5,opt,name=ave" json:"ave"`
-	ChainState              *TokenChainStateObservation          `protobuf:"bytes,6,opt,name=chainState" json:"chainState"`
-	WalletAssets            []*TokenWalletAssetState             `protobuf:"bytes,7,rep,name=walletAssets" json:"walletAssets"`
-	Simulations             []*TokenSimulationResult             `protobuf:"bytes,8,rep,name=simulations" json:"simulations"`
-	ContractSource          *TokenContractSourceObservation      `protobuf:"bytes,9,opt,name=contractSource" json:"contractSource"`
-	RelatedWallets          []*TokenProjectRelatedWallet         `protobuf:"bytes,10,rep,name=relatedWallets" json:"relatedWallets"`
-	InitialRecipients       []*TokenProjectInitialRecipient      `protobuf:"bytes,11,rep,name=initialRecipients" json:"initialRecipients"`
-	CollectionSchedules     []*TokenCollectionSchedule           `protobuf:"bytes,12,rep,name=collectionSchedules" json:"collectionSchedules"`
-	WalletTransactionCounts []*TokenWalletTransactionCount       `protobuf:"bytes,13,rep,name=walletTransactionCounts" json:"walletTransactionCounts"`
-	TransactionCount        int64                                `protobuf:"varint,14,opt,name=transactionCount" json:"transactionCount"`
-	CurrentObservations     []*TokenProjectObservation           `protobuf:"bytes,15,rep,name=currentObservations" json:"currentObservations"`
-	GeneratedAt             string                               `protobuf:"bytes,16,opt,name=generatedAt" json:"generatedAt"`
-	CurrentReportEvaluation *TokenProjectReportEvaluationSummary `protobuf:"bytes,17,opt,name=currentReportEvaluation" json:"currentReportEvaluation"`
+	Project                 *TokenProject                   `protobuf:"bytes,1,opt,name=project" json:"project"`
+	Profile                 *TokenProjectProfile            `protobuf:"bytes,2,opt,name=profile" json:"profile"`
+	CollectionTasks         []*TokenCollectionTask          `protobuf:"bytes,3,rep,name=collectionTasks" json:"collectionTasks"`
+	RelatedWallets          []*TokenProjectRelatedWallet    `protobuf:"bytes,4,rep,name=relatedWallets" json:"relatedWallets"`
+	InitialRecipients       []*TokenProjectInitialRecipient `protobuf:"bytes,5,rep,name=initialRecipients" json:"initialRecipients"`
+	WalletTransactionCounts []*TokenWalletTransactionCount  `protobuf:"bytes,6,rep,name=walletTransactionCounts" json:"walletTransactionCounts"`
+	TransactionCount        int64                           `protobuf:"varint,7,opt,name=transactionCount" json:"transactionCount"`
+	GeneratedAt             string                          `protobuf:"bytes,8,opt,name=generatedAt" json:"generatedAt"`
 }
 
 type TokenProjectSwapAsset struct {
@@ -513,26 +506,6 @@ type TokenProjectSwapEvent struct {
 	QuoteAmountOutRaw string `protobuf:"bytes,14,opt,name=quoteAmountOutRaw" json:"quoteAmountOutRaw"`
 	Direction         string `protobuf:"bytes,15,opt,name=direction" json:"direction"`
 	EffectivePrice    string `protobuf:"bytes,16,opt,name=effectivePrice" json:"effectivePrice"`
-}
-
-type TokenProjectTrendPoint struct {
-	ObservedAt string `protobuf:"bytes,1,opt,name=observedAt" json:"observedAt"`
-	Value      string `protobuf:"bytes,2,opt,name=value" json:"value"`
-}
-
-type TokenProjectTrendSeries struct {
-	Key      string                    `protobuf:"bytes,1,opt,name=key" json:"key"`
-	Label    string                    `protobuf:"bytes,2,opt,name=label" json:"label"`
-	Unit     string                    `protobuf:"bytes,3,opt,name=unit" json:"unit"`
-	DataType string                    `protobuf:"bytes,4,opt,name=dataType" json:"dataType"`
-	Points   []*TokenProjectTrendPoint `protobuf:"bytes,5,rep,name=points" json:"points"`
-}
-
-type TokenProjectTrends struct {
-	Range        string                     `protobuf:"bytes,1,opt,name=range" json:"range"`
-	ObservedFrom string                     `protobuf:"bytes,2,opt,name=observedFrom" json:"observedFrom"`
-	GeneratedAt  string                     `protobuf:"bytes,3,opt,name=generatedAt" json:"generatedAt"`
-	Series       []*TokenProjectTrendSeries `protobuf:"bytes,4,rep,name=series" json:"series"`
 }
 
 type TokenWalletNormalTransaction struct {

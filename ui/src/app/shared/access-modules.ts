@@ -95,7 +95,7 @@ export const accountDataModules: AccountDataModuleDefinition[] = [
         module: AccountDataModule.Token,
         id: 'token',
         label: 'Token',
-        description: 'Token catalog, research, policy, and chain operations.',
+        description: 'Token discovery, one-time collection, project profiles, and chain operations.',
         group: 'token-risk',
         maxAccess: AccountDataAccess.ReadWrite
     },

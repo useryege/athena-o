@@ -46,9 +46,9 @@ The executable code remains the source of truth. These documents provide the mai
 | Token Intelligence | Synchronous EVM block discovery, token validation, project initialization, and per-attempt processing diagnostics | [Token Chain Processor](token-intelligence/chain-processor.md) |
 | Token Intelligence | Per-project WETH and USDT Pair Swap-block collection | [Token Swap Processor](token-intelligence/swap-processor.md) |
 | Token Intelligence | On-chain ERC-20, pair, wallet, and simulation-state aggregation | [ATHENA EVM Aggregator Contract](token-intelligence/athena-contract.md) |
-| Token Intelligence | Research lifecycle and collection scheduling | [Token Research Lifecycle](token-intelligence/research-lifecycle.md) |
+| Token Intelligence | PostgreSQL-backed six-source one-time collection, fenced workers, terminal barrier, and immutable ProjectProfile construction | [Token Collection and Project Profile](token-intelligence/collection-profile.md) |
 | Token Intelligence | Ave token market data and canonical pair collection | [Ave Market Data Collection](token-intelligence/ave-market-data.md) |
-| Token Intelligence | Unified project pages, current snapshots, Report risk, trends, and history reads | [Token Project Read Model](token-intelligence/project-read-model.md) |
+| Token Intelligence | Project list/detail, collection evidence, immutable profile, Swap, wallet, and contract-source reads | [Token Project Read Model](token-intelligence/project-read-model.md) |
 | Token Intelligence | One-time pre-deployment normal transactions for related wallets | [Project Wallet Pre-Deployment Normal Transactions](token-intelligence/wallet-normal-transactions.md) |
 | Token Intelligence | Independent Token-module READ and READ_WRITE authorization for UI, requests, caches, and APIs | [Token Module Access Control](token-intelligence/access-control.md) |
 | Blockchain Data | Finalized inbound BSC transaction indexing and lookup | [BSC Inbound Normal Transactions](blockchain-data/bsc-inbound-normal-transactions.md) |
