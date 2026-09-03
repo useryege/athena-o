@@ -15,19 +15,16 @@ import {
     emptyProjectsFilterState,
     generalFilterCount,
     profilePairFilterCount,
-    profilePairQuoteMissingStates,
     ProfilePairFilterState,
     profilePairSignalStates,
     profileStates,
     ProjectsFiltersModal,
     ProjectsFilterState
 } from './projects-filters-modal';
-import {ChainBadge, TokenLogo, chainLabel} from './token-shared';
+import {ChainBadge, TokenLogo} from './token-shared';
 
 const PROJECTS_LIST_STALE_TIME_MS = 30_000;
 const PROJECTS_POLL_INTERVAL_MS = 30_000;
-const RUNTIME_CONFIGURATION_STALE_TIME_MS = 5 * 60_000;
-const RUNTIME_CONFIGURATION_CACHE_KEY = 'token.runtime-configuration';
 const PROJECTS_TABLE_WIDTH = 2460;
 
 const positiveIntegerParam = (value: string | null) => {
@@ -49,34 +46,29 @@ interface ProjectsQueryState extends ProjectsFilterState {
     pageSize: number;
 }
 
-const pairFilterFromParams = (params: URLSearchParams, prefix: 'wrapped' | 'usdt'): ProfilePairFilterState => ({
-    balanceSupply: enumListParam(params.get(`${prefix}BalanceSupply`), profilePairSignalStates),
-    minimumLP: enumListParam(params.get(`${prefix}MinimumLP`), profilePairSignalStates),
-    feeLPShare: enumListParam(params.get(`${prefix}FeeLPShare`), profilePairSignalStates),
-    quoteMin: unsignedIntegerParam(params.get(`${prefix}QuoteMin`)),
-    quoteMax: unsignedIntegerParam(params.get(`${prefix}QuoteMax`)),
-    quoteMissing: enumListParam(params.get(`${prefix}QuoteMissing`), profilePairQuoteMissingStates)
+const pairFilterFromParams = (params: URLSearchParams): ProfilePairFilterState => ({
+    balanceSupply: enumListParam(params.get('pairBalanceSupply'), profilePairSignalStates),
+    minimumLP: enumListParam(params.get('pairMinimumLP'), profilePairSignalStates),
+    feeLPShare: enumListParam(params.get('pairFeeLPShare'), profilePairSignalStates),
+    quoteMin: unsignedIntegerParam(params.get('pairQuoteMin')),
+    quoteMax: unsignedIntegerParam(params.get('pairQuoteMax'))
 });
 
-const serializePairFilter = (params: URLSearchParams, prefix: 'wrapped' | 'usdt', filter: ProfilePairFilterState) => {
-    if (filter.balanceSupply.length) params.set(`${prefix}BalanceSupply`, profilePairSignalStates.filter(value => filter.balanceSupply.includes(value)).join(','));
-    if (filter.minimumLP.length) params.set(`${prefix}MinimumLP`, profilePairSignalStates.filter(value => filter.minimumLP.includes(value)).join(','));
-    if (filter.feeLPShare.length) params.set(`${prefix}FeeLPShare`, profilePairSignalStates.filter(value => filter.feeLPShare.includes(value)).join(','));
-    if (filter.quoteMin) params.set(`${prefix}QuoteMin`, filter.quoteMin);
-    if (filter.quoteMax) params.set(`${prefix}QuoteMax`, filter.quoteMax);
-    if (filter.quoteMissing.length) params.set(`${prefix}QuoteMissing`, profilePairQuoteMissingStates.filter(value => filter.quoteMissing.includes(value)).join(','));
+const serializePairFilter = (params: URLSearchParams, filter: ProfilePairFilterState) => {
+    if (filter.balanceSupply.length) params.set('pairBalanceSupply', profilePairSignalStates.filter(value => filter.balanceSupply.includes(value)).join(','));
+    if (filter.minimumLP.length) params.set('pairMinimumLP', profilePairSignalStates.filter(value => filter.minimumLP.includes(value)).join(','));
+    if (filter.feeLPShare.length) params.set('pairFeeLPShare', profilePairSignalStates.filter(value => filter.feeLPShare.includes(value)).join(','));
+    if (filter.quoteMin) params.set('pairQuoteMin', filter.quoteMin);
+    if (filter.quoteMax) params.set('pairQuoteMax', filter.quoteMax);
 };
 
 const serializeQueryState = (state: ProjectsQueryState) => {
     const next = new URLSearchParams();
-    if (state.chainID !== undefined) next.set('chainID', String(state.chainID));
-    if (state.projectID !== undefined) next.set('projectID', String(state.projectID));
     if (state.contract) next.set('contract', state.contract);
     if (state.codeHash) next.set('codeHash', state.codeHash);
     if (state.collectionStatus) next.set('collectionStatus', state.collectionStatus);
     if (state.profileState) next.set('profileState', state.profileState);
-    serializePairFilter(next, 'wrapped', state.wrappedNativePairFilter);
-    serializePairFilter(next, 'usdt', state.usdtPairFilter);
+    serializePairFilter(next, state.pairFilter);
     if (state.page !== 1) next.set('page', String(state.page));
     if (state.pageSize !== DEFAULT_PAGE_SIZE) next.set('pageSize', String(state.pageSize));
     return next;
@@ -208,21 +200,17 @@ const ProjectCard = (props: {item: TokenProjectListItem}) => (
 export const ProjectsPage = () => {
     const [params, setParams] = useSearchParams();
     const [filtersOpen, setFiltersOpen] = React.useState(false);
-    const chainID = positiveIntegerParam(params.get('chainID'));
-    const projectID = positiveIntegerParam(params.get('projectID'));
     const contract = params.get('contract') || '';
     const codeHash = params.get('codeHash') || '';
     const collectionStatus = enumParam(params.get('collectionStatus'), collectionStatuses);
     const profileState = enumParam(params.get('profileState'), profileStates);
-    const wrappedParams = ['wrappedBalanceSupply', 'wrappedMinimumLP', 'wrappedFeeLPShare', 'wrappedQuoteMin', 'wrappedQuoteMax', 'wrappedQuoteMissing'].map(key => params.get(key) || '').join('|');
-    const usdtParams = ['usdtBalanceSupply', 'usdtMinimumLP', 'usdtFeeLPShare', 'usdtQuoteMin', 'usdtQuoteMax', 'usdtQuoteMissing'].map(key => params.get(key) || '').join('|');
-    const wrappedNativePairFilter = React.useMemo(() => pairFilterFromParams(params, 'wrapped'), [wrappedParams]);
-    const usdtPairFilter = React.useMemo(() => pairFilterFromParams(params, 'usdt'), [usdtParams]);
+    const pairParams = ['pairBalanceSupply', 'pairMinimumLP', 'pairFeeLPShare', 'pairQuoteMin', 'pairQuoteMax'].map(key => params.get(key) || '').join('|');
+    const pairFilter = React.useMemo(() => pairFilterFromParams(params), [pairParams]);
     const page = positiveIntegerParam(params.get('page')) || 1;
     const requestedPageSize = positiveIntegerParam(params.get('pageSize')) || DEFAULT_PAGE_SIZE;
     const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize) ? requestedPageSize : DEFAULT_PAGE_SIZE;
-    const queryState = React.useMemo<ProjectsQueryState>(() => ({chainID, projectID, contract, codeHash, collectionStatus, profileState, wrappedNativePairFilter, usdtPairFilter, page, pageSize}), [chainID, projectID, contract, codeHash, collectionStatus, profileState, wrappedNativePairFilter, usdtPairFilter, page, pageSize]);
-    const filterState = React.useMemo<ProjectsFilterState>(() => ({chainID, projectID, contract, codeHash, collectionStatus, profileState, wrappedNativePairFilter, usdtPairFilter}), [chainID, projectID, contract, codeHash, collectionStatus, profileState, wrappedNativePairFilter, usdtPairFilter]);
+    const queryState = React.useMemo<ProjectsQueryState>(() => ({contract, codeHash, collectionStatus, profileState, pairFilter, page, pageSize}), [contract, codeHash, collectionStatus, profileState, pairFilter, page, pageSize]);
+    const filterState = React.useMemo<ProjectsFilterState>(() => ({contract, codeHash, collectionStatus, profileState, pairFilter}), [contract, codeHash, collectionStatus, profileState, pairFilter]);
     const rawSearch = params.toString();
     React.useEffect(() => {
         const canonical = serializeQueryState(queryState);
@@ -230,22 +218,14 @@ export const ProjectsPage = () => {
     }, [queryState, rawSearch, setParams]);
 
     const listCacheKey = JSON.stringify(['token.projects', queryState]);
-    const options = useCachedAsyncData(RUNTIME_CONFIGURATION_CACHE_KEY, () => services.tokenapi.getRuntimeConfiguration(), {staleTimeMs: RUNTIME_CONFIGURATION_STALE_TIME_MS, module: AccountDataModule.Token});
     const data = useCachedAsyncData(listCacheKey, () => services.tokenapi.listProjects({
-        page, pageSize, chainID, projectID, contract: contract || undefined, codeHash: codeHash || undefined,
+        page, pageSize, contract: contract || undefined, codeHash: codeHash || undefined,
         collectionStatus: collectionStatus || undefined, profileState: profileState || undefined,
-        wrappedNativePairBalanceSupplyStates: wrappedNativePairFilter.balanceSupply,
-        wrappedNativePairMinimumLPStates: wrappedNativePairFilter.minimumLP,
-        wrappedNativePairFeeLPShareStates: wrappedNativePairFilter.feeLPShare,
-        wrappedNativePairQuoteUSDTMin: wrappedNativePairFilter.quoteMin || undefined,
-        wrappedNativePairQuoteUSDTMax: wrappedNativePairFilter.quoteMax || undefined,
-        wrappedNativePairQuoteMissingStates: wrappedNativePairFilter.quoteMissing,
-        usdtPairBalanceSupplyStates: usdtPairFilter.balanceSupply,
-        usdtPairMinimumLPStates: usdtPairFilter.minimumLP,
-        usdtPairFeeLPShareStates: usdtPairFilter.feeLPShare,
-        usdtPairQuoteUSDTMin: usdtPairFilter.quoteMin || undefined,
-        usdtPairQuoteUSDTMax: usdtPairFilter.quoteMax || undefined,
-        usdtPairQuoteMissingStates: usdtPairFilter.quoteMissing
+        pairBalanceSupplyStates: pairFilter.balanceSupply,
+        pairMinimumLPStates: pairFilter.minimumLP,
+        pairFeeLPShareStates: pairFilter.feeLPShare,
+        pairQuoteUSDTMin: pairFilter.quoteMin || undefined,
+        pairQuoteUSDTMax: pairFilter.quoteMax || undefined
     }), {staleTimeMs: PROJECTS_LIST_STALE_TIME_MS, module: AccountDataModule.Token});
     const reloadRef = React.useRef(data.reload);
     reloadRef.current = data.reload;
@@ -257,19 +237,18 @@ export const ProjectsPage = () => {
     }, [needsPolling]);
     useRestoreProjectsScroll(Boolean(data.data));
 
-    const chainOptions = (options.data?.chains || []).filter((item): item is {chainID: number; chainName?: string} => item.chainID !== undefined).map(item => ({value: item.chainID, label: chainLabel(item.chainID)}));
-    const activeFilterCount = generalFilterCount(filterState) + profilePairFilterCount(wrappedNativePairFilter) + profilePairFilterCount(usdtPairFilter);
+    const activeFilterCount = generalFilterCount(filterState) + profilePairFilterCount(pairFilter);
     const applyFilters = (nextFilters: ProjectsFilterState) => {setFiltersOpen(false); setParams(serializeQueryState({...queryState, ...nextFilters, page: 1}));};
     const setPage = (nextPage: number, nextPageSize: number) => setParams(serializeQueryState({...queryState, page: nextPage, pageSize: nextPageSize}));
 
     return (
-        <AppPage title='Projects' subtitle='Discovered projects, one-time collection progress, and the resulting immutable profile.' loading={data.loading || data.refreshing || options.loading || options.refreshing} error={data.error || options.error} onRefresh={() => {data.reload(); options.reload();}} filters={
+        <AppPage title='Projects' subtitle='Discovered projects, one-time collection progress, and the resulting immutable profile.' loading={data.loading || data.refreshing} error={data.error} onRefresh={data.reload} filters={
             <div className='projects-controls'>
                 <div className='projects-controls__toolbar'><div className='projects-controls__actions'>
                     <Badge count={activeFilterCount} size='small' overflowCount={99}><Button aria-label={`Open filters${activeFilterCount ? `, ${activeFilterCount} active fields` : ''}`} icon={<FilterOutlined />} onClick={() => setFiltersOpen(true)}>Filters</Button></Badge>
                     <Button disabled={!activeFilterCount} onClick={() => setParams(serializeQueryState({...queryState, ...emptyProjectsFilterState(), page: 1}))}>Clear all</Button>
                 </div></div>
-                <ProjectsFiltersModal open={filtersOpen} filters={filterState} chainOptions={chainOptions} onCancel={() => setFiltersOpen(false)} onApply={applyFilters} />
+                <ProjectsFiltersModal open={filtersOpen} filters={filterState} onCancel={() => setFiltersOpen(false)} onApply={applyFilters} />
             </div>
         }>
             <div className='projects-unified-table-region'>

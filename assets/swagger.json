@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "v1.0.0-1106-g1beae37f-dirty"
+    "version": "v1.0.0-1108-g19817766-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -2295,12 +2295,6 @@
         "parameters": [
           {
             "type": "string",
-            "format": "int64",
-            "name": "chain_id",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "name": "code_hash",
             "in": "query"
           },
@@ -2323,12 +2317,6 @@
           },
           {
             "type": "string",
-            "format": "int64",
-            "name": "project_id",
-            "in": "query"
-          },
-          {
-            "type": "string",
             "name": "collection_status",
             "in": "query"
           },
@@ -2343,7 +2331,7 @@
               "type": "string"
             },
             "collectionFormat": "multi",
-            "name": "wrapped_native_pair_balance_supply_states",
+            "name": "pair_balance_supply_states",
             "in": "query"
           },
           {
@@ -2352,7 +2340,7 @@
               "type": "string"
             },
             "collectionFormat": "multi",
-            "name": "wrapped_native_pair_minimum_lp_states",
+            "name": "pair_minimum_lp_states",
             "in": "query"
           },
           {
@@ -2361,72 +2349,17 @@
               "type": "string"
             },
             "collectionFormat": "multi",
-            "name": "wrapped_native_pair_fee_lp_share_states",
+            "name": "pair_fee_lp_share_states",
             "in": "query"
           },
           {
             "type": "string",
-            "name": "wrapped_native_pair_quote_usdt_min",
+            "name": "pair_quote_usdt_min",
             "in": "query"
           },
           {
             "type": "string",
-            "name": "wrapped_native_pair_quote_usdt_max",
-            "in": "query"
-          },
-          {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi",
-            "name": "wrapped_native_pair_quote_missing_states",
-            "in": "query"
-          },
-          {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi",
-            "name": "usdt_pair_balance_supply_states",
-            "in": "query"
-          },
-          {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi",
-            "name": "usdt_pair_minimum_lp_states",
-            "in": "query"
-          },
-          {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi",
-            "name": "usdt_pair_fee_lp_share_states",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "usdt_pair_quote_usdt_min",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "usdt_pair_quote_usdt_max",
-            "in": "query"
-          },
-          {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi",
-            "name": "usdt_pair_quote_missing_states",
+            "name": "pair_quote_usdt_max",
             "in": "query"
           }
         ],
@@ -6599,6 +6532,9 @@
     "v1alpha1TokenProjectDetail": {
       "type": "object",
       "properties": {
+        "collectionStatus": {
+          "type": "string"
+        },
         "collectionTasks": {
           "type": "array",
           "items": {
@@ -6616,6 +6552,9 @@
         },
         "profile": {
           "$ref": "#/definitions/v1alpha1TokenProjectProfile"
+        },
+        "profileState": {
+          "type": "string"
         },
         "project": {
           "$ref": "#/definitions/v1alpha1TokenProject"

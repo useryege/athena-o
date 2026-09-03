@@ -4011,15 +4011,13 @@
     font-weight: 700;
 }
 
-.projects-filters-modal__choice-field .ant-checkbox-group,
-.projects-filters-modal__missing-field .ant-checkbox-group {
+.projects-filters-modal__choice-field .ant-checkbox-group {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px 14px;
 }
 
-.projects-filters-modal__choice-field .ant-checkbox-wrapper,
-.projects-filters-modal__missing-field .ant-checkbox-wrapper {
+.projects-filters-modal__choice-field .ant-checkbox-wrapper {
     margin-inline-start: 0;
 }
 
@@ -4039,11 +4037,6 @@
 .projects-filters-modal__range-divider {
     padding-bottom: 7px;
     color: var(--athena-muted);
-}
-
-.projects-filters-modal__missing-field {
-    display: grid;
-    gap: 8px;
 }
 
 .projects-filters-modal__scope-note {
@@ -6518,7 +6511,6 @@ button.chain-processing-kpi {
     .projects-filters-modal__field-grid,
     .projects-filters-modal__pair-grid,
     .projects-filters-modal__choice-field .ant-checkbox-group,
-    .projects-filters-modal__missing-field .ant-checkbox-group,
     .projects-filters-modal__quote-range {
         grid-template-columns: minmax(0, 1fr);
     }

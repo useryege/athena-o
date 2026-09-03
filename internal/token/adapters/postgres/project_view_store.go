@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	tokensqlc "github.com/useryege/athena/internal/token/adapters/postgres/sqlc"
 	"github.com/useryege/athena/internal/token/collection"
+	"github.com/useryege/athena/internal/token/profile"
 	"github.com/useryege/athena/internal/token/projectview"
 	"github.com/useryege/athena/internal/token/shared"
 )
@@ -47,6 +48,17 @@ func (repository *ProjectViewRepository) GetProjectDetail(ctx context.Context, p
 	} else if !errors.Is(err, pgx.ErrNoRows) {
 		return nil, fmt.Errorf("get project %d profile: %w", projectID, err)
 	}
+	var profileBuildTask *profile.BuildTask
+	profileBuildRow, getErr := queries.GetProjectProfileBuildTask(ctx, projectID)
+	if getErr == nil {
+		profileBuildValue, mapErr := mapProfileBuildTask(profileBuildRow)
+		if mapErr != nil {
+			return nil, fmt.Errorf("map project %d profile build task: %w", projectID, mapErr)
+		}
+		profileBuildTask = &profileBuildValue
+	} else if !errors.Is(getErr, pgx.ErrNoRows) {
+		return nil, fmt.Errorf("get project %d profile build task: %w", projectID, getErr)
+	}
 
 	taskRows, err := queries.ListProjectDataCollectionTasksByProject(ctx, projectID)
 	if err != nil {
@@ -81,6 +93,11 @@ func (repository *ProjectViewRepository) GetProjectDetail(ctx context.Context, p
 	if len(results) != 0 {
 		return nil, fmt.Errorf("project %d contains collection results without tasks", projectID)
 	}
+	detail.CollectionStatus = projectDetailCollectionStatus(detail.CollectionTasks)
+	detail.ProfileState, err = projectDetailProfileState(detail.Profile, profileBuildTask)
+	if err != nil {
+		return nil, fmt.Errorf("derive project %d profile state: %w", projectID, err)
+	}
 
 	relatedWalletRows, err := queries.ListProjectRelatedWalletsByProject(ctx, projectID)
 	if err != nil {
@@ -113,6 +130,48 @@ func (repository *ProjectViewRepository) GetProjectDetail(ctx context.Context, p
 		return nil, fmt.Errorf("commit project %d detail snapshot: %w", projectID, err)
 	}
 	return detail, nil
+}
+
+func projectDetailCollectionStatus(tasks []collection.TaskDetail) projectview.ProjectCollectionStatus {
+	succeededCount := 0
+	hasRunning := false
+	for _, task := range tasks {
+		switch task.Task.Status {
+		case collection.TaskStatusFailed:
+			return projectview.ProjectCollectionStatusNeedsAttention
+		case collection.TaskStatusSucceeded:
+			succeededCount++
+		case collection.TaskStatusRunning:
+			hasRunning = true
+		}
+	}
+	if succeededCount == len(collection.AllDataTypes()) {
+		return projectview.ProjectCollectionStatusComplete
+	}
+	if hasRunning || succeededCount > 0 {
+		return projectview.ProjectCollectionStatusCollecting
+	}
+	return projectview.ProjectCollectionStatusQueued
+}
+
+func projectDetailProfileState(
+	projectProfile *profile.ProjectProfile,
+	buildTask *profile.BuildTask,
+) (projectview.ProjectProfileState, error) {
+	if projectProfile != nil {
+		switch projectProfile.CompletenessStatus {
+		case profile.CompletenessStatusComplete:
+			return projectview.ProjectProfileStateComplete, nil
+		case profile.CompletenessStatusIncomplete:
+			return projectview.ProjectProfileStateIncomplete, nil
+		default:
+			return "", fmt.Errorf("unsupported profile completeness status %q", projectProfile.CompletenessStatus)
+		}
+	}
+	if buildTask != nil && buildTask.Status == profile.BuildTaskStatusFailed {
+		return projectview.ProjectProfileStateFailed, nil
+	}
+	return projectview.ProjectProfileStatePending, nil
 }
 
 func (repository *ProjectViewRepository) ListProjectWalletNormalTransactionsPage(

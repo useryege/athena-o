@@ -7,7 +7,6 @@ import {formatBeijingDateTime, formatBlockNumber} from '../../shared/format';
 import {
     TokenCollectionTask,
     TokenProjectDetail,
-    TokenProjectListItem,
     TokenProjectProfilePair,
     TokenProjectRelatedWallet,
     TokenWalletNormalTransaction
@@ -47,7 +46,7 @@ const pairSignal = (value?: boolean) => value === undefined
     ? <StatusTag value='Unknown' />
     : <StatusTag value={value ? 'Detected' : 'Clear'} positive={!value} negative={value} />;
 
-const Summary = (props: {detail: TokenProjectDetail; listItem?: TokenProjectListItem}) => {
+const Summary = (props: {detail: TokenProjectDetail}) => {
     const project = props.detail.project;
     const profile = props.detail.profile;
     const market = profile?.market;
@@ -62,8 +61,8 @@ const Summary = (props: {detail: TokenProjectDetail; listItem?: TokenProjectList
                         <Space wrap={true}>
                             <ChainBadge chainID={project?.chainID} />
                             <Tag>Project #{project?.projectID || '-'}</Tag>
-                            {workflowTag(props.listItem?.collectionStatus)}
-                            {workflowTag(props.listItem?.profileState)}
+                            {workflowTag(props.detail.collectionStatus)}
+                            {workflowTag(props.detail.profileState)}
                         </Space>
                     </div>
                 </div>
@@ -81,7 +80,7 @@ const Summary = (props: {detail: TokenProjectDetail; listItem?: TokenProjectList
             <div className='project-detail-kpis' aria-label='Project profile summary'>
                 {[
                     ['Collection', `${succeeded}/6`],
-                    ['Profile', profile?.completenessStatus || props.listItem?.profileState || 'Pending'],
+                    ['Profile', profile?.completenessStatus || props.detail.profileState || 'Pending'],
                     ['Price', compact(market?.currentPriceUSD, true)],
                     ['Market Cap', compact(market?.marketCapUSD, true)],
                     ['TVL', compact(market?.tvlUSD, true)],
@@ -275,17 +274,13 @@ export const ProjectDetailPage = () => {
     const [evidenceError, setEvidenceError] = React.useState<Error>();
     const evidenceRequest = React.useRef<(Promise<TokenCollectionTask | undefined> & {abort?: () => void})>();
     const detail = useAsyncData(() => services.tokenapi.getProjectDetail(projectID), [projectID]);
-    const summary = useAsyncData(() => services.tokenapi.listProjects({projectID, page: 1, pageSize: 1}), [projectID]);
-    const listItem = summary.data?.items[0];
     const reloadDetailRef = React.useRef(detail.reload);
-    const reloadSummaryRef = React.useRef(summary.reload);
     reloadDetailRef.current = detail.reload;
-    reloadSummaryRef.current = summary.reload;
-    const hasActiveWorkflow = Boolean(detail.data?.collectionTasks.some(task => task.status === 'pending' || task.status === 'running') || listItem?.profileState === 'pending');
+    const hasActiveWorkflow = Boolean(detail.data?.collectionTasks.some(task => task.status === 'pending' || task.status === 'running') || detail.data?.profileState === 'pending');
     React.useEffect(() => {
         if (!hasActiveWorkflow) return;
         const refresh = () => {
-            if (document.visibilityState === 'visible') { reloadDetailRef.current(); reloadSummaryRef.current(); }
+            if (document.visibilityState === 'visible') reloadDetailRef.current();
         };
         const timer = window.setInterval(refresh, DETAIL_POLL_INTERVAL_MS);
         document.addEventListener('visibilitychange', refresh);
@@ -293,7 +288,7 @@ export const ProjectDetailPage = () => {
     }, [hasActiveWorkflow]);
     React.useEffect(() => () => evidenceRequest.current?.abort?.(), []);
 
-    const refresh = () => {detail.reload(); summary.reload(); setRefreshVersion(value => value + 1);};
+    const refresh = () => {detail.reload(); setRefreshVersion(value => value + 1);};
     const openTask = (task: TokenCollectionTask) => {
         if (!task.taskID) return;
         evidenceRequest.current?.abort?.(); setEvidenceTask(undefined); setEvidenceError(undefined); setEvidenceLoading(true);
@@ -308,10 +303,10 @@ export const ProjectDetailPage = () => {
 
     const current = detail.data;
     return (
-        <AppPage title={`${current.project?.symbol || current.project?.name || 'Project'} profile`} subtitle={`Project #${current.project?.projectID || projectID}`} loading={detail.loading || summary.loading} error={detail.error || summary.error} onRefresh={refresh} extra={<Button onClick={returnToProjects}>Back to projects</Button>}>
-            <Summary detail={current} listItem={listItem} />
+        <AppPage title={`${current.project?.symbol || current.project?.name || 'Project'} profile`} subtitle={`Project #${current.project?.projectID || projectID}`} loading={detail.loading} error={detail.error} onRefresh={refresh} extra={<Button onClick={returnToProjects}>Back to projects</Button>}>
+            <Summary detail={current} />
             <Tabs className='project-detail-tabs' activeKey={activeTab} onChange={setActiveTab} items={[
-                {key: 'profile', label: 'Project Profile', children: <ProjectProfileTab project={current.project} profile={current.profile} profileState={listItem?.profileState} openJSON={setJSONContent} />},
+                {key: 'profile', label: 'Project Profile', children: <ProjectProfileTab project={current.project} profile={current.profile} profileState={current.profileState} openJSON={setJSONContent} />},
                 {key: 'market', label: 'Market & Liquidity', children: <MarketLiquidityTab detail={current} />},
                 {key: 'swap', label: 'Swap Activity', children: <ProjectSwapActivityTab projectID={projectID} active={activeTab === 'swap'} refreshVersion={refreshVersion} />},
                 {key: 'wallets', label: 'Wallets', children: <WalletsTab detail={current} />},

@@ -16,10 +16,12 @@ WITH collection_summary AS (
     project.*,
     profile.project_id AS profile_project_id,
     profile.completeness_status,
+    profile.weth_pair_is_created,
     profile.weth_pair_token_balance_exceeds_total_supply,
     profile.weth_pair_lp_minimum_supply_only,
     profile.weth_pair_fixed_fee_address_lp_share_gte_90_percent,
     profile.weth_pair_quote_usdt_value_int,
+    profile.usdt_pair_is_created,
     profile.usdt_pair_token_balance_exceeds_total_supply,
     profile.usdt_pair_lp_minimum_supply_only,
     profile.usdt_pair_fixed_fee_address_lp_share_gte_90_percent,
@@ -42,88 +44,65 @@ WITH collection_summary AS (
 )
 SELECT COUNT(*)::bigint
 FROM project_state
-WHERE (sqlc.arg('chain_id')::bigint = 0 OR chain_id = sqlc.arg('chain_id')::bigint)
-  AND (sqlc.arg('project_id')::bigint = 0 OR id = sqlc.arg('project_id')::bigint)
-  AND (sqlc.narg('code_hash')::bytea IS NULL OR code_hash = sqlc.narg('code_hash')::bytea)
+WHERE (sqlc.narg('code_hash')::bytea IS NULL OR code_hash = sqlc.narg('code_hash')::bytea)
   AND (sqlc.narg('contract')::bytea IS NULL OR contract = sqlc.narg('contract')::bytea)
   AND (sqlc.arg('collection_status')::text = '' OR collection_status = sqlc.arg('collection_status')::text)
   AND (sqlc.arg('profile_state')::text = '' OR profile_state = sqlc.arg('profile_state')::text)
   AND (
-    COALESCE(cardinality(sqlc.arg('weth_pair_token_balance_states')::text[]), 0) = 0
-    OR ('detected' = ANY(sqlc.arg('weth_pair_token_balance_states')::text[]) AND weth_pair_token_balance_exceeds_total_supply IS TRUE)
-    OR ('clear' = ANY(sqlc.arg('weth_pair_token_balance_states')::text[]) AND weth_pair_token_balance_exceeds_total_supply IS FALSE)
-    OR ('no_profile' = ANY(sqlc.arg('weth_pair_token_balance_states')::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY(sqlc.arg('weth_pair_token_balance_states')::text[]) AND profile_project_id IS NOT NULL AND weth_pair_token_balance_exceeds_total_supply IS NULL)
-  )
-  AND (
-    COALESCE(cardinality(sqlc.arg('weth_pair_lp_minimum_supply_states')::text[]), 0) = 0
-    OR ('detected' = ANY(sqlc.arg('weth_pair_lp_minimum_supply_states')::text[]) AND weth_pair_lp_minimum_supply_only IS TRUE)
-    OR ('clear' = ANY(sqlc.arg('weth_pair_lp_minimum_supply_states')::text[]) AND weth_pair_lp_minimum_supply_only IS FALSE)
-    OR ('no_profile' = ANY(sqlc.arg('weth_pair_lp_minimum_supply_states')::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY(sqlc.arg('weth_pair_lp_minimum_supply_states')::text[]) AND profile_project_id IS NOT NULL AND weth_pair_lp_minimum_supply_only IS NULL)
-  )
-  AND (
-    COALESCE(cardinality(sqlc.arg('weth_pair_fixed_fee_lp_share_states')::text[]), 0) = 0
-    OR ('detected' = ANY(sqlc.arg('weth_pair_fixed_fee_lp_share_states')::text[]) AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS TRUE)
-    OR ('clear' = ANY(sqlc.arg('weth_pair_fixed_fee_lp_share_states')::text[]) AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS FALSE)
-    OR ('no_profile' = ANY(sqlc.arg('weth_pair_fixed_fee_lp_share_states')::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY(sqlc.arg('weth_pair_fixed_fee_lp_share_states')::text[]) AND profile_project_id IS NOT NULL AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS NULL)
-  )
-  AND (
     (
-      sqlc.narg('weth_pair_quote_usdt_min')::numeric IS NULL
-      AND sqlc.narg('weth_pair_quote_usdt_max')::numeric IS NULL
-      AND COALESCE(cardinality(sqlc.arg('weth_pair_quote_missing_states')::text[]), 0) = 0
+      COALESCE(cardinality(sqlc.arg('pair_balance_supply_states')::text[]), 0) = 0
+      AND COALESCE(cardinality(sqlc.arg('pair_minimum_lp_states')::text[]), 0) = 0
+      AND COALESCE(cardinality(sqlc.arg('pair_fee_lp_share_states')::text[]), 0) = 0
+      AND sqlc.narg('pair_quote_usdt_min')::numeric IS NULL
+      AND sqlc.narg('pair_quote_usdt_max')::numeric IS NULL
     )
-    OR (
-      (
-        (sqlc.narg('weth_pair_quote_usdt_min')::numeric IS NOT NULL OR sqlc.narg('weth_pair_quote_usdt_max')::numeric IS NOT NULL)
-        AND weth_pair_quote_usdt_value_int IS NOT NULL
-        AND (sqlc.narg('weth_pair_quote_usdt_min')::numeric IS NULL OR weth_pair_quote_usdt_value_int >= sqlc.narg('weth_pair_quote_usdt_min')::numeric)
-        AND (sqlc.narg('weth_pair_quote_usdt_max')::numeric IS NULL OR weth_pair_quote_usdt_value_int <= sqlc.narg('weth_pair_quote_usdt_max')::numeric)
+    OR EXISTS (
+      SELECT 1
+      FROM (VALUES
+        (
+          weth_pair_is_created,
+          weth_pair_token_balance_exceeds_total_supply,
+          weth_pair_lp_minimum_supply_only,
+          weth_pair_fixed_fee_address_lp_share_gte_90_percent,
+          weth_pair_quote_usdt_value_int
+        ),
+        (
+          usdt_pair_is_created,
+          usdt_pair_token_balance_exceeds_total_supply,
+          usdt_pair_lp_minimum_supply_only,
+          usdt_pair_fixed_fee_address_lp_share_gte_90_percent,
+          usdt_pair_quote_usdt_value_int
+        )
+      ) AS pair_candidate(is_created, balance_supply, minimum_lp, fee_lp_share, quote_usdt)
+      WHERE pair_candidate.is_created IS TRUE
+        AND (
+          COALESCE(cardinality(sqlc.arg('pair_balance_supply_states')::text[]), 0) = 0
+          OR ('detected' = ANY(sqlc.arg('pair_balance_supply_states')::text[]) AND pair_candidate.balance_supply IS TRUE)
+          OR ('clear' = ANY(sqlc.arg('pair_balance_supply_states')::text[]) AND pair_candidate.balance_supply IS FALSE)
+        )
+        AND (
+          COALESCE(cardinality(sqlc.arg('pair_minimum_lp_states')::text[]), 0) = 0
+          OR ('detected' = ANY(sqlc.arg('pair_minimum_lp_states')::text[]) AND pair_candidate.minimum_lp IS TRUE)
+          OR ('clear' = ANY(sqlc.arg('pair_minimum_lp_states')::text[]) AND pair_candidate.minimum_lp IS FALSE)
+        )
+        AND (
+          COALESCE(cardinality(sqlc.arg('pair_fee_lp_share_states')::text[]), 0) = 0
+          OR ('detected' = ANY(sqlc.arg('pair_fee_lp_share_states')::text[]) AND pair_candidate.fee_lp_share IS TRUE)
+          OR ('clear' = ANY(sqlc.arg('pair_fee_lp_share_states')::text[]) AND pair_candidate.fee_lp_share IS FALSE)
+        )
+        AND (
+          (
+            sqlc.narg('pair_quote_usdt_min')::numeric IS NULL
+            AND sqlc.narg('pair_quote_usdt_max')::numeric IS NULL
+          )
+          OR (
+            pair_candidate.quote_usdt IS NOT NULL
+            AND (sqlc.narg('pair_quote_usdt_min')::numeric IS NULL OR pair_candidate.quote_usdt >= sqlc.narg('pair_quote_usdt_min')::numeric)
+            AND (sqlc.narg('pair_quote_usdt_max')::numeric IS NULL OR pair_candidate.quote_usdt <= sqlc.narg('pair_quote_usdt_max')::numeric)
+          )
+        )
       )
-      OR ('no_profile' = ANY(sqlc.arg('weth_pair_quote_missing_states')::text[]) AND profile_project_id IS NULL)
-      OR ('value_unavailable' = ANY(sqlc.arg('weth_pair_quote_missing_states')::text[]) AND profile_project_id IS NOT NULL AND weth_pair_quote_usdt_value_int IS NULL)
-    )
-  )
-  AND (
-    COALESCE(cardinality(sqlc.arg('usdt_pair_token_balance_states')::text[]), 0) = 0
-    OR ('detected' = ANY(sqlc.arg('usdt_pair_token_balance_states')::text[]) AND usdt_pair_token_balance_exceeds_total_supply IS TRUE)
-    OR ('clear' = ANY(sqlc.arg('usdt_pair_token_balance_states')::text[]) AND usdt_pair_token_balance_exceeds_total_supply IS FALSE)
-    OR ('no_profile' = ANY(sqlc.arg('usdt_pair_token_balance_states')::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY(sqlc.arg('usdt_pair_token_balance_states')::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_token_balance_exceeds_total_supply IS NULL)
-  )
-  AND (
-    COALESCE(cardinality(sqlc.arg('usdt_pair_lp_minimum_supply_states')::text[]), 0) = 0
-    OR ('detected' = ANY(sqlc.arg('usdt_pair_lp_minimum_supply_states')::text[]) AND usdt_pair_lp_minimum_supply_only IS TRUE)
-    OR ('clear' = ANY(sqlc.arg('usdt_pair_lp_minimum_supply_states')::text[]) AND usdt_pair_lp_minimum_supply_only IS FALSE)
-    OR ('no_profile' = ANY(sqlc.arg('usdt_pair_lp_minimum_supply_states')::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY(sqlc.arg('usdt_pair_lp_minimum_supply_states')::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_lp_minimum_supply_only IS NULL)
-  )
-  AND (
-    COALESCE(cardinality(sqlc.arg('usdt_pair_fixed_fee_lp_share_states')::text[]), 0) = 0
-    OR ('detected' = ANY(sqlc.arg('usdt_pair_fixed_fee_lp_share_states')::text[]) AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS TRUE)
-    OR ('clear' = ANY(sqlc.arg('usdt_pair_fixed_fee_lp_share_states')::text[]) AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS FALSE)
-    OR ('no_profile' = ANY(sqlc.arg('usdt_pair_fixed_fee_lp_share_states')::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY(sqlc.arg('usdt_pair_fixed_fee_lp_share_states')::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS NULL)
-  )
-  AND (
-    (
-      sqlc.narg('usdt_pair_quote_usdt_min')::numeric IS NULL
-      AND sqlc.narg('usdt_pair_quote_usdt_max')::numeric IS NULL
-      AND COALESCE(cardinality(sqlc.arg('usdt_pair_quote_missing_states')::text[]), 0) = 0
-    )
-    OR (
-      (
-        (sqlc.narg('usdt_pair_quote_usdt_min')::numeric IS NOT NULL OR sqlc.narg('usdt_pair_quote_usdt_max')::numeric IS NOT NULL)
-        AND usdt_pair_quote_usdt_value_int IS NOT NULL
-        AND (sqlc.narg('usdt_pair_quote_usdt_min')::numeric IS NULL OR usdt_pair_quote_usdt_value_int >= sqlc.narg('usdt_pair_quote_usdt_min')::numeric)
-        AND (sqlc.narg('usdt_pair_quote_usdt_max')::numeric IS NULL OR usdt_pair_quote_usdt_value_int <= sqlc.narg('usdt_pair_quote_usdt_max')::numeric)
-      )
-      OR ('no_profile' = ANY(sqlc.arg('usdt_pair_quote_missing_states')::text[]) AND profile_project_id IS NULL)
-      OR ('value_unavailable' = ANY(sqlc.arg('usdt_pair_quote_missing_states')::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_quote_usdt_value_int IS NULL)
-    )
-  );
+    );
 
 -- name: ListProjectListItems :many
 WITH collection_summary AS (
@@ -198,89 +177,66 @@ WITH collection_summary AS (
 )
 SELECT *
 FROM project_state
-WHERE (sqlc.arg('chain_id')::bigint = 0 OR chain_id = sqlc.arg('chain_id')::bigint)
-  AND (sqlc.arg('project_id')::bigint = 0 OR id = sqlc.arg('project_id')::bigint)
-  AND (sqlc.narg('code_hash')::bytea IS NULL OR EXISTS (
+WHERE (sqlc.narg('code_hash')::bytea IS NULL OR EXISTS (
     SELECT 1 FROM project WHERE project.id = project_state.id AND project.code_hash = sqlc.narg('code_hash')::bytea
   ))
   AND (sqlc.narg('contract')::bytea IS NULL OR contract = sqlc.narg('contract')::bytea)
   AND (sqlc.arg('collection_status')::text = '' OR collection_status = sqlc.arg('collection_status')::text)
   AND (sqlc.arg('profile_state')::text = '' OR profile_state = sqlc.arg('profile_state')::text)
   AND (
-    COALESCE(cardinality(sqlc.arg('weth_pair_token_balance_states')::text[]), 0) = 0
-    OR ('detected' = ANY(sqlc.arg('weth_pair_token_balance_states')::text[]) AND weth_pair_token_balance_exceeds_total_supply IS TRUE)
-    OR ('clear' = ANY(sqlc.arg('weth_pair_token_balance_states')::text[]) AND weth_pair_token_balance_exceeds_total_supply IS FALSE)
-    OR ('no_profile' = ANY(sqlc.arg('weth_pair_token_balance_states')::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY(sqlc.arg('weth_pair_token_balance_states')::text[]) AND profile_project_id IS NOT NULL AND weth_pair_token_balance_exceeds_total_supply IS NULL)
-  )
-  AND (
-    COALESCE(cardinality(sqlc.arg('weth_pair_lp_minimum_supply_states')::text[]), 0) = 0
-    OR ('detected' = ANY(sqlc.arg('weth_pair_lp_minimum_supply_states')::text[]) AND weth_pair_lp_minimum_supply_only IS TRUE)
-    OR ('clear' = ANY(sqlc.arg('weth_pair_lp_minimum_supply_states')::text[]) AND weth_pair_lp_minimum_supply_only IS FALSE)
-    OR ('no_profile' = ANY(sqlc.arg('weth_pair_lp_minimum_supply_states')::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY(sqlc.arg('weth_pair_lp_minimum_supply_states')::text[]) AND profile_project_id IS NOT NULL AND weth_pair_lp_minimum_supply_only IS NULL)
-  )
-  AND (
-    COALESCE(cardinality(sqlc.arg('weth_pair_fixed_fee_lp_share_states')::text[]), 0) = 0
-    OR ('detected' = ANY(sqlc.arg('weth_pair_fixed_fee_lp_share_states')::text[]) AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS TRUE)
-    OR ('clear' = ANY(sqlc.arg('weth_pair_fixed_fee_lp_share_states')::text[]) AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS FALSE)
-    OR ('no_profile' = ANY(sqlc.arg('weth_pair_fixed_fee_lp_share_states')::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY(sqlc.arg('weth_pair_fixed_fee_lp_share_states')::text[]) AND profile_project_id IS NOT NULL AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS NULL)
-  )
-  AND (
     (
-      sqlc.narg('weth_pair_quote_usdt_min')::numeric IS NULL
-      AND sqlc.narg('weth_pair_quote_usdt_max')::numeric IS NULL
-      AND COALESCE(cardinality(sqlc.arg('weth_pair_quote_missing_states')::text[]), 0) = 0
+      COALESCE(cardinality(sqlc.arg('pair_balance_supply_states')::text[]), 0) = 0
+      AND COALESCE(cardinality(sqlc.arg('pair_minimum_lp_states')::text[]), 0) = 0
+      AND COALESCE(cardinality(sqlc.arg('pair_fee_lp_share_states')::text[]), 0) = 0
+      AND sqlc.narg('pair_quote_usdt_min')::numeric IS NULL
+      AND sqlc.narg('pair_quote_usdt_max')::numeric IS NULL
     )
-    OR (
-      (
-        (sqlc.narg('weth_pair_quote_usdt_min')::numeric IS NOT NULL OR sqlc.narg('weth_pair_quote_usdt_max')::numeric IS NOT NULL)
-        AND weth_pair_quote_usdt_value_int IS NOT NULL
-        AND (sqlc.narg('weth_pair_quote_usdt_min')::numeric IS NULL OR weth_pair_quote_usdt_value_int >= sqlc.narg('weth_pair_quote_usdt_min')::numeric)
-        AND (sqlc.narg('weth_pair_quote_usdt_max')::numeric IS NULL OR weth_pair_quote_usdt_value_int <= sqlc.narg('weth_pair_quote_usdt_max')::numeric)
+    OR EXISTS (
+      SELECT 1
+      FROM (VALUES
+        (
+          weth_pair_is_created,
+          weth_pair_token_balance_exceeds_total_supply,
+          weth_pair_lp_minimum_supply_only,
+          weth_pair_fixed_fee_address_lp_share_gte_90_percent,
+          weth_pair_quote_usdt_value_int
+        ),
+        (
+          usdt_pair_is_created,
+          usdt_pair_token_balance_exceeds_total_supply,
+          usdt_pair_lp_minimum_supply_only,
+          usdt_pair_fixed_fee_address_lp_share_gte_90_percent,
+          usdt_pair_quote_usdt_value_int
+        )
+      ) AS pair_candidate(is_created, balance_supply, minimum_lp, fee_lp_share, quote_usdt)
+      WHERE pair_candidate.is_created IS TRUE
+        AND (
+          COALESCE(cardinality(sqlc.arg('pair_balance_supply_states')::text[]), 0) = 0
+          OR ('detected' = ANY(sqlc.arg('pair_balance_supply_states')::text[]) AND pair_candidate.balance_supply IS TRUE)
+          OR ('clear' = ANY(sqlc.arg('pair_balance_supply_states')::text[]) AND pair_candidate.balance_supply IS FALSE)
+        )
+        AND (
+          COALESCE(cardinality(sqlc.arg('pair_minimum_lp_states')::text[]), 0) = 0
+          OR ('detected' = ANY(sqlc.arg('pair_minimum_lp_states')::text[]) AND pair_candidate.minimum_lp IS TRUE)
+          OR ('clear' = ANY(sqlc.arg('pair_minimum_lp_states')::text[]) AND pair_candidate.minimum_lp IS FALSE)
+        )
+        AND (
+          COALESCE(cardinality(sqlc.arg('pair_fee_lp_share_states')::text[]), 0) = 0
+          OR ('detected' = ANY(sqlc.arg('pair_fee_lp_share_states')::text[]) AND pair_candidate.fee_lp_share IS TRUE)
+          OR ('clear' = ANY(sqlc.arg('pair_fee_lp_share_states')::text[]) AND pair_candidate.fee_lp_share IS FALSE)
+        )
+        AND (
+          (
+            sqlc.narg('pair_quote_usdt_min')::numeric IS NULL
+            AND sqlc.narg('pair_quote_usdt_max')::numeric IS NULL
+          )
+          OR (
+            pair_candidate.quote_usdt IS NOT NULL
+            AND (sqlc.narg('pair_quote_usdt_min')::numeric IS NULL OR pair_candidate.quote_usdt >= sqlc.narg('pair_quote_usdt_min')::numeric)
+            AND (sqlc.narg('pair_quote_usdt_max')::numeric IS NULL OR pair_candidate.quote_usdt <= sqlc.narg('pair_quote_usdt_max')::numeric)
+          )
+        )
       )
-      OR ('no_profile' = ANY(sqlc.arg('weth_pair_quote_missing_states')::text[]) AND profile_project_id IS NULL)
-      OR ('value_unavailable' = ANY(sqlc.arg('weth_pair_quote_missing_states')::text[]) AND profile_project_id IS NOT NULL AND weth_pair_quote_usdt_value_int IS NULL)
     )
-  )
-  AND (
-    COALESCE(cardinality(sqlc.arg('usdt_pair_token_balance_states')::text[]), 0) = 0
-    OR ('detected' = ANY(sqlc.arg('usdt_pair_token_balance_states')::text[]) AND usdt_pair_token_balance_exceeds_total_supply IS TRUE)
-    OR ('clear' = ANY(sqlc.arg('usdt_pair_token_balance_states')::text[]) AND usdt_pair_token_balance_exceeds_total_supply IS FALSE)
-    OR ('no_profile' = ANY(sqlc.arg('usdt_pair_token_balance_states')::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY(sqlc.arg('usdt_pair_token_balance_states')::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_token_balance_exceeds_total_supply IS NULL)
-  )
-  AND (
-    COALESCE(cardinality(sqlc.arg('usdt_pair_lp_minimum_supply_states')::text[]), 0) = 0
-    OR ('detected' = ANY(sqlc.arg('usdt_pair_lp_minimum_supply_states')::text[]) AND usdt_pair_lp_minimum_supply_only IS TRUE)
-    OR ('clear' = ANY(sqlc.arg('usdt_pair_lp_minimum_supply_states')::text[]) AND usdt_pair_lp_minimum_supply_only IS FALSE)
-    OR ('no_profile' = ANY(sqlc.arg('usdt_pair_lp_minimum_supply_states')::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY(sqlc.arg('usdt_pair_lp_minimum_supply_states')::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_lp_minimum_supply_only IS NULL)
-  )
-  AND (
-    COALESCE(cardinality(sqlc.arg('usdt_pair_fixed_fee_lp_share_states')::text[]), 0) = 0
-    OR ('detected' = ANY(sqlc.arg('usdt_pair_fixed_fee_lp_share_states')::text[]) AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS TRUE)
-    OR ('clear' = ANY(sqlc.arg('usdt_pair_fixed_fee_lp_share_states')::text[]) AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS FALSE)
-    OR ('no_profile' = ANY(sqlc.arg('usdt_pair_fixed_fee_lp_share_states')::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY(sqlc.arg('usdt_pair_fixed_fee_lp_share_states')::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS NULL)
-  )
-  AND (
-    (
-      sqlc.narg('usdt_pair_quote_usdt_min')::numeric IS NULL
-      AND sqlc.narg('usdt_pair_quote_usdt_max')::numeric IS NULL
-      AND COALESCE(cardinality(sqlc.arg('usdt_pair_quote_missing_states')::text[]), 0) = 0
-    )
-    OR (
-      (
-        (sqlc.narg('usdt_pair_quote_usdt_min')::numeric IS NOT NULL OR sqlc.narg('usdt_pair_quote_usdt_max')::numeric IS NOT NULL)
-        AND usdt_pair_quote_usdt_value_int IS NOT NULL
-        AND (sqlc.narg('usdt_pair_quote_usdt_min')::numeric IS NULL OR usdt_pair_quote_usdt_value_int >= sqlc.narg('usdt_pair_quote_usdt_min')::numeric)
-        AND (sqlc.narg('usdt_pair_quote_usdt_max')::numeric IS NULL OR usdt_pair_quote_usdt_value_int <= sqlc.narg('usdt_pair_quote_usdt_max')::numeric)
-      )
-      OR ('no_profile' = ANY(sqlc.arg('usdt_pair_quote_missing_states')::text[]) AND profile_project_id IS NULL)
-      OR ('value_unavailable' = ANY(sqlc.arg('usdt_pair_quote_missing_states')::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_quote_usdt_value_int IS NULL)
-    )
-  )
 ORDER BY created_at DESC, id DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');

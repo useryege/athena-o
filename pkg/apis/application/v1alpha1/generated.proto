@@ -744,6 +744,10 @@ message TokenProjectDetail {
   optional int64 transactionCount = 7;
 
   optional string generatedAt = 8;
+
+  optional string collectionStatus = 9;
+
+  optional string profileState = 10;
 }
 
 message TokenProjectInitialRecipient {

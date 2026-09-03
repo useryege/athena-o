@@ -2501,6 +2501,16 @@ func (m *TokenProjectDetail) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.ProfileState)
+	copy(dAtA[i:], m.ProfileState)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.ProfileState)))
+	i--
+	dAtA[i] = 0x52
+	i -= len(m.CollectionStatus)
+	copy(dAtA[i:], m.CollectionStatus)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.CollectionStatus)))
+	i--
+	dAtA[i] = 0x4a
 	i -= len(m.GeneratedAt)
 	copy(dAtA[i:], m.GeneratedAt)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.GeneratedAt)))
@@ -6323,6 +6333,10 @@ func (m *TokenProjectDetail) Size() (n int) {
 	n += 1 + sovGenerated(uint64(m.TransactionCount))
 	l = len(m.GeneratedAt)
 	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.CollectionStatus)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.ProfileState)
+	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -8006,6 +8020,8 @@ func (this *TokenProjectDetail) String() string {
 		`WalletTransactionCounts:` + repeatedStringForWalletTransactionCounts + `,`,
 		`TransactionCount:` + fmt.Sprintf("%v", this.TransactionCount) + `,`,
 		`GeneratedAt:` + fmt.Sprintf("%v", this.GeneratedAt) + `,`,
+		`CollectionStatus:` + fmt.Sprintf("%v", this.CollectionStatus) + `,`,
+		`ProfileState:` + fmt.Sprintf("%v", this.ProfileState) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -19253,6 +19269,70 @@ func (m *TokenProjectDetail) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.GeneratedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CollectionStatus", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CollectionStatus = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProfileState", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ProfileState = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

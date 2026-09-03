@@ -17,14 +17,11 @@ type WalletTransactionCount struct {
 }
 
 type ProjectListFilter struct {
-	ChainID           int64
-	ProjectID         int64
-	CodeHash          shared.Hash
-	Contract          shared.Address
-	CollectionStatus  ProjectCollectionStatus
-	ProfileState      ProjectProfileState
-	WrappedNativePair ProjectListPairFilter
-	USDTPair          ProjectListPairFilter
+	CodeHash         shared.Hash
+	Contract         shared.Address
+	CollectionStatus ProjectCollectionStatus
+	ProfileState     ProjectProfileState
+	Pair             ProjectListPairFilter
 }
 
 type ProjectListPairFilter struct {
@@ -33,7 +30,6 @@ type ProjectListPairFilter struct {
 	FixedFeeAddressLPShareGte90PercentStates []string
 	QuoteUSDTMin                             *big.Int
 	QuoteUSDTMax                             *big.Int
-	QuoteMissingStates                       []string
 }
 
 type ProjectCollectionStatus string
@@ -108,6 +104,8 @@ type ProjectListPage struct {
 type Detail struct {
 	Project                 catalog.Project
 	Profile                 *profile.ProjectProfile
+	CollectionStatus        ProjectCollectionStatus
+	ProfileState            ProjectProfileState
 	CollectionTasks         []collection.TaskDetail
 	RelatedWallets          []catalog.ProjectRelatedWallet
 	InitialRecipients       []catalog.ProjectInitialRecipient

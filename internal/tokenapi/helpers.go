@@ -601,6 +601,7 @@ func mapProjectProfile(item profile.ProjectProfile) *v1alpha1.TokenProjectProfil
 func mapProjectDetail(item projectview.Detail) (*v1alpha1.TokenProjectDetail, error) {
 	result := &v1alpha1.TokenProjectDetail{
 		Project: mapProject(item.Project), TransactionCount: item.TransactionCount, GeneratedAt: formatTime(item.GeneratedAt),
+		CollectionStatus: string(item.CollectionStatus), ProfileState: string(item.ProfileState),
 	}
 	if item.Profile != nil {
 		result.Profile = mapProjectProfile(*item.Profile)

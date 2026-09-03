@@ -28,10 +28,12 @@ WITH collection_summary AS (
     project.id, project.chain_id, project.contract, project.tx_sender, project.tx_hash, project.tx_index, project.deployment_nonce, project.block_number, project.block_time, project.code_hash, project.name, project.symbol, project.decimals, project.total_supply, project.weth_pair, project.usdt_pair, project.created_at,
     profile.project_id AS profile_project_id,
     profile.completeness_status,
+    profile.weth_pair_is_created,
     profile.weth_pair_token_balance_exceeds_total_supply,
     profile.weth_pair_lp_minimum_supply_only,
     profile.weth_pair_fixed_fee_address_lp_share_gte_90_percent,
     profile.weth_pair_quote_usdt_value_int,
+    profile.usdt_pair_is_created,
     profile.usdt_pair_token_balance_exceeds_total_supply,
     profile.usdt_pair_lp_minimum_supply_only,
     profile.usdt_pair_fixed_fee_address_lp_share_gte_90_percent,
@@ -54,132 +56,91 @@ WITH collection_summary AS (
 )
 SELECT COUNT(*)::bigint
 FROM project_state
-WHERE ($1::bigint = 0 OR chain_id = $1::bigint)
-  AND ($2::bigint = 0 OR id = $2::bigint)
-  AND ($3::bytea IS NULL OR code_hash = $3::bytea)
-  AND ($4::bytea IS NULL OR contract = $4::bytea)
-  AND ($5::text = '' OR collection_status = $5::text)
-  AND ($6::text = '' OR profile_state = $6::text)
-  AND (
-    COALESCE(cardinality($7::text[]), 0) = 0
-    OR ('detected' = ANY($7::text[]) AND weth_pair_token_balance_exceeds_total_supply IS TRUE)
-    OR ('clear' = ANY($7::text[]) AND weth_pair_token_balance_exceeds_total_supply IS FALSE)
-    OR ('no_profile' = ANY($7::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY($7::text[]) AND profile_project_id IS NOT NULL AND weth_pair_token_balance_exceeds_total_supply IS NULL)
-  )
-  AND (
-    COALESCE(cardinality($8::text[]), 0) = 0
-    OR ('detected' = ANY($8::text[]) AND weth_pair_lp_minimum_supply_only IS TRUE)
-    OR ('clear' = ANY($8::text[]) AND weth_pair_lp_minimum_supply_only IS FALSE)
-    OR ('no_profile' = ANY($8::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY($8::text[]) AND profile_project_id IS NOT NULL AND weth_pair_lp_minimum_supply_only IS NULL)
-  )
-  AND (
-    COALESCE(cardinality($9::text[]), 0) = 0
-    OR ('detected' = ANY($9::text[]) AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS TRUE)
-    OR ('clear' = ANY($9::text[]) AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS FALSE)
-    OR ('no_profile' = ANY($9::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY($9::text[]) AND profile_project_id IS NOT NULL AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS NULL)
-  )
+WHERE ($1::bytea IS NULL OR code_hash = $1::bytea)
+  AND ($2::bytea IS NULL OR contract = $2::bytea)
+  AND ($3::text = '' OR collection_status = $3::text)
+  AND ($4::text = '' OR profile_state = $4::text)
   AND (
     (
-      $10::numeric IS NULL
-      AND $11::numeric IS NULL
-      AND COALESCE(cardinality($12::text[]), 0) = 0
+      COALESCE(cardinality($5::text[]), 0) = 0
+      AND COALESCE(cardinality($6::text[]), 0) = 0
+      AND COALESCE(cardinality($7::text[]), 0) = 0
+      AND $8::numeric IS NULL
+      AND $9::numeric IS NULL
     )
-    OR (
-      (
-        ($10::numeric IS NOT NULL OR $11::numeric IS NOT NULL)
-        AND weth_pair_quote_usdt_value_int IS NOT NULL
-        AND ($10::numeric IS NULL OR weth_pair_quote_usdt_value_int >= $10::numeric)
-        AND ($11::numeric IS NULL OR weth_pair_quote_usdt_value_int <= $11::numeric)
+    OR EXISTS (
+      SELECT 1
+      FROM (VALUES
+        (
+          weth_pair_is_created,
+          weth_pair_token_balance_exceeds_total_supply,
+          weth_pair_lp_minimum_supply_only,
+          weth_pair_fixed_fee_address_lp_share_gte_90_percent,
+          weth_pair_quote_usdt_value_int
+        ),
+        (
+          usdt_pair_is_created,
+          usdt_pair_token_balance_exceeds_total_supply,
+          usdt_pair_lp_minimum_supply_only,
+          usdt_pair_fixed_fee_address_lp_share_gte_90_percent,
+          usdt_pair_quote_usdt_value_int
+        )
+      ) AS pair_candidate(is_created, balance_supply, minimum_lp, fee_lp_share, quote_usdt)
+      WHERE pair_candidate.is_created IS TRUE
+        AND (
+          COALESCE(cardinality($5::text[]), 0) = 0
+          OR ('detected' = ANY($5::text[]) AND pair_candidate.balance_supply IS TRUE)
+          OR ('clear' = ANY($5::text[]) AND pair_candidate.balance_supply IS FALSE)
+        )
+        AND (
+          COALESCE(cardinality($6::text[]), 0) = 0
+          OR ('detected' = ANY($6::text[]) AND pair_candidate.minimum_lp IS TRUE)
+          OR ('clear' = ANY($6::text[]) AND pair_candidate.minimum_lp IS FALSE)
+        )
+        AND (
+          COALESCE(cardinality($7::text[]), 0) = 0
+          OR ('detected' = ANY($7::text[]) AND pair_candidate.fee_lp_share IS TRUE)
+          OR ('clear' = ANY($7::text[]) AND pair_candidate.fee_lp_share IS FALSE)
+        )
+        AND (
+          (
+            $8::numeric IS NULL
+            AND $9::numeric IS NULL
+          )
+          OR (
+            pair_candidate.quote_usdt IS NOT NULL
+            AND ($8::numeric IS NULL OR pair_candidate.quote_usdt >= $8::numeric)
+            AND ($9::numeric IS NULL OR pair_candidate.quote_usdt <= $9::numeric)
+          )
+        )
       )
-      OR ('no_profile' = ANY($12::text[]) AND profile_project_id IS NULL)
-      OR ('value_unavailable' = ANY($12::text[]) AND profile_project_id IS NOT NULL AND weth_pair_quote_usdt_value_int IS NULL)
     )
-  )
-  AND (
-    COALESCE(cardinality($13::text[]), 0) = 0
-    OR ('detected' = ANY($13::text[]) AND usdt_pair_token_balance_exceeds_total_supply IS TRUE)
-    OR ('clear' = ANY($13::text[]) AND usdt_pair_token_balance_exceeds_total_supply IS FALSE)
-    OR ('no_profile' = ANY($13::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY($13::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_token_balance_exceeds_total_supply IS NULL)
-  )
-  AND (
-    COALESCE(cardinality($14::text[]), 0) = 0
-    OR ('detected' = ANY($14::text[]) AND usdt_pair_lp_minimum_supply_only IS TRUE)
-    OR ('clear' = ANY($14::text[]) AND usdt_pair_lp_minimum_supply_only IS FALSE)
-    OR ('no_profile' = ANY($14::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY($14::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_lp_minimum_supply_only IS NULL)
-  )
-  AND (
-    COALESCE(cardinality($15::text[]), 0) = 0
-    OR ('detected' = ANY($15::text[]) AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS TRUE)
-    OR ('clear' = ANY($15::text[]) AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS FALSE)
-    OR ('no_profile' = ANY($15::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY($15::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS NULL)
-  )
-  AND (
-    (
-      $16::numeric IS NULL
-      AND $17::numeric IS NULL
-      AND COALESCE(cardinality($18::text[]), 0) = 0
-    )
-    OR (
-      (
-        ($16::numeric IS NOT NULL OR $17::numeric IS NOT NULL)
-        AND usdt_pair_quote_usdt_value_int IS NOT NULL
-        AND ($16::numeric IS NULL OR usdt_pair_quote_usdt_value_int >= $16::numeric)
-        AND ($17::numeric IS NULL OR usdt_pair_quote_usdt_value_int <= $17::numeric)
-      )
-      OR ('no_profile' = ANY($18::text[]) AND profile_project_id IS NULL)
-      OR ('value_unavailable' = ANY($18::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_quote_usdt_value_int IS NULL)
-    )
-  )
 `
 
 type CountProjectListItemsParams struct {
-	ChainID                       int64
-	ProjectID                     int64
-	CodeHash                      []byte
-	Contract                      []byte
-	CollectionStatus              string
-	ProfileState                  string
-	WethPairTokenBalanceStates    []string
-	WethPairLpMinimumSupplyStates []string
-	WethPairFixedFeeLpShareStates []string
-	WethPairQuoteUsdtMin          pgtype.Numeric
-	WethPairQuoteUsdtMax          pgtype.Numeric
-	WethPairQuoteMissingStates    []string
-	UsdtPairTokenBalanceStates    []string
-	UsdtPairLpMinimumSupplyStates []string
-	UsdtPairFixedFeeLpShareStates []string
-	UsdtPairQuoteUsdtMin          pgtype.Numeric
-	UsdtPairQuoteUsdtMax          pgtype.Numeric
-	UsdtPairQuoteMissingStates    []string
+	CodeHash                []byte
+	Contract                []byte
+	CollectionStatus        string
+	ProfileState            string
+	PairBalanceSupplyStates []string
+	PairMinimumLpStates     []string
+	PairFeeLpShareStates    []string
+	PairQuoteUsdtMin        pgtype.Numeric
+	PairQuoteUsdtMax        pgtype.Numeric
 }
 
 // Project-centered collection and profile read model.
 func (q *Queries) CountProjectListItems(ctx context.Context, arg CountProjectListItemsParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countProjectListItems,
-		arg.ChainID,
-		arg.ProjectID,
 		arg.CodeHash,
 		arg.Contract,
 		arg.CollectionStatus,
 		arg.ProfileState,
-		arg.WethPairTokenBalanceStates,
-		arg.WethPairLpMinimumSupplyStates,
-		arg.WethPairFixedFeeLpShareStates,
-		arg.WethPairQuoteUsdtMin,
-		arg.WethPairQuoteUsdtMax,
-		arg.WethPairQuoteMissingStates,
-		arg.UsdtPairTokenBalanceStates,
-		arg.UsdtPairLpMinimumSupplyStates,
-		arg.UsdtPairFixedFeeLpShareStates,
-		arg.UsdtPairQuoteUsdtMin,
-		arg.UsdtPairQuoteUsdtMax,
-		arg.UsdtPairQuoteMissingStates,
+		arg.PairBalanceSupplyStates,
+		arg.PairMinimumLpStates,
+		arg.PairFeeLpShareStates,
+		arg.PairQuoteUsdtMin,
+		arg.PairQuoteUsdtMax,
 	)
 	var column_1 int64
 	err := row.Scan(&column_1)
@@ -259,115 +220,83 @@ WITH collection_summary AS (
 )
 SELECT id, chain_id, contract, code_hash, tx_hash, block_number, block_time, name, symbol, weth_pair, usdt_pair, created_at, collection_task_count, collection_terminal_count, collection_succeeded_count, collection_failed_count, collection_status, profile_state, profile_build_status, profile_build_failure_count, profile_build_last_error, profile_build_updated_at, profile_project_id, logo_url, completeness_status, current_price_usd, market_cap_usd, fdv_usd, tvl_usd, holders, contract_source_status, weth_pair_is_created, weth_pair_token_balance_exceeds_total_supply, weth_pair_lp_minimum_supply_only, weth_pair_fixed_fee_address_lp_share_gte_90_percent, weth_pair_quote_usdt_value_int, weth_pair_reserve_updated_at, usdt_pair_is_created, usdt_pair_token_balance_exceeds_total_supply, usdt_pair_lp_minimum_supply_only, usdt_pair_fixed_fee_address_lp_share_gte_90_percent, usdt_pair_quote_usdt_value_int, usdt_pair_reserve_updated_at, profile_built_at
 FROM project_state
-WHERE ($1::bigint = 0 OR chain_id = $1::bigint)
-  AND ($2::bigint = 0 OR id = $2::bigint)
-  AND ($3::bytea IS NULL OR EXISTS (
-    SELECT 1 FROM project WHERE project.id = project_state.id AND project.code_hash = $3::bytea
+WHERE ($1::bytea IS NULL OR EXISTS (
+    SELECT 1 FROM project WHERE project.id = project_state.id AND project.code_hash = $1::bytea
   ))
-  AND ($4::bytea IS NULL OR contract = $4::bytea)
-  AND ($5::text = '' OR collection_status = $5::text)
-  AND ($6::text = '' OR profile_state = $6::text)
-  AND (
-    COALESCE(cardinality($7::text[]), 0) = 0
-    OR ('detected' = ANY($7::text[]) AND weth_pair_token_balance_exceeds_total_supply IS TRUE)
-    OR ('clear' = ANY($7::text[]) AND weth_pair_token_balance_exceeds_total_supply IS FALSE)
-    OR ('no_profile' = ANY($7::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY($7::text[]) AND profile_project_id IS NOT NULL AND weth_pair_token_balance_exceeds_total_supply IS NULL)
-  )
-  AND (
-    COALESCE(cardinality($8::text[]), 0) = 0
-    OR ('detected' = ANY($8::text[]) AND weth_pair_lp_minimum_supply_only IS TRUE)
-    OR ('clear' = ANY($8::text[]) AND weth_pair_lp_minimum_supply_only IS FALSE)
-    OR ('no_profile' = ANY($8::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY($8::text[]) AND profile_project_id IS NOT NULL AND weth_pair_lp_minimum_supply_only IS NULL)
-  )
-  AND (
-    COALESCE(cardinality($9::text[]), 0) = 0
-    OR ('detected' = ANY($9::text[]) AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS TRUE)
-    OR ('clear' = ANY($9::text[]) AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS FALSE)
-    OR ('no_profile' = ANY($9::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY($9::text[]) AND profile_project_id IS NOT NULL AND weth_pair_fixed_fee_address_lp_share_gte_90_percent IS NULL)
-  )
+  AND ($2::bytea IS NULL OR contract = $2::bytea)
+  AND ($3::text = '' OR collection_status = $3::text)
+  AND ($4::text = '' OR profile_state = $4::text)
   AND (
     (
-      $10::numeric IS NULL
-      AND $11::numeric IS NULL
-      AND COALESCE(cardinality($12::text[]), 0) = 0
+      COALESCE(cardinality($5::text[]), 0) = 0
+      AND COALESCE(cardinality($6::text[]), 0) = 0
+      AND COALESCE(cardinality($7::text[]), 0) = 0
+      AND $8::numeric IS NULL
+      AND $9::numeric IS NULL
     )
-    OR (
-      (
-        ($10::numeric IS NOT NULL OR $11::numeric IS NOT NULL)
-        AND weth_pair_quote_usdt_value_int IS NOT NULL
-        AND ($10::numeric IS NULL OR weth_pair_quote_usdt_value_int >= $10::numeric)
-        AND ($11::numeric IS NULL OR weth_pair_quote_usdt_value_int <= $11::numeric)
+    OR EXISTS (
+      SELECT 1
+      FROM (VALUES
+        (
+          weth_pair_is_created,
+          weth_pair_token_balance_exceeds_total_supply,
+          weth_pair_lp_minimum_supply_only,
+          weth_pair_fixed_fee_address_lp_share_gte_90_percent,
+          weth_pair_quote_usdt_value_int
+        ),
+        (
+          usdt_pair_is_created,
+          usdt_pair_token_balance_exceeds_total_supply,
+          usdt_pair_lp_minimum_supply_only,
+          usdt_pair_fixed_fee_address_lp_share_gte_90_percent,
+          usdt_pair_quote_usdt_value_int
+        )
+      ) AS pair_candidate(is_created, balance_supply, minimum_lp, fee_lp_share, quote_usdt)
+      WHERE pair_candidate.is_created IS TRUE
+        AND (
+          COALESCE(cardinality($5::text[]), 0) = 0
+          OR ('detected' = ANY($5::text[]) AND pair_candidate.balance_supply IS TRUE)
+          OR ('clear' = ANY($5::text[]) AND pair_candidate.balance_supply IS FALSE)
+        )
+        AND (
+          COALESCE(cardinality($6::text[]), 0) = 0
+          OR ('detected' = ANY($6::text[]) AND pair_candidate.minimum_lp IS TRUE)
+          OR ('clear' = ANY($6::text[]) AND pair_candidate.minimum_lp IS FALSE)
+        )
+        AND (
+          COALESCE(cardinality($7::text[]), 0) = 0
+          OR ('detected' = ANY($7::text[]) AND pair_candidate.fee_lp_share IS TRUE)
+          OR ('clear' = ANY($7::text[]) AND pair_candidate.fee_lp_share IS FALSE)
+        )
+        AND (
+          (
+            $8::numeric IS NULL
+            AND $9::numeric IS NULL
+          )
+          OR (
+            pair_candidate.quote_usdt IS NOT NULL
+            AND ($8::numeric IS NULL OR pair_candidate.quote_usdt >= $8::numeric)
+            AND ($9::numeric IS NULL OR pair_candidate.quote_usdt <= $9::numeric)
+          )
+        )
       )
-      OR ('no_profile' = ANY($12::text[]) AND profile_project_id IS NULL)
-      OR ('value_unavailable' = ANY($12::text[]) AND profile_project_id IS NOT NULL AND weth_pair_quote_usdt_value_int IS NULL)
     )
-  )
-  AND (
-    COALESCE(cardinality($13::text[]), 0) = 0
-    OR ('detected' = ANY($13::text[]) AND usdt_pair_token_balance_exceeds_total_supply IS TRUE)
-    OR ('clear' = ANY($13::text[]) AND usdt_pair_token_balance_exceeds_total_supply IS FALSE)
-    OR ('no_profile' = ANY($13::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY($13::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_token_balance_exceeds_total_supply IS NULL)
-  )
-  AND (
-    COALESCE(cardinality($14::text[]), 0) = 0
-    OR ('detected' = ANY($14::text[]) AND usdt_pair_lp_minimum_supply_only IS TRUE)
-    OR ('clear' = ANY($14::text[]) AND usdt_pair_lp_minimum_supply_only IS FALSE)
-    OR ('no_profile' = ANY($14::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY($14::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_lp_minimum_supply_only IS NULL)
-  )
-  AND (
-    COALESCE(cardinality($15::text[]), 0) = 0
-    OR ('detected' = ANY($15::text[]) AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS TRUE)
-    OR ('clear' = ANY($15::text[]) AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS FALSE)
-    OR ('no_profile' = ANY($15::text[]) AND profile_project_id IS NULL)
-    OR ('signal_unavailable' = ANY($15::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_fixed_fee_address_lp_share_gte_90_percent IS NULL)
-  )
-  AND (
-    (
-      $16::numeric IS NULL
-      AND $17::numeric IS NULL
-      AND COALESCE(cardinality($18::text[]), 0) = 0
-    )
-    OR (
-      (
-        ($16::numeric IS NOT NULL OR $17::numeric IS NOT NULL)
-        AND usdt_pair_quote_usdt_value_int IS NOT NULL
-        AND ($16::numeric IS NULL OR usdt_pair_quote_usdt_value_int >= $16::numeric)
-        AND ($17::numeric IS NULL OR usdt_pair_quote_usdt_value_int <= $17::numeric)
-      )
-      OR ('no_profile' = ANY($18::text[]) AND profile_project_id IS NULL)
-      OR ('value_unavailable' = ANY($18::text[]) AND profile_project_id IS NOT NULL AND usdt_pair_quote_usdt_value_int IS NULL)
-    )
-  )
 ORDER BY created_at DESC, id DESC
-LIMIT $20 OFFSET $19
+LIMIT $11 OFFSET $10
 `
 
 type ListProjectListItemsParams struct {
-	ChainID                       int64
-	ProjectID                     int64
-	CodeHash                      []byte
-	Contract                      []byte
-	CollectionStatus              string
-	ProfileState                  string
-	WethPairTokenBalanceStates    []string
-	WethPairLpMinimumSupplyStates []string
-	WethPairFixedFeeLpShareStates []string
-	WethPairQuoteUsdtMin          pgtype.Numeric
-	WethPairQuoteUsdtMax          pgtype.Numeric
-	WethPairQuoteMissingStates    []string
-	UsdtPairTokenBalanceStates    []string
-	UsdtPairLpMinimumSupplyStates []string
-	UsdtPairFixedFeeLpShareStates []string
-	UsdtPairQuoteUsdtMin          pgtype.Numeric
-	UsdtPairQuoteUsdtMax          pgtype.Numeric
-	UsdtPairQuoteMissingStates    []string
-	Offset                        int32
-	Limit                         int32
+	CodeHash                []byte
+	Contract                []byte
+	CollectionStatus        string
+	ProfileState            string
+	PairBalanceSupplyStates []string
+	PairMinimumLpStates     []string
+	PairFeeLpShareStates    []string
+	PairQuoteUsdtMin        pgtype.Numeric
+	PairQuoteUsdtMax        pgtype.Numeric
+	Offset                  int32
+	Limit                   int32
 }
 
 type ListProjectListItemsRow struct {
@@ -419,24 +348,15 @@ type ListProjectListItemsRow struct {
 
 func (q *Queries) ListProjectListItems(ctx context.Context, arg ListProjectListItemsParams) ([]ListProjectListItemsRow, error) {
 	rows, err := q.db.Query(ctx, listProjectListItems,
-		arg.ChainID,
-		arg.ProjectID,
 		arg.CodeHash,
 		arg.Contract,
 		arg.CollectionStatus,
 		arg.ProfileState,
-		arg.WethPairTokenBalanceStates,
-		arg.WethPairLpMinimumSupplyStates,
-		arg.WethPairFixedFeeLpShareStates,
-		arg.WethPairQuoteUsdtMin,
-		arg.WethPairQuoteUsdtMax,
-		arg.WethPairQuoteMissingStates,
-		arg.UsdtPairTokenBalanceStates,
-		arg.UsdtPairLpMinimumSupplyStates,
-		arg.UsdtPairFixedFeeLpShareStates,
-		arg.UsdtPairQuoteUsdtMin,
-		arg.UsdtPairQuoteUsdtMax,
-		arg.UsdtPairQuoteMissingStates,
+		arg.PairBalanceSupplyStates,
+		arg.PairMinimumLpStates,
+		arg.PairFeeLpShareStates,
+		arg.PairQuoteUsdtMin,
+		arg.PairQuoteUsdtMax,
 		arg.Offset,
 		arg.Limit,
 	)

@@ -412,6 +412,8 @@ type TokenProjectDetail struct {
 	WalletTransactionCounts []*TokenWalletTransactionCount  `protobuf:"bytes,6,rep,name=walletTransactionCounts" json:"walletTransactionCounts"`
 	TransactionCount        int64                           `protobuf:"varint,7,opt,name=transactionCount" json:"transactionCount"`
 	GeneratedAt             string                          `protobuf:"bytes,8,opt,name=generatedAt" json:"generatedAt"`
+	CollectionStatus        string                          `protobuf:"bytes,9,opt,name=collectionStatus" json:"collectionStatus"`
+	ProfileState            string                          `protobuf:"bytes,10,opt,name=profileState" json:"profileState"`
 }
 
 type TokenProjectSwapAsset struct {

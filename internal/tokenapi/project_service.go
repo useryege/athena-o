@@ -16,12 +16,6 @@ func (s *Service) ListProjects(ctx context.Context, req *apiclient.ListProjectsR
 	if err != nil {
 		return nil, err
 	}
-	if err := validateNonNegativeInt64Field("chain_id", req.GetChainId()); err != nil {
-		return nil, err
-	}
-	if err := validateNonNegativeInt64Field("project_id", req.GetProjectId()); err != nil {
-		return nil, err
-	}
 	codeHash, err := parseOptionalHashField("code_hash", req.GetCodeHash())
 	if err != nil {
 		return nil, err
@@ -38,39 +32,23 @@ func (s *Service) ListProjects(ctx context.Context, req *apiclient.ListProjectsR
 	if err := validateProjectProfileState(profileState); err != nil {
 		return nil, err
 	}
-	wrappedNativePairFilter, err := parseProjectListPairFilter(
-		"wrapped_native_pair",
-		req.GetWrappedNativePairBalanceSupplyStates(),
-		req.GetWrappedNativePairMinimumLpStates(),
-		req.GetWrappedNativePairFeeLpShareStates(),
-		req.GetWrappedNativePairQuoteUsdtMin(),
-		req.GetWrappedNativePairQuoteUsdtMax(),
-		req.GetWrappedNativePairQuoteMissingStates(),
-	)
-	if err != nil {
-		return nil, err
-	}
-	usdtPairFilter, err := parseProjectListPairFilter(
-		"usdt_pair",
-		req.GetUsdtPairBalanceSupplyStates(),
-		req.GetUsdtPairMinimumLpStates(),
-		req.GetUsdtPairFeeLpShareStates(),
-		req.GetUsdtPairQuoteUsdtMin(),
-		req.GetUsdtPairQuoteUsdtMax(),
-		req.GetUsdtPairQuoteMissingStates(),
+	pairFilter, err := parseProjectListPairFilter(
+		"pair",
+		req.GetPairBalanceSupplyStates(),
+		req.GetPairMinimumLpStates(),
+		req.GetPairFeeLpShareStates(),
+		req.GetPairQuoteUsdtMin(),
+		req.GetPairQuoteUsdtMax(),
 	)
 	if err != nil {
 		return nil, err
 	}
 	page, err := application.ListProjectsPage(ctx, projectview.ProjectListFilter{
-		ChainID:           req.GetChainId(),
-		ProjectID:         req.GetProjectId(),
-		CodeHash:          codeHash,
-		Contract:          contract,
-		CollectionStatus:  projectview.ProjectCollectionStatus(collectionStatus),
-		ProfileState:      projectview.ProjectProfileState(profileState),
-		WrappedNativePair: wrappedNativePairFilter,
-		USDTPair:          usdtPairFilter,
+		CodeHash:         codeHash,
+		Contract:         contract,
+		CollectionStatus: projectview.ProjectCollectionStatus(collectionStatus),
+		ProfileState:     projectview.ProjectProfileState(profileState),
+		Pair:             pairFilter,
 	}, req.GetPage(), req.GetPageSize())
 	if err != nil {
 		return nil, wrapStoreError("list projects", err)
@@ -113,12 +91,11 @@ func parseProjectListPairFilter(
 	prefix string,
 	balanceSupplyStates, minimumLPStates, feeLPShareStates []string,
 	quoteUSDTMinValue, quoteUSDTMaxValue string,
-	quoteMissingStates []string,
 ) (projectview.ProjectListPairFilter, error) {
 	balanceSupply, err := normalizeProjectListPairStates(
 		prefix+"_balance_supply_states",
 		balanceSupplyStates,
-		[]string{"detected", "clear", "no_profile", "signal_unavailable"},
+		[]string{"detected", "clear"},
 	)
 	if err != nil {
 		return projectview.ProjectListPairFilter{}, err
@@ -126,7 +103,7 @@ func parseProjectListPairFilter(
 	minimumLP, err := normalizeProjectListPairStates(
 		prefix+"_minimum_lp_states",
 		minimumLPStates,
-		[]string{"detected", "clear", "no_profile", "signal_unavailable"},
+		[]string{"detected", "clear"},
 	)
 	if err != nil {
 		return projectview.ProjectListPairFilter{}, err
@@ -134,7 +111,7 @@ func parseProjectListPairFilter(
 	feeLPShare, err := normalizeProjectListPairStates(
 		prefix+"_fee_lp_share_states",
 		feeLPShareStates,
-		[]string{"detected", "clear", "no_profile", "signal_unavailable"},
+		[]string{"detected", "clear"},
 	)
 	if err != nil {
 		return projectview.ProjectListPairFilter{}, err
@@ -150,21 +127,12 @@ func parseProjectListPairFilter(
 	if quoteUSDTMin != nil && quoteUSDTMax != nil && quoteUSDTMin.Cmp(quoteUSDTMax) > 0 {
 		return projectview.ProjectListPairFilter{}, status.Errorf(codes.InvalidArgument, "%s_quote_usdt_min must not exceed %s_quote_usdt_max", prefix, prefix)
 	}
-	quoteMissing, err := normalizeProjectListPairStates(
-		prefix+"_quote_missing_states",
-		quoteMissingStates,
-		[]string{"no_profile", "value_unavailable"},
-	)
-	if err != nil {
-		return projectview.ProjectListPairFilter{}, err
-	}
 	return projectview.ProjectListPairFilter{
 		PairTokenBalanceExceedsTotalSupplyStates: balanceSupply,
 		LPMinimumSupplyOnlyStates:                minimumLP,
 		FixedFeeAddressLPShareGte90PercentStates: feeLPShare,
 		QuoteUSDTMin:                             quoteUSDTMin,
 		QuoteUSDTMax:                             quoteUSDTMax,
-		QuoteMissingStates:                       quoteMissing,
 	}, nil
 }
 

@@ -188,26 +188,17 @@ func (s *Server) ListContractCodes(ctx context.Context, req *tokenapipkg.ListCon
 func (s *Server) ListProjects(ctx context.Context, req *tokenapipkg.ListProjectsRequest) (*tokenapipkg.ListProjectsResponse, error) {
 	client := s.tokenAPIClientSet.Catalog()
 	r, e := client.ListProjects(ctx, &tokenapiapiclient.ListProjectsRequest{
-		ChainId:                              req.GetChainId(),
-		CodeHash:                             req.GetCodeHash(),
-		Contract:                             req.GetContract(),
-		Page:                                 req.GetPage(),
-		PageSize:                             req.GetPageSize(),
-		ProjectId:                            req.GetProjectId(),
-		CollectionStatus:                     req.GetCollectionStatus(),
-		ProfileState:                         req.GetProfileState(),
-		WrappedNativePairBalanceSupplyStates: req.GetWrappedNativePairBalanceSupplyStates(),
-		WrappedNativePairMinimumLpStates:     req.GetWrappedNativePairMinimumLpStates(),
-		WrappedNativePairFeeLpShareStates:    req.GetWrappedNativePairFeeLpShareStates(),
-		WrappedNativePairQuoteUsdtMin:        req.GetWrappedNativePairQuoteUsdtMin(),
-		WrappedNativePairQuoteUsdtMax:        req.GetWrappedNativePairQuoteUsdtMax(),
-		WrappedNativePairQuoteMissingStates:  req.GetWrappedNativePairQuoteMissingStates(),
-		UsdtPairBalanceSupplyStates:          req.GetUsdtPairBalanceSupplyStates(),
-		UsdtPairMinimumLpStates:              req.GetUsdtPairMinimumLpStates(),
-		UsdtPairFeeLpShareStates:             req.GetUsdtPairFeeLpShareStates(),
-		UsdtPairQuoteUsdtMin:                 req.GetUsdtPairQuoteUsdtMin(),
-		UsdtPairQuoteUsdtMax:                 req.GetUsdtPairQuoteUsdtMax(),
-		UsdtPairQuoteMissingStates:           req.GetUsdtPairQuoteMissingStates(),
+		CodeHash:                req.GetCodeHash(),
+		Contract:                req.GetContract(),
+		Page:                    req.GetPage(),
+		PageSize:                req.GetPageSize(),
+		CollectionStatus:        req.GetCollectionStatus(),
+		ProfileState:            req.GetProfileState(),
+		PairBalanceSupplyStates: req.GetPairBalanceSupplyStates(),
+		PairMinimumLpStates:     req.GetPairMinimumLpStates(),
+		PairFeeLpShareStates:    req.GetPairFeeLpShareStates(),
+		PairQuoteUsdtMin:        req.GetPairQuoteUsdtMin(),
+		PairQuoteUsdtMax:        req.GetPairQuoteUsdtMax(),
 	})
 	if e != nil {
 		return nil, e

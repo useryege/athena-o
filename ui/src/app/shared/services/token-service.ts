@@ -399,6 +399,8 @@ export interface TokenProjectInitialRecipient {
 export interface TokenProjectDetail {
     project?: TokenProject;
     profile?: TokenProjectProfile;
+    collectionStatus?: string;
+    profileState?: string;
     collectionTasks: TokenCollectionTask[];
     relatedWallets: TokenProjectRelatedWallet[];
     initialRecipients: TokenProjectInitialRecipient[];
@@ -1016,6 +1018,8 @@ function normalizeProjectDetail(item: any): TokenProjectDetail {
     return {
         project: item.project ? normalizeProject(item.project) : undefined,
         profile: normalizeProjectProfile(item.profile),
+        collectionStatus: item.collectionStatus ?? item.collection_status,
+        profileState: item.profileState ?? item.profile_state,
         collectionTasks: ((item.collectionTasks ?? item.collection_tasks ?? []) as any[]).map(normalizeTask),
         relatedWallets: ((item.relatedWallets ?? item.related_wallets ?? []) as any[]).map(wallet => ({
             projectID: numberValue(wallet.projectID ?? wallet.projectId ?? wallet.project_id),
@@ -1346,45 +1350,27 @@ export class TokenService {
         options: {
             page?: number;
             pageSize?: number;
-            chainID?: number;
-            projectID?: number;
             codeHash?: string;
             contract?: string;
             collectionStatus?: string;
             profileState?: string;
-            wrappedNativePairBalanceSupplyStates?: string[];
-            wrappedNativePairMinimumLPStates?: string[];
-            wrappedNativePairFeeLPShareStates?: string[];
-            wrappedNativePairQuoteUSDTMin?: string;
-            wrappedNativePairQuoteUSDTMax?: string;
-            wrappedNativePairQuoteMissingStates?: string[];
-            usdtPairBalanceSupplyStates?: string[];
-            usdtPairMinimumLPStates?: string[];
-            usdtPairFeeLPShareStates?: string[];
-            usdtPairQuoteUSDTMin?: string;
-            usdtPairQuoteUSDTMax?: string;
-            usdtPairQuoteMissingStates?: string[];
+            pairBalanceSupplyStates?: string[];
+            pairMinimumLPStates?: string[];
+            pairFeeLPShareStates?: string[];
+            pairQuoteUSDTMin?: string;
+            pairQuoteUSDTMax?: string;
         } = {}
     ): Promise<PagedResponse<TokenProjectListItem>> & {abort?: () => void} {
         const req = requests.get('/tokens/projects', readScope).query({
-            chain_id: options.chainID,
-            project_id: options.projectID,
             code_hash: options.codeHash || undefined,
             contract: options.contract || undefined,
             collection_status: options.collectionStatus || undefined,
             profile_state: options.profileState || undefined,
-            wrapped_native_pair_balance_supply_states: options.wrappedNativePairBalanceSupplyStates?.length ? options.wrappedNativePairBalanceSupplyStates : undefined,
-            wrapped_native_pair_minimum_lp_states: options.wrappedNativePairMinimumLPStates?.length ? options.wrappedNativePairMinimumLPStates : undefined,
-            wrapped_native_pair_fee_lp_share_states: options.wrappedNativePairFeeLPShareStates?.length ? options.wrappedNativePairFeeLPShareStates : undefined,
-            wrapped_native_pair_quote_usdt_min: options.wrappedNativePairQuoteUSDTMin || undefined,
-            wrapped_native_pair_quote_usdt_max: options.wrappedNativePairQuoteUSDTMax || undefined,
-            wrapped_native_pair_quote_missing_states: options.wrappedNativePairQuoteMissingStates?.length ? options.wrappedNativePairQuoteMissingStates : undefined,
-            usdt_pair_balance_supply_states: options.usdtPairBalanceSupplyStates?.length ? options.usdtPairBalanceSupplyStates : undefined,
-            usdt_pair_minimum_lp_states: options.usdtPairMinimumLPStates?.length ? options.usdtPairMinimumLPStates : undefined,
-            usdt_pair_fee_lp_share_states: options.usdtPairFeeLPShareStates?.length ? options.usdtPairFeeLPShareStates : undefined,
-            usdt_pair_quote_usdt_min: options.usdtPairQuoteUSDTMin || undefined,
-            usdt_pair_quote_usdt_max: options.usdtPairQuoteUSDTMax || undefined,
-            usdt_pair_quote_missing_states: options.usdtPairQuoteMissingStates?.length ? options.usdtPairQuoteMissingStates : undefined,
+            pair_balance_supply_states: options.pairBalanceSupplyStates?.length ? options.pairBalanceSupplyStates : undefined,
+            pair_minimum_lp_states: options.pairMinimumLPStates?.length ? options.pairMinimumLPStates : undefined,
+            pair_fee_lp_share_states: options.pairFeeLPShareStates?.length ? options.pairFeeLPShareStates : undefined,
+            pair_quote_usdt_min: options.pairQuoteUSDTMin || undefined,
+            pair_quote_usdt_max: options.pairQuoteUSDTMax || undefined,
             page: options.page,
             page_size: options.pageSize
         });

@@ -53,39 +53,26 @@ func (repository *ProjectViewRepository) ListProjectsPage(
 
 func projectListCountParams(filter projectview.ProjectListFilter) tokensqlc.CountProjectListItemsParams {
 	return tokensqlc.CountProjectListItemsParams{
-		ChainID: filter.ChainID, ProjectID: filter.ProjectID,
 		CodeHash: optionalHashBytes(filter.CodeHash), Contract: optionalAddressBytes(filter.Contract),
 		CollectionStatus: string(filter.CollectionStatus), ProfileState: string(filter.ProfileState),
-		WethPairTokenBalanceStates:    filter.WrappedNativePair.PairTokenBalanceExceedsTotalSupplyStates,
-		WethPairLpMinimumSupplyStates: filter.WrappedNativePair.LPMinimumSupplyOnlyStates,
-		WethPairFixedFeeLpShareStates: filter.WrappedNativePair.FixedFeeAddressLPShareGte90PercentStates,
-		WethPairQuoteUsdtMin:          nullableNumericFromBigInt(filter.WrappedNativePair.QuoteUSDTMin),
-		WethPairQuoteUsdtMax:          nullableNumericFromBigInt(filter.WrappedNativePair.QuoteUSDTMax),
-		WethPairQuoteMissingStates:    filter.WrappedNativePair.QuoteMissingStates,
-		UsdtPairTokenBalanceStates:    filter.USDTPair.PairTokenBalanceExceedsTotalSupplyStates,
-		UsdtPairLpMinimumSupplyStates: filter.USDTPair.LPMinimumSupplyOnlyStates,
-		UsdtPairFixedFeeLpShareStates: filter.USDTPair.FixedFeeAddressLPShareGte90PercentStates,
-		UsdtPairQuoteUsdtMin:          nullableNumericFromBigInt(filter.USDTPair.QuoteUSDTMin),
-		UsdtPairQuoteUsdtMax:          nullableNumericFromBigInt(filter.USDTPair.QuoteUSDTMax),
-		UsdtPairQuoteMissingStates:    filter.USDTPair.QuoteMissingStates,
+		PairBalanceSupplyStates: filter.Pair.PairTokenBalanceExceedsTotalSupplyStates,
+		PairMinimumLpStates:     filter.Pair.LPMinimumSupplyOnlyStates,
+		PairFeeLpShareStates:    filter.Pair.FixedFeeAddressLPShareGte90PercentStates,
+		PairQuoteUsdtMin:        nullableNumericFromBigInt(filter.Pair.QuoteUSDTMin),
+		PairQuoteUsdtMax:        nullableNumericFromBigInt(filter.Pair.QuoteUSDTMax),
 	}
 }
 
 func projectListParams(source tokensqlc.CountProjectListItemsParams, offset, limit int32) tokensqlc.ListProjectListItemsParams {
 	return tokensqlc.ListProjectListItemsParams{
-		ChainID: source.ChainID, ProjectID: source.ProjectID, CodeHash: source.CodeHash, Contract: source.Contract,
+		CodeHash: source.CodeHash, Contract: source.Contract,
 		CollectionStatus: source.CollectionStatus, ProfileState: source.ProfileState,
-		WethPairTokenBalanceStates:    source.WethPairTokenBalanceStates,
-		WethPairLpMinimumSupplyStates: source.WethPairLpMinimumSupplyStates,
-		WethPairFixedFeeLpShareStates: source.WethPairFixedFeeLpShareStates,
-		WethPairQuoteUsdtMin:          source.WethPairQuoteUsdtMin, WethPairQuoteUsdtMax: source.WethPairQuoteUsdtMax,
-		WethPairQuoteMissingStates:    source.WethPairQuoteMissingStates,
-		UsdtPairTokenBalanceStates:    source.UsdtPairTokenBalanceStates,
-		UsdtPairLpMinimumSupplyStates: source.UsdtPairLpMinimumSupplyStates,
-		UsdtPairFixedFeeLpShareStates: source.UsdtPairFixedFeeLpShareStates,
-		UsdtPairQuoteUsdtMin:          source.UsdtPairQuoteUsdtMin, UsdtPairQuoteUsdtMax: source.UsdtPairQuoteUsdtMax,
-		UsdtPairQuoteMissingStates: source.UsdtPairQuoteMissingStates,
-		Offset:                     offset, Limit: limit,
+		PairBalanceSupplyStates: source.PairBalanceSupplyStates,
+		PairMinimumLpStates:     source.PairMinimumLpStates,
+		PairFeeLpShareStates:    source.PairFeeLpShareStates,
+		PairQuoteUsdtMin:        source.PairQuoteUsdtMin,
+		PairQuoteUsdtMax:        source.PairQuoteUsdtMax,
+		Offset:                  offset, Limit: limit,
 	}
 }
 
