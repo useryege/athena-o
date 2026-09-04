@@ -17,7 +17,7 @@ import {ProjectJSONDrawer, ProjectJSONDrawerValue} from './project-json-drawer';
 import {useProjectDetailReturn, useScrollProjectDetailOnPush} from './project-navigation';
 import {ProjectProfileTab} from './project-profile-tab';
 import {ProjectSwapActivityTab} from './project-swap-activity';
-import {ChainBadge, TokenLogo} from './token-shared';
+import {ChainBadge, pairRiskSignalCopy, RiskSignalTag, TokenLogo} from './token-shared';
 
 const DATA_TYPES = ['chain_state', 'wallet_asset_state', 'simulation_result', 'ave', 'contract_code_source', 'wallet_normal_transactions'];
 const DETAIL_POLL_INTERVAL_MS = 30_000;
@@ -42,10 +42,6 @@ const workflowTag = (value?: string) => {
     const color: Record<string, string> = {queued: 'default', collecting: 'blue', pending: 'gold', complete: 'green', incomplete: 'gold', needs_attention: 'red', failed: 'red'};
     return <Tag color={value ? color[value] : undefined}>{value?.replace(/_/g, ' ') || 'unknown'}</Tag>;
 };
-const pairSignal = (value?: boolean) => value === undefined
-    ? <StatusTag value='Unknown' />
-    : <StatusTag value={value ? 'Detected' : 'Clear'} positive={!value} negative={value} />;
-
 const Summary = (props: {detail: TokenProjectDetail}) => {
     const project = props.detail.project;
     const profile = props.detail.profile;
@@ -111,9 +107,9 @@ const PairDetails = (props: {title: string; pair?: TokenProjectProfilePair; chai
                     {label: 'Quote balance', value: chainState.quoteBalance || '-'},
                     {label: 'Quote value in USDT', value: chainState.quoteUsdtValueInt || chainState.quoteUsdtValue || '-'},
                     {label: 'Reserve updated time', value: <TimeValue unixSeconds={chainState.reserveUpdatedAt} />},
-                    {label: 'Pair token balance exceeds total supply', value: pairSignal(chainState.signals?.pairTokenBalanceExceedsTotalSupply)},
-                    {label: 'LP minimum supply only', value: pairSignal(chainState.signals?.lpMinimumSupplyOnly)},
-                    {label: 'Fixed fee address LP share ≥ 90%', value: pairSignal(chainState.signals?.fixedFeeAddressLpShareGte90Percent)}
+                    {label: pairRiskSignalCopy.pairTokenBalanceExceedsTotalSupply.label, value: <RiskSignalTag value={chainState.signals?.pairTokenBalanceExceedsTotalSupply} applicable={chainState.isCreated !== false} signalLabel={pairRiskSignalCopy.pairTokenBalanceExceedsTotalSupply.label} />},
+                    {label: pairRiskSignalCopy.lpMinimumSupplyOnly.label, value: <RiskSignalTag value={chainState.signals?.lpMinimumSupplyOnly} applicable={chainState.isCreated !== false} signalLabel={pairRiskSignalCopy.lpMinimumSupplyOnly.label} />},
+                    {label: pairRiskSignalCopy.fixedFeeAddressLpShareGte90Percent.label, value: <RiskSignalTag value={chainState.signals?.fixedFeeAddressLpShareGte90Percent} applicable={chainState.isCreated !== false} signalLabel={pairRiskSignalCopy.fixedFeeAddressLpShareGte90Percent.label} />}
                 ]} /> : <Alert type='warning' showIcon={true} title='Chain-state evidence unavailable' description='On-chain balances, liquidity, and risk signals are unknown for this pair.' />}
                 {props.pair.market && <KeyValueGrid columns={2} items={[
                     {label: 'Ave AMM', value: props.pair.market.amm || '-'},
@@ -179,7 +175,7 @@ const WalletsTab = (props: {detail: TokenProjectDetail}) => {
     return <div className='project-detail-tab'><Section title='Related wallet roles'><Table<WalletRow> rowKey={item => item.wallet || item.role || 'wallet'} columns={columns} dataSource={[...rows.values()]} pagination={false} scroll={{x: 980}} locale={{emptyText: 'No related wallets'}} /></Section><Section title='Wallet profile summary'><KeyValueGrid columns={3} items={[
         {label: 'Wallets collected', value: props.detail.profile?.walletSummary?.walletCount ?? '-'},
         {label: 'Tracked asset value in USDT', value: props.detail.profile?.walletSummary?.trackedAssetUsdtValueTotal || '-'},
-        {label: 'Wallets with successful simulation-call signals', value: props.detail.profile?.walletSummary?.walletsWithSimulationSignals ?? '-'}
+        {label: 'Wallets with at least one successful simulation call', value: props.detail.profile?.walletSummary?.walletsWithSimulationSignals ?? '-'}
     ]} /></Section></div>;
 };
 

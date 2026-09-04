@@ -4,13 +4,12 @@ import {KeyValueGrid, Section, StatusTag} from '../../components';
 import {formatBeijingDateTime, formatBeijingUnixSeconds, formatBlockNumber} from '../../shared/format';
 import {TokenProject, TokenProjectProfile, TokenProjectProfilePair, TokenProjectProfileWalletSimulation} from '../../shared/services/token-service';
 import {ProjectJSONDrawerValue} from './project-json-drawer';
+import {pairRiskSignalCopy, RiskSignalTag} from './token-shared';
 
 const present = (value: unknown) => value !== undefined && value !== null && value !== '';
 const exact = (value?: string | number) => present(value) ? String(value) : '-';
 const currency = (value?: string) => present(value) ? `$${value}` : '-';
-const signal = (value?: boolean) => value === undefined
-    ? <StatusTag value='Unknown' />
-    : <StatusTag value={value ? 'Detected' : 'Clear'} positive={!value} negative={value} />;
+const percentage = (value?: string | number) => present(value) ? `${value}%` : '-';
 const simulationSuccessCount = (simulation?: TokenProjectProfileWalletSimulation) => simulation
     ? Object.values(simulation).filter(value => value === true).length
     : undefined;
@@ -39,15 +38,15 @@ const PairCard = (props: {title: string; pair?: TokenProjectProfilePair}) => {
                     {label: 'Reserves updated', value: formatBeijingUnixSeconds(chainState.reserveUpdatedAt) || '-'},
                     {label: 'LP total supply', value: exact(chainState.liquidity?.totalSupply)},
                     {label: 'Locked liquidity', value: exact(chainState.liquidity?.lockedLiquidity)},
-                    {label: 'Fixed fee address balance', value: exact(chainState.liquidity?.fixedFeeAddressBalance)},
-                    {label: 'Fixed fee address share', value: exact(chainState.liquidity?.fixedFeeAddressShare)},
-                    {label: 'Pair balance exceeds supply', value: signal(chainState.signals?.pairTokenBalanceExceedsTotalSupply)},
-                    {label: 'LP minimum supply only', value: signal(chainState.signals?.lpMinimumSupplyOnly)},
-                    {label: 'Fixed fee address LP share ≥ 90%', value: signal(chainState.signals?.fixedFeeAddressLpShareGte90Percent)}
+                    {label: 'LP balance held by fixed fee address', value: exact(chainState.liquidity?.fixedFeeAddressBalance)},
+                    {label: 'Fixed fee address share of LP supply', value: percentage(chainState.liquidity?.fixedFeeAddressShare)},
+                    {label: pairRiskSignalCopy.pairTokenBalanceExceedsTotalSupply.label, value: <RiskSignalTag value={chainState.signals?.pairTokenBalanceExceedsTotalSupply} applicable={chainState.isCreated !== false} signalLabel={pairRiskSignalCopy.pairTokenBalanceExceedsTotalSupply.label} />},
+                    {label: pairRiskSignalCopy.lpMinimumSupplyOnly.label, value: <RiskSignalTag value={chainState.signals?.lpMinimumSupplyOnly} applicable={chainState.isCreated !== false} signalLabel={pairRiskSignalCopy.lpMinimumSupplyOnly.label} />},
+                    {label: pairRiskSignalCopy.fixedFeeAddressLpShareGte90Percent.label, value: <RiskSignalTag value={chainState.signals?.fixedFeeAddressLpShareGte90Percent} applicable={chainState.isCreated !== false} signalLabel={pairRiskSignalCopy.fixedFeeAddressLpShareGte90Percent.label} />}
                 ]} /> : <Alert type='warning' showIcon={true} title='Chain-state evidence unavailable' description='On-chain balances, liquidity, and risk signals are unknown for this pair.' />}
                 {market && <KeyValueGrid columns={2} items={[
                     {label: 'Ave AMM', value: exact(market.amm)},
-                    {label: 'Ave pair marked fake', value: signal(market.isFake)},
+                    {label: 'Ave reports pair as fake', value: <RiskSignalTag value={market.isFake} signalLabel='Ave reports pair as fake' />},
                     {label: 'Market reserves', value: `${exact(market.reserve0)} / ${exact(market.reserve1)}`},
                     {label: 'Market volume in USD', value: exact(market.volumeUSD)},
                     {label: 'Market cap in USD', value: exact(market.marketCapUSD)},
@@ -106,9 +105,9 @@ export const ProjectProfileTab = (props: {project?: TokenProject; profile?: Toke
                         {label: 'Ave risk level', value: aveRisk.riskLevel ?? '-'},
                         {label: 'Ave risk score', value: exact(aveRisk.riskScore)},
                         {label: 'Ave audited', value: <StatusTag value={aveRisk.audited ? 'Audited' : 'Not audited'} positive={aveRisk.audited} negative={!aveRisk.audited} />},
-                        {label: 'Ave mintable', value: signal(aveRisk.mintable)},
-                        {label: 'Ave honeypot', value: signal(aveRisk.honeypot)},
-                        {label: 'Ave blacklist', value: signal(aveRisk.inBlacklist)},
+                        {label: 'Ave reports token as mintable', value: <RiskSignalTag value={aveRisk.mintable} signalLabel='Ave reports token as mintable' />},
+                        {label: 'Ave reports token as a honeypot', value: <RiskSignalTag value={aveRisk.honeypot} signalLabel='Ave reports token as a honeypot' />},
+                        {label: 'Ave reports token as blacklisted', value: <RiskSignalTag value={aveRisk.inBlacklist} signalLabel='Ave reports token as blacklisted' />},
                         {label: 'Ave risk information', value: exact(aveRisk.riskInfo)}
                     ]} />}
                     <Button disabled={!aveRisk} onClick={() => props.openJSON({title: 'Ave risk evidence', value: aveRisk ? JSON.stringify(aveRisk, null, 2) : ''})}>View Ave risk evidence</Button>
@@ -129,7 +128,7 @@ export const ProjectProfileTab = (props: {project?: TokenProject; profile?: Toke
                     {label: 'Tracked asset value in USDT', value: exact(wallet.trackedAssetUsdtValueTotal)},
                     {label: 'Initial recipients sampled', value: wallet.initialRecipientCount ?? '-'},
                     {label: 'Deployment-time recipient allocation estimate', value: wallet.initialRecipientAllocationBPS === undefined ? '-' : `${(wallet.initialRecipientAllocationBPS / 100).toFixed(2)}%`},
-                    {label: 'Wallets with successful simulation-call signals', value: wallet.walletsWithSimulationSignals ?? '-'},
+                    {label: 'Wallets with at least one successful simulation call', value: wallet.walletsWithSimulationSignals ?? '-'},
                     {label: 'Roles', value: wallet.roleCounts.length ? <Space wrap={true}>{wallet.roleCounts.map(item => <Tag key={item.role}>{item.role || 'unknown'}: {item.count ?? 0}</Tag>)}</Space> : 'None'}
                 ]} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='Wallet evidence is unavailable' />}
                 {profile.wallets.length > 0 && <div className='project-profile-evidence-grid'>

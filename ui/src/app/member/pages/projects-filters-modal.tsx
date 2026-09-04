@@ -1,7 +1,8 @@
 import {Button, Checkbox, Input, Modal, Select, Tabs, Typography} from 'antd';
 import * as React from 'react';
+import {pairRiskSignalCopy} from './token-shared';
 
-export type ProfilePairSignalState = 'detected' | 'clear';
+export type ProfilePairSignalState = 'detected' | 'not_detected';
 
 export interface ProfilePairFilterState {
     balanceSupply: ProfilePairSignalState[];
@@ -21,11 +22,11 @@ export interface ProjectsFilterState {
 
 export const collectionStatuses = ['queued', 'collecting', 'complete', 'needs_attention'] as const;
 export const profileStates = ['pending', 'complete', 'incomplete', 'failed'] as const;
-export const profilePairSignalStates = ['detected', 'clear'] as const;
+export const profilePairSignalStates = ['detected', 'not_detected'] as const;
 
 const signalStateOptions = [
-    {label: 'Clear', value: 'clear'},
-    {label: 'Detected', value: 'detected'}
+    {label: 'Detected', value: 'detected'},
+    {label: 'Not detected', value: 'not_detected'}
 ];
 const statusOptions = (values: readonly string[]) => values.map(value => ({value, label: value.replace(/_/g, ' ')}));
 
@@ -141,9 +142,9 @@ const PairFilters = (props: {draft: ProjectsFilterState; error: string; onChange
                 <Button size='small' onClick={() => setFilter(emptyProfilePairFilter())}>Clear section</Button>
             </div>
             <div className='projects-filters-modal__pair-grid'>
-                <SignalChoice label='Pair token balance exceeds total supply' ariaLabel='Filter pair token balance signal' value={filter.balanceSupply} onChange={value => setFilter({...filter, balanceSupply: value})} />
-                <SignalChoice label='LP minimum supply only' ariaLabel='Filter LP minimum supply signal' value={filter.minimumLP} onChange={value => setFilter({...filter, minimumLP: value})} />
-                <SignalChoice label='Fixed fee address LP share ≥ 90%' ariaLabel='Filter fixed fee address LP share signal' value={filter.feeLPShare} onChange={value => setFilter({...filter, feeLPShare: value})} />
+                <SignalChoice label={pairRiskSignalCopy.pairTokenBalanceExceedsTotalSupply.label} ariaLabel={pairRiskSignalCopy.pairTokenBalanceExceedsTotalSupply.filterAriaLabel} value={filter.balanceSupply} onChange={value => setFilter({...filter, balanceSupply: value})} />
+                <SignalChoice label={pairRiskSignalCopy.lpMinimumSupplyOnly.label} ariaLabel={pairRiskSignalCopy.lpMinimumSupplyOnly.filterAriaLabel} value={filter.minimumLP} onChange={value => setFilter({...filter, minimumLP: value})} />
+                <SignalChoice label={pairRiskSignalCopy.fixedFeeAddressLpShareGte90Percent.label} ariaLabel={pairRiskSignalCopy.fixedFeeAddressLpShareGte90Percent.filterAriaLabel} value={filter.feeLPShare} onChange={value => setFilter({...filter, feeLPShare: value})} />
                 <fieldset className='projects-filters-modal__quote-field'>
                     <legend>Quote value in USDT</legend>
                     <div className='projects-filters-modal__quote-range'>

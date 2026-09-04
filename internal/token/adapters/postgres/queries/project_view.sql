@@ -78,17 +78,17 @@ WHERE (sqlc.narg('code_hash')::bytea IS NULL OR code_hash = sqlc.narg('code_hash
         AND (
           COALESCE(cardinality(sqlc.arg('pair_balance_supply_states')::text[]), 0) = 0
           OR ('detected' = ANY(sqlc.arg('pair_balance_supply_states')::text[]) AND pair_candidate.balance_supply IS TRUE)
-          OR ('clear' = ANY(sqlc.arg('pair_balance_supply_states')::text[]) AND pair_candidate.balance_supply IS FALSE)
+          OR ('not_detected' = ANY(sqlc.arg('pair_balance_supply_states')::text[]) AND pair_candidate.balance_supply IS FALSE)
         )
         AND (
           COALESCE(cardinality(sqlc.arg('pair_minimum_lp_states')::text[]), 0) = 0
           OR ('detected' = ANY(sqlc.arg('pair_minimum_lp_states')::text[]) AND pair_candidate.minimum_lp IS TRUE)
-          OR ('clear' = ANY(sqlc.arg('pair_minimum_lp_states')::text[]) AND pair_candidate.minimum_lp IS FALSE)
+          OR ('not_detected' = ANY(sqlc.arg('pair_minimum_lp_states')::text[]) AND pair_candidate.minimum_lp IS FALSE)
         )
         AND (
           COALESCE(cardinality(sqlc.arg('pair_fee_lp_share_states')::text[]), 0) = 0
           OR ('detected' = ANY(sqlc.arg('pair_fee_lp_share_states')::text[]) AND pair_candidate.fee_lp_share IS TRUE)
-          OR ('clear' = ANY(sqlc.arg('pair_fee_lp_share_states')::text[]) AND pair_candidate.fee_lp_share IS FALSE)
+          OR ('not_detected' = ANY(sqlc.arg('pair_fee_lp_share_states')::text[]) AND pair_candidate.fee_lp_share IS FALSE)
         )
         AND (
           (
@@ -213,17 +213,17 @@ WHERE (sqlc.narg('code_hash')::bytea IS NULL OR EXISTS (
         AND (
           COALESCE(cardinality(sqlc.arg('pair_balance_supply_states')::text[]), 0) = 0
           OR ('detected' = ANY(sqlc.arg('pair_balance_supply_states')::text[]) AND pair_candidate.balance_supply IS TRUE)
-          OR ('clear' = ANY(sqlc.arg('pair_balance_supply_states')::text[]) AND pair_candidate.balance_supply IS FALSE)
+          OR ('not_detected' = ANY(sqlc.arg('pair_balance_supply_states')::text[]) AND pair_candidate.balance_supply IS FALSE)
         )
         AND (
           COALESCE(cardinality(sqlc.arg('pair_minimum_lp_states')::text[]), 0) = 0
           OR ('detected' = ANY(sqlc.arg('pair_minimum_lp_states')::text[]) AND pair_candidate.minimum_lp IS TRUE)
-          OR ('clear' = ANY(sqlc.arg('pair_minimum_lp_states')::text[]) AND pair_candidate.minimum_lp IS FALSE)
+          OR ('not_detected' = ANY(sqlc.arg('pair_minimum_lp_states')::text[]) AND pair_candidate.minimum_lp IS FALSE)
         )
         AND (
           COALESCE(cardinality(sqlc.arg('pair_fee_lp_share_states')::text[]), 0) = 0
           OR ('detected' = ANY(sqlc.arg('pair_fee_lp_share_states')::text[]) AND pair_candidate.fee_lp_share IS TRUE)
-          OR ('clear' = ANY(sqlc.arg('pair_fee_lp_share_states')::text[]) AND pair_candidate.fee_lp_share IS FALSE)
+          OR ('not_detected' = ANY(sqlc.arg('pair_fee_lp_share_states')::text[]) AND pair_candidate.fee_lp_share IS FALSE)
         )
         AND (
           (

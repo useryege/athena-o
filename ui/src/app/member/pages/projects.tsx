@@ -21,7 +21,7 @@ import {
     ProjectsFiltersModal,
     ProjectsFilterState
 } from './projects-filters-modal';
-import {ChainBadge, TokenLogo} from './token-shared';
+import {ChainBadge, pairRiskSignalCopy, RiskSignalTag, TokenLogo} from './token-shared';
 
 const PROJECTS_LIST_STALE_TIME_MS = 30_000;
 const PROJECTS_POLL_INTERVAL_MS = 30_000;
@@ -89,7 +89,6 @@ const workflowTag = (value?: string) => {
     return <Tag color={value ? color[value] : undefined}>{value?.replace(/_/g, ' ') || 'unknown'}</Tag>;
 };
 
-const SignalTag = (props: {value?: boolean}) => <StatusTag value={props.value ? 'Detected' : 'Clear'} positive={props.value === false} negative={props.value === true} />;
 const pairUnavailable = (profileState?: string) => <Typography.Text type='secondary'>{profileState === 'pending' ? 'Profile pending' : 'Unavailable'}</Typography.Text>;
 
 const PairSnapshot = (props: {pair?: TokenProjectPairProfileSummary; profileState?: string}) => {
@@ -97,9 +96,9 @@ const PairSnapshot = (props: {pair?: TokenProjectPairProfileSummary; profileStat
     return (
         <div className='projects-pair-summary'>
             <div className='projects-pair-summary__line'><Typography.Text type='secondary'>Created</Typography.Text><StatusTag value={props.pair.isCreated ? 'Yes' : 'No'} positive={props.pair.isCreated} /></div>
-            <div className='projects-pair-summary__line'><Typography.Text type='secondary'>Balance &gt; supply</Typography.Text><SignalTag value={props.pair.pairTokenBalanceExceedsTotalSupply} /></div>
-            <div className='projects-pair-summary__line'><Typography.Text type='secondary'>Minimum LP only</Typography.Text><SignalTag value={props.pair.lpMinimumSupplyOnly} /></div>
-            <div className='projects-pair-summary__line'><Typography.Text type='secondary'>Fee LP ≥ 90%</Typography.Text><SignalTag value={props.pair.fixedFeeAddressLpShareGte90Percent} /></div>
+            <div className='projects-pair-summary__line'><Typography.Text type='secondary'>{pairRiskSignalCopy.pairTokenBalanceExceedsTotalSupply.label}</Typography.Text><RiskSignalTag value={props.pair.pairTokenBalanceExceedsTotalSupply} applicable={props.pair.isCreated !== false} signalLabel={pairRiskSignalCopy.pairTokenBalanceExceedsTotalSupply.label} /></div>
+            <div className='projects-pair-summary__line'><Typography.Text type='secondary'>{pairRiskSignalCopy.lpMinimumSupplyOnly.label}</Typography.Text><RiskSignalTag value={props.pair.lpMinimumSupplyOnly} applicable={props.pair.isCreated !== false} signalLabel={pairRiskSignalCopy.lpMinimumSupplyOnly.label} /></div>
+            <div className='projects-pair-summary__line'><Typography.Text type='secondary'>{pairRiskSignalCopy.fixedFeeAddressLpShareGte90Percent.label}</Typography.Text><RiskSignalTag value={props.pair.fixedFeeAddressLpShareGte90Percent} applicable={props.pair.isCreated !== false} signalLabel={pairRiskSignalCopy.fixedFeeAddressLpShareGte90Percent.label} /></div>
             <div className='projects-pair-summary__line'><Typography.Text type='secondary'>Quote USDT</Typography.Text><span>{formatInteger(props.pair.quoteUsdtValueInt)}</span></div>
             <div className='projects-pair-summary__line'><Typography.Text type='secondary'>Reserves updated</Typography.Text><span>{formatBeijingUnixSeconds(props.pair.reserveUpdatedAt) || '-'}</span></div>
         </div>

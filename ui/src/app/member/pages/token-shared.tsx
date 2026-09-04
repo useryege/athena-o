@@ -4,6 +4,32 @@ import bscIcon from '../../../assets/images/bsc.png';
 import ethIcon from '../../../assets/images/eth.png';
 import solanaIcon from '../../../assets/images/solana.png';
 
+export const pairRiskSignalCopy = {
+    pairTokenBalanceExceedsTotalSupply: {
+        label: 'Pair-held token balance exceeds token total supply',
+        filterAriaLabel: 'Filter by whether pair-held token balance exceeds token total supply'
+    },
+    lpMinimumSupplyOnly: {
+        label: 'Only minimum LP remains',
+        filterAriaLabel: 'Filter by whether only minimum LP remains'
+    },
+    fixedFeeAddressLpShareGte90Percent: {
+        label: 'Fixed fee address holds ≥ 90% of LP supply',
+        filterAriaLabel: 'Filter by whether the fixed fee address holds at least 90% of LP supply'
+    }
+} as const;
+
+export const RiskSignalTag = (props: {value?: boolean; applicable?: boolean; signalLabel?: string}) => {
+    const status = props.applicable === false
+        ? 'Not applicable'
+        : props.value === undefined
+            ? 'Unknown'
+            : props.value
+                ? 'Detected'
+                : 'Not detected';
+    return <Tag color={status === 'Detected' ? 'red' : 'default'} aria-label={props.signalLabel ? `${props.signalLabel}: ${status}` : status}>{status}</Tag>;
+};
+
 const chainIconAssets = {
     eth: ethIcon,
     bsc: bscIcon,

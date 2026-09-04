@@ -90,17 +90,17 @@ WHERE ($1::bytea IS NULL OR code_hash = $1::bytea)
         AND (
           COALESCE(cardinality($5::text[]), 0) = 0
           OR ('detected' = ANY($5::text[]) AND pair_candidate.balance_supply IS TRUE)
-          OR ('clear' = ANY($5::text[]) AND pair_candidate.balance_supply IS FALSE)
+          OR ('not_detected' = ANY($5::text[]) AND pair_candidate.balance_supply IS FALSE)
         )
         AND (
           COALESCE(cardinality($6::text[]), 0) = 0
           OR ('detected' = ANY($6::text[]) AND pair_candidate.minimum_lp IS TRUE)
-          OR ('clear' = ANY($6::text[]) AND pair_candidate.minimum_lp IS FALSE)
+          OR ('not_detected' = ANY($6::text[]) AND pair_candidate.minimum_lp IS FALSE)
         )
         AND (
           COALESCE(cardinality($7::text[]), 0) = 0
           OR ('detected' = ANY($7::text[]) AND pair_candidate.fee_lp_share IS TRUE)
-          OR ('clear' = ANY($7::text[]) AND pair_candidate.fee_lp_share IS FALSE)
+          OR ('not_detected' = ANY($7::text[]) AND pair_candidate.fee_lp_share IS FALSE)
         )
         AND (
           (
@@ -256,17 +256,17 @@ WHERE ($1::bytea IS NULL OR EXISTS (
         AND (
           COALESCE(cardinality($5::text[]), 0) = 0
           OR ('detected' = ANY($5::text[]) AND pair_candidate.balance_supply IS TRUE)
-          OR ('clear' = ANY($5::text[]) AND pair_candidate.balance_supply IS FALSE)
+          OR ('not_detected' = ANY($5::text[]) AND pair_candidate.balance_supply IS FALSE)
         )
         AND (
           COALESCE(cardinality($6::text[]), 0) = 0
           OR ('detected' = ANY($6::text[]) AND pair_candidate.minimum_lp IS TRUE)
-          OR ('clear' = ANY($6::text[]) AND pair_candidate.minimum_lp IS FALSE)
+          OR ('not_detected' = ANY($6::text[]) AND pair_candidate.minimum_lp IS FALSE)
         )
         AND (
           COALESCE(cardinality($7::text[]), 0) = 0
           OR ('detected' = ANY($7::text[]) AND pair_candidate.fee_lp_share IS TRUE)
-          OR ('clear' = ANY($7::text[]) AND pair_candidate.fee_lp_share IS FALSE)
+          OR ('not_detected' = ANY($7::text[]) AND pair_candidate.fee_lp_share IS FALSE)
         )
         AND (
           (

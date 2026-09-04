@@ -95,7 +95,7 @@ func parseProjectListPairFilter(
 	balanceSupply, err := normalizeProjectListPairStates(
 		prefix+"_balance_supply_states",
 		balanceSupplyStates,
-		[]string{"detected", "clear"},
+		[]string{"detected", "not_detected"},
 	)
 	if err != nil {
 		return projectview.ProjectListPairFilter{}, err
@@ -103,7 +103,7 @@ func parseProjectListPairFilter(
 	minimumLP, err := normalizeProjectListPairStates(
 		prefix+"_minimum_lp_states",
 		minimumLPStates,
-		[]string{"detected", "clear"},
+		[]string{"detected", "not_detected"},
 	)
 	if err != nil {
 		return projectview.ProjectListPairFilter{}, err
@@ -111,7 +111,7 @@ func parseProjectListPairFilter(
 	feeLPShare, err := normalizeProjectListPairStates(
 		prefix+"_fee_lp_share_states",
 		feeLPShareStates,
-		[]string{"detected", "clear"},
+		[]string{"detected", "not_detected"},
 	)
 	if err != nil {
 		return projectview.ProjectListPairFilter{}, err

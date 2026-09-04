@@ -48,9 +48,9 @@ by the single collection-task endpoint.
 ## Runtime Flow
 
 1. `GET /api/v1/tokens/projects` validates paging, contract and code-hash,
-   workflow status, detected/clear pair-signal, and integer quote filters
-   before issuing one paged list query. Chain ID and project ID are returned
-   as project identity but are not list-filter inputs.
+   workflow status, `detected`/`not_detected` pair-signal states, and integer
+   quote filters before issuing one paged list query. Chain ID and project ID
+   are returned as project identity but are not list-filter inputs.
 2. Every list item exposes discovery identity; collection progress as `x/6`;
    `collectionStatus`; `profileState`; optional profile completeness and build
    time; Ave market projection; and wrapped-native and USDT pair projections.
@@ -90,7 +90,7 @@ by the single collection-task endpoint.
 Pair filters use one shared predicate over the factual V1 wrapped-native and
 USDT profile projections. Each of `pairTokenBalanceExceedsTotalSupply`,
 `lpMinimumSupplyOnly`, and `fixedFeeAddressLpShareGte90Percent` accepts only
-`detected` and `clear` states. Quote filters accept inclusive minimum and
+`detected` and `not_detected` states. Quote filters accept inclusive minimum and
 maximum integer USDT values; missing profiles, pairs, signals, or quote values
 are not selectable states.
 
@@ -98,6 +98,11 @@ When any pair condition is enabled, one created wrapped-native or USDT pair
 must satisfy every enabled signal and quote condition. Conditions cannot be
 satisfied by combining values from different pairs. The response continues to
 project the wrapped-native and USDT pair summaries independently.
+
+The member UI renders factual risk booleans as `Detected` or `Not detected`,
+missing signal values as `Unknown`, and the three chain-state pair signals as
+`Not applicable` when the pair is not created. Only `Detected` uses a negative
+visual tone; the other states remain neutral and are distinguished by text.
 
 The typed profile response contains completeness, failed sources, market and
 `aveRisk`, contract-source status, both pair summaries, wallet totals,
