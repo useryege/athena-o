@@ -9,7 +9,5 @@ service TokenCatalogService {
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) { option (google.api.http) = {get: "/api/v1/tokens/projects"}; }
   rpc GetProjectDetail(GetProjectDetailRequest) returns (GetProjectDetailResponse) { option (google.api.http) = {get: "/api/v1/tokens/projects/{project_id}"}; }
   rpc GetProjectProfile(GetProjectProfileRequest) returns (GetProjectProfileResponse) { option (google.api.http) = {get: "/api/v1/tokens/projects/{project_id}/profile"}; }
-  rpc GetProjectSwapActivity(GetProjectSwapActivityRequest) returns (GetProjectSwapActivityResponse) { option (google.api.http) = {get: "/api/v1/tokens/projects/{project_id}/swap-activity"}; }
-  rpc ListProjectSwapEvents(ListProjectSwapEventsRequest) returns (ListProjectSwapEventsResponse) { option (google.api.http) = {get: "/api/v1/tokens/projects/{project_id}/swap-pairs/{pair_kind}/blocks/{block_number}/events"}; }
   rpc ListProjectWalletNormalTransactions(ListProjectWalletNormalTransactionsRequest) returns (ListProjectWalletNormalTransactionsResponse) { option (google.api.http) = {get: "/api/v1/tokens/projects/{project_id}/wallet-normal-transactions"}; }
 }

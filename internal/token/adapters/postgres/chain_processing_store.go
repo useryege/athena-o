@@ -10,7 +10,6 @@ import (
 	"github.com/useryege/athena/internal/token/collection"
 	"github.com/useryege/athena/internal/token/discovery"
 	discoveryapp "github.com/useryege/athena/internal/token/discovery/application"
-	"github.com/useryege/athena/internal/token/swap"
 )
 
 const (
@@ -226,35 +225,6 @@ func initializeInspectedProject(ctx context.Context, queries *tokensqlc.Queries,
 	})
 	if err != nil {
 		return fmt.Errorf("upsert project for candidate %s: %w", candidate.Contract, err)
-	}
-	absoluteExpiryBlockTime, err := addSwapObservationDuration(candidate.BlockTime, swap.AbsoluteObservationTimeout)
-	if err != nil {
-		return fmt.Errorf("calculate absolute Swap expiry for project %d: %w", project.ID, err)
-	}
-	nextExpiryBlockTime, err := addSwapObservationDuration(candidate.BlockTime, swap.FirstSwapTimeout)
-	if err != nil {
-		return fmt.Errorf("calculate initial Swap expiry for project %d: %w", project.ID, err)
-	}
-	swapPairs := []struct {
-		kind    swap.PairKind
-		address []byte
-	}{
-		{kind: swap.PairKindWETH, address: inspection.WethPair.Bytes()},
-		{kind: swap.PairKindUSDT, address: inspection.UsdtPair.Bytes()},
-	}
-	for _, pair := range swapPairs {
-		if _, err := queries.CreateProjectSwapPair(ctx, tokensqlc.CreateProjectSwapPairParams{
-			ProjectID:               project.ID,
-			ChainID:                 candidate.ChainID,
-			PairKind:                string(pair.kind),
-			PairAddress:             pair.address,
-			StartBlockNumber:        blockNumber,
-			StartBlockTime:          blockTime,
-			AbsoluteExpiryBlockTime: absoluteExpiryBlockTime,
-			NextExpiryBlockTime:     nextExpiryBlockTime,
-		}); err != nil {
-			return fmt.Errorf("create %s Swap pair for project %d: %w", pair.kind, project.ID, err)
-		}
 	}
 	for _, wallet := range inspection.RelatedWallets {
 		if wallet.Wallet.IsZero() || wallet.Role == "" {

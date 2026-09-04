@@ -8,7 +8,7 @@ Athena 是一个面向区块链与预测市场的情报分析平台，用于采�
 ## 核心能力
 
 - **Market Intelligence**：同步 Polymarket 热门市场、体育市场和 Optimistic Oracle 数据，并提供价格变化与事件告警。
-- **Token Intelligence**：处理 EVM 链上代币、交易对、钱包和 Swap 数据，支持项目研究、风险分析与报告。
+- **Token Intelligence**：处理 EVM 链上代币、交易对和钱包数据，支持项目研究、风险分析与报告。
 - **Blockchain Indexing**：索引 BSC 普通转账和 V2 Swap 事件，为交易查询与上层分析提供数据。
 - **Platform Services**：提供 Web UI、HTTP/gRPC API、通知服务、数据迁移以及 PostgreSQL/Redis 运行支持。
 

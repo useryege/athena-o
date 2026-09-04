@@ -38,7 +38,7 @@ authoritative.
    its handler runs.
 4. `READ` covers runtime configuration/status, chain attempt reads, projects,
    the unique profile, collection tasks/evidence, contract source, wallets,
-   pre-deployment transactions, and Swap reads.
+   and pre-deployment transactions.
 5. `READ_WRITE` covers contract-code and wallet blocklist creation/update/delete
    plus checkpoint start/stop controls. Corresponding read endpoints remain
    `READ`.
@@ -63,7 +63,7 @@ identity and applies its configured module permissions.
 ## Invariants
 
 - Every public Token method has an explicit authorization-map entry.
-- Token `READ` is sufficient for all catalog, collection, profile, Swap,
+- Token `READ` is sufficient for all catalog, collection, profile,
   contract-source, and operational read endpoints.
 - Only `READ_WRITE` may mutate blocklists or chain checkpoint status.
 - UI visibility is advisory; backend authorization is authoritative.

@@ -63,10 +63,6 @@ message GetProjectDetailRequest { int64 project_id = 1; }
 message GetProjectDetailResponse { bool found = 1; github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenProjectDetail detail = 2; }
 message GetProjectProfileRequest { int64 project_id = 1; }
 message GetProjectProfileResponse { bool found = 1; github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenProjectProfile profile = 2; }
-message GetProjectSwapActivityRequest { int64 project_id = 1; }
-message GetProjectSwapActivityResponse { bool found = 1; github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenProjectSwapActivity activity = 2; }
-message ListProjectSwapEventsRequest { int64 project_id = 1; string pair_kind = 2; string block_number = 3; int32 page = 4; int32 page_size = 5; }
-message ListProjectSwapEventsResponse { repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenProjectSwapEvent events = 1; int64 total = 2; int32 page = 3; int32 page_size = 4; }
 message ListProjectWalletNormalTransactionsRequest { int64 project_id = 1; string wallet = 2; string receipt_status = 3; string method_id = 4; int32 page = 5; int32 page_size = 6; }
 message ListProjectWalletNormalTransactionsResponse { repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TokenWalletNormalTransaction transactions = 1; int64 total = 2; int32 page = 3; int32 page_size = 4; }
 message GetCollectionTaskRequest { int64 task_id = 1; }

@@ -166,8 +166,6 @@ var moduleGRPCRules = map[string]grpcModuleRule{
 	"/tokenapi.TokenCatalogService/ListProjects":                        moduleRead(accountaccess.ModuleToken),
 	"/tokenapi.TokenCatalogService/GetProjectDetail":                    moduleRead(accountaccess.ModuleToken),
 	"/tokenapi.TokenCatalogService/GetProjectProfile":                   moduleRead(accountaccess.ModuleToken),
-	"/tokenapi.TokenCatalogService/GetProjectSwapActivity":              moduleRead(accountaccess.ModuleToken),
-	"/tokenapi.TokenCatalogService/ListProjectSwapEvents":               moduleRead(accountaccess.ModuleToken),
 	"/tokenapi.TokenCatalogService/ListProjectWalletNormalTransactions": moduleRead(accountaccess.ModuleToken),
 	"/tokenapi.TokenCollectionService/GetCollectionTask":                moduleRead(accountaccess.ModuleToken),
 	"/tokenapi.TokenCollectionService/ListCollectionTasks":              moduleRead(accountaccess.ModuleToken),

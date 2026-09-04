@@ -113,16 +113,6 @@ func (*TokenProjectProfileWalletSummary) ProtoMessage() {}
 
 func (*TokenProjectRelatedWallet) ProtoMessage() {}
 
-func (*TokenProjectSwapActivity) ProtoMessage() {}
-
-func (*TokenProjectSwapAsset) ProtoMessage() {}
-
-func (*TokenProjectSwapBlock) ProtoMessage() {}
-
-func (*TokenProjectSwapEvent) ProtoMessage() {}
-
-func (*TokenProjectSwapPairActivity) ProtoMessage() {}
-
 func (*TokenRuntimeConfiguration) ProtoMessage() {}
 
 func (*TokenWalletBlocklistEntry) ProtoMessage() {}

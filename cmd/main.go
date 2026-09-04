@@ -21,7 +21,6 @@ import (
 	athenaTokenChainProcessorCommands "github.com/useryege/athena/cmd/athena-token-chain-processor/commands"
 	athenaTokenCollectorCommands "github.com/useryege/athena/cmd/athena-token-collector/commands"
 	athenaTokenProfileBuilderCommands "github.com/useryege/athena/cmd/athena-token-profile-builder/commands"
-	athenaTokenSwapProcessorCommands "github.com/useryege/athena/cmd/athena-token-swap-processor/commands"
 	athenaWalletCommands "github.com/useryege/athena/cmd/athena-wallet/commands"
 	athenaWormMarketsCommands "github.com/useryege/athena/cmd/athena-worm-markets/commands"
 	athenaWormTradingCommands "github.com/useryege/athena/cmd/athena-worm-trading/commands"
@@ -70,8 +69,6 @@ func main() {
 		command = athenaTokenAPICommands.NewCommand()
 	case "athena-token-chain-processor":
 		command = athenaTokenChainProcessorCommands.NewCommand()
-	case "athena-token-swap-processor":
-		command = athenaTokenSwapProcessorCommands.NewCommand()
 	case "athena-token-collector":
 		command = athenaTokenCollectorCommands.NewCommand()
 	case "athena-token-profile-builder":

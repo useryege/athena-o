@@ -221,33 +221,6 @@ func (s *Server) GetProjectDetail(ctx context.Context, req *tokenapipkg.GetProje
 	}
 	return &tokenapipkg.GetProjectDetailResponse{Found: r.GetFound(), Detail: r.GetDetail()}, nil
 }
-func (s *Server) GetProjectSwapActivity(ctx context.Context, req *tokenapipkg.GetProjectSwapActivityRequest) (*tokenapipkg.GetProjectSwapActivityResponse, error) {
-	client := s.tokenAPIClientSet.Catalog()
-	r, e := client.GetProjectSwapActivity(ctx, &tokenapiapiclient.GetProjectSwapActivityRequest{ProjectId: req.GetProjectId()})
-	if e != nil {
-		return nil, e
-	}
-	return &tokenapipkg.GetProjectSwapActivityResponse{Found: r.GetFound(), Activity: r.GetActivity()}, nil
-}
-func (s *Server) ListProjectSwapEvents(ctx context.Context, req *tokenapipkg.ListProjectSwapEventsRequest) (*tokenapipkg.ListProjectSwapEventsResponse, error) {
-	client := s.tokenAPIClientSet.Catalog()
-	r, e := client.ListProjectSwapEvents(ctx, &tokenapiapiclient.ListProjectSwapEventsRequest{
-		ProjectId:   req.GetProjectId(),
-		PairKind:    req.GetPairKind(),
-		BlockNumber: req.GetBlockNumber(),
-		Page:        req.GetPage(),
-		PageSize:    req.GetPageSize(),
-	})
-	if e != nil {
-		return nil, e
-	}
-	return &tokenapipkg.ListProjectSwapEventsResponse{
-		Events:   r.GetEvents(),
-		Total:    r.GetTotal(),
-		Page:     r.GetPage(),
-		PageSize: r.GetPageSize(),
-	}, nil
-}
 func (s *Server) ListProjectWalletNormalTransactions(ctx context.Context, req *tokenapipkg.ListProjectWalletNormalTransactionsRequest) (*tokenapipkg.ListProjectWalletNormalTransactionsResponse, error) {
 	client := s.tokenAPIClientSet.Catalog()
 	r, e := client.ListProjectWalletNormalTransactions(ctx, &tokenapiapiclient.ListProjectWalletNormalTransactionsRequest{ProjectId: req.GetProjectId(), Wallet: req.GetWallet(), ReceiptStatus: req.GetReceiptStatus(), MethodId: req.GetMethodId(), Page: req.GetPage(), PageSize: req.GetPageSize()})

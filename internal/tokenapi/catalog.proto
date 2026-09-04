@@ -8,7 +8,5 @@ service TokenCatalogService {
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
   rpc GetProjectDetail(GetProjectDetailRequest) returns (GetProjectDetailResponse);
   rpc GetProjectProfile(GetProjectProfileRequest) returns (GetProjectProfileResponse);
-  rpc GetProjectSwapActivity(GetProjectSwapActivityRequest) returns (GetProjectSwapActivityResponse);
-  rpc ListProjectSwapEvents(ListProjectSwapEventsRequest) returns (ListProjectSwapEventsResponse);
   rpc ListProjectWalletNormalTransactions(ListProjectWalletNormalTransactionsRequest) returns (ListProjectWalletNormalTransactionsResponse);
 }

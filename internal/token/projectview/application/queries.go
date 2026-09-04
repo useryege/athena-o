@@ -2,19 +2,15 @@ package application
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/useryege/athena/internal/token/projectview"
 	"github.com/useryege/athena/internal/token/shared"
-	"github.com/useryege/athena/internal/token/swap"
 )
 
 type ReadRepository interface {
 	ListProjectsPage(context.Context, projectview.ProjectListFilter, int32, int32) (*projectview.ProjectListPage, error)
 	GetProjectDetail(context.Context, int64) (*projectview.Detail, error)
-	GetProjectSwapActivity(context.Context, int64) (*projectview.SwapActivity, error)
-	ListProjectSwapEventsPage(context.Context, int64, swap.PairKind, uint64, int32, int32) (*projectview.SwapEventPage, error)
 	ListProjectWalletNormalTransactionsPage(context.Context, int64, shared.Address, string, string, int32, int32) (*projectview.WalletNormalTransactionPage, error)
 }
 
@@ -38,33 +34,6 @@ func (queries *Queries) GetProjectDetail(ctx context.Context, projectID int64) (
 	}
 	detail.GeneratedAt = queries.now().UTC()
 	return detail, nil
-}
-
-func (queries *Queries) GetProjectSwapActivity(ctx context.Context, projectID int64) (*projectview.SwapActivity, error) {
-	activity, err := queries.repository.GetProjectSwapActivity(ctx, projectID)
-	if err != nil || activity == nil {
-		return activity, err
-	}
-	activity.GeneratedAt = queries.now().UTC()
-	return activity, nil
-}
-
-func (queries *Queries) ListProjectSwapEventsPage(
-	ctx context.Context,
-	projectID int64,
-	pairKind swap.PairKind,
-	blockNumber uint64,
-	page, pageSize int32,
-) (*projectview.SwapEventPage, error) {
-	switch pairKind {
-	case swap.PairKindWETH, swap.PairKindUSDT:
-	default:
-		return nil, fmt.Errorf("pair kind must be weth or usdt")
-	}
-	if blockNumber == 0 {
-		return nil, fmt.Errorf("block number must be positive")
-	}
-	return queries.repository.ListProjectSwapEventsPage(ctx, projectID, pairKind, blockNumber, page, pageSize)
 }
 
 func (queries *Queries) ListProjectWalletNormalTransactionsPage(

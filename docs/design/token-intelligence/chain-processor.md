@@ -5,13 +5,13 @@
 The Token Chain Processor scans configured EVM chains in block order, discovers
 contract-creation candidates, validates Token projects, and atomically
 initializes accepted projects. A committed accepted project includes its code
-hash, two canonical pairs, creator and initial recipients, exactly six one-time
-collection tasks, and two independent Swap targets. The block checkpoint moves
-only after the complete block result commits.
+hash, two canonical pairs, creator and initial recipients, and exactly six
+one-time collection tasks. The block checkpoint moves only after the complete
+block result commits.
 
-Collection execution, ProjectProfile construction, and Swap event sampling are
-separate processes. The Chain Processor has no project expiry, recurring
-schedule, report, selection, or trend responsibility.
+Collection execution and ProjectProfile construction are separate processes.
+The Chain Processor has no project expiry, recurring schedule, report,
+selection, or trend responsibility.
 
 ## Source Locations
 
@@ -23,7 +23,7 @@ schedule, report, selection, or trend responsibility.
 | Block source | [internal/token/adapters/evm/block_source.go](../../../internal/token/adapters/evm/block_source.go) | `DiscoverProjectBlock`, `LatestBlockHeader` |
 | Atomic persistence | [internal/token/adapters/postgres/chain_processing_store.go](../../../internal/token/adapters/postgres/chain_processing_store.go) | `ChainRepository.CommitProcessedBlock` |
 | Attempt diagnostics | [internal/token/adapters/postgres/chain_block_processing_attempt_store.go](../../../internal/token/adapters/postgres/chain_block_processing_attempt_store.go) | attempt start/complete/summary methods |
-| Schema | [internal/token/adapters/postgres/migrations/000001_init.sql](../../../internal/token/adapters/postgres/migrations/000001_init.sql) | checkpoint, candidate, project, collection-task, and Swap tables |
+| Schema | [internal/token/adapters/postgres/migrations/000001_init.sql](../../../internal/token/adapters/postgres/migrations/000001_init.sql) | checkpoint, candidate, project, and collection-task tables |
 | Public operations API | [internal/tokenapi/chain_service.go](../../../internal/tokenapi/chain_service.go) | checkpoint and processing-attempt reads |
 
 ## Architecture
@@ -38,7 +38,6 @@ flowchart LR
     A --> C["atomic PostgreSQL block commit"]
     C --> D["validated/rejected candidates"]
     C --> J["project + six collection tasks"]
-    C --> S["two Swap targets"]
     C --> K["chain checkpoint"]
     A --> M["processing-attempt diagnostics"]
 ```
@@ -69,12 +68,11 @@ whole block.
 6. One PostgreSQL transaction first locks the durable checkpoint and requires
    its cursor to equal the preceding block, then writes every candidate outcome. For each accepted
    candidate it idempotently creates the project graph, inserts all six fixed
-   collection types, verifies the project has exactly six distinct tasks, and
-   initializes wrapped-native and USDT Swap targets. Rediscovery of a committed
-   project reuses its immutable project context and only verifies the six-task
-   invariant.
+   collection types, and verifies the project has exactly six distinct tasks.
+   Rediscovery of a committed project reuses its immutable project context and
+   only verifies the six-task invariant.
 7. The transaction advances the checkpoint with a compare-and-set only after
-   all project/task/Swap writes succeed. A concurrent instance that already
+   all project and task writes succeed. A concurrent instance that already
    committed the block is observed without rewriting data or moving the cursor
    backward. A missing or zero canonical pair fails the block.
 8. The attempt is completed outside the business transaction with stage
@@ -101,16 +99,12 @@ collectors. The fixed tasks are `chain_state`, `wallet_asset_state`,
 `wallet_normal_transactions`. The `(project_id, data_type)` uniqueness
 constraint makes rediscovery idempotent.
 
-Each accepted project also initializes its wrapped-native and USDT
-`project_swap_pair` rows. Their later collection and terminal state are owned by
-the [Token Swap Processor](swap-processor.md).
-
 ## Configuration
 
 Per-chain settings select enablement, WebSocket endpoints, ATHENA contract,
-initial lookback, processor poll interval, and Swap poll interval. The shared
-Token PostgreSQL DSN and auto-migration setting control persistence. The
-dedicated Token node proxy is optional. Health listen address defaults to
+initial lookback, and processor poll interval. The shared Token PostgreSQL DSN
+and auto-migration setting control persistence. The dedicated Token node proxy
+is optional. Health listen address defaults to
 `127.0.0.1:8110`; stale readiness defaults to two minutes.
 
 Ethereum Mainnet is chain `1` and BSC Mainnet is chain `56`. Every maintained
@@ -122,8 +116,8 @@ per-candidate inspection concurrency is ten.
 
 - A committed cursor covers every candidate outcome in that block.
 - Every accepted project visible behind the cursor has its complete context,
-  exactly six unique collection tasks, and two nonzero canonical Swap targets.
-- Rejected candidates create no project, collection tasks, or Swap targets.
+  two nonzero canonical pairs, and exactly six unique collection tasks.
+- Rejected candidates create no project or collection tasks.
 - Blocks for one chain commit strictly in ascending order.
 - Candidate ordering remains block transaction order through persistence.
 - Discovery makes no scheduled or recurring work and performs no lifecycle
@@ -137,8 +131,8 @@ startup. Header, block, ATHENA, code, receipt, sender, or shape errors fail the
 current block before its checkpoint advances and reset the cached chain client
 when appropriate.
 
-Any candidate, project, wallet, six-task, Swap-target, or checkpoint write
-failure rolls back the complete business transaction. The next poll retries
+Any candidate, project, wallet, six-task, or checkpoint write failure rolls
+back the complete business transaction. The next poll retries
 from the unchanged cursor. A crash after the business commit but before attempt
 completion is reconciled as successful with incomplete diagnostic timing.
 
@@ -153,7 +147,7 @@ processor.
 ## Change Checklist
 
 - [ ] Recheck candidate ordering, validation boundaries, and accepted context.
-- [ ] Recheck project, six-task, two-Swap-target, and checkpoint atomicity.
+- [ ] Recheck project context, six-task, and checkpoint atomicity.
 - [ ] Recheck duplicate discovery against all unique constraints.
 - [ ] Recheck attempt reconciliation, duration accounting, and retention.
 - [ ] Recheck chain registry, proxy, health, and shutdown behavior.

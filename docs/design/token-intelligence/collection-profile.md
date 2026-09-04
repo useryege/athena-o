@@ -11,8 +11,6 @@ task reaches a terminal state.
 Project discovery owns atomic project and task creation. Six dedicated
 collector processes own external reads. The Profile Builder only consumes
 persisted project context and evidence; it never calls an external provider.
-The independent [Token Swap Processor](swap-processor.md) remains outside this
-pipeline and its sampled events are not profile evidence.
 
 ## Source Locations
 
@@ -151,7 +149,6 @@ durations are fixed at 90 and 30 seconds.
   final barrier transition.
 - Only real collection failures consume the three-attempt budget.
 - Every profile is derived solely from the persisted six-task snapshot.
-- Swap state is independent and cannot delay or alter profile construction.
 
 ## Failure Recovery
 

@@ -9,7 +9,6 @@ import (
 	"github.com/useryege/athena/internal/token/profile"
 	"github.com/useryege/athena/internal/token/projectview"
 	"github.com/useryege/athena/internal/token/shared"
-	"github.com/useryege/athena/internal/token/swap"
 )
 
 type CatalogApplication interface {
@@ -30,8 +29,6 @@ type ProfileApplication interface {
 type ProjectViewApplication interface {
 	ListProjectsPage(context.Context, projectview.ProjectListFilter, int32, int32) (*projectview.ProjectListPage, error)
 	GetProjectDetail(context.Context, int64) (*projectview.Detail, error)
-	GetProjectSwapActivity(context.Context, int64) (*projectview.SwapActivity, error)
-	ListProjectSwapEventsPage(context.Context, int64, swap.PairKind, uint64, int32, int32) (*projectview.SwapEventPage, error)
 	ListProjectWalletNormalTransactionsPage(context.Context, int64, shared.Address, string, string, int32, int32) (*projectview.WalletNormalTransactionPage, error)
 }
 

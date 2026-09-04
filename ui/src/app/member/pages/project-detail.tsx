@@ -16,7 +16,6 @@ import {ProjectExplorerValue as ExplorerValue, ProjectTimeValue as TimeValue} fr
 import {ProjectJSONDrawer, ProjectJSONDrawerValue} from './project-json-drawer';
 import {useProjectDetailReturn, useScrollProjectDetailOnPush} from './project-navigation';
 import {ProjectProfileTab} from './project-profile-tab';
-import {ProjectSwapActivityTab} from './project-swap-activity';
 import {ChainBadge, pairRiskSignalCopy, RiskSignalTag, TokenLogo} from './token-shared';
 
 const DATA_TYPES = ['chain_state', 'wallet_asset_state', 'simulation_result', 'ave', 'contract_code_source', 'wallet_normal_transactions'];
@@ -304,7 +303,6 @@ export const ProjectDetailPage = () => {
             <Tabs className='project-detail-tabs' activeKey={activeTab} onChange={setActiveTab} items={[
                 {key: 'profile', label: 'Project Profile', children: <ProjectProfileTab project={current.project} profile={current.profile} profileState={current.profileState} openJSON={setJSONContent} />},
                 {key: 'market', label: 'Market & Liquidity', children: <MarketLiquidityTab detail={current} />},
-                {key: 'swap', label: 'Swap Activity', children: <ProjectSwapActivityTab projectID={projectID} active={activeTab === 'swap'} refreshVersion={refreshVersion} />},
                 {key: 'wallets', label: 'Wallets', children: <WalletsTab detail={current} />},
                 {key: 'transactions', label: 'Pre-deploy Transactions', children: <PreDeployTransactionsTab projectID={projectID} active={activeTab === 'transactions'} refreshVersion={refreshVersion} detail={current} />},
                 {key: 'contract', label: 'Contract', children: <ContractTab detail={current} />},

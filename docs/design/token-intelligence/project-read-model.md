@@ -4,7 +4,7 @@
 
 The Token project read model exposes validated projects, their six-source
 collection progress, one immutable ProjectProfile, contract source, related
-wallets, bounded pre-deployment transactions, and independent Swap activity.
+wallets, and bounded pre-deployment transactions.
 It owns list filtering and projection, project-detail assembly, public Token
 API mapping, and the member UI's Token pages. It does not schedule work or call
 external market, explorer, or chain providers.
@@ -63,8 +63,8 @@ by the single collection-task endpoint.
 5. `GET /api/v1/tokens/collection-tasks` returns paged task summaries filtered
    by project, data type, and status. The task-ID route adds the complete
    versioned evidence payload and content hash when collection succeeded.
-6. Contract source, wallet transaction, Swap activity, and Swap event routes
-   remain separate bounded reads linked from project detail.
+6. Contract-source and wallet-transaction routes remain separate bounded reads
+   linked from project detail.
 7. The project list polls only while at least one visible collection or profile
    build remains pending/running. Project detail uses its detail request alone
    for status display and polling. Terminal pages stop automatically and retain
@@ -132,8 +132,6 @@ endpoints are side-effect free.
   is the authoritative full evidence response.
 - The transaction total is distinct by transaction hash even when a transaction
   is associated with multiple related wallets.
-- Swap terminal states remain visible but never change collection or profile
-  status.
 
 ## Failure Recovery
 

@@ -409,104 +409,6 @@ export interface TokenProjectDetail {
     generatedAt?: string;
 }
 
-export type TokenProjectSwapPairKind = 'weth' | 'usdt';
-
-export type TokenProjectSwapDirection = 'buy' | 'sell' | 'complex';
-
-export interface TokenProjectSwapAsset {
-    address?: string;
-    symbol?: string;
-    decimals?: number;
-    tokenIndex?: number;
-}
-
-export interface TokenProjectSwapBlock {
-    sampleIndex?: number;
-    blockNumber?: string;
-    blockTime?: string;
-    eventCount?: number;
-    transactionCount?: number;
-    transactionOriginCount?: number;
-    buyEventCount?: number;
-    sellEventCount?: number;
-    complexEventCount?: number;
-    previousBlockGap?: string;
-    previousTimeGapSeconds?: string;
-    baseAmountInRaw?: string;
-    baseAmountOutRaw?: string;
-    quoteAmountInRaw?: string;
-    quoteAmountOutRaw?: string;
-    buyQuoteAmountRaw?: string;
-    sellQuoteAmountRaw?: string;
-    openPrice?: string;
-    highPrice?: string;
-    lowPrice?: string;
-    closePrice?: string;
-    vwap?: string;
-}
-
-export interface TokenProjectSwapPairActivity {
-    pairKind?: TokenProjectSwapPairKind;
-    pairAddress?: string;
-    status?: string;
-    swapBlockCount?: number;
-    targetSwapBlockCount?: number;
-    startBlockNumber?: string;
-    startBlockTime?: string;
-    firstSwapBlockNumber?: string;
-    firstSwapBlockTime?: string;
-    lastSwapBlockNumber?: string;
-    lastSwapBlockTime?: string;
-    absoluteExpiryBlockTime?: string;
-    nextExpiryBlockTime?: string;
-    completedBlockNumber?: string;
-    completedBlockTime?: string;
-    expiredBlockNumber?: string;
-    expiredBlockTime?: string;
-    expiredReason?: string;
-    baseAsset?: TokenProjectSwapAsset;
-    quoteAsset?: TokenProjectSwapAsset;
-    eventCount?: number;
-    transactionCount?: number;
-    transactionOriginCount?: number;
-    buyEventCount?: number;
-    sellEventCount?: number;
-    complexEventCount?: number;
-    baseAmountInRaw?: string;
-    baseAmountOutRaw?: string;
-    quoteAmountInRaw?: string;
-    quoteAmountOutRaw?: string;
-    buyQuoteAmountRaw?: string;
-    sellQuoteAmountRaw?: string;
-    blocks: TokenProjectSwapBlock[];
-}
-
-export interface TokenProjectSwapActivity {
-    projectID?: number;
-    chainID?: number;
-    generatedAt?: string;
-    pairs: TokenProjectSwapPairActivity[];
-}
-
-export interface TokenProjectSwapEvent {
-    transactionHash?: string;
-    transactionIndex?: string;
-    logIndex?: string;
-    txFrom?: string;
-    sender?: string;
-    toAddress?: string;
-    amount0In?: string;
-    amount1In?: string;
-    amount0Out?: string;
-    amount1Out?: string;
-    baseAmountInRaw?: string;
-    baseAmountOutRaw?: string;
-    quoteAmountInRaw?: string;
-    quoteAmountOutRaw?: string;
-    direction?: TokenProjectSwapDirection;
-    effectivePrice?: string;
-}
-
 export interface TokenWalletNormalTransaction {
     wallet?: string;
     transactionHash?: string;
@@ -544,13 +446,6 @@ const numberValue = (value: unknown): number | undefined => {
         return Number.isNaN(parsed) ? undefined : parsed;
     }
     return undefined;
-};
-
-const exactStringValue = (value: unknown): string | undefined => {
-    if (value === undefined || value === null) {
-        return undefined;
-    }
-    return String(value);
 };
 
 function normalizeContractCodeBlocklistEntry(item: any): TokenContractCodeBlocklistEntry {
@@ -1046,115 +941,6 @@ function normalizeProjectDetail(item: any): TokenProjectDetail {
     };
 }
 
-function normalizeProjectSwapAsset(item: any): TokenProjectSwapAsset | undefined {
-    if (!item) {
-        return undefined;
-    }
-    return {
-        address: item.address,
-        symbol: item.symbol,
-        decimals: numberValue(item.decimals),
-        tokenIndex: numberValue(item.tokenIndex ?? item.token_index)
-    };
-}
-
-function normalizeProjectSwapBlock(item: any): TokenProjectSwapBlock {
-    return {
-        sampleIndex: numberValue(item.sampleIndex ?? item.sample_index),
-        blockNumber: exactStringValue(item.blockNumber ?? item.block_number),
-        blockTime: item.blockTime ?? item.block_time,
-        eventCount: numberValue(item.eventCount ?? item.event_count),
-        transactionCount: numberValue(item.transactionCount ?? item.transaction_count),
-        transactionOriginCount: numberValue(item.transactionOriginCount ?? item.transaction_origin_count),
-        buyEventCount: numberValue(item.buyEventCount ?? item.buy_event_count),
-        sellEventCount: numberValue(item.sellEventCount ?? item.sell_event_count),
-        complexEventCount: numberValue(item.complexEventCount ?? item.complex_event_count),
-        previousBlockGap: exactStringValue(item.previousBlockGap ?? item.previous_block_gap),
-        previousTimeGapSeconds: exactStringValue(item.previousTimeGapSeconds ?? item.previous_time_gap_seconds),
-        baseAmountInRaw: item.baseAmountInRaw ?? item.base_amount_in_raw,
-        baseAmountOutRaw: item.baseAmountOutRaw ?? item.base_amount_out_raw,
-        quoteAmountInRaw: item.quoteAmountInRaw ?? item.quote_amount_in_raw,
-        quoteAmountOutRaw: item.quoteAmountOutRaw ?? item.quote_amount_out_raw,
-        buyQuoteAmountRaw: item.buyQuoteAmountRaw ?? item.buy_quote_amount_raw,
-        sellQuoteAmountRaw: item.sellQuoteAmountRaw ?? item.sell_quote_amount_raw,
-        openPrice: item.openPrice ?? item.open_price,
-        highPrice: item.highPrice ?? item.high_price,
-        lowPrice: item.lowPrice ?? item.low_price,
-        closePrice: item.closePrice ?? item.close_price,
-        vwap: item.vwap
-    };
-}
-
-function normalizeProjectSwapPairActivity(item: any): TokenProjectSwapPairActivity {
-    const pairKind = item.pairKind ?? item.pair_kind;
-    return {
-        pairKind: pairKind === 'weth' || pairKind === 'usdt' ? pairKind : undefined,
-        pairAddress: item.pairAddress ?? item.pair_address,
-        status: item.status,
-        swapBlockCount: numberValue(item.swapBlockCount ?? item.swap_block_count),
-        targetSwapBlockCount: numberValue(item.targetSwapBlockCount ?? item.target_swap_block_count),
-        startBlockNumber: exactStringValue(item.startBlockNumber ?? item.start_block_number),
-        startBlockTime: item.startBlockTime ?? item.start_block_time,
-        firstSwapBlockNumber: exactStringValue(item.firstSwapBlockNumber ?? item.first_swap_block_number),
-        firstSwapBlockTime: item.firstSwapBlockTime ?? item.first_swap_block_time,
-        lastSwapBlockNumber: exactStringValue(item.lastSwapBlockNumber ?? item.last_swap_block_number),
-        lastSwapBlockTime: item.lastSwapBlockTime ?? item.last_swap_block_time,
-        absoluteExpiryBlockTime: item.absoluteExpiryBlockTime ?? item.absolute_expiry_block_time,
-        nextExpiryBlockTime: item.nextExpiryBlockTime ?? item.next_expiry_block_time,
-        completedBlockNumber: exactStringValue(item.completedBlockNumber ?? item.completed_block_number),
-        completedBlockTime: item.completedBlockTime ?? item.completed_block_time,
-        expiredBlockNumber: exactStringValue(item.expiredBlockNumber ?? item.expired_block_number),
-        expiredBlockTime: item.expiredBlockTime ?? item.expired_block_time,
-        expiredReason: item.expiredReason ?? item.expired_reason,
-        baseAsset: normalizeProjectSwapAsset(item.baseAsset ?? item.base_asset),
-        quoteAsset: normalizeProjectSwapAsset(item.quoteAsset ?? item.quote_asset),
-        eventCount: numberValue(item.eventCount ?? item.event_count),
-        transactionCount: numberValue(item.transactionCount ?? item.transaction_count),
-        transactionOriginCount: numberValue(item.transactionOriginCount ?? item.transaction_origin_count),
-        buyEventCount: numberValue(item.buyEventCount ?? item.buy_event_count),
-        sellEventCount: numberValue(item.sellEventCount ?? item.sell_event_count),
-        complexEventCount: numberValue(item.complexEventCount ?? item.complex_event_count),
-        baseAmountInRaw: item.baseAmountInRaw ?? item.base_amount_in_raw,
-        baseAmountOutRaw: item.baseAmountOutRaw ?? item.base_amount_out_raw,
-        quoteAmountInRaw: item.quoteAmountInRaw ?? item.quote_amount_in_raw,
-        quoteAmountOutRaw: item.quoteAmountOutRaw ?? item.quote_amount_out_raw,
-        buyQuoteAmountRaw: item.buyQuoteAmountRaw ?? item.buy_quote_amount_raw,
-        sellQuoteAmountRaw: item.sellQuoteAmountRaw ?? item.sell_quote_amount_raw,
-        blocks: ((item.blocks || []) as any[]).map(normalizeProjectSwapBlock)
-    };
-}
-
-function normalizeProjectSwapActivity(item: any): TokenProjectSwapActivity {
-    return {
-        projectID: numberValue(item.projectID ?? item.projectId ?? item.project_id),
-        chainID: numberValue(item.chainID ?? item.chainId ?? item.chain_id),
-        generatedAt: item.generatedAt ?? item.generated_at,
-        pairs: ((item.pairs || []) as any[]).map(normalizeProjectSwapPairActivity)
-    };
-}
-
-function normalizeProjectSwapEvent(item: any): TokenProjectSwapEvent {
-    const direction = item.direction;
-    return {
-        transactionHash: item.transactionHash ?? item.transaction_hash,
-        transactionIndex: exactStringValue(item.transactionIndex ?? item.transaction_index),
-        logIndex: exactStringValue(item.logIndex ?? item.log_index),
-        txFrom: item.txFrom ?? item.tx_from,
-        sender: item.sender,
-        toAddress: item.toAddress ?? item.to_address,
-        amount0In: item.amount0In ?? item.amount0_in,
-        amount1In: item.amount1In ?? item.amount1_in,
-        amount0Out: item.amount0Out ?? item.amount0_out,
-        amount1Out: item.amount1Out ?? item.amount1_out,
-        baseAmountInRaw: item.baseAmountInRaw ?? item.base_amount_in_raw,
-        baseAmountOutRaw: item.baseAmountOutRaw ?? item.base_amount_out_raw,
-        quoteAmountInRaw: item.quoteAmountInRaw ?? item.quote_amount_in_raw,
-        quoteAmountOutRaw: item.quoteAmountOutRaw ?? item.quote_amount_out_raw,
-        direction: direction === 'buy' || direction === 'sell' || direction === 'complex' ? direction : undefined,
-        effectivePrice: item.effectivePrice ?? item.effective_price
-    };
-}
-
 function normalizeWalletNormalTransaction(item: any): TokenWalletNormalTransaction {
     return {
         wallet: item.wallet,
@@ -1402,41 +1188,6 @@ export class TokenService {
         const promise = req.then(res => {
             const body = res.body || {};
             return body.found === false || !body.profile ? undefined : normalizeProjectProfile(body.profile);
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public getProjectSwapActivity(projectID: number): Promise<TokenProjectSwapActivity | undefined> & {abort?: () => void} {
-        const req = requests.get(`/tokens/projects/${encodeURIComponent(String(projectID))}/swap-activity`, readScope);
-        const promise = req.then(res => {
-            const body = res.body || {};
-            return body.found === false || !body.activity ? undefined : normalizeProjectSwapActivity(body.activity);
-        }) as any;
-        promise.abort = () => req.abort();
-        return promise;
-    }
-
-    public listProjectSwapEvents(
-        projectID: number,
-        pairKind: TokenProjectSwapPairKind,
-        blockNumber: string,
-        options: {page?: number; pageSize?: number} = {}
-    ): Promise<PagedResponse<TokenProjectSwapEvent>> & {abort?: () => void} {
-        const req = requests
-            .get(
-                `/tokens/projects/${encodeURIComponent(String(projectID))}/swap-pairs/${encodeURIComponent(pairKind)}/blocks/${encodeURIComponent(String(blockNumber))}/events`,
-                readScope
-            )
-            .query({page: options.page, page_size: options.pageSize});
-        const promise = req.then(res => {
-            const body = res.body || {};
-            return {
-                items: ((body.events || []) as any[]).map(normalizeProjectSwapEvent),
-                total: numberValue(body.total) || 0,
-                page: numberValue(body.page) || options.page || 1,
-                pageSize: numberValue(body.pageSize ?? body.page_size) || options.pageSize || 50
-            };
         }) as any;
         promise.abort = () => req.abort();
         return promise;
