@@ -8,6 +8,8 @@
 
 owner 属于尽力采集的信息。直接函数调用和未来 AI 分析路线都可能无法取得 owner，这一结果可以接受：保存实际结果及原因后继续研究，仅跳过无法定位地址的 owner 钱包采集，不阻塞其他资料采集或项目研究，也不因缺少 owner 自动否决项目。未取得地址不代表已经确认合约没有 owner。
 
+上述继续研究指项目尚未被其他筛选规则排除。若源码质检报告评定为高风险，项目直接排除、不再研究；owner 获取及其结果不改变该结论。高风险筛选规则见 [AI 静态质检流程](token-contract-review-flow.md)。
+
 首版直接调用目标合约的 `owner()` 或 `getowner()` 读取地址。函数名称按已确认的大小写记录，源码不是首版读取的前置条件。整体资料范围见 [研究资料整理流程](token-research-materials-flow.md)。
 
 ## 流程图
@@ -24,15 +26,15 @@ flowchart TD
     result -->|"否"| unavailable["保存实际结果与未取得 owner 原因<br/>仅跳过无法定位地址的 owner 钱包采集"]
     materials --> collected["将已有 owner 资料或未取得结果<br/>纳入项目研究资料"]
     unavailable --> collected
-    collected --> research["继续项目研究<br/>不因缺少 owner 阻塞或自动否决项目"]
+    collected --> research["未被其他规则排除时继续项目研究<br/>不因缺少 owner 阻塞或自动否决项目"]
 
-    project -. 未来 AI 路线 .-> lookup["按当前合约 code_hash 查询数据库<br/>匹配已保存的 owner 读取方式"]
+    project -. 未来 AI 路线 .-> lookup["按当前合约 code_hash 查询数据库<br/>匹配对应源码及共享的 owner 读取方式"]
     lookup -.-> cached{"是否有可复用的读取方式？"}
     cached -. 有 .-> chainRead["用读取方式调用当前链的当前合约<br/>按采集时最新区块读取 owner 地址"]
     cached -. 无 .-> source{"是否已取得对应源码？"}
     source -. 有 .-> analyze["由 AI 分析源码<br/>确定 owner 字段及读取方式"]
     source -. 无 .-> unavailable
-    analyze -. 得到读取方式 .-> saveMethod["保存 AI 读取方式<br/>关联源码及 code_hash"]
+    analyze -. 得到读取方式 .-> saveMethod["保存该源码共用的 owner 读取方式<br/>关联源码及 code_hash"]
     saveMethod -.-> chainRead
     analyze -. 未确定读取方式 .-> unavailable
     chainRead -.-> result
@@ -56,7 +58,9 @@ owner 读取与余额采集使用各自采集时的最新区块，不要求两�
 
 ## 未来路线与待设计事项
 
-未来 AI 分析得到的 owner 读取方式与实际源码及其对应的运行时字节码 `code_hash` 关联保存。下次按当前合约的 `code_hash` 先查询数据库，已有可用方式时跳过 AI 分析；没有可用方式且已取得对应源码时，再由 AI 分析并保存读取方式。源码获取规则见 [合约源码获取流程](token-contract-source-flow.md)。
+未来 AI 分析得到的 owner 读取方式与实际源码及其对应的运行时字节码 `code_hash` 关联保存。同一份源码共用同一份 owner 读取方式，不按项目重复分析。下次按当前合约的 `code_hash` 先查询数据库匹配源码及读取方式，已有可用方式时跳过 AI 分析；没有可用方式且已取得对应源码时，再由 AI 分析并保存读取方式。源码获取规则见 [合约源码获取流程](token-contract-source-flow.md)。
+
+源码的 [AI 静态质检报告及风险等级](token-contract-review-flow.md) 采用相同的共享原则：通过 `code_hash` 匹配到对应源码后，已有完成的质检报告就直接复用，仅在没有报告且有非空源码时生成并保存。因此，同一份源码的质检报告、风险等级和 owner 读取方式都属于源码层面的共享结果。报告用于高风险项目排除；读取方式用于取得当前合约的 owner 地址。静态质检不核实链上 owner，也不依赖 owner 读取成功；此处的共享关系不要求本轮实现未来 AI owner 路线，或将两种分析合并为一次调用。
 
 复用的是读取方式，各部署实例的 owner 地址仍分别读取。每次都对当前链、当前合约按采集时最新区块读取 owner，不将其他合约的地址或历史 owner 快照作为本次结果。缓存命中不保证读取成功；没有可用方式且没有源码、AI 未能确定方式或链上读取未取得地址，都保留实际结果与原因并继续研究。
 
@@ -74,4 +78,5 @@ owner 读取与余额采集使用各自采集时的最新区块，不要求两�
 - [Token 目标设计](token.md)
 - [研究资料整理流程](token-research-materials-flow.md)
 - [合约源码获取流程](token-contract-source-flow.md)
+- [合约源码 AI 静态质检与报告复用](token-contract-review-flow.md)
 - [返回业务设计与流程图索引](README.md)
