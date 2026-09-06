@@ -13,6 +13,7 @@ Athena is a trading/project sync system for the blockchain.
 
 - [业务设计与研究资料索引](project/README.md)
 - [Token 目标设计](project/token.md) — 中文业务设计草案，尚未实现。
+- [Token 流程图索引](project/README.md#流程图) — 每张流程图独立保存，附规则与待定边界说明。
 
 ## Current System Design
 
