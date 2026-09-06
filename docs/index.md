@@ -9,6 +9,15 @@ Athena is a trading/project sync system for the blockchain.
 
 ![Athena Architecture](assets/athena-architecture.png)
 
+## Business Design and Research
+
+- [业务设计与研究资料索引](project/README.md)
+- [Token 目标设计](project/token.md) — 中文业务设计草案，尚未实现。
+
+## Current System Design
+
+- [Living Design Documentation](design/README.md) — English documentation of the currently implemented system for developers and AI agents.
+
 ## Operations
 
 - [Makefile Commands and Deployment](operator-manual/makefile-commands.md)
