@@ -53,7 +53,7 @@ fenced PostgreSQL transaction.
 The result payload contains wallet count, association count, unique hash count,
 success/failure counts, native-value inflow/outflow, top methods, top external
 counterparties, and capped-wallet addresses. Detailed rows preserve block/time,
-transaction and log position, nonce, from/to, value, gas, input, decoded method,
+transaction position, nonce, from/to, value, gas, input, decoded method,
 receipt status, error flag, and collection time.
 
 One transaction may be associated with multiple related wallets. The database
