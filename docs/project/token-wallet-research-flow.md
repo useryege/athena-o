@@ -8,6 +8,8 @@
 
 L1 为第一层直接关联钱包，包括部署者、最多 5 个初始接收钱包、已取得的 owner 及税费接收钱包。初始接收钱包的选择沿用 [Token 目标设计](token.md#研究证据与完成条件)；owner 按 [owner 获取流程](token-owner-wallet-flow.md)，先复用或由 AI 分析源码确定读取方式，再由 Go 程序读取当前合约的链上地址。税费接收钱包按 [税费接收钱包获取流程](token-fee-recipient-wallet-flow.md)，由 AI 提取源码中的固定地址，或确定读函数交由 Go 读取当前链上状态；一个合约可同时包含这两种来源，合并取得的全部地址纳入 L1。5 个上限只限制初始接收钱包；owner 和税费接收钱包可为合约地址。未取得或只取得部分结果时，记录原因并继续研究其他已知钱包。
 
+[当前持币地址采集](token-holder-flow.md)作为独立研究资料，可匹配这里已有的项目角色及资金来源关系供展示。持有目标代币本身不使地址自动成为 L1，也不触发每钱包 300 笔交易、L2–L5 资金来源或其他资产余额采集；已经属于 L1–L5 的地址仍沿用其原有范围。持币查询时间不改变本流程的部署前历史窗口。
+
 从 L1 找资金来源形成 L2，再从 L2 找到 L3、从 L3 找到 L4、从 L4 找到 L5。L5 对应从 L1 向上追溯四轮；L5 钱包仍需采集历史并分析部署与代币交互，但不继续发现 L6。共同来源和循环转账按下文去重规则处理，不为每条路径复制钱包。
 
 展示采用按 L1–L5 分层的资金来源树，底层保留完整有向关系图。图示与交互说明见 [钱包资金来源关系图](token-wallet-funding-graph.md)。
@@ -146,4 +148,5 @@ Etherscan 的 [普通交易接口](https://docs.etherscan.io/api-reference/endpo
 - [项目研究与筛选流程](token-research-flow.md)
 - [合约 owner 获取与关联钱包采集](token-owner-wallet-flow.md)
 - [税费接收钱包获取与关联钱包采集](token-fee-recipient-wallet-flow.md)
+- [当前持币地址信息采集](token-holder-flow.md)
 - [返回业务设计与流程图索引](README.md)
