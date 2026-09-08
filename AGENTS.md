@@ -69,9 +69,10 @@ make notify-task-complete \
 
 ### Documentation Before Code
 
-- 修改业务逻辑或进行后端代码开发前，必须先阅读并梳理相关业务需求、目标设计和当前实现文档，明确本次需求、修改范围及预期行为。
+- 修改业务逻辑、进行后端代码开发或开展前端 UI 设计与开发前，必须先阅读并梳理相关业务需求、目标设计和当前实现文档，明确本次需求、修改范围及预期行为。
 - 相关文档缺失、过时或与本次需求不一致时，先补充或修正文档；需求存在歧义或冲突时，先澄清，再开展依赖这些需求的代码修改。
 - 必须先完成需求与文档对齐，再修改代码，不得先实现后补写需求设计。用户已明确的需求和决定应直接沿用，无需重复确认。
+- 前端 UI 必须在需求与文档对齐后，先完成页面结构、主要交互和关键状态的设计，并记录到对应业务需求或目标设计文档；按照 [UI Layout Review](#ui-layout-review) 完成必要的布局确认后，再实现代码，不得先实现后补设计。
 - 尚未实现的目标写入对应业务需求或目标设计文档；`docs/design/` 继续只描述当前实现，在代码实现时同步更新，避免提前把规划写成现状。
 
 ### Living Design Documentation
@@ -89,10 +90,10 @@ make notify-task-complete \
 
 ### UI Layout Review
 
-When a task involves UI design, page layout, interaction structure, visual hierarchy, or other frontend interface changes, generate a Markdown layout diagram first and submit it to the user for review before implementation.
+When a task involves UI design, page layout, interaction structure, visual hierarchy, or other frontend interface changes, first align the requirements and documents under [Documentation Before Code](#documentation-before-code), then complete the UI design and generate a Markdown layout diagram for user review before implementation.
 
 - The Markdown layout diagram should show the page structure, major regions, control placement, state or interaction entry points, and responsive differences when relevant.
-- Begin code implementation only after the user confirms the layout diagram.
+- Begin code implementation only after the requirements and documents are aligned, the UI design is complete, and the user confirms the layout diagram. Reuse an already-confirmed design when the scope and expected behavior remain unchanged.
 - Minor style tweaks, copy changes, or non-visual logic changes do not require a layout diagram unless the user explicitly asks for one.
 
 ### 本地图片路径规则
