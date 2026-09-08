@@ -10,6 +10,7 @@
   - [No Tests](#no-tests)
   - [Chinese Plans](#chinese-plans)
   - [Plan Implementation Completion Email](#plan-implementation-completion-email)
+  - [Documentation Before Code](#documentation-before-code)
   - [Living Design Documentation](#living-design-documentation)
   - [UI Layout Review](#ui-layout-review)
   - [本地图片路径规则](#本地图片路径规则)
@@ -65,6 +66,13 @@ make notify-task-complete \
 - Use the default `.env` notification configuration; this rule does not switch to `.env.prod`.
 - Wait for the Make command to finish before returning the final response.
 - If the notification still fails after the command's built-in retries, keep the implementation task complete but report the notification failure and a credential-safe error summary in the final response. Do not claim that the email was sent.
+
+### Documentation Before Code
+
+- 修改业务逻辑或进行后端代码开发前，必须先阅读并梳理相关业务需求、目标设计和当前实现文档，明确本次需求、修改范围及预期行为。
+- 相关文档缺失、过时或与本次需求不一致时，先补充或修正文档；需求存在歧义或冲突时，先澄清，再开展依赖这些需求的代码修改。
+- 必须先完成需求与文档对齐，再修改代码，不得先实现后补写需求设计。用户已明确的需求和决定应直接沿用，无需重复确认。
+- 尚未实现的目标写入对应业务需求或目标设计文档；`docs/design/` 继续只描述当前实现，在代码实现时同步更新，避免提前把规划写成现状。
 
 ### Living Design Documentation
 
