@@ -57,9 +57,20 @@ capabilities from the nine-module matrix:
 - **Markets:** Market Radar, Sports, Managed OO, Worm Trading, and World Cup
   Corners according to the module matrix. Worm Markets remains an API-only
   module grant and has no member page or navigation item.
-- **Token & Risk:** Token Intelligence and Wallet according to their modules.
+- **Token & Risk:** a disabled Token entry for accounts with Token `READ` or
+  `READ_WRITE`, and the independent Wallet entry according to its module.
 - **Operations:** Profit Sharing when the entitlement is enabled and
   Notifications for every authenticated ordinary interactive session.
+
+The Token entry has no path or children. `NavItem.disabled` is forwarded to
+the menu and checked by its click handler for both the desktop sidebar and
+mobile drawer. Token has no business pages, lazy imports, browser service,
+project return snapshots, or landing path. Direct `/token` and `/token/*`
+navigation reaches the existing not-found page without a compatibility redirect.
+Account Center permission cards and their summary use
+`accountAccessDisplayModules`, which excludes Token. The full nine-module
+model still drives authorization and account status, so Token-only access
+remains Active; it cannot trigger an automatic jump to a Token page.
 
 `/notifications` is an account-owned Telegram binding route, not a product
 module. It is registered directly instead of through `moduleRoute`, so both
@@ -132,7 +143,7 @@ are emitted in shared chunks.
 
 The member route tree includes `/wallet`, `/worm-trading/*`, `/market-radar/*`,
 `/sports-live`, `/sports-history`, `/world-cup-corners`, `/managed-oo/*`,
-the exact `/notifications` binding route, `/profit-sharing/*`, `/token/*`,
+the exact `/notifications` binding route, `/profit-sharing/*`,
 `/account/*`, and `/help`.
 Service Status and Etherscan Gateway have no member route or redirect.
 
@@ -266,5 +277,5 @@ fallback commands.
 - [ ] Pending access, Telegram temporary-state cleanup, authorization refresh, request abort, cache cleanup, and logout remain current.
 - [ ] Account Center keeps self-service and API Keys while excluding management functions.
 - [ ] Telegram binding remains interactive-member-only, module-independent, and free of system history or test-send UI.
-- [ ] Wallet, Worm, Token, and Profit Sharing behavior remains aligned with subsystem documents.
+- [ ] Wallet, Worm, Profit Sharing, the disabled Token entry, and permission display boundaries remain aligned with subsystem documents.
 - [ ] Source links resolve and the [design index](../README.md) summary remains current.

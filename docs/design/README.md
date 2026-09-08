@@ -49,7 +49,7 @@ The executable code remains the source of truth. These documents provide the mai
 | Token Intelligence | Ave token market data and canonical pair collection | [Ave Market Data Collection](token-intelligence/ave-market-data.md) |
 | Token Intelligence | Project list/detail, collection evidence, immutable profile, wallet, and contract-source reads | [Token Project Read Model](token-intelligence/project-read-model.md) |
 | Token Intelligence | One-time pre-deployment normal transactions for related wallets | [Project Wallet Pre-Deployment Normal Transactions](token-intelligence/wallet-normal-transactions.md) |
-| Token Intelligence | Independent Token-module READ and READ_WRITE authorization for UI, requests, caches, and APIs | [Token Module Access Control](token-intelligence/access-control.md) |
+| Token Intelligence | Token-module READ/READ_WRITE API authorization, retained grants, and the disabled member navigation entry | [Token Module Access Control](token-intelligence/access-control.md) |
 | Blockchain Data | Finalized inbound BSC transaction indexing and lookup | [BSC Inbound Normal Transactions](blockchain-data/bsc-inbound-normal-transactions.md) |
 | Blockchain Data | Finalized BSC V2 Swap-topic transaction indexing and lookup | [BSC V2 Swap Transactions](blockchain-data/bsc-v2-swap-transactions.md) |
 | Blockchain Data | Etherscan API-key and Gateway request scheduling | [Etherscan Manager](blockchain-data/etherscan-manager.md) |

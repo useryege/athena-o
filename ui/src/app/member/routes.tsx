@@ -26,13 +26,4 @@ export const ManagedOODisputesPage = React.lazy(() => import('./pages/managed-oo
 export const NotificationsPage = React.lazy(() => import('./pages/notifications').then(module => ({default: module.NotificationsPage})));
 export const ProfitSharingRoundsPage = React.lazy(() => import('./pages/profit-sharing').then(module => ({default: module.ProfitSharingRoundsPage})));
 export const ProfitSharingRoundPage = React.lazy(() => import('./pages/profit-sharing').then(module => ({default: module.ProfitSharingRoundPage})));
-export const ProjectsPage = React.lazy(() => import('./pages/projects').then(module => ({default: module.ProjectsPage})));
-export const ProjectDetailPage = React.lazy(() => import('./pages/project-detail').then(module => ({default: module.ProjectDetailPage})));
-export const ContractCodesPage = React.lazy(() => import('./pages/contract-codes').then(module => ({default: module.ContractCodesPage})));
-export const ContractCodeDetailPage = React.lazy(() => import('./pages/contract-code-detail').then(module => ({default: module.ContractCodeDetailPage})));
-export const ContractCodeBlocklistPage = React.lazy(() => import('./pages/contract-code-blocklist').then(module => ({default: module.ContractCodeBlocklistPage})));
-export const WalletBlocklistPage = React.lazy(() => import('./pages/wallet-blocklist').then(module => ({default: module.WalletBlocklistPage})));
-export const NodeStatusesPage = React.lazy(() => import('./pages/node-statuses').then(module => ({default: module.NodeStatusesPage})));
-export const ChainProcessingPage = React.lazy(() => import('./pages/chain-processing').then(module => ({default: module.ChainProcessingPage})));
-export const CollectionTasksPage = React.lazy(() => import('./pages/collection-tasks').then(module => ({default: module.CollectionTasksPage})));
 export const HelpPage = React.lazy(() => import('../shared/pages/help').then(module => ({default: module.HelpPage})));

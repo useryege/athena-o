@@ -1,5 +1,5 @@
 import {AccountAccess} from './models';
-import {AccountDataAccess, AccountDataModule, accountDataModuleDefinition, accountDataModules} from './access-modules';
+import {AccountDataAccess, AccountDataModule, accountAccessDisplayModules, accountDataModuleDefinition, accountDataModules} from './access-modules';
 
 export type ModuleAccessLevels = Record<AccountDataModule, AccountDataAccess>;
 
@@ -49,7 +49,7 @@ export const moduleAccessSummary = (access: AccountAccess | undefined): string =
     let readWrite = 0;
     let read = 0;
     let none = 0;
-    accountDataModules.forEach(definition => {
+    accountAccessDisplayModules.forEach(definition => {
         switch (moduleAccessLevel(access, definition.module)) {
             case AccountDataAccess.ReadWrite:
                 readWrite++;

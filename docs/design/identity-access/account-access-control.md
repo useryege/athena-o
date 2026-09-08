@@ -238,7 +238,12 @@ contract does not carry role or a caller-selected owner.
 4. An administrator may replace one ordinary account's three flags and full
    module matrix in one expected-revision CAS. The SQL transaction advances the
    revision and replaces all nine rows together. Administrator aggregates cannot
-   be edited through this path.
+   be edited through this path. The browser editor and Account Center use
+   `accountAccessDisplayModules` to omit Token controls, cards, and display
+   counts. The complete `accountDataModules` list continues to drive parsing,
+   cloning, replacement, comparison, status derivation, and submission. Editing
+   another permission preserves the existing Token grant; hidden permissions
+   are not omitted from the update or replaced with `NONE`.
 5. Status derives as `BLOCKED` when login is disabled, `PENDING` for a
    non-administrator whose login is enabled while all modules are `NONE` and
    Profit Sharing is disabled, and `ACTIVE` otherwise. The fixed administrator
@@ -262,7 +267,10 @@ contract does not carry role or a caller-selected owner.
    setup, Help, and Logout without starting business requests. Security appears
    only when API Key access is enabled. The first UI-backed module grant routes
    to the first canonical readable module; Profit Sharing-only access routes to
-   `/profit-sharing`. The administrator application creates only administrator
+   `/profit-sharing`. Token has no landing path or business page. Its disabled
+   menu entry is visible only with Token `READ` or `READ_WRITE`; Token-only
+   access still yields Active status and no business-page auto-navigation.
+   The administrator application creates only administrator
    and self-account services and rejects an ordinary account before any
    management request.
 

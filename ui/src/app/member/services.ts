@@ -4,7 +4,6 @@ import {ManagedOOService} from '../shared/services/managed-oo-service';
 import {MarketRadarService} from '../shared/services/market-radar-service';
 import {SportsHistoryService} from '../shared/services/sports-history-service';
 import {SportsLiveService} from '../shared/services/sports-live-service';
-import {TokenService} from '../shared/services/token-service';
 import {configureServices, serviceProjection} from '../shared/services/registry';
 import {UserService} from '../shared/services/user-service';
 import {VersionService} from '../shared/services/version-service';
@@ -18,7 +17,6 @@ import {MemberProfitSharingService} from './profit-sharing-service';
 import {MemberSecurityService} from './security-service';
 
 export interface MemberServices extends SelfAccountServices {
-    tokenapi: TokenService;
     memberSecurity: MemberSecurityService;
     wallet: WalletService;
     wormTrading: WormTradingService;
@@ -48,7 +46,6 @@ export const ensureMemberBusinessServices = () => {
     }
     businessServicesConfigured = true;
     configureServices('member', {
-        tokenapi: new TokenService(),
         version: new VersionService(),
         accounts: new SelfAccountService(),
         memberSecurity: new MemberSecurityService(),

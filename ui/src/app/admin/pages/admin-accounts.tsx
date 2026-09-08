@@ -4,7 +4,14 @@ import * as React from 'react';
 import {useBlocker, useSearchParams} from 'react-router-dom';
 import {AppPage, ChoiceGroup, KeyValueGrid, Section, StatusTag, useAsyncData} from '../../components';
 import {accountAccessEqual, cloneAccountAccess, moduleAccessLevel, moduleAccessSummary, replaceModuleAccess} from '../../shared/account-access';
-import {AccountDataAccess, AccountDataModuleDefinition, accountDataAccessLabel, accountDataModuleGroups, accountDataModules} from '../../shared/access-modules';
+import {
+    AccountDataAccess,
+    AccountDataModuleDefinition,
+    accountAccessDisplayModules,
+    accountDataAccessLabel,
+    accountDataModuleGroups,
+    accountDataModules
+} from '../../shared/access-modules';
 import {Context, useAuthorization} from '../../shared/context';
 import {accountStatusForAccess, Account, AccountAccess, AccountProfile, AccountStatus, AccountTier} from '../../shared/models';
 import {AccountAvatar, accountTierLabel, identityPresentation, identityProviderLabel} from '../../shared/account-presentation';
@@ -105,7 +112,7 @@ const AccountAccessEditor = (props: {
                 <fieldset className='account-access-module-group' key={group.key} disabled={props.updating}>
                     <legend>{group.label}</legend>
                     <div className='account-access-module-group__items'>
-                        {accountDataModules
+                        {accountAccessDisplayModules
                             .filter(definition => definition.group === group.key)
                             .map(definition => {
                                 const value = moduleAccessLevel(props.access, definition.module);

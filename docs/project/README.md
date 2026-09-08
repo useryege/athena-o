@@ -4,6 +4,8 @@
 
 ## 目标设计
 
+Token 的实施顺序已确定为先完成后端业务逻辑，再重新设计前端。当前前端清理范围见 [实施顺序与前端范围](token.md#已明确的实施顺序与前端范围)：删除原有 Token 业务页面和权限界面，保留不可点击的 Token 父菜单、独立 Wallets，以及完整后端接口、数据和权限。以下流程中的研究资料展示属于后续前端目标，不代表需要保留原有 UI。
+
 | 文档 | 内容 | 状态 |
 | --- | --- | --- |
 | [Token 目标设计](token.md) | 从合约部署开始研究项目，筛选值得关注的项目，交接给交易监控与执行板块，在交易开放且满足条件时及时买入 | 目标设计草案，尚未实现 |
@@ -77,7 +79,7 @@ Token 当前实现的主要入口：
 | --- | --- |
 | [Token Chain Processor](../design/token-intelligence/chain-processor.md) | 按区块发现和验证项目，初始化项目及采集任务 |
 | [Token Collection and Project Profile](../design/token-intelligence/collection-profile.md) | 六类一次性采集、采集终态汇合与不可变项目画像构建 |
-| [Token Project Read Model](../design/token-intelligence/project-read-model.md) | 项目列表、详情、采集证据和画像的 API 与页面读取 |
+| [Token Project Read Model](../design/token-intelligence/project-read-model.md) | 项目列表、详情、采集证据和画像的后端 API 读取 |
 
 现有采集与画像流程为目标设计提供现状背景，不限定后续重构的业务边界或技术方案。
 

@@ -14,7 +14,7 @@ import * as React from 'react';
 import {useBlocker, useNavigate} from 'react-router-dom';
 import {AppPage, ChoiceGroup, KeyValueGrid, Section, StatusTag, useAsyncData} from '../../components';
 import {moduleAccessSummary} from '../account-access';
-import {accountDataAccessLabel, accountDataModules} from '../access-modules';
+import {accountAccessDisplayModules, accountDataAccessLabel} from '../access-modules';
 import {Context, useAuthorization} from '../context';
 import {accountStatusForAccess, AccountStatus} from '../models';
 import {AccountAvatar, accountTierLabel, identityPresentation, identityProviderLabel} from '../account-presentation';
@@ -407,7 +407,7 @@ const ActiveAccessPage = () => {
             </Section>
             <Section title='Module access'>
                 <div className='account-module-summary'>
-                    {accountDataModules.map(definition => (
+                    {accountAccessDisplayModules.map(definition => (
                         <div key={definition.module}>
                             <span>
                                 <strong>{definition.label}</strong>

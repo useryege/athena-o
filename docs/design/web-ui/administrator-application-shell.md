@@ -94,12 +94,19 @@ facade and never pulls management history or testing code into that bundle.
 4. `/admin` redirects to `/admin/accounts`. Account Admin searches and pages the
    account directory, displays safe identity/profile data, and applies one
    expected-revision update to the complete mutable access aggregate of an
-   ordinary account. Administrator rows remain read-only.
+   ordinary account. The editor uses `accountAccessDisplayModules` to display
+   eight module controls, excluding Token. Drafts, resets, conflict reloads,
+   comparisons, and updates retain the complete nine-module matrix and preserve
+   the existing Token level when another permission changes. Account Center
+   permission cards and display summaries also exclude Token. Administrator
+   rows remain read-only.
 5. Governance reads rounds through the shared `ListRounds`/`GetRound` contract
    using administrator authority and exposes only lifecycle and roster actions.
    It cannot create a member proposal or vote.
 6. Service Status and Etherscan pages call only their explicit administrator
    endpoints for aggregate service state and gateway configuration/operations.
+   The shared service list retains Token API health; Etherscan administration
+   is independent of the member Token entry.
    Service Status refreshes both the standard gRPC-health list and Notification
    runtime immediately, on manual refresh, and every ten seconds. The runtime
    section shows Bot identity and availability, poller state and freshness,

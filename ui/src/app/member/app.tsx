@@ -9,7 +9,6 @@ import {
     BgColorsOutlined,
     BellOutlined,
     CheckOutlined,
-    CodeOutlined,
     DashboardOutlined,
     DesktopOutlined,
     FileTextOutlined,
@@ -43,7 +42,6 @@ import {WALLET_REAUTH_REQUIRED} from '../shared/services/wallet-service';
 import {loginPathFor, readLoginReturnTo} from '../shared/login-navigation';
 import {deploymentPath, readApplicationBaseHRef, readDeploymentBaseHRef} from '../shared/runtime-base';
 import {BrandMark, clearAsyncDataCache, setAsyncDataCacheSession} from '../components';
-import {clearProjectsReturnSnapshots} from './pages/project-navigation';
 import {AccountAvatar, accountTierLabel} from '../shared/account-presentation';
 import {accountThemeLabel, localThemeMode, serverThemeMode} from '../shared/theme';
 import {configureMemberSessionServices, ensureMemberBusinessServices, memberServices as services} from './services';
@@ -52,13 +50,7 @@ import {loadAppBootstrapWithRetry, SessionBootstrap} from '../session/bootstrap'
 import {
     AccountCenterPage,
     AccountSecurityPage,
-    ContractCodeBlocklistPage,
-    ChainProcessingPage,
-    CollectionTasksPage,
-    ContractCodeDetailPage,
-    ContractCodesPage,
     HelpPage,
-    NodeStatusesPage,
     NotificationsPage,
     MarketRadarHotPage,
     MarketRadarMoversPage,
@@ -67,9 +59,6 @@ import {
     SportsHistoryPage,
     ManagedOODisputesPage,
     ManagedOOProposalsPage,
-    ProjectDetailPage,
-    ProjectsPage,
-    WalletBlocklistPage,
     WalletsPage,
     WormTradingCombinationBuilderPage,
     WormTradingCombinationsPage,
@@ -103,6 +92,7 @@ interface NavItem {
     children?: NavItem[];
     module?: AccountDataModule;
     availability?: 'profit-sharing';
+    disabled?: boolean;
 }
 
 interface NavSection {
@@ -201,45 +191,7 @@ const tokenNavItem: NavItem = {
     label: 'Token',
     icon: <DashboardOutlined />,
     module: AccountDataModule.Token,
-    children: [
-        {key: '/token/projects', label: 'Projects', path: '/token/projects', icon: <FileTextOutlined />},
-        {
-            key: '/token/contract-codes',
-            label: 'Contract Codes',
-            path: '/token/contract-codes',
-            icon: <CodeOutlined />
-        },
-        {
-            key: '/token/contract-code-blocklist',
-            label: 'Contract Code Blocklist',
-            path: '/token/contract-code-blocklist',
-            icon: <ApiOutlined />
-        },
-        {
-            key: '/token/wallet-blocklist',
-            label: 'Wallet Blocklist',
-            path: '/token/wallet-blocklist',
-            icon: <WalletOutlined />
-        },
-        {
-            key: '/token/node-statuses',
-            label: 'Node Status',
-            path: '/token/node-statuses',
-            icon: <ApiOutlined />
-        },
-        {
-            key: '/token/chain-processing',
-            label: 'Chain Processing',
-            path: '/token/chain-processing',
-            icon: <ApiOutlined />
-        },
-        {
-            key: '/token/collection-tasks',
-            label: 'Collection Tasks',
-            path: '/token/collection-tasks',
-            icon: <FileTextOutlined />
-        }
-    ]
+    disabled: true
 };
 
 const navSections: NavSection[] = [
@@ -303,6 +255,7 @@ const toMenuItems = (items: NavItem[]): MenuProps['items'] =>
         key: item.key,
         icon: item.icon,
         label: item.label,
+        disabled: item.disabled,
         children: item.children ? toMenuItems(item.children) : undefined
     }));
 
@@ -389,7 +342,6 @@ const moduleLandingPaths: Partial<Record<AccountDataModule, string>> = {
     [AccountDataModule.ManagedOO]: '/managed-oo/proposals',
     [AccountDataModule.WormTrading]: '/worm-trading',
     [AccountDataModule.WorldCupCorners]: '/world-cup-corners',
-    [AccountDataModule.Token]: '/token/projects',
     [AccountDataModule.Wallet]: '/wallet'
 };
 
@@ -517,16 +469,6 @@ const AppRoutes = (props: {
                 <Route path='/profit-sharing' element={profitSharingRoute(<ProfitSharingRoundsPage />)} />
                 <Route path='/profit-sharing/:slug' element={profitSharingRoute(<ProfitSharingRoundPage />)} />
                 <Route path='/help' element={<HelpPage help={props.settings.help} />} />
-                <Route path='/token' element={moduleRoute(AccountDataModule.Token, <Navigate replace={true} to='/token/projects' />)} />
-                <Route path='/token/projects' element={moduleRoute(AccountDataModule.Token, <ProjectsPage />)} />
-                <Route path='/token/projects/:projectID' element={moduleRoute(AccountDataModule.Token, <ProjectDetailPage />)} />
-                <Route path='/token/contract-codes' element={moduleRoute(AccountDataModule.Token, <ContractCodesPage />)} />
-                <Route path='/token/contract-codes/:codeHash' element={moduleRoute(AccountDataModule.Token, <ContractCodeDetailPage />)} />
-                <Route path='/token/contract-code-blocklist' element={moduleRoute(AccountDataModule.Token, <ContractCodeBlocklistPage />)} />
-                <Route path='/token/wallet-blocklist' element={moduleRoute(AccountDataModule.Token, <WalletBlocklistPage />)} />
-                <Route path='/token/node-statuses' element={moduleRoute(AccountDataModule.Token, <NodeStatusesPage />)} />
-                <Route path='/token/chain-processing' element={moduleRoute(AccountDataModule.Token, <ChainProcessingPage />)} />
-                <Route path='/token/collection-tasks' element={moduleRoute(AccountDataModule.Token, <CollectionTasksPage />)} />
                 <Route path='*' element={<NotFoundPage />} />
             </Routes>
         </React.Suspense>
@@ -578,7 +520,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         setLoggingOut(false);
         setSession(status === 'maintenance' ? {status: 'maintenance'} : {status: 'anonymous'});
         clearAsyncDataCache();
-        clearProjectsReturnSnapshots();
         clearTelegramBindingInstructions();
     }, []);
 
@@ -625,7 +566,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                         requests.invalidatePendingRequestErrors();
                         requests.abortAuthorizationRequests();
                         clearAsyncDataCache();
-                        clearProjectsReturnSnapshots();
                         clearTelegramBindingInstructions();
                     } else {
                         if (priorAccess.user.access.apiKeyEnabled && !next.user.access.apiKeyEnabled) {
@@ -640,16 +580,12 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                             if (prior >= AccountDataAccess.Read && current < AccountDataAccess.Read) {
                                 requests.abortAuthorizationRequests(definition.module);
                                 clearAsyncDataCache(definition.module);
-                                if (definition.module === AccountDataModule.Token) {
-                                    clearProjectsReturnSnapshots();
-                                }
                             } else if (prior >= AccountDataAccess.ReadWrite && current < AccountDataAccess.ReadWrite) {
                                 requests.abortAuthorizationRequests(definition.module, 'write');
                             }
                         });
                         if (!isPendingAccess(priorAccess) && isPendingAccess(next)) {
                             clearAsyncDataCache();
-                            clearProjectsReturnSnapshots();
                         }
                     }
                 }
@@ -903,7 +839,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
 
     const onMenuClick: MenuProps['onClick'] = item => {
         const target = flattenNav(visibleNavItems).find(navItem => navItem.key === item.key);
-        if (target?.path) {
+        if (target?.path && !target.disabled) {
             if (narrowShell) {
                 setMobileSidebarOpen(false);
             }

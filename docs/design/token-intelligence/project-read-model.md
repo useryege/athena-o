@@ -5,8 +5,9 @@
 The Token project read model exposes validated projects, their six-source
 collection progress, one immutable ProjectProfile, contract source, related
 wallets, and bounded pre-deployment transactions.
-It owns list filtering and projection, project-detail assembly, public Token
-API mapping, and the member UI's Token pages. It does not schedule work or call
+It owns list filtering and projection, project-detail assembly, and public Token
+API mapping. The member application has no Token business pages or browser
+client; these reads remain available through HTTP/gRPC. It does not schedule work or call
 external market, explorer, or chain providers.
 
 ## Source Locations
@@ -21,7 +22,6 @@ external market, explorer, or chain providers.
 | Collection API | [internal/tokenapi/project_data_collection_task_service.go](../../../internal/tokenapi/project_data_collection_task_service.go) | `GetCollectionTask`, `ListCollectionTasks` |
 | Public contracts | [internal/server/tokenapi/catalog.proto](../../../internal/server/tokenapi/catalog.proto), [internal/server/tokenapi/collection.proto](../../../internal/server/tokenapi/collection.proto), [internal/server/tokenapi/types.proto](../../../internal/server/tokenapi/types.proto) | `TokenCatalogService`, `TokenCollectionService` |
 | Shared API types | [pkg/apis/application/v1alpha1/tokenapi_types.go](../../../pkg/apis/application/v1alpha1/tokenapi_types.go) | `TokenProjectListItem`, `TokenProjectDetail`, `TokenProjectProfile`, `TokenCollectionTask` |
-| Member UI | [ui/src/app/member/pages](../../../ui/src/app/member/pages), [ui/src/app/shared/services/token-service.ts](../../../ui/src/app/shared/services/token-service.ts) | project list/detail and collection-task pages, `tokenService` |
 
 ## Architecture
 
@@ -35,7 +35,7 @@ flowchart LR
     CQ --> CA["TokenCollectionService"]
     API --> GW["public gRPC/HTTP gateway"]
     CA --> GW
-    GW --> UI["member Token UI"]
+    GW --> Client["authorized API consumers"]
 ```
 
 List reads use denormalized profile columns for market and pair summaries, so
@@ -63,12 +63,8 @@ by the single collection-task endpoint.
 5. `GET /api/v1/tokens/collection-tasks` returns paged task summaries filtered
    by project, data type, and status. The task-ID route adds the complete
    versioned evidence payload and content hash when collection succeeded.
-6. Contract-source and wallet-transaction routes remain separate bounded reads
-   linked from project detail.
-7. The project list polls only while at least one visible collection or profile
-   build remains pending/running. Project detail uses its detail request alone
-   for status display and polling. Terminal pages stop automatically and retain
-   manual refresh.
+6. Contract-source and wallet-transaction endpoints remain separate bounded
+   API reads. There is no member Token UI polling or browser collection cache.
 
 ## State / Data
 
@@ -99,11 +95,6 @@ must satisfy every enabled signal and quote condition. Conditions cannot be
 satisfied by combining values from different pairs. The response continues to
 project the wrapped-native and USDT pair summaries independently.
 
-The member UI renders factual risk booleans as `Detected` or `Not detected`,
-missing signal values as `Unknown`, and the three chain-state pair signals as
-`Not applicable` when the pair is not created. Only `Detected` uses a negative
-visual tone; the other states remain neutral and are distinguished by text.
-
 The typed profile response contains completeness, failed sources, market and
 `aveRisk`, contract-source status, both pair summaries, wallet totals,
 pre-deployment transaction summary, and six evidence references. `profileJson`
@@ -113,14 +104,13 @@ assets, simulation call-success signals, top methods, and counterparties.
 ## Configuration
 
 The API uses the shared Token PostgreSQL DSN and Token API gRPC/listen settings.
-Paging defaults and limits are enforced by the existing API helpers. The UI
-uses the shared authenticated request client and module-aware cache. All read
-endpoints are side-effect free.
+Paging defaults and limits are enforced by the existing API helpers. All read
+endpoints are side-effect free and retain Token-module authorization.
 
 ## Invariants
 
-- Project list/detail/profile/task views use the collection/profile vocabulary
-  consistently across domain, transport, and UI layers.
+- Project list/detail/profile/task responses use the collection/profile
+  vocabulary consistently across domain and transport layers.
 - Project list filtering does not accept chain ID or project ID, while list and
   detail responses retain both identity fields.
 - The list's market and pair data are projections of the same immutable profile
@@ -141,15 +131,14 @@ groups fail the request rather than fabricating a partial view. A missing
 project/profile/task returns `found=false`; storage failures are mapped to an
 internal API error.
 
-Read endpoints are side-effect free. UI request caches are invalidated by
-manual refresh or active-work polling. A failed poll leaves the last successful
-view available with an error surface and does not mutate backend state.
+Read failures do not mutate backend state. Clients receive the API error;
+there is no member Token page or browser cache recovery flow.
 
 ## Observability
 
 Token API request tracing and standard gRPC/HTTP status logging cover each
 route. Worker health and queue metrics explain why a list item remains queued,
-collecting, or pending. The data-source cards expose failure count, lease and
+collecting, or pending. Collection-task API responses expose failure count, lease and
 terminal timestamps, last error, schema version, content hash, source block,
 and collection time for per-project diagnosis.
 
@@ -158,9 +147,8 @@ and collection time for per-project diagnosis.
 - [ ] Recheck list-status SQL against the four collection and four profile states.
 - [ ] Recheck profile projection columns against canonical profile construction.
 - [ ] Recheck every filter across public proto, facade, internal handler,
-      repository, UI service, and UI controls, including the single-pair
+      and repository, including the single-pair
       requirement for the shared pair predicate.
 - [ ] Recheck project detail and standalone profile equality.
-- [ ] Recheck list and detail status projection, active-only polling, and manual
-      refresh behavior.
+- [ ] Recheck list and detail status projection and Token API authorization.
 - [ ] Keep the [design index](../README.md) current.

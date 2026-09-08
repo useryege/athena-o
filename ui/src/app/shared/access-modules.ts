@@ -109,6 +109,9 @@ export const accountDataModules: AccountDataModuleDefinition[] = [
     }
 ];
 
+// Presentation only: authorization parsing and updates retain the complete module matrix.
+export const accountAccessDisplayModules = accountDataModules.filter(definition => definition.module !== AccountDataModule.Token);
+
 const moduleByID = new Map(accountDataModules.map(definition => [definition.id, definition.module]));
 const moduleByEnumName = new Map(accountDataModules.map(definition => [`ACCOUNT_DATA_MODULE_${definition.id.toUpperCase()}`, definition.module]));
 
