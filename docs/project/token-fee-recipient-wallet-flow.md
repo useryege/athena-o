@@ -66,7 +66,7 @@ AI 根据税费计算、归集与转出代码确认地址的接收语义，不�
 
 AI 技术失败单独记录，不作为“未发现”或“无可用方式”的可复用完成结论，也不覆盖已有有效分析。Go 调用失败同样不改变共享的源码分析结论。无源码、未发现接收方、缺少读取方式、部分成功以及调用失败分别保存实际结果与原因；未取得某个地址时只跳过该地址的钱包采集，不影响其他已知地址。
 
-税费接收方分析与 [owner 分析](token-owner-wallet-flow.md)、[静态质检报告](token-contract-review-flow.md) 各自复用，不强制合并为一次 AI 调用或互相等待。税费地址读取不纳入静态质检的链上核实，也不成为静态报告生成或评级的前置条件。
+税费接收方分析与 [owner 分析](token-owner-wallet-flow.md)、[税率分析与读取](token-tax-rate-flow.md)、[静态质检报告](token-contract-review-flow.md)各自复用，不强制合并为一次 AI 调用或互相等待。税费地址与税率分别取得和保存，不要求取得全部税率才采集接收钱包；这些链上读取不纳入静态质检的核实，也不成为静态报告生成或评级的前置条件。
 
 当前只分析实际取得的源码，不额外解析代理实现地址，不获取或分析代理实现及外部依赖源码。若接收方只能由未取得的外部实现确定，则保留该限制及实际分析结果；已经明确的当前合约只读调用仍按本流程执行。
 
@@ -92,6 +92,7 @@ AI 技术失败单独记录，不作为“未发现”或“无可用方式”�
 - [合约源码获取流程](token-contract-source-flow.md)
 - [合约源码 AI 静态质检与报告复用](token-contract-review-flow.md)
 - [Token owner 钱包获取与研究流程](token-owner-wallet-flow.md)
+- [合约税率读取流程](token-tax-rate-flow.md)
 - [多层关联钱包研究流程](token-wallet-research-flow.md)
 - [钱包资金来源关系图](token-wallet-funding-graph.md)
 - [返回业务设计与流程图索引](README.md)

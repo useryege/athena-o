@@ -82,6 +82,8 @@ AI 输出的是源码支持的读取说明，不能只返回一个不足以执�
 
 [税费接收钱包获取](token-fee-recipient-wallet-flow.md)同样复用源码分析，但还允许直接提取源码中确实固定的地址，并支持多个接收钱包。其分析结果单独保存，与 owner 分析及静态质检互不作为完成前提；税费接收地址与 owner 相同时只追加角色标签，复用该钱包的资料。
 
+[税率读取](token-tax-rate-flow.md)也采用 AI 确定读函数、Go 读取当前合约的方式，另行保存税率原始值与换算依据。税率分析与 owner 分析分别复用，读取结果互不作为前置条件，也不进入静态质检的链上核实。
+
 ## 待设计事项
 
 - AI 读取说明的具体数据结构、支持的调用描述格式、多个可用入口的选择与结果冲突处理、分析更新及版本管理仍待设计；当前不再预设 `owner()` 与 `getowner()` 的固定调用顺序或兜底。
@@ -96,6 +98,7 @@ AI 输出的是源码支持的读取说明，不能只返回一个不足以执�
 - [Token 目标设计](token.md)
 - [研究资料整理流程](token-research-materials-flow.md)
 - [税费接收钱包获取与研究流程](token-fee-recipient-wallet-flow.md)
+- [合约税率读取流程](token-tax-rate-flow.md)
 - [多层关联钱包研究流程](token-wallet-research-flow.md)
 - [钱包资金来源关系图](token-wallet-funding-graph.md)
 - [合约源码获取流程](token-contract-source-flow.md)
