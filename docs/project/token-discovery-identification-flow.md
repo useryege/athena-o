@@ -2,9 +2,9 @@
 
 > 文档状态：目标设计草案，尚未实现。本图依据 [Token 两板块目标设计](token.md)，说明顶层部署候选如何被识别为 Token，以及识别结论和原因如何保留。
 
-本流程接收[区块扫描流程](token-block-scan-flow.md)取得的区块交易，将通过识别的 Token 交给[项目研究流程](token-research-flow.md)。这里的交接表示业务关系；扫描、识别与研究是否同步执行，以及扫描何时视为单块完成，仍待设计。
+本流程接收[区块扫描流程](token-block-scan-flow.md)取得的区块交易，将通过识别的 Token 交给[项目研究流程](token-research-flow.md)。单块完成需要完成该块的 Token 识别并可靠保存识别结果、项目资料与研究任务，之后推进扫描；具体研究在后台独立执行。
 
-发现范围只覆盖顶层合约创建交易，不包括工厂内部的 `CREATE` / `CREATE2`；暂不使用 Bitquery、Allium 或内部调用追踪扩展范围。
+首版仅 Ethereum Mainnet（chain ID 1），发现范围只覆盖顶层合约创建交易，不包括工厂内部的 `CREATE` / `CREATE2`；暂不使用 Bitquery、Allium 或内部调用追踪扩展范围。
 
 ## 流程图
 
@@ -31,7 +31,7 @@ flowchart TD
 
     invoke --> code
     invoke -. 节点请求或外层聚合调用整体失败 .-> executionError["记录实际执行错误<br/>不伪造逐项结果或 Token 结论"]
-    executionError -.-> retryBoundary["与区块失败通知、重试的衔接待设计"]
+    executionError -.-> retryBoundary["按区块失败规则通知并重试<br/>不推进当前块"]
     noCode --> returned["返回识别结论、代码检查结果<br/>已执行检测结果与原因"]
     token --> returned
     notToken --> returned
@@ -67,8 +67,8 @@ flowchart TD
 
 ## 待明确的衔接
 
-具体返回结构、错误码、存储结构、人工查询入口、检测资源限制与异常传播方式仍待设计。识别查询使用哪个区块状态，以及逐块扫描完成所需的识别持久化边界、与研究的执行关系，也需进一步明确。
+具体返回结构、错误码、存储结构、人工查询入口、检测资源限制仍待设计；识别查询使用哪个区块状态仍需明确。识别结果及研究任务可靠保存后推进扫描的边界已确认，研究不阻塞扫描。
 
-[区块扫描流程](token-block-scan-flow.md)已规定区块处理失败时每次通知管理员并无限次重试同一区块；执行异常如何接入该规则仍待细化，本图不自行确定重试触发或恢复机制。
+[区块扫描流程](token-block-scan-flow.md)已规定区块处理失败时每次通知管理员并无限次重试同一区块；节点或外层识别调用整体失败接入该块重试；目标合约单项检测不通过则保存不是 Token 的业务结论，不把它当作无限重试的技术异常。
 
 完整业务约束见 [Token 两板块目标设计](token.md)。返回[业务设计与研究资料索引](README.md)，或继续阅读[项目研究流程](token-research-flow.md)。
