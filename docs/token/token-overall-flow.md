@@ -8,7 +8,8 @@
 
 ```mermaid
 flowchart TD
-    deployed["扫描 ETH 顶层合约创建交易"] --> identify["识别 Token，保存结果与项目身份、研究任务<br/>保存成功后推进区块扫描"]
+    runtime["同一程序按启动配置选择唯一链<br/>首版启动 ETH 实例"] --> deployed["扫描 ETH 顶层合约创建交易"]
+    deployed --> identify["识别 Token，保存结果与项目身份、研究任务<br/>保存成功后推进区块扫描"]
     identify --> collect["后台启动项目资料采集<br/>源码、基础信息、税率、持币及自动五层钱包"]
     collect --> report["生成或复用 AI 源码质检报告<br/>无限增发、修改余额、限制转出及依据<br/>AI 不评级，保存供管理员查看"]
     collect --> activity["扫描项目 Approval / Transfer 活动<br/>尚无源码时触发更新查询"]
@@ -31,7 +32,8 @@ flowchart TD
 - 钱包、税率、持币与源码公开资料只采集、解析、保存展示。后台自动执行 L1–L5，前端展示五层；首次 Swap 提前出现时保留部分结果，不等待采集齐备。
 - 为匹配 Swap 取得池与代币身份映射，属于截止事件识别，不扩展为底池深度、流动性或 LP 风险研究。研究开始不要求池子已经存在。
 - 首版不考虑区块替换。订阅断线补日志属于防漏处理，单纯在项目入库后开启实时订阅不能覆盖此前已发生的 Swap。
-- 已经交接的项目由第二板块按其规则处理，研究截止不是买入指令。两板块职责不预设服务数量或通信方式。
+- 扫描、活动/Swap 监控和外部采集按链实例运行，汇总、AI、源码报告与 API 可以共享；项目、任务及来源保留链身份，详见 [单链实例运行设计](token-chain-runtime.md)。
+- 已经交接的项目由第二板块按其规则处理，研究截止不是买入指令。单链运行边界已经确定，板块内部其余服务数量或通信方式仍待设计。
 
 ## 待明确边界
 
@@ -40,6 +42,7 @@ flowchart TD
 ## 关联文档
 
 - [Token 目标设计](token.md)
+- [单链实例运行设计](token-chain-runtime.md)
 - [区块扫描与研究衔接](token-block-scan-flow.md)
 - [项目研究流程](token-research-flow.md)
 - [AI 源码质检](token-contract-review-flow.md)
