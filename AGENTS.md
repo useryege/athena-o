@@ -12,6 +12,7 @@
   - [Plan Implementation Completion Email](#plan-implementation-completion-email)
   - [Design-Gated Development](#design-gated-development)
   - [UI Layout Review](#ui-layout-review)
+  - [Impeccable Integration](#impeccable-integration)
   - [本地图片路径规则](#本地图片路径规则)
 
 ## Rules
@@ -87,6 +88,13 @@ When a task involves UI design, page layout, interaction structure, visual hiera
 - The Markdown layout diagram should show the page structure, major regions, control placement, state or interaction entry points, and responsive differences when relevant.
 - Begin code implementation only after the requirements and documents are aligned, the UI design is complete, and the user confirms the layout diagram. Reuse an already-confirmed design when the scope and expected behavior remain unchanged.
 - Minor style tweaks, copy changes, or non-visual logic changes do not require a layout diagram unless the user explicitly asks for one.
+
+### Impeccable Integration
+
+- Impeccable is a UI/UX workflow aid, not an independent source of product or design truth. `docs/requirements/` and `docs/design/` remain authoritative, and repository instructions and confirmed documents override Impeccable defaults or detector findings.
+- Scope Impeccable work to the frontend under `ui/`. Read the relevant requirements, `docs/design/web-ui/` documents, and current React/CSS implementation before using it; its own shaping or approval steps do not replace [Design-Gated Development](#design-gated-development) or [UI Layout Review](#ui-layout-review).
+- Do not silently run `$impeccable init` or `$impeccable document`, and do not create `PRODUCT.md` or `DESIGN.md` as competing records. If Impeccable needs those files, first propose how they derive from the authoritative repository documents and wait for the user's explicit confirmation.
+- Treat automatic Impeccable hook findings as review input. Do not weaken confirmed behavior, accessibility requirements, established brand decisions, or repository-specific UI conventions merely to clear a generic detector rule.
 
 ### 本地图片路径规则
 
