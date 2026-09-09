@@ -21,6 +21,8 @@
 
 [链上成交数据可行性调研](onchain-trade-data-feasibility.md)保存部署源码核对、目标钱包 RPC 过滤和 Token 到市场的实际查询证据。普通 CTF 与 Neg Risk 的核心识别链路已得到样本支持；协议完整覆盖、源记录粒度、时间及金额口径仍需对齐。该资料不构成主数据源选型、需求整体确认或技术设计确认。
 
+用户已明确当前暂不自建 Polygon PoS 节点。[托管 Polygon RPC 服务与费用调研](hosted-polygon-rpc-providers.md)比较第三方 HTTP/WSS 能力、日志查询限制与公开价格，并给出相同工作量下的预算。供应商、套餐与采集架构尚未选定。
+
 ## 阶段关系
 
 ```mermaid
