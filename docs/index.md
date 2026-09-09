@@ -12,7 +12,7 @@ Athena is a trading/project sync system for the blockchain.
 ## Requirements and Research
 
 - [需求目标设计索引](requirements/README.md)
-- [Polymarket 跟单需求](requirements/polymarket-copy-trading/README.md) — 第一阶段先监控目标交易并通知，不执行复制交易。
+- [Polymarket 交易员跟随产品需求](requirements/polymarket-copy-trading/README.md) — 产品名称待确认；产品规划包含活动订阅与通知、未来 Copy Trading 两个板块，当前只讨论第一阶段。
 - [Token 业务设计与研究资料](requirements/token/README.md)
 - [Token 目标设计](requirements/token/token.md) — 中文需求草案，包含已确认子项和尚待讨论内容。
 - [Token 流程图索引](requirements/token/README.md#流程图) — 每张流程图独立保存，附规则与待定边界说明。
