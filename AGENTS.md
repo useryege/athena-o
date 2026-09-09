@@ -11,6 +11,7 @@
   - [Chinese Plans](#chinese-plans)
   - [Plan Implementation Completion Email](#plan-implementation-completion-email)
   - [Documentation Before Code](#documentation-before-code)
+  - [Backend Design Before Implementation](#backend-design-before-implementation)
   - [Living Design Documentation](#living-design-documentation)
   - [UI Layout Review](#ui-layout-review)
   - [本地图片路径规则](#本地图片路径规则)
@@ -74,6 +75,17 @@ make notify-task-complete \
 - 必须先完成需求与文档对齐，再修改代码，不得先实现后补写需求设计。用户已明确的需求和决定应直接沿用，无需重复确认。
 - 前端 UI 必须在需求与文档对齐后，先完成页面结构、主要交互和关键状态的设计，并记录到对应业务需求或目标设计文档；按照 [UI Layout Review](#ui-layout-review) 完成必要的布局确认后，再实现代码，不得先实现后补设计。
 - 尚未实现的目标写入对应业务需求或目标设计文档；`docs/design/` 继续只描述当前实现，在代码实现时同步更新，避免提前把规划写成现状。
+
+### Backend Design Before Implementation
+
+修改后端源码前，必须先完成与本次需求相匹配的后端技术设计，并在用户确认设计后再开始实现。
+
+- 先基于相关需求文档、目标设计文档、`docs/design/` 当前实现说明和实际源码，梳理现有行为、约束、依赖关系及本次修改边界。
+- 技术设计应按需明确组件职责与边界、接口和数据契约、核心流程与状态变化、数据模型及持久化策略、事务与并发、错误处理与恢复、配置、安全、可观测性，以及受影响源码和需要清理的旧实现；不适用的内容无需机械补齐。
+- 将尚未实现的方案写入对应业务需求或目标设计文档，不得提前写入只描述当前实现的 `docs/design/`。
+- 在修改后端源码前，向用户提供简明的设计摘要、关键取舍及预计影响范围，并等待用户明确确认。需求、设计和影响范围未变化时，可以沿用用户已经确认的设计，无需重复确认。
+- 实现必须遵循已确认的设计；如果实现过程中发现需要实质性改变组件边界、接口契约、数据模型、核心流程或基础设施，应先更新目标设计并重新获得用户确认，再继续相关源码修改。
+- 纯格式化、注释或文案修正，以及不改变行为和设计语义的机械性重构或生成文件同步，不要求单独进行后端设计确认。
 
 ### Living Design Documentation
 
