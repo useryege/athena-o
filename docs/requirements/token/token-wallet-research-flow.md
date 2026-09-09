@@ -1,6 +1,8 @@
 # Token 多层关联钱包研究流程
 
-> 文档状态：目标设计草案，尚未实现。本文件记录已确认的 L1–L5 钱包资料采集、解析与展示范围，当前阶段不执行钱包数据驱动的项目筛选过滤；每个钱包部署前最近最多 300 笔普通交易的查询规则沿用当前实现。
+> 需求状态：讨论中
+>
+> 细分状态：目标设计草案，尚未实现。本文件记录已确认的 L1–L5 钱包资料采集、解析与展示范围，当前阶段不执行钱包数据驱动的项目筛选过滤；每个钱包部署前最近最多 300 笔普通交易的查询规则沿用当前实现。
 
 ## 入口与目的
 
@@ -108,7 +110,7 @@ L1–L5 每个钱包都整理以下两份清单；L5 停止向外扩展不影响
 
 Etherscan 的 [普通交易接口](https://docs.etherscan.io/api-reference/endpoint/txlist)和[交易回执接口](https://docs.etherscan.io/api-reference/endpoint/ethgettransactionreceipt)提供交易与日志事实，具体项目及行为由本项目解析。以 [Uniswap Universal Router](https://developers.uniswap.org/docs/protocols/universal-router/concepts/commands) 为例，同一个 `execute` 入口可以包含 V2、V3、V4 交易命令以及其他操作，因此不能仅凭顶层方法名确定交易版本或参与项目。
 
-仓库现有、独立于本阶段 ETH 范围的 [BSC V2 Swap 索引](../design/blockchain-data/bsc-v2-swap-transactions.md)仅筛选包含固定 V2 `Swap` topic 的交易哈希，[ATHENA 聚合合约](../design/token-intelligence/athena-contract.md)中的 V2 范围属于池与状态查询。两者均不作为钱包历史研究的唯一交易入口或协议覆盖上限。本节只规定历史交易解析，不要求研究阶段新增底池状态采集，也不改变资金来源图仅通过直接原生币入账向上扩展的规则。
+仓库现有、独立于本阶段 ETH 范围的 [BSC V2 Swap 索引](../../design/blockchain-data/bsc-v2-swap-transactions.md)仅筛选包含固定 V2 `Swap` topic 的交易哈希，[ATHENA 聚合合约](../../design/token-intelligence/athena-contract.md)中的 V2 范围属于池与状态查询。两者均不作为钱包历史研究的唯一交易入口或协议覆盖上限。本节只规定历史交易解析，不要求研究阶段新增底池状态采集，也不改变资金来源图仅通过直接原生币入账向上扩展的规则。
 
 ## 去重、复用与项目关联
 
@@ -134,7 +136,7 @@ Etherscan 的 [普通交易接口](https://docs.etherscan.io/api-reference/endpo
 
 ## 当前实现与待细化内容
 
-当前已实现部署前最多 300 笔普通交易的采集、明细保存和摘要，见 [钱包普通交易现状](../design/token-intelligence/wallet-normal-transactions.md)。Etherscan Manager 已返回 `contractAddress`，但 Token 的 [交易字段映射](../../internal/token/adapters/normaltransactions/provider.go)与[交易模型](../../internal/token/collection/model.go)尚未保存该字段，也尚未提供本流程所需的回执日志与多层历史行为分析。
+当前已实现部署前最多 300 笔普通交易的采集、明细保存和摘要，见 [钱包普通交易现状](../../design/token-intelligence/wallet-normal-transactions.md)。Etherscan Manager 已返回 `contractAddress`，但 Token 的 [交易字段映射](../../../internal/token/adapters/normaltransactions/provider.go)与[交易模型](../../../internal/token/collection/model.go)尚未保存该字段，也尚未提供本流程所需的回执日志与多层历史行为分析。
 
 初始接收钱包由 10 个缩减为 5 个、owner 与税费接收钱包的获取及纳入 L1、逐层发现 L2–L5、各层历史行为分析与结果复用、资金来源图及交互均待代码实现。本轮只更新业务设计文档。
 

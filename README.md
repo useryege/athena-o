@@ -55,18 +55,21 @@ make stop
 - `internal/`：主要业务实现。
 - `pkg/`：公共 API、合约 ABI 和客户端代码。
 - `ui/`：Web 前端。
-- `docs/design/`：当前实现的 Living Design Documentation。
+- `docs/requirements/`：业务需求、目标行为与确认状态。
+- `docs/design/`：编码前形成并在实现后持续维护的后端技术设计。
 - `deploy/`：独立服务的部署配置。
 - `hack/`：开发、代码生成和部署脚本。
 
 ## 文档
 
 - [文档首页](docs/index.md)
-- [当前系统设计](docs/design/README.md)
+- [需求目标设计](docs/requirements/README.md)
+- [后端技术设计](docs/design/README.md)
+- [设计主导后端开发工作流](docs/developer-guide/design-led-backend-development.md)
 - [开发者指南](docs/developer-guide/index.md)
 - [Makefile 操作手册](docs/operator-manual/makefile-commands.md)
 - [API 文档](docs/developer-guide/api-docs.md)
 
 ## 开发约定
 
-修改组件职责、运行流程、数据模型、接口契约或其他设计级行为前，请先阅读 [Living Design Documentation](docs/design/README.md)，并在同一变更中同步相关设计文档。
+后端功能按“需求目标设计 → 后端技术设计 → 明确派发实现 → 设计一致性审查”推进。开始前阅读[需求目标设计](docs/requirements/README.md)、[后端技术设计](docs/design/README.md)和[完整工作流](docs/developer-guide/design-led-backend-development.md)；需求确认、设计确认与实现授权是三个独立门禁。

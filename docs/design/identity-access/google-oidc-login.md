@@ -1,5 +1,7 @@
 # Google OIDC Login
 
+> 设计状态：已实现
+
 ## Scope
 
 Google OIDC Login owns Athena's browser Authorization Code flow for both

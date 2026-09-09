@@ -1,5 +1,7 @@
 # System Notification Operations
 
+> 设计状态：已实现
+
 ## Scope
 
 System Notification Operations owns operational Telegram notifications sent to

@@ -1,5 +1,7 @@
 # Managed OO
 
+> 设计状态：已实现
+
 ## Scope
 
 Managed OO owns Polymarket Managed Optimistic Oracle `ProposePrice` and

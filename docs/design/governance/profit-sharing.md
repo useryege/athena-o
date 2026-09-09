@@ -1,5 +1,7 @@
 # Profit Sharing
 
+> 设计状态：已实现
+
 ## Scope
 
 Profit Sharing owns durable draft and opened rounds, configurable draft rosters

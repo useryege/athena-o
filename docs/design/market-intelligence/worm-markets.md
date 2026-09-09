@@ -1,5 +1,7 @@
 # Worm Markets
 
+> 设计状态：已实现
+
 ## Scope
 
 Worm Markets owns the continuously synchronized read model for open Worm sports

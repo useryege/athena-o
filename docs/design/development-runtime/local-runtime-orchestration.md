@@ -1,5 +1,7 @@
 # Local Runtime Orchestration
 
+> 设计状态：已实现
+
 ## Scope
 
 Local Runtime Orchestration owns `make run`, `make stop`, and `make run-reset`;

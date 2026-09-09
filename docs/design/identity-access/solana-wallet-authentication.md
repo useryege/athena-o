@@ -1,5 +1,7 @@
 # Solana Wallet Authentication
 
+> 设计状态：已实现
+
 ## Scope
 
 Solana Wallet Authentication is a member-application identity provider. It is

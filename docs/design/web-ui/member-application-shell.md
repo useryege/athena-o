@@ -1,5 +1,7 @@
 # Member Application Shell
 
+> 设计状态：已实现
+
 ## Scope
 
 The Member Application Shell owns Athena's ordinary-account browser experience:

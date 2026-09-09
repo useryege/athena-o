@@ -1,5 +1,7 @@
 # Worm Position Cash Out
 
+> 设计状态：已实现
+
 ## Scope
 
 Worm Position Cash Out owns the durable, owner-scoped operation that closes one

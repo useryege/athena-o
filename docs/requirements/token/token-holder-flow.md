@@ -1,6 +1,8 @@
 # Token 持币地址资料获取流程
 
-> 文档状态：目标设计草案，尚未实现。首版仅研究 Ethereum Mainnet，现有 Etherscan API Key 均为免费 Key；持币地址采集保留设计，待后续开通并接入专用 PRO Key。
+> 需求状态：讨论中
+>
+> 细分状态：目标设计草案，尚未实现。首版仅研究 Ethereum Mainnet，现有 Etherscan API Key 均为免费 Key；持币地址采集保留设计，待后续开通并接入专用 PRO Key。
 
 ## 入口与目的
 

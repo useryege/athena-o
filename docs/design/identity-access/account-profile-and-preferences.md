@@ -1,5 +1,7 @@
 # Account Profile and Preferences
 
+> 设计状态：已实现
+
 ## Scope
 
 Account Profile and Preferences owns each UUID account's editable display name,

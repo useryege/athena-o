@@ -1,5 +1,7 @@
 # Account Access Control
 
+> 设计状态：已实现
+
 ## Scope
 
 Account Access Control owns Athena's durable role-aware authorization model:

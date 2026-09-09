@@ -1,5 +1,7 @@
 # Etherscan Manager
 
+> 设计状态：已实现
+
 ## Scope
 
 The Etherscan Manager is ATHENA's internal gRPC entry point for Etherscan-backed

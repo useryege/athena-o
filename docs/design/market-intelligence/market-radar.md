@@ -1,5 +1,7 @@
 # Market Radar
 
+> 设计状态：已实现
+
 ## Scope
 
 Market Radar owns the process-local Polymarket market-discovery read model used

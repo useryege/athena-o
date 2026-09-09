@@ -1,5 +1,7 @@
 # Worm Trading
 
+> 设计状态：已实现
+
 ## Scope
 
 Worm Trading owns the process boundary that persists each account's ordered

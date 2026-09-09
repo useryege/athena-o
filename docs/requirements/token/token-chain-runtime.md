@@ -1,6 +1,10 @@
 # Token 单链实例运行设计
 
-> 文档状态：已确认的目标设计，尚未实现。本次确定运行时按链拆分的边界；当前只开发和运行 Ethereum Mainnet，后续扩链时使用同一套代码增加实例。
+> 需求状态：已确认
+>
+> 细分状态：已确认的目标设计，尚未实现。本次确定运行时按链拆分的边界；当前只开发和运行 Ethereum Mainnet，后续扩链时使用同一套代码增加实例。
+>
+> 关联技术设计：[Token Chain Processor](../../design/token-intelligence/chain-processor.md)、[Token Collection and Project Profile](../../design/token-intelligence/collection-profile.md)
 
 ## 运行方式
 
@@ -66,14 +70,14 @@ flowchart TD
 
 ## 实现时需要对齐的现状
 
-- [当前扫描器](../../cmd/athena-token-chain-processor/commands/athena-token-chain-processor.go) 为每条启用链创建周期任务，尚未限制单实例单链。
-- [当前链参数解析](../../cmd/tokenchain/flags.go) 和 [链注册表](../../internal/token/chainregistry/registry.go) 同时要求 ETH、BSC 的配置，禁用链也会校验；应调整为仅校验本职责需要的当前链配置。
-- [当前公共启动逻辑](../../cmd/tokenworker/common.go) 会同步全部链，[链状态写入](../../internal/token/adapters/postgres/queries/chain.sql) 会覆盖 `enabled`。不能只复制实例并把各自不处理的链设成禁用；应先分清全局链状态与实例链范围，避免相互覆盖。
-- [当前采集器](../../cmd/athena-token-collector/commands/athena-token-collector.go) 已把启用链范围传入任务领取，改造时应收敛为实例唯一链；[当前资料汇总器](../../cmd/athena-token-profile-builder/commands/athena-token-profile-builder.go) 从全库领取汇总任务，可以按上述共享职责保留，但需解除无关链配置与全局状态写入的启动依赖。
+- [当前扫描器](../../../cmd/athena-token-chain-processor/commands/athena-token-chain-processor.go) 为每条启用链创建周期任务，尚未限制单实例单链。
+- [当前链参数解析](../../../cmd/tokenchain/flags.go) 和 [链注册表](../../../internal/token/chainregistry/registry.go) 同时要求 ETH、BSC 的配置，禁用链也会校验；应调整为仅校验本职责需要的当前链配置。
+- [当前公共启动逻辑](../../../cmd/tokenworker/common.go) 会同步全部链，[链状态写入](../../../internal/token/adapters/postgres/queries/chain.sql) 会覆盖 `enabled`。不能只复制实例并把各自不处理的链设成禁用；应先分清全局链状态与实例链范围，避免相互覆盖。
+- [当前采集器](../../../cmd/athena-token-collector/commands/athena-token-collector.go) 已把启用链范围传入任务领取，改造时应收敛为实例唯一链；[当前资料汇总器](../../../cmd/athena-token-profile-builder/commands/athena-token-profile-builder.go) 从全库领取汇总任务，可以按上述共享职责保留，但需解除无关链配置与全局状态写入的启动依赖。
 
 拆分使各链能够独立重启、分配进程资源和观察运行状态；普通单链请求错误仍在自身任务中处理。共享数据库和 Etherscan Key 池继续存在共同容量限制，进程拆分不增加 Key 配额，也不自动消除共享依赖故障。资源额度、限流参数、部署配置和实例标识的具体形式在实现时细化。
 
-本次只记录目标设计，未修改程序或部署配置。当前实现继续以 [Token Chain Processor](../design/token-intelligence/chain-processor.md) 和 [Token Collection and Project Profile](../design/token-intelligence/collection-profile.md) 为准，在代码改造时同步对应说明。
+本次只确认需求目标，未修改程序或部署配置。当前实现继续以 [Token Chain Processor](../../design/token-intelligence/chain-processor.md) 和 [Token Collection and Project Profile](../../design/token-intelligence/collection-profile.md) 为准；开始改造前必须先形成并确认覆盖本需求的目标技术设计，实现时再将其同步为 `已实现`。
 
 ## 关联文档
 

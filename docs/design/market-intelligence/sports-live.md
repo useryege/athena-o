@@ -1,5 +1,7 @@
 # Sports Live
 
+> 设计状态：已实现
+
 ## Scope
 
 Sports Live owns the durable read model for current Polymarket sports events,

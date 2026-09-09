@@ -1,5 +1,7 @@
 # Sports History
 
+> 设计状态：已实现
+
 ## Scope
 
 Sports History owns the durable Polymarket read model for recently completed ATP

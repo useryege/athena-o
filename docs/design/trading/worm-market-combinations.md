@@ -1,5 +1,7 @@
 # Worm Market Combinations
 
+> 设计状态：已实现
+
 ## Scope
 
 Worm Market Combinations owns interactive discovery of every child market below

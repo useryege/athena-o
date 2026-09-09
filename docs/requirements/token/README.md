@@ -1,12 +1,15 @@
-# 业务设计与研究资料
+# Token 需求目标与研究资料
 
-本目录记录目标设计、已确认业务决定和待细化事项；`docs/design/` 继续说明当前实现，代码实现时再同步更新。Token 当前先完成后端，再重新设计前端；旧业务 UI 已移除，保留禁用 Token 父菜单、独立 Wallets 和后端 API，见 [前端范围](token.md#已明确的实施顺序与前端范围)。
+本目录属于 [`docs/requirements/`](../README.md)，记录 Token 业务目标、已确认决定、仍在讨论的边界和支撑调研。每份可独立确认的文档以 `需求状态` 为阶段依据；细分状态继续说明其中已经确认、尚待细化或仅供选择的内容。
+
+Token 当前先完成后端，再重新设计前端；旧业务 UI 已移除，保留禁用 Token 父菜单、独立 Wallets 和后端 API，见[前端范围](token.md#已明确的实施顺序与前端范围)。需求确认后，后端方案进入 [`docs/design/`](../../design/README.md) 的技术设计阶段。
 
 ## 目标设计
 
 | 文档 | 内容 | 状态 |
 | --- | --- | --- |
-| [Token 目标设计](token.md) | ETH 新项目发现、首次 Swap 前研究、AI 源码报告、后续程序筛选与交易板块衔接 | 目标设计，后端尚未完成 |
+| [Token 目标设计](token.md) | ETH 新项目发现、首次 Swap 前研究、AI 源码报告、后续程序筛选与交易板块衔接 | `讨论中`，包含已确认子项 |
+| [单链实例运行需求](token-chain-runtime.md) | 同代码、单链实例的运行边界和首版链范围 | `已确认`，尚未实现 |
 
 已确定以下业务边界：
 
@@ -26,7 +29,7 @@ owner、税费接收钱包和税率仍由 AI 基于源码提供读取说明，Go
 
 ## 流程图
 
-流程文档每份保留一张 Mermaid，按业务顺序阅读。目标设计变更同步对应图文与主文档，不提前写入当前实现说明。
+流程文档每份保留一张 Mermaid，按业务顺序阅读。需求变化同步对应图文、主文档和状态；只有相关需求确认后，才进入后端技术设计。
 
 | 文档 | 内容 |
 | --- | --- |
@@ -48,18 +51,22 @@ owner、税费接收钱包和税率仍由 AI 基于源码提供读取说明，Go
 | [多层钱包研究](token-wallet-research-flow.md) | 后台自动五层、固定历史窗口、部署/交互事实 |
 | [钱包资金来源图](token-wallet-funding-graph.md) | 五层结果、共享节点、循环关系和交易证据 |
 
-## 当前实现说明
+## 关联后端技术设计
 
-[当前系统设计索引](../design/README.md)维护仓库现有实现的英文说明，面向开发者和 AI 代理。代码是当前行为的依据；目标设计不替代这些实现说明。
+[后端技术设计索引](../../design/README.md)同时承载待实现方案和已实现设计，并用文档状态明确区分。以下关联文档当前均为 `已实现`，用于说明现状和识别目标差距；新的实现方案必须在相应需求确认后进入技术设计并另行确认。
 
 Token 当前实现的主要入口：
 
 | 文档 | 当前职责 |
 | --- | --- |
-| [Token Chain Processor](../design/token-intelligence/chain-processor.md) | 按区块发现和验证项目，初始化项目及采集任务 |
-| [Token Collection and Project Profile](../design/token-intelligence/collection-profile.md) | 六类一次性采集、采集终态汇合与不可变项目画像构建 |
-| [Token Project Read Model](../design/token-intelligence/project-read-model.md) | 项目列表、详情、采集证据和画像的后端 API 读取 |
+| [Token Module Access Control](../../design/token-intelligence/access-control.md) | Token 模块的后端 API 授权和保留权限模型 |
+| [ATHENA EVM Aggregator Contract](../../design/token-intelligence/athena-contract.md) | ERC-20、交易对、钱包与模拟状态聚合 |
+| [Ave Market Data Collection](../../design/token-intelligence/ave-market-data.md) | Ave 市场数据采集 |
+| [Token Chain Processor](../../design/token-intelligence/chain-processor.md) | 按区块发现和验证项目，初始化项目及采集任务 |
+| [Token Collection and Project Profile](../../design/token-intelligence/collection-profile.md) | 六类一次性采集、采集终态汇合与不可变项目画像构建 |
+| [Token Project Read Model](../../design/token-intelligence/project-read-model.md) | 项目列表、详情、采集证据和画像的后端 API 读取 |
+| [Project Wallet Pre-Deployment Normal Transactions](../../design/token-intelligence/wallet-normal-transactions.md) | 部署前普通交易采集 |
 
 现有采集与画像流程为目标设计提供现状背景，不限定后续重构的业务边界或技术方案。
 
-[返回文档首页](../index.md)
+[返回文档首页](../../index.md)

@@ -1,5 +1,7 @@
 # Wallet Ownership and Custody
 
+> 设计状态：已实现
+
 ## Scope
 
 Wallet Ownership and Custody owns Athena-managed EVM and Solana keypairs,

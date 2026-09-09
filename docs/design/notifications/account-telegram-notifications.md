@@ -1,5 +1,7 @@
 # Account Telegram Notifications
 
+> 设计状态：已实现
+
 ## Scope
 
 Account Telegram Notifications owns the ordinary-account binding lifecycle and

@@ -1,5 +1,7 @@
 # Account and Wallet Avatar Storage
 
+> 设计状态：已实现
+
 ## Scope
 
 Account and Wallet Avatar Storage owns shared image validation, private

@@ -1,6 +1,10 @@
 # Token 两板块目标设计
 
-> 文档状态：目标设计草案，尚未实现。本文件记录已明确的业务目标与开发阶段范围，并将待确认建议、待细化规则和未采用的调研方案分别列出；不代表当前程序已经具备完整目标能力。
+> 需求状态：讨论中
+>
+> 细分状态：目标设计草案，尚未实现。本文件记录已明确的业务目标与开发阶段范围，并将待确认建议、待细化规则和未采用的调研方案分别列出；不代表当前程序已经具备完整目标能力。
+>
+> 关联技术设计：[Token Intelligence 技术设计索引](../../design/README.md)
 
 本文用于需求讨论和开发设计。具体技术方案与代码开发在对应业务规则和文档对齐后推进，整体目标尚未全部实现。
 
@@ -20,7 +24,7 @@ Token 先完成后端业务逻辑，再重新设计和实现前端 UI。现阶�
 
 管理员权限编辑器及账户中心不展示或编辑 Token 权限项，相应展示统计也排除 Token。完整九项权限模型、后端鉴权及已有 Token 授权继续保留；编辑其他权限时必须保留原有 Token 值，不得遗漏或重置。仅持有 Token 授权的账户仍按原规则判定为 Active。
 
-本阶段不删除 Token HTTP/gRPC 接口、采集服务、数据库或 API 文档。管理员通用服务状态中的 Token API 健康信息、Etherscan 管理、独立钱包、Worm Trading 和账户 API Key 功能保留。当前实现说明随界面清理同步更新，后续业务逻辑开发继续遵循先对齐需求文档、再修改代码的顺序。
+本阶段不删除 Token HTTP/gRPC 接口、采集服务、数据库或 API 文档。管理员通用服务状态中的 Token API 健康信息、Etherscan 管理、独立钱包、Worm Trading 和账户 API Key 功能保留。后续业务逻辑开发遵循“确认需求 → 确认后端技术设计 → 另行派发实现 → 设计一致性审查”的顺序。
 
 ## 项目的典型阶段
 
@@ -100,9 +104,9 @@ Token 先完成后端业务逻辑，再重新设计和实现前端 UI。现阶�
 
 区块处理失败的每一次尝试都产生一次管理员通知，不因同一区块或同类错误重复发生而去重、合并或抑制，也不设置只通知首次失败的规则。每轮最多 100 个区块限制的是不同区块的处理范围，不限制同一区块的重试次数；失败块成功后，才继续本轮的下一块。重试间隔及通知提交失败时的处理方式后续细化。
 
-区块处理失败后的持续通知与重试，以及 `H < C` 时通知管理员人工处理，均复用仓库的 [系统通知组件](../design/notifications/system-notification-operations.md)。`H < C` 的人工处理分支独立于区块失败重试循环；该分支的重复通知控制、异常期间扫描控制及人工恢复方式仍待细化。具体告警内容、通知接入方式与接收配置后续设计；本轮不改变通知组件自身的投递和重试机制。
+区块处理失败后的持续通知与重试，以及 `H < C` 时通知管理员人工处理，均复用仓库的 [系统通知组件](../../design/notifications/system-notification-operations.md)。`H < C` 的人工处理分支独立于区块失败重试循环；该分支的重复通知控制、异常期间扫描控制及人工恢复方式仍待细化。具体告警内容、通知接入方式与接收配置后续设计；本轮不改变通知组件自身的投递和重试机制。
 
-当前明确不考虑区块被替换或链重组，不设计自动回滚、重组修复或因区块替换恢复研究。`H < C` 的既有异常通知与人工处理保留。区块处理采用已选择的 A 边界：完成该块 Token 识别并可靠保存结果、项目资料与研究任务后推进；源码、AI和五层研究独立后台执行，见 [扫描与研究衔接](token-block-scan-flow.md#已确认的扫描与研究衔接)。本轮只更新目标文档，尚未接入异常通知或修改扫描代码，现状见 [Token 链扫描与项目初始化](../design/token-intelligence/chain-processor.md)。
+当前明确不考虑区块被替换或链重组，不设计自动回滚、重组修复或因区块替换恢复研究。`H < C` 的既有异常通知与人工处理保留。区块处理采用已选择的 A 边界：完成该块 Token 识别并可靠保存结果、项目资料与研究任务后推进；源码、AI和五层研究独立后台执行，见 [扫描与研究衔接](token-block-scan-flow.md#已确认的扫描与研究衔接)。本轮只更新目标文档，尚未接入异常通知或修改扫描代码，现状见 [Token 链扫描与项目初始化](../../design/token-intelligence/chain-processor.md)。
 
 ## 已明确的 Token 识别与逐项诊断
 
@@ -132,7 +136,7 @@ Token 识别保留当前全部筛选条件，不放宽元数据、精度或供�
 | `balanceOf(零地址)` | 能正常返回并按现有要求解码；允许返回 0 |
 | `allowance(零地址, 零地址)` | 能正常返回并按现有要求解码；允许返回 0 |
 
-读取和解码要求沿用 [当前 Token 探测逻辑](../../pkg/abi/ATHENA/ATHENA.sol) 的 `_getToken` 及相关 `_safe*` 方法。名称或符号为空、精度或总供应量为 0，均按现有规则判定该项不通过；余额和授权额度不增加大于 0 的要求。这一步记录项目采用的 Token 筛选结果，是否值得关注仍由后续研究判断。
+读取和解码要求沿用 [当前 Token 探测逻辑](../../../pkg/abi/ATHENA/ATHENA.sol) 的 `_getToken` 及相关 `_safe*` 方法。名称或符号为空、精度或总供应量为 0，均按现有规则判定该项不通过；余额和授权额度不增加大于 0 的要求。这一步记录项目采用的 Token 筛选结果，是否值得关注仍由后续研究判断。
 
 ### 返回并保存逐项检测结果（待实现）
 
@@ -194,7 +198,7 @@ Token 识别保留当前全部筛选条件，不放宽元数据、精度或供�
 
 启动研究不以池子已经存在或已取得底池状态快照为前提。首次 Swap 识别按协议取得必要的池身份与币种映射，不采集池深或 LP 风险；没有匹配到事件不表示已证明项目无池或没有交易。第一笔实际 Swap 结束研究，具体买入条件仍由第二板块设计。
 
-这里先确定数据职责与阶段边界，不预先确定拆分后的任务名称、服务数量、采集频率、接口或数据库结构。当前基础信息、池信息和模拟字段的实现背景见 [ATHENA 聚合查询](../design/token-intelligence/athena-contract.md) 与 [现有采集数据定义](../../internal/token/collection/payload.go)。
+这里先确定数据职责与阶段边界，不预先确定拆分后的任务名称、服务数量、采集频率、接口或数据库结构。当前基础信息、池信息和模拟字段的实现背景见 [ATHENA 聚合查询](../../design/token-intelligence/athena-contract.md) 与 [现有采集数据定义](../../../internal/token/collection/payload.go)。
 
 ### 合约源码按字节码哈希复用
 
@@ -214,7 +218,7 @@ Token 识别保留当前全部筛选条件，不放宽元数据、精度或供�
 
 按 `code_hash` 定位的实际源码共享 AI 静态质检报告、owner 分析与读取方式、税费接收钱包分析、固定地址与读取方式、税率分析与解释方案，以及公开资料链接和出处。需要链上读取的 owner、税费接收地址与税率逐合约读取。复用源码不将新地址标记为在 Etherscan 独立完成源码验证，也不将不同初始化参数或链上状态视为相同；链接保留实际提取源码及出处，不宣称已经核实新项目的官方归属。
 
-当前实现 `ContractSourceProcessor.Process` 在缓存记录 `Fetched` 为真时复用，包括空源码；当前采集任务在第三次失败时结束。这与目标中的空源码再次查询、请求失败独立记录及首次加三次重试存在差异，后续实现时调整。参考 [源码处理器](../../internal/token/collection/application/processors.go)和[当前采集任务设计](../design/token-intelligence/collection-profile.md)。
+当前实现 `ContractSourceProcessor.Process` 在缓存记录 `Fetched` 为真时复用，包括空源码；当前采集任务在第三次失败时结束。这与目标中的空源码再次查询、请求失败独立记录及首次加三次重试存在差异，后续实现时调整。参考 [源码处理器](../../../internal/token/collection/application/processors.go)和[当前采集任务设计](../../design/token-intelligence/collection-profile.md)。
 
 ### AI 静态质检、程序风险判断与报告复用（待实现）
 
@@ -260,9 +264,9 @@ AI 只阅读实际取得的源码并生成质检报告，不给出风险等级�
 
 这些交易用于整理并展示各层钱包直接部署过的合约、交易或交互过的项目，以及多层资金来源和地址间的交易联系。钱包资料当前只采集、解析和展示，不据此筛选或排除项目。层级范围、资金来源定义和分析内容按下节执行；具体行为解析仍待细化。
 
-当前代码已经实现上述区块范围、排序、页码及数量规则，本轮原样保留。当前钱包范围仍只覆盖部署者和最多 10 个初始接收钱包；初始接收钱包缩减为最多 5 个、owner 与税费接收钱包的获取及纳入采集、L2–L5 来源发现、多层历史分析与资金来源图均待实现。详见 [钱包历史交易现状](../design/token-intelligence/wallet-normal-transactions.md)及对应的[截止区块计算](../../internal/token/collection/application/processors.go)与[Etherscan 查询参数](../../internal/token/adapters/normaltransactions/provider.go)。
+当前代码已经实现上述区块范围、排序、页码及数量规则，本轮原样保留。当前钱包范围仍只覆盖部署者和最多 10 个初始接收钱包；初始接收钱包缩减为最多 5 个、owner 与税费接收钱包的获取及纳入采集、L2–L5 来源发现、多层历史分析与资金来源图均待实现。详见 [钱包历史交易现状](../../design/token-intelligence/wallet-normal-transactions.md)及对应的[截止区块计算](../../../internal/token/collection/application/processors.go)与[Etherscan 查询参数](../../../internal/token/adapters/normaltransactions/provider.go)。
 
-现有 `simulation_result` 是六项独立的 `transfer` / `transferFrom` 调用探测，当前仅记录调用是否报错，不是完整的买入、卖出模拟。因此不将现有结果直接作为项目安全、增发能力或买卖可执行性的结论。辅助合约探测与后续买卖可执行性检查的目标和方式仍需分别设计。实现依据见 [当前模拟调用](../../internal/token/adapters/evm/project_state_reader.go)。
+现有 `simulation_result` 是六项独立的 `transfer` / `transferFrom` 调用探测，当前仅记录调用是否报错，不是完整的买入、卖出模拟。因此不将现有结果直接作为项目安全、增发能力或买卖可执行性的结论。辅助合约探测与后续买卖可执行性检查的目标和方式仍需分别设计。实现依据见 [当前模拟调用](../../../internal/token/adapters/evm/project_state_reader.go)。
 
 研究阶段不再以现有六类采集任务全部结束作为完成条件；项目第一次实际 Swap 出现时结束研究并保留截至当时的资料、进度及未取得原因。本阶段未采集底池信息、未采集 Ave，或没有取得非必采的模拟结果，不应仅因此阻塞研究或将研究结论标为不完整。owner 由 AI 分析源码确定读取方式，再由 Go 程序读取链上结果；税费接收钱包由 AI 提取固定地址或提供方式交由 Go 读取。未取得或只取得部分地址时记录实际结果与原因，保留成功结果并继续使用已有资料研究，不将取得全部 owner 或税费接收地址作为研究完成的必要条件。研究截止不保证所有资料完整。交接条件、活动更新合并及资料部分取得时的程序规则处理仍待细化；遇到相同哈希但未取得源码时，按前述已明确规则使用当前合约重新查询。这不代表可以跳过必要的项目研究直接买入。
 
@@ -424,7 +428,7 @@ AI 根据实际税费分配逻辑判断地址用途，不仅凭变量或函数�
 
 尚未配置专用 PRO Key 时，记录“未配置专用 PRO Key，未采集”，继续其他项目资料采集与展示。权限不足、配额耗尽、限流或请求失败时保存实际原因，不解释为零持币地址或项目异常。实际调用遵守所购套餐、所属账号及对应接口的额度和限频；不因为凭据用途分开就假定平台配额天然独立。
 
-现有 [Etherscan Manager](../design/blockchain-data/etherscan-manager.md)提供源码和普通交易查询及通用 Key 轮询；持币接口与专用凭据选择尚未实现。具体配置字段、请求调度、重试、存储及接口结构后续设计，本轮不修改 Key、配置或服务。
+现有 [Etherscan Manager](../../design/blockchain-data/etherscan-manager.md)提供源码和普通交易查询及通用 Key 轮询；持币接口与专用凭据选择尚未实现。具体配置字段、请求调度、重试、存储及接口结构后续设计，本轮不修改 Key、配置或服务。
 
 ### 结果保存与研究边界
 
@@ -477,11 +481,11 @@ AI 根据实际税费分配逻辑判断地址用途，不仅凭变量或函数�
 
 后续代码重构时，一并清理两类黑名单对应的数据模型与存储、管理接口、前端页面与导航、接口权限映射和命中检查方法。合约源码、代码哈希及关联钱包仍按前述范围用于项目研究；删除黑名单不扩大其他研究数据的删除范围。
 
-当前两类黑名单的存储和管理能力仍然存在，发现、采集和画像构建流程未调用其命中检查。本轮只记录已确认的移除决定，不删除代码或数据；实际清理时再同步更新当前实现文档。现状入口见 [黑名单模型](../../internal/token/policy/model.go)、[黑名单仓储](../../internal/token/adapters/postgres/blocklist_store.go) 和 [Token 模块访问控制](../design/token-intelligence/access-control.md)。
+当前两类黑名单的存储和管理能力仍然存在，发现、采集和画像构建流程未调用其命中检查。本轮只记录已确认的移除决定，不删除代码或数据；实际清理前仍需完成并确认相应技术设计，实现时将关联设计同步为 `已实现`。现状入口见 [黑名单模型](../../../internal/token/policy/model.go)、[黑名单仓储](../../../internal/token/adapters/postgres/blocklist_store.go) 和 [Token 模块访问控制](../../design/token-intelligence/access-control.md)。
 
 ## 已明确的交易监控覆盖方向（待设计、尚未实现）
 
-第二板块需要扩大底池覆盖范围，支持更多协议、报价资产和底池类型。当前实现只围绕 Ethereum 的 Uniswap V2、BSC 的 PancakeSwap V2，以及目标 Token 与 WETH/WBNB、USDT 组成的交易对采集底池信息；这些现状不作为新设计的固定限制。现状说明见 [ATHENA 聚合查询](../design/token-intelligence/athena-contract.md)。
+第二板块需要扩大底池覆盖范围，支持更多协议、报价资产和底池类型。当前实现只围绕 Ethereum 的 Uniswap V2、BSC 的 PancakeSwap V2，以及目标 Token 与 WETH/WBNB、USDT 组成的交易对采集底池信息；这些现状不作为新设计的固定限制。现状说明见 [ATHENA 聚合查询](../../design/token-intelligence/athena-contract.md)。
 
 | 扩展方向 | 目标要求 |
 | --- | --- |
@@ -537,11 +541,11 @@ AI 根据实际税费分配逻辑判断地址用途，不仅凭变量或函数�
 
 当前 Token 代码主要实现按区块发现项目、创建六类一次性采集任务，并在任务全部结束后尝试构建唯一的不可变画像。该流程提供现状背景，尚未实现本文描述的完整两板块业务主线。前述基础信息与底池采集拆分、AI 质检报告与程序评级分工、首次 Swap 截止、AI 确定 owner 与税费接收钱包及税率读取方式、从源码提取公开资料链接、专用 PRO Key 的持币地址采集、不研究池深或 LP 风险但识别首次 Swap、模拟结果非必采和不采集 Ave 的目标安排也尚未实现。相关说明见：
 
-- [Token 链扫描与项目初始化](../design/token-intelligence/chain-processor.md)。
-- [Token 六源采集与项目画像](../design/token-intelligence/collection-profile.md)。
-- [Token 项目查询模型](../design/token-intelligence/project-read-model.md)。
+- [Token 链扫描与项目初始化](../../design/token-intelligence/chain-processor.md)。
+- [Token 六源采集与项目画像](../../design/token-intelligence/collection-profile.md)。
+- [Token 项目查询模型](../../design/token-intelligence/project-read-model.md)。
 
-六类数据源、一次性采集、不可变画像以及现有组件边界均不作为新方案的固定约束。后续设计应依据业务要求决定保留、替换或重新组织哪些能力；真正实施代码变更时，再同步更新 [当前系统设计文档](../design/README.md)。
+六类数据源、一次性采集、不可变画像以及现有组件边界均不作为新方案的固定约束。相关需求确认后，应依据业务要求在[后端技术设计](../../design/README.md)中决定保留、替换或重新组织哪些能力；技术设计确认且另行派发实现后才能修改源码。
 
 ## 第三方发现方案调研备忘（本阶段未采用）
 
@@ -571,4 +575,4 @@ Allium 的 [Ethereum contracts 表](https://docs.allium.so/historical-data/suppo
 
 另有 [Machine Payments 按次付费方式](https://docs.allium.so/ai/machine-payments/endpoints-pricing)：提交 SQL 为 $0.01/次，查询状态为 $0.01/次，获取结果为动态计费。因此 $0.01 不是一次完整查询的总成本；该价格表中状态与结果接口仍要求 API key，具体表权限也需确认，不能只凭提交价格确定可用性和总预算。
 
-返回 [业务设计与研究资料索引](README.md) 或 [文档首页](../index.md)。
+返回 [业务设计与研究资料索引](README.md) 或 [文档首页](../../index.md)。

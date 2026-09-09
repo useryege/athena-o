@@ -1,5 +1,7 @@
 # BSC V2 Swap Transactions
 
+> 设计状态：已实现
+
 ## Scope
 
 This service indexes finalized BNB Smart Chain Mainnet transactions that emit at least one log whose topic zero is `0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822`. It owns the initial 30-day backfill, fixed 100-block log-filter windows, transaction-sender recovery, transaction-level deduplication, atomic PostgreSQL persistence, wallet-first keyset pagination, gRPC serving, and scanner health reporting.

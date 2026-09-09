@@ -1,5 +1,9 @@
 # Ave Market Data Collection
 
+> 设计状态：已实现
+>
+> 相关目标需求（讨论中）：[Token 两板块目标设计](../../requirements/token/token.md)
+
 ## Scope
 
 The `ave` collector performs one Ave Token Detail request for a validated

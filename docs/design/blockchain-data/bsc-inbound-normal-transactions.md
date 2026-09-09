@@ -1,5 +1,7 @@
 # BSC Inbound Normal Transactions
 
+> 设计状态：已实现
+
 ## Scope
 
 This service indexes successful finalized BNB Smart Chain Mainnet transactions that directly transfer more than `10000000000000000` wei with empty calldata to a non-null recipient. It owns the initial 30-day backfill, finalized-head following, receipt validation, atomic PostgreSQL persistence, address-first keyset pagination with an optional exclusive starting position, gRPC serving, and scanner health reporting.

@@ -1,5 +1,7 @@
 # Account Credentials
 
+> 设计状态：已实现
+
 ## Scope
 
 Account Credentials owns Athena's stable UUID account identity, immutable public

@@ -9,8 +9,8 @@
 > * A Slack integration
 
 ## Preface
-#### Understand the [Code Contribution Guide](code-contributions.md)
 #### Understand the [Code Contribution Preface](submit-your-pr.md#preface)
+#### Follow the [Design-Led Backend Development Workflow](design-led-backend-development.md)
     
 ## Contributing to Athena documentation
 
@@ -64,11 +64,9 @@ As is the case with the development process, this document is under constant cha
 - [Set up the local toolchain](toolchain-guide.md#local-toolchain)
 
 ### Perform the development cycle 
-- [Pull in all build dependencies](development-cycle.md#pull-in-all-build-dependencies)
-- [Generate API glue code and other assets](development-cycle.md#generate-API-glue-code-and-other-assets)
-- [Build your code and run unit tests](development-cycle.md#build-your-code-and-run-unit-tests)
-- [Lint your code base](development-cycle.md#lint-your-code-base)
-- How to contribute to documentation: maintain repository Markdown directly and follow the [Living Design Documentation](../design/README.md) rules for design-level changes
+- [Start with the compact local development workflow](how-to-develop.md)
+- [Follow the design-led backend workflow and phase gates](design-led-backend-development.md)
+- How to contribute to documentation: maintain repository Markdown directly and follow the [requirements](../requirements/README.md), [backend technical design](../design/README.md), and [design-led workflow](design-led-backend-development.md) rules
 
 ### Run and debug Athena locally
 - [Run Athena on your machine for manual testing](running-locally.md)
@@ -82,16 +80,6 @@ As is the case with the development process, this document is under constant cha
 - [Understand the CI automated builds & tests](submit-your-pr.md#automated-builds-&-tests)
 - [Understand & make sure your PR meets the CI code test coverage requirements](submit-your-pr.md#code-test-coverage)
 
-Need help? Start with the [Contributors FAQ](faq/)
-
 ## Contributing to Athena dependencies
 - [Contributing to athena-ui](dependencies.md#athena-ui-components-githubcomargoprojargo-ui)
 - [Contributing to notifications-engine](dependencies.md#notifications-engine-githubcomargoprojnotifications-engine)
-
-## Extensions and Third-Party Applications
-* [UI Extensions](extensions/ui-extensions.md)
-* [Proxy Extensions](extensions/proxy-extensions.md)
-* [Config Management Plugins](../operator-manual/config-management-plugins/)
-
-## Contributing to Argo Website
-The Argo website is maintained in the [argo-site](https://github.com/useryege/argo-site) repository.

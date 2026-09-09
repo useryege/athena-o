@@ -1,52 +1,89 @@
-# Design Document Title
+# <能力名称>后端技术设计
 
-Use this template for the current implemented design of one subsystem or independently understandable capability. Remove all instructional text and placeholders before registering the document in the [design index](README.md).
+> 设计状态：设计中
+>
+> 关联需求：[<已确认需求名称>](../../requirements/<业务域>/<文档>.md)
 
-## Scope
+复制本模板后删除所有说明性占位内容。只有关联需求已经处于 `已确认` 状态时，才开始填写技术设计。
 
-State what the capability owns, what behavior this document explains, and the most important adjacent responsibilities that are outside its boundary.
+## 需求覆盖
 
-## Source Locations
+逐项列出本设计覆盖的需求规则、验收场景和明确不覆盖的范围，确保每个技术决定都有需求来源。
 
-Link the implementation entry points and name the important symbols. Include application logic, adapters, persistent storage, configuration, and process wiring when relevant.
-
-| Concern | Source | Key symbols |
+| 需求条目 | 设计落点 | 说明 |
 | --- | --- | --- |
-| Process entry | `path/to/file` | `SymbolName` |
+| `<需求规则或验收场景>` | `<本文章节>` | `<覆盖方式或边界>` |
 
-## Architecture
+## 范围
 
-Describe component responsibilities, boundaries, dependencies, and the direction of calls or data movement. Add a small diagram only when it makes those relationships materially clearer.
+说明本能力负责什么、与哪些相邻能力交互，以及本次设计不承担什么。
 
-## Runtime Flow
+## 现状与目标差距
 
-Describe the current end-to-end execution sequence, including startup, steady-state work, and shutdown. Identify concurrency and transaction boundaries explicitly.
+基于代码和已有 `已实现` 设计说明当前行为，再列出达到目标所需的差距。进入 `已实现` 后只保留仍然真实的现状，并明确不存在未实现差距。
 
-## State / Data
+## 关键决定
 
-Describe durable state, in-memory state, ownership, lifecycle, uniqueness constraints, and the point at which state transitions become committed.
+记录会约束实现的重要方案与取舍，包括采用原因和被排除方案的必要结论；不保留讨论流水账。
 
-## Configuration
+## 组件与职责
 
-List the configuration sources, relevant fields, defaults, validation rules, and which behavior each setting controls. Do not copy secrets or unrelated environment variables.
+说明组件边界、依赖方向、调用关系和各自唯一职责。只有在关系较复杂时添加小型图示。
 
-## Invariants
+## 接口与数据契约
 
-List the conditions the implementation relies on and must preserve across changes.
+定义内部或外部接口、消息、事件、字段语义、错误语义、兼容边界和调用约束。没有契约变化时写“不适用”。
 
-## Failure Recovery
+## 数据模型与持久化
 
-Explain how dependency failures, partial work, retries, restarts, cancellation, and invalid configuration behave. State where atomicity prevents partial state.
+说明实体、所有权、生命周期、唯一性、索引、状态转换和持久化边界；没有持久化状态时写“不适用”。
 
-## Observability
+## 运行流程
 
-Document logs, health and readiness semantics, metrics, status endpoints, and the fields needed to diagnose the capability.
+按顺序描述启动、主路径、异常路径、停止，以及跨组件的数据流和状态提交点。
 
-## Change Checklist
+## 事务、并发与幂等
 
-- [ ] Component responsibilities and boundaries still match this document.
-- [ ] Runtime, concurrency, and transaction flows are current.
-- [ ] State, data, interfaces, configuration, dependencies, and invariants are current.
-- [ ] Failure recovery, health checks, and observability are current.
-- [ ] Source links and named symbols resolve to the implementation.
-- [ ] The [design index](README.md) contains the correct entry.
+说明原子边界、锁或版本策略、并发顺序、重复请求处理、任务领取和重试幂等性；不适用时说明原因。
+
+## 失败处理与恢复
+
+说明依赖失败、部分完成、重试、取消、重启恢复、人工介入和永久失败语义。
+
+## 配置、安全与权限
+
+列出配置来源、默认值、校验、凭据边界、鉴权与授权要求，以及敏感操作的安全约束。不得复制密钥。
+
+## 可观测性与运维
+
+定义关键日志、指标、追踪、健康与就绪语义、状态查询和诊断所需字段。
+
+## 源码影响
+
+列出预计新增、修改、替换或删除的源码位置和关键符号。设计阶段可以标记预计路径，实现完成后必须更新为实际位置。
+
+| 关注点 | 源码位置 | 关键符号 | 动作 |
+| --- | --- | --- | --- |
+| `<入口或边界>` | `<path/to/file>` | `<SymbolName>` | `<新增/修改/替换/删除>` |
+
+## 旧实现清理
+
+列出应直接替换或删除的旧路径、字段、配置和死代码。ATHENA 不为历史行为保留兼容层。
+
+## 验证方式
+
+列出如何证明需求覆盖和设计一致。验证必须遵守根 `AGENTS.md`，单元、集成或端到端测试只有在用户明确授权时才能规划或运行。
+
+## 待确认问题
+
+列出会改变技术方案的问题及影响。进入 `已确认待实现` 前，本节不得保留实质性未决项。
+
+## 设计一致性检查
+
+- [ ] 已确认需求均映射到设计和实现。
+- [ ] 组件、接口、数据、事务、并发和失败语义与实现一致。
+- [ ] 配置、安全、权限、可观测性和运维入口与实现一致。
+- [ ] 实质偏差已经回退到对应阶段并重新确认。
+- [ ] 旧实现已按设计清理，没有无需求依据的兼容路径。
+- [ ] 源码链接和关键符号可以解析。
+- [ ] 文档状态与当前阶段一致，并已登记到[设计索引](README.md)。

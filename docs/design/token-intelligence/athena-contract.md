@@ -1,5 +1,9 @@
 # ATHENA EVM Aggregator Contract
 
+> 设计状态：已实现
+>
+> 相关目标需求（讨论中）：[Token 两板块目标设计](../../requirements/token/token.md)
+
 ## Scope
 
 The ATHENA contract is a stateless on-chain read aggregator for Token Intelligence. It probes ERC-20 metadata, derives V2 pair addresses, summarizes pair liquidity and quote values, reads related-wallet balances, and returns allowance state used by off-chain simulation. This document covers the contract's chain-specific construction, query behavior, generated Go binding, and direct Token Intelligence consumers. Contract broadcasting, address provisioning, project persistence, and off-chain simulation execution are outside this boundary.

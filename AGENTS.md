@@ -10,9 +10,7 @@
   - [No Tests](#no-tests)
   - [Chinese Plans](#chinese-plans)
   - [Plan Implementation Completion Email](#plan-implementation-completion-email)
-  - [Documentation Before Code](#documentation-before-code)
-  - [Backend Design Before Implementation](#backend-design-before-implementation)
-  - [Living Design Documentation](#living-design-documentation)
+  - [Design-Gated Development](#design-gated-development)
   - [UI Layout Review](#ui-layout-review)
   - [本地图片路径规则](#本地图片路径规则)
 
@@ -68,41 +66,23 @@ make notify-task-complete \
 - Wait for the Make command to finish before returning the final response.
 - If the notification still fails after the command's built-in retries, keep the implementation task complete but report the notification failure and a credential-safe error summary in the final response. Do not claim that the email was sent.
 
-### Documentation Before Code
+### Design-Gated Development
 
-- 修改业务逻辑、进行后端代码开发或开展前端 UI 设计与开发前，必须先阅读并梳理相关业务需求、目标设计和当前实现文档，明确本次需求、修改范围及预期行为。
-- 相关文档缺失、过时或与本次需求不一致时，先补充或修正文档；需求存在歧义或冲突时，先澄清，再开展依赖这些需求的代码修改。
-- 必须先完成需求与文档对齐，再修改代码，不得先实现后补写需求设计。用户已明确的需求和决定应直接沿用，无需重复确认。
-- 前端 UI 必须在需求与文档对齐后，先完成页面结构、主要交互和关键状态的设计，并记录到对应业务需求或目标设计文档；按照 [UI Layout Review](#ui-layout-review) 完成必要的布局确认后，再实现代码，不得先实现后补设计。
-- 尚未实现的目标写入对应业务需求或目标设计文档；`docs/design/` 继续只描述当前实现，在代码实现时同步更新，避免提前把规划写成现状。
-
-### Backend Design Before Implementation
-
-修改后端源码前，必须先完成与本次需求相匹配的后端技术设计，并在用户确认设计后再开始实现。
-
-- 先基于相关需求文档、目标设计文档、`docs/design/` 当前实现说明和实际源码，梳理现有行为、约束、依赖关系及本次修改边界。
-- 技术设计应按需明确组件职责与边界、接口和数据契约、核心流程与状态变化、数据模型及持久化策略、事务与并发、错误处理与恢复、配置、安全、可观测性，以及受影响源码和需要清理的旧实现；不适用的内容无需机械补齐。
-- 将尚未实现的方案写入对应业务需求或目标设计文档，不得提前写入只描述当前实现的 `docs/design/`。
-- 在修改后端源码前，向用户提供简明的设计摘要、关键取舍及预计影响范围，并等待用户明确确认。需求、设计和影响范围未变化时，可以沿用用户已经确认的设计，无需重复确认。
-- 实现必须遵循已确认的设计；如果实现过程中发现需要实质性改变组件边界、接口契约、数据模型、核心流程或基础设施，应先更新目标设计并重新获得用户确认，再继续相关源码修改。
-- 纯格式化、注释或文案修正，以及不改变行为和设计语义的机械性重构或生成文件同步，不要求单独进行后端设计确认。
-
-### Living Design Documentation
-
-`docs/design/` contains the repository-internal, English-language explanation of the currently implemented design for developers and AI agents.
-
-- Before planning or implementing a change, read `docs/design/README.md` and every design document relevant to the affected subsystem or capability.
-- Update the relevant design document in the same change when implementation changes component responsibilities, boundaries, runtime flow, state machines, data models, interface contracts, configuration defaults, dependency relationships, failure recovery, health checks, or observability.
-- When adding a subsystem or independently understandable capability, create a document from `docs/design/template.md` and register it in `docs/design/README.md`.
-- Purely internal refactors, formatting changes, copy edits, and generated-file updates that do not change design semantics do not require a design-document update.
-- Describe only the current implementation. Replace obsolete content instead of retaining compatibility notes, change histories, future plans, or deprecated designs as an archive.
-- Link to actual source paths and name the important symbols instead of copying large code sections into documentation.
-- Executable code is the source of truth. If code and documentation disagree, inspect the code and correct the documentation in the same task.
-- The implementer is responsible for keeping the affected design documents synchronized; documentation maintenance is not a separate follow-up task.
+- 修改业务逻辑、开展后端开发或设计前端 UI 前，先阅读 `docs/requirements/README.md`、`docs/design/README.md`、相关能力文档和实际源码，明确当前阶段、范围与预期行为。聊天记录不是跨任务事实来源；影响后续工作的确认结果必须先写回文档。
+- 后端功能固定按“需求目标设计 → 后端技术设计 → 明确派发实现 → 设计一致性审查”推进。详细操作遵循 `docs/developer-guide/design-led-backend-development.md` 和仓库技能 `$athena-backend-feature-workflow`。
+- 需求文档必须由用户明确确认并标记为 `已确认`，才能进入后端技术设计；仍为 `讨论中` 时不得开始技术设计或修改后端源码。
+- 技术设计必须由用户明确确认并标记为 `已确认待实现`，才能作为实现依据。确认设计本身不构成实现授权；只有用户另行明确派发实现任务后，才能修改后端源码。
+- 实现必须遵循已确认需求和技术设计。完成后在同一任务内同步文档、实际源码链接和设计状态，并按需求逐项进行设计一致性审查；文档维护不是事后独立补写任务。
+- 业务规则、权限、业务状态、范围或可观察行为发生实质变化时，退回需求阶段并重新确认。组件边界、接口或数据契约、数据模型、事务与并发、核心流程或基础设施发生实质变化时，退回技术设计阶段并重新确认。
+- 实现中发现实质偏差时，只继续不受偏差影响的部分；先把拟议变化和影响写回相应文档，等待重新确认，并由用户明确授权继续变更后的实现，再修改依赖该变化的源码。原实现授权不自动覆盖变化后的范围。
+- 命名、辅助函数拆分和局部代码组织由实现者自主决定，只要不改变已确认行为或技术方案。纯格式化、注释、文案，以及源输入、契约和设计语义均未变化的生成文件刷新等机械修改，豁免上述设计确认流程；修改 SQL、Proto、ABI 等生成源不属于豁免。
+- 用户明确要求修复、且现有代码只是偏离已确认设计时，可以直接按该设计修复。若期望行为未被已确认需求或设计定义，则必须先回到相应阶段补充并确认。
+- 可执行代码是当前运行行为的事实来源。代码与标记为 `已实现` 的设计不一致时，先判断偏差来源；在已明确授权的实现或修复任务中同步修复代码或文档，单独审查任务只报告偏差而不擅自修改。不保留失效说明、历史兼容层或废弃方案。
+- 前端 UI 在需求对齐后继续遵循 [UI Layout Review](#ui-layout-review)；本后端门禁不替代其布局确认要求。
 
 ### UI Layout Review
 
-When a task involves UI design, page layout, interaction structure, visual hierarchy, or other frontend interface changes, first align the requirements and documents under [Documentation Before Code](#documentation-before-code), then complete the UI design and generate a Markdown layout diagram for user review before implementation.
+When a task involves UI design, page layout, interaction structure, visual hierarchy, or other frontend interface changes, first align the requirements and documents under [Design-Gated Development](#design-gated-development), then complete the UI design and generate a Markdown layout diagram for user review before implementation.
 
 - The Markdown layout diagram should show the page structure, major regions, control placement, state or interaction entry points, and responsive differences when relevant.
 - Begin code implementation only after the requirements and documents are aligned, the UI design is complete, and the user confirms the layout diagram. Reuse an already-confirmed design when the scope and expected behavior remain unchanged.

@@ -1,5 +1,7 @@
 # Worm Position Cash Out Batches
 
+> 设计状态：已实现
+
 ## Scope
 
 Worm Position Cash Out Batches owns one owner-scoped, Wallet-major operation

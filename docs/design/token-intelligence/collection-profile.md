@@ -1,5 +1,9 @@
 # Token Collection and Project Profile
 
+> 设计状态：已实现
+>
+> 相关目标需求（讨论中）：[Token 两板块目标设计](../../requirements/token/token.md)
+
 ## Scope
 
 Token collection turns every validated project into six one-time evidence

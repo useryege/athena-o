@@ -1,5 +1,7 @@
 # Task Completion Email
 
+> 设计状态：已实现
+
 ## Scope
 
 Task Completion Email owns the explicit developer command that sends a short

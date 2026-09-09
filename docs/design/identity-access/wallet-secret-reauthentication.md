@@ -1,5 +1,7 @@
 # Wallet Secret and Worm Credential Reauthentication
 
+> 设计状态：已实现
+
 ## Scope
 
 This capability owns five independent additional identity-proof boundaries.

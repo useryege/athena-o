@@ -34,7 +34,7 @@ cd ui
 yarn start
 ```
 
-Maintain documentation directly as repository Markdown. Before changing a subsystem, read the [Living Design Documentation index](../design/README.md) and its relevant design documents. Update those documents in the same task when design-level behavior changes.
+Maintain documentation directly as repository Markdown. Backend features follow the fixed [design-led workflow](design-led-backend-development.md): confirm the relevant [requirement](../requirements/README.md), confirm the [backend technical design](../design/README.md), receive a separate implementation request, and finish with a design-conformance review. Keep the affected documents and their status synchronized in the same task.
 
 ### 3. Generated Files
 

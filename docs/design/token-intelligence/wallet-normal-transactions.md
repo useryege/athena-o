@@ -1,5 +1,9 @@
 # Project Wallet Pre-Deployment Normal Transactions
 
+> 设计状态：已实现
+>
+> 相关目标需求（讨论中）：[Token 两板块目标设计](../../requirements/token/token.md)
+
 ## Scope
 
 The `wallet_normal_transactions` collector obtains one bounded historical

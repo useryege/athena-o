@@ -1,5 +1,7 @@
 # Web UI Application Shell
 
+> 设计状态：已实现
+
 ## Scope
 
 The shared Web UI Application Shell owns Athena's two-application bootstrap and

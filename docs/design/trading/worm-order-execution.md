@@ -1,5 +1,7 @@
 # Worm Order Execution
 
+> 设计状态：已实现
+
 ## Scope
 
 Worm Order Execution owns permanent, owner-scoped live-execution Runs created

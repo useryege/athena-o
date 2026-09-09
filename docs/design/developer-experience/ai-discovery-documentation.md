@@ -1,5 +1,7 @@
 # AI Discovery Documentation
 
+> 设计状态：已实现
+
 ## Scope
 
 AI Discovery Documentation owns Athena's public, build-time documentation
