@@ -12,23 +12,31 @@
 flowchart TD
     runtime["同一程序按启动配置选择唯一链<br/>首版启动 ETH 实例"] --> deployed["流水线扫描 ETH 顶层合约创建交易"]
     deployed --> identify["按区块批量识别 Token<br/>使用最新状态并保存实际观察区块"]
-    identify --> collect["后台采集项目事实<br/>源码、基础状态、税率、持币及自动五层钱包"]
+    identify --> setup["登记研究项目<br/>保存原生币资金门槛快照<br/>设置部署时间 + 默认 72 小时观察期限"]
+    setup --> collect["后台采集项目事实<br/>源码、基础状态、税率和持币资料"]
     collect --> display["保存并展示当前事实、失败原因与来源<br/>AI 报告只陈述事实，不评级"]
+    setup --> wallets["自动研究 L1–L5 固定 300 笔历史<br/>单笔成功直接入账达到项目门槛才形成资金边<br/>交易所 / 跨链节点完成本层分析后停止向上追溯"]
+    wallets --> display
+    setup --> assets["L1 六项资产同区块余额与 USDT 估值<br/>保留已知小计、完整性、路径和失败原因<br/>L2–L5 不读余额"]
+    assets --> display
 
-    identify --> monitor["链级统一事件监控器<br/>实时接收 + 断线补查"]
-    monitor --> approval["目标 Token Approval<br/>期限内仅续期"]
-    monitor --> transfer["目标 Token Transfer<br/>期限内续期 + 缺源码重查"]
-    monitor --> walletTx["部署者 / 当前 owner 发出的成功顶层交易<br/>期限内续期 + 缺源码重查"]
-    approval --> renew["以活动区块时间重置观察期限"]
-    transfer --> renew
-    walletTx --> renew
-    transfer --> refresh["按管理员的 Transfer 刷新映射<br/>冷却并合并资料刷新"]
-    refresh --> collect
+    setup --> monitor["链级统一事件监控<br/>实时接收 + 断线补查"]
+    monitor --> eligible{"活动区块时间不晚于当前期限？"}
+    eligible -->|否| late["保存迟到依据<br/>不续期、不重查、不刷新、不重开"]
+    eligible -->|是：Approval| approval["记录证据并续期<br/>不重查源码，不刷新资料"]
+    eligible -->|是：Transfer| transfer["记录证据并续期<br/>缺源码时触发或合并源码补查"]
+    eligible -->|是：部署者 / 当前 owner 主动交易| walletTx["成功顶层且 from 为监控地址，零金额有效<br/>记录证据并续期，缺源码时重查<br/>不触发其他资料刷新"]
+    transfer --> refresh["只刷新管理员选中的 Transfer 资料组<br/>默认 Token 当前状态和 Ave 持币资料"]
+    refresh --> display
 
-    monitor --> swap["首版七协议 Swap"]
+    monitor --> swap["首版七协议可信有效 Swap<br/>涉及目标 Token"]
     swap --> stopSwap["首次已识别 Swap：停止研究"]
-    renew --> timeout{"链上时间越过期限且<br/>四类活动与 Swap 覆盖完整？"}
-    timeout -->|是且期限内无新事件| stopTimeout["不活跃超时：停止研究"]
+    setup --> timeout{"链上时间越过当前期限且<br/>四类活动与 Swap 覆盖完整？"}
+    approval --> timeout
+    transfer --> timeout
+    walletTx --> timeout
+    timeout -->|是且无待处理的期限内活动或 Swap| stopTimeout["不活跃超时：停止研究"]
+    timeout -->|否| monitor
     admin["管理员手动停止"] --> stopManual["人工停止研究"]
 
     stopSwap --> settle["取消未开始任务<br/>已开始任务按原有限重试规则收尾"]
@@ -47,7 +55,7 @@ flowchart TD
 - “首次”只表示当前覆盖版本内最早的已识别 Swap。页面必须展示协议清单、覆盖版本和进度；未支持路径保持未知。
 - `Approval` 只记录证据并续期，不重查源码、不刷新资料。`Transfer` 在缺少非空源码时重查，并按链级管理员配置刷新资料，默认刷新 Token 当前状态和 Ave 持币资料。部署者／当前 owner 主动交易在缺少非空源码时重查，但不触发其他资料刷新。
 - 部署者从部署交易之后开始监控；当前 owner 从成功读取它的观察区块开始监控。owner 更换后停止旧 owner，部署者始终保留；地址重合时，同项目同一交易只处理一次。超时前必须确认 `Approval`、`Transfer`、部署者交易、当前 owner 交易和 Swap 都已完整覆盖越过期限。
-- 每项目每数据组默认 10 分钟冷却，重复 `Transfer` 合并刷新；期限续期不受冷却影响。项目动态资料只保留最近成功事实，失败另存最近时间和原因。
+- 每项目每数据组默认 10 分钟冷却，重复 `Transfer` 合并刷新；期限续期不受冷却影响。项目动态资料通常展示最近成功事实，失败另存最近时间和原因；L1 每次估值快照保留逐项结果和完整性，不用旧结果填补本次缺项。
 - 三类停止分别为首次已识别 Swap、不活跃超时、管理员手动停止。正常停止不通知管理员，不允许恢复。未开始任务取消，已开始任务执行完原有限重试后保存。
 - 项目停止并等待在途任务完成后，项目专属事实冻结。共享源码报告、公开链接和静态读取方案始终显示最新共享有效版本，但不会重开项目。
 - ETH 首版每个 L1 钱包固定读取原生 ETH、WETH、USDT、USDC、DAI、WBTC，在同一观察区块逐项保存余额和 USDT value；非零资产无法估值时保留已知小计并把总值标记为不完整。L2–L5 不采集余额，首版不采集现有 `simulation_result`。
