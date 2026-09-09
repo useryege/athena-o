@@ -125,6 +125,8 @@ UI 必须在用户确认创建订阅前清晰提示优先选择低频交易者�
 
 ## 当前可行性与通知粒度
 
+除公开活动 API 外，[链上成交数据可行性调研](onchain-trade-data-feasibility.md)已通过当前两种 V2 Exchange 的部署源码、实际成交回执、RPC 目标过滤和市场查询，证明能够识别指定实际交易钱包的自身成交并补齐市场资料。该调研未选定生产数据源；链上自身成交记录与 API 分片的粒度、结算时间、现行钱包类型与金额单位，以及 Combos 在全部 `TRADE` 范围内的覆盖仍需对齐，不能将核心样本成功等同于本文全部要求已经验证。
+
 当前公开能力足以支持交易活动通知：[用户活动](https://docs.polymarket.com/api-reference/core/get-user-activity)可以按 Profile Address 查询并区分 `TRADE`、`BUY` 与 `SELL`，结果包含市场、Outcome、价格、数量、USDC 金额、交易哈希和秒级时间戳；[公开成交](https://docs.polymarket.com/api-reference/core/get-trades-for-a-user-or-markets)也可按用户查询，但 `takerOnly` 默认值为 `true`。另一方面，[User WebSocket](https://docs.polymarket.com/api-reference/wss/user)需要目标自身的认证信息，不能被假设为监控任意公开目标的推送来源。
 
 目标确认资料也存在公开数据基础：[公开资料](https://docs.polymarket.com/api-reference/profiles/get-public-profile-by-wallet-address)包含创建时间、Proxy Wallet、头像、显示名称和认证标记；[持仓总价值](https://docs.polymarket.com/api-reference/core/get-total-value-of-a-users-positions)、[已平仓仓位](https://docs.polymarket.com/api-reference/core/get-closed-positions-for-a-user)、[已交易市场数量](https://docs.polymarket.com/api-reference/misc/get-total-markets-a-user-has-traded)和[交易员排行榜](https://docs.polymarket.com/api-reference/core/get-trader-leaderboard-rankings)可提供部分统计与周期 PnL。官方[速率限制](https://docs.polymarket.com/api-reference/rate-limits)列出了 User PNL API，但当前公开参考文档没有单独给出完整收益曲线的字段与区间契约；因此需求必须允许明确显示不可用字段，技术设计阶段还需验证稳定数据来源。

@@ -60,10 +60,12 @@ flowchart TD
 | 首次已识别 Swap 监控 | 共享监控覆盖本链所有研究中项目；实时订阅、历史补查、协议覆盖版本、池或管理合约身份、代币映射及持久日志覆盖进度均有明确链范围；不能将 ETH 的协议地址直接当作 BSC 部署使用 |
 | 外部采集 | 源码请求、钱包历史、链上状态及持币查询使用项目所属链；采集实例只领取并处理该链任务，即使多个链共用一张任务表 |
 | 项目与钱包资料 | 共用数据库，地址身份按链区分；交易、事件、研究任务和采集结果保留链、项目及实际来源，不能仅凭相同地址或区块高度跨链关联 |
-| L1 余额与资金来源 | ETH L1 固定采集原生 ETH、WETH、USDT、USDC、DAI、WBTC 及独立 USDT value，L2–L5 不读取余额；资金来源仅由达到项目门槛的单笔成功直接原生币顶层入账形成，多笔小额不累计。交易所／跨链节点仍完成本层历史分析但停止上游发现 |
+| L1 余额与资金来源 | ETH L1 固定采集原生 ETH、WETH、USDT、USDC、DAI、WBTC 及独立 USDT value，L2–L5 不读取余额。钱包普通与内部交易分别取部署前第一页最多 300 条；达标内部 ETH 入账按顶层发起人归因并保留实际转出证据，实际转出方命中交易所／跨链库时优先终止且完成本层双历史。完整规则及讨论状态见 [钱包研究](token-wallet-research-flow.md)和 [内部 ETH 转账识别](token-wallet-internal-transfers-flow.md)，按链隔离不改变这些业务语义 |
 | 资料汇总 | 可以共用汇总服务，从已保存资料构建各项目结果；按项目关联证据，不要求为每条链复制汇总进程 |
 | 源码与 AI 分析 | 非空源码和已完成报告、owner/税费接收钱包/税率读取说明及公开链接分析按既定 `code_hash` 规则跨实例复用；各部署的实际链上地址和值逐链、逐合约读取 |
 | 查询 API 与管理入口 | 保持统一，从共享数据库查询，返回和筛选中保留链身份 |
+
+首版 ETH 钱包内部历史使用免费 Etherscan 按地址查询能力，范围与普通历史均固定为部署前 `0..B-1`，两类各自倒序取第一页最多 300 条原始记录。该资料采集不扩展链级研究期监控或内部部署发现，也不依赖付费的全链区块范围内部交易查询。
 
 源码成功返回空内容、请求失败和活动补采继续遵守 [源码获取设计](token-contract-source-flow.md)，不把一个部署未公开源码的结果当作所有同字节码部署都未公开。共享报告仍允许管理员指定报告人工重检，不因另一个链实例发现相同源码重复分析。
 
@@ -90,7 +92,7 @@ flowchart TD
 
 拆分使各链能够独立重启、分配进程资源和观察运行状态；普通单链请求错误仍在自身任务中处理。共享数据库和 Etherscan Key 池继续存在共同容量限制，进程拆分不增加 Key 配额，也不自动消除共享依赖故障。资源额度、限流参数、部署配置和实例标识的具体形式在实现时细化。
 
-本次只确认需求目标，未修改程序或部署配置。本文原有单链实例运行边界保持 `已确认`；活动、资产与资金来源完整需求仍分别以关联的 `讨论中` 文档为准，本次同步不将 Token 整体需求推进至已确认。当前实现继续以 [Token Chain Processor](../../design/token-intelligence/chain-processor.md) 和 [Token Collection and Project Profile](../../design/token-intelligence/collection-profile.md) 为准；开始改造前必须先形成并确认覆盖已确认需求的目标技术设计，实现时再将其同步为 `已实现`。具体业务时效/SLO 仍待明确，本次不新增 API、数据库字段或内部组件设计。
+本次只确认需求目标，未修改程序或部署配置。本文原有单链实例运行边界保持 `已确认`；活动、资产与资金来源（含新增内部 ETH 转账）完整需求仍分别以关联的 `讨论中` 文档为准，本次同步不将 Token 整体需求推进至已确认。当前实现继续以 [Token Chain Processor](../../design/token-intelligence/chain-processor.md) 和 [Token Collection and Project Profile](../../design/token-intelligence/collection-profile.md) 为准；开始改造前必须先形成并确认覆盖已确认需求的目标技术设计，实现时再将其同步为 `已实现`。具体业务时效/SLO 仍待明确，本次不新增 API、数据库字段或内部组件设计。
 
 ## 关联文档
 
@@ -100,5 +102,6 @@ flowchart TD
 - [项目研究流程](token-research-flow.md)
 - [项目事件监控、活动续期与研究停止](token-project-activity-flow.md)
 - [L1–L5 钱包研究与资产估值](token-wallet-research-flow.md)
+- [内部 ETH 转账识别与来源归因](token-wallet-internal-transfers-flow.md)
 - [ETH Swap 事件调研](token-swap-events-research.md)
 - [业务设计与流程图索引](README.md)

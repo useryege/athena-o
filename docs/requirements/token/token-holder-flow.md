@@ -60,11 +60,11 @@ Token Detail 与 Top100 Holders 是两次独立请求，Ave 的数据更新时�
 
 本阶段只恢复并使用 Ave 的持币能力：Token Detail 中的持币地址总数，以及 Top100 Holders 中的前 100 持币分布。不恢复现有 Ave 市场、池、流动性或风险标签采集，也不从 Ave Contract Risk 等其他接口拼接本需求字段。
 
-首版 Ethereum Mainnet 的合约源码、钱包普通交易等既有 Etherscan 请求继续使用现有免费 Key；后续扩展其他链时，现有免费 Key 全部替换为付费 Key。这个安排只适用于 Etherscan 的既有用途，持币资料不再依赖 Etherscan 套餐或单独的 PRO Key。
+首版 Ethereum Mainnet 的合约源码、钱包普通交易及按地址内部交易等 Etherscan 请求继续使用现有免费 Key；后续扩展其他链时，现有免费 Key 全部替换为付费 Key。这个安排只适用于上述 Etherscan 用途，持币资料不再依赖 Etherscan 套餐或单独的 PRO Key。
 
 ## 与关联钱包研究的边界
 
-取得 Top 100 地址后可以匹配已有 L1–L5 钱包身份，但仅因持有目标代币，不自动将该地址加入 L1，也不自动触发该地址的部署前 300 笔历史、资金来源追溯或其他资产余额采集。已有钱包的研究继续沿用 [多层关联钱包研究流程](token-wallet-research-flow.md)。
+取得 Top 100 地址后可以匹配已有 L1–L5 钱包身份，但仅因持有目标代币，不自动将该地址加入 L1，也不自动触发该地址的部署前普通与内部交易各最多 300 条原始记录的历史、资金来源追溯或其他资产余额采集。已有钱包的研究继续沿用 [多层关联钱包研究流程](token-wallet-research-flow.md)和 [内部 ETH 转账识别](token-wallet-internal-transfers-flow.md)，两类历史分别倒序取第一页，窗口均为部署前 `0..B-1`。
 
 本板块记录“当前有多少持币地址，以及 Ave 前 100 名是谁、持有多少”。首版 L1 钱包资产板块另行固定记录相关钱包的原生 ETH、WETH、USDT、USDC、DAI、WBTC 原始余额及逐项 USDT value；L2–L5 不读取资产余额。已确认的关联钱包由后台自动采集 L1–L5 并展示五层实际结果，展示折叠不触发取数；该规则不扩大为自动分析 Top 100 的全部地址。
 
