@@ -40,4 +40,5 @@
 
 | 业务域 | 入口 | 状态 | 关联技术设计 |
 | --- | --- | --- | --- |
+| Polymarket 跟单 | [Polymarket 跟单需求](polymarket-copy-trading/README.md) | `讨论中`（第一阶段） | 未创建 |
 | Token Intelligence | [Token 业务设计与研究资料](token/README.md) | `讨论中`（其中部分独立需求已确认） | [Token Intelligence 当前及目标技术设计](../design/README.md) |

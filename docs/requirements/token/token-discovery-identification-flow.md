@@ -2,7 +2,7 @@
 
 > 需求状态：讨论中
 >
-> 细分状态：目标设计草案，尚未实现。本图依据 [Token 两板块目标设计](token.md)，说明顶层部署候选如何被识别为 Token，以及识别结论和原因如何保留。
+> 细分状态：单个/批量识别能力及区块扫描使用批量路径已确认，整体仍为目标设计草案、尚未实现。本图依据 [Token 两板块目标设计](token.md)，说明顶层部署候选如何被识别为 Token，以及识别结论和原因如何保留。
 
 本流程接收[区块扫描流程](token-block-scan-flow.md)取得的区块交易，将通过识别的 Token 交给[项目研究流程](token-research-flow.md)。单块完成需要完成该块的 Token 识别并可靠保存识别结果、项目资料与研究任务，之后推进扫描；具体研究在后台独立执行。
 
@@ -15,15 +15,19 @@ flowchart TD
     transactions["逐笔检查区块中的交易"] --> candidate{"transaction.To() == nil？"}
     candidate -->|否| skip["不作为顶层部署候选"]
     candidate -->|是| address["使用发送者 sender 与 nonce<br/>推导候选合约地址"]
-    address --> invoke["调用聚合合约识别候选地址"]
+    address --> collect["汇总当前区块的全部候选地址"]
+    collect --> batchInvoke["使用聚合合约的批量判断能力<br/>不逐个调用单个判断"]
+    singleInput["其他单地址判断调用方"] --> singleInvoke["使用聚合合约的单个判断能力"]
 
     subgraph aggregator["聚合合约内部"]
+        shared["单个与批量共享同一套判断规则<br/>批量按输入地址逐项产生结果"]
         code{"目标地址 code.length 大于 0？"}
         noCode["判定：不是 Token<br/>原因：地址无合约代码<br/>不执行六项检测"]
         probes["分别执行六项检测并收集结果<br/>name、symbol、decimals、totalSupply<br/>balanceOf、allowance"]
         passed{"六项全部通过？"}
         token["判定：是 Token<br/>保留六项通过结果"]
         notToken["判定：不是 Token<br/>列出所有已发现的未通过项及原因"]
+        shared --> code
         code -->|否| noCode
         code -->|是| probes
         probes --> passed
@@ -31,8 +35,10 @@ flowchart TD
         passed -->|否| notToken
     end
 
-    invoke --> code
-    invoke -. 节点请求或外层聚合调用整体失败 .-> executionError["记录实际执行错误<br/>不伪造逐项结果或 Token 结论"]
+    batchInvoke --> shared
+    singleInvoke --> shared
+    batchInvoke -. 节点请求或外层聚合调用整体失败 .-> executionError["记录实际执行错误<br/>不伪造逐项结果或 Token 结论"]
+    singleInvoke -. 节点请求或外层聚合调用整体失败 .-> executionError
     executionError -.-> retryBoundary["按区块失败规则通知并重试<br/>不推进当前块"]
     noCode --> returned["返回识别结论、代码检查结果<br/>已执行检测结果与原因"]
     token --> returned
@@ -41,6 +47,15 @@ flowchart TD
     persist -->|是 Token| research["交给项目研究<br/>按研究筛选规则判断是否值得关注"]
     persist -->|不是 Token| retained["保留识别记录<br/>不进入项目研究"]
 ```
+
+## 单个与批量识别能力
+
+- 聚合合约必须同时支持单个候选合约判断和多个候选合约批量判断。两种调用形态共享完全相同的代码存在检查、六项检测、结论与诊断语义，不能形成两套判断规则。
+- 区块扫描完成当前区块的候选发现后，汇总该区块全部候选地址并使用批量判断形态，不在 Go 中循环调用单个判断。即使当前区块只有一个候选，也沿用扫描的批量路径；没有候选时跳过聚合判断。
+- 一次批量判断只包含同一条链、同一个区块的候选，不与其他区块合并。返回结果必须与输入候选一一对应并保持输入顺序，保证识别记录能够关联原交易和合约。
+- 某个候选的代码不存在或单项检测不通过，只形成该候选“不是 Token”的业务结果，不影响批量中其他候选继续判断。节点请求或整个聚合调用失败才进入当前区块的技术失败重试。
+- 单次批量最大候选数量及超限拆分方式留待技术设计；若需要拆分，同一区块仍只使用批量判断形态，并在全部拆分结果可靠保存后才能推进区块进度。
+- 需求只确认两种调用能力及扫描使用方式；具体 Solidity ABI 方法数量、名称和返回结构由后续技术设计确定。
 
 ## 六项检测规则
 
@@ -69,7 +84,7 @@ flowchart TD
 
 ## 待明确的衔接
 
-具体返回结构、错误码、存储结构、人工查询入口、检测资源限制仍待设计；识别查询使用哪个区块状态仍需明确。识别结果及研究任务可靠保存后推进扫描的边界已确认，研究不阻塞扫描。
+具体 ABI 方法、返回结构、错误码、存储结构、人工查询入口、单次批量上限与检测资源限制仍待设计；识别查询使用哪个区块状态仍需明确。识别结果及研究任务可靠保存后推进扫描的边界已确认，研究不阻塞扫描。
 
 [区块扫描流程](token-block-scan-flow.md)已规定区块处理失败时每次通知管理员并无限次重试同一区块；节点或外层识别调用整体失败接入该块重试；目标合约单项检测不通过则保存不是 Token 的业务结论，不把它当作无限重试的技术异常。
 

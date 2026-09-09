@@ -14,8 +14,8 @@ flowchart TD
     deployed --> identify["识别 Token，保存结果与项目身份、研究任务<br/>保存成功后推进区块扫描"]
     identify --> collect["后台启动项目资料采集<br/>源码、基础信息、税率、持币及自动五层钱包"]
     collect --> report["生成或复用 AI 源码质检报告<br/>无限增发、修改余额、限制转出及依据<br/>AI 不评级，保存供管理员查看"]
-    collect --> activity["扫描项目 Approval / Transfer 活动<br/>尚无源码时触发更新查询"]
-    identify --> watch["订阅并匹配跨协议 Swap 日志<br/>启动与断线时补查遗漏范围"]
+    collect --> activity["共享监控实时接收并补查<br/>项目 Approval / Transfer 活动<br/>尚无源码时触发更新查询"]
+    identify --> watch["共享监控实时接收并补查跨协议 Swap<br/>验证发出方、池身份与实际交换币种"]
     watch --> first["识别项目第一笔实际 Swap"]
     first --> stop["结束项目研究，保留已有资料和截止依据"]
     stop --> notHanded["尚未交接：放弃本轮参与"]
@@ -33,7 +33,8 @@ flowchart TD
 - 后续程序评级与 AI 报告分别表达，程序使用报告和管理员规则判断风险。虚线部分是后续规则与执行设计，当前不把未配置规则当作低风险或已通过。
 - 钱包、税率、持币与源码公开资料只采集、解析、保存展示。后台自动执行 L1–L5，前端展示五层；首次 Swap 提前出现时保留部分结果，不等待采集齐备。
 - 为匹配 Swap 取得池与代币身份映射，属于截止事件识别，不扩展为底池深度、流动性或 LP 风险研究。研究开始不要求池子已经存在。
-- 首版不考虑区块替换。订阅断线补日志属于防漏处理，单纯在项目入库后开启实时订阅不能覆盖此前已发生的 Swap。
+- 每条链使用一套共享事件监控动态覆盖研究项目，不按项目分别建立独立订阅。Approval/Transfer 仅监控仍在研究且尚无非空源码的目标 Token；Swap 监控覆盖所有仍在研究的项目，通常从 Pair、Pool、Vault 或 PoolManager 等交易场所日志解析。
+- 首版不考虑区块替换。实时订阅用于降低发现延迟，历史补查用于覆盖项目登记时差、启动、断线、重启与动态目标变化；新目标先开始实时接收，再固定终点并从部署区块补查，重叠范围按链上日志身份去重。
 - 扫描、活动/Swap 监控和外部采集按链实例运行，汇总、AI、源码报告与 API 可以共享；项目、任务及来源保留链身份，详见 [单链实例运行设计](token-chain-runtime.md)。
 - 已经交接的项目由第二板块按其规则处理，研究截止不是买入指令。单链运行边界已经确定，板块内部其余服务数量或通信方式仍待设计。
 
@@ -48,6 +49,6 @@ flowchart TD
 - [区块扫描与研究衔接](token-block-scan-flow.md)
 - [项目研究流程](token-research-flow.md)
 - [AI 源码质检](token-contract-review-flow.md)
-- [项目活动与源码更新](token-project-activity-flow.md)
+- [项目事件监控、源码更新与研究截止](token-project-activity-flow.md)
 - [ETH Swap 事件调研](token-swap-events-research.md)
 - [流程图索引](README.md)
