@@ -21,7 +21,7 @@
 | 第一阶段：Activity Alerts（目标账户订阅与活动通知） | [目标账户订阅与活动通知需求](target-trade-monitoring-notifications.md) | `已确认`（业务边界已逐项确认） | [Activity Alerts 后端技术设计](../../design/trading/trader-sync-activity-alerts.md)（已确认待实现） |
 | 未来：Copy Trading | 总体方向已明确：复制人工选定的低频交易者交易；高频跟单不在性能支持目标内，具体需求另行讨论 | 具体需求未开始 | 未创建 |
 
-本次完整规格见[2026-09-10 后端设计 spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)，已获用户整体确认，本次设计任务完成；没有开始实现计划或业务实施。
+本次完整规格见[2026-09-10 后端设计 spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)，已获用户整体确认。用户随后要求进入下一步，[实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)已形成，业务实施尚未开始。
 
 ## 数据源可行性资料
 

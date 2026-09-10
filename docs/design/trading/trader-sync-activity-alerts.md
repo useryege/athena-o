@@ -4,9 +4,9 @@
 >
 > 关联需求：[Activity Alerts 需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)（已确认；完整书面设计也已整体确认）
 
-本文是目标方案，不代表当前实现。用户已整体确认完整技术方案，本次范围仅为设计，尚未实施。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
+本文是目标方案，不代表当前实现。用户已整体确认完整技术方案，并要求进入下一步；[实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)已形成，尚未执行。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
 
-本轮已按 Superpowers 分节确认统一数据库与现有进程边界、发送许可与撤权语义、单供应商 WSS 采集及最终确认路线；同用户集中成交允许限速排队也已确认。接口、资料和验收章节也已确认；[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认。本次只修改设计与相关文档。
+本轮已按 Superpowers 分节确认统一数据库与现有进程边界、发送许可与撤权语义、单供应商 WSS 采集及最终确认路线；同用户集中成交允许限速排队也已确认。接口、资料和验收章节也已确认；[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认。后续实现计划细化了源码、生成依赖与验收步骤；当前仍只修改文档。
 
 新增技术证据见[数据源契约核验](../../requirements/polymarket-copy-trading/source-contract-verification.md)与[RPC 过滤、确认和额度复核](../../requirements/polymarket-copy-trading/collector-contract-verification.md)。它们记录当前实现版本、100 钱包 OR 推送、Combo 腿映射、Profile 与收益资料的证据及限制。技术参数是可验证的设计默认值，不表示已完成运行验收。
 
@@ -316,3 +316,5 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 已确认：首期规模及既有业务；集中成交保留前 10 条逐条并允许排队；全部通知同库；发送许可边界；单供应商采集、最终确认、秒级基线与故障不补查。接口、资料和验收章节也已确认，[完整任务 spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认，本次设计任务完成。长期需求状态与设计状态不增加额外审批流程。
 
 后续实现需验证当前协议完整样本矩阵、同秒与重启故障、授权/撤权/绑定竞争、未知结果不重发、摘要临界 60 秒调度、真实容量及公开时间证据。数据缺失/异常的行为已有明确设计；未完成的运行测试不能写成已通过。
+
+2026-09-10 设计确认后的下一阶段已完成实现计划编写：共14项任务，覆盖同库存储、可靠投递、订阅授权、实时采集、摘要、API与验收。见[实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)。本轮仅进行源码核对、计划自检和文档同步，未实施或运行业务测试；计划中的测试命令不是已通过的结果。
