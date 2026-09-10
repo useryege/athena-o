@@ -132,9 +132,19 @@ Activity DTO 包含 source_record_id、钱包、BUY/SELL、原量/份额/费用�
 
 普通成交按精确 token/market 查询 Gamma，显式考虑 open/closed，按 token 下标匹配真实 Outcome。Combo 用当前 CombinatorialModule `getLegs(bytes31)` 取得腿：迁移 Binary 腿经 legacyConditionId/getLegacyPositionId 转旧 CTF token；其余已知腿使用公开 Combo markets 分页索引 PositionId→market ID，再精确查询 Gamma 核对 positionIds、condition 和 Outcome。该索引持久保存已见映射，包括之后关闭的市场；周期刷新仅补市场元数据，不读取历史成交。
 
+module1 腿的 legacy 无值或读取失败时，已持久目录和 Gamma 可提供独立精确资料证据，来源必须如实标注，不据此推断 native 身份或声称链上版本/映射成功。调用 legacy 前仍须核验 Binary 版本；Combinatorial 版本/getLegs 失败不允许靠目录猜整组腿。已取得的明确冲突保持可见，不通过切换资料路线覆盖。
+
 目录每页最多 100、支持 cursor，没有任意 PositionId 直接查询契约；不得在热路径无界扫完整目录。默认后台每 10 分钟开始一轮、有上轮则继续其游标不重叠启动，最多每秒一页，外部失败退避；查询和缓存指标独立统计。现有持仓和生命周期只作可选交叉核验，不能要求钱包仍有持仓或每次 TRADE 都带 SPLIT。
 
+目录用专属刷新行锁串行一个最多 5 秒的 HTTP 页请求，同事务保存本页映射、cursor 和下一页时刻；失败保留 cursor 并持久记录至少 1 秒后的重试时刻。该锁不涉及账户或钱包 gate，不能将网络持锁模式扩展到用户操作。
+
+请求已经发出后父上下文取消，也要以有界清理保存节流状态再释放行锁，避免另一实例立即重试同页；取消不是“没有发过请求”的证明。清理失败须报告，不能静默吞掉。
+
+目录索引记录外部声明的待核验关系；只有精确 Gamma 对照通过后，才将资料及实际来源保存为 available。不能因为目录存在一个 PositionId 就直接把该市场判为已核验。
+
 元数据先与 finality 并行补全；最终确认可用后最多另等 2 秒。未取得资料则形成独立活动，保留 PositionId、已知腿、未知字段及原因。getLegs 整体失败时 legs 与腿数均 unavailable，不能用空数组或 0 代替；已知 N 条腿但 M 条缺资料时，N/M 才有明确值。异步补资料只更新可变显示资料，不改成交原始事实、备注或已冻结消息，不创建/重发通知。组合 YES 是所有腿的合取，NO 是整体合取的补集，不逐腿取反，也不把组合成交方向称为各腿分别成交。
+
+两秒是活动投影方在最终确认后的等待预算，不是 MetadataResolver 的总请求截止。解析器遵从调用方取消、单次 HTTP/RPC 最多 5 秒；后台补资料使用自身有界上下文，避免稳定超过两秒的资料请求永远无法补齐。
 
 ## 6. 采集、基线与最终确认
 
@@ -193,7 +203,8 @@ WSS ACK、ping/pong、节点头新鲜只证明观察健康，不能证明服务�
 | collector_epochs / interruptions | 运行 incarnation/fencing token、过滤集合版本、可靠观察/中断/恢复及不确定性。 |
 | source_records / source_candidates | 不变 raw、定位、首次接收、确认/版本证据、状态；候选绑定原 subscription/generation/attempt，唯一关系防重新归属。 |
 | activities | owner、subscription、generation、interval、source、成交事实、备注与形成时间；每订阅源记录唯一，无自动 TTL。 |
-| market_metadata / combo_leg_index | 来源键、精确映射与核验时间、可用性、刷新游标；保留已见关闭市场。与成交事实分离。 |
+| market_metadata / combo_leg_index | 来源键、精确映射与核验时间、可用性；保留已见关闭市场。与成交事实分离。 |
+| directory_refresh | 当前 cursor、轮次开始/完成时间、下一页时刻；同事务推进映射与游标，失败保留游标并节流。 |
 | summary_batches / items / parts | owner、binding revision、最老成员时间、真实首条起点或缺失、不可变成员/内容与 part 序号；activity 只属一个外发形态。 |
 | account_deliveries / delivery_attempts | 业务来源与资格、永久 eligibility_revoked_at/原因、payload digest、当前状态及 next_attempt_at；每次独立 attempt、sender incarnation、许可/起点/结果时间、provider message ID 和原因。 |
 | bot_updates / offsets / reply_outbox | Bot/update 唯一，消费结果、绑定事务、持久回复与消费进度同库原子。 |

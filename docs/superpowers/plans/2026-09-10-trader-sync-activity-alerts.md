@@ -506,7 +506,7 @@ if parentImplementation!=blockImplementation || len(upgrades)>0 || !upgradeEvide
 - 资料 RPC 复用任务7的 SourceRPC，增加窄方法 `CallContractAtHash(context.Context,ethereum.CallMsg,common.Hash) ([]byte,error)`，只调用已知 hash 并沿用5秒截止；模块版本核验复用同包 deployment helper，先核实 chain/known 头/真实父 hash。模块 ABI 纳入既有 embed，不加入 Exchange 解码白名单。
 - 产出公开适配：`ComboMarketPage{Markets []ComboMarket; NextCursor string}`、`ComboMarket{ID string; PositionIDs []string; ConditionID string}`；`(*GammaClient).ListComboMarkets(ctx context.Context,cursor string,limit int) (ComboMarketPage,error)`；在util/polymarket定义这些类型。
 
-- [ ] **步骤1：写组合逻辑和缺失整腿红灯。**
+- [x] **步骤1：写组合逻辑和缺失整腿红灯。**
 
 ```go
 func TestComboNoMeansComplementOfConjunction(t *testing.T) {
@@ -518,7 +518,7 @@ func TestComboNoMeansComplementOfConjunction(t *testing.T) {
 
 定义`ComboRelationship(outcome string) string`，只对已核验YES/NO返回该表达式，其余未知为空并附reason。用HTTP/RPC fake返回getLegs失败，断言LegsEvidence=unavailable而不是available空数组/0；运行 `go test ./internal/tradersync ./util/polymarket -run 'TestCombo|TestMarket' -count=1`。
 
-- [ ] **步骤2：实现精确市场与两类腿映射。**普通token查询考虑open/closed，并按精确token下标取Outcome。迁移Binary腿执行legacyConditionId/getLegacyPositionId→旧CTF token→Gamma；其他已核准module腿用目录PositionId→market ID，再GetMarketByID核对positionIds、condition、Outcome，不以名字或当前持仓猜测。PositionID保留十进制字符串，Gamma类型增加有presence的positionIds解析。
+- [x] **步骤2：实现精确市场与两类腿映射。**普通token查询考虑open/closed，并按精确token下标取Outcome。迁移Binary腿执行legacyConditionId/getLegacyPositionId→旧CTF token→Gamma；其他已核准module腿用目录PositionId→market ID，再GetMarketByID核对positionIds、condition、Outcome，不以名字或当前持仓猜测。PositionID保留十进制字符串，Gamma类型增加有presence的positionIds解析。
 
 ```go
 func ComboRelationship(outcome string) string {
@@ -529,7 +529,11 @@ func ComboRelationship(outcome string) string {
 
 getLegs在已知块hash调用并保留module版本证据；metadata错误不改变TRADE方向/金额。已知N腿部分缺失时仍保留N条位置及各自状态，关系针对组合自身Outcome；不是每腿分别BUY/SELL。
 
-- [ ] **步骤3：实现有界分页目录和资料缓存。**新增`trader_sync_market_metadata`、`trader_sync_combo_leg_index`、`trader_sync_directory_refresh`；索引以position_id/market_id核验关系持久保存，不能刷新时删除已关闭记录。每页最多100，当前cursor/round_started_at/next_page_at在同事务推进；失败保留cursor，最多1page/s，10分钟轮次不重叠。
+module1腿的legacy无值/读取失败时，可用已持久目录加Gamma作为独立精确资料路线，Evidence.Source标明实际来源，不推断native或宣称链上版本/映射成功。legacy链上调用本身先核验Binary版本；Combinatorial版本/getLegs失败不能由目录猜出整腿，已取得的明确冲突不能用另一条路线掩盖。
+
+- [x] **步骤3：实现有界分页目录和资料缓存。**新增`trader_sync_market_metadata`、`trader_sync_combo_leg_index`、`trader_sync_directory_refresh`；索引以position_id/market_id核验关系持久保存，不能刷新时删除已关闭记录。每页最多100，当前cursor/round_started_at/next_page_at在同事务推进；失败保留cursor，最多1page/s，10分钟轮次不重叠。
+
+目录索引保存外部声明的待核验关系，不直接授予metadata available；缓存缺失时按精确market ID查询Gamma并核对positionIds/condition/Outcome，成功的资料及实际Source另存market_metadata，冲突明确unavailable。
 
 ```sql
 UPDATE trader_sync_directory_refresh
@@ -537,9 +541,9 @@ SET cursor=$2,next_page_at=clock_timestamp()+interval '1 second'
 WHERE name='combo_markets' AND cursor=$1;
 ```
 
-该CAS与本页映射upsert同事务；最后一页另保存round_completed_at和下轮时刻。稳定SQL后 `make sqlc-local`。并发资料默认4；热路径缓存miss返回可见缺失，不能遍历目录阻塞活动。
+该CAS与本页映射upsert同事务；最后一页另保存round_completed_at和下轮时刻。专属refresh行锁可覆盖一个最多5秒的HTTP页请求，失败保留cursor且提交至少1秒后的next_page_at，不能持account/wallet gate等网络；请求已发出后的父上下文取消也需有界收尾保存节流，再释放行锁。真实两连接验证不会并发请求页面及取消后抢跑，事务中途写失败则整页映射与cursor回滚。稳定SQL后 `make sqlc-local`。并发资料默认4；热路径缓存miss返回可见缺失，不能遍历目录阻塞活动。Resolve按调用方ctx取消、单次HTTP/RPC最多5秒，不硬设2秒总截止；任务10负责最终确认后额外最多2秒的活动等待，后台补资料使用自身有界上下文。
 
-- [ ] **步骤4：运行本任务单元/集成测试。**覆盖两迁移Binary腿、module1/2、已关闭市场、空持仓、目录分页重启/失败/重复页、超大ID及unknown Outcome；验证晚补资料只变显示数据。提交 `feat(trader-sync): resolve market and combo metadata precisely`。
+- [x] **步骤4：运行本任务单元/集成测试。**覆盖两迁移Binary腿、module1/2、已关闭市场、空持仓、目录分页重启/失败/重复页、超大ID及unknown Outcome；验证晚补资料只变显示数据。提交 `feat(trader-sync): resolve market and combo metadata precisely`。
 
 ## 任务9：注册先于过滤的基线、共享WSS与持久接收
 
