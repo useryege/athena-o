@@ -1,10 +1,11 @@
 # Token 钱包内部 ETH 转账需求目标
 
+> 关联目标技术设计：[对应子系统方案](../../design/token-intelligence/wallet-evidence-and-valuation.md)（分节已确认，书面待审阅；尚未实现）。
+
 > 需求状态：讨论中
 >
 > 细分状态：内部历史采样、发起人归因、地址库优先终止及行为分析范围已作为单项决定确认，尚未实现；不代表 Token 整体需求确认或后端实现授权。
 >
-> 关联技术设计：未创建
 
 ## 背景与问题
 
@@ -25,7 +26,7 @@
 - 不改变 Swap 停止规则，不新增工厂内部部署或内部 `CREATE/CREATE2` 项目发现。
 - 不扩展 ERC-20 等代币资金来源，不获取完整钱包历史或完整调用轨迹，不自动向出账接收方扩展下游。
 - 不评级、不筛选，不推断共同控制、合约权限或资金最终所有权。
-- 本轮仅整理需求，不修改 API、Proto、数据库、源码或 UI；组件和接口契约留到技术设计。
+- 本轮整理需求及目标技术设计，不修改 API、Proto、数据库、业务源码或 UI；组件和接口契约见关联目标设计。
 
 ## 角色与权限
 
@@ -52,7 +53,7 @@ Token `READ` 或 `READ_WRITE` 成员可以查看内部收支、资金关系、�
 
 首版只运行 Ethereum Mainnet，使用免费 Etherscan 的按地址内部交易查询能力。指定地址后可限制区块范围；不依赖付费的全链区块范围内部交易查询，也不以“仅查询原有 300 笔普通交易的内部记录”替代独立地址采样。
 
-截至 2026-09-09 核对的官方文档：[按地址查询](https://docs.etherscan.io/api-reference/endpoint/txlistinternal)支持分页、排序和区块范围；[按区块范围查询](https://docs.etherscan.io/api-reference/endpoint/txlistinternal-blockrange)要求 Standard 或以上套餐。免费版按地址查询自 2026-07-01 起每次最多返回 1,000 条，见[变更公告](https://docs.etherscan.io/changelog)，本需求仍固定只取第一页最多 300 条。[按交易哈希查询](https://docs.etherscan.io/api-reference/endpoint/txlistinternal-txhash)明确只返回非零金额内部交易，不能据此承诺完整调用轨迹或内部部署覆盖，也不能把该过滤说明泛化到地址接口。本次为文档核对，未使用仓库 Key 实际调用；请求调度与失败恢复留到后续技术设计。
+截至 2026-09-09 核对的官方文档：[按地址查询](https://docs.etherscan.io/api-reference/endpoint/txlistinternal)支持分页、排序和区块范围；[按区块范围查询](https://docs.etherscan.io/api-reference/endpoint/txlistinternal-blockrange)要求 Standard 或以上套餐。免费版按地址查询自 2026-07-01 起每次最多返回 1,000 条，见[变更公告](https://docs.etherscan.io/changelog)，本需求仍固定只取第一页最多 300 条。[按交易哈希查询](https://docs.etherscan.io/api-reference/endpoint/txlistinternal-txhash)明确只返回非零金额内部交易，不能据此承诺完整调用轨迹或内部部署覆盖，也不能把该过滤说明泛化到地址接口。本次为文档核对，未使用仓库 Key 实际调用；请求调度与失败恢复留到见关联目标技术设计。
 
 ### 金额与证据
 
@@ -152,10 +153,10 @@ flowchart TD
 - 内部记录关联的新增顶层交易同时参与钱包行为分析。
 - 内部入账按顶层发起人归因并追溯，实际转出方保留为证据；归因不代表实际出资已经证实。
 - 实际转出方命中管理员交易所／跨链地址库时，优先在该地址终止，不再穿透发起人。
-- 本轮只更新需求，本文与 Token 整体仍为讨论中；单项选择不构成整份需求确认或后端实现授权。
+- 本轮同步需求及目标技术设计，单项已确认、整包待审阅；不修改业务源码，不进入实现。
 
 ## 待确认问题
 
-本轮范围内的核心业务选择已明确。业务延迟／SLO 继续沿用 [Token 整体待确认事项](token.md#仍待明确的事项)；组件、接口、限流、证据规范、采集与补充资料的失败恢复在后续 Superpowers 任务的技术方案中确定。本轮不预设这些后端方案，也不把当前实现说明改成已具备内部转账能力。
+核心业务、L1 首轮时效及深层持续推进已明确，见[时效目标](token.md#已明确的正常运行时效目标尚未验证)。组件、采样身份、去重、补证、限流和失败恢复见[钱包目标设计](../../design/token-intelligence/wallet-evidence-and-valuation.md)及[运行时](../../design/token-intelligence/research-task-runtime.md)。目标方案已形成，不表示当前实现已有内部转账能力。
 
 当前普通交易实现见[已实现的钱包普通交易设计](../../design/token-intelligence/wallet-normal-transactions.md)；该文档只说明现状，不是本能力的目标技术设计。返回 [Token 目标设计](token.md)、[钱包研究](token-wallet-research-flow.md)、[资金来源图](token-wallet-funding-graph.md)或[需求索引](README.md)。

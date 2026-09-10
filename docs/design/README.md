@@ -62,6 +62,12 @@
 | Trading | Current-selection-gated Run admission, Run-bound Worm Web JWT execution, purpose-bound custodial signing, browser-led Wallet-major coordination, durable mutation attempts, reconciliation, and permanent owner-scoped history | [Worm Order Execution](trading/worm-order-execution.md) | `已实现` |
 | Trading | Current-selection exact-position, fresh-proof-authorized Worm HMAC Cash Out with whole-position market Close, at-most-once dispatch, read-only recovery, and durable historical detail | [Worm Position Cash Out](trading/worm-position-cash-out.md) | `已实现` |
 | Trading | Up-to-20 selected-Wallet, Wallet-major serial Cash Out batches with complete position freezing, single-operation reuse, confirmed-USDC advancement gates, durable Wallet locks, and manual recovery controls | [Worm Position Cash Out Batches](trading/worm-position-cash-out-batches.md) | `已实现` |
+| Token Intelligence | 第一板块设计包：已确认时效、架构选择、跨子系统契约与容量验收 | [Token 第一板块主 spec](../superpowers/specs/2026-09-10-token-first-block-design.md) | `设计中`，分节已确认，书面待审阅 |
+| Token Intelligence | 有界发现、连续覆盖、有序活动、owner 观察屏障、七协议 Swap 及停止 | [发现与研究生命周期](token-intelligence/discovery-research-lifecycle.md) | `设计中`，尚未实现 |
+| Token Intelligence | PostgreSQL 持久依赖任务、独立事实、刷新、共享配额和失败恢复 | [研究任务运行时](token-intelligence/research-task-runtime.md) | `设计中`，尚未实现 |
+| Token Intelligence | 非空源码、五项共享 AI 产物与声明式部署读取 | [源码事实与读取方案](token-intelligence/source-facts-and-read-plans.md) | `设计中`，尚未实现 |
+| Token Intelligence | 部署前双历史、内部归因、历史 L1、五层图和六资产同块估值 | [钱包证据与估值](token-intelligence/wallet-evidence-and-valuation.md) | `设计中`，尚未实现 |
+| Token Intelligence | 分项事实、历史证据、进度、分页及管理员命令 | [研究查询与管理](token-intelligence/research-query-and-administration.md) | `设计中`，尚未实现 |
 | Token Intelligence | Synchronous EVM block discovery, token validation, project initialization, and per-attempt processing diagnostics | [Token Chain Processor](token-intelligence/chain-processor.md) | `已实现` |
 | Token Intelligence | On-chain ERC-20, pair, wallet, and simulation-state aggregation | [ATHENA EVM Aggregator Contract](token-intelligence/athena-contract.md) | `已实现` |
 | Token Intelligence | PostgreSQL-backed six-source one-time collection, fenced workers, terminal barrier, and immutable ProjectProfile construction | [Token Collection and Project Profile](token-intelligence/collection-profile.md) | `已实现` |
