@@ -229,6 +229,8 @@ RETURNING update_id;
 **Files**
 - 新增：`internal/notification/dispatcher.go`、`internal/notification/budget.go`、`internal/notification/recovery.go`；对应`internal/notification/dispatcher_test.go`、`internal/notification/budget_test.go`、`internal/notification/recovery_integration_test.go`。
 - 修改：`internal/notification/worker.go`、`internal/notification/service.go`、`internal/notification/server.go`、`internal/notification/store/queries/account_notifications.sql`、`internal/notification/store/queries/system_notifications.sql`、`internal/notification/store/queries/bot_updates.sql`。
+- 扩展必要存储与组合入口：`internal/accountstate/store/migrations/000001_init.sql`及通知SQL/生成消费链、`internal/notification/store/`的sender实例/恢复持久化、`internal/notification/delivery/types.go`、`cmd/athena-notification/commands/athena_notification.go`。实例登记与明确恢复CLI、attempt实际路由持久化是本任务恢复/预算的组成部分。
+- 动态限流入口适配：`internal/notification/sender.go`、`util/telegram/{send_transport.go,telegram.go,send_transport_test.go}`；实际HTTP前独立可取消准入，准入后计算五秒HTTP超时，测试许可已commit但HTTP未开始时沿用同attempt等待。
 **Interfaces**
 - 产出delivery类型：`Candidate{Ref WorkRef; OwnerID string; ChatID int64; Group bool; NotBefore time.Time; Deadline *time.Time}`。
 - 产出：`Budget.Next(c delivery.Candidate, now time.Time) time.Time`、`Budget.Start(c delivery.Candidate, at time.Time)`；内部保存Bot、chat及group窗口。另提供`Reserve(c delivery.Candidate,now time.Time) (reservationID uint64,ok bool)`、`Release(reservationID uint64)`；Reserve计入尚未started的预留容量，Start按Candidate.Ref原子消耗预留并写实际起点，防并发Next检查超售。
@@ -236,7 +238,7 @@ RETURNING update_id;
 - 产出：`NewDispatcher(clock Clock,sources []WorkSource,budget *Budget,concurrency int) *Dispatcher`、`Dispatcher.Run(ctx context.Context) error`。Clock契约为`Now() time.Time`、`After(time.Duration) <-chan time.Time`；生产包装time，测试手动推进。
 - 产出：`(*notificationstore.SQLStore).RecoverSender(ctx context.Context,stoppedIncarnation uuid.UUID) error`只在外部已确认旧进程停止后调用。
 
-- [ ] **步骤1：写纯预算红灯测试。**
+- [x] **步骤1：写纯预算红灯测试。**
 
 ```go
 func TestBudgetKeepsDifferentChatsIndependent(t *testing.T) {
@@ -252,8 +254,8 @@ func TestBudgetKeepsDifferentChatsIndependent(t *testing.T) {
 
 定义 `NewBudget(botPerSecond int, privateInterval time.Duration, groupCount int, groupWindow time.Duration) *Budget`；窗口用实际started事件推进，不用入队时间占用历史额度。Dispatcher在启动WorkSource前Reserve，onStarted回调通知Budget.Start；未调用HTTP的失败路径Release，不能吞掉预留或重复记入额度。
 
-- [ ] **步骤2：用可控clock和阻塞fake Sender写调度失败测试。**10个owner不同chat同时就绪，断言能同时启动且不超过12；同chat第二条等前一尝试结束及1秒预算；一个owner12条不阻塞其他owner。账户/系统/reply共用20/秒预算，group窗口20/分钟。使用channel+clock推进，不写真实time.Sleep。
-- [ ] **步骤3：替换全局1.1秒串行worker，接入WorkSource及许可流程。**按owner公平轮转并优先即将到期任务；看见尚未到NotBefore的未来Deadline时预留“HTTP最长5秒+chat间隔”的槽。取得预算前不拿账户gate，等锁后槽过期则重排；同chat只有一个执行中的许可。临时速率错误缩紧预算，unknown不回队。用单sender incarnation/session lease检测失锁，失锁后停止授权并退出；绝不因lease过期并行接管Telegram。
+- [x] **步骤2：用可控clock和阻塞fake Sender写调度失败测试。**10个owner不同chat同时就绪，断言能同时启动且不超过12；同chat第二条等前一尝试结束及1秒预算；一个owner12条不阻塞其他owner。账户/系统/reply共用20/秒预算，group窗口20/分钟。使用channel+clock推进，不写真实time.Sleep。
+- [x] **步骤3：替换全局1.1秒串行worker，接入WorkSource及许可流程。**按owner公平轮转并优先即将到期任务；看见尚未到NotBefore的未来Deadline时预留“HTTP最长5秒+chat间隔”的槽。取得预算前不拿账户gate，等锁后槽过期则重排；同chat只有一个执行中的许可。临时速率错误缩紧预算，unknown不回队。预算收紧同时使尚未许可的旧预留失效；已提交许可但未实际开始HTTP的调用沿用同一attempt等待，不新增许可或计次。独立可取消pre-start闸门与Tighten确定排序，等待不持账户gate，也不阻塞constant-time Started回调。任务11的摘要source须在动态等待时释放/重新进入短sessiongate并保存同一冻结批次及许可，持久未开始状态仍保护批次顺序。用单sender incarnation/session lease检测失锁，失锁后停止授权并退出；绝不因lease过期并行接管Telegram。
 
 ```sql
 -- 只处理已确认停止的incarnation；其余kind使用相同CAS条件更新各自表。
@@ -263,10 +265,12 @@ WHERE d.current_attempt_id = a.id AND d.status = 'sending'
   AND a.sender_incarnation = $1 AND a.outcome IS NULL;
 ```
 
-有明确结果的旧attempt先补记该事实；没有结果才unknown，不能以重发探测成功与否。短期连接错误不能把旧permit当成未发送。
+有明确结果的旧attempt先补记该事实；没有结果才unknown，不能以重发探测成功与否。短期连接错误不能把旧permit当成未发送。 持久记录sender实例身份；启动持独占session锁，存在未确认停止的旧实例时拒绝启动，即使锁已失效。正常Stop等待poller及所有dispatch/sender与结果补记结束才登记stopped。异常失锁使健康失败、取消调度/poller并将错误传到CLI退出；操作员确认登记进程已退出后用`--recover-stopped-sender=<UUID>`明确恢复，不凭锁到期、端口或PID推断。
 
-- [ ] **步骤4：运行 `go test -race ./internal/notification/...` 和 `go test -tags=integration ./internal/notification -run TestRecoverSender -count=1`；断言恢复不增加HTTP调用，停止时无泄漏goroutine/连接。**
-- [ ] **步骤5：提交 `feat(notification): schedule deliveries fairly across chats`。**
+attempt许可冻结实际chat ID/group并与Sender请求一致。预算恢复读取全部近期attempt，缺起点且有结果以result_at作为保守上界；无起点无结果以停止确认时刻等待完整窗口，保留缺失started_at及真实结果。配置路由变化不能改写旧调用预算。 当前无跨进程UTC偏差证明，每次非首次启动另设60秒monotonic恢复屏障；只有实例与attempt历史均为空的可靠首次启动可豁免。持久保留未由monotonic计时确认届满的Retry-After，重启不按UTC过滤，保守等待完整未解除时长并在确实届满后标记解除。恢复等待是本地时延，单列且保留总体统计；测试UTC前跳、长Retry-After、已解除历史与停止取消屏障。
+
+- [x] **步骤4：运行 `go test -race ./internal/notification/...` 和 `go test -tags=integration ./internal/notification -run TestRecoverSender -count=1`；断言恢复不增加HTTP调用，停止时无泄漏goroutine/连接。**
+- [x] **步骤5：提交 `feat(notification): schedule deliveries fairly across chats`。**
 
 ## 任务5：精确身份、六区间资料与确认token
 

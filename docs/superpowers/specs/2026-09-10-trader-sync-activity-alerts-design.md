@@ -206,7 +206,7 @@ member 读取在同一数据库事务/gate 下核验 grant 并取得 owner 数�
 
 权限撤销在同一账户事务里更新 grant、关闭区间、设置 permission_disabled、取消无执行中许可的投递和未冻结摘要成员，同时给全部旧 Trader Sync delivery（包括 sending）保存永久的 eligibility_revoked_at/原因。该标记不撤销当前已授权 attempt，但永远阻止后续 attempt；重新授权不会清除。旧 attempt 此后明确成功/未知照实保存，明确失败则 cancelled，不因 grant 已重新开启而重试。解绑/重绑提高 binding revision，并终止旧 revision 的待发工作；不抹去已发送或未知结果。产品 grant 只控制 Trader Sync 来源，不给其他合法账户通知强加该权限。
 
-sender 准备 worker 与有效速率槽后，在短事务里复核当前资格和状态，提交 attempt 与 sending 即取得许可；随后释放 gate，执行一次显式 Telegram 调用。撤权只需等待该短事务，已有许可可完成，包括许可已提交而尚未调用的窗口。每 chat 最多一个执行中尝试；摘要每一部分独立许可。
+sender 准备 worker 与有效速率槽后，在短事务里复核当前资格和状态，提交 attempt 与 sending 即取得许可；随后释放 gate，执行一次显式 Telegram 调用。撤权只需等待该短事务，已有许可可完成，包括许可已提交而尚未调用的窗口。每 chat 最多一个执行中尝试；摘要每一部分独立许可。许可本身不豁免后续收到的动态限流：尚未开始 HTTP 时沿用同一 permit/attempt 在独立可取消的 pre-start 闸门等待，不能再次授权或计次。最后预算准入与预算收紧确定排序，真实 started 回调仍为常量时间；五秒 HTTP 超时从预算准入后开始，本地预算等待另记并保留总体时延。
 
 ```mermaid
 stateDiagram-v2
@@ -239,7 +239,9 @@ Bot update 的绑定修改、消费进度与回复 outbox 在同一事务；upda
 
 **首条特例：**先备好 worker、chat/Bot 槽及可预计算内容，用固定连接获取账户 session gate；冻结全部成员并提交首条许可后直接进入 provider。provider 在真实调用入口发 started 握手，协调路径补记该起点后即释放 gate，不等待 HTTP 回执。结果回调另开短事务/CAS。同一 gate 下后续活动才赋 recorded_at，消除“已经冻结但尚未开始”时遗漏到下一批的成员。
 
-若冻结 f、开始 s、新活动 t 满足 f<t<s，下一批同时要求 start≥s+60、start≤t+60 会无解；短 gate 是为消除此窗口。它不证明任意精度实时保证，本地 DB、渲染、调度延迟造成的 miss 如实计入，不改成外部故障，不人为拖延活动形成以制造余量。session lock 释放异常须关闭连接，不能带锁还池。
+若冻结 f、开始 s、新活动 t 满足 f<t<s，下一批同时要求 start≥s+60、start≤t+60 会无解；短 gate 是为消除此窗口。它在无新增预算等待的正常路径中消除该窗口，不证明任意精度实时保证。本地 DB、渲染、调度延迟造成的 miss 如实计入，不改成外部故障，不人为拖延活动形成以制造余量。session lock 释放异常须关闭连接，不能带锁还池。
+
+若许可提交后、实际 HTTP 前收到新的 Retry-After，必须释放短 gate 再等待；同一存活 Send 在预算恢复后重取同 owner gate，核对原冻结批次、permit/attempt/实例事实并做与预算收紧定序的非阻塞最终准入，再完成真实 started 握手。等待不重冻结、不重新授权、不变更原 payload/chat；owner 的持久未解决首条 head 阻止后批冻结抢先。崩溃后仍走明确停止恢复，不能凭 started 缺失重发。该动态等待可能出现 f<t<s；两个 60 秒数值不变，实际失约保留总体统计，并保存 f、最老待汇总活动、s、预算阻塞及本地/外部原因，不以重写时间或隐藏样本宣称达标。
 
 实际起点未能持久化时保留缺失；确认旧 sender 停止后，以恢复时刻作为下一批间隔的保守基点，标为异常恢复，不伪造历史起点。运行内使用 monotonic 时间维护至少 60 秒间隔，同时保存 UTC 时间；跨重启/进程比较保留时钟来源和偏差，不可信时相应时效不可判定。
 
