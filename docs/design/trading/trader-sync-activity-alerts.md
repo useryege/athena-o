@@ -37,9 +37,9 @@ Copy Trading 不在本设计内。本文维护后端和跨层数据契约，页�
 | [账户状态存储](../../../internal/accountstate/store/sql_store.go)与[通知存储](../../../internal/notification/store/sql_store.go)共用 `athena` 数据库及唯一权威迁移集；[账户 gate](../../../internal/accountstate/txgate/gate.go)统一账户事务锁。 | 同库基础已实现；Trader Sync 业务仍需把权限、订阅和活动形成接入这些事务。 |
 | [发送许可](../../../internal/notification/store/attempts.go)已在短事务提交 sending 与 attempt；[worker](../../../internal/notification/worker.go)以实际 HTTP 起点和结果 CAS 补记，unknown 不重发，绑定变化写永久墓碑。 | 共享并发调度、单 sender 登记和显式停止恢复已经实现；产品 grant 撤权钩子仍待接入，现有入队绑定不能代替活动形成时的资格快照。 |
 | [Bot update](../../../internal/notification/store/bot_updates.go)将绑定变更、回复 outbox 和消费进度原子提交；[poller](../../../internal/notification/poller.go)只调用该入口，reply 复用 worker 的发送许可。 | reply 已接入跨 chat 公平调度、统一预算和停止确认恢复；Trader Sync 摘要首条尚待接入。 |
-| [Data API 客户端](../../../util/polymarket/data.go)有活动、成交和持仓；[Gamma 客户端](../../../util/polymarket/gamma.go)有公开 Profile 与市场数据。 | 缺少 Trader Sync 的类型化源记录、确认卡契约、实时接收和收益曲线适配。现有通用 map 不作为持久业务契约。 |
+| [Profile 适配器](../../../util/polymarket/profile_identity.go)、[六区间 P/L](../../../internal/tradersync/pnl.go)与[目标确认](../../../internal/tradersync/target_resolver.go)已实现精确数值、逐字段 evidence 和 owner token。 | 官方显示参考时间、YTD 执行时区、舍入语义仍缺证据，对应字段 unavailable；实际 grant/context SQL 与公开入口尚待接入。 |
 | [Managed OO](../../../internal/managedoo/log_sync.go)与 [BSC Swap](../../../internal/bscswap/scanner.go)有持久游标扫描。 | 业务事件、网络及中断回补语义不同，不能直接沿用为 Trader Sync 监控。 |
-| 当前源码没有 Trader Sync 服务、订阅、站内活动或摘要。 | 本文列出的 Trader Sync 路径均为预计新增；既有设计继续描述当前实现。 |
+| 当前已有独立 Trader Sync types、TargetResolver 与 confirmations/request-results/targets 表；尚无订阅、站内活动或摘要。 | 下文除明确标注已实现的目标确认契约外，仍为后续目标；不将确认资料组件视为公开服务已上线。 |
 
 ## 关键决定
 
@@ -121,9 +121,19 @@ flowchart LR
 - 时间分别保存 `settled_at`（区块时间）、`time_basis=chain_settlement`、`received_at`、`recorded_at`、投递尝试和结果时间。页面和消息使用“结算时间”；订阅生效前撮合但生效后结算的成交按新活动判断。不能用 `received_at` 冒充公开可查询时间；不能用链上区块时间冒充链下撮合时间。
 - 私有备注按 Unicode 字符数校验最多 20 个字符；服务端拒绝超限，不截断。修改不追溯活动或冻结通知的备注快照，取消保留 owner-wallet 备注。
 
+### 已实现的目标确认边界
+
+`TargetResolver` 要求显式注入 `GrantCheck` 与 `ResolveContextTx`，缺少任一依赖即构造失败。外部身份和资料查询在账户 gate 外完成，资料请求并发最多 4；随后在同一个短账户事务中核验当前 grant、读取 owner 的备注/现有订阅/配额、使用数据库时钟生成 5 分钟期限并保存确认。SavedNote 的 nil 与空备注保留区别。当前集成测试显式提供授权或拒绝依赖，生产入口尚未注册，不存在临时放行路径。
+
+身份适配器只接受合法 0x 地址或 HTTPS 的 `polymarket.com` / `www.polymarket.com` 单段 `/@handle`。URL 禁止 userinfo、端口、额外路径和 query/fragment；每次读取限制 2 MiB、5 秒，最多 3 次受同样规则验证的跳转。固定版本 RSC SSR 必须有唯一 canonical 与明确钱包，并用 Gamma `GetPublicProfile` 交叉核验；不使用 PublicSearch。摘要仅含规范钱包、canonical 映射和适配器版本，头像、显示名与收益变化不会使身份失效。
+
+确认表只保存 32 字节随机 token 的 SHA-256 digest；`identity_json`/`identity_digest` 用于身份核验，`card_json` 独立保留完整确认卡查询证据。Read 强制 owner、未消费和数据库到期条件；Consume 另核验身份摘要并原子绑定 request ID，提交后任何再次消费均失败，回滚恢复未消费状态。后续 Create 的已提交请求重试应先读 owner/operation/request ID 唯一的幂等结果，不能靠再次消费 token 实现重试。card_json 不参与身份失效判断。
+
+`Decimal` 在 HTTP 边界保留原始数字 token，未经过浮点；真实 0 与缺失/null 区分。加入时间仅取 `joinDate`，Predictions 仅取 `traded`，PositionValue 使用独立核验的公开 v1 `/value`。辅助字段分别保留来源、查询时间与不可用原因，不因格式异常抹除钱包。六个区间始终返回，默认 1Y；1Y/YTD 共用 ALL 请求，1M 使用严格 31 天历史判断与 30 天裁切。时间序列允许相邻同时间点并保留返回顺序，不排序或去重；缺少展示规则时保留已验证原始点，但不宣称已完成精确裁切或金额显示。当前只对已知请求规划规则使用本地请求时钟计算 ALL 采样年龄，不把它代作官方展示参考时间。
+
 ## 数据模型与持久化
 
-所有账户域表在 `athena` 库；下列为拟议实体，不是已创建表。
+所有账户域表在 `athena` 库；`trader_sync_targets`、`trader_sync_target_confirmations`、`trader_sync_request_results` 已创建，其余为后续目标实体。
 
 | 实体 | 关键内容与约束 |
 | --- | --- |

@@ -66,6 +66,7 @@ type GammaClient interface {
 }
 
 type GammaConfig struct {
+	HTTPClient   *http.Client
 	GammaBaseURL string
 	Timeout      time.Duration
 }
@@ -97,9 +98,13 @@ func NewGammaClient(config GammaConfig) (GammaClient, error) {
 	if _, err := url.ParseRequestURI(config.GammaBaseURL); err != nil {
 		return nil, fmt.Errorf("invalid polymarket gamma base url: %w", err)
 	}
+	client := config.HTTPClient
+	if client == nil {
+		client = &http.Client{Timeout: config.Timeout}
+	}
 	return &gammaClientImpl{
 		config: config,
-		http:   &http.Client{Timeout: config.Timeout},
+		http:   client,
 	}, nil
 }
 
@@ -1198,4 +1203,28 @@ func addInt64Slice(query url.Values, key string, values []int64) {
 	for _, v := range values {
 		query.Add(key, strconv.FormatInt(v, 10))
 	}
+}
+
+// UnmarshalJSON isolates optional presentation fields so an unavailable avatar,
+// date or badge cannot erase an otherwise explicit public wallet identity.
+func (p *PublicProfile) UnmarshalJSON(raw []byte) error {
+	var fields map[string]json.RawMessage
+	if err := decodeObject(raw, &fields); err != nil {
+		return err
+	}
+	*p = PublicProfile{
+		ProxyWallet:           optionalProfileField[string](fields["proxyWallet"]),
+		CreatedAt:             optionalProfileField[time.Time](fields["createdAt"]),
+		ProfileImage:          optionalProfileField[string](fields["profileImage"]),
+		DisplayUsernamePublic: optionalProfileField[bool](fields["displayUsernamePublic"]),
+		Bio:                   optionalProfileField[string](fields["bio"]),
+		Pseudonym:             optionalProfileField[string](fields["pseudonym"]),
+		Name:                  optionalProfileField[string](fields["name"]),
+		XUsername:             optionalProfileField[string](fields["xUsername"]),
+		VerifiedBadge:         optionalProfileField[bool](fields["verifiedBadge"]),
+	}
+	if users := optionalProfileField[[]json.RawMessage](fields["users"]); users != nil {
+		p.Users = *users
+	}
+	return nil
 }

@@ -27,7 +27,7 @@ type DataClient interface {
 
 	GetOpenInterest(ctx context.Context, options GetOpenInterestOptions) ([]DataOpenInterest, error)
 	GetLiveVolumeByEventID(ctx context.Context, id int64) ([]DataLiveVolume, error)
-	GetTotalMarketsTraded(ctx context.Context, user string) (DataObject, error)
+	GetTotalMarketsTraded(ctx context.Context, user string) (MarketsTraded, error)
 	DownloadAccountingSnapshot(ctx context.Context, user string) ([]byte, error)
 
 	ListBuilderLeaderboard(ctx context.Context, options ListBuilderLeaderboardOptions) ([]BuilderLeaderboardEntry, error)
@@ -167,8 +167,6 @@ type ListBuilderDailyVolumeOptions struct {
 	TimePeriod string
 }
 
-type DataObject map[string]any
-
 type DataActivity map[string]any
 
 type DataTrade map[string]any
@@ -187,7 +185,7 @@ type BuilderDailyVolumeEntry map[string]any
 
 type DataUserValue struct {
 	User  string  `json:"user"`
-	Value float64 `json:"value"`
+	Value Decimal `json:"value"`
 }
 
 type DataOpenInterest struct {
@@ -289,12 +287,12 @@ func (c *dataClientImpl) GetLiveVolumeByEventID(ctx context.Context, id int64) (
 	return out, nil
 }
 
-func (c *dataClientImpl) GetTotalMarketsTraded(ctx context.Context, user string) (DataObject, error) {
+func (c *dataClientImpl) GetTotalMarketsTraded(ctx context.Context, user string) (MarketsTraded, error) {
 	q := make(url.Values)
 	setString(q, "user", user)
-	out := DataObject{}
+	out := MarketsTraded{}
 	if err := c.doJSON(ctx, http.MethodGet, "/traded", q, nil, &out); err != nil {
-		return nil, err
+		return MarketsTraded{}, err
 	}
 	return out, nil
 }

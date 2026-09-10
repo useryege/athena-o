@@ -105,3 +105,9 @@
 - 未验证：长期稳定性、100 个活跃目标的实际吞吐、最终确认或通知端到端 P95/P99。
 
 上述限制由设计定义明确失败/缺失行为，并由后续实现验收覆盖；不要求用户选择技术事实真假，也不把短时成功扩大为全部产品验收通过。
+
+## PositionValue 独立补证
+
+2026-09-10T17:03:15.616Z 对固定 GCR 钱包的公开 `/value?user=...` 做了一次受限 GET，返回 HTTP 200、唯一匹配钱包与原始数字 `0`。[完整记录与 SHA-256](evidence/trader-sync-position-value-2026-09-10.json)独立保存，不覆盖此前 SSR 样本。官方 [v1 总持仓价值契约](https://docs.polymarket.com/api-reference/core/get-total-value-of-a-users-positions)明确该数组的 `user`、`value` 口径；确认卡可以保存该直接原值与本次查询来源、时间。缺失、null、模式变化、钱包不匹配或请求失败仅使该字段 unavailable，不从持仓列表求和。
+
+文档将 v1 标记为 Legacy；[v2](https://docs.polymarket.com/api-reference/wallet/get-portfolio-value)要求 bearer 认证并采用不同 envelope。本次实现采用仍在提供服务且已获批准的公开 v1 单一路径，不增加 v2 认证、兼容读取或失败 fallback。这份补证不证明 `/user-pnl` 全部实时区间可用。

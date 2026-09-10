@@ -480,7 +480,40 @@ CREATE INDEX idx_account_notification_deliveries_account_created
 CREATE INDEX idx_account_notification_deliveries_pending_ready
   ON account_notification_deliveries (status, next_attempt_at, id);
 
+CREATE TABLE trader_sync_targets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  wallet BYTEA NOT NULL UNIQUE CHECK (octet_length(wallet) = 20),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
+
+CREATE TABLE trader_sync_target_confirmations (
+  token_digest BYTEA PRIMARY KEY CHECK (octet_length(token_digest) = 32),
+  owner_id UUID NOT NULL,
+  identity_json JSONB NOT NULL CHECK (jsonb_typeof(identity_json) = 'object'),
+  identity_digest BYTEA NOT NULL CHECK (octet_length(identity_digest) = 32),
+  card_json JSONB NOT NULL DEFAULT '{}' CHECK (jsonb_typeof(card_json) = 'object'),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  consumed_request_id TEXT CHECK (consumed_request_id IS NULL OR length(btrim(consumed_request_id)) > 0),
+  CHECK (expires_at <= created_at + INTERVAL '5 minutes')
+);
+CREATE INDEX trader_sync_confirmations_owner_idx ON trader_sync_target_confirmations(owner_id);
+
+CREATE TABLE trader_sync_request_results (
+  owner_id UUID NOT NULL,
+  operation TEXT NOT NULL CHECK (length(btrim(operation)) > 0),
+  request_id TEXT NOT NULL CHECK (length(btrim(request_id)) > 0),
+  payload_digest BYTEA NOT NULL CHECK (octet_length(payload_digest) = 32),
+  result_json JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  PRIMARY KEY (owner_id, operation, request_id)
+);
+
 -- +goose Down
+
+DROP TABLE trader_sync_request_results;
+DROP TABLE trader_sync_target_confirmations;
+DROP TABLE trader_sync_targets;
 
 DROP TABLE account_notification_deliveries;
 DROP TABLE telegram_binding_replies;

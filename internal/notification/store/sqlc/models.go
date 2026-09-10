@@ -216,3 +216,29 @@ type TelegramPollingState struct {
 	LastUpdateAt pgtype.Timestamptz
 	UpdatedAt    pgtype.Timestamptz
 }
+
+type TraderSyncRequestResult struct {
+	OwnerID       pgtype.UUID
+	Operation     string
+	RequestID     string
+	PayloadDigest []byte
+	ResultJson    []byte
+	CreatedAt     pgtype.Timestamptz
+}
+
+type TraderSyncTarget struct {
+	ID        pgtype.UUID
+	Wallet    []byte
+	CreatedAt pgtype.Timestamptz
+}
+
+type TraderSyncTargetConfirmation struct {
+	TokenDigest       []byte
+	OwnerID           pgtype.UUID
+	IdentityJson      []byte
+	IdentityDigest    []byte
+	CardJson          []byte
+	CreatedAt         pgtype.Timestamptz
+	ExpiresAt         pgtype.Timestamptz
+	ConsumedRequestID pgtype.Text
+}
