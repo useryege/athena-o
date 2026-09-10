@@ -3,7 +3,9 @@ package tradersync
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
 	"sync"
 	"time"
@@ -153,8 +155,49 @@ func (s *SourceRPC) HeaderByNumber(ctx context.Context, n *big.Int) (*types.Head
 func (s *SourceRPC) TransactionReceipt(ctx context.Context, h common.Hash) (*types.Receipt, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	return s.client.TransactionReceipt(ctx, h)
+	// ethclient permits missing status/location fields and fills them with zero.
+	// Preserve presence before standard decoding, without making a second RPC.
+	var wire json.RawMessage
+	if err := s.client.Client().CallContext(ctx, &wire, "eth_getTransactionReceipt", h); err != nil {
+		return nil, err
+	}
+	if bytes.Equal(bytes.TrimSpace(wire), []byte("null")) {
+		return nil, ethereum.NotFound
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(wire, &fields); err != nil {
+		return nil, err
+	}
+	if err := requireReceiptFields(fields, "status", "blockHash", "blockNumber", "transactionHash", "transactionIndex", "logs"); err != nil {
+		return nil, err
+	}
+	var logs []map[string]json.RawMessage
+	if err := json.Unmarshal(fields["logs"], &logs); err != nil {
+		return nil, err
+	}
+	for _, log := range logs {
+		if err := requireReceiptFields(log, "blockHash", "blockNumber", "transactionHash", "transactionIndex", "logIndex"); err != nil {
+			return nil, fmt.Errorf("receipt log: %w", err)
+		}
+	}
+	var receipt types.Receipt
+	if err := json.Unmarshal(wire, &receipt); err != nil {
+		return nil, err
+	}
+	return &receipt, nil
 }
+
+// Zero quantities/indices are present values; only absent/null fields fail here.
+func requireReceiptFields(fields map[string]json.RawMessage, names ...string) error {
+	for _, name := range names {
+		value := fields[name]
+		if len(value) == 0 || bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+			return fmt.Errorf("incomplete receipt: missing %s", name)
+		}
+	}
+	return nil
+}
+
 func (s *SourceRPC) CodeAtHash(ctx context.Context, a common.Address, h common.Hash) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()

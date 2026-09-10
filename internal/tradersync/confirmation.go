@@ -16,6 +16,8 @@ import (
 // FinalizedHeader must establish that this node instance serves Polygon 137.
 type CanonicalRPC interface {
 	FinalizedHeader(context.Context) (*types.Header, error)
+	// TransactionReceipt must reject missing/null JSON status and location fields;
+	// their zero values alone cannot establish explicit negative evidence.
 	TransactionReceipt(context.Context, common.Hash) (*types.Receipt, error)
 	HeaderByHash(context.Context, common.Hash) (*types.Header, error)
 	HeaderByNumber(context.Context, *big.Int) (*types.Header, error)
@@ -54,10 +56,18 @@ func ConfirmReceived(ctx context.Context, node CanonicalRPC, raw types.Log) (tsm
 	if err != nil || receipt == nil {
 		return unavailable("receipt_unavailable", err)
 	}
+	if receipt.Status > types.ReceiptStatusSuccessful || receipt.BlockHash == (common.Hash{}) || receipt.TxHash == (common.Hash{}) || receipt.BlockNumber == nil || !receipt.BlockNumber.IsUint64() || receipt.Logs == nil {
+		return unavailable("receipt_incomplete", nil)
+	}
+	for _, log := range receipt.Logs {
+		if log == nil || log.BlockHash == (common.Hash{}) || log.TxHash == (common.Hash{}) {
+			return unavailable("receipt_log_incomplete", nil)
+		}
+	}
 	if receipt.Status != types.ReceiptStatusSuccessful {
 		return invalid("transaction_failed")
 	}
-	if receipt.TxHash != raw.TxHash || receipt.BlockHash != raw.BlockHash || receipt.BlockNumber == nil || !receipt.BlockNumber.IsUint64() || receipt.BlockNumber.Uint64() != raw.BlockNumber || receipt.TransactionIndex != raw.TxIndex {
+	if receipt.TxHash != raw.TxHash || receipt.BlockHash != raw.BlockHash || receipt.BlockNumber.Uint64() != raw.BlockNumber || receipt.TransactionIndex != raw.TxIndex {
 		return invalid("receipt_location_changed")
 	}
 	canonical, err := node.HeaderByNumber(ctx, new(big.Int).SetUint64(raw.BlockNumber))

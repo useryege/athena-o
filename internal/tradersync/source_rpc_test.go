@@ -309,3 +309,118 @@ func TestSourceRPCHasFiveSecondUpperBoundWithoutCallerDeadline(t *testing.T) {
 		t.Fatal("RPC upper bound missing", elapsed, err)
 	}
 }
+
+func TestSourceRPCIncompleteReceiptJSONStaysRetryable(t *testing.T) {
+	for _, scope := range []string{"receipt", "log"} {
+		fields := []string{"status", "blockHash", "blockNumber", "transactionHash", "transactionIndex", "logs"}
+		if scope == "log" {
+			fields = []string{"blockHash", "blockNumber", "transactionHash", "transactionIndex", "logIndex"}
+		}
+		for _, field := range fields {
+			for _, missing := range []bool{true, false} {
+				name := scope + "/" + field + "/null"
+				if missing {
+					name = scope + "/" + field + "/missing"
+				}
+				t.Run(name, func(t *testing.T) {
+					raw, fixture := canonicalFixture(t)
+					var complete atomic.Bool
+					var receipts atomic.Int32
+					node := sourceRPCServer(t, func(req rpcRequest) (any, error) {
+						switch req.Method {
+						case "eth_chainId":
+							return "0x89", nil
+						case "eth_getBlockByNumber":
+							return fixture.canonical, nil
+						case "eth_getBlockByHash":
+							return fixture.known, nil
+						case "eth_getTransactionReceipt":
+							receipts.Add(1)
+							if complete.Load() {
+								return fixture.receipt, nil
+							}
+							encoded, _ := json.Marshal(fixture.receipt)
+							var wire map[string]any
+							_ = json.Unmarshal(encoded, &wire)
+							target := wire
+							if scope == "log" {
+								target = wire["logs"].([]any)[1].(map[string]any)
+							}
+							if missing {
+								delete(target, field)
+							} else {
+								target[field] = nil
+							}
+							return wire, nil
+						}
+						t.Error(req.Method)
+						return nil, nil
+					})
+					got, _ := ConfirmReceived(context.Background(), node, raw)
+					if got.Status != "unverified" || got.Reason == "" || !got.SettledAt.IsZero() {
+						t.Fatal("missing evidence became final", got)
+					}
+					complete.Store(true)
+					got, err := ConfirmReceived(context.Background(), node, raw)
+					if err != nil || got.Status != "confirmed" || receipts.Load() != 2 {
+						t.Fatal("complete retry rejected", got, err, receipts.Load())
+					}
+				})
+			}
+		}
+	}
+}
+
+func TestSourceRPCCompleteFailedOrRelocatedReceiptIsInvalid(t *testing.T) {
+	for _, failed := range []bool{true, false} {
+		raw, fixture := canonicalFixture(t)
+		if failed {
+			fixture.receipt.Status = 0
+		} else {
+			fixture.receipt.BlockHash = common.HexToHash("0x123")
+		}
+		node := sourceRPCServer(t, func(req rpcRequest) (any, error) {
+			switch req.Method {
+			case "eth_chainId":
+				return "0x89", nil
+			case "eth_getBlockByNumber":
+				return fixture.canonical, nil
+			case "eth_getTransactionReceipt":
+				return fixture.receipt, nil
+			}
+			t.Error("continued after invalid receipt", req.Method)
+			return nil, nil
+		})
+		got, err := ConfirmReceived(context.Background(), node, raw)
+		if err != nil || got.Status != "invalid" {
+			t.Fatal(got, err)
+		}
+	}
+}
+
+func TestSourceRPCReceiptZeroLocationsArePresent(t *testing.T) {
+	raw, fixture := canonicalFixture(t)
+	header := types.CopyHeader(fixture.canonical)
+	header.Number = big.NewInt(0)
+	raw.BlockHash, raw.BlockNumber, raw.TxIndex, raw.Index = header.Hash(), 0, 0, 0
+	fixture.receipt.BlockHash = raw.BlockHash
+	fixture.receipt.BlockNumber = big.NewInt(0)
+	fixture.receipt.TransactionIndex = 0
+	fixture.receipt.Logs = []*types.Log{&raw}
+	node := sourceRPCServer(t, func(req rpcRequest) (any, error) {
+		switch req.Method {
+		case "eth_chainId":
+			return "0x89", nil
+		case "eth_getBlockByNumber", "eth_getBlockByHash":
+			return header, nil
+		case "eth_getTransactionReceipt":
+			return fixture.receipt, nil
+		}
+		t.Error(req.Method)
+		return nil, nil
+	})
+	got, err := ConfirmReceived(context.Background(), node, raw)
+	if err != nil || got.Status != "confirmed" {
+		t.Fatal("present zero location rejected", got, err)
+	}
+}

@@ -163,3 +163,37 @@ func TestConfirmRechecksPreviouslyConfirmedHashAfterDeepReorg(t *testing.T) {
 		t.Fatal("positive confirmation was cached across reorg", got)
 	}
 }
+
+func TestConfirmIncompleteReceiptEvidenceStaysRetryable(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		change func(*types.Receipt)
+	}{
+		{"nil height", func(r *types.Receipt) { r.BlockNumber = nil }},
+		{"failed status but missing height", func(r *types.Receipt) { r.Status = 0; r.BlockNumber = nil }},
+		{"negative height", func(r *types.Receipt) { r.BlockNumber = big.NewInt(-1) }},
+		{"overflow height", func(r *types.Receipt) { r.BlockNumber = new(big.Int).Lsh(big.NewInt(1), 64) }},
+		{"missing block hash", func(r *types.Receipt) { r.BlockHash = common.Hash{} }},
+		{"missing tx hash", func(r *types.Receipt) { r.TxHash = common.Hash{} }},
+		{"invalid status", func(r *types.Receipt) { r.Status = 2 }},
+		{"nil logs", func(r *types.Receipt) { r.Logs = nil }},
+		{"null log", func(r *types.Receipt) { r.Logs[1] = nil }},
+		{"log block hash", func(r *types.Receipt) { r.Logs[1].BlockHash = common.Hash{} }},
+		{"log tx hash", func(r *types.Receipt) { r.Logs[1].TxHash = common.Hash{} }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			raw, node := canonicalFixture(t)
+			tc.change(node.receipt)
+			got, _ := ConfirmReceived(context.Background(), node, raw)
+			if got.Status != "unverified" || got.Reason == "" || !got.SettledAt.IsZero() {
+				t.Fatal("incomplete evidence finalized", got)
+			}
+			_, restored := canonicalFixture(t)
+			node.receipt = restored.receipt
+			got, err := ConfirmReceived(context.Background(), node, raw)
+			if err != nil || got.Status != "confirmed" {
+				t.Fatal("complete retry rejected", got, err)
+			}
+		})
+	}
+}
