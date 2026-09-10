@@ -165,7 +165,7 @@ SELECT pg_advisory_xact_lock(hashtextextended('athena:wallet:' || $1::text, 0));
 - 产出：`(*SQLStore).Authorize(ctx context.Context, ref delivery.WorkRef, incarnation uuid.UUID) (delivery.Permit,error)`；`RecordStarted(ctx context.Context,p delivery.Permit,at time.Time) error`；`RecordOutcome(ctx context.Context,p delivery.Permit,o delivery.Outcome,at time.Time) error`。
 - 修改Sender契约：`Send(ctx context.Context, request SendRequest, started func(time.Time)) delivery.Outcome`；保留CreateSystemTopic方法。store不导入父notification包，避免当前已有父包→store的循环。
 
-- [ ] **步骤1：写HTTP故障测试，先证明“对端已接收但无响应”不会重发。**使用httptest handler计数并读取请求体后Hijack关闭连接；调用一次Send，断言Outcome为unknown且handler计数为1。另一个handler返回Telegram `ok=false,error_code=429,parameters.retry_after=7`，断言retryable及7秒；本地空消息则failed且计数为0。
+- [x] **步骤1：写HTTP故障测试，先证明“对端已接收但无响应”不会重发。**使用httptest handler计数并读取请求体后Hijack关闭连接；调用一次Send，断言Outcome为unknown且handler计数为1。另一个handler返回Telegram `ok=false,error_code=429,parameters.retry_after=7`，断言retryable及7秒；本地空消息则failed且计数为0。
 
 ```go
 func TestUnknownOutcomeIsTerminal(t *testing.T) {
@@ -180,7 +180,7 @@ func TestUnknownOutcomeIsTerminal(t *testing.T) {
 
 定义并实现 `delivery.NextState(o Outcome, attempts int, eligible bool) (string,time.Duration)`；测试首先因缺少该规则失败。
 
-- [ ] **步骤2：实现attempt表、资格墓碑与CAS SQL，生成后适配消费者。**新增 `notification_delivery_attempts`：UUID主键、work_kind/work_id、incarnation、payload_digest、authorized_at、nullable started_at/result_at/message_id、outcome；账户投递增加eligibility_revoked_at/reason及current_attempt_id，系统投递增加current_attempt_id及sending/unknown状态。attempt与work关系按kind在许可事务核验，账户owner一致，不用可变payload复用许可。
+- [x] **步骤2：实现attempt表、资格墓碑与CAS SQL，生成后适配消费者。**新增 `notification_delivery_attempts`：UUID主键、work_kind/work_id、incarnation、payload_digest、authorized_at、nullable started_at/result_at/message_id、outcome；账户投递增加eligibility_revoked_at/reason及current_attempt_id，系统投递增加current_attempt_id及sending/unknown状态。attempt与work关系按kind在许可事务核验，账户owner一致，不用可变payload复用许可。
 
 ```sql
 -- 结果更新必须绑定当次许可；行数0表示迟到/已终结，不能重新发送。
@@ -189,14 +189,14 @@ SET status = $3, provider_message_id = $4
 WHERE id = $1 AND current_attempt_id = $2 AND status = 'sending';
 ```
 
-许可与attempt同时提交后才调用Telegram。仅明确retryable且资格未永久撤销、attempts<5时回pending；等待=max(1/2/4/8秒对应值,RetryAfter)。success写库失败只重试结果CAS。提交结果不确定先按attempt UUID读取，无法确认则不发送。同步现有Notification公共/内部proto的状态表达，稳定后执行一次 `make protogen`，适配现有状态消费者，不让unknown被旧映射误报成功。
+许可与attempt同时提交后才调用Telegram。资格已永久撤销时，明确failed或retryable均将delivery终结为cancelled，attempt保留真实失败事实；sent/unknown照实保存。仅明确retryable且资格未永久撤销、attempts<5时回pending；等待=max(1/2/4/8秒对应值,RetryAfter)。success写库失败只重试结果CAS。提交结果不确定先按attempt UUID读取，无法确认则不发送。同步现有Notification公共/内部proto的状态表达，稳定后执行一次 `make protogen`，适配现有状态消费者，不让unknown被旧映射误报成功。
 
 当前公共枚举cancelled已经存在（值4），新增sending/unknown使用未占用编号。同步deliveryStatusString、normalizeDeliveryStatusFilter、runtime计数和管理员系统列表/详情的筛选、颜色、时间字段；账户逐条投递仍不向管理员开放。若application类型新增attempt时间，同批 `make clientgen` 更新deepcopy。会员notification-service里的binding attempt状态不是消息状态，不改成sending/unknown。状态测试覆盖JSON字符串往返和unknown独立计数。
 
-- [ ] **步骤3：在实际HTTP RoundTrip入口记录started，禁用隐式重试。**新transport包装既有 `http.RoundTripper`，通过本次请求context的回调在进入base.RoundTrip前记录起点；不在goroutine启动/队列领取处调用。回调写入容量1的握手channel，不等待响应。预校验/编码失败不报告started；禁止跟随会重放POST的重定向，检查现有go-telegram/bot选项，发送路径只允许一个HTTP请求。保留原始结构化错误分类后再形成对外错误文本，不能把所有网络错误都归为“确定失败”。
+- [x] **步骤3：在实际HTTP RoundTrip入口记录started，禁用隐式重试。**新transport包装既有 `http.RoundTripper`，通过本次请求context的回调在进入base.RoundTrip前记录起点；不在goroutine启动/队列领取处调用。回调写入容量1的握手channel，不等待响应。预校验/编码失败不报告started；禁止跟随会重放POST的重定向，检查现有go-telegram/bot选项，发送路径只允许一个HTTP请求。保留原始结构化错误分类后再形成对外错误文本，不能把所有网络错误都归为“确定失败”。
 
-- [ ] **步骤4：运行 `go test ./util/telegram ./internal/notification/...`、`go test -tags=integration ./internal/notification/store -run 'TestAttempt|TestOutcome' -count=1`。集成矩阵覆盖许可后崩溃、成功后结果写库失败、结果CAS冲突、起点缺失但有成功回执，以及撤权→重授→旧attempt返回429仍cancelled。**
-- [ ] **步骤5：提交 `feat(notification): persist send permits and terminal outcomes`。**
+- [x] **步骤4：运行 `go test ./util/telegram ./internal/notification/...`、`go test -tags=integration ./internal/notification/store -run 'TestAttempt|TestOutcome' -count=1`。集成矩阵覆盖许可后崩溃、成功后结果写库失败、结果CAS冲突、起点缺失但有成功回执，以及撤权→重授→旧attempt返回429仍cancelled。**
+- [x] **步骤5：提交 `feat(notification): persist send permits and terminal outcomes`。**
 
 ## 任务3：Bot update、绑定与回复outbox原子消费
 
@@ -319,7 +319,7 @@ func decimalToken(raw []byte) (*string,error) {
 
 替换现有GetTotalMarketsTraded的map及DataUserValue的float表示，适配实际调用方；不保留无消费者旧接口。加入时间只用joinDate，Predictions只用traded；辅助字段逐项记录source/queriedAt/reason。
 
-- [ ] **步骤3：实现六区间请求、裁切与独立availability。**fallback为1d/1h、1w/3h、1m/18h、all/1d；1Y/YTD共用ALL。已知ALL历史年龄时按证据表的H/N从[1,3,12,18,24]小时选最小误差，平局较小候选；1M严格<31天使用all。对实际t/p数组校验升序、原数组及裁切后至少2点，裁切边界包含，原p不平移。
+- [ ] **步骤3：实现六区间请求、裁切与独立availability。**fallback为1d/1h、1w/3h、1m/18h、all/1d；1Y/YTD共用ALL。已知ALL历史年龄时按证据表的H/N从[1,3,12,18,24]小时选最小误差，平局较小候选；1M严格<31天使用all。对实际t/p数组校验时间非递减（相邻同时间点按原顺序保留，不排序或去重）、原数组及裁切后至少2点，裁切边界包含，原p不平移。
 
 ```go
 // 区间未舍入金额的核心；调用前已经验证两端存在及ALL年龄证据。

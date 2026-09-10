@@ -34,7 +34,7 @@ Trader Sync 第一阶段提供目标确认、独立订阅、实时成交活动�
 - 每条合格成交形成独立持久活动；用户级滚动 60 秒内前 10 条逐条提醒，第 11 条起按已确认规则汇总。消息未知结果不自动重发，摘要分条分别显示结果。
 - 暂停/取消保留旧通知队列；撤权、解绑或重绑终止未取得发送许可的旧资格。重新获权后用户逐个恢复订阅。
 - 显示结算时间、监控健康、资料缺失和通知结果，不把“无新活动”“监控失效”“投递未知”混为同一状态。
-- 当前后端与 UI 完整书面设计均已整体确认，21项前后端联合实现计划已编写，尚未实施。资料查询、页面与运行结果不能因文档确认而记为已实现或验收通过。
+- 当前后端与 UI 完整书面设计均已整体确认，21项前后端联合实现计划正在独立工作区逐项实施，进度与验证见计划。资料查询、页面与运行结果须以实际实现和验收证据为准。
 
 ## Brand Commitments
 
@@ -47,7 +47,7 @@ Trader Sync 第一阶段提供目标确认、独立订阅、实时成交活动�
 - [已确认后端 spec](docs/superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)
 - [已整体确认 UI spec](docs/superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)
 - [长期 UI 设计](docs/design/web-ui/trader-sync-activity-alerts.md)
-- [前后端联合实现计划，尚未执行](docs/superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)
+- [前后端联合实现计划与执行进度](docs/superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)
 - [会员应用壳](docs/design/web-ui/member-application-shell.md)、[管理员应用壳](docs/design/web-ui/administrator-application-shell.md)
 - [共享样式实现](ui/src/app/styles/shared.css)、[会员入口](ui/src/app/member/app.tsx)、[管理员入口](ui/src/app/admin/app.tsx)
 

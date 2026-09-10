@@ -55,7 +55,7 @@
 | Market Intelligence | Completed ATP/WTA event synchronization, price history, status, and manual refresh | [Sports History](market-intelligence/sports-history.md) | `已实现` |
 | Market Intelligence | Managed Optimistic Oracle log ingestion, market enrichment, reads, scans, and alerts | [Managed OO](market-intelligence/managed-oo.md) | `已实现` |
 | Market Intelligence | Worm sports-market synchronization, rules, live state, history, and alerts | [Worm Markets](market-intelligence/worm-markets.md) | `已实现` |
-| Trading | Trader Sync Activity Alerts：10 人共享 WSS、全部通知同库、发送许可与撤权边界、分批摘要及未知终态；后端设计已确认，[21项前后端联合计划已编写，尚未执行](../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md) | [Activity Alerts 后端技术设计](trading/trader-sync-activity-alerts.md) | `已确认待实现`；UI 读取补充已确认 |
+| Trading | Trader Sync Activity Alerts：10 人共享 WSS、全部通知同库、发送许可与撤权边界、分批摘要及未知终态；后端设计已确认，[21项前后端联合计划正在逐项实施](../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md) | [Activity Alerts 后端技术设计](trading/trader-sync-activity-alerts.md) | `已确认待实现`；部分基础设施已实现，进度见计划 |
 | Web UI | Trader Sync 活动与目标同屏、独立添加/管理/活动/摘要、稳定刷新、Telegram 衔接及管理员安全概要 | [Activity Alerts UI 设计](web-ui/trader-sync-activity-alerts.md) | `已确认待实现` |
 | Trading | Revisioned owner-scoped selection of up to 20 Solana Wallets, removal-first official-HMAC connection/activity flows, saved combinations and previews, Cash Out, and official Web JWT live-Run orchestration | [Worm Trading](trading/worm-trading.md) | `已实现` |
 | Trading | Provider-backed Worm event catalogs and owner-scoped, revisioned market-combination CRUD with trusted display snapshots | [Worm Market Combinations](trading/worm-market-combinations.md) | `已实现` |
