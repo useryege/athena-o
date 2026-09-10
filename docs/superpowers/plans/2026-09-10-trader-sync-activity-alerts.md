@@ -439,13 +439,16 @@ if (module.id === 'trader_sync') {
 **Files**
 - 新增：`internal/tradersync/exchange_decode.go`、`internal/tradersync/confirmation.go`、`internal/tradersync/source_version.go`、`internal/tradersync/abi/embed.go`、`internal/tradersync/abi/core_exchange.json`、`internal/tradersync/abi/combos_exchange.json`、`internal/tradersync/abi/proxy.json`、`internal/tradersync/testdata/source_records.json`。
 - 新增测试：`internal/tradersync/exchange_decode_test.go`、`internal/tradersync/confirmation_test.go`、`internal/tradersync/source_version_test.go`；新增类型`internal/tradersync/types/trade.go`。
+- 新增薄适配器：`internal/tradersync/source_rpc.go`、`source_rpc_test.go`；借用调用方持有的 ethclient，端点替换时重建实例，关闭由调用方负责。
 - 依据：[已核准来源契约与部署值](../../requirements/polymarket-copy-trading/source-contract-verification.md)。ABI资源记录来源仓库commit及hash，不新增或修改`pkg/abi/**/*.sol`。
 **Interfaces**
 - 产出tsmodel：`Trade{Wallet common.Address; Side,PositionID,CollateralRaw,SharesRaw,FeeRaw,CollateralSymbol string; CollateralDecimals,SharesDecimals uint8; Exchange common.Address; SourceVersion,PriceNumerator,PriceDenominator string}`；`CanonicalEvidence{Status string; BlockHash common.Hash; SettledAt time.Time; CheckedAt time.Time; Reason string}`；Status=unverified/invalid/confirmed。
 - 产出：`DecodeOwnTrade(log types.Log,version string) (tsmodel.Trade,error)`；`ConfirmReceived(ctx context.Context,node CanonicalRPC,raw types.Log) (tsmodel.CanonicalEvidence,error)`；`(*VersionVerifier).Verify(ctx context.Context,raw types.Log) (version string,err error)`。
 - CanonicalRPC精确契约：`FinalizedHeader(context.Context) (*types.Header,error)`、`TransactionReceipt(context.Context,common.Hash) (*types.Receipt,error)`、`HeaderByHash(context.Context,common.Hash) (*types.Header,error)`、`HeaderByNumber(context.Context,*big.Int) (*types.Header,error)`；fake按调用记录，不请求真实链。
+- `FinalizedHeader`先保证当前实例连接 chain 137，再取 finalized；正面链证明仅在同不可变端点实例内缓存，失败不永久缓存。`SourceRPC`单一拥有成功头的2秒缓存与可取消并发合并，过期懒刷新且失败不使用旧头；不启动独立 poller。任务9的2秒工作调度消费此入口，不维护第二份 finalized 缓存。每次真实 RPC 截止5秒，回环测试覆盖错链、并发、取消、过期失败和真实超时。
+- `ConfirmReceived`在读取失败或错链时返回 unverified 证据、稳定 Reason 和底层 error；调用方保留原始候选再报告错误，取消只结束本轮。removed、完整回执的明确失败、明确规范定位或字节不一致才返回 invalid；不能根据另一链的头否定 Polygon 候选。
 
-- [ ] **步骤1：固定已核准原始日志fixtures，写BUY/SELL及自身归属红灯。**fixtures逐项存address/topics/data/block/tx/logIndex及预期wallet/方向/原量/fee，至少三Exchange×BUY/SELL×Maker/Taker；同tx两个自身日志必须两个Trade；只topics[3]匹配的目标不得被归属该Trade（纯解码器只取topics[2]，目标过滤由任务9验证），OrdersMatched及SPLIT/MERGE不得产出Trade。
+- [x] **步骤1：固定已核准原始日志fixtures，写BUY/SELL及自身归属红灯。**fixtures逐项存address/topics/data/block/tx/logIndex及预期wallet/方向/原量/fee，至少三Exchange×BUY/SELL×Maker/Taker；同tx两个自身日志必须两个Trade；只topics[3]匹配的目标不得被归属该Trade（纯解码器只取topics[2]，目标过滤由任务9验证），OrdersMatched及SPLIT/MERGE不得产出Trade。
 
 ```go
 func TestUnknownExecutionVersionIsNotDecoded(t *testing.T) {
@@ -454,9 +457,9 @@ func TestUnknownExecutionVersionIsNotDecoded(t *testing.T) {
 }
 ```
 
-运行 `go test ./internal/tradersync -run 'TestDecode|TestUnknownExecution' -count=1`确认红灯。fixture构造必须按来源ABI编码，不能把decoder输出当预期再反序列化。
+运行 `go test ./internal/tradersync -run 'TestDecode|TestUnknownExecution' -count=1`确认红灯。fixture构造必须按来源ABI编码，不能把decoder输出当预期再反序列化。现存真实记录缺Combo SELL maker，该格允许明确标注按固定ABI构造的synthetic，其余11格保留原始日志；不宣称十二格均完成真实来源核验。任务13在有界实时验收中继续补证，未观察到时明确保留缺口。
 
-- [ ] **步骤2：实现白名单版本解码及精确单位。**先核对chain/address/topic0/version，再按真实ABI解码自身资金钱包topics[2]、side、position及filled/fee原整数。BUY的抵押币/份额分别为maker/taker，SELL反转；6位pUSD与6位份额作为已核准版本属性保存，费用独立。无大于0的自定义门槛；零值合法性按合约事件语义处理，不能新增最小金额过滤。
+- [x] **步骤2：实现白名单版本解码及精确单位。**先核对chain/address/topic0/version，再按真实ABI解码自身资金钱包topics[2]、side、position及filled/fee原整数。BUY的抵押币/份额分别为maker/taker，SELL反转；6位pUSD与6位份额作为已核准版本属性保存，费用独立。无大于0的自定义门槛；零值合法性按合约事件语义处理，不能新增最小金额过滤。
 
 ```go
 collateral,shares:=makerAmount,takerAmount
@@ -468,7 +471,7 @@ trade.FeeRaw=feeAmount.String()
 
 片段变量来自ABI解码后的`*big.Int`，trade为`tsmodel.Trade`；symbol/decimals从本次version注册项取得，不能从API字段名usdcSize推断。价格保存未含fee的collateral/shares精确比值（两个字符串），分母为0则价格不可用，不造0价格，不阻止保存可识别成交；当前两者decimals均6，未来版本按精度换算。
 
-- [ ] **步骤3：实现确认后回执和已知哈希验证。**共享fresh finalized可覆盖候选后重新取known tx receipt；status=成功、规范高度头hash、receipt定位和原日志address/topics/data/index均一致，才取HeaderByHash时间。null/403/timeout返回unverified；removed或明确不同规范定位返回invalid。receipt其他日志仅核对，不建新候选。fake构造receipt有两条日志时只返回被请求原日志的确认事实，并断言先finalized后receipt。
+- [x] **步骤3：实现确认后回执和已知哈希验证。**共享fresh finalized可覆盖候选后重新取known tx receipt；status=成功、规范高度头hash、receipt定位和原日志address/topics/data/index均一致，才取HeaderByHash时间。null/403/timeout或回执必需字段缺失返回unverified；适配器区分missing/null与合法零值，不能让JSON默认值变成明确负证据。removed、完整回执明确失败或明确不同规范定位返回invalid。receipt其他日志仅核对，不建新候选。fake构造receipt有两条日志时只返回被请求原日志的确认事实，并断言先finalized后receipt。
 
 ```go
 if raw.Removed { return tsmodel.CanonicalEvidence{Status:"invalid",Reason:"removed"},nil }
@@ -478,7 +481,7 @@ same:=received.Address==raw.Address && received.Index==raw.Index &&
 if !same { return tsmodel.CanonicalEvidence{Status:"invalid",Reason:"canonical_log_changed"},nil }
 ```
 
-- [ ] **步骤4：加入按blockHash的版本证据缓存。**HTTP adapter用StorageAtHash/CodeAtHash读取已知候选块及父块代理/实现，核对已核准升级记录语义；仅允许候选known blockHash的升级事件查询，不用latest槽证明旧执行。不认识实现或无法排除同块升级保持unverified，不能用块末实现盲解。该能力通过窄接口`VersionRPC`定义`ChainID(context.Context) (*big.Int,error)`、`HeaderByHash(context.Context,common.Hash) (*types.Header,error)`、StorageAtHash、CodeAtHash及`UpgradeLogs(ctx context.Context,blockHash common.Hash,proxy common.Address) ([]types.Log,error)`；先核实节点chain 137，再从已知候选头取得ParentHash，不以配置常量或按高度猜父块代替；不提供任意from/to扫描接口。
+- [x] **步骤4：加入按blockHash的版本证据缓存。**HTTP adapter用StorageAtHash/CodeAtHash读取已知候选块及父块代理/实现，核对已核准升级记录语义；仅允许候选known blockHash的升级事件查询，不用latest槽证明旧执行。不认识实现或无法排除同块升级保持unverified，不能用块末实现盲解。该能力通过窄接口`VersionRPC`定义`ChainID(context.Context) (*big.Int,error)`、`HeaderByHash(context.Context,common.Hash) (*types.Header,error)`、StorageAtHash、CodeAtHash及`UpgradeLogs(ctx context.Context,blockHash common.Hash,proxy common.Address) ([]types.Log,error)`；先核实节点chain 137，再从已知候选头取得ParentHash，不以配置常量或按高度猜父块代替；不提供任意from/to扫描接口。
 
 ```go
 if parentImplementation!=blockImplementation || len(upgrades)>0 || !upgradeEvidenceComplete {
@@ -488,18 +491,19 @@ if parentImplementation!=blockImplementation || len(upgrades)>0 || !upgradeEvide
 
 缓存键至少chain/exchange/blockHash；无法确认结果不当作永久无升级。CombinatorialModule资料版本失败归任务8metadata缺失，不阻塞已确认成交。
 
-- [ ] **步骤5：运行 `go test ./internal/tradersync -run 'TestDecode|TestConfirm|TestVersion|TestUnknownExecution' -count=1`。**覆盖旧hash/新规范块、403/null、removed、已确认后深度重组隔离所需证据、同块升级/未知实现；提交 `feat(trader-sync): verify and decode canonical source trades`。
+- [x] **步骤5：运行 `go test ./internal/tradersync -run 'TestDecode|TestConfirm|TestVersion|TestUnknownExecution' -count=1`。**覆盖旧hash/新规范块、403/null、removed、已确认后深度重组隔离所需证据、同块升级/未知实现；提交 `feat(trader-sync): verify and decode canonical source trades`。
 
 ## 任务8：普通市场、Combo逻辑及持久目录资料
 
 **Files**
 - 新增：`internal/tradersync/market_metadata.go`、`internal/tradersync/combo_metadata.go`、`internal/tradersync/abi/combinatorial_module.json`、`internal/tradersync/abi/binary_module.json`、`internal/tradersync/store/metadata.go`、`internal/tradersync/store/queries/metadata.sql`、`util/polymarket/combo_markets.go`。
 - 新增类型：`internal/tradersync/types/metadata.go`。
-- 修改：`util/polymarket/gamma.go`、权威`internal/accountstate/store/migrations/000001_init.sql`。
+- 修改：`util/polymarket/gamma.go`、权威`internal/accountstate/store/migrations/000001_init.sql`、`internal/tradersync/abi/embed.go`、`internal/tradersync/source_rpc.go`及其测试。
 - 测试：`internal/tradersync/market_metadata_test.go`、`internal/tradersync/combo_metadata_test.go`、`internal/tradersync/store/metadata_integration_test.go`、`util/polymarket/combo_markets_test.go`。
 **Interfaces**
 - 产出tsmodel：`MarketRef{Evidence; ID,Title,URL,ConditionID,PositionID,Outcome string}`；`ComboLeg{PositionID string; Market MarketRef}`；`TradeMetadata{Market MarketRef; LegsEvidence Evidence; Legs []ComboLeg; Relationship string}`。腿数仅LegsEvidence.available时由len(Legs)取得。
 - 产出：`(*MetadataResolver).Resolve(ctx context.Context,trade tsmodel.Trade,blockHash common.Hash) tsmodel.TradeMetadata`；`(*DirectoryRefresher).Run(ctx context.Context) error`。
+- 资料 RPC 复用任务7的 SourceRPC，增加窄方法 `CallContractAtHash(context.Context,ethereum.CallMsg,common.Hash) ([]byte,error)`，只调用已知 hash 并沿用5秒截止；模块版本核验复用同包 deployment helper，先核实 chain/known 头/真实父 hash。模块 ABI 纳入既有 embed，不加入 Exchange 解码白名单。
 - 产出公开适配：`ComboMarketPage{Markets []ComboMarket; NextCursor string}`、`ComboMarket{ID string; PositionIDs []string; ConditionID string}`；`(*GammaClient).ListComboMarkets(ctx context.Context,cursor string,limit int) (ComboMarketPage,error)`；在util/polymarket定义这些类型。
 
 - [ ] **步骤1：写组合逻辑和缺失整腿红灯。**
@@ -548,7 +552,7 @@ WHERE name='combo_markets' AND cursor=$1;
 - 消费：任务6 `BaselineRegistrar.RegisterTx`，任务7CanonicalRPC；原始接收不依赖metadata。
 - 产出：`ComputeBaseline(now time.Time,registeredHigh uint64,h *types.Header) (time.Time,error)`；`(*Collector).Run(ctx context.Context) error`；`(*Intake).Persist(ctx context.Context,epoch uint64,raw types.Log,receivedAt time.Time) error`。
 - 产出rpc：`DialSession(ctx context.Context,endpoint,proxyURL string) (*Session,error)`；`(*Session).Subscribe(ctx context.Context,query ethereum.FilterQuery) (subscriptionID string,error)`；`Unsubscribe(ctx context.Context,id string) error`；`Logs() <-chan types.Log`；`Done() <-chan struct{}`；`Err() error`；`Close() error`。每个Session仅一物理WSS，绝不内部重连。
-- 产出tsmodel：`Candidate{SourceID int64; SubscriptionID,OwnerID string; Generation uint64; AttemptID int64; ReceivedAt time.Time}`；`Eligibility{Generation uint64; BaselineSucceeded bool; SettledAt,EffectiveAt time.Time; EndedAt *time.Time}`。`Eligible(c tsmodel.Eligibility,s tsmodel.Subscription) bool`只判原区间+当前意图/代次，不判当前epoch健康。
+- 产出tsmodel：`Candidate{SourceID int64; SubscriptionID,OwnerID string; Generation uint64; AttemptID string; ReceivedAt time.Time}`；`Eligibility{Generation uint64; BaselineSucceeded bool; SettledAt,EffectiveAt time.Time; EndedAt *time.Time}`。`Eligible(c tsmodel.Eligibility,s tsmodel.Subscription) bool`只判原区间+当前意图/代次，不判当前epoch健康。
 
 - [ ] **步骤1：写秒级边界红灯测试。**
 

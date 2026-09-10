@@ -162,11 +162,13 @@ BUY 抵押币量为 makerAmountFilled、份额为 takerAmountFilled；SELL 相�
 
 原始定位键为 `(chain_id,exchange_address,block_hash,transaction_hash,log_index)`，raw 第一次落库同时冻结候选订阅、generation 与 baseline/interval。重复返回只复用原事实，不能补建后来订阅的候选；同键后到的 removed=true 是状态证据，必须应用，不能被去重吞掉。原始接收失败不算可靠收到，要记录中断/可能遗漏，不借后续历史查询掩盖丢失。
 
-共享 finalized 每 2 秒查询；latest 健康每 10 秒查询，不常驻全链 newHeads。候选高度不高于新读 finalized 时，重新查询已知 tx receipt，核验成功状态、当前规范链定位以及已接收日志的地址/topics/data/index，再取已知 blockHash 区块时间。确认前缓存回执不够；必要时用近期高度头交叉核验。回执中其他日志不转为新活动。
+确认工作每 2 秒调度，共享 finalized 由同一 SourceRPC 实例持有：成功头缓存 2 秒，过期按需刷新，在途请求合并且等待可取消，刷新失败不冒用过期头。适配器不另起轮询，空闲时不主动拉 finalized；latest 健康仍每 10 秒查询，不常驻全链 newHeads。候选高度不高于新读 finalized 时，重新查询已知 tx receipt，核验成功状态、当前规范链定位以及已接收日志的地址/topics/data/index，再取已知 blockHash 区块时间。确认前缓存回执不够；必要时用近期高度头交叉核验。回执中其他日志不转为新活动。
+
+读取 finalized 前先核实当前连接的 chain ID 为 137；成功链证明只属于同一不可变端点实例，替换端点必须重建实例。每次真实 RPC 截止 5 秒；版本核验另从已知候选头取得真实 ParentHash。节点错链或读取失败返回 unverified 证据及底层错误，调用者保留候选并分别报告，不能用另一链的头将 Polygon 候选标为 invalid。取消只停止本轮工作。
 
 单次 finality 查询失败保留候选并重试，不以错误响应推进水位，也不单凭该错误丢弃仍健康的 WSS。采集可用性与确认/资料处理积压分别报告；只有真实失去观察能力或无法核准其健康时关闭观察 epoch，不能将所有处理延迟描述为发生了接收中断。
 
-removed 或明确规范链重定位使该 raw 候选无效；null/403/超时只是未能确认，不当作孤块。重新包含的交易只有再次真实接收的新日志才可形成新候选，不能从查询中补建。只有最终确认后才投影活动；若后续出现与已形成活动冲突的深度重组，保留原事实并标 finality 一致性异常，隔离同交易的新分叉候选，不再自动形成第二份活动或提醒。不能简单以 txHash+logIndex 跨分叉去重，因为区块级 logIndex 可能改变。
+removed 或明确规范链重定位使该 raw 候选无效；null/403/超时或回执必需字段缺失只是未能确认，不当作孤块。适配器须区分字段缺失与合法零值，不能将缺失 status 的默认零误作明确执行失败；完整回执中的明确失败仍为无效证据。重新包含的交易只有再次真实接收的新日志才可形成新候选，不能从查询中补建。只有最终确认后才投影活动；若后续出现与已形成活动冲突的深度重组，保留原事实并标 finality 一致性异常，隔离同交易的新分叉候选，不再自动形成第二份活动或提醒。不能简单以 txHash+logIndex 跨分叉去重，因为区块级 logIndex 可能改变。
 
 活动插入以 `(subscription_id,source_record_id)` 唯一。每个 owner 在独立短事务里重查 grant、desired_state=enabled、相同 generation 和原基线成功/区间，插入活动、备注快照及当前绑定资格、普通或摘要归属。不因为 collector epoch 已关闭或当前 observation_state=interrupted 而拒绝原本合格的持久候选。用户暂停/取消/撤权或手动新 generation 则使旧未形成候选失去资格。
 
