@@ -282,8 +282,8 @@ attempt许可冻结实际chat ID/group并与Sender请求一致。预算恢复读
 - 依据：[Profile/P/L契约核验](../../requirements/polymarket-copy-trading/profile-pnl-contract-verification.md)。
 **Interfaces**
 - 以下任务统一将`internal/tradersync/types`导入为`tsmodel`，避免service→store→service循环。
-- 产出类型：`Identity{Wallet common.Address; ProfileURL,DisplayName,AvatarURL string; Digest [32]byte}`；`Evidence{Availability,ReasonCode,Source string; QueriedAt time.Time}`；`Scalar{Evidence; Value *string}`；`PnLPoint{T int64; P string}`；`Curve{Evidence; Points []PnLPoint}`。数字以字符串保留原值，Value=nil代表缺失。
-- Identity.Digest只摘要规范钱包、canonical身份映射及适配器版本；显示名、头像、收益变化不改变身份。完整确认卡资料另保存查询证据，不把辅助资料变化判成另一个目标。
+- 产出类型：`Identity{Wallet common.Address; ResolutionInput,ProfileURL,DisplayName,AvatarURL string; Digest [32]byte}`；`Evidence{Availability,ReasonCode,Source string; QueriedAt time.Time}`；`Scalar{Evidence; Value *string}`；`PnLPoint{T int64; P string}`；`Curve{Evidence; Points []PnLPoint}`。数字以字符串保留原值，Value=nil代表缺失。
+- Identity.Digest只摘要规范钱包、canonical身份映射及适配器版本；显示名、头像、收益变化不改变身份。ResolutionInput保存规范原始查询地址或受限输入URL，digest绑定其到规范钱包/canonical的映射；Revalidate重新解析该参照，不能只查询已解析钱包。原参照缺失、改指另一钱包或无法复核都要求重新解析确认，无旧身份格式兼容回退。完整确认卡资料另保存查询证据，不把辅助资料变化判成另一个目标。
 - 产出类型：`ConfirmationCard{Identity Identity; Avatar,DisplayName,Verified,JoinedAt,PositionValue,LargestWin,Predictions Scalar; PnL map[string]PnLView; DefaultPeriod,UsageNotice string}`；`PnLView{Amount Scalar; Curve Curve; Interval,Fidelity string; Reference *time.Time; Timezone string}`；`ResolvedTarget{Card ConfirmationCard; Context ResolutionContext; Token string; ExpiresAt time.Time}`。
 - 产出tsmodel：`TargetNote{Wallet common.Address; Note string; Revision uint64}`、`ExistingSubscription{ID,Status string; Revision uint64}`、`Quota{Used,Limit int32}`、`ResolutionContext{SavedNote *TargetNote; Existing *ExistingSubscription; Quota Quota}`。SavedNote=nil与Note=""不同；Current五态均占配额。
 - 产出：`(*TargetResolver).Resolve(ctx context.Context,ownerID,input string) (tsmodel.ResolvedTarget,error)`；`Revalidate(ctx context.Context,identity tsmodel.Identity) error`。外部查询先完成再进入短事务保存token；当前grant在写入前重新核验。
@@ -291,7 +291,7 @@ attempt许可冻结实际chat ID/group并与Sender请求一致。预算恢复读
 - 产出store：`NewSQLStore(pool *pgxpool.Pool) *SQLStore`；`SaveConfirmationTx(ctx context.Context,tx pgx.Tx,ownerID string,identity tsmodel.Identity,tokenDigest []byte,expiresAt time.Time) error`；`ReadConfirmationTx(ctx context.Context,tx pgx.Tx,ownerID string,tokenDigest []byte) (tsmodel.Identity,error)`；`ConsumeConfirmationTx(ctx context.Context,tx pgx.Tx,ownerID string,tokenDigest []byte,requestID string,identityDigest []byte) (tsmodel.Identity,error)`。Read核验owner、未消费和expires_at但不消费。
 - Resolver另注入必需`ResolveContextTx func(context.Context,pgx.Tx,string,common.Address) (tsmodel.ResolutionContext,error)`；本任务使用显式fake，任务6提供SQL实现，任务12才组合公开入口。外部资料完成后，在同account gate事务内RequireGrant→ResolveContextTx→SaveConfirmationTx，返回同一次确认的owner上下文；不在外部查询期间持锁。
 
-- [ ] **步骤1：写精确请求与缺失值红灯测试。**
+- [x] **步骤1：写精确请求与缺失值红灯测试。**
 
 ```go
 func TestMonthQueryUsesStrict31DayBoundary(t *testing.T) {
@@ -308,7 +308,7 @@ func TestMonthQueryUsesStrict31DayBoundary(t *testing.T) {
 
 `profile_stats_test.go`用httptest返回`{"traded":9007199254740993}`与`{"traded":0}`，分别断言原整数不变和available真0；null/缺字段为unavailable。运行 `go test ./internal/tradersync ./util/polymarket -run 'TestMonthQuery|TestProfileStats' -count=1`，确认针对缺失行为失败。
 
-- [ ] **步骤2：实现受限身份读取与类型化数值。**URL只允许HTTPS、`polymarket.com`/`www.polymarket.com`和已核准`/@handle`路径；拒绝userinfo、端口、伪域、额外路径及改变身份的query/fragment；最大响应2MiB、重定向最多3次且每跳验证相同规则、超时5秒。这些是输入防护默认值，不改变合法身份。HTTP适配器注入RoundTripper供测试，生产allowlist不由用户输入改变。解析固定版本SSR身份和canonical，与public-profile明确钱包交叉核验；冲突、缺关键结构、多个候选钱包均FailedPrecondition，不调用PublicSearch。
+- [x] **步骤2：实现受限身份读取与类型化数值。**URL只允许HTTPS、`polymarket.com`/`www.polymarket.com`和已核准`/@handle`路径；拒绝userinfo、端口、伪域、额外路径及改变身份的query/fragment；最大响应2MiB、重定向最多3次且每跳验证相同规则、超时5秒。这些是输入防护默认值，不改变合法身份。HTTP适配器注入RoundTripper供测试，生产allowlist不由用户输入改变。解析固定版本SSR身份和canonical，与public-profile明确钱包交叉核验；冲突、缺关键结构、多个候选钱包均FailedPrecondition，不调用PublicSearch。
 
 ```go
 // 自定义数值UnmarshalJSON保留原始十进制token，不能先Decode进float64。
@@ -325,7 +325,7 @@ func decimalToken(raw []byte) (*string,error) {
 
 替换现有GetTotalMarketsTraded的map及DataUserValue的float表示，适配实际调用方；不保留无消费者旧接口。加入时间只用joinDate，Predictions只用traded；辅助字段逐项记录source/queriedAt/reason。
 
-- [ ] **步骤3：实现六区间请求、裁切与独立availability。**fallback为1d/1h、1w/3h、1m/18h、all/1d；1Y/YTD共用ALL。已知ALL历史年龄时按证据表的H/N从[1,3,12,18,24]小时选最小误差，平局较小候选；1M严格<31天使用all。对实际t/p数组校验时间非递减（相邻同时间点按原顺序保留，不排序或去重）、原数组及裁切后至少2点，裁切边界包含，原p不平移。
+- [x] **步骤3：实现六区间请求、裁切与独立availability。**fallback为1d/1h、1w/3h、1m/18h、all/1d；1Y/YTD共用ALL。已知ALL历史年龄时按证据表的H/N从[1,3,12,18,24]小时选最小误差，平局较小候选；1M严格<31天使用all。对实际t/p数组校验时间非递减（相邻同时间点按原顺序保留，不排序或去重）、原数组及裁切后至少2点，裁切边界包含，原p不平移。
 
 ```go
 // 区间未舍入金额的核心；调用前已经验证两端存在及ALL年龄证据。
@@ -337,7 +337,7 @@ if period!="ALL" && !shortHistory { amount.Sub(end,begin) }
 
 此片段位于BuildPNL内部：`points`是验证后裁切数组；`shortHistory`按报告各区间严格阈值计算，YTD使用报告的年初规则。Reference缺失使相关裁切不可验证；YTD缺时区只影响YTD；Round缺失使精确显示金额unavailable但保留可验证原始曲线。直接取得的官方显示原值可以有独立证据，不用排行榜/持仓求和代替。
 
-- [ ] **步骤4：增加token和幂等存储，稳定SQL后生成。**`trader_sync_targets`钱包唯一；`trader_sync_target_confirmations`保存token SHA-256 digest、owner、identity_json/digest、expires_at、consumed_request_id；`trader_sync_request_results`以(owner,operation,request_id)唯一并保存payload_digest/result_json。token使用32字节crypto/rand，DB时钟5分钟；成功Create事务中消费，过期或其他request重复消费拒绝。
+- [x] **步骤4：增加token和幂等存储，稳定SQL后生成。**`trader_sync_targets`钱包唯一；`trader_sync_target_confirmations`保存token SHA-256 digest、owner、identity_json/digest、expires_at、consumed_request_id；`trader_sync_request_results`以(owner,operation,request_id)唯一并保存payload_digest/result_json。token使用32字节crypto/rand，DB时钟5分钟；成功Create事务中消费，过期或其他request重复消费拒绝。
 
 ```sql
 UPDATE trader_sync_target_confirmations
@@ -350,7 +350,7 @@ RETURNING identity_json;
 
 在sqlc.yaml新增独立tradersync输出包（`internal/tradersync/store/sqlc`），schema仍指向权威目录；`make sqlc-local`后实现适配器。Resolver要求注入`GrantCheck func(context.Context,pgx.Tx,string) error`与ResolveContextTx，缺任一依赖构造失败。Consume由已经核验grant的Create事务调用，owner条件仍由SQL强制。此任务用显式授权/拒绝fake测试调用及nil/空备注、六个period完整性，任务6提供真实`RequireGrantTx(ctx context.Context,tx pgx.Tx,ownerID string) error`及上下文查询，任务12才注册公共入口；不增加临时放行生产路径。
 
-- [ ] **步骤5：运行 `go test ./util/polymarket ./internal/tradersync/...` 及对应confirmation集成测试。**覆盖精确URL、canonical冲突、结构变化、跨域重定向、身份变化/超时、owner错用、到期、不同request重消费；6区间逐项缺失、负值、真0、31日边界、30日裁切、365日、跨年及舍入证据缺失。提交 `feat(trader-sync): resolve targets with evidence-backed profile data`。
+- [x] **步骤5：运行 `go test ./util/polymarket ./internal/tradersync/...` 及对应confirmation集成测试。**覆盖精确URL、canonical冲突、结构变化、跨域重定向、身份变化/超时、owner错用、到期、不同request重消费；6区间逐项缺失、负值、真0、31日边界、30日裁切、365日、跨年及舍入证据缺失。提交 `feat(trader-sync): resolve targets with evidence-backed profile data`。
 
 ## 任务6：独立订阅、备注、十模块授权与原子撤权
 
@@ -625,6 +625,7 @@ func Eligible(c tsmodel.Eligibility,s tsmodel.Subscription) bool {
 - 新增：`internal/tradersync/projector.go`、`internal/tradersync/store/activities.go`、`internal/tradersync/store/queries/activities.sql`、`internal/tradersync/types/activity.go`、`internal/tradersync/render.go`、`internal/tradersync/render_test.go`、`internal/notification/store/transactional_enqueue.go`。
 - 修改：权威`internal/accountstate/store/migrations/000001_init.sql`、`internal/tradersync/store/revocation.go`、`internal/notification/store/queries/account_notifications.sql`、`internal/notification/store/attempts.go`。
 - 测试：`internal/tradersync/projector_test.go`、`internal/tradersync/store/activities_integration_test.go`、`internal/notification/store/transactional_enqueue_integration_test.go`。
+- 最早纯文本消费者适配：共享通知载荷/必要schema-query、Sender/SendRequest及util Telegram实际调用明确保存并消费消息格式；Trader Sync普通纯文本、既有HTML消费者显式保留HTML。格式与正文冻结，摘要任务11复用。
 **Interfaces**
 - 消费：任务7确认/版本/Trade、任务8TradeMetadata、任务9Candidate/Eligible、任务1account gate。
 - 产出tsmodel：`Activity{ID int64; OwnerID,SubscriptionID string; SourceID int64; Trade Trade; Metadata TradeMetadata; NoteSnapshot,NotificationMode,NotificationReason string; SettledAt,ReceivedAt,RecordedAt time.Time; Generation uint64}`；`Projection{Candidate Candidate; Trade Trade; Confirmation CanonicalEvidence; Metadata TradeMetadata}`。NotificationMode在形成事务中固定in_app_only/ordinary/summary；未绑定原因unbound_at_formation不因未来绑定改变。
@@ -645,7 +646,7 @@ func TestClassificationRetainsFirstTenOrdinary(t *testing.T) {
 
 真实DB测试用同owner记录时间t-60秒、t-60秒+1微秒和当前t，断言左端排除、右端包含；同秒用ID稳定顺序。运行 `go test ./internal/tradersync -run TestClassification -count=1` 和新集成测试确认红灯。
 
-- [ ] **步骤2：实现活动/外发资格同事务和持久唯一约束。**新增`trader_sync_activities`，(subscription_id,source_record_id)唯一，owner/订阅/原interval引用一致，trade_json与note_snapshot不可变，metadata展示引用独立。取得account gate后重查数据库grant、当前enabled、generation及成功原区间；原epoch关闭不失去资格。普通消息渲染入口定义`RenderActivity(activity tsmodel.Activity,siteURL string) (string,error)`，在`internal/tradersync/render.go`实现，输出纯文本：目标备注/名称和完整wallet、TRADE及BUY/SELL、市场/Outcome/精确价格比值、份额/金额/币种/独立fee、明确“结算时间”、市场链接及站内详情。缺市场保留PositionID与缺失原因；Combo标明组合自身Outcome、整体关系及腿资料状态，完整腿在站内详情保留。长标题允许显式省略显示字符但保留身份与完整链接，不静默截断交易事实。
+- [ ] **步骤2：实现活动/外发资格同事务和持久唯一约束。**新增`trader_sync_activities`，(subscription_id,source_record_id)唯一，owner/订阅/原interval引用一致，trade_json与note_snapshot不可变，metadata展示引用独立。取得account gate后重查数据库grant、当前enabled、generation及成功原区间；原epoch关闭不失去资格。普通消息渲染入口定义`RenderActivity(activity tsmodel.Activity,siteURL string) (string,error)`，在`internal/tradersync/render.go`实现，输出纯文本：目标备注/名称和完整wallet、TRADE及BUY/SELL、市场/Outcome/精确价格比值、份额/金额/币种/独立fee、明确“结算时间”、市场链接及站内详情。缺市场保留PositionID与缺失原因；Combo标明组合自身Outcome、整体关系及腿资料状态，完整腿在站内详情保留。长标题允许显式省略显示字符但保留身份与完整链接，不静默截断交易事实。本任务同步移除Sender对所有消息强制HTML的假设：显式格式随实际规范文本持久冻结并进入不可变发送证据，纯文本请求不设parse_mode。真实回环测试覆盖特殊字符/emoji/完整链接与旧HTML消费者；不在重试时重新渲染或改变冻结文本。
 
 ```sql
 CREATE SEQUENCE trader_sync_activity_id_seq AS bigint INCREMENT BY 1 CACHE 1 NO CYCLE;
