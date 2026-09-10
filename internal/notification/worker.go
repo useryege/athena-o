@@ -86,6 +86,7 @@ func (s *Service) stopWorkerLocked() {
 }
 
 type claimedNotification struct {
+	reply   *notificationstore.ClaimedTelegramBindingReply
 	system  *notificationstore.ClaimedSystemNotificationDelivery
 	account *notificationstore.ClaimedAccountNotificationDelivery
 }
@@ -105,7 +106,9 @@ func (s *Service) runWorker(ctx context.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			if delivery.system != nil {
+			if delivery.reply != nil {
+				s.processClaimedTelegramBindingReply(ctx, *delivery.reply)
+			} else if delivery.system != nil {
 				s.processClaimedSystemNotification(ctx, *delivery.system)
 			} else if delivery.account != nil {
 				s.processClaimedAccountNotification(ctx, *delivery.account)
@@ -147,7 +150,18 @@ func (s *Service) claimFairNotificationBatch(ctx context.Context, preferAccount 
 			accountItems = items
 		}
 	}
-	return interleaveClaimedNotifications(systemItems, accountItems, preferAccount)
+	items := interleaveClaimedNotifications(systemItems, accountItems, preferAccount)
+	// Replies share this worker and its send interval until the unified scheduler replaces claiming.
+	replies, err := s.store.ClaimPendingTelegramBindingReplies(ctx, claimOptions(1))
+	if err != nil {
+		log.WithError(err).Warn("failed to claim telegram binding replies")
+	} else {
+		for _, reply := range replies {
+			item := reply
+			items = append(items, claimedNotification{reply: &item})
+		}
+	}
+	return items
 }
 
 func interleaveClaimedNotifications(
@@ -187,6 +201,15 @@ func (s *Service) processClaimedAccountNotification(ctx context.Context, item no
 	if outcome.Code == "recipient_unreachable" {
 		if err := s.store.MarkTelegramBindingUnreachable(ctx, item.AccountID, item.TelegramChatID, item.BindingRevision, outcome.Code); err != nil {
 			log.WithError(err).Warn("failed to mark telegram binding unreachable")
+		}
+	}
+}
+
+func (s *Service) processClaimedTelegramBindingReply(ctx context.Context, item notificationstore.ClaimedTelegramBindingReply) {
+	outcome := s.sendPermittedNotification(ctx, delivery.WorkRef{Kind: "reply", ID: item.ID}, SendRequest{TelegramChatID: item.TelegramChatID, Text: item.Body})
+	if outcome.Code == "recipient_unreachable" && item.AccountID != "" {
+		if err := s.store.MarkTelegramBindingUnreachable(ctx, item.AccountID, item.TelegramChatID, item.BindingRevision, outcome.Code); err != nil {
+			log.WithError(err).Warn("failed to mark reply binding unreachable")
 		}
 	}
 }

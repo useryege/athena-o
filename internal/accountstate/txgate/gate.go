@@ -10,8 +10,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func WithAccountTx(ctx context.Context, pool *pgxpool.Pool, accountID string, fn func(pgx.Tx) error) error {
-	if pool == nil {
+type Beginner interface {
+	BeginTx(context.Context, pgx.TxOptions) (pgx.Tx, error)
+}
+
+func WithAccountTx(ctx context.Context, pool Beginner, accountID string, fn func(pgx.Tx) error) error {
+	// Preserve nil pgxpool validation after accepting transaction decorators.
+	concretePool, isConcretePool := pool.(*pgxpool.Pool)
+	if pool == nil || (isConcretePool && concretePool == nil) {
 		return fmt.Errorf("account transaction pool is required")
 	}
 	canonicalAccountID, err := canonicalAccountID(accountID)

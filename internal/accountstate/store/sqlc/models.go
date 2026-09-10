@@ -163,9 +163,37 @@ type TelegramBindingAttempt struct {
 	UpdatedAt     pgtype.Timestamptz
 }
 
+type TelegramBindingReply struct {
+	ID                       int64
+	UpdateID                 int64
+	AccountID                pgtype.UUID
+	BindingRevision          pgtype.Int8
+	TelegramChatID           int64
+	Body                     string
+	PayloadDigest            []byte
+	Status                   string
+	Attempts                 int32
+	CreatedAt                pgtype.Timestamptz
+	NextAttemptAt            pgtype.Timestamptz
+	LastAttemptAt            pgtype.Timestamptz
+	LockedAt                 pgtype.Timestamptz
+	LockedBy                 pgtype.Text
+	CurrentAttemptID         pgtype.UUID
+	ProviderMessageID        pgtype.Text
+	ErrorMessage             pgtype.Text
+	SentAt                   pgtype.Timestamptz
+	EligibilityRevokedAt     pgtype.Timestamptz
+	EligibilityRevokedReason pgtype.Text
+}
+
 type TelegramBindingVersion struct {
 	AccountID pgtype.UUID
 	Revision  int64
+}
+
+type TelegramConsumedUpdate struct {
+	UpdateID   int64
+	ConsumedAt pgtype.Timestamptz
 }
 
 type TelegramPollingState struct {

@@ -276,7 +276,7 @@ SET message_thread_id = EXCLUDED.message_thread_id;
 
 CREATE TABLE notification_delivery_attempts (
   id UUID PRIMARY KEY,
-  work_kind TEXT NOT NULL CHECK (work_kind IN ('account', 'system')),
+  work_kind TEXT NOT NULL CHECK (work_kind IN ('account', 'system', 'reply')),
   work_id BIGINT NOT NULL CHECK (work_id > 0),
   owner_id UUID,
   sender_incarnation UUID NOT NULL,
@@ -288,7 +288,7 @@ CREATE TABLE notification_delivery_attempts (
   outcome TEXT CHECK (outcome IN ('sent', 'retryable', 'failed', 'unknown')),
   outcome_code TEXT,
   retry_after INTERVAL,
-  CHECK ((work_kind = 'account') = (owner_id IS NOT NULL)),
+  CHECK ((work_kind <> 'account' OR owner_id IS NOT NULL) AND (work_kind <> 'system' OR owner_id IS NULL)),
   CHECK ((result_at IS NULL) = (outcome IS NULL))
 );
 CREATE INDEX idx_notification_delivery_attempts_work
@@ -393,6 +393,37 @@ CREATE TABLE telegram_polling_state (
 INSERT INTO telegram_polling_state (singleton)
 VALUES (TRUE);
 
+CREATE TABLE telegram_consumed_updates (
+  update_id BIGINT PRIMARY KEY CHECK (update_id >= 0),
+  consumed_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
+
+CREATE TABLE telegram_binding_replies (
+  id BIGSERIAL PRIMARY KEY,
+  update_id BIGINT NOT NULL UNIQUE REFERENCES telegram_consumed_updates(update_id),
+  account_id UUID,
+  binding_revision BIGINT,
+  telegram_chat_id BIGINT NOT NULL CHECK (telegram_chat_id > 0),
+  body TEXT NOT NULL,
+  payload_digest BYTEA NOT NULL CHECK (octet_length(payload_digest) = 32),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sending', 'sent', 'failed', 'unknown', 'cancelled')),
+  attempts INT NOT NULL DEFAULT 0 CHECK (attempts BETWEEN 0 AND 5),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  last_attempt_at TIMESTAMPTZ,
+  locked_at TIMESTAMPTZ,
+  locked_by TEXT,
+  current_attempt_id UUID REFERENCES notification_delivery_attempts(id),
+  provider_message_id TEXT,
+  error_message TEXT,
+  sent_at TIMESTAMPTZ,
+  eligibility_revoked_at TIMESTAMPTZ,
+  eligibility_revoked_reason TEXT,
+  CHECK ((account_id IS NULL) = (binding_revision IS NULL)),
+  CHECK (binding_revision IS NULL OR binding_revision > 0)
+);
+CREATE INDEX idx_telegram_binding_replies_ready ON telegram_binding_replies(status, next_attempt_at, id);
+
 CREATE TABLE account_notification_deliveries (
   id BIGSERIAL PRIMARY KEY,
   account_id UUID NOT NULL,
@@ -439,6 +470,8 @@ CREATE INDEX idx_account_notification_deliveries_pending_ready
 -- +goose Down
 
 DROP TABLE account_notification_deliveries;
+DROP TABLE telegram_binding_replies;
+DROP TABLE telegram_consumed_updates;
 DROP TABLE telegram_polling_state;
 DROP TABLE telegram_binding_attempts;
 DROP TABLE telegram_bindings;

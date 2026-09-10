@@ -70,7 +70,7 @@ Market Radar、Sports Live、Managed OO、Worm Markets 自行决定告警条件�
 - 系统操作不接受或推断普通账户 UUID，不调用 AccountNotificationService。
 - 会员与 API Key 不能读取系统记录、详情、运行状态或入队测试。
 - 入队前逻辑 chat 与 Topic 必须解析为持久正数 thread ID。
-- 系统与账户交错领取，共享 Bot 与发送间隔，任一队列不能长期饿死另一队列。
+- 系统与账户交错领取，每轮再追加至多一条 Bot 绑定回复；三者共享 Bot、持久 attempt 和现有串行发送间隔，回复不在 poller 内直发。reply 有独立 outbox，不写入系统通知记录。
 - Provider 错误不修改 Notification 数据库中的生产者告警状态；来源侧接受边界由各服务自行负责。
 - 当前模型不含旧通用 topic/delivery 表和 Notifications 账户模块，也不增加历史兼容路径。
 - 只有已提交许可才可发送；结果更新绑定当前 attempt 与 sending，sent/failed/unknown/cancelled 不可复活。
@@ -91,7 +91,7 @@ gRPC health 报告生命周期就绪。共享运行 RPC 报告 Bot 可用性/ID/
 
 系统记录展示来源、严重程度、逻辑 chat、Topic、channel、结果、message/error、创建/授权/实际起点/结果/发送时间。日志使用投递/attempt ID 和逻辑 chat，不记录内部 Bearer 或 Bot token。
 
-当前 worker 保留交错串行调度。崩溃后遗留 sending 不会被超时领取；确认旧 sender 已停止后终结未知结果、跨 chat 并发与统一配额属于 [Trader Sync 后续实现](../trading/trader-sync-activity-alerts.md)，尚未实现。不能在启动时按不同 incarnation 批量终结仍存活 sender 的任务。
+当前 worker 保留交错串行调度，账户/系统批量之外每轮追加至多一条 reply。Bot update 的绑定、消费记录、offset 和回复在同一数据库事务提交；回复以 `work_kind=reply` 复用许可/结果路径和五次上限，unknown 不重发。崩溃后遗留 sending 不会被超时领取；确认旧 sender 已停止后终结未知结果、跨 chat 并发与统一配额属于 [Trader Sync 后续实现](../trading/trader-sync-activity-alerts.md)，尚未实现。不能在启动时按不同 incarnation 批量终结仍存活 sender 的任务。
 
 ## 维护检查
 

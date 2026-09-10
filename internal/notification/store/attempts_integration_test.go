@@ -4,11 +4,14 @@ package store
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"github.com/google/uuid"
 	"github.com/useryege/athena/internal/accountstate/store/migrations"
 	"github.com/useryege/athena/internal/notification/delivery"
 	"github.com/useryege/athena/internal/testutil/pgtest"
+	utiltelegram "github.com/useryege/athena/util/telegram"
 	"testing"
 	"time"
 )
@@ -18,7 +21,14 @@ func attemptFixture(t *testing.T, kind string) (*SQLStore, delivery.WorkRef) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
 	ctx := context.Background()
 	var id int64
-	if kind == "system" {
+	if kind == "reply" {
+		if _, err := db.Pool.Exec(ctx, `INSERT INTO telegram_consumed_updates(update_id) VALUES (42)`); err != nil {
+			t.Fatal(err)
+		}
+		if err := db.Pool.QueryRow(ctx, `INSERT INTO telegram_binding_replies(update_id,telegram_chat_id,body,payload_digest) VALUES(42,123,'reply',decode(repeat('ab',32),'hex')) RETURNING id`).Scan(&id); err != nil {
+			t.Fatal(err)
+		}
+	} else if kind == "system" {
 		if _, err := db.Pool.Exec(ctx, `INSERT INTO system_notification_topics(telegram_chat,label,message_thread_id) VALUES('test','default',1)`); err != nil {
 			t.Fatal(err)
 		}
@@ -41,14 +51,18 @@ func attemptFixture(t *testing.T, kind string) (*SQLStore, delivery.WorkRef) {
 func deliveryState(t *testing.T, s *SQLStore, ref delivery.WorkRef) string {
 	t.Helper()
 	var state string
-	if err := s.pool.QueryRow(context.Background(), `SELECT status FROM `+ref.Kind+`_notification_deliveries WHERE id=$1`, ref.ID).Scan(&state); err != nil {
+	table := ref.Kind + "_notification_deliveries"
+	if ref.Kind == "reply" {
+		table = "telegram_binding_replies"
+	}
+	if err := s.pool.QueryRow(context.Background(), `SELECT status FROM `+table+` WHERE id=$1`, ref.ID).Scan(&state); err != nil {
 		t.Fatal(err)
 	}
 	return state
 }
 
 func TestAttemptPermitIsSingleUseAndOutcomeCAS(t *testing.T) {
-	for _, kind := range []string{"account", "system"} {
+	for _, kind := range []string{"account", "system", "reply"} {
 		t.Run(kind, func(t *testing.T) {
 			s, ref := attemptFixture(t, kind)
 			ctx := context.Background()
@@ -294,9 +308,9 @@ func TestAttemptBindingGateSerializesRebindAndAuthorize(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	digest := make([]byte, 32)
-	digest[0] = 1
-	if _, err = s.CreateTelegramBindingAttempt(ctx, CreateTelegramBindingAttemptRequest{ID: uuid.NewString(), AccountID: uuidString(owner), TokenDigest: digest, ExpiresAt: time.Now().Add(time.Minute)}); err != nil {
+	token := base64.RawURLEncoding.EncodeToString(make([]byte, 32))
+	digest := sha256.Sum256([]byte(token))
+	if _, err = s.CreateTelegramBindingAttempt(ctx, CreateTelegramBindingAttemptRequest{ID: uuid.NewString(), AccountID: uuidString(owner), TokenDigest: digest[:], ExpiresAt: time.Now().Add(time.Minute)}); err != nil {
 		t.Fatal(err)
 	}
 	tx, err := s.pool.Begin(ctx)
@@ -309,7 +323,7 @@ func TestAttemptBindingGateSerializesRebindAndAuthorize(t *testing.T) {
 	}
 	rebound := make(chan error, 1)
 	go func() {
-		_, err := s.CompleteTelegramBindingAttempt(ctx, CompleteTelegramBindingAttemptRequest{TokenDigest: digest, TelegramUserID: 456, TelegramChatID: 456, TelegramDisplayName: "rebound"})
+		err := s.ApplyBotUpdate(ctx, utiltelegram.Update{ID: 42, Message: &utiltelegram.Message{Text: "/start " + token, ChatType: "private", UserID: 456, ChatID: 456, FirstName: "rebound"}})
 		rebound <- err
 	}()
 	waitForAccountGateWaiters(t, ctx, s, 1)

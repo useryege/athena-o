@@ -16,11 +16,11 @@
 | 公开会员入口 | [internal/server/notification/notification.proto](../../../internal/server/notification/notification.proto), [internal/server/notification/notification.go](../../../internal/server/notification/notification.go) | 会员绑定 HTTP 路由, `authenticatedAccountID`, `publicTelegramBinding` |
 | 公开鉴权 | [internal/server/authz.go](../../../internal/server/authz.go) | `ordinaryMemberInteractiveGRPCMethods`, `authorizeOrdinaryInteractiveAccount` |
 | 绑定与入队逻辑 | [internal/notification/service.go](../../../internal/notification/service.go) | `GetTelegramBinding`, `CreateTelegramBindingAttempt`, `DeleteTelegramBinding`, `SendAccountNotification` |
-| Telegram 更新消费 | [internal/notification/poller.go](../../../internal/notification/poller.go) | `TelegramPoller`, `handleMessage`, `handleMyChatMember` |
+| Telegram 更新消费 | [internal/notification/poller.go](../../../internal/notification/poller.go) | `TelegramPoller`、`ApplyBotUpdate` |
 | 公平投递与共享发送器 | [internal/notification/worker.go](../../../internal/notification/worker.go), [internal/notification/sender.go](../../../internal/notification/sender.go) | `claimFairNotificationBatch`, `processClaimedAccountNotification`, `TelegramSender` |
 | Telegram 适配器 | [util/telegram/telegram.go](../../../util/telegram/telegram.go) | `Client`, `PollUpdates`, `GetWebhookInfo`, dynamic `SendMessageRequest.ChatID` |
 | 持久模型与查询 | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql), [internal/notification/store/queries/telegram_bindings.sql](../../../internal/notification/store/queries/telegram_bindings.sql), [internal/notification/store/queries/account_notifications.sql](../../../internal/notification/store/queries/account_notifications.sql) | 绑定、尝试、消费位置、版本及账户投递表 |
-| 事务存储入口 | [internal/notification/store/telegram_bindings.go](../../../internal/notification/store/telegram_bindings.go), [internal/notification/store/account_notifications.go](../../../internal/notification/store/account_notifications.go) | `CompleteTelegramBindingAttempt`, `EnqueueAccountNotification`, `Authorize`、`RecordStarted`、`RecordOutcome` |
+| 事务存储入口 | [internal/notification/store/bot_updates.go](../../../internal/notification/store/bot_updates.go)、[internal/notification/store/telegram_bindings.go](../../../internal/notification/store/telegram_bindings.go), [internal/notification/store/account_notifications.go](../../../internal/notification/store/account_notifications.go) | `ApplyBotUpdate`、`EnqueueAccountNotification`, `Authorize`、`RecordStarted`、`RecordOutcome` |
 | 进程装配与内部鉴权 | [cmd/athena-notification/commands/athena_notification.go](../../../cmd/athena-notification/commands/athena_notification.go), [internal/notification/server.go](../../../internal/notification/server.go), [internal/notification/apiclient/internal_auth.go](../../../internal/notification/apiclient/internal_auth.go) | 单一 Telegram 客户端, `InternalAuthTokenEnv`, gRPC 拦截器 |
 | 会员界面 | [ui/src/app/member/pages/notifications.tsx](../../../ui/src/app/member/pages/notifications.tsx), [ui/src/app/member/notification-service.ts](../../../ui/src/app/member/notification-service.ts), [ui/src/app/member/notification-storage.ts](../../../ui/src/app/member/notification-storage.ts) | `NotificationsPage`, `MemberNotificationService`, 单标签页绑定指引 |
 | 持久发送许可及结果 | [attempts.go](../../../internal/notification/store/attempts.go)、[delivery/types.go](../../../internal/notification/delivery/types.go)、[delivery_attempts.sql](../../../internal/notification/store/queries/delivery_attempts.sql) | `Permit`、`Outcome`、`Authorize`、`RecordStarted`、`RecordOutcome` |
@@ -51,12 +51,12 @@ flowchart LR
 2. `GET /api/v1/notification-bindings/telegram` 注入当前账户 UUID，返回安全绑定投影、当前绑定尝试和 Bot 名称/可用性；浏览器不接收 Telegram 数字 user ID 或私聊 chat ID。
 3. 创建绑定尝试生成 32 字节加密随机数，编码为无 padding 的 43 字符 Base64URL token，仅保存 SHA-256 digest。新尝试替换该账户旧尝试，有效期十分钟；响应只返回一次 `https://t.me/<bot>?start=<token>` 与 `/start <token>`。
 4. 会员页面把尝试 ID、深链接与备用命令保存在当前标签页 `sessionStorage`。可见时每三秒单飞读取状态；恢复焦点/可见时立即读取。成功、失败、本地过期、尝试 ID 不符、取消、解绑、会话结束和账户变化均清理缓存。
-5. Poller 只接受非 Bot 用户在私聊中发送的 token，且 Telegram user ID 必须等于 chat ID。解析时不记录 token 或更新正文；取得账户和 Telegram 身份 advisory lock，锁定并复核尝试，检查身份唯一性，分配新 revision，终止旧绑定未许可投递，替换绑定并删除已消费尝试，全部在同一事务完成。身份锁在唯一索引之前串行化不同账户的竞争。
+5. Poller 将每个 update 交给 `ApplyBotUpdate`。事务先插入 `telegram_consumed_updates`，重复 update ID 直接跳过。只接受非 Bot 用户的私聊 token，且 user ID 必须等于 chat ID；先取账户 gate，再取 Telegram 身份 advisory lock，锁定并复核尝试、身份唯一性，分配新 revision，终止旧绑定未许可投递及成功绑定回复，替换绑定并删除尝试。解析不记录 token 或更新正文。
 6. 重绑在新 token 成功消费前保持原绑定有效。取消只删除尝试。解绑在同一账户 gate 内删除绑定和尝试，取消 pending 投递，并给 sending 投递写永久资格墓碑；已有许可仍可完成或成为 unknown。
-7. 每条更新处理成功后推进持久 offset；空成功轮询更新 `last_poll_at`，处理更新也写 `last_update_at`。重复更新受 token 状态、身份、账户锁和 revision 约束。
+7. 消费记录、绑定/版本及尝试变化、`telegram_binding_replies` 回复和持久 offset 在同一个 `pgx.Tx` 提交。失败全回滚；提交确认丢失只重放这个数据库事务，幂等记录防止重复增 revision 或回复。成功后重启从持久 offset 继续；空成功轮询仍更新 `last_poll_at`。Poller 不调用 `SendMessage`。
 8. `my_chat_member` 的离开/封禁更新将对应绑定标为 unreachable，取消 pending 并撤销 sending 的后续尝试资格。之后的 `member` 更新恢复同一绑定可达性，但不复活已取消投递或资格墓碑。
 9. `SendAccountNotification` 规范化账户 UUID、内容、来源、严重程度和幂等键，计算 payload digest，在账户 gate 内入队。相同 `(account_id, source, idempotency_key)` 返回原投递；不同 payload 冲突。绑定不存在或不可达时不插入投递；只有 connected 绑定产生 pending 并返回 `QUEUED` 与 ID。
-10. Worker 交替领取账户与系统队列。领取只占用调度锁，不增加发送尝试数。`Authorize` 在共享账户 gate 的短事务中再次核验 owner、私聊身份、chat/revision、connected、pending、永久资格墓碑、重试时间与五次上限，插入 attempt 并将投递改为 sending，提交后才调用 Telegram。
+10. Worker 交替领取账户与系统队列，并在每轮追加至多一条 reply，三者共享现有串行 1.1 秒发送间隔；当前批量上限用于账户/系统，reply 为额外一条。领取只占用调度锁，不增加发送尝试数。`Authorize` 在共享账户 gate 的短事务中再次核验 owner、私聊身份、chat/revision、connected、pending、永久资格墓碑、重试时间与五次上限，插入 attempt 并将投递改为 sending，提交后才调用 Telegram。
 11. HTTP `RoundTrip` 入口通过容量为一的 channel 握手记录实际 started 时间；回调不等待数据库或 HTTP 响应。结果通过独立事务按投递 ID、attempt UUID、sending 状态 CAS 写入。
 
 ## 状态与数据
@@ -64,7 +64,8 @@ flowchart LR
 - `telegram_binding_versions` 为每个账户保存跨解绑持续递增的 revision；只有成功 token 建立/替换绑定才递增，可达性变化不改变 revision。
 - `telegram_bindings` 以账户 UUID 为键，Telegram user ID 与私聊 chat ID 各自唯一；保存安全名称、状态、revision、绑定/更新时间与错误类别。
 - `telegram_binding_attempts` 每账户一行，全局唯一 32 字节 token digest；状态为 pending/failed，失败码如 `expired`、`telegram_identity_in_use`。绑定尝试状态与消息状态分离。
-- `telegram_polling_state` 为单例，保存 next update ID、最近成功轮询/处理时间及更新时间。
+- `telegram_polling_state` 为单例，保存 next update ID、最近成功轮询/处理时间及更新时间。`telegram_consumed_updates` 按 update ID 唯一，消费证据无自动清理。
+- `telegram_binding_replies` 按 update ID 唯一，冻结私聊 chat、正文、payload digest。成功回复保存 owner/revision，解绑、重绑或不可达终止旧 pending 并永久禁止旧 sending 后续尝试。无效、过期或身份冲突回复没有成功绑定资格，owner/revision 为空，目标只来自已验证私聊 update。全部回复以 `work_kind=reply` 使用统一 `Authorize`、`RecordStarted`、`RecordOutcome`；最多五次，unknown 不重发。
 - `account_notification_deliveries` 固定 owner、来源、幂等键、payload digest、正文、私聊 chat ID 与 revision；状态为 pending/sending/sent/failed/unknown/cancelled。`current_attempt_id` 指向当前许可，`eligibility_revoked_at/reason` 永久禁止旧投递重试。
 - `notification_delivery_attempts` 保存 UUID、work kind/ID、账户 owner、sender incarnation、payload digest、authorized/started/result 时间、provider message ID、outcome/code 和 retry-after。许可事务核验 kind 对应的投递及 owner；不可把许可用于不同 payload。缺失的实际起点保留 NULL，不由授权或结果时间补造。
 
@@ -103,7 +104,7 @@ flowchart LR
 
 管理员运行入口报告进程生命周期、Bot 可用性/ID/名称、poller 状态、最近轮询/更新时间、账户 pending/retry/failed/sending/unknown 独立计数与不可达绑定数。gRPC health 在资料同步、webhook 检查、poller 与 worker 启动后才为 SERVING。诊断日志使用内部更新/投递/attempt ID；轮询失败、结果写库失败和绑定更新错误为 warning。
 
-当前持久发送许可与结果路径已实现。崩溃遗留 sending 保留事实且不会重新领取；确认旧 sender 已停止后，将无结果 attempt 终结为 unknown 的恢复入口和跨 chat 调度属于 [Trader Sync 后续实现](../trading/trader-sync-activity-alerts.md)，尚未实现。产品 grant 撤销钩子也由后续任务接入，不能把已有绑定墓碑误称为完整产品撤权实现。
+当前持久发送许可与结果路径以及 Bot update 原子消费、回复 outbox 已实现。运行 RPC 暂未增加独立 reply 队列计数。崩溃遗留 sending 保留事实且不会重新领取；确认旧 sender 已停止后，将无结果 attempt 终结为 unknown 的恢复入口和跨 chat 调度属于 [Trader Sync 后续实现](../trading/trader-sync-activity-alerts.md)，尚未实现。产品 grant 撤销钩子也由后续任务接入，不能把已有绑定墓碑误称为完整产品撤权实现。
 
 ## 维护检查
 

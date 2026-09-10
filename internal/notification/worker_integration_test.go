@@ -137,3 +137,66 @@ func TestWorkerDoesNotResendUnknownOrCrashedPermit(t *testing.T) {
 		t.Fatalf("states %s/%s start %q calls %d", unknown.Status, crashed.Status, crashed.StartedAt, calls.Load())
 	}
 }
+
+func TestWorkerConsumesBindingReplyThroughPermit(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	store := notificationstore.NewSQLStore(db.Pool)
+	if err := store.ApplyBotUpdate(ctx, utiltelegram.Update{ID: 42, Message: &utiltelegram.Message{ChatType: "private", UserID: 123, ChatID: 123, Text: "/start invalid"}}); err != nil {
+		t.Fatal(err)
+	}
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		_, _ = io.Copy(io.Discard, r.Body)
+		var state, kind string
+		var attempts int
+		if err := db.Pool.QueryRow(ctx, `SELECT r.status,r.attempts,a.work_kind FROM telegram_binding_replies r JOIN notification_delivery_attempts a ON a.id=r.current_attempt_id`).Scan(&state, &attempts, &kind); err != nil {
+			t.Error(err)
+		}
+		if state != "sending" || attempts != 1 || kind != "reply" {
+			t.Errorf("reply HTTP without durable permit: %s %d %s", state, attempts, kind)
+		}
+		_, _ = io.WriteString(w, `{"ok":true,"result":{"message_id":99}}`)
+	}))
+	defer server.Close()
+	client, err := utiltelegram.NewClient(utiltelegram.Config{BotToken: "test", BaseURL: server.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+	service := NewService(store, NewTelegramSender(client, nil), nil, nil)
+	// The existing dispatch consumer must actually discover reply work.
+	claimed := service.claimFairNotificationBatch(ctx, false)
+	if len(claimed) != 1 {
+		t.Fatalf("worker must claim binding reply, got %d", len(claimed))
+	}
+	service.workerConfig.SendInterval = time.Millisecond
+	service.workerConfig.PollInterval = time.Millisecond
+	// Release the probe's scheduling lease so the live worker can pick it up.
+	if _, err := db.Pool.Exec(ctx, `UPDATE telegram_binding_replies SET locked_at=NULL`); err != nil {
+		t.Fatal(err)
+	}
+	workerCtx, cancel := context.WithCancel(ctx)
+	done := make(chan struct{})
+	go func() { defer close(done); service.runWorker(workerCtx) }()
+	defer func() { cancel(); <-done }()
+	deadline := time.After(3 * time.Second)
+	for {
+		var state string
+		var started bool
+		if err := db.Pool.QueryRow(ctx, `SELECT r.status,COALESCE(a.started_at IS NOT NULL,false) FROM telegram_binding_replies r LEFT JOIN notification_delivery_attempts a ON a.id=r.current_attempt_id`).Scan(&state, &started); err != nil {
+			t.Fatal(err)
+		}
+		if state == "sent" {
+			if calls.Load() != 1 || !started {
+				t.Fatalf("calls/start %d/%v", calls.Load(), started)
+			}
+			break
+		}
+		select {
+		case <-deadline:
+			t.Fatal("worker never sent reply")
+		case <-time.After(5 * time.Millisecond):
+		}
+	}
+}

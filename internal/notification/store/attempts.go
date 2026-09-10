@@ -38,6 +38,12 @@ func lockPermitWork(ctx context.Context, queries *q.Queries, ref delivery.WorkRe
 			return permitWork{}, err
 		}
 		return permitWork{owner: uuidString(r.AccountID), digest: r.PayloadDigest, status: r.Status, attempts: int(r.Attempts), eligible: r.BindingEligible && !r.EligibilityRevokedAt.Valid, next: r.NextAttemptAt.Time, current: r.CurrentAttemptID}, nil
+	case "reply":
+		r, err := queries.GetReplyDeliveryForPermit(ctx, ref.ID)
+		if err != nil {
+			return permitWork{}, err
+		}
+		return permitWork{owner: uuidString(r.AccountID), digest: r.PayloadDigest, status: r.Status, attempts: int(r.Attempts), eligible: r.BindingEligible.Valid && r.BindingEligible.Bool && !r.EligibilityRevokedAt.Valid, next: r.NextAttemptAt.Time, current: r.CurrentAttemptID}, nil
 	case "system":
 		r, err := queries.GetSystemDeliveryForPermit(ctx, ref.ID)
 		if err != nil {
@@ -89,6 +95,13 @@ func (s *SQLStore) Authorize(ctx context.Context, ref delivery.WorkRef, incarnat
 		}
 		owner = uuidString(id)
 	}
+	if ref.Kind == "reply" {
+		id, err := s.queries.GetReplyDeliveryOwner(ctx, ref.ID)
+		if err != nil {
+			return delivery.Permit{}, err
+		}
+		owner = uuidString(id)
+	}
 	var permit delivery.Permit
 	err := s.withPermitTx(ctx, owner, func(queries *q.Queries) error {
 		work, err := lockPermitWork(ctx, queries, ref)
@@ -115,6 +128,8 @@ func (s *SQLStore) Authorize(ctx context.Context, ref delivery.WorkRef, incarnat
 		var rows int64
 		if ref.Kind == "account" {
 			rows, err = queries.AuthorizeAccountDelivery(ctx, q.AuthorizeAccountDeliveryParams{ID: ref.ID, CurrentAttemptID: r.ID, LastAttemptAt: r.AuthorizedAt})
+		} else if ref.Kind == "reply" {
+			rows, err = queries.AuthorizeReplyDelivery(ctx, q.AuthorizeReplyDeliveryParams{ID: ref.ID, CurrentAttemptID: r.ID, LastAttemptAt: r.AuthorizedAt})
 		} else {
 			rows, err = queries.AuthorizeSystemDelivery(ctx, q.AuthorizeSystemDeliveryParams{ID: ref.ID, CurrentAttemptID: r.ID, LastAttemptAt: r.AuthorizedAt})
 		}
@@ -212,6 +227,8 @@ func (s *SQLStore) RecordOutcome(ctx context.Context, p delivery.Permit, o deliv
 		var rows int64
 		if p.Work.Kind == "account" {
 			rows, err = queries.RecordAccountDeliveryOutcome(ctx, q.RecordAccountDeliveryOutcomeParams{ID: p.Work.ID, CurrentAttemptID: r.ID, Status: state, ProviderMessageID: nullableText(o.MessageID), ErrorMessage: nullableText(o.Code), ResultAt: timestamptzValue(at), NextAttemptAt: timestamptzValue(at.Add(wait))})
+		} else if p.Work.Kind == "reply" {
+			rows, err = queries.RecordReplyDeliveryOutcome(ctx, q.RecordReplyDeliveryOutcomeParams{ID: p.Work.ID, CurrentAttemptID: r.ID, Status: state, ProviderMessageID: nullableText(o.MessageID), ErrorMessage: nullableText(o.Code), ResultAt: timestamptzValue(at), NextAttemptAt: timestamptzValue(at.Add(wait))})
 		} else {
 			rows, err = queries.RecordSystemDeliveryOutcome(ctx, q.RecordSystemDeliveryOutcomeParams{ID: p.Work.ID, CurrentAttemptID: r.ID, Status: state, ProviderMessageID: nullableText(o.MessageID), ErrorMessage: nullableText(o.Code), ResultAt: timestamptzValue(at), NextAttemptAt: timestamptzValue(at.Add(wait))})
 		}

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
@@ -15,8 +16,15 @@ import (
 	"github.com/useryege/athena/util/db/postgres"
 )
 
+type sqlPool interface {
+	notificationsqlc.DBTX
+	Begin(context.Context) (pgx.Tx, error)
+	BeginTx(context.Context, pgx.TxOptions) (pgx.Tx, error)
+	Close()
+}
+
 type SQLStore struct {
-	pool    *pgxpool.Pool
+	pool    sqlPool
 	queries notificationsqlc.Querier
 }
 

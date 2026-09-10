@@ -60,7 +60,7 @@ type CreateTelegramBindingAttemptRequest struct {
 	ExpiresAt   time.Time
 }
 
-type CompleteTelegramBindingAttemptRequest struct {
+type completeTelegramBindingAttemptRequest struct {
 	TokenDigest         []byte
 	TelegramUserID      int64
 	TelegramChatID      int64
@@ -204,6 +204,9 @@ func (s *SQLStore) DeleteTelegramBinding(ctx context.Context, accountID string) 
 	if _, err := queries.DeleteTelegramBindingAttemptByAccount(ctx, accountUUID); err != nil {
 		return false, fmt.Errorf("failed to delete stale telegram binding attempt: %w", err)
 	}
+	if err := queries.CancelTelegramBindingReplies(ctx, accountUUID); err != nil {
+		return false, err
+	}
 	if _, err := queries.CancelPendingAccountNotificationDeliveries(ctx, accountUUID); err != nil {
 		return false, fmt.Errorf("failed to cancel pending account notification deliveries: %w", err)
 	}
@@ -213,23 +216,15 @@ func (s *SQLStore) DeleteTelegramBinding(ctx context.Context, accountID string) 
 	return deleted, nil
 }
 
-func (s *SQLStore) CompleteTelegramBindingAttempt(ctx context.Context, req CompleteTelegramBindingAttemptRequest) (*TelegramBinding, error) {
-	if err := s.transactional(); err != nil {
-		return nil, err
-	}
-	attemptAccountID, err := s.queries.GetTelegramBindingAttemptAccountByToken(ctx, req.TokenDigest)
+func completeTelegramBindingAttemptTx(ctx context.Context, tx pgx.Tx, req completeTelegramBindingAttemptRequest) (*TelegramBinding, error) {
+	queries := notificationsqlc.New(tx)
+	attemptAccountID, err := queries.GetTelegramBindingAttemptAccountByToken(ctx, req.TokenDigest)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrTelegramBindingAttemptInvalid
 		}
 		return nil, fmt.Errorf("failed to resolve telegram binding attempt account: %w", err)
 	}
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin telegram binding completion transaction: %w", err)
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
-	queries := notificationsqlc.New(tx)
 	if err := queries.LockTelegramBindingAccount(ctx, attemptAccountID); err != nil {
 		return nil, fmt.Errorf("failed to lock telegram binding account: %w", err)
 	}
@@ -262,9 +257,6 @@ func (s *SQLStore) CompleteTelegramBindingAttempt(ctx context.Context, req Compl
 		}); err != nil {
 			return nil, fmt.Errorf("failed to expire telegram binding attempt: %w", err)
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return nil, fmt.Errorf("failed to commit expired telegram binding attempt: %w", err)
-		}
 		return nil, ErrTelegramBindingAttemptExpired
 	}
 	oldBinding, oldBindingErr := queries.GetTelegramBinding(ctx, attemptRow.AccountID)
@@ -284,9 +276,6 @@ func (s *SQLStore) CompleteTelegramBindingAttempt(ctx context.Context, req Compl
 		if err := failTelegramBindingAttempt(ctx, queries, attemptRow.ID, TelegramBindingFailureTelegramIdentityUsed); err != nil {
 			return nil, err
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return nil, fmt.Errorf("failed to commit used telegram identity attempt: %w", err)
-		}
 		return nil, ErrTelegramIdentityInUse
 	}
 	revision, err := queries.NextTelegramBindingRevision(ctx, attemptRow.AccountID)
@@ -294,6 +283,9 @@ func (s *SQLStore) CompleteTelegramBindingAttempt(ctx context.Context, req Compl
 		return nil, fmt.Errorf("failed to allocate telegram binding revision: %w", err)
 	}
 	if oldBindingErr == nil {
+		if err := queries.CancelTelegramBindingRepliesForBinding(ctx, notificationsqlc.CancelTelegramBindingRepliesForBindingParams{AccountID: oldBinding.AccountID, TelegramChatID: oldBinding.TelegramChatID, BindingRevision: pgtype.Int8{Int64: oldBinding.Revision, Valid: true}}); err != nil {
+			return nil, err
+		}
 		if _, err := queries.CancelPendingAccountNotificationDeliveriesForBinding(ctx, notificationsqlc.CancelPendingAccountNotificationDeliveriesForBindingParams{
 			AccountID: oldBinding.AccountID, TelegramChatID: oldBinding.TelegramChatID,
 			BindingRevision: oldBinding.Revision,
@@ -311,9 +303,6 @@ func (s *SQLStore) CompleteTelegramBindingAttempt(ctx context.Context, req Compl
 	}
 	if _, err := queries.DeleteTelegramBindingAttemptByID(ctx, attemptRow.ID); err != nil {
 		return nil, fmt.Errorf("failed to consume telegram binding attempt: %w", err)
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("failed to commit telegram binding: %w", err)
 	}
 	return telegramBindingFromValues(
 		bindingRow.AccountID, bindingRow.TelegramUserID, bindingRow.TelegramChatID,
@@ -351,6 +340,9 @@ func (s *SQLStore) MarkTelegramBindingUnreachable(
 	if err != nil {
 		return fmt.Errorf("failed to mark telegram binding unreachable: %w", err)
 	}
+	if err := queries.CancelTelegramBindingRepliesForBinding(ctx, notificationsqlc.CancelTelegramBindingRepliesForBindingParams{AccountID: accountUUID, TelegramChatID: chatID, BindingRevision: pgtype.Int8{Int64: revision, Valid: true}}); err != nil {
+		return err
+	}
 	if _, err := queries.CancelPendingAccountNotificationDeliveriesForBinding(ctx, notificationsqlc.CancelPendingAccountNotificationDeliveriesForBindingParams{
 		AccountID: accountUUID, TelegramChatID: chatID, BindingRevision: revision,
 	}); err != nil {
@@ -362,26 +354,18 @@ func (s *SQLStore) MarkTelegramBindingUnreachable(
 	return nil
 }
 
-func (s *SQLStore) MarkTelegramBindingStatusByIdentity(ctx context.Context, userID, chatID int64, status, reason string) error {
-	if err := s.transactional(); err != nil {
-		return err
-	}
+func markTelegramBindingStatusByIdentityTx(ctx context.Context, tx pgx.Tx, userID, chatID int64, status, reason string) error {
+	queries := notificationsqlc.New(tx)
 	identityParams := notificationsqlc.GetTelegramBindingByIdentityParams{
 		TelegramUserID: userID, TelegramChatID: chatID,
 	}
-	observed, err := s.queries.GetTelegramBindingByIdentity(ctx, identityParams)
+	observed, err := queries.GetTelegramBindingByIdentity(ctx, identityParams)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}
 		return fmt.Errorf("failed to resolve telegram binding identity: %w", err)
 	}
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to begin telegram binding status transaction: %w", err)
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
-	queries := notificationsqlc.New(tx)
 	if err := queries.LockTelegramBindingAccount(ctx, observed.AccountID); err != nil {
 		return fmt.Errorf("failed to lock telegram binding account: %w", err)
 	}
@@ -412,6 +396,9 @@ func (s *SQLStore) MarkTelegramBindingStatusByIdentity(ctx context.Context, user
 				return fmt.Errorf("failed to mark telegram binding unreachable: %w", err)
 			}
 		}
+		if err := queries.CancelTelegramBindingRepliesForBinding(ctx, notificationsqlc.CancelTelegramBindingRepliesForBindingParams{AccountID: current.AccountID, TelegramChatID: current.TelegramChatID, BindingRevision: pgtype.Int8{Int64: current.Revision, Valid: true}}); err != nil {
+			return err
+		}
 		if _, err := queries.CancelPendingAccountNotificationDeliveriesForBinding(ctx, notificationsqlc.CancelPendingAccountNotificationDeliveriesForBindingParams{
 			AccountID: current.AccountID, TelegramChatID: current.TelegramChatID, BindingRevision: current.Revision,
 		}); err != nil {
@@ -419,9 +406,6 @@ func (s *SQLStore) MarkTelegramBindingStatusByIdentity(ctx context.Context, user
 		}
 	default:
 		return fmt.Errorf("unsupported telegram binding status %q", status)
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("failed to commit telegram binding status: %w", err)
 	}
 	return nil
 }
@@ -433,26 +417,6 @@ func (s *SQLStore) GetTelegramPollingState(ctx context.Context) (TelegramPolling
 	row, err := s.queries.GetTelegramPollingState(ctx)
 	if err != nil {
 		return TelegramPollingState{}, fmt.Errorf("failed to get telegram polling state: %w", err)
-	}
-	state := TelegramPollingState{NextUpdateID: row.NextUpdateID, UpdatedAt: row.UpdatedAt.Time}
-	if row.LastPollAt.Valid {
-		state.LastPollAt = row.LastPollAt.Time
-	}
-	if row.LastUpdateAt.Valid {
-		state.LastUpdateAt = row.LastUpdateAt.Time
-	}
-	return state, nil
-}
-
-func (s *SQLStore) AdvanceTelegramPollingState(ctx context.Context, nextUpdateID int64, lastUpdateAt time.Time) (TelegramPollingState, error) {
-	if err := s.configured(); err != nil {
-		return TelegramPollingState{}, err
-	}
-	row, err := s.queries.AdvanceTelegramPollingState(ctx, notificationsqlc.AdvanceTelegramPollingStateParams{
-		NextUpdateID: nextUpdateID, LastUpdateAt: timestamptzValue(lastUpdateAt),
-	})
-	if err != nil {
-		return TelegramPollingState{}, fmt.Errorf("failed to advance telegram polling state: %w", err)
 	}
 	state := TelegramPollingState{NextUpdateID: row.NextUpdateID, UpdatedAt: row.UpdatedAt.Time}
 	if row.LastPollAt.Valid {
