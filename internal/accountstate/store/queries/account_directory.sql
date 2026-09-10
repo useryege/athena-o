@@ -165,7 +165,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 9
+  AND (SELECT COUNT(*) FROM inserted_modules) = 10
   AND EXISTS (SELECT 1 FROM inserted_profile)
   AND EXISTS (SELECT 1 FROM inserted_preferences);
 
@@ -251,7 +251,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 9
+  AND (SELECT COUNT(*) FROM inserted_modules) = 10
   AND EXISTS (SELECT 1 FROM inserted_profile)
   AND EXISTS (SELECT 1 FROM inserted_preferences);
 
@@ -330,7 +330,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 9
+  AND (SELECT COUNT(*) FROM inserted_modules) = 10
   AND EXISTS (SELECT 1 FROM inserted_profile)
   AND EXISTS (SELECT 1 FROM inserted_preferences);
 
@@ -409,7 +409,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 9
+  AND (SELECT COUNT(*) FROM inserted_modules) = 10
   AND EXISTS (SELECT 1 FROM inserted_profile)
   AND EXISTS (SELECT 1 FROM inserted_preferences);
 
