@@ -453,3 +453,38 @@ func TestSourceRPCCallContractUsesKnownHash(t *testing.T) {
 		t.Fatal("accepted zero hash")
 	}
 }
+
+func TestSourceRPCLatestChecksPolygonBeforeBlockAndRecoversWrongChain(t *testing.T) {
+	var correct atomic.Bool
+	var chains, heads atomic.Int32
+	header := &types.Header{Number: big.NewInt(100), Difficulty: big.NewInt(0), Time: uint64(time.Now().Unix()), GasLimit: 30000000}
+	node := sourceRPCServer(t, func(request rpcRequest) (any, error) {
+		switch request.Method {
+		case "eth_chainId":
+			chains.Add(1)
+			if correct.Load() {
+				return "0x89", nil
+			}
+			return "0x1", nil
+		case "eth_getBlockByNumber":
+			heads.Add(1)
+			return header, nil
+		default:
+			t.Error("unexpected latest RPC", request.Method)
+			return nil, errors.New("unexpected RPC")
+		}
+	})
+	if got, err := node.HeaderByNumber(context.Background(), nil); err == nil || got != nil || heads.Load() != 0 || chains.Load() != 1 {
+		t.Fatal("wrong HTTP chain provided baseline/health head", got, err, chains.Load(), heads.Load())
+	}
+	correct.Store(true)
+	for i := 0; i < 2; i++ {
+		got, err := node.HeaderByNumber(context.Background(), nil)
+		if err != nil || got == nil || got.Number.Uint64() != 100 {
+			t.Fatal(got, err)
+		}
+	}
+	if chains.Load() != 2 || heads.Load() != 2 {
+		t.Fatal("failed chain cached or positive chain repeatedly queried", chains.Load(), heads.Load())
+	}
+}

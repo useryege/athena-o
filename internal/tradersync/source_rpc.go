@@ -150,6 +150,9 @@ func (s *SourceRPC) HeaderByHash(ctx context.Context, h common.Hash) (*types.Hea
 func (s *SourceRPC) HeaderByNumber(ctx context.Context, n *big.Int) (*types.Header, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
+	if _, err := s.ChainID(ctx); err != nil {
+		return nil, err
+	}
 	return s.client.HeaderByNumber(ctx, n)
 }
 func (s *SourceRPC) TransactionReceipt(ctx context.Context, h common.Hash) (*types.Receipt, error) {

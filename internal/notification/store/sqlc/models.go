@@ -232,6 +232,25 @@ type TraderSyncBaselineAttempt struct {
 	EndedAt              pgtype.Timestamptz
 	Reason               string
 	CreatedAt            pgtype.Timestamptz
+	RegisteredSequence   pgtype.Int8
+}
+
+type TraderSyncCollectorControl struct {
+	Singleton    bool
+	FencingToken int64
+	OwnerID      pgtype.UUID
+	ActiveEpoch  pgtype.Int8
+}
+
+type TraderSyncCollectorEpoch struct {
+	ID               int64
+	FencingToken     int64
+	StartedAt        pgtype.Timestamptz
+	EndedAt          pgtype.Timestamptz
+	Reason           string
+	FilterRevision   int64
+	LastReceivedAt   pgtype.Timestamptz
+	LastReadSequence int64
 }
 
 type TraderSyncComboLegIndex struct {
@@ -249,6 +268,15 @@ type TraderSyncDirectoryRefresh struct {
 	RoundStartedAt   pgtype.Timestamptz
 	RoundCompletedAt pgtype.Timestamptz
 	NextPageAt       pgtype.Timestamptz
+}
+
+type TraderSyncInterruption struct {
+	ID               int64
+	CollectorEpoch   int64
+	Reason           string
+	RecordedAt       pgtype.Timestamptz
+	LastReceivedAt   pgtype.Timestamptz
+	LastReadSequence int64
 }
 
 type TraderSyncMarketMetadatum struct {
@@ -281,6 +309,37 @@ type TraderSyncRequestResult struct {
 	PayloadDigest []byte
 	ResultJson    []byte
 	CreatedAt     pgtype.Timestamptz
+}
+
+type TraderSyncSourceCandidate struct {
+	SourceRecordID       int64
+	OwnerID              pgtype.UUID
+	SubscriptionID       pgtype.UUID
+	ActivationGeneration int64
+	BaselineAttemptID    pgtype.UUID
+	ReceivedAt           pgtype.Timestamptz
+}
+
+type TraderSyncSourceRecord struct {
+	ID                 int64
+	ChainID            int64
+	ExchangeAddress    []byte
+	Wallet             []byte
+	BlockHash          []byte
+	TransactionHash    []byte
+	LogIndex           int64
+	BlockNumber        int64
+	RawJson            []byte
+	CollectorEpoch     int64
+	ReadSequence       int64
+	ReceivedAt         pgtype.Timestamptz
+	Removed            bool
+	ConfirmationState  string
+	ConfirmationReason string
+	CheckedAt          pgtype.Timestamptz
+	SettledAt          pgtype.Timestamptz
+	SourceVersion      string
+	TradeJson          []byte
 }
 
 type TraderSyncSubscription struct {

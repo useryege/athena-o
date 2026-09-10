@@ -6,7 +6,7 @@
 
 本文是目标方案，不代表当前实现。用户已整体确认原后端技术方案；[实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)已形成并正在执行。随后补充的[UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)已整体确认，本文的 UI 读取补充也已确认；实现计划已扩展为21项前后端联合任务。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
 
-本轮已按 Superpowers 分节确认统一数据库与现有进程边界、发送许可与撤权语义、单供应商 WSS 采集及最终确认路线；同用户集中成交允许限速排队也已确认。接口、资料和验收章节也已确认；[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认。后续实现计划细化了源码、生成依赖与验收步骤；当前已实现共享数据库基础、持久发送许可/结果路径、Bot update 原子消费、共享调度和单 sender 恢复，其余目标按联合计划继续实施。
+本轮已按 Superpowers 分节确认统一数据库与现有进程边界、发送许可与撤权语义、单供应商 WSS 采集及最终确认路线；同用户集中成交允许限速排队也已确认。接口、资料和验收章节也已确认；[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认。后续实现计划细化了源码、生成依赖与验收步骤；当前已实现共享数据库基础、持久发送许可/结果路径、Bot update 原子消费、共享调度、单 sender 恢复及可构造的实时 Collector/基线/持久接收组件，其余目标按联合计划继续实施。
 
 新增技术证据见[数据源契约核验](../../requirements/polymarket-copy-trading/source-contract-verification.md)与[RPC 过滤、确认和额度复核](../../requirements/polymarket-copy-trading/collector-contract-verification.md)。它们记录当前实现版本、100 钱包 OR 推送、Combo 腿映射、Profile 与收益资料的证据及限制。技术参数是可验证的设计默认值，不表示已完成运行验收。
 
@@ -39,15 +39,15 @@ Copy Trading 不在本设计内。本文维护后端和跨层数据契约，页�
 | [Bot update](../../../internal/notification/store/bot_updates.go)将绑定变更、回复 outbox 和消费进度原子提交；[poller](../../../internal/notification/poller.go)只调用该入口，reply 复用 worker 的发送许可。 | reply 已接入跨 chat 公平调度、统一预算和停止确认恢复；Trader Sync 摘要首条尚待接入。 |
 | [Profile 适配器](../../../util/polymarket/profile_identity.go)、[六区间 P/L](../../../internal/tradersync/pnl.go)与[目标确认](../../../internal/tradersync/target_resolver.go)已实现精确数值、逐字段 evidence 和 owner token。 | 官方显示参考时间、YTD 执行时区、舍入语义仍缺证据，对应字段 unavailable；实际 grant/context SQL 已实现；公开入口尚待接入。 |
 | [Managed OO](../../../internal/managedoo/log_sync.go)与 [BSC Swap](../../../internal/bscswap/scanner.go)有持久游标扫描。 | 业务事件、网络及中断回补语义不同，不能直接沿用为 Trader Sync 监控。 |
-| 当前已有独立 Trader Sync types、TargetResolver、SubscriptionService 及确认/请求结果/目标/备注/订阅/基线 attempt/观察区间基础表；尚无站内活动或摘要。 | 下文除明确标注已实现的目标确认、订阅与撤权契约外，仍为后续目标；不将确认资料组件视为公开服务已上线。 |
+| 当前已有独立 Trader Sync types、TargetResolver、SubscriptionService、Collector、原始 Session 与基线/接收存储；Collector 实现 BaselineRegistrar 并提供可取消、可等待的 Run。 | ActivityProjector、站内活动和摘要仍待实现；Task 12 才接公开 API 和 athena-server 后台组合，不将组件测试视为服务已上线。 |
 
 ## 关键决定
 
-2026-09-10 本轮已确认以下总体架构、采集路线与发送许可边界；接口和验收章节也已确认，完整书面规格已获整体确认；当前已实现共享数据库基础、持久发送许可/结果路径、Bot update 原子消费、共享调度和单 sender 恢复，其余目标按联合计划继续实施。
+2026-09-10 本轮已确认以下总体架构、采集路线与发送许可边界；接口和验收章节也已确认，完整书面规格已获整体确认；当前已实现共享数据库基础、持久发送许可/结果路径、Bot update 原子消费、共享调度、单 sender 恢复及可构造的实时 Collector/基线/持久接收组件，其余目标按联合计划继续实施。
 
 1. **进程部署：**`internal/tradersync.Service` 运行在现有 `athena-server` 内，提供业务 RPC 和后台监控；Telegram 仍由现有 `athena-notification` 的单一 Bot、poller 和 sender 负责。不新增服务进程、消息中间件或 Redis。
 2. **事务范围（已确认）：**账户权限、Trader Sync 数据及全部 Notification 数据统一放在 `athena` PostgreSQL 数据库，包括账户绑定、账户投递、系统群组通知、Bot polling offset 和绑定回复 outbox。各模块保留独立 query adapter，共享受控事务和一个权威迁移集；每个进程建立自己的连接池，不跨进程共享连接池对象。Notification 不再因账户/系统通知而持有两个数据库 store。
-3. **链上实时路线（已确认）：**Chainstack 为首个开发 HTTP/WSS 入口，dRPC 仅供手动切换；不双采、不自动故障切换。共享目标过滤 WSS 采集普通 CTF、Neg Risk 和 Combos Exchange 自身 OrderFilled，先持久接收、再核验规范链及最终确认、最后投影用户活动；公开资料接口补身份与市场。仅常驻目标 logs，finality 默认每 2 秒、latest 健康每 10 秒共享查询，不永久订阅全链 newHeads。
+3. **链上实时路线（已确认）：**Chainstack 为首个开发 HTTP/WSS 入口，dRPC 仅供手动切换；不双采、不自动故障切换。共享目标过滤 WSS 采集普通 CTF、Neg Risk 和 Combos Exchange 自身 OrderFilled，先持久接收、再核验规范链及最终确认、最后投影用户活动；公开资料接口补身份与市场。仅常驻目标 logs；ActivityProjector 拥有唯一每 2 秒确认工作调度，Collector 只负责每 10 秒 latest 健康查询，不永久订阅全链 newHeads。
 4. **活动与外发解耦：**每位用户的站内活动在形成时持久化，并在同一事务冻结 Telegram 资格与备注。普通提醒和摘要均有确定的活动成员关系；不会因发送失败再创建成交活动。
 5. **未知结果：**提交网络请求前持久记录发送尝试。凡无法证明请求未成功的结果转入 `unknown`，停止自动重发；取消或重启不把 `unknown` 改为可重试。发送许可在短事务中持久化，撤权提交后禁止新许可，既有 sending 可完成或未知；仅摘要首条采用冻结到实际调用起点的短 gate。
 
@@ -129,17 +129,31 @@ flowchart LR
 
 [`VersionVerifier`](../../../internal/tradersync/source_version.go)显式核验 ChainID、已知头及真实 ParentHash，比较候选/父块部署代码；Combo 还校验实际代理 hash、固定槽和实现代码，并读取仅候选 hash 的完整升级日志。未知版本、读取失败、空升级响应或同块升级均为 FailedPrecondition。仅成功代码证据按 chain/exchange/blockHash 缓存（最多 256 项），不会代替规范链重核；失败不缓存。私有 deployment helper 可供后续模块资料核验复用，但调用者须先建立同实例链 137、known 头/hash 与真实 ParentHash 的前置证据，模块不加入 Exchange 解码白名单。
 
-[`SourceRPC`](../../../internal/tradersync/source_rpc.go)借用不可变端点 ethclient，正面的链 137 验证仅在此实例缓存；重建端点必须新实例。它单独负责成功 finalized 头的 2 秒缓存、过期懒刷新及同在途并发合并，不启动独立 poller；后续采集工作调度只消费此入口，不再另设头缓存或独立 finalized 轮询。读取失败不把过期头当 fresh，每次真实 RPC 最多 5 秒；发起者取消会结束共享读取，其他等待者可独立取消，客户端由所有者关闭。当前交付这些只读组件及回环验证，实际后台采集、公开 API、活动持久化和模块 metadata 留待后续任务接入。
+[`SourceRPC`](../../../internal/tradersync/source_rpc.go)借用不可变端点 ethclient，正面的链 137 验证仅在此实例缓存；重建端点必须新实例。它单独负责成功 finalized 头的 2 秒缓存、过期懒刷新及同在途并发合并，不启动独立 poller；ActivityProjector 的唯一 2 秒确认调度消费此入口，不再另设头缓存或独立 finalized 轮询；Collector 不调度 finalized。读取失败不把过期头当 fresh，每次真实 RPC 最多 5 秒；发起者取消会结束共享读取，其他等待者可独立取消，客户端由所有者关闭。当前已提供这些只读组件及独立 Collector；最终确认、版本解码和资料的后台消费由后续 ActivityProjector 统一组合。公开 API 与实际进程启动仍待接入，模块资料实现见市场补全章节。
 
 ### 已实现的订阅与撤权边界
 
-[`SubscriptionService`](../../../internal/tradersync/subscriptions.go)要求显式注入身份复核器与 `BaselineRegistrar.RegisterTx`；Task 9 实现采集登记器前，集成验证使用持久写入 pending attempt 的显式 fake，不在服务构造中提供空登记器。公开业务入口仍待组合。
+[`SubscriptionService`](../../../internal/tradersync/subscriptions.go)要求显式注入身份复核器与 `BaselineRegistrar.RegisterTx`；现有 Collector 提供真实事务登记器，不在服务构造中提供空登记器；测试可显式注入 fake，公开业务入口仍待 Task 12 组合。
 
 创建分为两次短账户事务：各自在当前 grant 之后先读取已提交请求结果。首个事务仅为未成功请求读取 token，锁外沿用 `Identity.ResolutionInput` 复核；第二个事务再次检查幂等结果、token/身份摘要、10 个未取消配额及 owner-wallet 唯一性，随后将备注、订阅、基线登记、token 消费及成功结果一起提交。相同 request 不同 payload 拒绝；过期或已消费 token 不影响已提交成功的重放，但撤权后的重放仍拒绝。
 
 备注独立按 owner-wallet 保存，20 个 Unicode code point；未保存与显式空串分别保留。备注 CAS 使用 note revision，取消保留备注，重新订阅创建新 ID。暂停/取消结束当前区间和 pending attempt；恢复递增 activation generation 并在事务内重新登记。若立即暂停/取消/撤权使 `ended_at < effective_at`，该区间覆盖为空且保留真实终点；资格仍同时要求起点包含、终点排他。
 
 [`AccessChangeHook`](../../../internal/accountstate/store/access_hooks.go)在服务启动时必需注入：账户 gate 内读取真实 previous，在 head CAS 和十模块替换后、commit 前调用。错误使账户与订阅/投递变更一起回滚；`ApplyAccessChangeTx`仅对 RW→NONE 执行关闭区间、permission_disabled、结束 pending attempt 和旧 delivery 永久墓碑，包括 sending。登录/API Key 开关不触发产品撤权，重授不复活订阅或旧 attempt。未冻结摘要成员将在其表实现时接入同一撤权事务。
+
+### 已实现的共享接收与基线边界
+
+[`Collector`](../../../internal/tradersync/collector.go) 通过 `NewCollector(store, latestRPC, Config)` 构造，HTTP 依赖仅为 `HeaderByNumber`，其契约要求先核验端点为 Polygon 137；SourceRPC 在此入口复用已有 ChainID 成功缓存/并发合并，失败不缓存，错链不得继续读头；`rpc.DialHTTP` 创建有 5 秒请求上限的显式 HTTP 客户端，composition owner 负责关闭并构造借用该客户端的 SourceRPC。Collector 的 `Run` 只管理 WSS、latest 健康、基线和 raw 接收；唯一 10 秒 latest 健康 goroutine 独立于 account gate/ACK 等待，失败立即取消 reconcile 并关闭本地 WSS，停止时一并 join；同轮已登记且已有完整 ACK 覆盖的 pending 切片共享随后新读的一个头，各自重新核验 DB now/high。确认、解码、资料及其每 2 秒调度归后续 ActivityProjector。生产仍仅 athena-server 与 athena-notification 两进程。
+
+[`Session`](../../../internal/tradersync/rpc/session.go) 每实例只有一条物理 WSS、一条 read loop 和串行写队列，绝不内部重连。read loop 在有界队列之前生成唯一 `types.ReceivedLog{Raw, ReceivedAt, Sequence}`，时间取实际解码接收时刻；钱包最高已观察高度和全会话接收序号在同一临界区更新。`RegisterTx` 在传入账户事务中取得钱包 gate，短时捕获相同 session/epoch 的快照，释放内存锁后写 pending attempt；所有 SQL 都在内存锁外。Collector 仅读已提交 pending/目标后安装过滤，调用方回滚不会发布过滤。
+
+首次 source INSERT 在钱包 gate 内冻结原 attempt、激活代次与收到时刻，且 `read_sequence > registered_sequence`；注册前已经解出、尚未落库的排队日志不会新归属。仅实际 `topics[2]` 已被观察的钱包入库，对手方命中不登记；重复 source 只补单调 removed 证据，首次 removed 也不创建候选。raw JSON 保留第一次事实，确认状态与 removed 分列；失败 attempt 的候选不转给新 attempt。
+
+新完整过滤全部 ACK 后才替换旧过滤并递增 epoch filter revision，之后查 fresh latest、保存未来秒级边界；保存时已过期则下一轮重新计算，已经成功保存的候选到时提交，不每轮延后。失败的新过滤会清理本轮新 ACK，保留旧覆盖及原基线；已经被旧完整过滤覆盖的钱包，其其他所有者的新基线仍可继续，不受新钱包失败阻塞。成功提交在同一账户事务复核 grant、revision、generation 与 epoch，原子写 succeeded/interval/healthy；COMMIT 回复未知先查原 attempt 和 interval 的真实持久状态。
+
+[`CollectorSession`](../../../internal/tradersync/store/collector_session.go) 用专属 PG session advisory lock 维持常态单实例，用单行 control 的递增 token 拒绝过时代次写入。每个写事务锁序为账户→钱包（需要时）→control fence，intake 只钱包→fence；换代/关闭 epoch 在独立 control 事务提交后，才逐账户结束旧区间。没有 TTL 接管或 sender 停止确认 CLI。Acquire 在 control 锁内快照已提交的 NULL-epoch pending 精确 ID，提交后逐账户/钱包/fence 终结为 `observation_ownership_changed`；Acquire 后新登记不在快照中，重建还要复核当前用户意图与权限，不虚构曾健康观察或实际遗漏。
+
+停止/失锁/接收失败先取消并关闭 Session，等待 read/write 与持久接收 goroutine 全部结束，然后记录 epoch 中断和最后可靠持久接收的时间/序号，逐账户收尾，最后释放专属连接。失锁向 Run 返回致命错误；不能持久结束旧 epoch 时也返回错误，避免悄悄卡在无法开启新 epoch 的重连循环。正常 WSS 故障由外层按退避建立全新 epoch，旧记录留给 Projector，不执行历史补查。尚无最终确认失败与 Projector 的真实组合验收，本任务回环明确禁止 Collector 调用 finality/receipt/版本接口。
 
 ### 已实现的目标确认边界
 
@@ -162,8 +176,8 @@ flowchart LR
 | `trader_sync_target_confirmations` | owner、token digest、规范身份、资料状态、过期时间；用于创建前确认。 |
 | `trader_sync_subscriptions` | ID、owner、target、desired_state、observation_state、revision、activation_generation、created/paused/cancelled/disabled 时间；部分唯一索引约束同 owner-target 的非 cancelled 记录。 |
 | `trader_sync_monitor_intervals` | subscription、activation_generation、起止时间、baseline/connection epoch、边界精度；起点包含、终点不包含。恢复新增区间，不覆盖旧区间。 |
-| `trader_sync_baseline_attempts` / `..._source_candidates` | 创建/恢复时先注册未定边界的 attempt，再安装过滤和填写候选边界；保存订阅代次、epoch、过滤版本和注册前观察高度，接收事实绑定当时的 attempt/区间。失败基线候选不能转归后来的成功基线。 |
-| `trader_sync_collector_epochs` | 连接代次、目标集合 revision、观察边界、owner fencing token、启动/结束原因。 |
+| `trader_sync_baseline_attempts` / `..._source_candidates` | 创建/恢复时先注册未定边界的 attempt，再安装过滤和填写候选边界；保存订阅代次、epoch、过滤版本、注册前观察高度及接收序号，接收事实绑定当时的 attempt/区间。失败基线候选不能转归后来的成功基线。 |
+| `trader_sync_collector_control` / `..._collector_epochs` / `..._interruptions` | 单行 owner/token/active epoch；物理连接代次、已 ACK 过滤版本、最后可靠持久接收时间/序号、启动/结束原因与中断。 |
 | `trader_sync_interruptions` | 受影响目标与订阅区间、最后可靠观察、确认失效及恢复/停用时间；未知边界显式记录，不存推测遗漏数量。 |
 | `trader_sync_source_records` | 接收时刻、epoch、完整来源定位、原始事实、确认/孤块/无效状态；只存真实收到的记录，不存回补游标。 |
 | `trader_sync_activities` | owner、subscription、activation_generation、interval、source record、事实和备注快照、形成时间；`(subscription_id, source_record_id)` 唯一，不自动过期。 |
@@ -195,7 +209,7 @@ flowchart LR
 
 使用一条 WSS 连接，普通 CTF/Neg Risk 共用一类过滤、Combos 单独一类过滤；每组最多 100 个钱包，目标来自全部仍需监控的订阅并去重。本轮两核心合约的 100 钱包 OR 已有真实推送证据，三类协议与 100 活跃钱包的完整负载矩阵留待验收。目标集合调整以新旧过滤重叠安装、源 ID 去重，已有目标不重建生效边界；新增过滤失败只影响尚未获得可靠观察的新目标。
 
-源定位为 `(chain_id, exchange_address, block_hash, transaction_hash, log_index)`。接收事实首先落库，记录 epoch、过滤版本和实际收到时间；同键后到的 removed=true 必须更新候选，不能被去重吞掉；确认前尚不形成不可逆用户成交。源消费者只按自身资金钱包所在 `topics[2]` 识别，分别使用经过核验的事件 ABI；对手方和 OrdersMatched 不另计活动。
+源定位为 `(chain_id, exchange_address, block_hash, transaction_hash, log_index)`。接收事实首先落库，记录 epoch 和 read-loop 实际收到时间/序号，候选经原 attempt 关联过滤版本；同键后到的 removed=true 必须更新候选，不能被去重吞掉；确认前尚不形成不可逆用户成交。源消费者只按自身资金钱包所在 `topics[2]` 识别，分别使用经过核验的事件 ABI；对手方和 OrdersMatched 不另计活动。
 
 当候选高度不高于新读 finalized 水位时，重新查询已知交易回执，核对成功状态、当前规范链定位及该条已收日志的全部原始字段，再以已知 blockHash 取得时间；需要时用近期按高度区块头交叉核验。不能把确认前缓存的回执当作确认后的规范链证据。只查看回执内与已收记录匹配的日志，不将其中其他日志变为新增活动。最终确认后若与已形成活动发生分叉冲突，保留旧事实并标 finality 一致性异常，隔离该交易新分叉候选，不再自动形成第二份活动或提醒；不能用可能跨块变化的 logIndex 简单去重。明确的 removed 或规范链重定位使原候选作废；null、超时、403 只表示未能确认，保留未确认及异常。
 
@@ -239,7 +253,7 @@ Combo PositionId 先取得组合自身 YES/NO，再以高 31 字节 condition �
 - 暂停关闭当前区间并保留配额；取消关闭区间并释放配额。二者均保留旧活动与旧投递资格，不改变已有摘要成员。
 - 产品 grant 从开启变为 NONE 时，同一账户事务关闭全部未取消订阅区间、设置 `permission_disabled`、终止尚未取得发送许可的投递和待摘要成员，并给包括 sending 的全部旧 delivery 持久设置 eligibility_revoked_at/原因，永久禁止后续 attempt。既有许可的明确成功/未知照实保存，明确失败则取消，不因重新授权恢复重试资格。重新开通 grant 不恢复任何订阅；用户手动恢复或取消。
 - 故障记录当前 epoch 的中断，不设置 pending backfill。连接重新可用后取得新实时边界，仅对仍应监控的订阅自动恢复；故障期间已暂停/取消/撤权的订阅不恢复。
-- `athena-server` 每次启动或进程内 Run 重启均建立新的 Collector epoch；持久旧 source records、活动及投递可继续处理，旧中断区间不回补。Stop 停止接收并尽力记录中断，异常退出通过上次心跳与下一次启动记录不确定边界。
+- `athena-server` 每次启动或进程内 Run 重启均建立新的 Collector epoch；持久旧 source records、活动及投递可继续处理，旧中断区间不回补。Stop 停止接收并尽力记录中断，异常退出由下一次取得独占所有权后的持久换代记录不确定边界；不以心跳超时证明旧进程已经停止。
 
 ## 事务、并发与幂等
 
@@ -365,10 +379,10 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 
 ## 验证方式与审阅进度
 
-本次已执行文档/源码阅读、官方资料检索、短时只读 RPC/WSS 核验、实现槽与 getLegs 等 eth_call、Profile 与精确市场查询。原始响应及限制见两份新增核验报告。没有修改业务源码、执行数据库迁移、启动业务服务或发送 Telegram 消息；没有运行实现的单元、集成或端到端测试。
+设计阶段的只读来源核验及限制见关联证据报告。当前组件实现包含本地 WSS 回环、纯基线及隔离 PostgreSQL 集成测试：注册提交可见性、ACK 前接收、过滤部分失败、重连、fencing、持久化错误和取消收尾均有定向覆盖。没有连接真实链或发送 Telegram；ActivityProjector 的真实最终确认故障组合与整体运行验收仍待 Task 10/13。
 
 已确认：首期规模及既有业务；集中成交保留前 10 条逐条并允许排队；全部通知同库；发送许可边界；单供应商采集、最终确认、秒级基线与故障不补查。原接口、资料和验收章节也已确认，[后端任务 spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认，原后端设计阶段完成。UI 补充进度见下文；长期需求状态与设计状态不增加额外审批流程。
 
 后续实现需验证当前协议完整样本矩阵、同秒与重启故障、授权/撤权/绑定竞争、未知结果不重发、摘要临界 60 秒调度、真实容量及公开时间证据。数据缺失/异常的行为已有明确设计；未完成的运行测试不能写成已通过。
 
-2026-09-10 用户已整体确认[UI 书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)，读取契约补充同时获确认；原后端计划已扩展为21项[前后端联合实现任务](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)，正在执行。当前已实施共享数据库基础及通知许可/结果路径，并验证既有管理员通知状态消费者；新的 Trader Sync 业务页面、采集与完整验收仍待后续任务。计划中的其他测试命令不代表已通过。
+2026-09-10 用户已整体确认[UI 书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)，读取契约补充同时获确认；原后端计划已扩展为21项[前后端联合实现任务](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)，正在执行。当前已实施共享数据库基础及通知许可/结果路径，并验证既有管理员通知状态消费者；新的 Trader Sync 业务页面、Collector 进程组合与完整验收仍待后续任务。计划中的其他测试命令不代表已通过。

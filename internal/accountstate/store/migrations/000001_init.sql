@@ -606,7 +606,76 @@ CREATE TABLE trader_sync_directory_refresh (
  next_page_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
 );
 
+-- Live collector ownership is fenced by a monotonic token, never a time lease.
+CREATE TABLE trader_sync_collector_control (
+ singleton BOOLEAN PRIMARY KEY DEFAULT true CHECK(singleton),
+ fencing_token BIGINT NOT NULL DEFAULT 0 CHECK(fencing_token>=0),
+ owner_id UUID,
+ active_epoch BIGINT
+);
+INSERT INTO trader_sync_collector_control(singleton) VALUES(true);
+CREATE TABLE trader_sync_collector_epochs (
+ id BIGSERIAL PRIMARY KEY,
+ fencing_token BIGINT NOT NULL CHECK(fencing_token>0),
+ started_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+ ended_at TIMESTAMPTZ,
+ reason TEXT NOT NULL DEFAULT '',
+ filter_revision BIGINT NOT NULL DEFAULT 0 CHECK(filter_revision>=0),
+ last_received_at TIMESTAMPTZ,
+ last_read_sequence BIGINT NOT NULL DEFAULT 0 CHECK(last_read_sequence>=0)
+);
+ALTER TABLE trader_sync_collector_control ADD FOREIGN KEY(active_epoch) REFERENCES trader_sync_collector_epochs(id);
+CREATE TABLE trader_sync_interruptions (
+ id BIGSERIAL PRIMARY KEY,
+ collector_epoch BIGINT NOT NULL UNIQUE REFERENCES trader_sync_collector_epochs(id),
+ reason TEXT NOT NULL,
+ recorded_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+ last_received_at TIMESTAMPTZ,
+ last_read_sequence BIGINT NOT NULL CHECK(last_read_sequence>=0)
+);
+ALTER TABLE trader_sync_baseline_attempts ADD COLUMN registered_sequence BIGINT CHECK(registered_sequence>=0);
+CREATE UNIQUE INDEX trader_sync_one_pending_baseline ON trader_sync_baseline_attempts(subscription_id) WHERE state='pending';
+CREATE UNIQUE INDEX trader_sync_one_interval_per_attempt ON trader_sync_monitor_intervals(baseline_attempt_id);
+CREATE TABLE trader_sync_source_records (
+ id BIGSERIAL PRIMARY KEY,
+ chain_id BIGINT NOT NULL CHECK(chain_id=137),
+ exchange_address BYTEA NOT NULL CHECK(octet_length(exchange_address)=20),
+ wallet BYTEA NOT NULL CHECK(octet_length(wallet)=20),
+ block_hash BYTEA NOT NULL CHECK(octet_length(block_hash)=32),
+ transaction_hash BYTEA NOT NULL CHECK(octet_length(transaction_hash)=32),
+ log_index BIGINT NOT NULL CHECK(log_index>=0),
+ block_number BIGINT NOT NULL CHECK(block_number>=0),
+ raw_json JSONB NOT NULL,
+ collector_epoch BIGINT NOT NULL REFERENCES trader_sync_collector_epochs(id),
+ read_sequence BIGINT NOT NULL CHECK(read_sequence>0),
+ received_at TIMESTAMPTZ NOT NULL,
+ removed BOOLEAN NOT NULL,
+ confirmation_state TEXT NOT NULL DEFAULT 'unverified' CHECK(confirmation_state IN ('unverified','invalid','confirmed')),
+ confirmation_reason TEXT NOT NULL DEFAULT '',
+ checked_at TIMESTAMPTZ,
+ settled_at TIMESTAMPTZ,
+ source_version TEXT NOT NULL DEFAULT '',
+ trade_json JSONB,
+ UNIQUE(chain_id,exchange_address,block_hash,transaction_hash,log_index)
+);
+CREATE TABLE trader_sync_source_candidates (
+ source_record_id BIGINT NOT NULL REFERENCES trader_sync_source_records(id),
+ owner_id UUID NOT NULL,
+ subscription_id UUID NOT NULL,
+ activation_generation BIGINT NOT NULL CHECK(activation_generation>0),
+ baseline_attempt_id UUID NOT NULL,
+ received_at TIMESTAMPTZ NOT NULL,
+ PRIMARY KEY(source_record_id,subscription_id),
+ FOREIGN KEY(owner_id,subscription_id,baseline_attempt_id) REFERENCES trader_sync_baseline_attempts(owner_id,subscription_id,id)
+);
+CREATE INDEX trader_sync_sources_unverified ON trader_sync_source_records(id) WHERE confirmation_state='unverified';
+
 -- +goose Down
+DROP TABLE IF EXISTS trader_sync_source_candidates;
+DROP TABLE IF EXISTS trader_sync_source_records;
+DROP TABLE IF EXISTS trader_sync_collector_control;
+DROP TABLE IF EXISTS trader_sync_interruptions;
+DROP TABLE IF EXISTS trader_sync_collector_epochs;
 DROP TABLE trader_sync_directory_refresh;
 DROP TABLE trader_sync_combo_leg_index;
 DROP TABLE trader_sync_market_metadata;
