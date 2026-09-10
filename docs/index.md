@@ -12,6 +12,7 @@ Athena is a trading/project sync system for the blockchain.
 ## Requirements and Research
 
 - [需求目标设计索引](requirements/README.md)
+- [Polygon PoS 自建节点配置与 Hetzner 费用调研](polygon-pos-node-hetzner-research.md) — 默认 RPC 端口、主网硬件要求、服务器月租与磁盘容量限制。
 - [Trader Sync 产品需求](requirements/polymarket-copy-trading/README.md) — 产品规划包含 Activity Alerts 与未来 Copy Trading 两个板块，当前只讨论第一阶段。
 - [Token 业务设计与研究资料](requirements/token/README.md)
 - [Token 目标设计](requirements/token/token.md) — 中文需求草案，包含已确认子项和尚待讨论内容。
