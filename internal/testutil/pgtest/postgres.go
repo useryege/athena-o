@@ -2,8 +2,12 @@ package pgtest
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
+	"net"
+	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -21,6 +25,22 @@ type DB struct {
 }
 
 func New(t *testing.T, schema fs.FS, dir string) *DB {
+	t.Helper()
+	ctx := context.Background()
+	dsn := newDatabase(t)
+	if err := postgres.Migrate(ctx, dsn, schema, dir); err != nil {
+		t.Fatalf("migrate test database: %v", err)
+	}
+	return &DB{Pool: newPool(t, dsn), DSN: dsn}
+}
+
+func NewUnmigrated(t *testing.T) *DB {
+	t.Helper()
+	dsn := newDatabase(t)
+	return &DB{Pool: newPool(t, dsn), DSN: dsn}
+}
+
+func newDatabase(t *testing.T) string {
 	t.Helper()
 	adminDSN := strings.TrimSpace(os.Getenv(adminDSNEnv))
 	if adminDSN == "" {
@@ -43,19 +63,54 @@ func New(t *testing.T, schema fs.FS, dir string) *DB {
 		admin.Close(context.Background())
 	})
 
-	config, err := pgxpool.ParseConfig(adminDSN)
+	dsn, err := databaseDSN(adminDSN, database)
 	if err != nil {
-		t.Fatalf("parse test postgres admin DSN: %v", err)
+		t.Fatalf("replace test postgres database in DSN: %v", err)
 	}
-	config.ConnConfig.Database = database
-	dsn := config.ConnString()
-	if err := postgres.Migrate(ctx, dsn, schema, dir); err != nil {
-		t.Fatalf("migrate test database: %v", err)
-	}
-	pool, err := pgxpool.New(ctx, dsn)
+	return dsn
+}
+
+func newPool(t *testing.T, dsn string) *pgxpool.Pool {
+	t.Helper()
+	pool, err := pgxpool.New(context.Background(), dsn)
 	if err != nil {
 		t.Fatalf("open test database pool: %v", err)
 	}
 	t.Cleanup(pool.Close)
-	return &DB{Pool: pool, DSN: dsn}
+	return pool
+}
+
+func databaseDSN(source string, database string) (string, error) {
+	config, err := pgx.ParseConfig(source)
+	if err != nil {
+		return "", err
+	}
+	if config.Host == "" || config.User == "" {
+		return "", fmt.Errorf("test postgres admin DSN must include host and user")
+	}
+	if !hasDisabledSSLMode(source) {
+		return "", fmt.Errorf("test postgres admin DSN must set sslmode=disable")
+	}
+	target := &url.URL{
+		Scheme: "postgres",
+		User:   url.UserPassword(config.User, config.Password),
+		Host:   net.JoinHostPort(config.Host, strconv.Itoa(int(config.Port))),
+		Path:   database,
+	}
+	query := target.Query()
+	query.Set("sslmode", "disable")
+	target.RawQuery = query.Encode()
+	return target.String(), nil
+}
+
+func hasDisabledSSLMode(source string) bool {
+	if parsed, err := url.Parse(source); err == nil && parsed.Scheme != "" {
+		return parsed.Query().Get("sslmode") == "disable"
+	}
+	for _, field := range strings.Fields(source) {
+		if field == "sslmode=disable" {
+			return true
+		}
+	}
+	return false
 }

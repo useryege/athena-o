@@ -52,6 +52,20 @@ func LockWallet(ctx context.Context, tx pgx.Tx, wallet common.Address) error {
 }
 
 func canonicalAccountID(value string) (string, error) {
+	if len(value) != 36 {
+		return "", fmt.Errorf("account ID %q is not a UUID", value)
+	}
+	for index, character := range value {
+		if index == 8 || index == 13 || index == 18 || index == 23 {
+			if character != '-' {
+				return "", fmt.Errorf("account ID %q is not a UUID", value)
+			}
+			continue
+		}
+		if !(character >= '0' && character <= '9') && !(character >= 'a' && character <= 'f') && !(character >= 'A' && character <= 'F') {
+			return "", fmt.Errorf("account ID %q is not a UUID", value)
+		}
+	}
 	parsed, err := uuid.Parse(value)
 	if err != nil || parsed == uuid.Nil {
 		return "", fmt.Errorf("account ID %q is not a non-zero UUID", value)

@@ -127,10 +127,10 @@ same validated Bearer credential; standard gRPC health remains unauthenticated.
   are `pending`, `sent`, `failed`, and `cancelled`; attempt, lock, retry,
   provider-message, error, and send timestamps support durable work recovery.
 
-The notification database intentionally has no foreign key to the account
-database. Account ownership is supplied by the authenticated public facade or a
-trusted internal caller. Raw binding tokens exist only in the create response,
-browser tab storage, and the Telegram command.
+The notification tables share the Athena database with account tables, but
+intentionally have no account foreign key. Account ownership is supplied by the
+authenticated public facade or a trusted internal caller. Raw binding tokens
+exist only in the create response, browser tab storage, and the Telegram command.
 
 ## Configuration
 
