@@ -103,7 +103,7 @@
 - 测试：`internal/migration/modules_test.go`、`internal/accountstate/store/schema_integration_test.go`、`internal/accountstate/txgate/gate_integration_test.go`。
 **Interfaces**
 - 产出：`migrations.FS embed.FS`、`migrations.Dir = "."`；原 `accountstatestore.Migrations()` 返回此FS，消费者使用对应Dir。
-- 产出：`txgate.WithAccountTx(ctx context.Context, pool *pgxpool.Pool, accountID string, fn func(pgx.Tx) error) error`；`txgate.LockWallet(ctx context.Context, tx pgx.Tx, wallet common.Address) error`。
+- 产出：`txgate.Beginner`为只含`BeginTx(context.Context,pgx.TxOptions) (pgx.Tx,error)`的最小接口，生产`*pgxpool.Pool`直接满足；`txgate.WithAccountTx(ctx context.Context, pool txgate.Beginner, accountID string, fn func(pgx.Tx) error) error`；`txgate.LockWallet(ctx context.Context, tx pgx.Tx, wallet common.Address) error`。
 - 产出：`pgtest.New(t *testing.T, schema fs.FS, dir string) *pgtest.DB`，DB含 `Pool *pgxpool.Pool`、`DSN string`。
 - 产出：`(*accountstatestore.SQLStore).Pool() *pgxpool.Pool`，由现有store拥有并关闭；业务适配器只借用，不重复Close。
 
@@ -202,13 +202,15 @@ WHERE id = $1 AND current_attempt_id = $2 AND status = 'sending';
 
 **Files**
 - 新增：`internal/notification/store/bot_updates.go`、`internal/notification/store/queries/bot_updates.sql`。
-- 修改：权威`internal/accountstate/store/migrations/000001_init.sql`、`internal/notification/store/telegram_bindings.go`、`internal/notification/store/queries/telegram_bindings.sql`、`internal/notification/poller.go`、`internal/notification/service.go`。
+- 修改：权威`internal/accountstate/store/migrations/000001_init.sql`、`internal/notification/store/telegram_bindings.go`、`internal/notification/poller.go`。
+- 核对并复用：`internal/notification/service.go`的同store装配、`internal/notification/store/queries/telegram_bindings.sql`的账户锁与单调offset；现有实现已满足，不要求无意义修改。
+- 修改必要发送消费者：`internal/notification/store/attempts.go`、对应attempt SQL与`internal/notification/worker.go`，使reply复用已持久化的许可/结果路径；新调度器仍由任务4实现。
 - 测试：`internal/notification/store/bot_updates_integration_test.go`、`internal/notification/poller_test.go`。
 **Interfaces**
 - 消费：任务1 txgate和任务2投递结果契约。
 - 产出：`(*SQLStore).ApplyBotUpdate(ctx context.Context, update utiltelegram.Update) error`；内部binding的Tx方法只由该事务调用；`telegram_binding_replies`作为独立work_kind=reply参与发送。
 
-- [ ] **步骤1：写重复update的失败集成测试。**夹具创建owner与pending绑定token，构造Update{ID:42,Message:私聊/start token}；调用ApplyBotUpdate两次。断言绑定revision只增一次、next_update_id=43、只有一条reply，且未调用Telegram SendMessage。异常分支包括错误token、群聊、bot用户、已被另一owner绑定和my_chat_member失联事件。
+- [x] **步骤1：写重复update的失败集成测试。**夹具创建owner与pending绑定token，构造Update{ID:42,Message:私聊/start token}；调用ApplyBotUpdate两次。断言绑定revision只增一次、next_update_id=43、只有一条reply，且未调用Telegram SendMessage。异常分支包括错误token、群聊、bot用户、已被另一owner绑定和my_chat_member失联事件。
 
 ```sql
 -- 必须与绑定变化、回复outbox及offset同事务；重复ID不再次执行副作用。
@@ -217,10 +219,10 @@ VALUES ($1, clock_timestamp()) ON CONFLICT (update_id) DO NOTHING
 RETURNING update_id;
 ```
 
-- [ ] **步骤2：写提交前后故障测试，运行 `go test -tags=integration ./internal/notification/store -run TestApplyBotUpdate -count=1` 确认红灯。**在提交前返回错误，断言四类记录全回滚；包装真实Commit使其提交后报告模拟断流，再重放update，断言不重绑/不重复回复。所用故障注入是测试事务装饰器，不添加业务feature flag。
-- [ ] **步骤3：增加consumed_updates及binding_replies表，形成SQL批次后 `make sqlc-local`，再将poller改为单次ApplyBotUpdate。**账户gate之后才取Telegram用户唯一锁；跨owner冲突不抢占已有绑定。解绑/重绑取消旧revision未授权任务，永久标记旧sending不得后续重试。删除poller直接sendBindingReply的网络调用，改写reply work。有效绑定修改、消费进度和回复必须使用同一个pgx.Tx。
-- [ ] **步骤4：运行本任务集成测试和 `go test ./internal/notification/...`；检查rollback后offset未前进、已提交重启从持久offset继续。**
-- [ ] **步骤5：提交 `feat(notification): consume bot updates transactionally`。**
+- [x] **步骤2：写提交前后故障测试，运行 `go test -tags=integration ./internal/notification/store -run TestApplyBotUpdate -count=1` 确认红灯。**在提交前返回错误，断言四类记录全回滚；包装真实Commit使其提交后报告模拟断流，再重放update，断言不重绑/不重复回复。所用故障注入是测试事务装饰器，不添加业务feature flag。
+- [x] **步骤3：增加consumed_updates及binding_replies表，形成SQL批次后 `make sqlc-local`，再将poller改为单次ApplyBotUpdate。**账户gate之后才取Telegram用户唯一锁；跨owner冲突不抢占已有绑定。解绑/重绑取消旧revision未授权任务，永久标记旧sending不得后续重试。删除poller直接sendBindingReply的网络调用，改写reply work。有效绑定修改、消费进度和回复必须使用同一个pgx.Tx。
+- [x] **步骤4：运行本任务集成测试和 `go test ./internal/notification/...`；检查rollback后offset未前进、已提交重启从持久offset继续。**
+- [x] **步骤5：提交 `feat(notification): consume bot updates transactionally`。**
 
 ## 任务4：共享限速、公平调度与单sender恢复
 
