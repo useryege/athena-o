@@ -4,7 +4,7 @@
 >
 > 关联需求：[Activity Alerts 需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)（已确认；完整书面设计也已整体确认）
 
-本文是目标方案，不代表当前实现。用户已整体确认完整技术方案，并要求进入下一步；[实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)已形成，尚未执行。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
+本文是目标方案，不代表当前实现。用户已整体确认原后端技术方案；[实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)已形成，尚未执行。随后补充的[UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)各节已确认、完整书面待审阅，本文的 UI 读取补充随该 spec 审阅。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
 
 本轮已按 Superpowers 分节确认统一数据库与现有进程边界、发送许可与撤权语义、单供应商 WSS 采集及最终确认路线；同用户集中成交允许限速排队也已确认。接口、资料和验收章节也已确认；[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认。后续实现计划细化了源码、生成依赖与验收步骤；当前仍只修改文档。
 
@@ -27,7 +27,7 @@
 
 本能力负责目标确认、订阅生命周期、实时成交接收、用户活动记录、Telegram 普通提醒与摘要，以及管理员运行概要。它依赖已有账户身份、权限、Telegram 绑定和 Polymarket 公开资料。
 
-Copy Trading 不在本设计内。前端只约定数据与交互契约，不设计页面布局；页面方案在后续 Superpowers 任务中形成，本文不代表页面设计已获批准。数据资料查询、处理已收到记录和完成旧通知队列，不属于历史成交补查。
+Copy Trading 不在本设计内。本文维护后端和跨层数据契约，页面布局、状态呈现与导航见[长期 UI 设计](../web-ui/trader-sync-activity-alerts.md)。UI 各节已确认，整份书面待审阅；不把原后端批准当作 UI 已实现。数据资料查询、处理已收到记录和完成旧通知队列，不属于历史成交补查。
 
 ## 现状与目标差距
 
@@ -87,6 +87,8 @@ flowchart LR
 | `PauseSubscription` / `ResumeSubscription` / `CancelSubscription` | 订阅 ID、expected revision、请求幂等键。 | 当前用户模块写。 |
 | `UpdateTargetNote` | 目标钱包、备注、expected revision。 | 当前用户模块写。 |
 | `ListActivities` / `GetActivity` | 活动事实、市场资料、来源及投递结果。 | 当前用户模块读。 |
+| `ListSubscriptionHistory` | 分页生效区间和中断时间线。 | 当前用户模块读。 |
+| `GetSummaryBatch` / `ListSummaryParts` | 批次概要和分条分页；parts 可按同批 activity_id 过滤。 | 当前用户模块读。 |
 | `ListSubscriptionSummaries` / `GetSubscriptionSummary` | 独立管理员投影；用户、目标、状态、健康和数量。 | 管理员专用。 |
 | `GetTraderSyncRuntimeStatus` | 连接、处理队列、异常和数量概要。 | 管理员专用。 |
 
@@ -95,6 +97,17 @@ flowchart LR
 沿用现有业务 API 凭据策略：有效会员登录或获准的 API Key 均须具备产品权限；Telegram 绑定仍仅允许普通账户的交互登录。管理员身份不获得会员数据访问权。登录/API Key 停用遵循现有认证边界，不能未经需求确认将其等同于产品 grant 撤销并取消全部后台订阅。
 
 订阅与备注写操作使用 revision CAS；并发冲突返回 Aborted，配额已满返回 ResourceExhausted，目标重复返回 AlreadyExists，确认 token 无效/过期或目标解析失败返回 FailedPrecondition/InvalidArgument。幂等键按 owner、操作和 payload digest 绑定，相同键不同内容拒绝；重试仍须先通过当前权限检查。
+
+### UI 读取契约补充
+
+完整定义见 [UI spec 第 10 节](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md#10-前后端契约补全)。这些是尚未实施的技术细化，保留既有采集、权限和发送业务边界。
+
+- Resolve 返回 owner 保存备注/revision、现有未取消订阅及配额快照；六区间数值与曲线独立 evidence。Create 检查当前权限后优先返回已提交幂等成功，再对未成功请求核验 token，支持响应丢失后恢复。
+- ListActivities 按 owner 形成顺序 `id DESC`，替换原 `(recorded_at,id)` 分页草案。bigint ID 在同账户 gate 内由持久 sequence（CACHE 1、正向、NO CYCLE）分配，不预取/回拨；读取同 gate 取 owner 已提交 max(id)，空为 0，作为 snapshot。recorded_at 保留真实时钟，回退不扰动列表。此约束是设计修订，不是现有实现事实。
+- 签名 next_cursor 固定 snapshot，refresh_cursor 固定当前页成员；刷新同时提供 has_newer/as_of，点击后才重建最新页。不返回虚构总数。默认 50、最多 100；身份/过滤/页边界均绑定游标。增加 summary_batch_id，时间筛选按结算时间 `[from,to)`。
+- Activity.notification_mode 固定 in_app_only/ordinary/summary；summary phase 分 waiting/frozen/cancelled_before_freeze；当前绑定不能推断历史资格。delivery/parts 展示各自结果、计数和缺失时间证据。
+- 详情只内嵌有界概要。ListSubscriptionHistory 读取完整观察历史，ListSummaryParts 读取所有相关/全批分条；attempts 后端完整保存，UI 只读最近 attempt 与总次数。批次查询也核验 grant/owner，管理员不复用。
+- 管理员数量携带 as_of；活动按订阅生命周期计数，Associated deliveries 按关联 distinct delivery，不能跨订阅求和。全局另聚合 distinct delivery，积压/异常标明单位及窗口或 epoch。
 
 ### 目标、成交与时间
 
@@ -130,7 +143,7 @@ flowchart LR
 
 `activation_generation` 表示用户的一次订阅激活，创建订阅时初始化，每次用户手动恢复时递增；普通字段修改、基线任务重试、连接故障及自动恢复不改变它。连接 epoch 表示观察连接代次，两者不能混用。投影候选从源记录接收时对应的持久订阅区间取得激活代次，不能在延迟处理时改贴当前代次；手动恢复后旧代次尚未形成活动的记录不再投影。已经形成的活动和旧通知资格不因激活代次变化而失效。
 
-活动成员、摘要、投递引用均检查 owner 一致。分页默认 50、最多 100，使用 `(recorded_at, id)` 游标，游标绑定 owner 与过滤条件；不允许客户端借游标改变所有者。活动历史、已取消订阅与备注不做自动 TTL；确认 token、已完成内部任务可按用途清理，不删除需求要求保留的事实。
+活动成员、摘要、投递引用均检查 owner 一致。分页默认 50、最多 100；活动使用上述形成顺序 ID 与 snapshot/refresh_cursor，其他资源按自身稳定键。游标绑定 owner 与过滤条件，不允许客户端借游标改变所有者。活动历史、已取消订阅与备注不做自动 TTL；确认 token、已完成内部任务可按用途清理，不删除需求要求保留的事实。
 
 `athena` 数据库使用一个权威迁移集；沿用 `internal/accountstate/store/migrations` 作为现有入口并纳入全部通知和 Trader Sync 表，移除 notification 独立迁移归属，不能让两套 goose 编号在同一库竞争。`sqlc.yaml` 中各存储查询仍按模块生成，但其 schema 输入引用真实权威迁移。composition root 注入池与受控事务接口，业务服务不创建另一个私有权限副本。数据库整体重组只是目标设计，本次未执行迁移或重置。
 
@@ -313,8 +326,8 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 
 本次已执行文档/源码阅读、官方资料检索、短时只读 RPC/WSS 核验、实现槽与 getLegs 等 eth_call、Profile 与精确市场查询。原始响应及限制见两份新增核验报告。没有修改业务源码、执行数据库迁移、启动业务服务或发送 Telegram 消息；没有运行实现的单元、集成或端到端测试。
 
-已确认：首期规模及既有业务；集中成交保留前 10 条逐条并允许排队；全部通知同库；发送许可边界；单供应商采集、最终确认、秒级基线与故障不补查。接口、资料和验收章节也已确认，[完整任务 spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认，本次设计任务完成。长期需求状态与设计状态不增加额外审批流程。
+已确认：首期规模及既有业务；集中成交保留前 10 条逐条并允许排队；全部通知同库；发送许可边界；单供应商采集、最终确认、秒级基线与故障不补查。原接口、资料和验收章节也已确认，[后端任务 spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认，原后端设计阶段完成。UI 补充进度见下文；长期需求状态与设计状态不增加额外审批流程。
 
 后续实现需验证当前协议完整样本矩阵、同秒与重启故障、授权/撤权/绑定竞争、未知结果不重发、摘要临界 60 秒调度、真实容量及公开时间证据。数据缺失/异常的行为已有明确设计；未完成的运行测试不能写成已通过。
 
-2026-09-10 设计确认后的下一阶段已完成实现计划编写：共14项任务，覆盖同库存储、可靠投递、订阅授权、实时采集、摘要、API与验收。见[实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)。本轮仅进行源码核对、计划自检和文档同步，未实施或运行业务测试；计划中的测试命令不是已通过的结果。
+2026-09-10 原后端设计确认后已形成14项[实现任务](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)，尚未执行。用户随后要求先补 UI；[UI 书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)各节已确认、整份待审阅，确认后更新前后端联合计划。当前仅设计、可丢弃线框和文档核对，未实施或运行业务测试；计划中的测试命令不是已通过的结果。

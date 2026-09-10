@@ -2,7 +2,7 @@
 
 > 日期：2026-09-10。状态：已确认待实现；用户已整体确认完整书面规格。
 >
-> 设计阶段已完成。用户随后要求进入下一步，现已形成[实现计划](../plans/2026-09-10-trader-sync-activity-alerts.md)；尚未实施业务代码、生成接口、数据库调整或运行配置。
+> 后端设计已整体确认并形成[实现计划](../plans/2026-09-10-trader-sync-activity-alerts.md)，尚未执行。用户随后要求先补 UI；[UI spec](2026-09-10-trader-sync-activity-alerts-ui-design.md)各节已确认，完整书面待审阅。本文第 4 节的 UI 读取契约补充随该 spec 审阅，已有业务及后端架构决定继续有效。
 
 ## 1. 目标、依据与决定
 
@@ -88,16 +88,31 @@ flowchart LR
 | PauseSubscription / ResumeSubscription / CancelSubscription | subscription_id、expected_revision、request_id；返回新的状态及 revision。 |
 | UpdateTargetNote | 规范 wallet、expected_revision、note、request_id；允许编辑已取消目标保留的备注，不变更订阅边界。 |
 | ListActivities / GetActivity | owner 内时间/订阅过滤及分页；逐条成交、资料、时间证据、备注快照、投递及批次进度。 |
+| ListSubscriptionHistory | owner 内分页读取订阅生效区间及中断时间线，避免详情无界内嵌历史。 |
+| GetSummaryBatch / ListSummaryParts | owner 内冻结批次概要、完整分条分页；parts 可过滤同批次 activity_id。 |
 | ListSubscriptionSummaries / GetSubscriptionSummary | 独立管理员接口；用户身份、完整目标钱包、生命周期/健康、活动及结果数量。 |
 | GetTraderSyncRuntimeStatus | 管理员安全概要：连接、目标/关系数量、积压、缺失和异常统计。 |
 
 方法按仓库 gRPC 规范使用动词开头 PascalCase。member 请求没有 account_id，由服务端注入；所有查询和写入均包含 owner 条件，跨 owner 与不存在资源都返回 NotFound。管理员 DTO/SQL 从源头不选择私有备注、活动正文、消息正文和逐条投递，无管理用户订阅或重发入口。
 
-分页默认 50、最多 100，以 `(recorded_at,id)` 或资源相应时间/ID 稳定排序；游标签名并绑定 owner、过滤条件和方向。写请求以 owner、操作、request_id 及 payload digest 幂等，重复键不同 payload 拒绝；读幂等结果前仍检查当前权限。资源版本竞争返回 Aborted；配额满 ResourceExhausted，重复目标 AlreadyExists，输入 InvalidArgument，过期/失效确认 FailedPrecondition。只有成功事务保存成功幂等结果；失败不会占配额。
+分页默认 50、最多 100，游标签名并绑定身份、过滤条件、方向及相应页边界。UI 补充将活动排序修订为 owner 内形成顺序 `id DESC`，其 bigint ID 在账户 gate 内由持久 sequence（CACHE 1、正向、NO CYCLE）分配，不预取或回拨；读取在同 gate 取得该 owner 已提交 max(id) 为 snapshot。recorded_at 继续记录真实时间，避免将可回退时钟当新活动水位。其他资源按相应稳定时间/ID，摘要部分按序号。
+
+写请求以 owner、操作、request_id 及 payload digest 幂等，重复键不同 payload 拒绝；读幂等结果前仍检查当前权限。已提交 Create 成功在权限检查后优先于 token 到期/消费判定返回，避免响应丢失后不能恢复结果。资源版本竞争返回 Aborted；配额满 ResourceExhausted，重复目标 AlreadyExists，输入 InvalidArgument，过期/失效确认 FailedPrecondition。只有成功事务保存成功幂等结果；失败不会占配额。
 
 确认卡包含头像、显示名、完整规范钱包、认证、加入时间、当前持仓价值、最大单笔盈利、Predictions，以及六个 P/L 区间和曲线，默认 1Y。每项使用 `availability`、`reason_code`、`source`、`queried_at` 与可选 value；未知不是 0。金额使用十进制字符串或整数原量加 decimals，position/token ID 以字符串传输，不经 JavaScript number。时间为带 UTC 语义的 timestamp；source/clock/precision 分开保存。
 
 Activity DTO 包含 source_record_id、钱包、BUY/SELL、原量/份额/费用及币种、结算时间、接收和形成时间、可用市场引用、资料缺失状态与备注快照。Combo 是单个活动，保留自身 Outcome、腿数组与逻辑关系。Delivery DTO 分别暴露 authorized_at、可缺失 started_at、结果时间、状态/原因；不把获许可或已提交显示为成功。
+
+### UI 设计补充的读取边界
+
+以下为本轮 UI 书面规格补全，尚未实现；完整定义与验收见 [UI spec 第 10 节](2026-09-10-trader-sync-activity-alerts-ui-design.md#10-前后端契约补全)。
+
+- Resolve 补充 owner 保存备注的存在性/revision、现有未取消订阅和配额快照；六区间各自返回标题值与曲线的独立可用性。Create 仍在事务中最终判断。
+- ListActivities 增加 summary_batch_id 过滤。首次返回 snapshot 和 refresh_cursor；next_cursor 固定 snapshot，refresh_cursor 重读原页固定成员并查询 has_newer，用户点击后才取得最新 snapshot。结算时间筛选为 `[from,to)`，UI 使用 UTC+8 输入、后端 UTC 语义。
+- 活动明确固定 notification_mode=in_app_only/ordinary/summary；summary 分 waiting/frozen/cancelled_before_freeze。当前绑定不能改写形成时资格。
+- 详情只返回观察和投递概要，生效/中断历史由 ListSubscriptionHistory、摘要部分由 ListSummaryParts 分页读取；全部 attempts 后端保留，UI 只取当前结果、次数和最近 attempt，不内嵌无界数组。
+- GetSummaryBatch 展示全批统计，活动读取相关 parts；一个活动跨多部分不能只返回第一部分。全部 member 批次/分条读取重查 grant 与 owner，管理员不能复用。
+- 管理员概要增加 as_of，关联投递计数按 distinct delivery 而非 attempt；跨订阅共享摘要部分使各行不可相加，全局单独 distinct 聚合。运行积压明确单位、窗口或 service_epoch。
 
 ## 5. 目标身份、P/L 与市场资料
 
@@ -289,8 +304,8 @@ Bot update 的绑定修改、消费进度与回复 outbox 在同一事务；upda
 
 预计新增 `internal/tradersync/`、`internal/server/tradersync/` 和 Trader Sync application types；调整 accountaccess/accountstate 的权限与事务、Notification 全部存储/worker/poller、Polymarket 类型化适配，以及服务注册与运行初始化。长期设计的[源码影响表](../../design/trading/trader-sync-activity-alerts.md#源码影响)提供当前真实入口和关键符号。
 
-实现时必须同步 schema→sqlc、application types→proto/gateway/apiclient/Swagger 及真实前后端消费者，不手改生成代码；新产品页面布局另行设计。本任务不改这些文件、不生成代码、不启动业务服务、不发 Telegram 或完成邮件。
+实现时必须同步 schema→sqlc、application types→proto/gateway/apiclient/Swagger 及真实前后端消费者，不手改生成代码；新产品页面布局和对应读取补全见[UI spec](2026-09-10-trader-sync-activity-alerts-ui-design.md)。本任务不改这些文件、不生成代码、不启动业务服务、不发 Telegram 或完成邮件。
 
 相关长期文档已同步本轮业务边界、所选架构与证据；既有 accountaccess、Notification、运行设计继续描述当前已实现行为，不把此方案提前标为已运行。没有待用户选择的技术事实；协议升级、资料不可用和未完成运行测试均有明确处理或验收条件。
 
-用户已整体确认本书面规格，设计阶段完成；随后已按 writing-plans 形成[14项实现任务与验收计划](../plans/2026-09-10-trader-sync-activity-alerts.md)。当前尚未执行该计划。后续若调整方案，同步修订本规格及相关长期文档。
+用户已整体确认原后端书面规格；随后已按 writing-plans 形成[14项后端实现任务与验收计划](../plans/2026-09-10-trader-sync-activity-alerts.md)，尚未执行。后续补充的 UI 各节已确认，完整书面待审阅；本轮读取/分页补充随 UI spec 一并审阅，确认后更新前后端联合计划，不能直接按旧计划宣称覆盖全部 UI。

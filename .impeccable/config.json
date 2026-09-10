@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "wide-tracking",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/1615399-1789043332/content/home-layouts.html"
+        ],
+        "createdAt": "2026-09-10T13:04:27.103Z",
+        "reason": "Agent review: Target form label now uses normal spacing. Remaining wider spacing belongs only to short uppercase navigation labels and the ATHENA / TRADER SYNC / UI DESIGN prototype label; no body paragraphs use wide tracking."
+      },
+      {
+        "rule": "repeating-stripes-gradient",
+        "value": "*",
+        "files": [
+          ".superpowers/brainstorm/1615399-1789043332/content/home-layouts.html"
+        ],
+        "createdAt": "2026-09-10T13:04:27.202Z",
+        "reason": "Agent review: repeating stripes depict table rows inside the three schematic layout thumbnails; they are diagram content, not decorative application backgrounds."
+      }
+    ]
+  }
+}

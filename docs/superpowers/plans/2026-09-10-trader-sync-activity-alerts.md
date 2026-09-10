@@ -1,5 +1,9 @@
 # Trader Sync / Activity Alerts 实现计划
 
+> 当前执行状态：尚未执行。本文件是原后端设计对应的 14 项计划。用户随后要求先补 UI；[完整 UI spec](../specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)各节已确认、书面待整体审阅。确认后按 writing-plans 更新为前后端联合计划，当前正文不能直接作为完整交付范围。
+>
+> 联合修订必须覆盖：Resolve 备注/重复/配额快照及 Create 成功结果优先恢复；活动 ID 顺序与 snapshot/refresh_cursor；ListSubscriptionHistory、GetSummaryBatch、ListSummaryParts；有界结果 DTO 和管理员计数；六类会员页面、管理员概要/Service Status、Notifications 返回及权限清理。任务 6 的“不增加业务页面”、任务 12 的旧游标/13 RPC/无界内嵌 DTO，以及仅后端验收范围均须修订。本轮仅标明差距，未开始执行或提前编写未经整体审阅的联合步骤。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 实现已确认的 Trader Sync 后端：目标确认、独立订阅、共享实时采集、持久活动、Telegram 普通/摘要投递及可核验运行状态。
