@@ -55,7 +55,7 @@
 | Market Intelligence | Completed ATP/WTA event synchronization, price history, status, and manual refresh | [Sports History](market-intelligence/sports-history.md) | `已实现` |
 | Market Intelligence | Managed Optimistic Oracle log ingestion, market enrichment, reads, scans, and alerts | [Managed OO](market-intelligence/managed-oo.md) | `已实现` |
 | Market Intelligence | Worm sports-market synchronization, rules, live state, history, and alerts | [Worm Markets](market-intelligence/worm-markets.md) | `已实现` |
-| Trading | Trader Sync Activity Alerts：10 人共享 WSS、全部通知同库、发送许可与撤权边界、分批摘要及未知终态；书面方案待整体审阅 | [Activity Alerts 后端技术设计](trading/trader-sync-activity-alerts.md) | `设计中` |
+| Trading | Trader Sync Activity Alerts：10 人共享 WSS、全部通知同库、发送许可与撤权边界、分批摘要及未知终态；完整设计已确认 | [Activity Alerts 后端技术设计](trading/trader-sync-activity-alerts.md) | `已确认待实现` |
 | Trading | Revisioned owner-scoped selection of up to 20 Solana Wallets, removal-first official-HMAC connection/activity flows, saved combinations and previews, Cash Out, and official Web JWT live-Run orchestration | [Worm Trading](trading/worm-trading.md) | `已实现` |
 | Trading | Provider-backed Worm event catalogs and owner-scoped, revisioned market-combination CRUD with trusted display snapshots | [Worm Market Combinations](trading/worm-market-combinations.md) | `已实现` |
 | Trading | Durable asynchronous read-only execution previews limited to the current selected Wallet revision, with frozen Wallet and market order, authoritative Worm exposure and estimates, cumulative USDC simulation, and expiring owner-scoped review | [Worm Execution Preview](trading/worm-execution-preview.md) | `已实现` |

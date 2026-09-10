@@ -195,4 +195,4 @@ WebSocket 的 `eth_subscribe("logs", filter)` 也接受合约及 topic 过滤；
 3. **全部 TRADE 的协议覆盖。** 官方 `/activity` 存在 `isCombo` 活动；两个核心 V2 合约并不等同于全部交易范围。Combos 使用独立 Exchange 代理，需覆盖对应事件与组合腿数据，不能静默忽略。[官方 Data OpenAPI](https://docs.polymarket.com/api-spec/data-openapi.yaml)、[Combos 请求流程](https://docs.polymarket.com/trading/combos/requesters)
 4. **性能与可靠性。** 首期需求已明确按 10 名用户、最多 100 个订阅关系及目标完全不重叠时的 100 个不同目标设计；实际成交负载、RPC 配额、长时间运行效果、端到端时效或源数据异常覆盖仍未完成验证。不能把单区块过滤成功当成已达到产品全部验收要求。
 
-关联 Activity Alerts 需求此前已正式确认；用户随后逐项确认结算时间、摘要提交时限及超长分批调整，本轮业务边界均已逐项确认，当前需求为 `已确认`。[后端技术设计](../../design/trading/trader-sync-activity-alerts.md)保持 `设计中`。这些发现继续作为技术核实输入；若后续方案产生其他实质业务影响，应先写回关联需求并确认。当前开发入口选择及完整书面方案见关联设计；本报告样本本身不构成全部运行验收或实现授权。
+关联 Activity Alerts 需求此前已正式确认；用户随后逐项确认结算时间、摘要提交时限及超长分批调整，本轮业务边界均已逐项确认，当前需求为 `已确认`。[后端技术设计](../../design/trading/trader-sync-activity-alerts.md)已获用户整体确认，状态为 `已确认待实现`。这些发现继续作为技术核实输入；若后续方案产生其他实质业务影响，应先写回关联需求并确认。当前开发入口选择及完整书面方案见关联设计；本报告样本本身不构成全部运行验收或实现授权。

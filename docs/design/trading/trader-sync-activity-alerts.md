@@ -1,12 +1,12 @@
 # Trader Sync：Activity Alerts 后端技术设计
 
-> 设计状态：设计中
+> 设计状态：已确认待实现
 >
-> 关联需求：[Activity Alerts 需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)（业务边界已逐项确认，随书面规格整体审阅）
+> 关联需求：[Activity Alerts 需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)（已确认；完整书面设计也已整体确认）
 
-本文是目标方案，不代表当前实现。用户已授权开展技术设计，整份技术方案尚未获批，本能力尚未获准实施。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
+本文是目标方案，不代表当前实现。用户已整体确认完整技术方案，本次范围仅为设计，尚未实施。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
 
-本轮已按 Superpowers 分节确认统一数据库与现有进程边界、发送许可与撤权语义、单供应商 WSS 采集及最终确认路线；同用户集中成交允许限速排队也已确认。接口、资料和验收章节也已确认；[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已形成，待用户整体审阅。本次只修改设计与相关文档。
+本轮已按 Superpowers 分节确认统一数据库与现有进程边界、发送许可与撤权语义、单供应商 WSS 采集及最终确认路线；同用户集中成交允许限速排队也已确认。接口、资料和验收章节也已确认；[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认。本次只修改设计与相关文档。
 
 新增技术证据见[数据源契约核验](../../requirements/polymarket-copy-trading/source-contract-verification.md)与[RPC 过滤、确认和额度复核](../../requirements/polymarket-copy-trading/collector-contract-verification.md)。它们记录当前实现版本、100 钱包 OR 推送、Combo 腿映射、Profile 与收益资料的证据及限制。技术参数是可验证的设计默认值，不表示已完成运行验收。
 
@@ -42,7 +42,7 @@ Copy Trading 不在本设计内。前端只约定数据与交互契约，不设�
 
 ## 关键决定
 
-2026-09-10 本轮已确认以下总体架构、采集路线与发送许可边界；接口和验收章节也已确认，完整书面规格待整体审阅，尚不表示实现已经开始。
+2026-09-10 本轮已确认以下总体架构、采集路线与发送许可边界；接口和验收章节也已确认，完整书面规格已获整体确认，尚未开始实现。
 
 1. **进程部署：**`internal/tradersync.Service` 运行在现有 `athena-server` 内，提供业务 RPC 和后台监控；Telegram 仍由现有 `athena-notification` 的单一 Bot、poller 和 sender 负责。不新增服务进程、消息中间件或 Redis。
 2. **事务范围（已确认）：**账户权限、Trader Sync 数据及全部 Notification 数据统一放在 `athena` PostgreSQL 数据库，包括账户绑定、账户投递、系统群组通知、Bot polling offset 和绑定回复 outbox。各模块保留独立 query adapter，共享受控事务和一个权威迁移集；每个进程建立自己的连接池，不跨进程共享连接池对象。Notification 不再因账户/系统通知而持有两个数据库 store。
@@ -313,6 +313,6 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 
 本次已执行文档/源码阅读、官方资料检索、短时只读 RPC/WSS 核验、实现槽与 getLegs 等 eth_call、Profile 与精确市场查询。原始响应及限制见两份新增核验报告。没有修改业务源码、执行数据库迁移、启动业务服务或发送 Telegram 消息；没有运行实现的单元、集成或端到端测试。
 
-已确认：首期规模及既有业务；集中成交保留前 10 条逐条并允许排队；全部通知同库；发送许可边界；单供应商采集、最终确认、秒级基线与故障不补查。接口、资料和验收章节也已确认，[完整任务 spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已写入并等待用户整体审阅。长期需求状态与设计状态不增加额外审批流程。
+已确认：首期规模及既有业务；集中成交保留前 10 条逐条并允许排队；全部通知同库；发送许可边界；单供应商采集、最终确认、秒级基线与故障不补查。接口、资料和验收章节也已确认，[完整任务 spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认，本次设计任务完成。长期需求状态与设计状态不增加额外审批流程。
 
 后续实现需验证当前协议完整样本矩阵、同秒与重启故障、授权/撤权/绑定竞争、未知结果不重发、摘要临界 60 秒调度、真实容量及公开时间证据。数据缺失/异常的行为已有明确设计；未完成的运行测试不能写成已通过。
