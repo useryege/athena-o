@@ -32,6 +32,31 @@ type AccountModuleAccess struct {
 	AccessLevel string
 }
 
+type AccountNotificationDelivery struct {
+	ID                int64
+	AccountID         pgtype.UUID
+	IdempotencyKey    string
+	PayloadDigest     []byte
+	Source            string
+	Severity          string
+	Title             pgtype.Text
+	Body              string
+	Link              pgtype.Text
+	Channel           string
+	Status            string
+	TelegramChatID    int64
+	BindingRevision   int64
+	ProviderMessageID pgtype.Text
+	ErrorMessage      pgtype.Text
+	CreatedAt         pgtype.Timestamptz
+	SentAt            pgtype.Timestamptz
+	Attempts          int32
+	NextAttemptAt     pgtype.Timestamptz
+	LastAttemptAt     pgtype.Timestamptz
+	LockedAt          pgtype.Timestamptz
+	LockedBy          pgtype.Text
+}
+
 type AccountPreference struct {
 	AccountID pgtype.UUID
 	Theme     string
@@ -63,4 +88,70 @@ type AthenaAccount struct {
 	CreatedAt        pgtype.Timestamptz
 	UpdatedAt        pgtype.Timestamptz
 	LastLoginAt      pgtype.Timestamptz
+}
+
+type SystemNotificationDelivery struct {
+	ID                int64
+	Source            string
+	Severity          string
+	Title             pgtype.Text
+	Body              string
+	Link              pgtype.Text
+	Channel           string
+	Status            string
+	ProviderMessageID pgtype.Text
+	ErrorMessage      pgtype.Text
+	CreatedAt         pgtype.Timestamptz
+	SentAt            pgtype.Timestamptz
+	TelegramChat      string
+	TopicLabel        string
+	Attempts          int32
+	NextAttemptAt     pgtype.Timestamptz
+	LastAttemptAt     pgtype.Timestamptz
+	LockedAt          pgtype.Timestamptz
+	LockedBy          pgtype.Text
+}
+
+type SystemNotificationTopic struct {
+	TelegramChat    string
+	Label           string
+	MessageThreadID int32
+	CreatedAt       pgtype.Timestamptz
+}
+
+type TelegramBinding struct {
+	AccountID           pgtype.UUID
+	TelegramUserID      int64
+	TelegramChatID      int64
+	TelegramUsername    pgtype.Text
+	TelegramDisplayName string
+	Status              string
+	Revision            int64
+	BoundAt             pgtype.Timestamptz
+	UpdatedAt           pgtype.Timestamptz
+	LastError           pgtype.Text
+}
+
+type TelegramBindingAttempt struct {
+	ID            pgtype.UUID
+	AccountID     pgtype.UUID
+	TokenDigest   []byte
+	Status        string
+	FailureReason pgtype.Text
+	ExpiresAt     pgtype.Timestamptz
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
+}
+
+type TelegramBindingVersion struct {
+	AccountID pgtype.UUID
+	Revision  int64
+}
+
+type TelegramPollingState struct {
+	Singleton    bool
+	NextUpdateID int64
+	LastPollAt   pgtype.Timestamptz
+	LastUpdateAt pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }

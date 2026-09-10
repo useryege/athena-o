@@ -27,7 +27,7 @@ documented in [System Notification Operations](system-notification-operations.md
 | Telegram update consumer | [internal/notification/poller.go](../../../internal/notification/poller.go) | `TelegramPoller`, `handleMessage`, `handleMyChatMember` |
 | Fair delivery worker and shared sender | [internal/notification/worker.go](../../../internal/notification/worker.go), [internal/notification/sender.go](../../../internal/notification/sender.go) | `claimFairNotificationBatch`, `processClaimedAccountNotification`, `TelegramSender` |
 | Telegram provider adapter | [util/telegram/telegram.go](../../../util/telegram/telegram.go) | `Client`, `PollUpdates`, `GetWebhookInfo`, dynamic `SendMessageRequest.ChatID` |
-| Durable schema and queries | [internal/notification/store/migrations/000001_init.sql](../../../internal/notification/store/migrations/000001_init.sql), [internal/notification/store/queries/telegram_bindings.sql](../../../internal/notification/store/queries/telegram_bindings.sql), [internal/notification/store/queries/account_notifications.sql](../../../internal/notification/store/queries/account_notifications.sql) | binding, attempt, offset, version, and account-delivery tables |
+| Durable schema and queries | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql), [internal/notification/store/queries/telegram_bindings.sql](../../../internal/notification/store/queries/telegram_bindings.sql), [internal/notification/store/queries/account_notifications.sql](../../../internal/notification/store/queries/account_notifications.sql) | binding, attempt, offset, version, and account-delivery tables |
 | Transactional store facade | [internal/notification/store/telegram_bindings.go](../../../internal/notification/store/telegram_bindings.go), [internal/notification/store/account_notifications.go](../../../internal/notification/store/account_notifications.go) | `CompleteTelegramBindingAttempt`, `EnqueueAccountNotification`, `SendAccountNotificationWithBindingLock` |
 | Process wiring and internal authentication | [cmd/athena-notification/commands/athena_notification.go](../../../cmd/athena-notification/commands/athena_notification.go), [internal/notification/server.go](../../../internal/notification/server.go), [internal/notification/apiclient/internal_auth.go](../../../internal/notification/apiclient/internal_auth.go) | one Telegram client, `InternalAuthTokenEnv`, gRPC interceptors |
 | Member UI | [ui/src/app/member/pages/notifications.tsx](../../../ui/src/app/member/pages/notifications.tsx), [ui/src/app/member/notification-service.ts](../../../ui/src/app/member/notification-service.ts), [ui/src/app/member/notification-storage.ts](../../../ui/src/app/member/notification-storage.ts) | `NotificationsPage`, `MemberNotificationService`, one-tab binding instructions |
@@ -136,7 +136,7 @@ browser tab storage, and the Telegram command.
 
 | Setting | Behavior |
 | --- | --- |
-| `ATHENA_NOTIFICATION_POSTGRES_DSN` | Own notification database connection and embedded migration source. |
+| `ATHENA_SERVER_POSTGRES_DSN` | Shared Athena database connection and authoritative embedded migration source. |
 | `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Shared internal gRPC Bearer; at least 32 bytes with no whitespace/control characters. |
 | `ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN` | Required token for the single account/system Bot client. |
 | `ATHENA_NOTIFICATION_TELEGRAM_API_URL` | Telegram API base; defaults to the official API URL. |

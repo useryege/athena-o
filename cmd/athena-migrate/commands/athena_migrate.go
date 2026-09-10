@@ -83,9 +83,9 @@ func newStatusCommand() *cobra.Command {
 }
 
 func migrateUp(ctx context.Context, module migration.Module) error {
-	return postgres.Migrate(ctx, postgres.DSN(module.DSNEnv, module.Database), module.Migrations, migration.MigrationDir)
+	return postgres.Migrate(ctx, postgres.DSN(module.DSNEnv, module.Database), module.Migrations, module.Dir)
 }
 
 func migrationStatus(ctx context.Context, module migration.Module) error {
-	return postgres.MigrationStatus(ctx, postgres.DSN(module.DSNEnv, module.Database), module.Migrations, migration.MigrationDir)
+	return postgres.MigrationStatus(ctx, postgres.DSN(module.DSNEnv, module.Database), module.Migrations, module.Dir)
 }

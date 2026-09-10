@@ -18,15 +18,13 @@ import (
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcenter"
 	"github.com/useryege/athena/internal/accountcredentials"
+	accountstatemigrations "github.com/useryege/athena/internal/accountstate/store/migrations"
 	accountstatesqlc "github.com/useryege/athena/internal/accountstate/store/sqlc"
 	"github.com/useryege/athena/util/db/postgres"
 )
 
-//go:embed migrations/*.sql
-var migrations embed.FS
-
 func Migrations() embed.FS {
-	return migrations
+	return accountstatemigrations.FS
 }
 
 // SQLStore is the shared durable adapter for account identity, access, API
@@ -43,14 +41,21 @@ func NewSQLStore(pool *pgxpool.Pool) *SQLStore {
 	return &SQLStore{pool: pool, queries: accountstatesqlc.New(pool)}
 }
 
+func (s *SQLStore) Pool() *pgxpool.Pool {
+	if s == nil {
+		return nil
+	}
+	return s.pool
+}
+
 func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {
 	return func(ctx context.Context) (*SQLStore, error) {
 		pool, err := postgres.ConnectAndMigrate(ctx, postgres.Options{
 			Module:       "account-state",
 			DSNEnv:       "ATHENA_SERVER_POSTGRES_DSN",
 			Database:     "athena",
-			Migrations:   migrations,
-			MigrationDir: "migrations",
+			Migrations:   accountstatemigrations.FS,
+			MigrationDir: accountstatemigrations.Dir,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("connect account-state postgres: %w", err)

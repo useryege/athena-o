@@ -3,6 +3,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+unset ATHENA_NOTIFICATION_POSTGRES_DSN
 STATE_DIR="${REPO_ROOT}/.run/athena-local-runtime"
 SUPERVISOR_STATE_FILE="${STATE_DIR}/supervisor.state"
 FILTERED_PROCFILE="${STATE_DIR}/Procfile"

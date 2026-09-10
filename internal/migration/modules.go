@@ -5,8 +5,8 @@ import (
 	"io/fs"
 
 	accountstatestore "github.com/useryege/athena/internal/accountstate/store"
+	accountstatemigrations "github.com/useryege/athena/internal/accountstate/store/migrations"
 	managedoostore "github.com/useryege/athena/internal/managedoo/store"
-	notificationstore "github.com/useryege/athena/internal/notification/store"
 	profitsharingstore "github.com/useryege/athena/internal/profitsharing/store"
 	sportshistorystore "github.com/useryege/athena/internal/sportshistory/store"
 	sportslivestore "github.com/useryege/athena/internal/sportslive/store"
@@ -26,19 +26,19 @@ type Module struct {
 	DSNEnv     string
 	Database   string
 	Migrations fs.FS
+	Dir        string
 }
 
 var modules = []Module{
-	{Name: "account-state", DSNEnv: "ATHENA_SERVER_POSTGRES_DSN", Database: "athena", Migrations: accountstatestore.Migrations()},
-	{Name: "worm-markets", DSNEnv: "ATHENA_WORM_MARKETS_POSTGRES_DSN", Database: "worm_markets", Migrations: wormmarketsstore.Migrations()},
-	{Name: "worm-trading", DSNEnv: "ATHENA_WORM_TRADING_POSTGRES_DSN", Database: "worm_trading", Migrations: wormtradingstore.Migrations()},
-	{Name: "notification", DSNEnv: "ATHENA_NOTIFICATION_POSTGRES_DSN", Database: "notification", Migrations: notificationstore.Migrations()},
-	{Name: "wallet", DSNEnv: "ATHENA_WALLET_POSTGRES_DSN", Database: "wallet", Migrations: walletstore.Migrations()},
-	{Name: "sports-live", DSNEnv: "ATHENA_SPORTS_LIVE_POSTGRES_DSN", Database: "sports_live", Migrations: sportslivestore.Migrations()},
-	{Name: "sports-history", DSNEnv: "ATHENA_SPORTS_HISTORY_POSTGRES_DSN", Database: "sports_history", Migrations: sportshistorystore.Migrations()},
-	{Name: "managed-oo", DSNEnv: "ATHENA_MANAGED_OO_POSTGRES_DSN", Database: "managed_oo", Migrations: managedoostore.Migrations()},
-	{Name: "profit-sharing", DSNEnv: "ATHENA_PROFIT_SHARING_POSTGRES_DSN", Database: "profit_sharing", Migrations: profitsharingstore.Migrations()},
-	{Name: "token", DSNEnv: "ATHENA_TOKEN_POSTGRES_DSN", Database: "token", Migrations: tokenpostgres.Migrations()},
+	{Name: "account-state", DSNEnv: "ATHENA_SERVER_POSTGRES_DSN", Database: "athena", Migrations: accountstatestore.Migrations(), Dir: accountstatemigrations.Dir},
+	{Name: "worm-markets", DSNEnv: "ATHENA_WORM_MARKETS_POSTGRES_DSN", Database: "worm_markets", Migrations: wormmarketsstore.Migrations(), Dir: MigrationDir},
+	{Name: "worm-trading", DSNEnv: "ATHENA_WORM_TRADING_POSTGRES_DSN", Database: "worm_trading", Migrations: wormtradingstore.Migrations(), Dir: MigrationDir},
+	{Name: "wallet", DSNEnv: "ATHENA_WALLET_POSTGRES_DSN", Database: "wallet", Migrations: walletstore.Migrations(), Dir: MigrationDir},
+	{Name: "sports-live", DSNEnv: "ATHENA_SPORTS_LIVE_POSTGRES_DSN", Database: "sports_live", Migrations: sportslivestore.Migrations(), Dir: MigrationDir},
+	{Name: "sports-history", DSNEnv: "ATHENA_SPORTS_HISTORY_POSTGRES_DSN", Database: "sports_history", Migrations: sportshistorystore.Migrations(), Dir: MigrationDir},
+	{Name: "managed-oo", DSNEnv: "ATHENA_MANAGED_OO_POSTGRES_DSN", Database: "managed_oo", Migrations: managedoostore.Migrations(), Dir: MigrationDir},
+	{Name: "profit-sharing", DSNEnv: "ATHENA_PROFIT_SHARING_POSTGRES_DSN", Database: "profit_sharing", Migrations: profitsharingstore.Migrations(), Dir: MigrationDir},
+	{Name: "token", DSNEnv: "ATHENA_TOKEN_POSTGRES_DSN", Database: "token", Migrations: tokenpostgres.Migrations(), Dir: MigrationDir},
 }
 
 func Modules() []Module {

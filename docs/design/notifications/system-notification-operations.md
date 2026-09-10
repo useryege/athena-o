@@ -22,7 +22,7 @@ private-chat delivery are documented in [Account Telegram Notifications](account
 | --- | --- | --- |
 | Internal system and runtime contracts | [internal/notification/notification.proto](../../../internal/notification/notification.proto) | `SystemNotificationService`, `NotificationRuntimeService` |
 | System application logic | [internal/notification/service.go](../../../internal/notification/service.go) | `SendSystemNotification`, `ListSystemNotificationDeliveries`, `GetSystemNotificationDelivery` |
-| Durable system store | [internal/notification/store/system_notifications.go](../../../internal/notification/store/system_notifications.go), [internal/notification/store/queries/system_notifications.sql](../../../internal/notification/store/queries/system_notifications.sql), [internal/notification/store/migrations/000001_init.sql](../../../internal/notification/store/migrations/000001_init.sql) | `EnsureSystemNotificationTopic`, system topic/delivery queue operations |
+| Durable system store | [internal/notification/store/system_notifications.go](../../../internal/notification/store/system_notifications.go), [internal/notification/store/queries/system_notifications.sql](../../../internal/notification/store/queries/system_notifications.sql), [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql) | `EnsureSystemNotificationTopic`, system topic/delivery queue operations |
 | Fair worker and Telegram gateway | [internal/notification/worker.go](../../../internal/notification/worker.go), [internal/notification/sender.go](../../../internal/notification/sender.go) | `claimFairNotificationBatch`, `processClaimedSystemNotification`, `TelegramSender` |
 | Public administrator facade | [internal/server/notification/notification.proto](../../../internal/server/notification/notification.proto), [internal/server/notification/notification.go](../../../internal/server/notification/notification.go) | administrator list/detail/test/runtime HTTP routes |
 | Administrator authorization | [internal/server/authz.go](../../../internal/server/authz.go) | `administratorGRPCMethods` notification entries |
@@ -105,7 +105,7 @@ projections.
 | `ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID` | Concrete group chat behind logical `TELEGRAM_CHAT_TEST`. |
 | `ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID` | Concrete group chat behind logical `TELEGRAM_CHAT_PROD`. |
 | `ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN`, `..._API_URL`, `..._TIMEOUT_SECONDS` | Shared Telegram Bot identity, API endpoint, and request timeout. |
-| `ATHENA_NOTIFICATION_POSTGRES_DSN` | Database that owns both logical notification domains. |
+| `ATHENA_SERVER_POSTGRES_DSN` | Shared Athena database connection that owns both logical notification domains. |
 | `ATHENA_NOTIFICATION_WORKER_SEND_INTERVAL`, `..._POLL_INTERVAL`, `..._BATCH_SIZE`, `..._MAX_ATTEMPTS`, `..._LOCK_TIMEOUT` | Shared rate interval, polling cadence, fair batch size, retry cap, and stale-lock recovery. |
 | Producer-specific `..._NOTIFICATION_ENABLED` and `..._NOTIFICATION_SERVER_ADDRESS` | Enable each producer and select the Notification gRPC target. |
 

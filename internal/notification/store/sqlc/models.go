@@ -8,6 +8,30 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AccountAccess struct {
+	AccountID            pgtype.UUID
+	LoginEnabled         bool
+	ApiKeyEnabled        bool
+	ProfitSharingEnabled bool
+	Revision             int64
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
+}
+
+type AccountApiKey struct {
+	AccountID pgtype.UUID
+	DisplayID string
+	Jti       string
+	IssuedAt  pgtype.Timestamptz
+	ExpiresAt pgtype.Timestamptz
+}
+
+type AccountModuleAccess struct {
+	AccountID   pgtype.UUID
+	Module      string
+	AccessLevel string
+}
+
 type AccountNotificationDelivery struct {
 	ID                int64
 	AccountID         pgtype.UUID
@@ -31,6 +55,39 @@ type AccountNotificationDelivery struct {
 	LastAttemptAt     pgtype.Timestamptz
 	LockedAt          pgtype.Timestamptz
 	LockedBy          pgtype.Text
+}
+
+type AccountPreference struct {
+	AccountID pgtype.UUID
+	Theme     string
+	Revision  int64
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+}
+
+type AccountProfile struct {
+	AccountID         pgtype.UUID
+	DisplayName       string
+	AccountTier       string
+	AvatarObjectKey   string
+	AvatarContentType string
+	AvatarEtag        string
+	AvatarSizeBytes   int64
+	Revision          int64
+	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+}
+
+type AthenaAccount struct {
+	AccountID        pgtype.UUID
+	Username         string
+	IdentityProvider string
+	IdentitySubject  pgtype.Text
+	VerifiedEmail    string
+	Administrator    bool
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+	LastLoginAt      pgtype.Timestamptz
 }
 
 type SystemNotificationDelivery struct {
