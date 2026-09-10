@@ -107,7 +107,7 @@
 - 产出：`pgtest.New(t *testing.T, schema fs.FS, dir string) *pgtest.DB`，DB含 `Pool *pgxpool.Pool`、`DSN string`。
 - 产出：`(*accountstatestore.SQLStore).Pool() *pgxpool.Pool`，由现有store拥有并关闭；业务适配器只借用，不重复Close。
 
-- [ ] **步骤1：写失败测试，证明迁移CLI只有一个athena/notification schema归属。**
+- [x] **步骤1：写失败测试，证明迁移CLI只有一个athena/notification schema归属。**
 
 ```go
 func TestModulesHaveOneAthenaOwner(t *testing.T) {
@@ -124,7 +124,7 @@ func TestModulesHaveOneAthenaOwner(t *testing.T) {
 
 运行 `go test ./internal/migration -run TestModulesHaveOneAthenaOwner -count=1`；预期因现有notification独立条目失败。
 
-- [ ] **步骤2：实现隔离数据库夹具及两连接锁测试。**夹具读取显式测试admin DSN，用 `pgx.Identifier{name}.Sanitize()` 创建 `athena_test_`+随机UUID数据库；从同DSN替换dbname，调用 `postgres.Migrate(ctx, dsn, schema, dir)`，再创建pool。Cleanup先关pool，再删除自己创建的数据库。禁止将输入DSN数据库直接清空；任何迁移失败Fatal并清理已创建资源。
+- [x] **步骤2：实现隔离数据库夹具及两连接锁测试。**夹具读取显式测试admin DSN，用 `pgx.Identifier{name}.Sanitize()` 创建 `athena_test_`+随机UUID数据库；从同DSN替换dbname，调用 `postgres.Migrate(ctx, dsn, schema, dir)`，再创建pool。Cleanup先关pool，再删除自己创建的数据库。禁止将输入DSN数据库直接清空；任何迁移失败Fatal并清理已创建资源。
 
 ```go
 // migrations/embed.go
@@ -135,9 +135,9 @@ var FS embed.FS
 const Dir = "."
 ```
 
-`schema_integration_test.go`用 `pgtest.New(t,migrations.FS,migrations.Dir)` 后查询 `to_regclass`，断言athena_account、account_access、telegram_bindings、account_notification_deliveries、system_notification_deliveries及telegram_polling_state均存在。另开两个pool同时迁移同一DB，断言成功且只有一组goose版本。gate测试用两个连接与channel屏障证明同owner串行、不同owner可并行。
+`schema_integration_test.go`用 `pgtest.New(t,migrations.FS,migrations.Dir)` 后查询 `to_regclass`，断言athena_account、account_access、telegram_bindings、account_notification_deliveries、system_notification_deliveries及telegram_polling_state均存在。对全新隔离库启动两个独立测试进程首次迁移，验证实际 advisory lock 竞争、建表及版本唯一性，避免进程内gooseMu使并发测试失去区分力。夹具同时验证current_database为新建随机库且管理库未被迁移；修改pgx配置后不能用仍返回原DSN的ConnString冒充重建连接字符串。gate测试用两个连接与channel屏障证明同owner串行、不同owner可并行。
 
-- [ ] **步骤3：合并SQL与连接归属，稳定输入后生成，再适配store/CLI。**
+- [x] **步骤3：合并SQL与连接归属，稳定输入后生成，再适配store/CLI。**
 
 ```sql
 -- WithAccountTx取得锁后才读取权限/时间；UUID先由Go严格规范化。
@@ -148,16 +148,17 @@ SELECT pg_advisory_xact_lock(hashtextextended('athena:wallet:' || $1::text, 0));
 
 `WithAccountTx`使用ReadCommitted，Begin→锁→fn→Commit；defer Rollback只负责清理。迁移注册结构增加逐模块 `Dir` 字段，原模块用"migrations"，athena用migrations.Dir；调用点使用选中模块的Dir，不改其他模块schema。Notification source使用ATHENA_SERVER_POSTGRES_DSN、athena及同一叶子FS；更新本地/Compose/bootstrap消费者并移除旧通知数据库配置。`sqlc.yaml`通知schema改为权威目录后运行 `make sqlc-local`，检查生成类型没有丢表。
 
-- [ ] **步骤4：运行 `go test ./internal/migration ./internal/accountstate/... ./internal/notification/...` 和 `go test -tags=integration ./internal/accountstate/... -count=1`；确认两连接及同库建表断言通过。**测试DB实例可用专用命令创建：`docker run --rm -d --name athena-trader-sync-test-pg -e POSTGRES_PASSWORD=athena-test -p 127.0.0.1:55439:5432 postgres:16`；若名称/端口占用选择新的测试实例，不操作已有容器。测试DSN为 `postgres://postgres:athena-test@127.0.0.1:55439/postgres?sslmode=disable`，设置到ATHENA_TEST_PG_ADMIN_DSN；执行结束只停止本任务创建的容器。
-- [ ] **步骤5：审阅并提交 `refactor(storage): unify notification persistence in athena`。**只暂存本任务文件及该批真实生成输出。
+- [x] **步骤4：运行 `go test ./internal/migration ./internal/accountstate/... ./internal/notification/...` 和 `go test -tags=integration ./internal/accountstate/... -count=1`；确认两连接及同库建表断言通过。**测试DB实例可用专用命令创建：`docker run --rm -d --name athena-trader-sync-test-pg -e POSTGRES_PASSWORD=athena-test -p 127.0.0.1:55439:5432 postgres:16`；若名称/端口占用选择新的测试实例，不操作已有容器。测试DSN为 `postgres://postgres:athena-test@127.0.0.1:55439/postgres?sslmode=disable`，设置到ATHENA_TEST_PG_ADMIN_DSN；执行结束只停止本任务创建的容器。
+- [x] **步骤5：审阅并提交 `refactor(storage): unify notification persistence in athena`。**只暂存本任务文件及该批真实生成输出。
 
 ## 任务2：持久发送许可、明确结果及实际调用起点
 
 **Files**
 - 新增：`internal/notification/delivery/types.go`、`internal/notification/store/attempts.go`、`internal/notification/store/queries/delivery_attempts.sql`、`util/telegram/send_transport.go`。
-- 修改：权威`internal/accountstate/store/migrations/000001_init.sql`、`internal/notification/store/queries/account_notifications.sql`、`internal/notification/store/queries/system_notifications.sql`、`internal/notification/store/account_notifications.go`、`internal/notification/store/system_notifications.go`、`internal/notification/sender.go`、`util/telegram/telegram.go`、`internal/notification/notification.proto`、`internal/server/notification/notification.proto`、`internal/server/notification/notification.go`。
+- 修改：权威`internal/accountstate/store/migrations/000001_init.sql`、`internal/notification/store/queries/account_notifications.sql`、`internal/notification/store/queries/system_notifications.sql`、`internal/notification/store/account_notifications.go`、`internal/notification/store/system_notifications.go`、`internal/notification/sender.go`、`internal/notification/worker.go`、`util/telegram/telegram.go`、`internal/notification/notification.proto`、`internal/server/notification/notification.proto`、`internal/server/notification/notification.go`。
 - 修改实际状态消费者：`internal/notification/service.go`、`pkg/apis/application/v1alpha1/notification_types.go`、`ui/src/app/admin/notification-service.ts`、`ui/src/app/admin/pages/service-status.tsx`、`ui/src/app/admin/pages/system-notifications.tsx`、`ui/src/app/admin/pages/system-notification-detail.tsx`。
-- 测试：`internal/notification/store/attempts_integration_test.go`、`util/telegram/send_transport_test.go`、`internal/notification/sender_test.go`。
+- 测试：`internal/notification/store/attempts_integration_test.go`、`util/telegram/send_transport_test.go`、`internal/notification/sender_test.go`。同步当前worker真实Send调用，使许可和结果协议立即生效，任务4再替换调度。
+- 执行基线补充：修复`ui/jest.config.js`的ts-jest/CommonJS解析配置、补测试专用Fetch API环境，并使`ui/src/app/app.test.tsx`登录界面断言和`ui/src/app/shared/services/user-service.test.ts`请求参数断言反映当前真实行为。保留产品bundler配置、权限/取消行为和有效断言，完整跑通既有UI回归；任务14仍负责扩大测试发现范围。
 **Interfaces**
 - 消费：任务1的账户gate、通知同库表。
 - 产出：delivery叶子包中的 `WorkRef{Kind string; ID int64}`、`Permit{Work WorkRef; AttemptID uuid.UUID; OwnerID string; SenderIncarnation uuid.UUID; PayloadDigest []byte; AuthorizedAt time.Time}`、`Outcome{Kind string; MessageID string; RetryAfter time.Duration; Code string}`。Outcome.Kind为sent/retryable/failed/unknown。
@@ -1154,6 +1155,7 @@ const req = requests.get('/admin/trader-sync/subscriptions', scope).query({
 **Interfaces**
 - 消费：任务13真实隔离DB/Service/Dispatcher/loopback来源，任务15–19实际页面；当前仓库有Playwright依赖但没有配置/spec，必须本任务新增。
 - harness新增测试方法`(*harness).StartUI(t *testing.T,distDir string) UIHarnessInfo`，`UIHarnessInfo{BaseURL,PathPrefix,MemberAState,MemberBState,AdminState string}`。测试使用真实网关、权限store、handler及数据库，以测试签名器颁发仅隔离环境可用的会话，导出Playwright storageState文件；不得增加生产绕过认证路由。测试控制入口仅test进程localhost，提供push source/断流/修改grant/丢一次响应的确定性屏障，不能出现在正式server构建。
+- `ui_harness_integration_test.go`使用`//go:build integration && uiharness`，单独启动需外部stop信号的交互harness，不纳入普通integration套件。真实浏览器验收仍必须显式启动并执行。
 - `TestUIHarness`以env `ATHENA_UI_E2E_DIR`为输出目录、`ATHENA_UI_DIST`为已构建静态目录，启动后写`harness.json`，等待目录下`stop`信号再关闭自己创建的服务/DB；缺必需env/测试DSN直接Fatal。manifest仅测试会话路径及loopback base，不含真实凭据。
 
 - [ ] **步骤1：建立测试配置与受控fixture。**所有测试目标必须通过`ATHENA_UI_E2E_BASE_URL`显式设置；没有目标就失败，不能默认访问开发/生产。两个project按testMatch区分route-fixture和live，fixture项目允许intercept，live不得intercept业务读取/写入来伪造通过。使用已有系统Chrome，不为验收引入新库。
@@ -1192,7 +1194,7 @@ test('desktop and mobile keep the document within the viewport', async ({page}) 
 ```
 
 在`trader-sync-fixtures.ts`导出`installTraderSyncRoutes(page:Page,scenario:string):Promise<void>`，通过已知bootstrap、权限和任务12JSON回复；测试beforeEach显式安装，不能遗漏导致上例跳登录后误判通过。另导出`memberPath(path:string):string`，实现为`(process.env.ATHENA_UI_E2E_PATH_PREFIX || '').replace(/\/$/, '') + path`；从manifest设置该前缀，分别以空前缀和`/athena`运行，不能用以斜杠开头的goto绕过部署前缀。admin路径在此前缀下加`/admin`。其余fixture需等待请求/响应事件，不以长sleep掩盖竞争。
-- [ ] **步骤3：启动隔离全链harness并运行live。**`yarn --cwd ui build`后，以任务1测试DSN及ATHENA_UI_DIST/ATHENA_UI_E2E_DIR运行`go test -tags=integration ./internal/tradersync/acceptance -run '^TestUIHarness$' -count=1 -timeout=30m`。StartUI复用任务12真实API注册及测试身份；UI可作为同源静态资源或本地代理提供，固定部署子路径测试也由此入口配置。读取manifest设置BASE_URL及三个storageState路径，再运行`yarn --cwd ui test:e2e --project=live`。
+- [ ] **步骤3：启动隔离全链harness并运行live。**`yarn --cwd ui build`后，以任务1测试DSN及ATHENA_UI_DIST/ATHENA_UI_E2E_DIR运行`go test -tags=integration,uiharness ./internal/tradersync/acceptance -run '^TestUIHarness$' -count=1 -timeout=30m`。StartUI复用任务12真实API注册及测试身份；UI可作为同源静态资源或本地代理提供，固定部署子路径测试也由此入口配置。读取manifest设置BASE_URL及三个storageState路径，再运行`yarn --cwd ui test:e2e --project=live`。
 - [ ] **步骤4：走通三身份真实读写。**A添加/备注/暂停/恢复/取消并由真实基线/source推送形成activity；B同钱包独立note/activity，A读B id/cursor/batch均NotFound；admin仅概要且无member读取。Create第一次成功响应被测试传输层丢弃，token过期后同request重取原ID；不能拦截响应伪造第二个成功。撤权屏障后旧请求晚到不显示正文，重授不自动恢复；初始空列表和历史页的新活动提示、点击载入与原位刷新用真实DB确认。
 - [ ] **步骤5：验证设备、键盘、绑定与结果矩阵。**实际DOM检查1440/1280/900附近/390、深浅主题、tab焦点/弹窗返回、20 emoji、复制精度、选择文本后5秒刷新不丢选区；市场外链不误触行。Telegram仅loopback生成实际普通/摘要结果，验证未知/失败/缺started但sent/跨101 parts及全批计数。绑定流程使用loopback Bot update，真实绑定状态与草稿往返/过期不延长；真实Telegram联调仍按任务13明确接收者边界。登录returnTo和部署`/athena/`分别测试。管理员gauge/window/epoch和不可相加计数以只读SQL交叉核验。
 - [ ] **步骤6：处理发现并保存证据。**失败按systematic-debugging定位；只修导致批准行为不满足的问题，重跑受影响场景。执行`yarn --cwd ui test:e2e --project=ui-fixtures`及live，保留运行命令、提交、场景数量、截图/trace和实际失败；无障碍按AA计算新增文本对比度并人工/自动键盘核验，未测不能写通过。写stop并等待harness退出，只清理本任务创建资源；提交 `test(trader-sync): verify complete member and admin browser flows`。
