@@ -52,6 +52,7 @@ type Service struct {
 	apiclient.UnimplementedNotificationRuntimeServiceServer
 
 	store             *notificationstore.SQLStore
+	summarySource     *SummarySource
 	sender            Sender
 	profileSyncer     ProfileSyncer
 	poller            *TelegramPoller

@@ -26,11 +26,16 @@ func TestRecoveryCommandConfirmsExactInstanceWithoutTelegramConfiguration(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer session.Close()
 	if _, err = db.Pool.Exec(ctx, `INSERT INTO system_notification_topics(telegram_chat,label,message_thread_id) VALUES('test','cli',1)`); err != nil {
 		t.Fatal(err)
 	}
+	payload, err := delivery.EncodePayload(delivery.Payload{Format: "html", Text: "body", MessageThreadID: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
 	var id int64
-	if err = db.Pool.QueryRow(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label) VALUES('test','info','body','telegram','pending','test','cli') RETURNING id`).Scan(&id); err != nil {
+	if err = db.Pool.QueryRow(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label,payload,payload_digest) VALUES('test','info','body','telegram','pending','test','cli',$1,$2) RETURNING id`, payload, delivery.PayloadDigest(payload)).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = store.Authorize(ctx, delivery.Candidate{Ref: delivery.WorkRef{Kind: "system", ID: id}, ChatID: -123, Group: true}, inc, nil); err != nil {

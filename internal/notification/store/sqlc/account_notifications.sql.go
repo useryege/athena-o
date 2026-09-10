@@ -343,6 +343,7 @@ func (q *Queries) GetAccountNotificationRuntimeCounts(ctx context.Context) (GetA
 const listDispatchAccounts = `-- name: ListDispatchAccounts :many
 SELECT id, account_id, idempotency_key, payload_digest, source, severity, title, body, link, channel, status, telegram_chat_id, binding_revision, provider_message_id, error_message, created_at, sent_at, attempts, next_attempt_at, last_attempt_at, locked_at, locked_by, current_attempt_id, eligibility_revoked_at, eligibility_revoked_reason, payload, request_digest, activity_id FROM account_notification_deliveries
 WHERE status = 'pending' AND attempts < 5 AND eligibility_revoked_at IS NULL
+AND NOT EXISTS(SELECT 1 FROM trader_sync_summary_parts p JOIN trader_sync_summary_heads h ON h.current_batch_id=p.batch_id WHERE p.delivery_id=account_notification_deliveries.id)
 ORDER BY account_id, next_attempt_at, id
 `
 

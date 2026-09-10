@@ -125,6 +125,11 @@ func TestBindingTerminationIncludesWaitingSummaryWithoutDeliveryAndRollsBack(t *
 			}
 			id := frozenActivityFixture(t, db.Pool, a.ID, 1, "summary")
 			frozen := frozenActivityFixture(t, db.Pool, a.ID, 2, "summary")
+			// The FK now requires a real batch fixture; this test only exercises binding
+			// tombstones. Task11's freeze tests cover the actual sealed batch flow.
+			if _, e = db.Pool.Exec(ctx, `INSERT INTO trader_sync_summary_batches(id,owner_id,binding_revision,chat_id,oldest_at)VALUES(99,$1,1,123,clock_timestamp())`, a.ID); e != nil {
+				t.Fatal(e)
+			}
 			if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_alert_memberships SET state='frozen',batch_id=99 WHERE activity_id=$1`, frozen); e != nil {
 				t.Fatal(e)
 			}

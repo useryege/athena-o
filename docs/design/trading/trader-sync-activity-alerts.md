@@ -167,7 +167,7 @@ flowchart LR
 
 ## 数据模型与持久化
 
-所有账户域表在 `athena` 库；目标、确认、订阅、基线、来源、资料、活动、摘要资格及三类通知队列已在唯一迁移中实现；摘要批次/分条表仍待后续任务。
+所有账户域表在 `athena` 库；目标、确认、订阅、基线、来源、资料、活动、摘要资格及三类通知队列已在唯一迁移中实现；摘要批次/分条、多对多成员及 owner 首条 head 已在同一迁移中实现。
 
 | 实体 | 关键内容与约束 |
 | --- | --- |
@@ -210,7 +210,7 @@ flowchart LR
 
 三类通知队列保存显式 `format`、最终 `text`、topic 的确定性 JSON bytes 及 SHA-256；系统和既有账户/绑定回复显式 HTML，Trader Sync 显式 plain。实际发送只解码许可带出的冻结 payload，不再渲染或 TrimSpace。数据库阻止 payload/digest 更新，原账户请求幂等另用 request_digest，不与实际发送 digest 混用。最后 Authorize 复核实际 grant、冻结 binding 和 membership 墓碑；已许可 sent/unknown 仍可保存结果，旧资格不因再授权复活。
 
-解绑、重绑、不可达和 Bot 状态变更沿现有 owner 事务更新全部旧资格，包括尚无 delivery 的 waiting summary；冻结前终止改 cancelled，已冻结 batch 归属保留，首个原因保留。pause/cancel 只阻止尚未形成候选，已形成普通/摘要资格继续。摘要冻结/分条仍属于 Task 11。
+解绑、重绑、不可达和 Bot 状态变更沿现有 owner 事务更新全部旧资格，包括尚无 delivery 的 waiting summary；冻结前终止改 cancelled，已冻结 batch 归属保留，首个原因保留。pause/cancel 只阻止尚未形成候选，已形成普通/摘要资格继续。摘要冻结器仅消费仍合格的 waiting 成员；冻结后的成员、分条正文与映射不可变。
 
 
 ### 创建与恢复
@@ -313,7 +313,13 @@ member 读取在同一数据库事务/gate 下核验 grant 并读取 owner 数�
 
 许可后若收到新的 Retry-After，HTTP 尚未开始的同一 attempt 必须等待冷却；预算等待可取消，不得持摘要短 gate。摘要源须保留持久 head、不可变冻结批次和同一许可，等待后重入 gate，完成非阻塞最后准入及真实 started 握手补记。head 阻止后批抢先，但释放 gate 后仍可能出现 f<t<s，不能继续声称短 gate 无条件消除此窗口。相邻首条至少 60 秒、首个成员形成后 60 秒的目标数值不变；实际 miss 保留总体统计，分别记录本地预算/gate 延迟与外部限流原因。禁止修改形成时间、伪造 started 或为等待 quota 增加 attempt。
 
-当前账户、系统、reply 共用独立 pre-start 准入与实际 transport 起点；五秒 HTTP 超时只在准入完成后开始，本地冷却仍计入总体投递时延。摘要释放/重入短 gate、持久 head 和最后准入组合在摘要源接入任务中实现，不要求当前通用入口提前加入无消费者的摘要会话框架。
+账户、系统、reply 与摘要首条共用 `executePermit`、pre-start 准入及实际 transport 起点；五秒 HTTP 超时只在准入完成后开始，本地冷却计入总体投递时延。`SummarySource` 已组合固定连接 `AccountSession`、`AuthorizeTx` 与非阻塞 `tryAdmitStart`：需要等预算就先释放 session，恢复时先等待无 gate 的预算闸门并释放其读锁，再重取同一账户 gate、核对原 permit/head、重新非阻塞准入。没有预算锁跨越账户锁等待或 HTTP I/O。
+
+`trader_sync_summary_heads` 用 owner 唯一键持久保护未解决首条，调度候选 `summary_head` 仅为稳定 head 身份；实际 delivery/attempt 仍为 `account`。冻结、全部 part 入队、part→activity 关联、首条许可与 head 绑定在同一个外层事务提交，普通 Authorize 也复用 AuthorizeTx 唯一核心。提交回执不确定时在一秒读回期限内核对同一 attempt/head；不能确认就不发，也不重授权。预算 guard 的完成回调覆盖外层真正提交或回滚。
+
+实际 started 回调只通知有界通道。协调者在固定连接内用最多一秒补记 attempt 与 batch 起点并解决 head，然后释放 gate；结果先返回时先取出已有 started 信号。通用 `RecordStarted` 只锁 attempt，不再申请账户 gate。起点写库超时可使连接失效，释放失败即 Hijack/Close，明确 ACK 仍写 sent；运行内保留已观测起点的 monotonic 间隔并有界重试事实补记。停机恢复同时处理仍 sending 与已 sent/unknown 但首条未解决的 head，使用真实 attempt 起点或明确停止时刻的保守恢复基点，恢复不发送，不回填不存在的历史起点。只有所有相关尝试均有明确 not_started 证据且所有部分终结，才允许无起点解决该 head。
+
+批次保留 frozen_at、oldest_at、first_started_at、recovery_basis_at/原因，以及预算等待起止、累计毫秒、约束来源和本地 gate 等待毫秒。约束来源区分 telegram_retry_after 与 budget_coordination；混合等待明确标混合。总体最老成员延迟从原 recorded_at 计算，不能减去本地/外部等待后宣称达标。
 
 ### 同库 Bot update
 
@@ -327,11 +333,11 @@ member 读取在同一数据库事务/gate 下核验 grant 并读取 owner 数�
 
 同一用户相邻两批首条的实际提交起点至少相隔 60 秒。首个待汇总活动形成时间为 `first_pending_at`，其首次开始提交截止为 `first_pending_at + 60s`；候选发送时间还受上一批首条提交时间及全 Bot/chat 预算约束。就绪后尽早发送，不故意等到截止。只写 outbox、冻结内容或取得速率槽不算提交开始，起点在 sender 开始该次显式 provider 调用处采集。尝试意图先持久化，实际起点在 started 握手阶段补记后释放 gate；结果回调另开短事务，以 attempt/status CAS 补记。崩溃导致起点无法核实则如实保留缺失，按故障恢复保守维护下一批间隔，不编造正常时效样本。
 
-渲染先按目标、市场、Outcome、方向去重展示行并汇总数量，站内成交仍逐条保存；目标备注沿用各活动快照。单条不超过 Telegram `sendMessage` 的 4096 个解析后字符，按完整展示行拆分并标注批次、`n/m` 及站内入口；长标题可缩短但保留准确身份和可点击市场链接，不省略整个市场。Combo 保留自身 YES/NO 与腿的整体关系，跨条延续时明确同一组合，不能把腿拆成独立成交。[发送契约](https://core.telegram.org/bots/api#sendmessage)
+渲染先按目标、市场、Outcome、方向去重展示行并汇总数量，站内成交仍逐条保存；目标备注沿用各活动快照。单条同时以 Unicode code point 和 UTF-16 code unit 保守限制在 4096 内，按完整展示行拆分并标注批次、`n/m` 及站内入口；长标题可缩短但保留准确身份和可点击市场链接，不省略整个市场。Combo 保留自身 YES/NO 与腿的整体关系，跨条延续时明确同一组合，不能把腿拆成独立成交。[发送契约](https://core.telegram.org/bots/api#sendmessage)
 
-每个部分对应独立投递和不可变 payload digest，逐条执行发送状态机。某部分成功或未知均不再次提交；明确未成功的暂时失败只重试该部分，仍属于原批次，不重置批次首次提交时间，其余未提交部分按当前资格继续。批次保存总条数以及 pending/sending/sent/failed/unknown/cancelled 数量；全部 sent 才展示整批成功，存在未完成或混合终态时分别呈现，不以单一成功覆盖部分未知。一个活动展示对应部分的结果及批次进度；因组合跨条而涉及多个部分时保留全部相关结果，不将部分成功视为完整成功。
+每个部分对应独立投递和不可变 payload digest，逐条执行发送状态机。某部分成功或未知均不再次提交；明确未成功的暂时失败只重试该部分，仍属于原批次，不重置批次首次提交时间，其余未提交部分按当前资格继续。`SummaryProgress` 从不可变部分与各自 delivery 读取总条数及 pending/sending/sent/failed/unknown/cancelled 数量；全部 sent 才展示整批成功，存在未完成或混合终态时分别呈现，不以单一成功覆盖部分未知。一个活动展示对应部分的结果及批次进度；因组合跨条而涉及多个部分时保留全部相关结果，不将部分成功视为完整成功。
 
-调度按账户公平轮转，优先处理即将达到目标时限的就绪工作；跨 chat 有界并行，同一 chat 串行，并统一取得 Bot 总预算及对应私聊/群组预算，不以一个用户的大队列吞掉其他用户工作。共享 Dispatcher 已替换全局串行出口；只有实例登记与attempt历史均为空才能豁免首次恢复等待，其他启动在新授权前等待完整60秒monotonic屏障；未解除长Retry-After跨重启保留并等待完整最大值，monotonic届满后才持久解除。该等待单列本地恢复延迟并保留总体时延。账户、系统和 reply 源均使用同一 Budget，历史 attempt 记录物理 chat/group。其调度与单 sender 恢复操作见[通知设计](../notifications/account-telegram-notifications.md#单-sender-与恢复操作)。摘要首条源尚待后续任务接入；本次调度单元和隔离数据库测试不代表整个产品时效验收通过。
+调度按账户公平轮转，优先处理即将达到目标时限的就绪工作；跨 chat 有界并行，同一 chat 串行，并统一取得 Bot 总预算及对应私聊/群组预算，不以一个用户的大队列吞掉其他用户工作。共享 Dispatcher 已替换全局串行出口；只有实例登记与attempt历史均为空才能豁免首次恢复等待，其他启动在新授权前等待完整60秒monotonic屏障；未解除长Retry-After跨重启保留并等待完整最大值，monotonic届满后才持久解除。该等待单列本地恢复延迟并保留总体时延。账户、系统和 reply 源均使用同一 Budget，历史 attempt 记录物理 chat/group。其调度与单 sender 恢复操作见[通知设计](../notifications/account-telegram-notifications.md#单-sender-与恢复操作)。摘要首条源已接入同一个 WorkSource 列表；普通 source 排除未解决 head 下的所有部分，真实首条一旦开始就允许旧后续部分与下一批未来首条交错。单元和隔离数据库测试不代表完整产品时效分位数验收。
 
 全 Bot 预算覆盖账户提醒、系统通知及 poller 的绑定成功/失败回复；Bot 回复已通过持久 reply outbox 接入同一调度与限速器，poller 不直接发送。各路径仍保留自己的内容、资格及投递结果语义；共享预算不使系统消息或绑定回复加入 Trader Sync 摘要。速率等待在取得账户 gate 前完成。站内活动不以取得发送名额为形成前提；待发送队列不设置静默丢弃上限，积压影响健康和延迟指标。
 
@@ -405,3 +411,9 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 后续实现需验证当前协议完整样本矩阵、同秒与重启故障、授权/撤权/绑定竞争、未知结果不重发、摘要临界 60 秒调度、真实容量及公开时间证据。数据缺失/异常的行为已有明确设计；未完成的运行测试不能写成已通过。
 
 2026-09-10 用户已整体确认[UI 书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)，读取契约补充同时获确认；原后端计划已扩展为21项[前后端联合实现任务](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)，正在执行。当前已实施共享数据库基础及通知许可/结果路径，并验证既有管理员通知状态消费者；新的 Trader Sync 业务页面、Collector 进程组合与完整验收仍待后续任务。计划中的其他测试命令不代表已通过。
+
+### 摘要构造与资源归属
+
+通知 composition owner 通过 `(*notificationstore.SQLStore).BorrowPool() (*pgxpool.Pool,error)` 取得原物理池的借用引用，在启动前调用 `(*notification.Service).ConfigureSummaries(pool *pgxpool.Pool,siteURL string) error`。后者拒绝不同 pool，配置既有 trader-store 纯冻结适配器并将 SummarySource 注册到原 workSources。摘要适配器不关闭 pool、不自建轮询进程；Service.Stop 取消并 join shared dispatcher、全部 Sender 和结果补记，释放其 session 连接。整个 pool 仍由 notification CLI 的原 store 唯一关闭。Task12 负责把校验过的 siteURL 与此配置入口接入 ServerOpts/现有通知 CLI 的 startup；本任务没有另建进程或第二个连接池。
+
+摘要 delivery 以 `summary:<batch>:part:<index>` 幂等，source 保持 trader_sync、activity_id 为 NULL。最终许可查询通过真实 part→batch→冻结 membership 验证 owner、绑定 revision/chat、grant 及永久撤销标记；head 绑定也检验该 attempt 对应本批真实部分。不可用任意普通 delivery 或单一 ActivityID 代替。批次封存后不能追加部分或成员；同一个活动可关联同批多个部分，组合延续不丢关系。最终带 n/m 的 plain payload 由既有 delivery.EncodePayload 编码并计算原 bytes digest，重试只读 Permit.Payload；分页遇到页码位数变化会重新切分，完整 URL 不截断，无法装入单条的超长 URL 明确报错。

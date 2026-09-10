@@ -3,6 +3,7 @@ package txgate
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
@@ -12,6 +13,55 @@ import (
 
 type Beginner interface {
 	BeginTx(context.Context, pgx.TxOptions) (pgx.Tx, error)
+}
+
+// AccountSession owns one physical connection until a confirmed advisory unlock.
+// It is not shared concurrently; the summary coordinator transfers ownership at
+// the actual-start handshake. Acquisition failure also discards the connection:
+// a lost server acknowledgement cannot prove the session never took the lock.
+type AccountSession struct {
+	Conn  *pgxpool.Conn
+	owner string
+}
+
+func AcquireAccountSession(ctx context.Context, pool *pgxpool.Pool, owner string) (*AccountSession, error) {
+	if pool == nil {
+		return nil, fmt.Errorf("account session pool is required")
+	}
+	canonical, e := canonicalAccountID(owner)
+	if e != nil {
+		return nil, e
+	}
+	c, e := pool.Acquire(ctx)
+	if e != nil {
+		return nil, e
+	}
+	if _, e = c.Exec(ctx, "SELECT pg_advisory_lock(hashtextextended('athena:account:' || $1::text,0))", canonical); e != nil {
+		discardAccountConnection(c)
+		return nil, fmt.Errorf("acquire account session: %w", e)
+	}
+	return &AccountSession{Conn: c, owner: canonical}, nil
+}
+func (s *AccountSession) Release(ctx context.Context) error {
+	if s == nil || s.Conn == nil {
+		return nil
+	}
+	c := s.Conn
+	s.Conn = nil
+	var unlocked bool
+	e := c.QueryRow(ctx, "SELECT pg_advisory_unlock(hashtextextended('athena:account:' || $1::text,0))", s.owner).Scan(&unlocked)
+	if e != nil || !unlocked {
+		discardAccountConnection(c)
+		return fmt.Errorf("release account session (unlocked=%t): %w", unlocked, e)
+	}
+	c.Release()
+	return nil
+}
+func discardAccountConnection(c *pgxpool.Conn) {
+	raw := c.Hijack()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	_ = raw.Close(ctx)
 }
 
 func WithAccountTx(ctx context.Context, pool Beginner, accountID string, fn func(pgx.Tx) error) error {

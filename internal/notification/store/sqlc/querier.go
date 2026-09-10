@@ -32,6 +32,8 @@ type Querier interface {
 	DeleteTelegramBinding(ctx context.Context, accountID pgtype.UUID) (DeleteTelegramBindingRow, error)
 	DeleteTelegramBindingAttemptByAccount(ctx context.Context, accountID pgtype.UUID) (int64, error)
 	DeleteTelegramBindingAttemptByID(ctx context.Context, id pgtype.UUID) (int64, error)
+	EnsureSummaryHead(ctx context.Context, ownerID pgtype.UUID) error
+	EnsureSummaryHeads(ctx context.Context) error
 	FailTelegramBindingAttempt(ctx context.Context, arg FailTelegramBindingAttemptParams) (TelegramBindingAttempt, error)
 	GetAccountDeliveryForPermit(ctx context.Context, id int64) (GetAccountDeliveryForPermitRow, error)
 	GetAccountDeliveryOwner(ctx context.Context, id int64) (pgtype.UUID, error)
@@ -59,10 +61,12 @@ type Querier interface {
 	ListDispatchReplies(ctx context.Context) ([]TelegramBindingReply, error)
 	ListDispatchSystems(ctx context.Context) ([]ListDispatchSystemsRow, error)
 	ListSenderRecoveryAttempts(ctx context.Context, senderIncarnation pgtype.UUID) ([]NotificationDeliveryAttempt, error)
+	ListSummaryHeads(ctx context.Context) ([]ListSummaryHeadsRow, error)
 	ListSystemNotificationDeliveries(ctx context.Context, arg ListSystemNotificationDeliveriesParams) ([]ListSystemNotificationDeliveriesRow, error)
 	ListTelegramBindingsByIdentityForShare(ctx context.Context, arg ListTelegramBindingsByIdentityForShareParams) ([]ListTelegramBindingsByIdentityForShareRow, error)
 	ListUnreleasedRetryAfters(ctx context.Context) ([]ListUnreleasedRetryAftersRow, error)
 	ListUnstoppedSenders(ctx context.Context) ([]NotificationSenderInstance, error)
+	LockSummaryHead(ctx context.Context, ownerID pgtype.UUID) (TraderSyncSummaryHead, error)
 	LockSystemNotificationTopic(ctx context.Context, arg LockSystemNotificationTopicParams) error
 	LockTelegramBindingAccount(ctx context.Context, accountID pgtype.UUID) error
 	LockTelegramBindingIdentity(ctx context.Context, arg LockTelegramBindingIdentityParams) error
@@ -70,16 +74,28 @@ type Querier interface {
 	MarkTelegramBindingUnreachable(ctx context.Context, arg MarkTelegramBindingUnreachableParams) (int64, error)
 	MarkTelegramBindingUnreachableByIdentity(ctx context.Context, arg MarkTelegramBindingUnreachableByIdentityParams) (MarkTelegramBindingUnreachableByIdentityRow, error)
 	NextTelegramBindingRevision(ctx context.Context, accountID pgtype.UUID) (int64, error)
+	ReadSummaryBatch(ctx context.Context, arg ReadSummaryBatchParams) (TraderSyncSummaryBatch, error)
 	RecordAccountDeliveryOutcome(ctx context.Context, arg RecordAccountDeliveryOutcomeParams) (int64, error)
 	RecordDeliveryAttemptOutcome(ctx context.Context, arg RecordDeliveryAttemptOutcomeParams) (int64, error)
 	RecordDeliveryAttemptStarted(ctx context.Context, arg RecordDeliveryAttemptStartedParams) (int64, error)
 	RecordReplyDeliveryOutcome(ctx context.Context, arg RecordReplyDeliveryOutcomeParams) (int64, error)
+	RecordSummaryBudgetWait(ctx context.Context, arg RecordSummaryBudgetWaitParams) error
+	RecordSummaryGateWait(ctx context.Context, arg RecordSummaryGateWaitParams) error
+	RecordSummaryStarted(ctx context.Context, arg RecordSummaryStartedParams) (int64, error)
 	RecordSystemDeliveryOutcome(ctx context.Context, arg RecordSystemDeliveryOutcomeParams) (int64, error)
 	RecordTelegramPoll(ctx context.Context, lastPollAt pgtype.Timestamptz) (RecordTelegramPollRow, error)
+	RecoverSummaryBatchBasis(ctx context.Context, arg RecoverSummaryBatchBasisParams) error
+	RecoverableSummaryHeads(ctx context.Context, senderIncarnation pgtype.UUID) ([]RecoverableSummaryHeadsRow, error)
 	RegisterSender(ctx context.Context, arg RegisterSenderParams) error
 	ReleaseRetryAfter(ctx context.Context, id pgtype.UUID) (int64, error)
 	ReplaceTelegramBinding(ctx context.Context, arg ReplaceTelegramBindingParams) (ReplaceTelegramBindingRow, error)
+	ResolveNeverStartedSummaryHeads(ctx context.Context, ownerID pgtype.UUID) error
+	ResolveStartedSummaryHead(ctx context.Context, arg ResolveStartedSummaryHeadParams) (int64, error)
+	SetSummaryHeadBatch(ctx context.Context, arg SetSummaryHeadBatchParams) (int64, error)
+	SetSummaryHeadPermit(ctx context.Context, arg SetSummaryHeadPermitParams) (int64, error)
 	StopSenderInstance(ctx context.Context, arg StopSenderInstanceParams) (int64, error)
+	SummaryBatchStartEvidence(ctx context.Context, batchID int64) (pgtype.Timestamptz, error)
+	SummaryHeadOwners(ctx context.Context) ([]pgtype.UUID, error)
 	UpsertTelegramBindingAttempt(ctx context.Context, arg UpsertTelegramBindingAttemptParams) (TelegramBindingAttempt, error)
 }
 

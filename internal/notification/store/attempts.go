@@ -74,93 +74,116 @@ func (s *SQLStore) withPermitTx(ctx context.Context, owner string, fn func(*q.Qu
 	return tx.Commit(ctx)
 }
 
-// Authorize consumes a work item before any HTTP call. A failed/uncertain commit never permits a send.
+// Authorize owns the account transaction; its sole core is AuthorizeTx.
 func (s *SQLStore) Authorize(ctx context.Context, candidate delivery.Candidate, incarnation uuid.UUID, guard func() error) (delivery.Permit, error) {
-	ref := candidate.Ref
-	if candidate.ChatID == 0 {
-		return delivery.Permit{}, ErrDeliveryNotEligible
-	}
 	if err := s.transactional(); err != nil {
 		return delivery.Permit{}, err
 	}
-	if ref.ID <= 0 || incarnation == uuid.Nil {
-		return delivery.Permit{}, ErrDeliveryNotEligible
-	}
 	owner := ""
-	if ref.Kind == "account" {
-		id, err := s.queries.GetAccountDeliveryOwner(ctx, ref.ID)
-		if err != nil {
-			return delivery.Permit{}, err
+	if candidate.Ref.Kind == "account" {
+		id, e := s.queries.GetAccountDeliveryOwner(ctx, candidate.Ref.ID)
+		if e != nil {
+			return delivery.Permit{}, e
 		}
 		owner = uuidString(id)
 	}
-	if ref.Kind == "reply" {
-		id, err := s.queries.GetReplyDeliveryOwner(ctx, ref.ID)
-		if err != nil {
-			return delivery.Permit{}, err
+	if candidate.Ref.Kind == "reply" {
+		id, e := s.queries.GetReplyDeliveryOwner(ctx, candidate.Ref.ID)
+		if e != nil {
+			return delivery.Permit{}, e
 		}
 		owner = uuidString(id)
 	}
-	var permit delivery.Permit
-	err := s.withPermitTx(ctx, owner, func(queries *q.Queries) error {
-		work, err := lockPermitWork(ctx, queries, ref)
-		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrDeliveryNotEligible
-		}
-		if err != nil {
-			return err
-		}
-		if _, err := delivery.DecodePayload(work.payload); err != nil {
-			return err
-		}
-		if !bytes.Equal(delivery.PayloadDigest(work.payload), work.digest) {
-			return ErrStalePermit
-		}
-		if work.owner != owner || work.status != "pending" || !work.eligible || work.attempts >= 5 {
-			return ErrDeliveryNotEligible
-		}
-		if work.chat != 0 && (work.chat != candidate.ChatID || candidate.Group) {
-			return ErrDeliveryNotEligible
-		}
-		if ref.Kind == "system" && (!candidate.Group || candidate.ChatID >= 0) {
-			return ErrDeliveryNotEligible
-		}
-		if guard != nil {
-			if err := guard(); err != nil {
-				return err
+	var p delivery.Permit
+	run := func(tx pgx.Tx) error {
+		var e error
+		p, e = s.AuthorizeTx(ctx, tx, candidate, incarnation, guard)
+		return e
+	}
+	var err error
+	if owner != "" {
+		err = txgate.WithAccountTx(ctx, s.pool, owner, run)
+	} else {
+		var tx pgx.Tx
+		tx, err = s.pool.Begin(ctx)
+		if err == nil {
+			defer tx.Rollback(context.Background())
+			err = run(tx)
+			if err == nil {
+				err = tx.Commit(ctx)
 			}
 		}
-		// Evaluate the deadline against database time, not a worker's clock.
-		var now time.Time
-		// The attempt INSERT supplies the database timestamp used by all permit transitions.
-		r, err := queries.CreateDeliveryAttempt(ctx, q.CreateDeliveryAttemptParams{ID: uuidPG(uuid.New()), WorkKind: ref.Kind, WorkID: ref.ID, OwnerID: optionalUUID(owner), SenderIncarnation: uuidPG(incarnation), PayloadDigest: work.digest, TelegramChatID: candidate.ChatID, TelegramGroup: candidate.Group})
-		if err != nil {
-			return err
-		}
-		now = r.AuthorizedAt.Time
-		if work.next.After(now) {
-			return ErrDeliveryNotEligible
-		}
-		var rows int64
-		if ref.Kind == "account" {
-			rows, err = queries.AuthorizeAccountDelivery(ctx, q.AuthorizeAccountDeliveryParams{ID: ref.ID, CurrentAttemptID: r.ID, LastAttemptAt: r.AuthorizedAt})
-		} else if ref.Kind == "reply" {
-			rows, err = queries.AuthorizeReplyDelivery(ctx, q.AuthorizeReplyDeliveryParams{ID: ref.ID, CurrentAttemptID: r.ID, LastAttemptAt: r.AuthorizedAt})
-		} else {
-			rows, err = queries.AuthorizeSystemDelivery(ctx, q.AuthorizeSystemDeliveryParams{ID: ref.ID, CurrentAttemptID: r.ID, LastAttemptAt: r.AuthorizedAt})
-		}
-		if err != nil {
-			return err
-		}
-		if rows != 1 {
-			return ErrDeliveryNotEligible
-		}
-		permit = delivery.Permit{ChatID: candidate.ChatID, Group: candidate.Group, Work: ref, AttemptID: uuid.UUID(r.ID.Bytes), OwnerID: owner, SenderIncarnation: incarnation, PayloadDigest: append([]byte(nil), work.digest...), Payload: append([]byte(nil), work.payload...), AuthorizedAt: now}
-		return nil
-	})
+	}
 	if err != nil {
 		return delivery.Permit{}, err
 	}
+	return p, nil
+}
+
+// AuthorizeTx requires the caller's account gate and an outer commit. The guard
+// runs after work-row validation; its budget completion belongs to that outer
+// Commit/Rollback, never this function's return. No network send occurs here.
+func (s *SQLStore) AuthorizeTx(ctx context.Context, tx pgx.Tx, candidate delivery.Candidate, incarnation uuid.UUID, guard func() error) (delivery.Permit, error) {
+	ref := candidate.Ref
+	if tx == nil || ref.ID <= 0 || incarnation == uuid.Nil || candidate.ChatID == 0 {
+		return delivery.Permit{}, ErrDeliveryNotEligible
+	}
+	queries := q.New(tx)
+
+	work, err := lockPermitWork(ctx, queries, ref)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return delivery.Permit{}, ErrDeliveryNotEligible
+	}
+	if err != nil {
+		return delivery.Permit{}, err
+	}
+	if _, err := delivery.DecodePayload(work.payload); err != nil {
+		return delivery.Permit{}, err
+	}
+	if !bytes.Equal(delivery.PayloadDigest(work.payload), work.digest) {
+		return delivery.Permit{}, ErrStalePermit
+	}
+	owner := work.owner
+	if (owner != "" && candidate.OwnerID != "" && candidate.OwnerID != owner) || work.status != "pending" || !work.eligible || work.attempts >= 5 {
+		return delivery.Permit{}, ErrDeliveryNotEligible
+	}
+	if work.chat != 0 && (work.chat != candidate.ChatID || candidate.Group) {
+		return delivery.Permit{}, ErrDeliveryNotEligible
+	}
+	if ref.Kind == "system" && (!candidate.Group || candidate.ChatID >= 0) {
+		return delivery.Permit{}, ErrDeliveryNotEligible
+	}
+	if guard != nil {
+		if err := guard(); err != nil {
+			return delivery.Permit{}, err
+		}
+	}
+	// Evaluate the deadline against database time, not a worker's clock.
+	var now time.Time
+	// The attempt INSERT supplies the database timestamp used by all permit transitions.
+	r, err := queries.CreateDeliveryAttempt(ctx, q.CreateDeliveryAttemptParams{ID: uuidPG(uuid.New()), WorkKind: ref.Kind, WorkID: ref.ID, OwnerID: optionalUUID(owner), SenderIncarnation: uuidPG(incarnation), PayloadDigest: work.digest, TelegramChatID: candidate.ChatID, TelegramGroup: candidate.Group})
+	if err != nil {
+		return delivery.Permit{}, err
+	}
+	now = r.AuthorizedAt.Time
+	if work.next.After(now) {
+		return delivery.Permit{}, ErrDeliveryNotEligible
+	}
+	var rows int64
+	if ref.Kind == "account" {
+		rows, err = queries.AuthorizeAccountDelivery(ctx, q.AuthorizeAccountDeliveryParams{ID: ref.ID, CurrentAttemptID: r.ID, LastAttemptAt: r.AuthorizedAt})
+	} else if ref.Kind == "reply" {
+		rows, err = queries.AuthorizeReplyDelivery(ctx, q.AuthorizeReplyDeliveryParams{ID: ref.ID, CurrentAttemptID: r.ID, LastAttemptAt: r.AuthorizedAt})
+	} else {
+		rows, err = queries.AuthorizeSystemDelivery(ctx, q.AuthorizeSystemDeliveryParams{ID: ref.ID, CurrentAttemptID: r.ID, LastAttemptAt: r.AuthorizedAt})
+	}
+	if err != nil {
+		return delivery.Permit{}, err
+	}
+	if rows != 1 {
+		return delivery.Permit{}, ErrDeliveryNotEligible
+	}
+	permit := delivery.Permit{ChatID: candidate.ChatID, Group: candidate.Group, Work: ref, AttemptID: uuid.UUID(r.ID.Bytes), OwnerID: owner, SenderIncarnation: incarnation, PayloadDigest: append([]byte(nil), work.digest...), Payload: append([]byte(nil), work.payload...), AuthorizedAt: now}
 	return permit, nil
 }
 
@@ -176,7 +199,7 @@ func (s *SQLStore) RecordStarted(ctx context.Context, p delivery.Permit, at time
 	if at.IsZero() {
 		return fmt.Errorf("notification start timestamp is required")
 	}
-	return s.withPermitTx(ctx, p.OwnerID, func(queries *q.Queries) error {
+	return s.withPermitTx(ctx, "", func(queries *q.Queries) error {
 		r, err := queries.GetDeliveryAttemptForUpdate(ctx, uuidPG(p.AttemptID))
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrStalePermit

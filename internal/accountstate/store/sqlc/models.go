@@ -407,6 +407,51 @@ type TraderSyncSubscription struct {
 	TargetDisplay        []byte
 }
 
+type TraderSyncSummaryBatch struct {
+	ID                   int64
+	OwnerID              pgtype.UUID
+	BindingRevision      int64
+	ChatID               int64
+	OldestAt             pgtype.Timestamptz
+	FrozenAt             pgtype.Timestamptz
+	Sealed               bool
+	FirstStartedAt       pgtype.Timestamptz
+	RecoveryBasisAt      pgtype.Timestamptz
+	RecoveryReason       string
+	BudgetWaitStartedAt  pgtype.Timestamptz
+	BudgetWaitEndedAt    pgtype.Timestamptz
+	BudgetWaitMs         int64
+	BudgetReason         string
+	LocalGateWaitMs      int64
+	StartEvidenceMissing bool
+}
+
+type TraderSyncSummaryHead struct {
+	ID               int64
+	OwnerID          pgtype.UUID
+	CurrentBatchID   pgtype.Int8
+	CurrentAttemptID pgtype.UUID
+	PreviousBasisAt  pgtype.Timestamptz
+}
+
+type TraderSyncSummaryPart struct {
+	ID            int64
+	OwnerID       pgtype.UUID
+	BatchID       int64
+	PartIndex     int32
+	Total         int32
+	Text          string
+	PayloadDigest []byte
+	DeliveryID    int64
+}
+
+type TraderSyncSummaryPartItem struct {
+	OwnerID    pgtype.UUID
+	BatchID    int64
+	PartID     int64
+	ActivityID int64
+}
+
 type TraderSyncTarget struct {
 	ID        pgtype.UUID
 	Wallet    []byte

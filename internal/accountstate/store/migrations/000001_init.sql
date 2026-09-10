@@ -745,6 +745,102 @@ CREATE TABLE trader_sync_finality_anomalies (
  PRIMARY KEY(chain_id,transaction_hash)
 );
 
+CREATE TABLE trader_sync_summary_batches (
+ id BIGSERIAL PRIMARY KEY,
+ owner_id UUID NOT NULL,
+ binding_revision BIGINT NOT NULL CHECK(binding_revision>0),
+ chat_id BIGINT NOT NULL CHECK(chat_id>0),
+ oldest_at TIMESTAMPTZ NOT NULL,
+ frozen_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+ sealed BOOLEAN NOT NULL DEFAULT false,
+ first_started_at TIMESTAMPTZ,
+ recovery_basis_at TIMESTAMPTZ,
+ recovery_reason TEXT NOT NULL DEFAULT '',
+ budget_wait_started_at TIMESTAMPTZ,
+ budget_wait_ended_at TIMESTAMPTZ,
+ budget_wait_ms BIGINT NOT NULL DEFAULT 0 CHECK(budget_wait_ms>=0),
+ budget_reason TEXT NOT NULL DEFAULT '',
+ local_gate_wait_ms BIGINT NOT NULL DEFAULT 0 CHECK(local_gate_wait_ms>=0),
+ start_evidence_missing BOOLEAN NOT NULL DEFAULT false,
+ UNIQUE(owner_id,id),
+ UNIQUE(owner_id,id,binding_revision,chat_id)
+);
+ALTER TABLE trader_sync_alert_memberships ADD UNIQUE(owner_id,batch_id,activity_id);
+ALTER TABLE trader_sync_alert_memberships ADD CONSTRAINT summary_membership_batch_fkey FOREIGN KEY(owner_id,batch_id,binding_revision,chat_id) REFERENCES trader_sync_summary_batches(owner_id,id,binding_revision,chat_id);
+ALTER TABLE account_notification_deliveries ADD UNIQUE(account_id,id);
+CREATE TABLE trader_sync_summary_parts (
+ id BIGSERIAL PRIMARY KEY,
+ owner_id UUID NOT NULL,
+ batch_id BIGINT NOT NULL,
+ part_index INTEGER NOT NULL CHECK(part_index>0),
+ total INTEGER NOT NULL CHECK(total>=part_index),
+ text TEXT NOT NULL CHECK(length(text)>0),
+ payload_digest BYTEA NOT NULL CHECK(octet_length(payload_digest)=32),
+ delivery_id BIGINT NOT NULL UNIQUE,
+ UNIQUE(batch_id,part_index),
+ UNIQUE(owner_id,batch_id,id),
+ FOREIGN KEY(owner_id,batch_id) REFERENCES trader_sync_summary_batches(owner_id,id),
+ FOREIGN KEY(owner_id,delivery_id) REFERENCES account_notification_deliveries(account_id,id)
+);
+CREATE TABLE trader_sync_summary_part_items (
+ owner_id UUID NOT NULL,
+ batch_id BIGINT NOT NULL,
+ part_id BIGINT NOT NULL,
+ activity_id BIGINT NOT NULL,
+ PRIMARY KEY(part_id,activity_id),
+ FOREIGN KEY(owner_id,batch_id,part_id) REFERENCES trader_sync_summary_parts(owner_id,batch_id,id),
+ FOREIGN KEY(owner_id,batch_id,activity_id) REFERENCES trader_sync_alert_memberships(owner_id,batch_id,activity_id)
+);
+CREATE TABLE trader_sync_summary_heads (
+ id BIGSERIAL PRIMARY KEY,
+ owner_id UUID NOT NULL UNIQUE,
+ current_batch_id BIGINT,
+ current_attempt_id UUID REFERENCES notification_delivery_attempts(id),
+ previous_basis_at TIMESTAMPTZ,
+ FOREIGN KEY(owner_id,current_batch_id) REFERENCES trader_sync_summary_batches(owner_id,id),
+ CHECK(current_attempt_id IS NULL OR current_batch_id IS NOT NULL)
+);
+-- +goose StatementBegin
+CREATE FUNCTION trader_sync_guard_summary_batch() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+ IF (NEW.id,NEW.owner_id,NEW.binding_revision,NEW.chat_id,NEW.oldest_at,NEW.frozen_at) IS DISTINCT FROM
+    (OLD.id,OLD.owner_id,OLD.binding_revision,OLD.chat_id,OLD.oldest_at,OLD.frozen_at)
+    OR (OLD.sealed AND NOT NEW.sealed)
+    OR (OLD.first_started_at IS NOT NULL AND NEW.first_started_at IS DISTINCT FROM OLD.first_started_at)
+ THEN RAISE EXCEPTION 'summary batch facts are immutable'; END IF;
+ RETURN NEW;
+END;
+$$;
+-- +goose StatementEnd
+CREATE TRIGGER summary_batch_immutable BEFORE UPDATE ON trader_sync_summary_batches FOR EACH ROW EXECUTE FUNCTION trader_sync_guard_summary_batch();
+-- +goose StatementBegin
+CREATE FUNCTION trader_sync_guard_summary_member() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+ IF (NEW.activity_id,NEW.owner_id,NEW.binding_revision,NEW.chat_id,NEW.form,NEW.created_at) IS DISTINCT FROM
+    (OLD.activity_id,OLD.owner_id,OLD.binding_revision,OLD.chat_id,OLD.form,OLD.created_at)
+    OR (OLD.batch_id IS NOT NULL AND (NEW.batch_id IS DISTINCT FROM OLD.batch_id OR NEW.state IS DISTINCT FROM OLD.state))
+    OR (OLD.eligibility_revoked_at IS NOT NULL AND NEW.eligibility_revoked_at IS DISTINCT FROM OLD.eligibility_revoked_at)
+ THEN RAISE EXCEPTION 'summary member identity is immutable'; END IF;
+ IF NEW.batch_id IS DISTINCT FROM OLD.batch_id AND EXISTS(SELECT 1 FROM trader_sync_summary_batches WHERE id=NEW.batch_id AND sealed)
+ THEN RAISE EXCEPTION 'summary batch is sealed'; END IF;
+ RETURN NEW;
+END;
+$$;
+-- +goose StatementEnd
+CREATE TRIGGER summary_member_immutable BEFORE UPDATE ON trader_sync_alert_memberships FOR EACH ROW EXECUTE FUNCTION trader_sync_guard_summary_member();
+-- +goose StatementBegin
+CREATE FUNCTION trader_sync_guard_summary_content() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+ IF TG_OP<>'INSERT' THEN RAISE EXCEPTION 'summary content is immutable'; END IF;
+ IF EXISTS(SELECT 1 FROM trader_sync_summary_batches WHERE id=NEW.batch_id AND sealed)
+ THEN RAISE EXCEPTION 'summary batch is sealed'; END IF;
+ RETURN NEW;
+END;
+$$;
+-- +goose StatementEnd
+CREATE TRIGGER summary_part_immutable BEFORE INSERT OR UPDATE OR DELETE ON trader_sync_summary_parts FOR EACH ROW EXECUTE FUNCTION trader_sync_guard_summary_content();
+CREATE TRIGGER summary_part_items_immutable BEFORE INSERT OR UPDATE OR DELETE ON trader_sync_summary_part_items FOR EACH ROW EXECUTE FUNCTION trader_sync_guard_summary_content();
+
 -- Every attempt sends the already frozen format/text bytes; status updates cannot rewrite them.
 -- +goose StatementBegin
 CREATE FUNCTION notification_guard_frozen_payload() RETURNS trigger LANGUAGE plpgsql AS $$
@@ -761,6 +857,15 @@ CREATE TRIGGER account_notification_frozen_payload BEFORE UPDATE ON account_noti
 CREATE TRIGGER binding_reply_frozen_payload BEFORE UPDATE ON telegram_binding_replies FOR EACH ROW EXECUTE FUNCTION notification_guard_frozen_payload();
 
 -- +goose Down
+DROP TABLE trader_sync_summary_heads;
+DROP TABLE trader_sync_summary_part_items;
+DROP TABLE trader_sync_summary_parts;
+DROP FUNCTION trader_sync_guard_summary_content();
+ALTER TABLE trader_sync_alert_memberships DROP CONSTRAINT summary_membership_batch_fkey;
+DROP TABLE trader_sync_summary_batches;
+DROP FUNCTION trader_sync_guard_summary_batch();
+DROP TRIGGER summary_member_immutable ON trader_sync_alert_memberships;
+DROP FUNCTION trader_sync_guard_summary_member();
 ALTER TABLE account_notification_deliveries DROP CONSTRAINT account_notification_deliveries_account_id_activity_id_fkey;
 DROP TABLE trader_sync_finality_anomalies;
 DROP TABLE trader_sync_alert_memberships;

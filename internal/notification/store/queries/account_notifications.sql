@@ -89,4 +89,5 @@ SELECT
 -- name: ListDispatchAccounts :many
 SELECT * FROM account_notification_deliveries
 WHERE status = 'pending' AND attempts < 5 AND eligibility_revoked_at IS NULL
+AND NOT EXISTS(SELECT 1 FROM trader_sync_summary_parts p JOIN trader_sync_summary_heads h ON h.current_batch_id=p.batch_id WHERE p.delivery_id=account_notification_deliveries.id)
 ORDER BY account_id, next_attempt_at, id;

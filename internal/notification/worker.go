@@ -110,6 +110,12 @@ func (s *Service) sendPermittedNotification(ctx context.Context, candidate deliv
 		log.WithError(err).WithField("notification_id", candidate.Ref.ID).Debug("notification send was not authorized")
 		return delivery.Outcome{}, err
 	}
+	return s.executePermit(ctx, permit, onStarted, nil)
+}
+
+// executePermit is the only Sender/result path, shared by ordinary work and
+// summary first parts. Its input is the committed payload, never re-rendered text.
+func (s *Service) executePermit(ctx context.Context, permit delivery.Permit, onStarted func(time.Time), summary *summaryAttempt) (delivery.Outcome, error) {
 	payload, err := delivery.DecodePayload(permit.Payload)
 	if err != nil {
 		return delivery.Outcome{}, err
@@ -119,7 +125,9 @@ func (s *Service) sendPermittedNotification(ctx context.Context, candidate deliv
 	result := make(chan delivery.Outcome, 1)
 	// The transport starts its HTTP timeout after cancellable local budget admission.
 	sendCtx, cancel := context.WithCancel(ctx)
-	if slot, ok := ctx.Value(dispatchSlotKey{}).(dispatchSlot); ok && slot.budget != nil {
+	if summary != nil {
+		sendCtx = utiltelegram.WithSendAdmission(sendCtx, summary.admit)
+	} else if slot, ok := ctx.Value(dispatchSlotKey{}).(dispatchSlot); ok && slot.budget != nil {
 		sendCtx = utiltelegram.WithSendAdmission(sendCtx, func(ctx context.Context) (func(), error) { return slot.budget.admitStart(ctx, slot.clock) })
 	}
 	defer cancel()
@@ -141,7 +149,11 @@ func (s *Service) sendPermittedNotification(ctx context.Context, candidate deliv
 		case at := <-started:
 			startedAt = at
 			recordCtx, recordCancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second)
-			err = s.store.RecordStarted(recordCtx, permit, at)
+			if summary != nil {
+				err = summary.recordStart(recordCtx, at)
+			} else {
+				err = s.store.RecordStarted(recordCtx, permit, at)
+			}
 			recordCancel()
 			if err != nil {
 				log.WithError(err).WithField("attempt_id", permit.AttemptID).Warn("failed to record notification HTTP start")
@@ -151,6 +163,11 @@ func (s *Service) sendPermittedNotification(ctx context.Context, candidate deliv
 			if startedAt.IsZero() {
 				select {
 				case startedAt = <-started:
+					if summary != nil {
+						recordCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second)
+						_ = summary.recordStart(recordCtx, startedAt)
+						cancel()
+					}
 				default:
 				}
 			}
@@ -158,13 +175,16 @@ func (s *Service) sendPermittedNotification(ctx context.Context, candidate deliv
 		}
 	}
 received:
+	if summary != nil {
+		summary.releaseGate()
+	}
 	resultAt := time.Now().UTC()
 	if retries, ok := ctx.Value(retryBudgetKey{}).(*retryBudget); ok {
 		retries.track(permit.AttemptID, outcome.RetryAfter)
 	}
 	recordCtx, recordCancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 	defer recordCancel()
-	if !startedAt.IsZero() {
+	if !startedAt.IsZero() && summary == nil {
 		if err = s.store.RecordStarted(recordCtx, permit, startedAt); err != nil {
 			log.WithError(err).Warn("failed to persist notification start evidence")
 		}

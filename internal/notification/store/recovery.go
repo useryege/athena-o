@@ -34,7 +34,7 @@ func (s *SQLStore) RecoverSender(ctx context.Context, stoppedIncarnation uuid.UU
 			return fmt.Errorf("recover attempt %s: %w", p.AttemptID, err)
 		}
 	}
-	return nil
+	return s.recoverSummaryHeads(ctx, uuidPG(stoppedIncarnation), instance.StoppedAt.Time)
 }
 func permitFromAttempt(a q.NotificationDeliveryAttempt) delivery.Permit {
 	return delivery.Permit{Work: delivery.WorkRef{Kind: a.WorkKind, ID: a.WorkID}, AttemptID: uuid.UUID(a.ID.Bytes), OwnerID: uuidString(a.OwnerID), SenderIncarnation: uuid.UUID(a.SenderIncarnation.Bytes), PayloadDigest: a.PayloadDigest, AuthorizedAt: a.AuthorizedAt.Time, ChatID: a.TelegramChatID, Group: a.TelegramGroup}

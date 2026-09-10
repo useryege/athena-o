@@ -108,7 +108,16 @@ SELECT d.id, d.account_id, d.idempotency_key, d.payload_digest, d.source, d.seve
     AND b.status = 'connected'
 ) AND (d.source <> 'trader_sync' OR (
  EXISTS (SELECT 1 FROM account_module_access m JOIN athena_account a USING(account_id) WHERE m.account_id=d.account_id AND m.module='trader_sync' AND m.access_level='read_write' AND NOT a.administrator)
- AND EXISTS (SELECT 1 FROM trader_sync_alert_memberships m WHERE m.activity_id=d.activity_id AND m.owner_id=d.account_id AND m.binding_revision=d.binding_revision AND m.chat_id=d.telegram_chat_id AND m.eligibility_revoked_at IS NULL)
+ AND (
+ EXISTS (SELECT 1 FROM trader_sync_alert_memberships m WHERE m.activity_id=d.activity_id AND m.owner_id=d.account_id AND m.binding_revision=d.binding_revision AND m.chat_id=d.telegram_chat_id AND m.form='ordinary' AND m.eligibility_revoked_at IS NULL)
+ OR (d.activity_id IS NULL AND EXISTS (
+ SELECT 1 FROM trader_sync_summary_parts p JOIN trader_sync_summary_batches b ON b.id=p.batch_id AND b.owner_id=p.owner_id
+ WHERE p.delivery_id=d.id AND p.owner_id=d.account_id AND b.binding_revision=d.binding_revision AND b.chat_id=d.telegram_chat_id AND b.sealed
+ AND EXISTS(SELECT 1 FROM trader_sync_summary_part_items i WHERE i.part_id=p.id)
+ AND NOT EXISTS(SELECT 1 FROM trader_sync_summary_part_items i JOIN trader_sync_alert_memberships m ON m.activity_id=i.activity_id
+ WHERE i.part_id=p.id AND (m.owner_id<>d.account_id OR m.batch_id<>p.batch_id OR m.binding_revision<>d.binding_revision OR m.chat_id<>d.telegram_chat_id OR m.state<>'frozen' OR m.eligibility_revoked_at IS NOT NULL))
+ ))
+ )
 )) AS binding_eligible
 FROM account_notification_deliveries d WHERE d.id = $1 FOR UPDATE OF d
 `

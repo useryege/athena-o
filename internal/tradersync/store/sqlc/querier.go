@@ -29,6 +29,9 @@ type Querier interface {
 	CreateBaselineAttempt(ctx context.Context, arg CreateBaselineAttemptParams) (TraderSyncBaselineAttempt, error)
 	CreateCollectorEpoch(ctx context.Context, fencingToken int64) (TraderSyncCollectorEpoch, error)
 	CreateSubscription(ctx context.Context, arg CreateSubscriptionParams) (TraderSyncSubscription, error)
+	CreateSummaryBatch(ctx context.Context, arg CreateSummaryBatchParams) (TraderSyncSummaryBatch, error)
+	CreateSummaryPart(ctx context.Context, arg CreateSummaryPartParams) (TraderSyncSummaryPart, error)
+	CreateSummaryPartItem(ctx context.Context, arg CreateSummaryPartItemParams) error
 	DelayComboPage(ctx context.Context) (pgtype.Timestamptz, error)
 	EndCollectorEpoch(ctx context.Context, arg EndCollectorEpochParams) (int64, error)
 	EnsureComboDirectory(ctx context.Context) error
@@ -38,6 +41,7 @@ type Querier interface {
 	FindPublishedTransaction(ctx context.Context, arg FindPublishedTransactionParams) ([][]byte, error)
 	FinishInvalidProjectionCandidates(ctx context.Context, sourceRecordID int64) error
 	FinishProjectionCandidate(ctx context.Context, arg FinishProjectionCandidateParams) error
+	FreezeSummaryMember(ctx context.Context, arg FreezeSummaryMemberParams) (int64, error)
 	GetBaselineAttempt(ctx context.Context, id pgtype.UUID) (TraderSyncBaselineAttempt, error)
 	GetBaselineSubscription(ctx context.Context, id pgtype.UUID) (TraderSyncSubscription, error)
 	GetCollectorEpoch(ctx context.Context, id int64) (TraderSyncCollectorEpoch, error)
@@ -91,11 +95,14 @@ type Querier interface {
 	SaveSubscriptionRequestResult(ctx context.Context, arg SaveSubscriptionRequestResultParams) error
 	SaveTargetNote(ctx context.Context, arg SaveTargetNoteParams) (TraderSyncTargetNote, error)
 	SaveTradeMetadata(ctx context.Context, arg SaveTradeMetadataParams) error
+	SealSummaryBatch(ctx context.Context, id int64) error
 	SetProjectionMetadataComplete(ctx context.Context, arg SetProjectionMetadataCompleteParams) error
 	StartComboRound(ctx context.Context) error
 	SucceedBaselineAttempt(ctx context.Context, id pgtype.UUID) (TraderSyncBaselineAttempt, error)
+	SummaryPartResults(ctx context.Context, arg SummaryPartResultsParams) ([]SummaryPartResultsRow, error)
 	UpdateSourceRemoved(ctx context.Context, arg UpdateSourceRemovedParams) (int64, error)
 	UpsertComboPosition(ctx context.Context, arg UpsertComboPositionParams) error
+	WaitingSummaryActivities(ctx context.Context, arg WaitingSummaryActivitiesParams) ([]WaitingSummaryActivitiesRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

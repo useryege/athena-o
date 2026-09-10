@@ -123,3 +123,13 @@ func timestamptzValue(value time.Time) pgtype.Timestamptz {
 func formatTime(value time.Time) string {
 	return value.UTC().Format(time.RFC3339)
 }
+
+// BorrowPool returns the existing physical pool without transferring ownership.
+// Only this SQLStore's composition owner closes it, after Service.Stop joins all work.
+func (s *SQLStore) BorrowPool() (*pgxpool.Pool, error) {
+	p, ok := s.pool.(*pgxpool.Pool)
+	if !ok || p == nil {
+		return nil, fmt.Errorf("physical notification pool required")
+	}
+	return p, nil
+}

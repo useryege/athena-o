@@ -52,3 +52,14 @@ type AccountEnqueue struct {
 	Payload         []byte
 	RecordedAt      time.Time
 }
+
+// SummaryPartEnqueue identifies a complete frozen summary part, never a single activity.
+type SummaryPartEnqueue struct {
+	OwnerID         string
+	BatchID         int64
+	Index           int
+	BindingRevision uint64
+	ChatID          int64
+	Payload         []byte
+	FrozenAt        time.Time
+}

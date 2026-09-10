@@ -21,6 +21,9 @@ func (s *Service) workSources() []WorkSource {
 	for _, kind := range []string{"account", "system", "reply"} {
 		sources = append(sources, &notificationSource{service: s, kind: kind, items: make(map[delivery.WorkRef]notificationstore.DispatchItem)})
 	}
+	if s.summarySource != nil {
+		sources = append(sources, s.summarySource)
+	}
 	return sources
 }
 func (s *notificationSource) Ready(ctx context.Context, now time.Time) ([]delivery.Candidate, error) {

@@ -103,7 +103,7 @@ flowchart LR
 
 管理员运行入口报告进程生命周期、Bot 可用性/ID/名称、poller 状态、最近轮询/更新时间、账户 pending/retry/failed/sending/unknown 独立计数与不可达绑定数。gRPC health 在资料同步、webhook 检查、poller 与 worker 启动后才为 SERVING。诊断日志使用内部更新/投递/attempt ID；轮询失败、结果写库失败和绑定更新错误为 warning。
 
-持久发送许可、共享调度、单 sender 登记和显式恢复入口已经实现。运行 RPC 暂未增加独立 reply 队列计数。Trader Sync 摘要首条源和产品 grant 撤销钩子由后续任务接入，不能把已有绑定墓碑误称为完整产品撤权实现。
+持久发送许可、共享调度、单 sender 登记和显式恢复入口已经实现。运行 RPC 暂未增加独立 reply 队列计数。Trader Sync 产品 grant 撤销钩子及摘要首条源已接入共享账户资格和调度；后续 API/runtime composition 仍需注入摘要 siteURL。
 
 ## 单 sender 与恢复操作
 
@@ -137,4 +137,14 @@ athena-notification --recover-stopped-sender=<incarnation-UUID>
 
 `WithSendAdmission` 将可取消的预算准入传至 Telegram HTTP 客户端。等待时不持账户 gate 或预算锁；最终准入读锁仅保留至 transport 实际 started 握手，立即释放后才执行网络请求。`Tighten` 写锁与这一真实起点排序，已进入 HTTP 的尝试保留原请求及结果。Started 回调只做内存记账和有界通道交接，不等待预算或写库。准入取消返回 not_started，持久许可仍只消耗原一次 attempt；事务取消、HTTP 前失败及正常起点均清理读锁。
 
-五秒 HTTP 超时在准入后起算，本地冷却等待不算外部 Telegram 耗时；创建、授权、真实开始和结果时间保留总体延迟。后续摘要消费者在预算等待时须释放短 gate，恢复同一冻结批次及许可，重入 gate 后完成最后准入与 started 补记；该组合由摘要源接入任务实现。
+五秒 HTTP 超时在准入后起算，本地冷却等待不算外部 Telegram 耗时；创建、授权、真实开始和结果时间保留总体延迟。摘要消费者已在预算等待时释放短 gate，保留同一冻结批次及许可，重入 gate 后完成非阻塞最后准入与 started 补记。
+
+## 摘要首条与共享许可
+
+[SummarySource](../../../internal/notification/summary_source.go) 消费 Trader Sync 的 waiting membership；其未来候选带 notBefore/deadline，按 owner 的持久 head 保序。候选的 summary_head Ref 只服务调度，真实冻结部分继续以 account WorkRef 进入同一个 AuthorizeTx/executePermit/RecordOutcome 路径。普通 account source 不领取未解决首条批次的任何部分；首条有起点后，其他部分独立许可并可与下批首条交错。
+
+固定连接 session advisory key 与账户事务相同。AuthorizeTx 不自行提交，也不再取另一连接的 account gate；guard 位于 delivery 行锁之后，预算完成回调由外层 Commit/Rollback 收尾。首条提交未知只可有界确认原 attempt/head，未确认不发。预算 Tighten 与最终 HTTP 准入通过同一 RW 锁排序；需要等待时先释放账户 session，等待结束释放临时预算读锁，再重取账户 session 和核验原许可。非阻塞 tryAdmitStart 可再次拒绝；真实 Started 回调仍恒定时间，预算读锁在该回调后、实际 I/O 前释放。
+
+Started 事实通过固定连接在一秒内补记后释放 gate，不等 HTTP 回执；RecordStarted 本身不再请求账户 gate，结果仍在原账户短事务里 CAS。已 sent/unknown 且起点丢失的 head 也纳入明确停止恢复，不能只恢复当前 sending，不能因 NULL 起点跨进程重发。运行内保留真实观察的 monotonic 基点；恢复缺证据时只记录 recovery_basis_at 和原因，不伪造 first_started_at。预算等待的起止、时长和外部 Retry-After/本地协调原因及 gate 等待保留在 batch，完整总体延迟与动态 f<t<s 的 miss 不被抹去。
+
+`SQLStore.BorrowPool()` 仅返回借用引用；启动前 `Service.ConfigureSummaries(pool,siteURL)` 要求原池并注册实际 WorkSource。Service.Stop 和摘要协调者负责 cancel/join/释放所持 session，trader-store 适配器不 Close。唯一 pool owner 仍是 [通知 CLI](../../../cmd/athena-notification/commands/athena_notification.go) 的 `defer utilio.Close(store)`；Task12 将通过现有 ServerOpts/CLI 启动注入上述配置，不另建池。完整冻结、Unicode/UTF-16 分条与成员关系见 [Trader Sync 设计](../trading/trader-sync-activity-alerts.md#摘要首条的短-gate)。

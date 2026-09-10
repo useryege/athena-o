@@ -13,6 +13,33 @@ type budgetEvent struct {
 	group bool
 	at    time.Time
 }
+
+// tryAdmitStart is nonblocking even with a waiting writer. A summary may call
+// it while holding its account session, then release that session before waiting.
+func (b *Budget) tryAdmitStart(ctx context.Context, clock Clock) (func(), time.Duration, string, error) {
+	if e := ctx.Err(); e != nil {
+		return nil, 0, "", e
+	}
+	if !b.authorizationMu.TryRLock() {
+		return nil, time.Millisecond, "budget_coordination", nil
+	}
+	if !b.mu.TryLock() {
+		b.authorizationMu.RUnlock()
+		return nil, time.Millisecond, "budget_coordination", nil
+	}
+	remaining := b.blockedUntil.Sub(clock.Now())
+	b.mu.Unlock()
+	if e := ctx.Err(); e != nil {
+		b.authorizationMu.RUnlock()
+		return nil, 0, "", e
+	}
+	if remaining > 0 {
+		b.authorizationMu.RUnlock()
+		return nil, remaining, "telegram_retry_after", nil
+	}
+	return b.authorizationMu.RUnlock, 0, "", nil
+}
+
 type budgetReservation struct {
 	candidate   delivery.Candidate
 	authorizing bool
@@ -188,33 +215,33 @@ func (b *Budget) roomForDeadline(f delivery.Candidate, slots int) bool {
 // must run immediately after the transport's actual started handshake, before I/O.
 // TryRLock keeps cancellation responsive even when a writer awaits another commit.
 func (b *Budget) admitStart(ctx context.Context, clock Clock) (func(), error) {
+	return b.admitStartObserved(ctx, clock, nil)
+}
+
+// The summary consumer records which constraint actually caused each local wait.
+// This observer runs with no budget/account lock and performs no I/O.
+func (b *Budget) admitStartObserved(ctx context.Context, clock Clock, observe func(string)) (func(), error) {
 	for {
-		if err := ctx.Err(); err != nil {
-			return nil, err
+		release, wait, reason, e := b.tryAdmitStart(ctx, clock)
+		if e != nil {
+			return nil, e
 		}
-		if !b.authorizationMu.TryRLock() {
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case <-time.After(time.Millisecond):
-			}
-			continue
+		if release != nil {
+			return release, nil
 		}
-		b.mu.Lock()
-		remaining := b.blockedUntil.Sub(clock.Now())
-		b.mu.Unlock()
-		if err := ctx.Err(); err != nil {
-			b.authorizationMu.RUnlock()
-			return nil, err
+		if observe != nil {
+			observe(reason)
 		}
-		if remaining <= 0 {
-			return b.authorizationMu.RUnlock, nil
+		var next <-chan time.Time
+		if reason == "budget_coordination" {
+			next = time.After(wait)
+		} else {
+			next = clock.After(wait)
 		}
-		b.authorizationMu.RUnlock()
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
-		case <-clock.After(remaining):
+		case <-next:
 		}
 	}
 }
