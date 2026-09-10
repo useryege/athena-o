@@ -23,9 +23,16 @@ import (
 	"github.com/useryege/athena/internal/testutil/pgtest"
 	ts "github.com/useryege/athena/internal/tradersync/store"
 	tm "github.com/useryege/athena/internal/tradersync/types"
+	"github.com/useryege/athena/util/polymarket"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"math/big"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -553,4 +560,119 @@ func projectPermitFixture(t *testing.T, pool *pgxpool.Pool, s *ts.SQLStore, owne
 		t.Fatal(err)
 	}
 	return deliveryID
+}
+
+func TestCanonicalProfileEvidenceSurvivesRealResolveCreateAndActivity(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	owner, e := as.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
+	if e != nil {
+		t.Fatal(e)
+	}
+	html, e := os.ReadFile("../../util/polymarket/testdata/profile/profile.html")
+	if e != nil {
+		t.Fatal(e)
+	}
+	public, e := os.ReadFile("../../util/polymarket/testdata/profile/public-profile.json")
+	if e != nil {
+		t.Fatal(e)
+	}
+	var original map[string]any
+	if e = json.Unmarshal(public, &original); e != nil {
+		t.Fatal(e)
+	}
+	original["name"] = nil
+	original["pseudonym"] = nil
+	var lastPublicRead atomic.Int64
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/@GCR", "/@gcr":
+			w.Write(html)
+		case "/public-profile":
+			lastPublicRead.Store(time.Now().UnixNano())
+			json.NewEncoder(w).Encode(original)
+		default:
+			w.WriteHeader(http.StatusServiceUnavailable)
+		}
+	}))
+	defer server.Close()
+	base, _ := url.Parse(server.URL)
+	adapter := polymarket.NewProfileAdapter(routedHTTP{base, server.Client().Transport})
+	s := ts.NewSQLStore(db.Pool)
+	resolver, e := NewTargetResolver(db.Pool, adapter, s.RequireGrantTx, s.ResolveContextTx)
+	if e != nil {
+		t.Fatal(e)
+	}
+	input := "https://polymarket.com/@GCR"
+	resolved, e := resolver.Resolve(ctx, owner.ID, input)
+	if e != nil {
+		t.Fatal(e)
+	}
+	queryAt := resolved.Card.DisplayName.QueriedAt
+	source := resolved.Card.DisplayName.Source
+	if resolved.Card.DisplayName.Availability != "unavailable" || queryAt.IsZero() || !strings.HasPrefix(source, "https://gamma-api.polymarket.com/public-profile?address=") {
+		t.Fatal("real adapter did not preserve cross-check evidence", resolved.Card.DisplayName)
+	}
+	svc, e := NewSubscriptionService(db.Pool, s, resolver, &fakeBaseline{})
+	if e != nil {
+		t.Fatal(e)
+	}
+	sub, e := svc.Create(ctx, owner.ID, tm.CreateInput{Token: resolved.Token, RequestID: uuid.NewString()})
+	if e != nil {
+		t.Fatal(e)
+	}
+	assertEvidence := func(label string, display tm.TargetDisplay) {
+		t.Helper()
+		wantSource := "canonical_profile_ssr: " + input + "; wallet_cross_check: " + source
+		u := display.ProfileURL
+		if u.Value == nil || *u.Value != "https://polymarket.com/@gcr" || u.Availability != "available" || u.Source != wantSource || !u.QueriedAt.Equal(queryAt) {
+			t.Errorf("%s lost original canonical provenance: %+v; want source=%q time=%s", label, u, wantSource, queryAt)
+		}
+	}
+	assertEvidence("Create", sub.TargetDisplay)
+	if !time.Unix(0, lastPublicRead.Load()).After(queryAt) {
+		t.Fatal("Create did not actually revalidate after original query")
+	}
+	// Construct only the transaction fixture; it is not new chain evidence.
+	at := time.Now().UTC().Truncate(time.Second)
+	var attempt string
+	if e = db.Pool.QueryRow(ctx, `UPDATE trader_sync_baseline_attempts SET state='succeeded',effective_at=$2 WHERE subscription_id=$1 RETURNING id`, sub.ID, at.Add(-time.Minute)).Scan(&attempt); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = db.Pool.Exec(ctx, `INSERT INTO trader_sync_monitor_intervals(owner_id,subscription_id,baseline_attempt_id,activation_generation,collector_epoch,filter_revision,expected_revision,registered_high,candidate_effective_at,effective_at)VALUES($1,$2,$3,1,1,1,1,0,$4,$4)`, owner.ID, sub.ID, attempt, at.Add(-time.Minute)); e != nil {
+		t.Fatal(e)
+	}
+	f := sourceFixtures(t)[0]
+	f.Log.Topics[2] = common.BytesToHash(sub.Wallet.Bytes())
+	raw, _ := json.Marshal(f.Log)
+	var epoch, sourceID int64
+	if e = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_collector_epochs(fencing_token)VALUES(1)RETURNING id`).Scan(&epoch); e != nil {
+		t.Fatal(e)
+	}
+	if e = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_source_records(chain_id,exchange_address,wallet,block_hash,transaction_hash,log_index,block_number,raw_json,collector_epoch,read_sequence,received_at,removed)VALUES(137,$1,$2,$3,$4,$5,$6,$7,$8,1,$9,false)RETURNING id`, f.Log.Address.Bytes(), sub.Wallet.Bytes(), f.Log.BlockHash.Bytes(), f.Log.TxHash.Bytes(), int64(f.Log.Index), int64(f.Log.BlockNumber), raw, epoch, at).Scan(&sourceID); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = db.Pool.Exec(ctx, `INSERT INTO trader_sync_source_candidates(source_record_id,owner_id,subscription_id,activation_generation,baseline_attempt_id,received_at)VALUES($1,$2,$3,1,$4,$5)`, sourceID, owner.ID, sub.ID, attempt, at); e != nil {
+		t.Fatal(e)
+	}
+	trade, e := DecodeOwnTrade(f.Log, f.Version)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = s.ConfigureActivities("https://athena.test"); e != nil {
+		t.Fatal(e)
+	}
+	id, created, e := s.Project(ctx, tm.Projection{Candidate: tm.Candidate{SourceID: sourceID, OwnerID: owner.ID, SubscriptionID: sub.ID, AttemptID: attempt, Generation: 1, ReceivedAt: at}, Trade: trade, Confirmation: tm.CanonicalEvidence{Status: "confirmed", BlockHash: f.Log.BlockHash, SettledAt: at, CheckedAt: at}})
+	if e != nil || !created {
+		t.Fatal(id, created, e)
+	}
+	var persisted []byte
+	if e = db.Pool.QueryRow(ctx, `SELECT target_display_snapshot FROM trader_sync_activities WHERE id=$1`, id).Scan(&persisted); e != nil {
+		t.Fatal(e)
+	}
+	var display tm.TargetDisplay
+	if e = json.Unmarshal(persisted, &display); e != nil {
+		t.Fatal(e)
+	}
+	assertEvidence("Activity", display)
 }

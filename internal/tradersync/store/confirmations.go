@@ -143,7 +143,15 @@ func (s *SQLStore) ReadConfirmationDisplayTx(ctx context.Context, tx pgx.Tx, own
 	}
 	result.DisplayName = normalize(card.DisplayName)
 	result.Avatar = normalize(card.Avatar)
-	result.ProfileURL = tsmodel.Scalar{Evidence: tsmodel.Evidence{Availability: "unavailable", ReasonCode: "canonical_profile_unavailable", Source: "verified_profile_identity", QueriedAt: card.DisplayName.QueriedAt}}
+	// The canonical URL came from the original Profile SSR input; Gamma only
+	// cross-checked its wallet. The card retains that check's original source
+	// and resolution time even when no display name was available.
+	profileSource := "resolution_input: " + saved.ResolutionInput
+	if saved.ProfileURL != "" {
+		profileSource = "canonical_profile_ssr: " + saved.ResolutionInput
+	}
+	profileSource += "; wallet_cross_check: " + card.DisplayName.Source
+	result.ProfileURL = tsmodel.Scalar{Evidence: tsmodel.Evidence{Availability: "unavailable", ReasonCode: "canonical_profile_unavailable", Source: profileSource, QueriedAt: card.DisplayName.QueriedAt}}
 	if saved.ProfileURL != "" {
 		value := saved.ProfileURL
 		result.ProfileURL.Value = &value

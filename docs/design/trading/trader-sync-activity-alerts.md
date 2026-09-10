@@ -198,7 +198,7 @@ flowchart LR
 
 ### 当前活动与普通投递实现
 
-`SubscriptionService.Create` 在第二个账户事务精确读取仍有效、未消费的 owner/token/card，核对 Identity digest 与钱包后保存 `TargetDisplay`。只复制 DisplayName、Avatar 和经过核验的非空 canonical ProfileURL 及 Scalar evidence，不复制 P/L。地址没有 canonical 时 URL 为 unavailable。名称不参与身份、代次或资格；暂停/恢复沿用确认快照，新订阅才可重新确认。通知备注优先于名称，另列完整钱包，并披露已知资料查询时间与可能陈旧。
+`SubscriptionService.Create` 在第二个账户事务精确读取仍有效、未消费的 owner/token/card，核对 Identity digest 与钱包后保存 `TargetDisplay`。只复制 DisplayName、Avatar 和经过核验的非空 canonical ProfileURL 及 Scalar evidence，不复制 P/L。ProfileURL.Source 明确组合原 ResolutionInput 对应的 Profile SSR canonical 来源与确认卡 PublicSource 对应的 Gamma 钱包交叉核验来源，QueriedAt 沿用原解析完成时刻，不由后来的 Revalidate 重写；显示名缺失不影响已核准 URL 的可用性。地址没有 canonical 时 URL 为 unavailable。名称不参与身份、代次或资格；暂停/恢复沿用确认快照，新订阅才可重新确认。通知备注优先于名称，另列完整钱包，并披露已知资料查询时间与可能陈旧。
 
 `Projector.Run` 独占确认调度，默认每 2 秒选择持久待处理来源，`MaxInFlightSources` 默认 100 且独立于用户/目标配额。选择按持久 checked_at（未检查优先）与 ID 排序，失败轮次保存 unverified 后让出槽，重启不把最老失败源固定在前。活动形成后的资料晚补仍占原 source 槽；禁止旁路无限 goroutine，重复 Run 拒绝，取消时 join 全部在途任务。100 为可配置资源初值，不代表已经完成吞吐或延迟验收。
 
@@ -278,7 +278,7 @@ Combo PositionId 先取得组合自身 YES/NO，再以高 31 字节 condition �
 
 ### 账户 gate 与发送许可
 
-权限变更、订阅操作、活动形成、绑定变更及发送许可使用同一 `athena` 账户 gate，锁键由统一命名空间和规范 account UUID 生成。普通事务使用 transaction advisory lock；绑定唯一身份锁在账户 gate 后取得。基线注册按 account gate→wallet intake gate，raw 持久化只取 intake gate，不反向申请账户 gate；投影只取账户 gate。不同账户不持有同一业务锁，AccountAccessController 的全局更新 mutex 改为按账户串行并保留 revision CAS。
+权限变更、订阅操作、活动形成、绑定变更及发送许可使用同一 `athena` 账户 gate，锁键由统一命名空间和规范 account UUID 生成。普通事务使用 transaction advisory lock；绑定唯一身份锁在账户 gate 后取得。基线注册按 account gate→wallet intake gate，raw 持久化只取 intake gate，不反向申请账户 gate；投影按 owner 账户 gate→chain/tx 证据锁→source 行锁顺序取得锁，证据写入不反向取得 owner gate。不同账户的账户业务锁独立，但同一 chain/tx 可共用交易证据锁，AccountAccessController 的全局更新 mutex 改为按账户串行并保留 revision CAS。
 
 业务读写核验权威数据库权限；进程内快照只能快速拒绝，不能作为允许访问的唯一证据。`recorded_at` 在取得 gate 后取数据库真实时间，不能用开始事务后等待锁前的 `NOW()` 时间。站内记录以事务成功提交为形成成功，事务耗时纳入可观测分段。
 

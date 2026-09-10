@@ -21,6 +21,7 @@ import (
 	"github.com/useryege/athena/internal/tradersync/activity"
 	q "github.com/useryege/athena/internal/tradersync/store/sqlc"
 	tm "github.com/useryege/athena/internal/tradersync/types"
+	"strings"
 	"testing"
 	"time"
 )
@@ -128,6 +129,24 @@ func TestConfirmationDisplayUsesExactCardAndRejectsDifferentWallet(t *testing.T)
 	}
 	if got.ProfileURL.Availability != "unavailable" || got.ProfileURL.Value != nil {
 		t.Fatal("invented profile URL", got)
+	}
+	// Canonical provenance combines the original SSR input and the original
+	// Gamma wallet check, independently of the display name's availability.
+	canonicalIdentity := tm.Identity{Wallet: id.Wallet, ResolutionInput: "https://www.polymarket.com/@GCR", ProfileURL: "https://polymarket.com/@gcr", Digest: [32]byte{2}}
+	canonicalToken := make([]byte, 32)
+	canonicalToken[0] = 2
+	publicSource := "https://gamma-api.polymarket.com/public-profile?address=" + strings.ToLower(id.Wallet.Hex())
+	canonicalCard := tm.ConfirmationCard{Identity: canonicalIdentity, DisplayName: tm.Scalar{Evidence: tm.Evidence{Availability: "unavailable", ReasonCode: "missing", Source: publicSource, QueriedAt: queryTime}}}
+	if err = s.SaveConfirmationTx(ctx, tx, owner.ID, canonicalIdentity, canonicalToken, time.Now().Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if err = s.SaveConfirmationCardTx(ctx, tx, owner.ID, canonicalToken, canonicalCard); err != nil {
+		t.Fatal(err)
+	}
+	canonicalDisplay, err := s.ReadConfirmationDisplayTx(ctx, tx, owner.ID, canonicalToken, canonicalIdentity)
+	wantSource := "canonical_profile_ssr: " + canonicalIdentity.ResolutionInput + "; wallet_cross_check: " + publicSource
+	if err != nil || canonicalDisplay.ProfileURL.Value == nil || *canonicalDisplay.ProfileURL.Value != canonicalIdentity.ProfileURL || canonicalDisplay.ProfileURL.Source != wantSource || !canonicalDisplay.ProfileURL.QueriedAt.Equal(queryTime) || canonicalDisplay.ProfileURL.Availability != "available" {
+		t.Errorf("canonical resolution evidence lost: %+v; want source %q; error %v", canonicalDisplay.ProfileURL, wantSource, err)
 	}
 	card.Identity.Wallet = common.HexToAddress("0x999")
 	if err = s.SaveConfirmationCardTx(ctx, tx, owner.ID, token, card); err != nil {
