@@ -1,0 +1,221 @@
+{
+  "chain_id": 137,
+  "observed_on": "2026-09-10",
+  "implementations": [
+    {
+      "address": "0x641b40ec414a076b9e79e703fc7bf4ebec248bb7",
+      "url": "https://sourcify.dev/server/v2/contract/137/0x641b40ec414a076b9e79e703fc7bf4ebec248bb7?fields=abi,metadata,sources",
+      "response_sha256": "a439c8afba406bb53895770810c35c63d7bd9d24fc564cc64cc3d8b193ccb8ea",
+      "runtimeMatch": "match",
+      "creationMatch": "match",
+      "verifiedAt": "2026-08-27T23:57:12Z",
+      "relevant_abi": [
+        {
+          "name": "OrderFilled",
+          "type": "event",
+          "inputs": [
+            {
+              "name": "orderHash",
+              "type": "bytes32",
+              "indexed": true,
+              "internalType": "bytes32"
+            },
+            {
+              "name": "maker",
+              "type": "address",
+              "indexed": true,
+              "internalType": "address"
+            },
+            {
+              "name": "taker",
+              "type": "address",
+              "indexed": true,
+              "internalType": "address"
+            },
+            {
+              "name": "side",
+              "type": "uint8",
+              "indexed": false,
+              "internalType": "enum Side"
+            },
+            {
+              "name": "tokenId",
+              "type": "uint256",
+              "indexed": false,
+              "internalType": "PositionId"
+            },
+            {
+              "name": "makerAmountFilled",
+              "type": "uint256",
+              "indexed": false,
+              "internalType": "uint256"
+            },
+            {
+              "name": "takerAmountFilled",
+              "type": "uint256",
+              "indexed": false,
+              "internalType": "uint256"
+            },
+            {
+              "name": "fee",
+              "type": "uint256",
+              "indexed": false,
+              "internalType": "uint256"
+            },
+            {
+              "name": "builder",
+              "type": "bytes32",
+              "indexed": false,
+              "internalType": "bytes32"
+            },
+            {
+              "name": "metadata",
+              "type": "bytes32",
+              "indexed": false,
+              "internalType": "bytes32"
+            }
+          ],
+          "anonymous": false
+        }
+      ],
+      "source_sha256": {
+        "src/exchange/Exchange.sol": "698f29ff5c659e7f54cb98bfe206bddd19d62e7dfbe9bddfe3f06e6d5cfadcd0",
+        "src/abstract/ERC1155TokenReceiver.sol": "ffc0fe32423956a718b7d723e0a924019153387a5602679d0b70b0d880c88724",
+        "src/modules/abstract/BaseModule.sol": "f2c098892ecf3a522d1e54aac546218080b968b1a1b5696d14cf19f09d2c0a9c",
+        "src/modules/CombinatorialModule.sol": "82e3447019986c9713ebafd6e90d4d3f1651ab6917fd9a57271f4d9e8e472ff3",
+        "src/libraries/Ids.sol": "7d60ec78c16b2b64ffb46c3be2b6bafa885d7470f2f83c364e36da9d6033aefb",
+        "src/positionManager/PositionManager.sol": "365c7fcda09cbb4777ebfbb6b41d1c938e3af2eb13c1aaa13e5f30c3f78bbbeb",
+        "src/exchange/OrderStructs.sol": "cf1fdef7a5d82e501ef2f468a53755486920dfc7d3596803804e73641854020d",
+        "src/collateral/CollateralToken.sol": "05a82b0702ef65e1327b517d9273e2f343cf61791d2bf787bc08e734bfe2ad87",
+        "src/positionManager/IPositionManagerModule.sol": "db955f84011da5a1baab49945f4cee4f5f97a057fb6b89e9ac44c50389100b9c",
+        "src/oracle/interfaces/IBinaryReporter.sol": "f682023863a72dee33e095a9703c72e6ee5691081444d238d3a04a15bdd2ad8d",
+        "src/modules/abstract/ModuleErrors.sol": "82700a2df10a92dc802f8ac4cd5eb5888697f10bfed596692f922d7f56ff130d",
+        "src/modules/abstract/OracleModule.sol": "56e895115793d76f38e9bd261f3444b2fc1fff78e2800c1d32531e4091e94aba",
+        "src/auth/InitializableRoles.sol": "8f7777d8dfc10f0be47a8430abaa410597822aca654f72168059734d7e76ec96",
+        "src/libraries/ModuleIds.sol": "8487bfed5462ff87d70e24ff9df4e44d845d89dd2d5ec7dc0b392bec2298391c",
+        "src/collateral/abstract/CollateralErrors.sol": "04bf1c5d1317103c7e16343f5df64364f40bed2bd449ccb69c41a1b9709ca501",
+        "src/collateral/interfaces/ICollateralToken.sol": "d8286b131717ae427a1a8ecdde6b42ba38ab327d8b562aa8b93c3978952d6e54"
+      }
+    },
+    {
+      "address": "0xf96968a44022b17240b42c557693e7c383d2d8a3",
+      "url": "https://sourcify.dev/server/v2/contract/137/0xf96968a44022b17240b42c557693e7c383d2d8a3?fields=abi,metadata,sources",
+      "response_sha256": "159cbc8d4a15b0023bd5cd3cf8e5cb32ca1d1f547745ede5f3c65ad994e1704e",
+      "runtimeMatch": "match",
+      "creationMatch": "match",
+      "verifiedAt": "2026-08-27T23:03:07Z",
+      "relevant_abi": [
+        {
+          "name": "getLegs",
+          "type": "function",
+          "inputs": [
+            {
+              "name": "_conditionId",
+              "type": "bytes31",
+              "internalType": "ConditionId"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "uint256[]",
+              "internalType": "PositionId[]"
+            }
+          ],
+          "stateMutability": "view"
+        }
+      ],
+      "source_sha256": {
+        "src/modules/CombinatorialModule.sol": "82e3447019986c9713ebafd6e90d4d3f1651ab6917fd9a57271f4d9e8e472ff3",
+        "src/abstract/ERC1155TokenReceiver.sol": "ffc0fe32423956a718b7d723e0a924019153387a5602679d0b70b0d880c88724",
+        "src/auth/InitializableRoles.sol": "8f7777d8dfc10f0be47a8430abaa410597822aca654f72168059734d7e76ec96",
+        "src/collateral/CollateralToken.sol": "05a82b0702ef65e1327b517d9273e2f343cf61791d2bf787bc08e734bfe2ad87",
+        "src/libraries/Ids.sol": "7d60ec78c16b2b64ffb46c3be2b6bafa885d7470f2f83c364e36da9d6033aefb",
+        "src/libraries/ModuleIds.sol": "8487bfed5462ff87d70e24ff9df4e44d845d89dd2d5ec7dc0b392bec2298391c",
+        "src/modules/abstract/BaseModule.sol": "f2c098892ecf3a522d1e54aac546218080b968b1a1b5696d14cf19f09d2c0a9c",
+        "src/positionManager/IPositionManagerModule.sol": "db955f84011da5a1baab49945f4cee4f5f97a057fb6b89e9ac44c50389100b9c",
+        "src/positionManager/PositionManager.sol": "365c7fcda09cbb4777ebfbb6b41d1c938e3af2eb13c1aaa13e5f30c3f78bbbeb",
+        "src/collateral/abstract/CollateralErrors.sol": "04bf1c5d1317103c7e16343f5df64364f40bed2bd449ccb69c41a1b9709ca501",
+        "src/collateral/interfaces/ICollateralToken.sol": "d8286b131717ae427a1a8ecdde6b42ba38ab327d8b562aa8b93c3978952d6e54",
+        "src/oracle/interfaces/IBinaryReporter.sol": "f682023863a72dee33e095a9703c72e6ee5691081444d238d3a04a15bdd2ad8d",
+        "src/modules/abstract/ModuleErrors.sol": "82700a2df10a92dc802f8ac4cd5eb5888697f10bfed596692f922d7f56ff130d",
+        "src/modules/abstract/OracleModule.sol": "56e895115793d76f38e9bd261f3444b2fc1fff78e2800c1d32531e4091e94aba"
+      }
+    },
+    {
+      "address": "0xf6428c0b5fa9361c0708cddb95468cf54c56e9a2",
+      "url": "https://sourcify.dev/server/v2/contract/137/0xf6428c0b5fa9361c0708cddb95468cf54c56e9a2?fields=abi,metadata,sources",
+      "response_sha256": "89539861a9d8a70cba742d25a77c8db60af6c7c583efc84fd4acd74125949463",
+      "runtimeMatch": "match",
+      "creationMatch": "match",
+      "verifiedAt": "2026-08-27T23:03:00Z",
+      "relevant_abi": [
+        {
+          "name": "getLegacyPositionId",
+          "type": "function",
+          "inputs": [
+            {
+              "name": "_conditionId",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "_outcomeIndex",
+              "type": "uint256",
+              "internalType": "uint256"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "uint256",
+              "internalType": "uint256"
+            }
+          ],
+          "stateMutability": "view"
+        },
+        {
+          "name": "legacyConditionId",
+          "type": "function",
+          "inputs": [
+            {
+              "name": "",
+              "type": "bytes31",
+              "internalType": "ConditionId"
+            }
+          ],
+          "outputs": [
+            {
+              "name": "",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ],
+          "stateMutability": "view"
+        }
+      ],
+      "source_sha256": {
+        "src/modules/BinaryModule.sol": "f2936a026421389119d67e5bcf1d5fef00d8ea29101e922ace32faed271e970e",
+        "src/libraries/Ids.sol": "7d60ec78c16b2b64ffb46c3be2b6bafa885d7470f2f83c364e36da9d6033aefb",
+        "src/libraries/ModuleIds.sol": "8487bfed5462ff87d70e24ff9df4e44d845d89dd2d5ec7dc0b392bec2298391c",
+        "src/modules/abstract/BaseModule.sol": "f2c098892ecf3a522d1e54aac546218080b968b1a1b5696d14cf19f09d2c0a9c",
+        "src/modules/migration/BinaryMigrationMixin.sol": "8d409fb1793bc78790eaef797876b421a814aebdca64887dd6c76dd6ed9cbb4c",
+        "src/abstract/ERC1155TokenReceiver.sol": "ffc0fe32423956a718b7d723e0a924019153387a5602679d0b70b0d880c88724",
+        "src/collateral/CollateralToken.sol": "05a82b0702ef65e1327b517d9273e2f343cf61791d2bf787bc08e734bfe2ad87",
+        "src/positionManager/IPositionManagerModule.sol": "db955f84011da5a1baab49945f4cee4f5f97a057fb6b89e9ac44c50389100b9c",
+        "src/positionManager/PositionManager.sol": "365c7fcda09cbb4777ebfbb6b41d1c938e3af2eb13c1aaa13e5f30c3f78bbbeb",
+        "src/oracle/interfaces/IBinaryReporter.sol": "f682023863a72dee33e095a9703c72e6ee5691081444d238d3a04a15bdd2ad8d",
+        "src/modules/abstract/ModuleErrors.sol": "82700a2df10a92dc802f8ac4cd5eb5888697f10bfed596692f922d7f56ff130d",
+        "src/modules/abstract/OracleModule.sol": "56e895115793d76f38e9bd261f3444b2fc1fff78e2800c1d32531e4091e94aba",
+        "src/legacy/interfaces/IConditionalTokens.sol": "241317f577d5a6d7109dfec9aa222a3047012f43ab23288bded00f4385b9f1e9",
+        "src/legacy/libraries/CTHelpers.sol": "2857e2c9b9290cdd4f13d861ea486a80c3dddee2fbfd6830ce42ce9c50dff23f",
+        "src/legacy/libraries/CTFHelpers.sol": "16a0bb1c8dc37019e1703ce9af4d92cc9bee6d0092d9c10726928438f2798245",
+        "src/modules/migration/BaseMigrationMixin.sol": "1f2d2d9c8efd0916eaefeb4929074c13e2e074b8d2ee311c2b43def3585d8475",
+        "src/collateral/abstract/CollateralErrors.sol": "04bf1c5d1317103c7e16343f5df64364f40bed2bd449ccb69c41a1b9709ca501",
+        "src/collateral/interfaces/ICollateralToken.sol": "d8286b131717ae427a1a8ecdde6b42ba38ab327d8b562aa8b93c3978952d6e54",
+        "src/auth/InitializableRoles.sol": "8f7777d8dfc10f0be47a8430abaa410597822aca654f72168059734d7e76ec96"
+      }
+    }
+  ],
+  "note": "Preserves ABI and provenance hashes, not full third-party source snapshots. runtimeMatch=match is the verifier result, not an independent local rebuild."
+}

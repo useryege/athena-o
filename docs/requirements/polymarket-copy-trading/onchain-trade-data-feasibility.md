@@ -8,6 +8,8 @@
 >
 > 样本证据：[RPC 请求、响应与市场映射](evidence/onchain-trade-data-sample.json)
 
+2026-09-10 后续核验见[当前数据源契约](source-contract-verification.md)：已查证升级后的 Combo 实现、getLegs 与迁移 Binary 链上映射，并验证目录到 Gamma 的 module 1/2 元数据映射。以下保留此前样本及其当时限制；当前设计不再依赖“交易必须附带生命周期记录”补齐 Combo 腿。
+
 ## 结论与证据边界
 
 **当前普通 CTF 和 Neg Risk 两种 V2 Exchange 的日志，足以识别“哪个实际交易钱包，在交易哪个 Token、什么方向、多少数量”。目标钱包是可过滤的 indexed 字段，节点可以直接返回指定目标集合的事件，无需 ATHENA 接收全链或全站所有用户的交易。Token 对应的市场、Outcome 和页面链接可以由公开 API 补齐，本次已经用真实成交完成该链路。**
@@ -193,4 +195,4 @@ WebSocket 的 `eth_subscribe("logs", filter)` 也接受合约及 topic 过滤；
 3. **全部 TRADE 的协议覆盖。** 官方 `/activity` 存在 `isCombo` 活动；两个核心 V2 合约并不等同于全部交易范围。Combos 使用独立 Exchange 代理，需覆盖对应事件与组合腿数据，不能静默忽略。[官方 Data OpenAPI](https://docs.polymarket.com/api-spec/data-openapi.yaml)、[Combos 请求流程](https://docs.polymarket.com/trading/combos/requesters)
 4. **性能与可靠性。** 首期需求已明确按 10 名用户、最多 100 个订阅关系及目标完全不重叠时的 100 个不同目标设计；实际成交负载、RPC 配额、长时间运行效果、端到端时效或源数据异常覆盖仍未完成验证。不能把单区块过滤成功当成已达到产品全部验收要求。
 
-关联 Activity Alerts 需求此前已正式确认；用户随后逐项确认结算时间、摘要提交时限及超长分批调整，本次修订为 `讨论中`，待整体确认。[后端技术设计](../../design/trading/trader-sync-activity-alerts.md)保持 `设计中`。这些发现继续作为技术核实输入；若后续方案产生其他实质业务影响，应先写回关联需求并确认。本报告的样本结论不构成供应商选型、技术设计确认或实现授权。
+关联 Activity Alerts 需求此前已正式确认；用户随后逐项确认结算时间、摘要提交时限及超长分批调整，本轮业务边界均已逐项确认，当前需求为 `已确认`。[后端技术设计](../../design/trading/trader-sync-activity-alerts.md)保持 `设计中`。这些发现继续作为技术核实输入；若后续方案产生其他实质业务影响，应先写回关联需求并确认。当前开发入口选择及完整书面方案见关联设计；本报告样本本身不构成全部运行验收或实现授权。

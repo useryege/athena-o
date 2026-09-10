@@ -2,11 +2,13 @@
 
 > 设计状态：设计中
 >
-> 关联需求：[Activity Alerts 需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)（本次修订讨论中；三项调整已逐项确认，待整体确认）
+> 关联需求：[Activity Alerts 需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)（业务边界已逐项确认，随书面规格整体审阅）
 
 本文是目标方案，不代表当前实现。用户已授权开展技术设计，整份技术方案尚未获批，本能力尚未获准实施。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
 
-源码核对支持下文的同库事务与进程部署建议。用户已逐项确认链上结算时间、摘要 60 秒内开始提交及超长分批；决定已同步需求。整份修订需求和技术方案尚未获批，外部契约与技术参数仍需核实。后续按 [Superpowers 工作流](../../developer-guide/superpowers-development.md)收敛这些事项，任务规格与计划分别保存在 `docs/superpowers/specs/`、`docs/superpowers/plans/`，本文保留业务背景、候选方案与实现事实。
+本轮已按 Superpowers 分节确认统一数据库与现有进程边界、发送许可与撤权语义、单供应商 WSS 采集及最终确认路线；同用户集中成交允许限速排队也已确认。接口、资料和验收章节也已确认；[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已形成，待用户整体审阅。本次只修改设计与相关文档。
+
+新增技术证据见[数据源契约核验](../../requirements/polymarket-copy-trading/source-contract-verification.md)与[RPC 过滤、确认和额度复核](../../requirements/polymarket-copy-trading/collector-contract-verification.md)。它们记录当前实现版本、100 钱包 OR 推送、Combo 腿映射、Profile 与收益资料的证据及限制。技术参数是可验证的设计默认值，不表示已完成运行验收。
 
 ## 需求覆盖
 
@@ -40,15 +42,15 @@ Copy Trading 不在本设计内。前端只约定数据与交互契约，不设�
 
 ## 关键决定
 
-以下均为尚未获得整体批准的设计建议。
+2026-09-10 本轮已确认以下总体架构、采集路线与发送许可边界；接口和验收章节也已确认，完整书面规格待整体审阅，尚不表示实现已经开始。
 
 1. **进程部署：**`internal/tradersync.Service` 运行在现有 `athena-server` 内，提供业务 RPC 和后台监控；Telegram 仍由现有 `athena-notification` 的单一 Bot、poller 和 sender 负责。不新增服务进程、消息中间件或 Redis。
-2. **事务范围：**账户权限、Trader Sync 数据、账户 Telegram 绑定和账户投递同放 `athena` PostgreSQL 数据库。系统群组通知与 Bot polling offset 保留 `notification` 库；Notification 进程持有两个职责明确的 store。
-3. **链上实时路线：**按用户已选择的结算时间口径，细化 Polygon 三类 Exchange 的目标钱包过滤 WSS，HTTP 用于链、区块确认和资料核验，公开 API 补身份和市场。Chainstack 是首个开发入口建议，dRPC 保留作手动切换候选；不同时运行两套采集或自动故障切换。具体供应商、完整协议覆盖与参数仍待核实并纳入任务规格。
+2. **事务范围（已确认）：**账户权限、Trader Sync 数据及全部 Notification 数据统一放在 `athena` PostgreSQL 数据库，包括账户绑定、账户投递、系统群组通知、Bot polling offset 和绑定回复 outbox。各模块保留独立 query adapter，共享受控事务和一个权威迁移集；每个进程建立自己的连接池，不跨进程共享连接池对象。Notification 不再因账户/系统通知而持有两个数据库 store。
+3. **链上实时路线（已确认）：**Chainstack 为首个开发 HTTP/WSS 入口，dRPC 仅供手动切换；不双采、不自动故障切换。共享目标过滤 WSS 采集普通 CTF、Neg Risk 和 Combos Exchange 自身 OrderFilled，先持久接收、再核验规范链及最终确认、最后投影用户活动；公开资料接口补身份与市场。仅常驻目标 logs，finality 默认每 2 秒、latest 健康每 10 秒共享查询，不永久订阅全链 newHeads。
 4. **活动与外发解耦：**每位用户的站内活动在形成时持久化，并在同一事务冻结 Telegram 资格与备注。普通提醒和摘要均有确定的活动成员关系；不会因发送失败再创建成交活动。
-5. **未知结果：**提交网络请求前持久记录发送尝试。凡无法证明请求未成功的结果转入 `unknown`，停止自动重发；取消或重启不把 `unknown` 改为可重试。
+5. **未知结果：**提交网络请求前持久记录发送尝试。凡无法证明请求未成功的结果转入 `unknown`，停止自动重发；取消或重启不把 `unknown` 改为可重试。发送许可在短事务中持久化，撤权提交后禁止新许可，既有 sending 可完成或未知；仅摘要首条采用冻结到实际调用起点的短 gate。
 
-同库方案会调整账户通知的持久化边界，代价是影响 accountstate、notification 的存储及运行配置。保留独立库则需要额外的撤权屏障、绑定版本同步与故障协调协议；首期规模和立即撤权要求不支持仅为维持现有数据库拆分而承担这些复杂度。
+同库方案会调整全部通知的持久化边界，影响 accountstate、notification 的存储及运行配置，并共享数据库故障范围。用户比较了完整同库、仅账户域同库和数据库独立事件协调三种方案后选择完整同库：首期没有必须保留物理数据库隔离的业务要求，完整同库可以消除双 store 与跨库 Bot update 协调。模块接口、系统通知与账户通知的内容及权限边界仍分别定义。
 
 ## 组件与职责
 
@@ -58,10 +60,10 @@ flowchart LR
     A[管理员授权与概要 API] --> T
     P[公开 Profile 与市场资料] --> T
     S[链上实时成交<br/>按结算时间划界] --> T
-    T --> D[(athena PostgreSQL<br/>权限、订阅、活动、绑定、账户投递)]
+    T --> D[(athena PostgreSQL<br/>权限、订阅、活动、全部通知与 Bot 进度)]
     D --> N[athena-notification<br/>账户发送与单一 Bot poller]
     N --> G[Telegram 私聊]
-    N --> O[(notification PostgreSQL<br/>系统通知与 polling offset)]
+    N --> D
 ```
 
 - `TargetResolver`：接受受限 Profile URL 或地址，查询公开身份，返回稳定钱包标识和带可用性状态的确认卡。
@@ -80,7 +82,7 @@ flowchart LR
 | 拟议 RPC | 内容 | 权限 |
 | --- | --- | --- |
 | `ResolveTarget` | 输入地址/Profile URL，返回确认卡与短期确认 token。 | 当前用户模块读。 |
-| `CreateSubscription` | 确认 token、请求幂等键、可选备注。 | 当前用户模块写。 |
+| `CreateSubscription` | 确认 token、请求幂等键、可选备注（未传沿用，显式空串清空）。 | 当前用户模块写。 |
 | `ListSubscriptions` / `GetSubscription` | 分页订阅、状态、有效时间、中断与旧队列概要。 | 当前用户模块读。 |
 | `PauseSubscription` / `ResumeSubscription` / `CancelSubscription` | 订阅 ID、expected revision、请求幂等键。 | 当前用户模块写。 |
 | `UpdateTargetNote` | 目标钱包、备注、expected revision。 | 当前用户模块写。 |
@@ -97,9 +99,9 @@ flowchart LR
 ### 目标、成交与时间
 
 - 目标身份区分 `input`、公开接口 `proxyWallet`、解析出的规范钱包；地址保存标准化 20 字节并按完整地址展示。显示名、头像和备注不参加身份或去重。钱包类型需由真实来源核准，不推断同一自然人的其他钱包。
-- Profile URL 只接受允许的 Polymarket 域名及已验证路径格式，不任意请求用户指定 URL，不凭相似名称选目标。不能无歧义解析时拒绝；无历史成交不构成拒绝原因。含 `@handle` 的官方 Profile URL 到真实钱包的精确映射仍缺少已核实契约，需继续取得证据；不能把所有这类链接都视作无效，从而静默将已承诺的 Profile URL 支持缩小为仅含 0x 地址的链接。
-- 确认 token 绑定 owner、规范钱包、身份查询结果与过期时间。建议有效期 5 分钟；这是用户审阅确认卡的有效期，与订阅生效等待无关。创建时再次核验身份、权限、配额和重复订阅。
-- P/L 的六种区间及 `Predictions` 按来源原始口径呈现；各字段携带 `available/unavailable`、来源和查询时间。未证明可靠来源前不得用持仓求和或已交易市场数冒充。创建后不安排收益刷新任务。
+- Profile URL 只接受允许的 Polymarket 域名及已验证路径格式，不任意请求用户指定 URL，不凭相似名称选目标。不能无歧义解析时拒绝；无历史成交不构成拒绝原因。本轮已验证受限读取具体官方 Profile 页的明确身份并以 public-profile 地址复核；禁止选择搜索首条。页面解析器隔离维护，canonical、页面身份与地址复核不一致则失败，不把页面结构当作稳定公开 API 契约。
+- 确认 token 绑定 owner、规范钱包、身份查询结果与过期时间。有效期 5 分钟；这是用户审阅确认卡的有效期，与订阅生效等待无关。创建时再次核验身份、权限、配额和重复订阅；身份变更要求重新确认。token 成功消费绑定创建幂等结果，不能被另一请求重复使用。
+- P/L 六区间及 `Predictions` 按来源原始口径呈现；各字段携带 `available/unavailable`、来源和查询时间。当前官方页面已验证直接使用 `/traded.traded` 展示 Predictions，可以使用该原值，不能自行重算。P/L 接口与页面数据分别记录，未完成区间语义核验时返回 unavailable，不用排行榜或持仓求和替代。原始曲线、区间金额与精确显示值分别标可用性，时区/参考时间/舍入缺证据时仅相应字段 unavailable，精确算法与失败边界见[P/L 六区间核验](../../requirements/polymarket-copy-trading/profile-pnl-contract-verification.md)。创建后不安排收益刷新任务。
 - 金额以十进制定点或整数原始量存储，Token/Position ID 使用十进制字符串；不经过浮点类型或 JavaScript number。金额、币种、decimals、费用分开，按实际来源标注。研究样本中的 pUSD 不能仅因 API 字段名含 USDC 而改标，也不能把所有来源直接改标 pUSD；结算时间的选择不自动完成各协议金额映射核实。
 - 活动保存 `source_record_id`、来源类型、目标、BUY/SELL、原始量、原始事实及市场引用。普通活动有单市场描述；Combo 保存组合自身的 YES/NO Outcome 和同一活动内的 `legs[]`，每腿标注真实市场和 Outcome。组合 NO 是整组腿合取条件的补集，不能解释为逐腿取反，也不能把组合 BUY/SELL 表述为每腿独立成交。生命周期 SPLIT/MERGE 仅能作为资料，不新增成交。[组合语义](https://docs.polymarket.com/trading/positions/combinatorial)
 - 时间分别保存 `settled_at`（区块时间）、`time_basis=chain_settlement`、`received_at`、`recorded_at`、投递尝试和结果时间。页面和消息使用“结算时间”；订阅生效前撮合但生效后结算的成交按新活动判断。不能用 `received_at` 冒充公开可查询时间；不能用链上区块时间冒充链下撮合时间。
@@ -114,8 +116,9 @@ flowchart LR
 | `trader_sync_targets` | 规范钱包唯一、公共资料引用；不保存私有备注。 |
 | `trader_sync_target_notes` | `(account_id, wallet)` 唯一、note、revision；不随订阅取消删除。 |
 | `trader_sync_target_confirmations` | owner、token digest、规范身份、资料状态、过期时间；用于创建前确认。 |
-| `trader_sync_subscriptions` | ID、owner、target、status、revision、activation_generation、created/paused/cancelled/disabled 时间；部分唯一索引约束同 owner-target 的非 cancelled 记录。 |
+| `trader_sync_subscriptions` | ID、owner、target、desired_state、observation_state、revision、activation_generation、created/paused/cancelled/disabled 时间；部分唯一索引约束同 owner-target 的非 cancelled 记录。 |
 | `trader_sync_monitor_intervals` | subscription、activation_generation、起止时间、baseline/connection epoch、边界精度；起点包含、终点不包含。恢复新增区间，不覆盖旧区间。 |
+| `trader_sync_baseline_attempts` / `..._source_candidates` | 创建/恢复时先注册未定边界的 attempt，再安装过滤和填写候选边界；保存订阅代次、epoch、过滤版本和注册前观察高度，接收事实绑定当时的 attempt/区间。失败基线候选不能转归后来的成功基线。 |
 | `trader_sync_collector_epochs` | 连接代次、目标集合 revision、观察边界、owner fencing token、启动/结束原因。 |
 | `trader_sync_interruptions` | 受影响目标与订阅区间、最后可靠观察、确认失效及恢复/停用时间；未知边界显式记录，不存推测遗漏数量。 |
 | `trader_sync_source_records` | 接收时刻、epoch、完整来源定位、原始事实、确认/孤块/无效状态；只存真实收到的记录，不存回补游标。 |
@@ -123,42 +126,55 @@ flowchart LR
 | `trader_sync_summary_batches` / `..._items` / `..._parts` | owner、binding revision、首条待汇总时间、首条提交时间、冻结内容、活动成员、分条序号及对应 delivery；一个活动只归入一个批次，保存其展示行对应的部分索引。 |
 | 账户绑定与投递表 | 迁入账户事务范围，保存 binding revision、来源业务引用、状态、attempt ID、不可变 payload digest、next_attempt_at 与 provider 结果；结果更新按 delivery、attempt 和预期状态进行 CAS。 |
 
+用户意图与观察健康分别持久化：desired_state 为 enabled/paused/permission_disabled/cancelled，observation_state 为 pending_baseline/healthy/interrupted，组合投影为用户六种状态，用户停用状态优先。连接异常不能抹去旧成功区间的持久候选。
+
 `activation_generation` 表示用户的一次订阅激活，创建订阅时初始化，每次用户手动恢复时递增；普通字段修改、基线任务重试、连接故障及自动恢复不改变它。连接 epoch 表示观察连接代次，两者不能混用。投影候选从源记录接收时对应的持久订阅区间取得激活代次，不能在延迟处理时改贴当前代次；手动恢复后旧代次尚未形成活动的记录不再投影。已经形成的活动和旧通知资格不因激活代次变化而失效。
 
-活动成员、摘要、投递引用均检查 owner 一致。分页使用 `(recorded_at, id)` 游标和服务端页大小上限，游标绑定 owner 与过滤条件；不允许客户端借游标改变所有者。活动历史、已取消订阅与备注不做自动 TTL；确认 token、已完成内部任务可按用途清理，不删除需求要求保留的事实。
+活动成员、摘要、投递引用均检查 owner 一致。分页默认 50、最多 100，使用 `(recorded_at, id)` 游标，游标绑定 owner 与过滤条件；不允许客户端借游标改变所有者。活动历史、已取消订阅与备注不做自动 TTL；确认 token、已完成内部任务可按用途清理，不删除需求要求保留的事实。
 
-`athena` 数据库统一由 `internal/accountstate/store/migrations` 管迁移；notification 自有迁移仅拥有系统通知与 polling offset，不能让两套 goose 编号在同一库竞争。`sqlc.yaml` 中各存储查询仍按模块生成，但其 schema 输入引用真实权威迁移。composition root 注入池与受控事务接口，业务服务不创建另一个私有权限副本。
+`athena` 数据库使用一个权威迁移集；沿用 `internal/accountstate/store/migrations` 作为现有入口并纳入全部通知和 Trader Sync 表，移除 notification 独立迁移归属，不能让两套 goose 编号在同一库竞争。`sqlc.yaml` 中各存储查询仍按模块生成，但其 schema 输入引用真实权威迁移。composition root 注入池与受控事务接口，业务服务不创建另一个私有权限副本。数据库整体重组只是目标设计，本次未执行迁移或重置。
 
 ## 运行流程
 
 ### 创建与恢复
 
 1. 解析目标并展示确认卡；辅助资料不可用时允许重试与继续确认。
-2. 创建事务获取账户 gate，读取数据库产品权限，核验 token 与 10 个配额，创建 `pending_baseline` 订阅。并发创建通过相同 gate 和部分唯一索引约束；失败不占名额。
-3. Collector 建立包含目标的真实观察能力后，按已确认的链上结算时间口径建立明确边界。订阅仍具有权限且 revision 未改变才提交 `monitoring`、区间及明确生效时间。未成功基线不能显示监控中；同秒边界建议见下文。
+2. 创建事务获取账户 gate，读取数据库产品权限，核验 token 与 10 个配额，创建 `pending_baseline` 订阅和未定边界的 baseline attempt，先注册其接收归属，再建立过滤。并发创建通过相同 gate 和部分唯一索引约束；失败不占名额。
+3. Collector 建立包含目标的真实观察能力后，按已确认的链上结算时间口径建立明确边界。订阅仍具有权限且 revision 未改变才提交 `monitoring`、区间及明确生效时间。未成功基线不能显示监控中；同秒边界见下文。
 4. 手动恢复采用新基线；服务在基线过程中失败可重试建立一个新的实时边界，不读取旧成交。暂停/取消/撤权与基线成功竞争时，较新 revision 和最新权限优先。
 
-**秒级边界建议：**目标过滤订阅已获 ACK、连接与链头健康后，以数据库权威时间的下一整秒作为候选 `effective_at`；到该时刻复核连接、权限及 revision 后完成基线，显示该明确时刻。对齐等待不足一秒，属于建立基线，不额外添加五分钟生效等待。如果复核时连接已中断，或无法证明从候选边界起持续接收，则放弃该候选，重新建立边界，不倒填已失效时刻。
+**秒级基线算法：**基线 attempt 注册与钱包 raw 持久接收使用同一 intake gate 串行，记录注册前最高观察高度；全部相关目标过滤获 ACK 后读取新鲜 latest 区块 H，要求高度不低于该记录，令候选 `effective_at = max(下一数据库整秒, H.timestamp + 1秒)`。该边界同时晚于当前数据库时刻与 ACK 后观察到的既有区块时间，避免只取下一数据库秒仍落入略微超前的链头时间标签。等待前为该已注册 attempt 填写订阅代次、epoch、过滤版本及候选边界；边界未定期间也保存接收归属，最终按成功边界裁定；若写入时边界已经过去，重算新的将来边界。边界到达后复核连接 epoch、权限和 revision，原子提交有效区间及基线成功。失败或重启中断的 attempt 保持无资格，不能将其候选改贴后来的基线；不倒填失效时刻，不扫描旧成交。
 
-比较使用 `settled_at >= effective_at`，终点保持真实暂停/取消/撤权的提交时刻并使用 `< ended_at`，不把停用时刻向后取整。候选时刻起已实时收到并持久保存的记录，在基线成功后才可投影。链上时间只有秒级，区块内各笔交易没有独立亚秒撮合顺序；页面不展示伪造精度。数据库时钟与链头时间明显偏离时记录健康异常，不能只因 WSS 已连接就宣称基线可靠。该算法是待确认设计建议，尚未验证运行时边界。
+默认要求 latest 请求 5 秒内完成、最新块距数据库当前时间不超过 10 秒且不领先超过 2 秒；超过阈值则不建立基线并说明时钟/节点异常。该阈值是可调整的健康参数，不是链完整性证明。`settled_at >= effective_at`；暂停/取消/撤权终点取实际业务事务边界且 `< ended_at`，不向后取整。区块时间只有秒级，不伪造逐成交亚秒顺序。
 
-### 实时采集候选与数据确认
+### 实时接收、确认与协议版本
 
-链上候选监听普通 CTF、Neg Risk、Combos Exchange 的认可地址与各自已核验 ABI，对自身订单资金钱包所在 topic 过滤。Maker/Taker 角色不按事件字段名字直接推断；对手方事件及 `OrdersMatched` 不另算自身成交。[现有调研](../../requirements/polymarket-copy-trading/onchain-trade-data-feasibility.md)支持核心过滤链路，但不代表已证明所有协议语义。
+使用一条 WSS 连接，普通 CTF/Neg Risk 共用一类过滤、Combos 单独一类过滤；每组最多 100 个钱包，目标来自全部仍需监控的订阅并去重。本轮两核心合约的 100 钱包 OR 已有真实推送证据，三类协议与 100 活跃钱包的完整负载矩阵留待验收。目标集合调整以新旧过滤重叠安装、源 ID 去重，已有目标不重建生效边界；新增过滤失败只影响尚未获得可靠观察的新目标。
 
-WSS 收到后先持久化来源事实，再完成确认及用户活动投影。候选唯一定位为 `(chain_id, exchange_address, block_hash, transaction_hash, log_index)`；同时保存规范链定位，确认前孤块记录不生成用户活动。同一日志重复推送不重复投影；不同日志即使同交易/同方向也不聚合。共享查询 latest/finalized 控制区块头以检查新鲜度和最终确认进度；对已接收候选核实其区块头及规范哈希，必要时核实已知交易回执。这些查询不枚举未接收区块的成交日志，不用于填补历史缺口。
+源定位为 `(chain_id, exchange_address, block_hash, transaction_hash, log_index)`。接收事实首先落库，记录 epoch、过滤版本和实际收到时间；同键后到的 removed=true 必须更新候选，不能被去重吞掉；确认前尚不形成不可逆用户成交。源消费者只按自身资金钱包所在 `topics[2]` 识别，分别使用经过核验的事件 ABI；对手方和 OrdersMatched 不另计活动。
 
-建议复用一条 WSS 连接上的若干目标分组订阅；分组大小以供应商可验证限制定稿，不用全站日志本地过滤。不订阅目标时不保持高频空转查询。已有目标集合变更采用新旧过滤器重叠安装并按源 ID 去重，避免重建其他目标的基线；扩容失败时已有有效过滤继续工作，新目标保持待基线/异常。离开有效订阅的目标从下一集合移除，已经收到的数据仍按原接收区间处理。
+当候选高度不高于新读 finalized 水位时，重新查询已知交易回执，核对成功状态、当前规范链定位及该条已收日志的全部原始字段，再以已知 blockHash 取得时间；需要时用近期按高度区块头交叉核验。不能把确认前缓存的回执当作确认后的规范链证据。只查看回执内与已收记录匹配的日志，不将其中其他日志变为新增活动。最终确认后若与已形成活动发生分叉冲突，保留旧事实并标 finality 一致性异常，隔离该交易新分叉候选，不再自动形成第二份活动或提醒；不能用可能跨块变化的 logIndex 简单去重。明确的 removed 或规范链重定位使原候选作废；null、超时、403 只表示未能确认，保留未确认及异常。
 
-区块最终确认后才生成不可逆成交活动是链上方案建议；必须同时满足候选高度不大于 finalized 高度、候选所在高度的规范哈希等于候选 `block_hash`，不能仅比较高度。收到 `removed` 或规范链不一致时在确认前作废原始候选。[Polygon 最终确认](https://docs.polygon.technology/pos/concepts/finality/finality)的典型等待范围不代表当前节点实测时延，确认等待计入公开到活动形成的处理预算。若已视作最终确认的事实后来被推翻，应停止受影响源并保留原事实与异常证据，不自动生成相反交易或删除用户历史；具体用户纠错表达需有真实情形再对齐。
+Chainstack 免费端点对旧 `eth_getBlockByNumber` 有 Archive 限制；本轮已知旧 blockHash 和已知 txHash receipt 仍可读取。因此确认路径采用已知回执/哈希，不依赖旧区块按高度扫描。缺少规范链证据时不确认，不因 finalized 高度足够就接受任何旧哈希。这是处理已接收事实，不是补查遗漏。
 
-### Combo 来源补齐
+单次 finality 查询失败不推进水位，保留候选重试，不单凭该错误丢弃健康 WSS；采集可用性与确认/资料积压分别报告。真实失去观察能力或无法核准其健康才关闭 epoch，处理延迟不自动等同接收中断。
 
-官方当前合约表分别列出普通 CTF、Neg Risk 和 Combos Exchange；前两类样本成功不能视为全部 `TRADE` 已覆盖。Combos 的 Position ID、金额和事件参数按其部署 ABI 单独解码，不直接套用普通 CTF 结构。[合约清单](https://docs.polymarket.com/resources/contracts)
+代理来源与当前实现分开登记，地址与核验范围见源契约报告。Exchange 执行版本证据按规范 blockHash 缓存；区块末实现槽不能单独证明该块日志执行时的版本，须核对候选块/父块版本和已核准代理的升级语义，针对已知块核验升级记录。同块有升级或无法排除变化时保持 unverified，不按末状态猜测，不从版本查询形成其他成交或扫描遗漏。未知 Exchange 版本阻止盲解；CombinatorialModule/BinaryModule 的版本及 getLegs 失败仅使对应 metadata unavailable，不阻止已能确认归属/金额的 TRADE。版本、升级及资料调用费用另计，Archive 使必要证据不可读时保持对应未确认或缺失。
 
-已验证部署源码表明 Position ID 的高 31 字节标识 condition，低 8 位标识自身 Outcome；CombinatorialModule 的 `getLegs(bytes31)` 可读取组合腿。运行状态查询应访问模块代理 `0x30000034706C7d8e12009DAB006Be20000c031A8`，不能向实现地址读取代理存储。以该定义与公开 Combo 资料交叉核对，补齐每腿市场、Outcome 与链接；成交同交易中没有 SPLIT、当前已经没有持仓，都不表示不存在组合成交。[模块源码](https://polygonscan.com/address/0xb529b2430d78868422C47934d9d61cC9D0C53dBb#code)、[Combo 活动资料](https://docs.polymarket.com/api-reference/core/get-user-combo-activity)
+同一 WSS 每 15 秒发送带关联值 ping，5 秒内未得到对应 pong 即关闭连接并终结 epoch；HTTP 健康不覆盖 WSS 失活，没有匹配日志不算故障。心跳流量与实际计费独立观测。实时源显式断开、连接丢失、持久写入失败或健康检查失效时记录中断与最后可靠观察，不补查。WSS ACK、连接心跳和链头健康无法证明上游永不静默漏推；界面“监控中”表示当前可观察健康，不是所有成交完整性的证明。[Geth 订阅语义](https://geth.ethereum.org/docs/interacting-with-geth/rpc/pubsub)
 
-本阶段只核对源码与已有样本，没有执行该代理的 `eth_call`。完整映射、版本匹配及调用预算仍是技术证据待核实项；不能以所有组合市场长期返回未知来宣称产品的市场识别目标已满足。
+### 市场与 Combo 补全
+
+普通成交使用 CLOB token 查询及 Gamma 精确 token/market 查询，明确处理开放和关闭市场，并按返回 token 数组下标匹配真实 Outcome。金额与费用使用当前已核验的 pUSD 六位单位，份额六位；保留原始整数与来源，不转换币种。
+
+Combo PositionId 先取得组合自身 YES/NO，再以高 31 字节 condition 调用 CombinatorialModule 代理 getLegs。所有腿保持在同一活动中；组合 NO 是整体合取的补集，不逐腿取反或拆成独立买卖。
+
+- 迁移 Binary 腿：调用当前 BinaryModule 的 legacyConditionId/getLegacyPositionId，取得原 CTF token 后查询 Gamma。本轮两个真实腿已经闭合此链路，不要求当前仍有持仓或同交易有 SPLIT。
+- 其他已知 Binary/Neg Risk 腿：使用公开 Combo markets 分页形成的 PositionId→market ID 索引，精确查询 Gamma 后核对 positionIds、condition 和真实 Outcome。本轮 module 1/2 目录与精确市场映射均有样本。
+- 同钱包、同组合 condition 的公开生命周期资料可补充并交叉核对，但不是必达依赖，不产生新成交。持仓为空不等于不存在成交。
+- 目录只覆盖活跃可组合市场；已见映射保留，关闭后不删除。尚未见过的历史腿可能资料缺失，保留精确 PositionId 和逐字段 unknown，允许异步补齐，不丢弃真实已确认 TRADE，也不为补资料重发。
+
+资料查询不能长期阻塞成交形成。先并行补全，最终确认可用后最多另等待 2 秒资料；仍缺失则写入独立活动和缺失状态。getLegs 整体失败时腿数组与腿数均 unavailable，不用空数组/0代替；已知 N 条腿、其中 M 条市场未知时才保存明确 N/M。任何缺失不能被表述为全部协议已经完整验收。
 
 ### 活动形成
 
@@ -166,47 +182,63 @@ WSS 收到后先持久化来源事实，再完成确认及用户活动投影。�
 
 必须区分源记录接收与活动形成：中断前已经可靠收到的数据使用原接收区间，新的连接 epoch 和恢复边界不抹去同一激活代次的已接收事实；但活动形成时仍须遵守当前权限与订阅状态。暂停、取消或撤权后尚未形成活动的源记录不再为该订阅创建活动；此后手动恢复也不能使旧代次候选重新取得资格。已经形成的队列按下文继续处理，发送阶段不再要求激活代次或订阅状态仍与形成时相同。
 
+这里的当前资格是“用户没有暂停、取消或被撤权，激活代次未变，原接收基线已经成功”，不是仅允许界面状态为 monitoring。连接异常、旧 epoch 关闭或新基线尚未完成，不使原本合格的持久候选失效；新收到数据仍受新基线约束。源记录第一次落库时同时冻结候选归属，重复推送不能为后来建立的订阅补建候选。
+
 ### 暂停、取消、撤权与实时恢复
 
 - 暂停关闭当前区间并保留配额；取消关闭区间并释放配额。二者均保留旧活动与旧投递资格，不改变已有摘要成员。
-- 产品 grant 从开启变为 NONE 时，同一账户事务关闭全部未取消订阅区间、设置 `permission_disabled`、停止尚未进入外部发送的投递和待摘要成员。重新开通 grant 不恢复任何订阅；用户手动恢复或取消。
+- 产品 grant 从开启变为 NONE 时，同一账户事务关闭全部未取消订阅区间、设置 `permission_disabled`、终止尚未取得发送许可的投递和待摘要成员，并给包括 sending 的全部旧 delivery 持久设置 eligibility_revoked_at/原因，永久禁止后续 attempt。既有许可的明确成功/未知照实保存，明确失败则取消，不因重新授权恢复重试资格。重新开通 grant 不恢复任何订阅；用户手动恢复或取消。
 - 故障记录当前 epoch 的中断，不设置 pending backfill。连接重新可用后取得新实时边界，仅对仍应监控的订阅自动恢复；故障期间已暂停/取消/撤权的订阅不恢复。
 - `athena-server` 每次启动或进程内 Run 重启均建立新的 Collector epoch；持久旧 source records、活动及投递可继续处理，旧中断区间不回补。Stop 停止接收并尽力记录中断，异常退出通过上次心跳与下一次启动记录不确定边界。
 
 ## 事务、并发与幂等
 
-### 账户 gate
+### 账户 gate 与发送许可
 
-权限变更、订阅操作、活动形成、绑定变更及外发授权统一使用 `athena` 库内的账户 advisory lock。普通事务用 transaction lock；外部发送用固定 pgx 连接上的 session lock，使发送前持久化提交后仍持有 gate。锁键采用明确命名空间与规范 account UUID，所有调用方用同一函数；绑定唯一身份锁在账户 gate 后获取，其他路径保持固定顺序。
+权限变更、订阅操作、活动形成、绑定变更及发送许可使用同一 `athena` 账户 gate，锁键由统一命名空间和规范 account UUID 生成。普通事务使用 transaction advisory lock；绑定唯一身份锁在账户 gate 后取得。基线注册按 account gate→wallet intake gate，raw 持久化只取 intake gate，不反向申请账户 gate；投影只取账户 gate。不同账户不持有同一业务锁，AccountAccessController 的全局更新 mutex 改为按账户串行并保留 revision CAS。
 
-现有 AccountAccessController 的全局更新 mutex 不应在等待某个账户网络发送时阻塞其他账户改权；改为按账户串行更新并保留版本 CAS。进程内快照用于快速入口拒绝，业务数据库事务再次核验权限，避免数据库提交与快照发布间的允许窗口。
+业务读写核验权威数据库权限；进程内快照只能快速拒绝，不能作为允许访问的唯一证据。`recorded_at` 在取得 gate 后取数据库真实时间，不能用开始事务后等待锁前的 `NOW()` 时间。站内记录以事务成功提交为形成成功，事务耗时纳入可观测分段。
 
-发送前先取得速率槽和 worker 名额，再取得账户 gate，避免在持账户锁时等待排队。一个账户的 HTTP 发送设置有限超时；不同账户独立排队。session lock 必须在取得它的连接上释放，失败时关闭并丢弃连接，不带锁归还池；不可调用从另一个池连接再次取同锁的旧 store helper。
+member 读取在同一数据库事务/gate 下核验 grant 并读取 owner 数据；撤权后新读取不会凭缓存获准。此前已获准读取的响应可能随后返回，不持锁等待客户端收包。
+
+用户已确认发送许可边界：在短事务内核验当前权限、绑定 revision 与 delivery 状态，持久提交 attempt 和 `sending` 即获得该次发送许可。普通通知和摘要后续部分在提交后释放账户 gate，再执行单次网络调用，不持锁等待回执。撤权、解绑或重绑提交后禁止新许可，终止未获许可的工作；已有 sending 可完成或成为 unknown，包括已获许可但尚未实际调用的竞争窗口。已失效资格不能因明确暂时失败而再次取得许可。
+
+产品权限只约束相应 Trader Sync 投递，不能因同库而给其他合法账户通知强加 Trader Sync grant。每个 chat 最多有一个在执行的尝试；发送预算和 worker 在授权前准备，取得预算后若因等待而失效，重新排程，不能将过期槽位作为实际调用许可。
 
 ### 发送状态机
 
-`pending → sending → sent / failed / unknown`，另有只适用于尚未发出工作的 `cancelled`。只有能够确定未成功的暂时失败允许 `sending → pending`，同时写入下次尝试时间并结束当前 attempt；后续尝试使用新 attempt ID，消息内容和摘要成员保持不变。每个 attempt 有唯一编号和不可变 payload digest；`sent`、`failed`、`unknown`、`cancelled` 均不能由重领任务或迟到回调改回 `pending`。
+`pending → sending → sent / failed / unknown`；明确未成功的暂时失败结束本次 attempt 后，可令 delivery 从 sending 回到 pending。资格已经失效则转 cancelled 并保留原因，不安排新尝试。cancelled 仅用于当前没有仍在执行的许可、可确定终止的工作；已有历史 attempt 不妨碍明确失败后取消。`pending` 包括等待可重试时间的工作，每次许可创建新的 attempt ID。`sent/failed/unknown/cancelled` 是 delivery 终态，不被 claim 超时、重新绑定或迟到回调改回 pending。
 
-1. 在 gate 内核验当前产品 grant、绑定 revision 和 pending 状态；暂停/取消订阅不使此前已排队活动失去资格。撤权或绑定不符则终止该 pending 工作。
-2. 同一固定连接的事务将 attempt 和 `sending` 提交；提交结果无法确认时，不发送，先读取持久状态核实。不能把不确定提交当成未提交重开网络请求。
-3. 保持 gate，以一次显式 provider 调用提交消息；禁用底层 SDK/HTTP 客户端的隐藏自动重试。网络未发出且能证明未成功的暂时失败可有限重排；明确暂时拒绝遵守 Retry-After，永久拒绝或尝试耗尽转 `failed`；请求可能成功的超时、断流、取消和无法解析结果均 `unknown`，不得重新排队。
-4. provider 成功后以 `(delivery_id, attempt_id, expected_status = sending)` CAS 写 `sent` 与 message ID。写库失败时，只尝试补记相同已知结果，绝不再次发送；更新未命中时读取当前状态，不覆盖其他 attempt 或已确定的终态。
-5. 恢复者必须先取得同一账户 gate，再重新读取残留 `sending` 及 attempt。存活发送者仍持有 gate 时不能仅凭 claim 超时抢占；取得 gate 后无法证明结果的遗留 attempt 通过同样的状态 CAS 终结为 `unknown`。禁止沿用旧 worker 对过期 claim 直接重领并发送的行为；迟到回调不能覆盖 `unknown` 或 `cancelled`。
-6. 成功提交或未知终态均不因 HTTP/RPC 重试创建另一消息；摘要成员不重新改派普通通知。所有失败、重排及恢复更新均受账户 gate 和 attempt/status CAS 约束。
+1. 发送许可事务冻结接收资格、payload digest、attempt ID、owner process incarnation 和 `authorized_at`；先成功提交再调用 Telegram。授权提交结果不确定时不发送，读取持久状态确认；无法确认的已有许可按 unknown 处理。
+2. 单次 provider 调用内记录实际 `started_at`，返回后记录结果时间；授权、实际调用与成功回执分别保存，不互相替代。禁用隐藏自动重试。
+3. 明确成功只补记同一个 attempt 的 sent 和 message ID。写库失败只重试补记结果，不重新调用 Telegram。所有结果更新使用 `(delivery_id, attempt_id, expected_status=sending)` CAS。
+4. 仅确定未成功的暂时错误允许有限重试：最多 5 次总尝试，退避 1、2、4、8 秒，429 至少等待 Retry-After；每次重新核验资格。永久拒绝或次数耗尽为 failed；可能已被接收的超时、断流、取消或无法解析响应为 unknown，不重发。
+5. 一次有效运行内，同 chat 的新尝试等待当前调用结束；恢复处理不能仅因 lease 到期重发 sending。确认旧 sender 已停止后，失去结果证据的 sending 转 unknown；有已知结果则补记该事实。恢复者与结果回调通过 attempt/status CAS 竞争，不能复活终态。
+6. 首期部署保持单一 Notification sender/poller 实例。DB 锁丢失时停止新授权并中止本实例调度，已有许可保留不确定性；数据库锁不能 fence Telegram。恢复必须确认旧进程停止，不能在旧 sender 可能继续运行时自动并行接管。该故障影响时效但不引入自动重发。
 
-撤权与解绑的提交是后续发送许可的线性化边界。先取得 gate 的发送可以完成或形成未知结果，随后撤权提交并禁止新的发送；先提交的撤权让发送直接终止。已经交给 Telegram 的请求无法撤回，也不能把其未知结果伪写成确定未送达。
+### 摘要首条的短 gate
 
-### 跨库 Bot update
+摘要首条需要额外保护“冻结成员到实际调用起点”的窗口。调度器先准备 worker、Bot/chat 槽与可预计算内容，再用固定连接取得账户 session gate，冻结此时全部同资格待汇总成员并提交首条发送许可，直接进入 provider 调用。调用内部在实际进入本次显式发送处发出 started 握手；协调路径记录实际起点后释放 gate，不等待 HTTP 回执。
 
-账户绑定处理提交到 `athena` 后，poller 才推进 `notification` 的 offset。账户侧保存已处理的 update ID，处理重放时不重复提高绑定 revision 或重建已消费 attempt。两步之间崩溃会重读 update，通过幂等处理完成 offset 推进；不依赖跨库事务或仅存在于进程内的标记。
+后续活动取得同一 gate 后才赋形成时间，因此不会在“本批已经冻结，但首条尚未开始”之间被错误归入下一批。否则若冻结于 f、首条开始于 s，新成员 t 落在 f<t<s，下一批同时要求 start≥s+60 和 start≤t+60，将没有合法时间。该短 gate 解决成员边界；不人为延迟活动形成来制造指标余量。
+
+起点从真实 provider 调用采集，不能在创建 goroutine 或入队时发握手。固定连接释放失败时关闭并丢弃，不带 session lock 归还连接池。冻结、首次提交和起点补记仍可能等待数据库，须单列 gate 延迟；“撤权不等回执”不等于任何故障下都零等待。
+
+若许可提交后无法证明调用起点，started_at 保持未知；明确成功或失败的回执仍如实保存，只有结果也无法确认时 attempt 才为 unknown，不重发。只有确认旧 sender 已停止后才恢复新批次，起点未知时使用恢复时刻作为保守的后续间隔基点，明确标为故障降级，不能伪造原始 started_at。跨进程时间同时保存时钟来源与偏差状态；偏差不可信时相关时效不可判定，不能靠修改时间值修复指标。
+
+短 gate 只消除成员冻结的逻辑冲突，不表示已经证明任意精度的实时保证。本地调度、内容冻结或数据库延迟导致 60 秒目标失约，计入正常目标 miss，不能归为外部故障，也不能通过延后活动形成时间消除失约。
+
+### 同库 Bot update
+
+每个 Bot update 的绑定修改、消费进度推进和绑定回复 outbox 在 `athena` 的同一事务提交。按 update ID 防止重复消费；重放不重复提高绑定 revision，也不创建第二条回复。事务失败时不推进 offset，已提交后崩溃则按持久进度继续。回复通过共享 sender 异步发送，不在处理 update 的事务内调用 Telegram。该结构替换旧草案的跨库两步协调。
 
 ## Telegram 摘要与调度
 
 按 owner 锁顺序统计所有已形成活动的滚动 60 秒窗口，窗口边界统一为 `(recorded_at - 60s, recorded_at]`；相同时刻用活动 ID 排序。当前活动纳入计数后 ≤10 时逐条，>10 时进入摘要。未绑定活动仍是站内事实，但绑定变化不补发旧活动或把旧活动加入新摘要。新绑定产生新投递资格；被撤权/解绑终止的成员不会重排。
 
-摘要保存首个待汇总成员的形成时间、成员列表、目标/市场/Outcome/方向集合、完整站内链接、当时备注和 binding revision。首条首次发送取得账户 gate 后，将此时同一资格下全部待摘要成员冻结为一个批次；分条内容、序号和成员映射随之固定。直到 provider 调用及结果处理结束才释放 gate，避免冻结后、首条尚未开始提交前，又形成下一批更早到期的活动。频率回落只改变后续新活动的归属，已有待汇总成员仍由原摘要完成。
+摘要保存首个待汇总成员的形成时间、成员列表、目标/市场/Outcome/方向集合、完整站内链接、当时备注和 binding revision。首条首次发送取得账户 gate 后，将此时同一资格下全部待摘要成员冻结为一个批次；分条内容、序号和成员映射随之固定。依前节短 gate 规则保护到实际 provider 调用起点完成记录后即释放，不等待网络回执；避免冻结与开始之间形成下一批更早到期的活动。频率回落只改变后续新活动的归属，已有待汇总成员仍由原摘要完成。
 
-同一用户相邻两批首条的实际提交起点至少相隔 60 秒。首个待汇总活动形成时间为 `first_pending_at`，其首次开始提交截止为 `first_pending_at + 60s`；候选发送时间还受上一批首条提交时间及全 Bot/chat 预算约束。就绪后尽早发送，不故意等到截止。只写 outbox、冻结内容或取得速率槽不算提交开始，起点在 sender 开始该次显式 provider 调用处采集。尝试意图先持久化，实际起点与结果在同一账户 gate 内补记；崩溃导致起点无法核实则如实标为未知，按故障恢复保守维护下一批间隔，不编造正常时效样本。
+同一用户相邻两批首条的实际提交起点至少相隔 60 秒。首个待汇总活动形成时间为 `first_pending_at`，其首次开始提交截止为 `first_pending_at + 60s`；候选发送时间还受上一批首条提交时间及全 Bot/chat 预算约束。就绪后尽早发送，不故意等到截止。只写 outbox、冻结内容或取得速率槽不算提交开始，起点在 sender 开始该次显式 provider 调用处采集。尝试意图先持久化，实际起点在 started 握手阶段补记后释放 gate；结果回调另开短事务，以 attempt/status CAS 补记。崩溃导致起点无法核实则如实保留缺失，按故障恢复保守维护下一批间隔，不编造正常时效样本。
 
 渲染先按目标、市场、Outcome、方向去重展示行并汇总数量，站内成交仍逐条保存；目标备注沿用各活动快照。单条不超过 Telegram `sendMessage` 的 4096 个解析后字符，按完整展示行拆分并标注批次、`n/m` 及站内入口；长标题可缩短但保留准确身份和可点击市场链接，不省略整个市场。Combo 保留自身 YES/NO 与腿的整体关系，跨条延续时明确同一组合，不能把腿拆成独立成交。[发送契约](https://core.telegram.org/bots/api#sendmessage)
 
@@ -216,7 +248,7 @@ WSS 收到后先持久化来源事实，再完成确认及用户活动投影。�
 
 全 Bot 预算覆盖账户提醒、系统通知及 poller 的绑定成功/失败回复；现有 `sendBindingReply` 直接调用 Telegram client 的路径也必须接入同一调度与限速器，不能只在业务 worker 内限速。各路径仍保留自己的内容、资格及投递结果语义；共享预算不使系统消息或绑定回复加入 Trader Sync 摘要。速率等待在取得账户 gate 前完成。站内活动不以取得发送名额为形成前提；待发送队列不设置静默丢弃上限，积压影响健康和延迟指标。
 
-摘要首条开始提交、每部分回执和整批完成是三个不同指标；只有首条提交适用本次确认的 60 秒目标。旧批次后续部分不能长期挡住新批次首条或普通通知；按截止时间和公平预算调度，必要时不同批次交错发送，通过批次序号保持可辨识。调度也检查尚未到最早发送时刻的下一批首条，按有限 HTTP 超时与 chat 间隔提前预留槽位，其他部分和 Bot 回复不得占用会导致该截止点失守的预算。每条都受 chat 限速及账户 gate 约束，无法满足的积压如实显示，不因 10 人规模就宣称任意事件量达标。正常短时集中中的前 10 条仍属于普通提醒，不能为规避 5 秒目标把它们提前改派摘要。[Bot 限速说明](https://core.telegram.org/bots/faq#my-bot-is-hitting-limits-how-do-i-avoid-this)
+摘要首条开始提交、每部分回执和整批完成是三个不同指标；只有首条提交适用本次确认的 60 秒目标。旧批次后续部分不能长期挡住新批次首条或普通通知；按截止时间和公平预算调度，必要时不同批次交错发送，通过批次序号保持可辨识。调度也检查尚未到最早发送时刻的下一批首条，按有限 HTTP 超时与 chat 间隔提前预留槽位，其他部分和 Bot 回复不得占用会导致该截止点失守的预算。每条都受 chat 限速及账户 gate 约束，无法满足的积压如实显示，不因 10 人规模就宣称任意事件量达标。已确认保留短时集中中的前 10 条普通提醒，允许同用户限速排队；平稳流量保留成功回执 P95≤5 秒，集中成交单列时延且保留总体统计，不提前改派摘要。[Bot 限速说明](https://core.telegram.org/bots/faq#my-bot-is-hitting-limits-how-do-i-avoid-this)
 
 ## 失败处理与恢复
 
@@ -228,17 +260,17 @@ WSS 收到后先持久化来源事实，再完成确认及用户活动投影。�
 | 收到并持久化后进程重启 | 按原接收区间及 activation_generation、当前权限/订阅状态判断；仅连接 epoch 改变不丢弃已接收事实，手动重新激活不能复活旧代次候选。这不是回放未接收历史。 |
 | metadata 暂时失败 | 保留来源与不可用状态，对已收到记录重试资料查询，不再生成第二个活动。 |
 | 明确 Telegram 暂时拒绝 | 仅确定未成功时，在 gate 内以 attempt/status CAS 安排有限重试并遵守 Retry-After；耗尽形成 failed。 |
-| Telegram 结果不确定/发送后写库失败 | 停止自动重发；已知成功只补记相同 attempt 的 sent，不能覆盖已确定终态。遗留 sending 由取得同账户 gate 的恢复者重新读取并以 CAS 终结为 unknown，不因 claim 超时再次发送。 |
-| 解绑/重绑/撤权与队列竞争 | 相同 gate 决定顺序，终止旧资格；已有 unknown 保留未知，不转成功或可重试。 |
+| Telegram 结果不确定/发送后写库失败 | 停止自动重发；已知成功只补记相同 attempt 的 sent，不能覆盖已确定终态。确认旧 sender 停止后才处理遗留 sending，无法恢复结果时以 CAS 终结为 unknown，不因 claim 超时再次发送。 |
+| 解绑/重绑/撤权与队列竞争 | 相同 gate 决定新发送许可顺序，终止未授权旧资格；已授权尝试可结束，已有 unknown 保留未知，不转成功或可重试。 |
 | 活动形成后取消订阅 | 保留旧队列与备注快照，继续完成；新订阅使用新 ID 和基线。 |
 
 ## 配置、安全与权限
 
 拟议配置集中在 `athena-server` 的 Trader Sync 部分：Polygon HTTP/WSS 入口、chain ID 137、已核验合约清单、资料 API 基址、源超时、连接健康阈值、finality 查询间隔、目标分组大小、资料请求并发和缓存期限。供应商地址从现有[开发端点清单](../../requirements/polymarket-copy-trading/hosted-polygon-rpc-providers.md#已取得的开发候选端点)引用，设计正文不复制凭据。
 
-业务配额 10 和首期 10 人规模是需求参数，不伪装成每次部署可任意改变的运维开关。候选技术默认值先按 2 秒 finality 查询、资料请求并发 4、外部调用 5 秒超时做预算和时效分解；它们尚需结合完整来源契约和通知调度预算定稿，不据此宣称已达到指标。
+业务配额 10 和首期 10 人规模是需求参数，不伪装成运维开关。技术默认值为 finality 2 秒、latest 10 秒、WSS ping 15 秒/pong 截止 5 秒、资料并发 4、外部调用超时 5 秒、最终确认后资料预算 2 秒。通知默认跨 chat 并发 12、Bot 20 次/秒、私聊至少 1 秒间隔、群组最多 20 次/分钟，并响应 429 缩紧预算。Combo 市场目录后台每 10 分钟一轮、最多每秒一页，未完成轮次从游标继续不重叠；重连按 1/2/4/8/16/30 秒退避加抖动。它们是已选设计初值，运行效果仍需验收。
 
-`athena-notification` 新增账户库连接，使用同一 `ATHENA_SERVER_POSTGRES_DSN` 所指账户库及 accountstate 权威迁移；原通知 DSN 只承载系统域。两进程都通过现有迁移工具的跨进程锁执行同一账户迁移集，不能互相等待对方才保证 schema 存在。生产继续通过既有 migration 初始化入口设置 schema。
+`athena-notification` 使用 `ATHENA_SERVER_POSTGRES_DSN` 所指的 `athena` 数据库及同一权威迁移集，替换原独立通知 DSN；部署初始化不再为通知创建独立数据库。两进程都通过现有迁移工具的跨进程锁执行同一迁移集，不能互相等待对方才保证 schema 存在。生产继续通过既有 migration 初始化入口设置 schema。本次不改变运行配置或现有数据库。
 
 Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥、目标私有凭据或交易执行客户端。所有外链按服务端可信市场资料构造，展示文本转义，公共 API/日志不泄露其他账户资料。内部管理员概要日志只记代码和数量，不包含完整活动正文或用户备注。
 
@@ -250,7 +282,7 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 
 “公开可查询→站内”只有起点证据可靠才计算完整指标；默认 WSS 收到时刻只能直接衡量接收后处理，不能用这个更短的指标替代已确认的 P95≤15 秒/P99≤30 秒。公开前外部延迟同样不能凭发生与收到之差全部推定。技术设计需明确可测值、上/下界与未知，而非为完成指标填写伪精确时间。
 
-容量区分三个维度：100 个订阅关系、最多 100 个不同目标、每条源成交最多分发给 10 个用户。低频场景允许偶发短时集中，实际事件率未被“10 人”定义；已有每天每目标 100 条的预算仍是假设。按该算例 30 天为 300,000 条目标日志，不能只算这些推送：2 秒共享 finality 查询另约 1,296,000 次/月，还应计已接收区块头、身份、Combo 核验、重连和其他服务流量。费用研究的 RU/CU 单价以供应商资料为准，设计不承诺免费额度必然覆盖所有运行情况。
+容量区分三个维度：100 个订阅关系、最多 100 个不同目标、每条源成交最多分发给 10 个用户。低频场景允许偶发短时集中，实际事件率未被“10 人”定义；已有每天每目标 100 条的预算仍是假设。按该算例 30 天为 300,000 条目标日志，不能只算这些推送：2 秒共享 finality 查询另约 1,296,000 次/月，再计 latest 259,200 次、最坏各 300,000 次区块头和回执，合计约 2,455,200 RU，占 Chainstack 3M 的 81.84%；dRPC 为49.104M CU，占210M的23.38%。版本、身份、Combo 核验、重连、心跳、重复推送和其他服务另计。费用研究的 RU/CU 单价以供应商资料为准，设计不承诺免费额度必然覆盖所有运行情况。
 
 ## 源码影响
 
@@ -263,8 +295,8 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 | API 服务组合 | [athena-server.go](../../../internal/server/athena-server.go)、[authz.go](../../../internal/server/authz.go) | newServiceSet、Run/Stop、RPC authorization maps | 注入业务服务与同库 store；进程重启不重复启动 worker。 |
 | 权限矩阵与原子撤权 | [access.go](../../../internal/accountaccess/access.go)、[controller.go](../../../internal/accountaccess/controller.go)、[account.go](../../../internal/server/account/account.go)、[accountstate store](../../../internal/accountstate/store/sql_store.go) | ModuleTraderSync、Validate、UpdateAccountAccess | 十模块矩阵、合法级别、按账户 gate、事务内停用。 |
 | 账户数据库 | [accountstate migrations](../../../internal/accountstate/store/migrations)、[sqlc.yaml](../../../sqlc.yaml) | 权威 schema、分模块查询生成 | 增加 Trader Sync 和账户通知实体；避免双迁移源。 |
-| Notification 存储和 worker | [service.go](../../../internal/notification/service.go)、[worker.go](../../../internal/notification/worker.go)、[store](../../../internal/notification/store)、[notification.proto](../../../internal/notification/notification.proto) | 双 store、binding gate、sending/unknown、账户投递合同 | 调整账户域；系统通知不进入 Trader Sync 摘要。 |
-| Bot update 幂等 | [poller.go](../../../internal/notification/poller.go)、[telegram.go](../../../util/telegram/telegram.go) | update ID、provider 错误分类 | 账户提交后推进 offset；明确是否可能已发送。 |
+| Notification 存储和 worker | [service.go](../../../internal/notification/service.go)、[worker.go](../../../internal/notification/worker.go)、[store](../../../internal/notification/store)、[notification.proto](../../../internal/notification/notification.proto) | 全部通知同库、binding gate、sending/unknown、账户投递合同 | 统一持久化入口；系统通知不进入 Trader Sync 摘要。 |
+| Bot update 幂等 | [poller.go](../../../internal/notification/poller.go)、[telegram.go](../../../util/telegram/telegram.go) | update ID、provider 错误分类 | 绑定、offset 与回复 outbox 同事务；明确是否可能已发送。 |
 | Polymarket 资料 | [data.go](../../../util/polymarket/data.go)、[gamma.go](../../../util/polymarket/gamma.go) | 类型化记录、Profile、market/Combo 适配 | 按已核实来源扩展，不手写生成代码。 |
 | 运行配置与部署 | [local-runtime.sh](../../../hack/local-runtime.sh)、[docker-compose.prod.yml](../../../docker-compose.prod.yml)、[数据库初始化](../../../hack/postgres/init/00-databases.sql) | 账户 DSN、通知账户 store、迁移初始化 | 沿用既有进程；无需新服务端口或 Trader Sync 独立数据库。 |
 | 现有设计消费者 | [账户权限设计](../identity-access/account-access-control.md)、[账户通知设计](../notifications/account-telegram-notifications.md)、[本地运行设计](../development-runtime/local-runtime-orchestration.md) | 当前实现说明 | 实现时同步，设计阶段不把目标方案写成已实现。 |
@@ -277,39 +309,10 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 
 数据库调整不在本阶段执行；不得把本设计当成清空当前数据库、复制历史数据或重置环境的授权。
 
-## 验证方式
+## 验证方式与审阅进度
 
-本阶段只读核对已确认需求、当前源码、已有样本与官方文档，检查文档链接及 diff。未运行单元、集成、端到端测试，未运行实时端点验收，也未启动或修改服务。
+本次已执行文档/源码阅读、官方资料检索、短时只读 RPC/WSS 核验、实现槽与 getLegs 等 eth_call、Profile 与精确市场查询。原始响应及限制见两份新增核验报告。没有修改业务源码、执行数据库迁移、启动业务服务或发送 Telegram 消息；没有运行实现的单元、集成或端到端测试。
 
-实现时按稳定源输入执行对应生成：账户/通知/Trader Sync SQL 对应 `make sqlc-local`；API 类型和 Proto 对应 `make protogen`；若新增 ABI 源才按 `make abigen-local` 处理。生成顺序遵循真实依赖边。后续任务按 Superpowers 的 TDD、执行与验证流程工作，具体验证范围随任务规格和计划记录；本文仅记录已经完成的只读核查，不代表已执行生成、构建或外部联调。
+已确认：首期规模及既有业务；集中成交保留前 10 条逐条并允许排队；全部通知同库；发送许可边界；单供应商采集、最终确认、秒级基线与故障不补查。接口、资料和验收章节也已确认，[完整任务 spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已写入并等待用户整体审阅。长期需求状态与设计状态不增加额外审批流程。
 
-## 待确认问题
-
-### 已逐项确认的业务调整
-
-| 调整 | 用户决定与影响 |
-| --- | --- |
-| Q1：实时来源与时间口径 | 采用链上结算时间，页面和通知明确标注“结算时间”；生效前撮合、生效后结算的成交纳入新活动。沿链上实时路线细化；公开到站内的时效起点仍独立观测，不改用结算或接收时刻。 |
-| Q2：摘要 60 秒目标 | 首条待汇总站内活动形成后 60 秒内开始向 Telegram 提交；成功回执耗时单列。生成内容或进入队列不算开始提交，开始提交不算发送成功。 |
-| Q3：超长摘要 | 每 60 秒至多开始一批，超长分多条完整展示全部目标、市场、Outcome、方向及链接；60 秒目标针对该批首条，整批完成耗时单列。逐条记录发送状态，不因某条未知而重发整批。 |
-
-三项决定已写回需求，整份修订需求与技术方案仍未获用户批准；单项选择不代表整体方案已经通过或代码已经实现。金额按真实来源币种标注属于事实对齐，没有引入兑换或交易执行。
-
-### 尚需完成的技术核实
-
-1. 三类 Exchange 的完整事件语义、规范钱包、原始记录粒度及金额映射；Combo `getLegs` 代理状态和真实市场链接的完整契约。已有样本及源码证据不等于运行链路已经完成。
-2. 含 `@handle` 的 Profile URL 精确解析；已确认卡片中的收益资料稳定来源及各字段可用性，不能仅用排行榜数值替代曲线或把全部 Profile URL 拒绝。
-3. 秒级基线算法、节点新鲜度阈值、最多 100 个目标的过滤分组、采集与 finality 请求预算、Bot/chat 调度和普通通知 5 秒指标的负载边界。已有每目标每天 100 条只是费用算例。
-4. 公开可查询起点的可观测证据与指标计算；无法核实时分别展示已知值、界限和未知，不伪造完整达标指标。
-
-这些是 Codex 需核实的技术事项，不要求用户选择事实真假。后续 Superpowers 任务需补齐技术证据、明确尚未决定的方案并形成可审阅的任务规格；源码保持未实现。
-
-## 设计一致性检查
-
-- [x] 以已确认需求为输入，首期规模与不补历史边界已写入。
-- [x] 已列出现状差距、目标组件、接口、数据、事务与失败语义。
-- [x] 已区分源研究证据、候选技术选择及需要业务确认的差异。
-- [x] Q1–Q3 已逐项确认，结算时间、摘要时限与超长分批已同步需求。
-- [ ] 整份修订需求与技术方案已在 Superpowers 任务规格中完成审阅和批准。
-- [ ] 外部数据契约、同秒基线、摘要调度与容量预算已完成核实并定稿。
-- [ ] 实现、生成边界、旧实现清理与逐项一致性审查完成。
+后续实现需验证当前协议完整样本矩阵、同秒与重启故障、授权/撤权/绑定竞争、未知结果不重发、摘要临界 60 秒调度、真实容量及公开时间证据。数据缺失/异常的行为已有明确设计；未完成的运行测试不能写成已通过。

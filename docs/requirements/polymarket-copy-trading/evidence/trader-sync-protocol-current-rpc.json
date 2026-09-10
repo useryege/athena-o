@@ -1,0 +1,1150 @@
+{
+  "timestamp": "2026-09-10T09:06:03.138848+00:00",
+  "requests": [
+    {
+      "endpoint": "https://lb.drpc.live/polygon/Ai_L7JAEMk5hgVgUsOe8aKuLbjItrMIR8Yhzzu2G7ZgM",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "web3_sha3",
+        "params": [
+          "0x6765744c656773286279746573333129"
+        ]
+      },
+      "response": {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "error": {
+          "message": "method is not available",
+          "code": -32601
+        }
+      }
+    },
+    {
+      "endpoint": "https://lb.drpc.live/polygon/Ai_L7JAEMk5hgVgUsOe8aKuLbjItrMIR8Yhzzu2G7ZgM",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "method": "eth_getBlockByNumber",
+        "params": [
+          "latest",
+          false
+        ]
+      },
+      "response": {
+        "id": 2,
+        "jsonrpc": "2.0",
+        "result": {
+          "baseFeePerGas": "0x3a869bc45a",
+          "difficulty": "0x1",
+          "extraData": "0xd78301100883626f7288676f312e32362e35856c696e75780000000000000000c78084016e36004072e570c0f5c29b00ff2f25619b5498b59bcfd765616f69888700d9f7df12e8ea54f0b90b2fe75191a044a086cdc2d8c9ef217d8d8a5fc0c9e049d5345c47511901",
+          "gasLimit": "0x9896800",
+          "gasUsed": "0x12a5134",
+          "hash": "0x1d64636dcdfa966bb1c6564f0ff3f4322bfc23150c2579f737eb36c9bb5028ad",
+          "logsBloom": "0x76a50c3656095a90463227c0d046e8ab0708cc123b7bff4a45a2b2ea06cc492c42281619eda87ee1971d3337b0d0ad6437baa42569c1b26ae98d668b94f0f2e03560c4b0d68fc631f1340249518382e3cbec6c205ac00a2eebebc0929000c3ab561484a42f4e987b54cb311571409d105702411c3834981f8896c81102a23de213c31b349180e30267a08d284452b1241112c791d2580be8e0154269c19830a9b2200ea0172141c30cf3cf6a51198f1d4ace74ccf188a5f500e0022bb85c5ccc8c4574070b8704e34b857b1050b2709a988ddce0fc0ca45ca476acb88d65f83862393cc57260a810146946974000996a06de304e9d9d1345e8129ce5c2516f47",
+          "miner": "0x0000000000000000000000000000000000000000",
+          "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "nonce": "0x0000000000000000",
+          "number": "0x59378a2",
+          "parentHash": "0xf1a61bd08412e52ff366f900c307626038832d9da4b44fae184ee8b4d1ab1139",
+          "receiptsRoot": "0xdaeafabd5ded8e4007919b972c69ab28a1d0187ae6b21f02203382b46e233aa8",
+          "sha3Uncles": "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+          "size": "0x10f9b",
+          "stateRoot": "0x79d129c2fa978b3ff4397a7d8b2283bf742f8bf7be8ec7d7beeb61ca1415802a",
+          "timestamp": "0x6aa272fc",
+          "transactions": [
+            "0x971fa8654e6e76e631636af3509d553d0cbb2930d034909937635c7bb586b290",
+            "0x2484b20b62e3585e6afc8fd0888cb611c0dee190e8e50c0128fa20f2ed76a2ca",
+            "0x56af6ecfedaebdd695b843d66b40f2a2cf47178ebe0e2cbf3c07cbc6f5db9fd4",
+            "0xfe679ce391523e1fe680a08a3bf1e9a6a5b89dbdf8ee7c6e5b8eda31e4a96aef",
+            "0xbb46cf13b31e19d19534489006a17932c612c6d66b2637e094bb1e14afc1d14e",
+            "0x8471d6acc1eee933ac43f0517a573445394f1c6eb15444cac165ad58f49e4826",
+            "0x17bf6cc2e9ef568fa1494ce0a487718e30fea5ccb9778f92dba157e7ae7b954a",
+            "0x53abae897519ecdda7b718703a416388b93a4e1b7e11aa0bc979e9244e5da2dc",
+            "0x87eeb4c8ba52db4542dbabbbfba70f4735522af367169e2a1dd7cea8837a1c65",
+            "0x6f3a8984c012fff4f7afbd991371666c222c0303f7130fda10aa4348511852f2",
+            "0x5e5991c005e4e3878aa8fb7120b92be631da1713676eae66dc62778cb2eac9b8",
+            "0xb9a91fc06a420c1d1527165611b09781b11697cf7e52b8e1f31dd647c7954538",
+            "0x2a43ad586afb976e09614144613f41a30172041ddcc3aaf8c70769b2742ecaf0",
+            "0xe3b0a216750d20e647c1d0030d9dcbecbef9c51780258f82ef6032c747a53b12",
+            "0xdd0984bd6b6697da63c396bff8496db90bd27ebbeda7c81e1f05130323e5b7d1",
+            "0x0ae810dba93c3b10a7a8f37c4e3592211a7d7b651211d6d2756c91b39eddd77a",
+            "0x2325853e5b5394e5bf81a944cefb4545052a7718336e1a3458960fc9d1c7d59a",
+            "0x3be175670c8cc9dfa5171bb47e3f157b55462e0bc3b2a6f3e667cfa5b7e1fc35",
+            "0xd82b97f3787b55c0ceb58f0cdc41dfd4fa8dddebb9bd498ba01fae754c0303f8",
+            "0x584c7bb2a4373984cdd46db19613aaac3bd8922423febc454bab1dc8c05654b2",
+            "0x4595c7a03fa2e273a73efbdfc16a3175e41ba756d99f7350dbe04e2ad5ca0559",
+            "0x10cbcafbb38c994b98495413bf1e0859e9dc0c1c0ee80e8ce88ba34f5f59238e",
+            "0x2b631da0a4440a40aea57780a222033d1043d0ef8cd9e073f094937644e048c5",
+            "0x3f9ea3d1f1442a66bad0f49972f8160dc5a492d0949295f6f13a683373f1b43f",
+            "0x8be64a556bdbe2e30fddbda8f471a03c8d4b2e5cda9e156323e291ceabf9b255",
+            "0x223c7dd3daf8f9d7601ff8ffebe7c7889218bdc46cd5c8fa82ad11ab71b5160f",
+            "0x59174f2c73878e749603c1ac0d6b21764715373138136b228c0add570def718b",
+            "0xa6dda1426491a13e600842520459502fd1a43c197fc920cc0da9213044a2ee6a",
+            "0xa3ed5c6425c3c07a600792f6ac05d38972e35a724d2a9764523386935e7d924e",
+            "0x2077df4c21a7495031f5d715ed1e409c22852f012d9f760b639ad4249d0cf363",
+            "0x8363f3d034afbad3e5dc980f3b1d7f14a7bfe9b0e0d1761d77922b548f89926e",
+            "0xf223fb636fee834afce8c62606502c98cebcd9faf718f5dc13377f9170bcd736",
+            "0x0b79a3fbcf56c1cae89e00c2323b2b698eee9a3a606b595092a25f6468035ccb",
+            "0xc8951feb16b7e01c675b5a09ccd3d8752275c25ad1e67971bd2349db4072cbbc",
+            "0xffacfd43f6d5badc7de69ebadc3428b24a51285da73e524b1cb8ce410a845418",
+            "0x84ab64415acbf36444f1112a9376beaa2fc4c0f8485be439e87668e0d07899cb",
+            "0x5a3379fce51a8da165610e486506d76bc513e35c78e00caa3137820e7c9daa45",
+            "0x5a537f4f77c1b6cd76225883ef577132b1592042a7d7dcb11e4f2768fbcd0771",
+            "0x67adab33d19839e27705d3010d43c7f9e993f3d27871e98cc416ccdfc3463e2a",
+            "0x741fa73ddbc8eec01ca4fe3cb63888ecd2909285fc9f4edf4f3b68330cd0604a",
+            "0xc8c43448fd9426f83c8681073dddc964ed2f61064a9f675fd2197d91aa07db59",
+            "0xf27e412b48bce5de6eec00d3cafd92b6f23604e817561e773ab43852d562f0c7",
+            "0xf4bd5ed6218cecba8b944cc84b072b815593c9d98628a4badad917d6bb2caf0f",
+            "0xe01db40c1713a57baa23bdae896ded27105d3f14cc09f5827b92a9c3e46b64ac",
+            "0x6ad7a01cbfecdd9c526f1a2b3c8d46db899c8f3290d98b728f96663d1cfb1c20",
+            "0xa3965dec934474bb9754199a89136a150d2089490d5359b5dc5fb86b0f3e8495",
+            "0x82103c2d37a1b8df2cbbf8eef04ff14a9abec4453efed047701eae8d97d549bb",
+            "0xd573460c5dc779ff90fadc10bcda96ac12027c09143c909189dd7600b4075737",
+            "0x7296297aec07bbe55d334f16792e690739520dff9502fff9cfe3bc6483aa294f",
+            "0x628f95a82770a168f0b25e116efe3b715f8904a1d3b8b5dfc02cb106b7e39b59",
+            "0xb374eb90f4e5c41919c359e1af493bbd2591c0a302e9ab5171ec978eee8c5e44",
+            "0x65db2906da74f15b8197cdb6751aff91edc50f7a5dff3eb6025e78d302e16450",
+            "0x091af56790595015afdb61d17f037dc889838731162a24c8c24f24b08f313b50",
+            "0x4ad2df36da1cd13ee01ce0b8148f43ef8e4296cfa283d4eeb102d62a51bf6ddd",
+            "0x052be3139c5e291288b625cd03150433a5b2fff74c6757c9062d6342639355e6",
+            "0xd32809020e61b1f8833b202937ddc28c0bdf80b5ad8437100eddc2932e02fd46",
+            "0x33f9457b9cce53f7d0f6b753317da97b32961e14c36d90a070192f410979478a",
+            "0x4fa6fcf9b846b228208f1f99890a888e08a1bf891d34d5e03e3b74f313a12dbb",
+            "0x8a6c2fbdda7d7064e23297c230ccabb3a362ec6aec16b724aed2b6c3ba8bb4a7",
+            "0x718e46a6d56271d1f182b568c24c971be1368c6eb75b225b9aa4626ec7b54ea9",
+            "0xfdd28c2ee542fcc5731e51bf0326fd2914825e6a3982937f32b58d8568bd7641",
+            "0x4bd77dd7bffe8f993b1517fdab74c78077cb270446943aa97e1b1380cae88ea4",
+            "0x4816fc542d1a121b131067ceb23c5994cb944e34ef2a8331968fb17c3af42cb2",
+            "0xdafc5a51bb29688ef80f705a41379bf8b09dfc3be36de55523218e4db7f81e49",
+            "0xb9ca90c32f31c0bebf50f0cf5c72f9aaf2b09275c96c7f453b7b943a65229acf",
+            "0xe56fb73cf45b29e86de93b6a3e267b25174b75e768ca92bdf31c24429ad87d33",
+            "0x593071937e49d13c4c0031f9da872a982887ca08b3bca39c787cb5564ca1e696",
+            "0xa671c19fc430ea6d9a3451f2dd90b088764a25b2081b31697a32b02983551eb9",
+            "0x858a7fb4c0cbb09eccc0ed4ea2b7a46ae8411b8bc0cedecc7abbbaf7665450f5",
+            "0x57709b21c70eb3cc17b7b08ef6d3f9abc55c85e7eef536a797989ffc52d11ebc",
+            "0x17024f8c31829e0ca41d1ae263b119d2ab112bc08abea3697a49bac4052e0b10",
+            "0x949af99672b6178bfd208054735a28bf9651c0a9e119a2e5ea4d3da888e2541d",
+            "0x0df408094e42490e54c43a5e6fe7adcc232ed58d7318ef4c3e93f75b5647949e",
+            "0x3fea1bfa3a9ebab7a1cd42eee479af49a6708cd26c1eb1ab860574a786a66783",
+            "0x2132e4f2d03b0da4f7e9f48e6908aabdead2ea4714a69ada96e60fb2e36de620",
+            "0x14f88e04ab246008fb3a94453b5faea6f424ed833ff31e7d93a5da8bc92a26e1",
+            "0xcb01cdf215f7138460119673473f7f5554892909343e478ca4abf4067e3e7489",
+            "0x956aac327856e374a52dd1fc930e2f60c639b9db23ff0407e79a59b4d97af4f3",
+            "0x239cc9ff60f53061a1debe18c0ef753f619f5f9292b11d97b0cadd9297b855c4",
+            "0x2a7ad741afbea594b7960344565c6ef0e17d3bef16c44aeef8793cb2954a1d31",
+            "0xb08d3d1aa194e681fa808463c72e206059c44f0ea5103959e020c1fb191a43c0",
+            "0xec67f839d042de08ca2ceb18905c56444df8f01c2b8ff4756f79529120671a3a",
+            "0xd19c5496de08355459d88563bcb4332f8f9365781b70643366447165c3ba31ce",
+            "0x88791cbfa103d4d380fa64840fbedfcad83b5265603fa2aa88a1d9b92f472a62",
+            "0x362e0191c1c45b0d3acc3c538351aa966f8a43fa46f10f47ef6d5f644128386a",
+            "0xb96199325ae47b1d661c1ab2f7b937fbeea14be325d04abc5526ca13ebcff22a",
+            "0x6bb632402fc7b2f646d039b9d190f940813a30987374d251cfc171fe17a577ca",
+            "0xe16a6c432b8e699f93682ea17a4e149a85f55484446b41c6d7d32c82257f932f",
+            "0xb5594a2697f085031b3243ff4c696f85045d06d7ddb66f18326fe536bc380455",
+            "0x900c2f8274abbf8d01c82c50c3902ebe24dde3db10ba4114054cf34d68695641",
+            "0x00520703300fd5e5e11f8875b4a6404f44aa57f32d10d4dd5218c22d2d43f8fa",
+            "0xe63dce7e9dfabd6e0e772debd3ba7cda7d539b1bd5bc0072071965aedf8ffe66",
+            "0xc5065d5a661c3ad54e2cc4464f7f33e14a793e7e1b250dbde5f331d36863ac7d",
+            "0xec60a5adfa27c1c364c06b7d8b8879cc9268b2e2a0b7a867f8997324cbe8c696",
+            "0xecf45b2936107301257afed13d1ec96a34a4ccf7f22d1ac3119b12a926bf0b61",
+            "0x01dbc6dd02b83518a57ba480d18e16cc4684ce9935fba486b925f151004bf2f0",
+            "0x7c2aacb3509dcc65dd5cb0a76965d5558495ab5e2beef9a1587e7462a23bc310",
+            "0x3e11763d800af7bd3c2594e8c64deb4daa65750e8bc39023d471cdedc826191c",
+            "0xd07e0a7f9f673d807fcbb85d14ed86d5f50af173d9be4d3b24ba268e0f0789f7",
+            "0x91f6106a19cefff64c4c917c63eac503b2b901b2af87d5c7686f74ad2151c474",
+            "0x2aa506c65a8d8e5536384e106a76b6d58dd5bfd27dd66450832775287ea3f87b",
+            "0xf2925244dcbb3553be4c90061ff40be452f75f206bc84aaf51482f5b97156b84",
+            "0x9cf9d58cfe13514a3e9e1f16a60d49490f9f89fd3e1ba5ce06be7d1c36124cf6",
+            "0x32683718d5f9383e1f89749a3325ef9e52a76454b3be56f3c20a3b2376a03b4b"
+          ],
+          "transactionsRoot": "0xf00b8776fcba45fa66d56eed624007c32f0114db1314071b4a8c464a9eae3bad",
+          "uncles": []
+        }
+      }
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "method": "eth_call",
+        "params": [
+          {
+            "to": "0x30000034706C7d8e12009DAB006Be20000c031A8",
+            "data": "0x9989b1ed03b5623e2ec8037416edce55a0ed93553a000000000000000000000000000000"
+          },
+          "0x59378a2"
+        ]
+      },
+      "response": {
+        "id": 3,
+        "jsonrpc": "2.0",
+        "result": "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000002018973c28252394425c5350b68169da64f00000000000000000000000000000001e66f5827b3529cec47a3537d291c5158000000000000000000000000000000"
+      }
+    }
+  ],
+  "position_id": "1677415912060011761505225895152832125576889787899132551452768910625300545536",
+  "condition_id": "0x03b5623e2ec8037416edce55a0ed93553a0000000000000000000000000000",
+  "decoded_legs": [
+    "695169841241862167160996901315064183076334912620096596571903877933715947520",
+    "859456143983043703969108701920818153184154941619452660194551913960693563392"
+  ],
+  "combo_metadata": {
+    "url": "https://data-api.polymarket.com/v1/positions/combos?user=0x237419de121f3aecf3e1e0a613ecb9dc82b9a426&market_id=0x03b5623e2ec8037416edce55a0ed93553a0000000000000000000000000000&limit=100",
+    "status": 200,
+    "response": {
+      "combos": [],
+      "pagination": {
+        "limit": 100,
+        "offset": 0,
+        "has_more": false,
+        "next_cursor": null
+      }
+    }
+  },
+  "combo_activity_metadata": {
+    "url": "https://data-api.polymarket.com/v1/activity/combos?user=0x237419de121f3aecf3e1e0a613ecb9dc82b9a426&market_id=0x03b5623e2ec8037416edce55a0ed93553a0000000000000000000000000000&limit=100",
+    "status": 200,
+    "response": {
+      "activity": [
+        {
+          "id": "0x1535ca2707356702fe919176eecf4f3ff5b2ad8be0a4e9b3ddad5a67030664a5-300",
+          "type": "SPLIT",
+          "event_kind": "PositionsSplit",
+          "side": "Split",
+          "module_kind": "Combinatorial",
+          "user_address": "0x237419de121f3aecf3e1e0a613ecb9dc82b9a426",
+          "combo_condition_id": "0x03b5623e2ec8037416edce55a0ed93553a0000000000000000000000000000",
+          "combo_position_id": "1677415912060011761505225895152832125576889787899132551452768910625300545536",
+          "module_id": 3,
+          "amount_usdc": 320.240527,
+          "payout_usdc": null,
+          "timestamp": 1788963892,
+          "tx_dttm": "2026-09-09T14:24:52Z",
+          "tx_hash": "0x1535ca2707356702fe919176eecf4f3ff5b2ad8be0a4e9b3ddad5a67030664a5",
+          "log_index": 300,
+          "block_number": 93505906,
+          "legs": [
+            {
+              "leg_index": 0,
+              "leg_position_id": "695169841241862167160996901315064183076334912620096596571903877933715947520",
+              "leg_condition_id": "0x17f9acc22b874fe7ae1cf34376073ff48973c28252394425c5350b68169da64f",
+              "leg_outcome_index": 0,
+              "leg_outcome_label": "Yes",
+              "leg_status": "RESOLVED_WIN",
+              "leg_resolved_at": "2026-09-09T21:15:09Z",
+              "leg_current_price": "1",
+              "market": {
+                "market_id": "3978602",
+                "slug": "ucl-spo-gal-2026-09-09-btts",
+                "title": "Both Teams to Score",
+                "outcome": "Yes",
+                "image_url": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+                "icon_url": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+                "category": "",
+                "subcategory": "",
+                "tags": [],
+                "end_date": "2026-09-09T19:00:00Z",
+                "event": {
+                  "event_id": "931869",
+                  "event_slug": "ucl-spo-gal-2026-09-09-more-markets",
+                  "event_title": "Sporting CP vs. Galatasaray SK - More Markets",
+                  "event_image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png"
+                }
+              }
+            },
+            {
+              "leg_index": 1,
+              "leg_position_id": "859456143983043703969108701920818153184154941619452660194551913960693563392",
+              "leg_condition_id": "0x127ffcc9241eeb1b5125ad9b0617cca9e66f5827b3529cec47a3537d291c5158",
+              "leg_outcome_index": 0,
+              "leg_outcome_label": "Yes",
+              "leg_status": "RESOLVED_WIN",
+              "leg_resolved_at": "2026-09-09T18:54:52Z",
+              "leg_current_price": "1",
+              "market": {
+                "market_id": "3978659",
+                "slug": "ucl-stu-vf-2026-09-09-spread-home-1pt5",
+                "title": "VfB Stuttgart (-1.5)",
+                "outcome": "Yes",
+                "image_url": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+                "icon_url": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+                "category": "",
+                "subcategory": "",
+                "tags": [],
+                "end_date": "2026-09-09T16:45:00Z",
+                "event": {
+                  "event_id": "931871",
+                  "event_slug": "ucl-stu-vf-2026-09-09-more-markets",
+                  "event_title": "VfB Stuttgart vs. Viking FK - More Markets",
+                  "event_image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "pagination": {
+        "limit": 100,
+        "offset": 0,
+        "has_more": false,
+        "next_cursor": null
+      }
+    }
+  },
+  "gamma_leg_metadata": [
+    {
+      "url": "https://gamma-api.polymarket.com/markets?condition_ids=0x17f9acc22b874fe7ae1cf34376073ff48973c28252394425c5350b68169da64f",
+      "status": 200,
+      "response": [],
+      "leg_position_id": "695169841241862167160996901315064183076334912620096596571903877933715947520"
+    },
+    {
+      "url": "https://gamma-api.polymarket.com/markets?condition_ids=0x127ffcc9241eeb1b5125ad9b0617cca9e66f5827b3529cec47a3537d291c5158",
+      "status": 200,
+      "response": [],
+      "leg_position_id": "859456143983043703969108701920818153184154941619452660194551913960693563392"
+    }
+  ],
+  "gamma_by_market_id": [
+    {
+      "url": "https://gamma-api.polymarket.com/markets/3978602",
+      "status": 200,
+      "response": {
+        "$schema": "https://gamma-api.polymarket.com/schemas/Market.json",
+        "id": "3978602",
+        "question": "Sporting CP vs. Galatasaray SK: Both Teams to Score",
+        "conditionId": "0x17f9acc22b874fe7ae1cf34376073ff48973c28252394425c5350b68169da64f",
+        "slug": "ucl-spo-gal-2026-09-09-btts",
+        "resolutionSource": "https://www.uefa.com/",
+        "endDate": "2026-09-09T19:00:00Z",
+        "startDate": "2026-08-29T18:16:29Z",
+        "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+        "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+        "description": "In the upcoming UEFA Champions League game between Sporting CP and Galatasaray SK, scheduled for September 9 at 3:00 PM ET:\n\nThis market will resolve to \"Yes\" if both Sporting CP and Galatasaray SK each score at least one goal during the game.\n\nThis market will resolve to \"No\" if either team fails to score (i.e., if one or both teams finish with zero goals).\n\nIf the game is postponed, this market will remain open until the game has been completed. If the game is canceled entirely, with no make-up game, this market will resolve 50\u201350.\n\nIf the game is started but not completed, this market will resolve according to the official final score published on uefa.com. This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.\n\nThe primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event's conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome.",
+        "outcomes": "[\"Yes\", \"No\"]",
+        "outcomePrices": "[\"1\", \"0\"]",
+        "volume": "30586.002063000004",
+        "active": true,
+        "closed": true,
+        "marketMakerAddress": "",
+        "createdAt": "2026-08-29T18:16:07.335347Z",
+        "updatedAt": "2026-09-10T09:02:29.675984Z",
+        "closedTime": "2026-09-09 21:15:09+00",
+        "new": false,
+        "featured": false,
+        "archived": false,
+        "resolvedBy": "0x65070BE91477460D8A7AeEb94ef92fe056C2f2A7",
+        "restricted": true,
+        "groupItemTitle": "Both Teams to Score",
+        "groupItemThreshold": "3",
+        "questionID": "0x64f6a6472e9f62d440c337d955a1ff7567157e07fa02d08bbe5abe37518ee7d8",
+        "umaEndDate": "2026-09-09T21:15:09Z",
+        "enableOrderBook": true,
+        "orderPriceMinTickSize": 0.001,
+        "orderMinSize": 5,
+        "umaResolutionStatus": "resolved",
+        "volumeNum": 30586.002063000004,
+        "endDateIso": "2026-09-09",
+        "startDateIso": "2026-08-29",
+        "hasReviewedDates": true,
+        "volume24hr": 29052.946719999996,
+        "volume1wk": 30586.002062999996,
+        "volume1mo": 30586.002062999996,
+        "volume1yr": 30586.002062999996,
+        "gameStartTime": "2026-09-09 19:00:00+00",
+        "secondsDelay": 1,
+        "clobTokenIds": "[\"44174022779928644804163012552948105723842696594170197991608889221484274133294\", \"15453671589145879570137868026954740543370235555836460217180439033223094220769\"]",
+        "positionIds": [
+          "695169841241862167160996901315064183076334912620096596571903877933715947520",
+          "695169841241862167160996901315064183076334912620096596571903877933715947521"
+        ],
+        "comboStatus": "enabled",
+        "umaBond": "250",
+        "umaReward": "0.8",
+        "volume24hrClob": 29052.946719999996,
+        "volume1wkClob": 30586.002062999996,
+        "volume1moClob": 30586.002062999996,
+        "volume1yrClob": 30586.002062999996,
+        "volumeClob": 30586.002063000004,
+        "makerBaseFee": 1000,
+        "takerBaseFee": 1000,
+        "customLiveness": 900,
+        "acceptingOrders": false,
+        "negRisk": false,
+        "ready": false,
+        "funded": false,
+        "acceptingOrdersTimestamp": "2026-08-29T18:16:29Z",
+        "cyom": false,
+        "pagerDutyNotificationEnabled": false,
+        "approved": true,
+        "rewardsMinSize": 50,
+        "rewardsMaxSpread": 4.5,
+        "spread": 0.001,
+        "automaticallyResolved": true,
+        "oneDayPriceChange": 0.3945,
+        "oneWeekPriceChange": 0.4095,
+        "lastTradePrice": 0.999,
+        "bestBid": 0.999,
+        "bestAsk": 1,
+        "automaticallyActive": true,
+        "clearBookOnStart": true,
+        "manualActivation": false,
+        "negRiskOther": false,
+        "sportsMarketType": "both_teams_to_score",
+        "umaResolutionStatuses": "[\"proposed\", \"proposed\"]",
+        "pendingDeployment": false,
+        "deploying": false,
+        "deployingTimestamp": "2026-08-29T18:16:11.490949Z",
+        "rfqEnabled": false,
+        "holdingRewardsEnabled": false,
+        "feesEnabled": true,
+        "requiresTranslation": false,
+        "feeType": "sports_fees_v3",
+        "feeSchedule": {
+          "exponent": 1,
+          "rate": 0.05,
+          "takerOnly": true,
+          "rebateRate": 0.15
+        },
+        "version": "v1"
+      },
+      "leg_position_id": "695169841241862167160996901315064183076334912620096596571903877933715947520"
+    },
+    {
+      "url": "https://gamma-api.polymarket.com/markets/3978659",
+      "status": 200,
+      "response": {
+        "$schema": "https://gamma-api.polymarket.com/schemas/Market.json",
+        "id": "3978659",
+        "question": "Spread: VfB Stuttgart (-1.5)",
+        "conditionId": "0x127ffcc9241eeb1b5125ad9b0617cca9e66f5827b3529cec47a3537d291c5158",
+        "slug": "ucl-stu-vf-2026-09-09-spread-home-1pt5",
+        "resolutionSource": "https://www.uefa.com/",
+        "endDate": "2026-09-09T16:45:00Z",
+        "startDate": "2026-08-29T18:16:38Z",
+        "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+        "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+        "description": "In the upcoming UEFA Champions League game, scheduled for September 9 at 12:45 PM ET:\n\nThis market will resolve to \"VfB Stuttgart\" if VfB Stuttgart win the game by 2 or more goals.\n\nOtherwise, this market will resolve to \"Viking FK\".\n\nIf the game is postponed, this market will remain open until the game has been completed. If the game is canceled entirely, with no make-up game, this market will resolve 50\u201350.\n\nThis market will resolve according to the official final score published on uefa.com. This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.\n\nThe primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event's conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome.",
+        "outcomes": "[\"VfB Stuttgart\", \"Viking FK\"]",
+        "outcomePrices": "[\"1\", \"0\"]",
+        "volume": "45670.06572499997",
+        "active": true,
+        "closed": true,
+        "marketMakerAddress": "",
+        "createdAt": "2026-08-29T18:16:18.820762Z",
+        "updatedAt": "2026-09-10T09:06:34.700559Z",
+        "closedTime": "2026-09-09 18:54:52+00",
+        "new": false,
+        "featured": false,
+        "archived": false,
+        "resolvedBy": "0x65070BE91477460D8A7AeEb94ef92fe056C2f2A7",
+        "restricted": true,
+        "groupItemTitle": "VfB Stuttgart (-1.5)",
+        "groupItemThreshold": "1",
+        "questionID": "0x2be6feb9db13ae3ae1e8a2cb96934fedf6f8772e20a79bc6954e985708ce9a2a",
+        "umaEndDate": "2026-09-09T18:54:52Z",
+        "enableOrderBook": true,
+        "orderPriceMinTickSize": 0.001,
+        "orderMinSize": 5,
+        "umaResolutionStatus": "resolved",
+        "volumeNum": 45670.06572499997,
+        "endDateIso": "2026-09-09",
+        "startDateIso": "2026-08-29",
+        "hasReviewedDates": true,
+        "volume24hr": 39534.655181,
+        "volume1wk": 45670.06572500001,
+        "volume1mo": 45670.06572500001,
+        "volume1yr": 45670.06572500001,
+        "gameStartTime": "2026-09-09 16:45:00+00",
+        "secondsDelay": 1,
+        "clobTokenIds": "[\"64373296427381054810163421606597670144180750703982812397147747598144600592086\", \"59012217578629269775680730879384762179074835934229955423460431271027730977732\"]",
+        "positionIds": [
+          "859456143983043703969108701920818153184154941619452660194551913960693563392",
+          "859456143983043703969108701920818153184154941619452660194551913960693563393"
+        ],
+        "comboStatus": "enabled",
+        "umaBond": "250",
+        "umaReward": "0.8",
+        "volume24hrClob": 39534.655181,
+        "volume1wkClob": 45670.06572500001,
+        "volume1moClob": 45670.06572500001,
+        "volume1yrClob": 45670.06572500001,
+        "volumeClob": 45670.06572499997,
+        "makerBaseFee": 1000,
+        "takerBaseFee": 1000,
+        "customLiveness": 900,
+        "acceptingOrders": false,
+        "negRisk": false,
+        "ready": false,
+        "funded": false,
+        "acceptingOrdersTimestamp": "2026-08-29T18:16:38Z",
+        "cyom": false,
+        "pagerDutyNotificationEnabled": false,
+        "approved": true,
+        "rewardsMinSize": 50,
+        "rewardsMaxSpread": 4.5,
+        "spread": 0.001,
+        "automaticallyResolved": true,
+        "oneDayPriceChange": 0.3945,
+        "oneHourPriceChange": 0.0995,
+        "oneWeekPriceChange": 0.3995,
+        "lastTradePrice": 0.999,
+        "bestBid": 0.999,
+        "bestAsk": 1,
+        "automaticallyActive": true,
+        "clearBookOnStart": true,
+        "manualActivation": false,
+        "negRiskOther": false,
+        "sportsMarketType": "spreads",
+        "line": -1.5,
+        "umaResolutionStatuses": "[\"proposed\", \"proposed\"]",
+        "pendingDeployment": false,
+        "deploying": false,
+        "deployingTimestamp": "2026-08-29T18:16:25.529657Z",
+        "rfqEnabled": false,
+        "holdingRewardsEnabled": false,
+        "feesEnabled": true,
+        "requiresTranslation": false,
+        "feeType": "sports_fees_v3",
+        "feeSchedule": {
+          "exponent": 1,
+          "rate": 0.05,
+          "takerOnly": true,
+          "rebateRate": 0.15
+        },
+        "version": "v1"
+      },
+      "leg_position_id": "859456143983043703969108701920818153184154941619452660194551913960693563392"
+    }
+  ],
+  "contract_checks": {
+    "endpoint": "https://lb.drpc.live/polygon/Ai_L7JAEMk5hgVgUsOe8aKuLbjItrMIR8Yhzzu2G7ZgM",
+    "requests": [
+      {
+        "jsonrpc": "2.0",
+        "id": 10,
+        "method": "eth_getStorageAt",
+        "params": [
+          "0x30000034706C7d8e12009DAB006Be20000c031A8",
+          "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+          "0x59378a2"
+        ]
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": 11,
+        "method": "eth_getStorageAt",
+        "params": [
+          "0xe3333700cA9d93003F00f0F71f8515005F6c00Aa",
+          "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+          "0x59378a2"
+        ]
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": 12,
+        "method": "eth_call",
+        "params": [
+          {
+            "to": "0xE111180000d2663C0091e4f400237545B87B996B",
+            "data": "0x5c1548fb"
+          },
+          "0x59378a2"
+        ]
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": 13,
+        "method": "eth_call",
+        "params": [
+          {
+            "to": "0xe2222d279d744050d28e00520010520000310F59",
+            "data": "0x5c1548fb"
+          },
+          "0x59378a2"
+        ]
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": 14,
+        "method": "eth_call",
+        "params": [
+          {
+            "to": "0xe3333700cA9d93003F00f0F71f8515005F6c00Aa",
+            "data": "0xf5f1f1a7"
+          },
+          "0x59378a2"
+        ]
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": 15,
+        "method": "eth_call",
+        "params": [
+          {
+            "to": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
+            "data": "0x313ce567"
+          },
+          "0x59378a2"
+        ]
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": 16,
+        "method": "eth_call",
+        "params": [
+          {
+            "to": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
+            "data": "0x95d89b41"
+          },
+          "0x59378a2"
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "id": 10,
+        "jsonrpc": "2.0",
+        "result": "0x000000000000000000000000f96968a44022b17240b42c557693e7c383d2d8a3"
+      },
+      {
+        "id": 11,
+        "jsonrpc": "2.0",
+        "result": "0x000000000000000000000000641b40ec414a076b9e79e703fc7bf4ebec248bb7"
+      },
+      {
+        "id": 12,
+        "jsonrpc": "2.0",
+        "result": "0x000000000000000000000000c011a7e12a19f7b1f670d46f03b03f3342e82dfb"
+      },
+      {
+        "id": 13,
+        "jsonrpc": "2.0",
+        "result": "0x000000000000000000000000c011a7e12a19f7b1f670d46f03b03f3342e82dfb"
+      },
+      {
+        "id": 14,
+        "jsonrpc": "2.0",
+        "result": "0x000000000000000000000000c011a7e12a19f7b1f670d46f03b03f3342e82dfb"
+      },
+      {
+        "id": 15,
+        "jsonrpc": "2.0",
+        "result": "0x0000000000000000000000000000000000000000000000000000000000000006"
+      },
+      {
+        "id": 16,
+        "jsonrpc": "2.0",
+        "result": "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000047055534400000000000000000000000000000000000000000000000000000000"
+      }
+    ]
+  },
+  "independent_implementation_check": {
+    "endpoint": "https://polygon-bor-rpc.publicnode.com",
+    "requests": [
+      {
+        "jsonrpc": "2.0",
+        "id": 10,
+        "method": "eth_getStorageAt",
+        "params": [
+          "0x30000034706C7d8e12009DAB006Be20000c031A8",
+          "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+          "0x59378a2"
+        ]
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": 11,
+        "method": "eth_getStorageAt",
+        "params": [
+          "0xe3333700cA9d93003F00f0F71f8515005F6c00Aa",
+          "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+          "0x59378a2"
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "jsonrpc": "2.0",
+        "id": 10,
+        "result": "0x000000000000000000000000f96968a44022b17240b42c557693e7c383d2d8a3"
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": 11,
+        "result": "0x000000000000000000000000641b40ec414a076b9e79e703fc7bf4ebec248bb7"
+      }
+    ]
+  },
+  "binary_impl": {
+    "request": {
+      "jsonrpc": "2.0",
+      "id": 20,
+      "method": "eth_getStorageAt",
+      "params": [
+        "0x1000008dD9001B968442c1000017eaE6E0dA00Ba",
+        "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+        "0x59378a2"
+      ]
+    },
+    "response": {
+      "id": 20,
+      "jsonrpc": "2.0",
+      "result": "0x000000000000000000000000f6428c0b5fa9361c0708cddb95468cf54c56e9a2"
+    }
+  },
+  "binary_leg_mapping": {
+    "endpoint": "https://lb.drpc.live/polygon/Ai_L7JAEMk5hgVgUsOe8aKuLbjItrMIR8Yhzzu2G7ZgM",
+    "requests": [
+      {
+        "jsonrpc": "2.0",
+        "id": 30,
+        "method": "eth_call",
+        "params": [
+          {
+            "to": "0x1000008dD9001B968442c1000017eaE6E0dA00Ba",
+            "data": "0x932094f6018973c28252394425c5350b68169da64f000000000000000000000000000000"
+          },
+          "0x59378a2"
+        ]
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": 31,
+        "method": "eth_call",
+        "params": [
+          {
+            "to": "0x1000008dD9001B968442c1000017eaE6E0dA00Ba",
+            "data": "0xbf5a5595018973c28252394425c5350b68169da64f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "0x59378a2"
+        ]
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": 32,
+        "method": "eth_call",
+        "params": [
+          {
+            "to": "0x1000008dD9001B968442c1000017eaE6E0dA00Ba",
+            "data": "0x932094f601e66f5827b3529cec47a3537d291c5158000000000000000000000000000000"
+          },
+          "0x59378a2"
+        ]
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": 33,
+        "method": "eth_call",
+        "params": [
+          {
+            "to": "0x1000008dD9001B968442c1000017eaE6E0dA00Ba",
+            "data": "0xbf5a559501e66f5827b3529cec47a3537d291c51580000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "0x59378a2"
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "id": 30,
+        "jsonrpc": "2.0",
+        "result": "0x17f9acc22b874fe7ae1cf34376073ff48973c28252394425c5350b68169da64f"
+      },
+      {
+        "id": 31,
+        "jsonrpc": "2.0",
+        "result": "0x61a99c61f58c8de5be3ecb61bd1346bbdbd5168209ba86e44da4a40858ae292e"
+      },
+      {
+        "id": 32,
+        "jsonrpc": "2.0",
+        "result": "0x127ffcc9241eeb1b5125ad9b0617cca9e66f5827b3529cec47a3537d291c5158"
+      },
+      {
+        "id": 33,
+        "jsonrpc": "2.0",
+        "result": "0x8e51fe9e7c12f38e70255ab2b9ebacfc24b93e8c27f0bfd556cfb5beec34ced6"
+      }
+    ]
+  },
+  "gamma_by_chain_token": [
+    {
+      "url": "https://gamma-api.polymarket.com/markets?clob_token_ids=44174022779928644804163012552948105723842696594170197991608889221484274133294&closed=true",
+      "status": 200,
+      "response": [
+        {
+          "id": "3978602",
+          "question": "Sporting CP vs. Galatasaray SK: Both Teams to Score",
+          "conditionId": "0x17f9acc22b874fe7ae1cf34376073ff48973c28252394425c5350b68169da64f",
+          "slug": "ucl-spo-gal-2026-09-09-btts",
+          "resolutionSource": "https://www.uefa.com/",
+          "endDate": "2026-09-09T19:00:00Z",
+          "startDate": "2026-08-29T18:16:29Z",
+          "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+          "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+          "description": "In the upcoming UEFA Champions League game between Sporting CP and Galatasaray SK, scheduled for September 9 at 3:00 PM ET:\n\nThis market will resolve to \"Yes\" if both Sporting CP and Galatasaray SK each score at least one goal during the game.\n\nThis market will resolve to \"No\" if either team fails to score (i.e., if one or both teams finish with zero goals).\n\nIf the game is postponed, this market will remain open until the game has been completed. If the game is canceled entirely, with no make-up game, this market will resolve 50\u201350.\n\nIf the game is started but not completed, this market will resolve according to the official final score published on uefa.com. This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.\n\nThe primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event's conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome.",
+          "outcomes": "[\"Yes\", \"No\"]",
+          "outcomePrices": "[\"1\", \"0\"]",
+          "volume": "30586.002063000004",
+          "active": true,
+          "closed": true,
+          "marketMakerAddress": "",
+          "createdAt": "2026-08-29T18:16:07.335347Z",
+          "updatedAt": "2026-09-10T09:10:33.909332Z",
+          "closedTime": "2026-09-09 21:15:09+00",
+          "new": false,
+          "featured": false,
+          "archived": false,
+          "resolvedBy": "0x65070BE91477460D8A7AeEb94ef92fe056C2f2A7",
+          "restricted": true,
+          "groupItemTitle": "Both Teams to Score",
+          "groupItemThreshold": "3",
+          "questionID": "0x64f6a6472e9f62d440c337d955a1ff7567157e07fa02d08bbe5abe37518ee7d8",
+          "umaEndDate": "2026-09-09T21:15:09Z",
+          "enableOrderBook": true,
+          "orderPriceMinTickSize": 0.001,
+          "orderMinSize": 5,
+          "umaResolutionStatus": "resolved",
+          "volumeNum": 30586.002063000004,
+          "endDateIso": "2026-09-09",
+          "startDateIso": "2026-08-29",
+          "hasReviewedDates": true,
+          "volume24hr": 29036.817688999996,
+          "volume1wk": 30586.002063,
+          "volume1mo": 30586.002063,
+          "volume1yr": 30586.002063,
+          "gameStartTime": "2026-09-09 19:00:00+00",
+          "secondsDelay": 1,
+          "clobTokenIds": "[\"44174022779928644804163012552948105723842696594170197991608889221484274133294\", \"15453671589145879570137868026954740543370235555836460217180439033223094220769\"]",
+          "positionIds": [
+            "695169841241862167160996901315064183076334912620096596571903877933715947520",
+            "695169841241862167160996901315064183076334912620096596571903877933715947521"
+          ],
+          "comboStatus": "enabled",
+          "umaBond": "250",
+          "umaReward": "0.8",
+          "volume24hrClob": 29036.817688999996,
+          "volume1wkClob": 30586.002063,
+          "volume1moClob": 30586.002063,
+          "volume1yrClob": 30586.002063,
+          "volumeClob": 30586.002063000004,
+          "makerBaseFee": 1000,
+          "takerBaseFee": 1000,
+          "customLiveness": 900,
+          "acceptingOrders": false,
+          "negRisk": false,
+          "events": [
+            {
+              "id": "931869",
+              "ticker": "ucl-spo-gal-2026-09-09-more-markets",
+              "slug": "ucl-spo-gal-2026-09-09-more-markets",
+              "title": "Sporting CP vs. Galatasaray SK - More Markets",
+              "description": "More markets for the UEFA Champions League game, scheduled for September 9 at 3:00 PM ET.",
+              "resolutionSource": "https://www.uefa.com/",
+              "startDate": "2026-08-29T18:16:23Z",
+              "creationDate": "2026-08-29T18:19:18.18447Z",
+              "endDate": "2026-09-09T19:00:00Z",
+              "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+              "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+              "active": true,
+              "closed": true,
+              "archived": false,
+              "new": false,
+              "featured": false,
+              "restricted": true,
+              "liquidity": 2.02,
+              "volume": 1026633.759817,
+              "openInterest": 570661.263057,
+              "createdAt": "2026-08-29T18:16:05.739579Z",
+              "updatedAt": "2026-09-10T09:10:53.20374Z",
+              "volume24hr": 993916.6086459999,
+              "volume1wk": 1026616.9416349999,
+              "volume1mo": 1026631.9416349999,
+              "volume1yr": 1026631.9416349999,
+              "parentEventId": 931722,
+              "enableOrderBook": true,
+              "liquidityClob": 2.02,
+              "negRisk": false,
+              "commentCount": 0,
+              "series": [
+                {
+                  "id": "10204",
+                  "ticker": "ucl-2025",
+                  "slug": "ucl-2025",
+                  "title": "UEFA Champions League 2025",
+                  "seriesType": "single",
+                  "recurrence": "daily",
+                  "active": true,
+                  "closed": false,
+                  "archived": false,
+                  "new": false,
+                  "featured": false,
+                  "restricted": true,
+                  "createdAt": "2025-08-18T21:09:19.816743Z",
+                  "updatedAt": "2026-09-10T09:11:03.569736Z",
+                  "volume24hr": 35707219.403427005,
+                  "volume": 2538503.083054,
+                  "liquidity": 22844696.17416,
+                  "commentCount": 3550,
+                  "requiresTranslation": false
+                }
+              ],
+              "cyom": false,
+              "closedTime": "2026-09-09T21:22:45Z",
+              "showAllOutcomes": true,
+              "showMarketImages": false,
+              "automaticallyResolved": true,
+              "enableNegRisk": false,
+              "automaticallyActive": true,
+              "eventDate": "2026-09-09",
+              "startTime": "2026-09-09T19:00:00Z",
+              "seriesSlug": "ucl-2025",
+              "score": "3-1",
+              "elapsed": "",
+              "period": "VFT",
+              "live": false,
+              "ended": true,
+              "finishedTimestamp": "2026-09-09T20:58:36.119537Z",
+              "negRiskAugmented": false,
+              "pendingDeployment": false,
+              "deploying": false,
+              "gameId": 90122445,
+              "requiresTranslation": false,
+              "eventMetadata": {
+                "context_requires_regen": false
+              },
+              "version": "v1"
+            }
+          ],
+          "ready": false,
+          "funded": false,
+          "acceptingOrdersTimestamp": "2026-08-29T18:16:29Z",
+          "cyom": false,
+          "pagerDutyNotificationEnabled": false,
+          "approved": true,
+          "rewardsMinSize": 50,
+          "rewardsMaxSpread": 4.5,
+          "spread": 0.001,
+          "automaticallyResolved": true,
+          "oneDayPriceChange": 0.3945,
+          "oneWeekPriceChange": 0.4095,
+          "lastTradePrice": 0.999,
+          "bestBid": 0.999,
+          "bestAsk": 1,
+          "automaticallyActive": true,
+          "clearBookOnStart": true,
+          "manualActivation": false,
+          "negRiskOther": false,
+          "sportsMarketType": "both_teams_to_score",
+          "umaResolutionStatuses": "[\"proposed\", \"proposed\"]",
+          "pendingDeployment": false,
+          "deploying": false,
+          "deployingTimestamp": "2026-08-29T18:16:11.490949Z",
+          "rfqEnabled": false,
+          "holdingRewardsEnabled": false,
+          "feesEnabled": true,
+          "requiresTranslation": false,
+          "feeType": "sports_fees_v3",
+          "feeSchedule": {
+            "exponent": 1,
+            "rate": 0.05,
+            "takerOnly": true,
+            "rebateRate": 0.15
+          },
+          "version": "v1"
+        }
+      ]
+    },
+    {
+      "url": "https://gamma-api.polymarket.com/markets?clob_token_ids=64373296427381054810163421606597670144180750703982812397147747598144600592086&closed=true",
+      "status": 200,
+      "response": [
+        {
+          "id": "3978659",
+          "question": "Spread: VfB Stuttgart (-1.5)",
+          "conditionId": "0x127ffcc9241eeb1b5125ad9b0617cca9e66f5827b3529cec47a3537d291c5158",
+          "slug": "ucl-stu-vf-2026-09-09-spread-home-1pt5",
+          "resolutionSource": "https://www.uefa.com/",
+          "endDate": "2026-09-09T16:45:00Z",
+          "startDate": "2026-08-29T18:16:38Z",
+          "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+          "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+          "description": "In the upcoming UEFA Champions League game, scheduled for September 9 at 12:45 PM ET:\n\nThis market will resolve to \"VfB Stuttgart\" if VfB Stuttgart win the game by 2 or more goals.\n\nOtherwise, this market will resolve to \"Viking FK\".\n\nIf the game is postponed, this market will remain open until the game has been completed. If the game is canceled entirely, with no make-up game, this market will resolve 50\u201350.\n\nThis market will resolve according to the official final score published on uefa.com. This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.\n\nThe primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event's conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome.",
+          "outcomes": "[\"VfB Stuttgart\", \"Viking FK\"]",
+          "outcomePrices": "[\"1\", \"0\"]",
+          "volume": "45670.06572499997",
+          "active": true,
+          "closed": true,
+          "marketMakerAddress": "",
+          "createdAt": "2026-08-29T18:16:18.820762Z",
+          "updatedAt": "2026-09-10T09:10:33.909332Z",
+          "closedTime": "2026-09-09 18:54:52+00",
+          "new": false,
+          "featured": false,
+          "archived": false,
+          "resolvedBy": "0x65070BE91477460D8A7AeEb94ef92fe056C2f2A7",
+          "restricted": true,
+          "groupItemTitle": "VfB Stuttgart (-1.5)",
+          "groupItemThreshold": "1",
+          "questionID": "0x2be6feb9db13ae3ae1e8a2cb96934fedf6f8772e20a79bc6954e985708ce9a2a",
+          "umaEndDate": "2026-09-09T18:54:52Z",
+          "enableOrderBook": true,
+          "orderPriceMinTickSize": 0.001,
+          "orderMinSize": 5,
+          "umaResolutionStatus": "resolved",
+          "volumeNum": 45670.06572499997,
+          "endDateIso": "2026-09-09",
+          "startDateIso": "2026-08-29",
+          "hasReviewedDates": true,
+          "volume24hr": 39189.827596,
+          "volume1wk": 45670.06572500001,
+          "volume1mo": 45670.06572500001,
+          "volume1yr": 45670.06572500001,
+          "gameStartTime": "2026-09-09 16:45:00+00",
+          "secondsDelay": 1,
+          "clobTokenIds": "[\"64373296427381054810163421606597670144180750703982812397147747598144600592086\", \"59012217578629269775680730879384762179074835934229955423460431271027730977732\"]",
+          "positionIds": [
+            "859456143983043703969108701920818153184154941619452660194551913960693563392",
+            "859456143983043703969108701920818153184154941619452660194551913960693563393"
+          ],
+          "comboStatus": "enabled",
+          "umaBond": "250",
+          "umaReward": "0.8",
+          "volume24hrClob": 39189.827596,
+          "volume1wkClob": 45670.06572500001,
+          "volume1moClob": 45670.06572500001,
+          "volume1yrClob": 45670.06572500001,
+          "volumeClob": 45670.06572499997,
+          "makerBaseFee": 1000,
+          "takerBaseFee": 1000,
+          "customLiveness": 900,
+          "acceptingOrders": false,
+          "negRisk": false,
+          "events": [
+            {
+              "id": "931871",
+              "ticker": "ucl-stu-vf-2026-09-09-more-markets",
+              "slug": "ucl-stu-vf-2026-09-09-more-markets",
+              "title": "VfB Stuttgart vs. Viking FK - More Markets",
+              "description": "More markets for the UEFA Champions League game, scheduled for September 9 at 12:45 PM ET.",
+              "resolutionSource": "https://www.uefa.com/",
+              "startDate": "2026-08-29T18:16:36Z",
+              "creationDate": "2026-08-29T18:19:18.186141Z",
+              "endDate": "2026-09-09T16:45:00Z",
+              "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+              "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+              "active": true,
+              "closed": true,
+              "archived": false,
+              "new": false,
+              "featured": false,
+              "restricted": true,
+              "liquidity": 908.2384,
+              "volume": 1091784.5657910001,
+              "openInterest": 734337.264989,
+              "createdAt": "2026-08-29T18:16:18.561718Z",
+              "updatedAt": "2026-09-10T09:10:53.20374Z",
+              "volume24hr": 1041715.9370350001,
+              "volume1wk": 1089630.807981,
+              "volume1mo": 1089631.8180810001,
+              "volume1yr": 1089631.8180810001,
+              "parentEventId": 931719,
+              "enableOrderBook": true,
+              "liquidityClob": 908.2384,
+              "negRisk": false,
+              "commentCount": 0,
+              "series": [
+                {
+                  "id": "10204",
+                  "ticker": "ucl-2025",
+                  "slug": "ucl-2025",
+                  "title": "UEFA Champions League 2025",
+                  "seriesType": "single",
+                  "recurrence": "daily",
+                  "active": true,
+                  "closed": false,
+                  "archived": false,
+                  "new": false,
+                  "featured": false,
+                  "restricted": true,
+                  "createdAt": "2025-08-18T21:09:19.816743Z",
+                  "updatedAt": "2026-09-10T09:11:03.569736Z",
+                  "volume24hr": 35707219.403427005,
+                  "volume": 2538503.083054,
+                  "liquidity": 22844696.17416,
+                  "commentCount": 3550,
+                  "requiresTranslation": false
+                }
+              ],
+              "cyom": false,
+              "closedTime": "2026-09-09T18:57:15Z",
+              "showAllOutcomes": true,
+              "showMarketImages": false,
+              "automaticallyResolved": true,
+              "enableNegRisk": false,
+              "automaticallyActive": true,
+              "eventDate": "2026-09-09",
+              "startTime": "2026-09-09T16:45:00Z",
+              "seriesSlug": "ucl-2025",
+              "score": "3-1",
+              "elapsed": "",
+              "period": "VFT",
+              "live": false,
+              "ended": true,
+              "finishedTimestamp": "2026-09-09T18:38:50.915582Z",
+              "negRiskAugmented": false,
+              "pendingDeployment": false,
+              "deploying": false,
+              "gameId": 90122440,
+              "requiresTranslation": false,
+              "eventMetadata": {
+                "context_requires_regen": false
+              },
+              "version": "v1"
+            }
+          ],
+          "ready": false,
+          "funded": false,
+          "acceptingOrdersTimestamp": "2026-08-29T18:16:38Z",
+          "cyom": false,
+          "pagerDutyNotificationEnabled": false,
+          "approved": true,
+          "rewardsMinSize": 50,
+          "rewardsMaxSpread": 4.5,
+          "spread": 0.001,
+          "automaticallyResolved": true,
+          "oneDayPriceChange": 0.3945,
+          "oneHourPriceChange": 0.0995,
+          "oneWeekPriceChange": 0.3995,
+          "lastTradePrice": 0.999,
+          "bestBid": 0.999,
+          "bestAsk": 1,
+          "automaticallyActive": true,
+          "clearBookOnStart": true,
+          "manualActivation": false,
+          "negRiskOther": false,
+          "sportsMarketType": "spreads",
+          "line": -1.5,
+          "umaResolutionStatuses": "[\"proposed\", \"proposed\"]",
+          "pendingDeployment": false,
+          "deploying": false,
+          "deployingTimestamp": "2026-08-29T18:16:25.529657Z",
+          "rfqEnabled": false,
+          "holdingRewardsEnabled": false,
+          "feesEnabled": true,
+          "requiresTranslation": false,
+          "feeType": "sports_fees_v3",
+          "feeSchedule": {
+            "exponent": 1,
+            "rate": 0.05,
+            "takerOnly": true,
+            "rebateRate": 0.15
+          },
+          "version": "v1"
+        }
+      ]
+    }
+  ]
+}

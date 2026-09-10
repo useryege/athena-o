@@ -89,6 +89,8 @@ Archive, Debug and Trace requests are not available on your current plan.
 
 ## 对当前候选选择的影响
 
+后续设计已选择 Chainstack 为开发入口、dRPC 为手动替代。新的[确认路径核验](collector-contract-verification.md)补充：旧区块按高度读取仍可能受 Archive 限制，但样本中的已知 blockHash 和 txHash 回执可读；只处理持久接收记录时采用该路径，并核验最终确认后的规范链回执。不能将“不补遗漏”扩大为“所有延后确认均不受套餐限制”。
+
 Chainstack 已有本次实时数据和目标成交推送的正面证据，可作为开发实时采集入口的候选。此前 Chainnodes 端点在其验证时数据严重滞后，详见[Chainnodes 验证报告](chainnodes-endpoint-verification.md)；本次没有重新检查其是否恢复。
 
 最终实时采集架构、容量和费用仍未完成设计确认，历史补查已明确不在当前范围。当前结论不会替代完整需求与技术设计阶段。
