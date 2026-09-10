@@ -10,7 +10,7 @@
 
 **Spec:** [已整体确认的后端 spec](../specs/2026-09-10-trader-sync-activity-alerts-design.md)、[已整体确认的 UI spec](../specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)、[长期后端设计](../../design/trading/trader-sync-activity-alerts.md)、[长期 UI 设计](../../design/web-ui/trader-sync-activity-alerts.md)、[业务需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)。两份 spec 已获用户整体确认，UI 读取补充已纳入本计划；执行者同时阅读，不按旧后端范围遗漏页面。
 
-**状态：**计划已编写，尚未执行。代码块是实现指导与测试起点，不代表相应源码已经存在。本轮只交付计划；进入执行时选择工作方式和隔离工作区。
+**状态：**用户已确认后端与 UI 整份设计，并授权按子代理逐项实施。执行工作区为 `.worktrees/trader-sync-activity-alerts/`，分支为 `codex/trader-sync-activity-alerts`；任务完成情况以下方复选项和实际验证为准。代码块是实现指导与测试起点，未勾选步骤不代表已经交付。
 
 ## Global Constraints
 
