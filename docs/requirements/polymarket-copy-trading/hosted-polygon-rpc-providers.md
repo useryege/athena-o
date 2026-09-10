@@ -12,7 +12,17 @@
 
 Alchemy、QuickNode、Chainstack、Infura、dRPC、Chainnodes 都提供 Polygon PoS RPC，可作为 HTTP 日志查询与 WebSocket 订阅的候选。当前低频目标活动监控可以从共享 RPC 服务开始评估，现有需求没有体现必须购买独享节点或固定高吞吐产品的理由。
 
-推荐优先比较 **Chainstack 与 dRPC**：前者提供免费额度和约 49 美元的固定月费方案，后者按量计费简单，常用调用折合每百万次 6 美元。Chainnodes 的免费请求额度也适合开发阶段，但官方明确免费资源在繁忙时可能降优先级。此建议依据费用、计费方式和公开限制，不代表已证明任何一家在实际部署区域更快、更稳定。
+付费候选推荐优先比较 **Chainstack 与 dRPC**：前者提供免费额度和约 49 美元的固定月费方案，后者按量计费简单，常用调用折合每百万次 6 美元。Chainnodes 的免费请求额度也适合开发阶段，但官方明确免费资源在繁忙时可能降优先级。此建议依据费用、计费方式和公开限制，不代表已证明任何一家在实际部署区域更快、更稳定。
+
+## 开发阶段免费方案建议（2026-09-10 复核）
+
+针对用户提出的开发阶段免费使用需求，建议首选 **Chainnodes Core**，将 **Chainstack Developer** 保留为第二选择，**dRPC Free** 作为临时补充查询候选。本节是推荐，用户尚未确认具体供应商，也没有形成自动故障切换设计。
+
+- **Chainnodes Core**：每月 12.5M 次请求，标称 25 RPS，支持 HTTP/WSS，单次日志查询区块跨度上限 20,000。免费额度与较宽的补查范围适合开发期间频繁启停后的恢复；仍受响应大小等限制，免费资源繁忙时可能提前限流。WSS 每条推送与 HTTP 共用请求额度和 RPS。[官方限制](https://www.chainnodes.org/docs/FAQs/rate_limits)
+- **Chainstack Developer**：每月 3M RU、25 RPS，单次 `eth_getLogs` 最多 100 块，适合近期小范围查询；停机较久后的补查需要更多分段。要保持零 RPC 费用，应确认免费套餐的 extra usage 已关闭；额度耗尽后服务会停止，不应假设默认配置绝不会收费。[价格](https://chainstack.com/pricing/)、[查询限制](https://docs.chainstack.com/docs/limits)、[账单设置](https://docs.chainstack.com/docs/manage-your-billing#manage-the-extra-usage-setting)
+- **dRPC Free**：文档列 210M CU/30 天，但依赖公共节点，免费查询超时 2 秒、最多 10,000 条日志，并可能动态限流，因此暂不作为优先开发入口。免费账户层的额度不能未经核实套到任意匿名公共 RPC URL。[免费层限制](https://drpc.org/docs/howitworks/ratelimiting)
+
+沿用下文每 5 秒查询共享高度加 5 组日志的预算，30 天约 3.11M 次基础调用，占 Chainnodes 免费额度约四分之一，尚未计 WSS 推送、补查等额外用量。推荐依据是免费额度和开发便利性，尚无实际部署区域的连接质量排名。
 
 ## 价格口径与套餐
 
