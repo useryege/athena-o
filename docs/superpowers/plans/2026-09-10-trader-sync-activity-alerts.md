@@ -637,14 +637,17 @@ func Eligible(c tsmodel.Eligibility,s tsmodel.Subscription) bool {
 - 修改：权威`internal/accountstate/store/migrations/000001_init.sql`、`internal/tradersync/store/revocation.go`、`internal/notification/store/queries/account_notifications.sql`、`internal/notification/store/queries/delivery_attempts.sql`、`internal/notification/store/attempts.go`。
 - 测试：`internal/tradersync/projector_test.go`、`internal/tradersync/store/activities_integration_test.go`、`internal/notification/store/transactional_enqueue_integration_test.go`。
 - 最早纯文本消费者适配：共享通知载荷/必要schema-query、Sender/SendRequest及util Telegram实际调用明确保存并消费消息格式；Trader Sync普通纯文本、既有HTML消费者显式保留HTML。格式与正文冻结，摘要任务11复用。
+- 共享纯规则：新增`internal/tradersync/activity/`叶子包（资格/分类/纯文本渲染及测试），同步`baseline.go`与上述公开入口为薄调用。store和tradersync共用唯一算法，types保持数据结构；该包无IO、不import store或notification业务根包；摘要可复用notification/delivery的无IO冻结codec。
+- 目标展示接续：同步订阅创建、confirmation/订阅SQL及共享types，在成功Create同事务持久保存小型公开展示快照，新增真实集成测试；不从过期确认记录临时推导。
 **Interfaces**
 - 消费：任务7确认/版本/Trade、任务8TradeMetadata、任务9Candidate/Eligible、任务1account gate。
-- 产出tsmodel：`Activity{ID int64; OwnerID,SubscriptionID string; SourceID int64; Trade Trade; Metadata TradeMetadata; NoteSnapshot,NotificationMode,NotificationReason string; SettledAt,ReceivedAt,RecordedAt time.Time; Generation uint64}`；`Projection{Candidate Candidate; Trade Trade; Confirmation CanonicalEvidence; Metadata TradeMetadata}`。NotificationMode在形成事务中固定in_app_only/ordinary/summary；未绑定原因unbound_at_formation不因未来绑定改变。
-- 产出：`(*Projector).Run(ctx context.Context) error`；`(*tradersyncstore.SQLStore).Project(ctx context.Context,input tsmodel.Projection) (activityID int64,created bool,err error)`；`ClassifyActivity(windowCount int64) string`返回ordinary/summary。
+- 产出tsmodel：`Activity{ID int64; OwnerID,SubscriptionID string; SourceID int64; Trade Trade; Metadata TradeMetadata; TargetDisplaySnapshot TargetDisplay; NoteSnapshot,NotificationMode,NotificationReason string; SettledAt,ReceivedAt,RecordedAt time.Time; Generation uint64}`；`Projection{Candidate Candidate; Trade Trade; Confirmation CanonicalEvidence; Metadata TradeMetadata}`。NotificationMode在形成事务中固定in_app_only/ordinary/summary；未绑定原因unbound_at_formation不因未来绑定改变。
+- 产出：`(*Projector).Run(ctx context.Context) error`；`(*tradersyncstore.SQLStore).Project(ctx context.Context,input tsmodel.Projection) (activityID int64,created bool,err error)`；`ClassifyActivity(windowCount int64) string`返回ordinary/summary。Projector窄构造依赖store、CanonicalRPC、VersionVerifier、共享MetadataResolver及siteURL；Run拒绝重复启动，取消并join全部有界工作；MaxInFlightSources默认100且独立可配置，包含晚补job，超量source持久等待并公平选择到期重试，不因最老失败记录而饿死后续正常source。SQLStore的Project必需配置缺失明确失败，不影响其独立读取能力。
+- 产出`TargetDisplay{DisplayName,Avatar,ProfileURL Scalar}`，Subscription增加TargetDisplay；成功Create精确读取同owner/token卡片及身份digest后保存少量确认时展示值和查询证据，Activity形成时复制快照。DisplayName采用card.Scalar；非空备注优先，其次available名称、最后钱包识别，名称缺失仍unavailable。ProfileURL仅核验canonical非空可用，地址输入缺值不猜链接。暂停恢复保留确认时资料，重新订阅可得新快照；不复制PNL、无周期刷新或全局缓存，钱包身份及历史消息不变。
 - 产出通知事务入口：`(*notificationstore.SQLStore).EnqueueAccountTx(ctx context.Context,tx pgx.Tx,in delivery.AccountEnqueue) (int64,error)`。`AccountEnqueue{OwnerID,Source string; ActivityID int64; BindingRevision uint64; ChatID int64; Payload []byte; RecordedAt time.Time}`放delivery叶子包；调用方已在同事务核验并冻结绑定，不二次读取新绑定。source='trader_sync'，其他有效来源不加Trader Sync grant。
 - 产出schema固定：`trader_sync_alert_memberships(activity_id bigint PK,owner_id,binding_revision,chat_id,form,state,created_at,eligibility_revoked_at,reason,batch_id nullable)`。form仅ordinary/summary；unbound不插membership。ordinary同事务建delivery；summary只建资格，任务11冻结。summary phase由state/batch映射waiting/frozen/cancelled_before_freeze，冻结前终止保留reason且不创建空batch；已有batch部分终止仍为frozen。owner与activity复合FK，批次FK在任务11添加。
 
-- [ ] **步骤1：写第10/11条与窗口端点红灯测试。**
+- [x] **步骤1：写第10/11条与窗口端点红灯测试。**
 
 ```go
 func TestClassificationRetainsFirstTenOrdinary(t *testing.T) {
@@ -657,23 +660,24 @@ func TestClassificationRetainsFirstTenOrdinary(t *testing.T) {
 
 真实DB测试用同owner记录时间t-60秒、t-60秒+1微秒和当前t，断言左端排除、右端包含；同秒用ID稳定顺序。运行 `go test ./internal/tradersync -run TestClassification -count=1` 和新集成测试确认红灯。
 
-- [ ] **步骤2：实现活动/外发资格同事务和持久唯一约束。**新增`trader_sync_activities`，(subscription_id,source_record_id)唯一，owner/订阅/原interval引用一致，trade_json与note_snapshot不可变，metadata展示引用独立。取得account gate后重查数据库grant、当前enabled、generation及成功原区间；原epoch关闭不失去资格。普通消息渲染入口定义`RenderActivity(activity tsmodel.Activity,siteURL string) (string,error)`，在`internal/tradersync/render.go`实现，输出纯文本：目标备注/名称和完整wallet、TRADE及BUY/SELL、市场/Outcome/精确价格比值、份额/金额/币种/独立fee、明确“结算时间”、市场链接及站内详情。缺市场保留PositionID与缺失原因；Combo标明组合自身Outcome、整体关系及腿资料状态，完整腿在站内详情保留。长标题允许显式省略显示字符但保留身份与完整链接，不静默截断交易事实。本任务同步移除Sender对所有消息强制HTML的假设：显式格式随实际规范文本持久冻结并进入不可变发送证据，纯文本请求不设parse_mode。真实回环测试覆盖特殊字符/emoji/完整链接与旧HTML消费者；不在重试时重新渲染或改变冻结文本。
+- [x] **步骤2：实现活动/外发资格同事务和持久唯一约束。**新增`trader_sync_activities`，(subscription_id,source_record_id)唯一，owner/订阅/原interval引用一致，trade_json与note_snapshot不可变，metadata展示引用独立。取得account gate后重查数据库grant、当前enabled、generation及成功原区间；原epoch关闭不失去资格。普通消息渲染入口定义`RenderActivity(activity tsmodel.Activity,siteURL string) (string,error)`，在`internal/tradersync/render.go`实现，输出纯文本：目标备注/名称和完整wallet、TRADE及BUY/SELL、市场/Outcome/精确价格比值、份额/金额/币种/独立fee、明确“结算时间”、市场链接及站内详情。缺市场保留PositionID与缺失原因；Combo标明组合自身Outcome、整体关系及腿资料状态，完整腿在站内详情保留。长标题允许显式省略显示字符但保留身份与完整链接，不静默截断交易事实。本任务同步移除Sender对所有消息强制HTML的假设：显式格式随实际规范文本持久冻结并进入不可变发送证据，纯文本请求不设parse_mode。真实回环测试覆盖特殊字符/emoji/完整链接与旧HTML消费者；不在重试时重新渲染或改变冻结文本。
 
 ```sql
 CREATE SEQUENCE trader_sync_activity_id_seq AS bigint INCREMENT BY 1 CACHE 1 NO CYCLE;
 -- 建表id为bigint PRIMARY KEY DEFAULT nextval('trader_sync_activity_id_seq')，再设置归属。
 ALTER SEQUENCE trader_sync_activity_id_seq OWNED BY trader_sync_activities.id;
--- 先在gate内读取clock_timestamp()作为本次recorded_at，再插活动。
+-- 在gate内先确认非重复，读取clock_timestamp()作为唯一recorded_at=t。
+-- 对既有窗口count+1，再一次INSERT最终mode；等价于包含本次活动的计数。
 SELECT count(*) FROM trader_sync_activities
 WHERE owner_id=$1 AND recorded_at>$2::timestamptz-interval '60 seconds'
   AND recorded_at<=$2;
 ```
 
-查询包含刚插入活动、未绑定活动和所有目标。重复插入不重复计数/规划资格；无当前binding则只活动，有binding则固定revision/chat与备注。暂停/取消和外发分开：旧活动ordinary/summary继续，尚未投影候选终止。插入到Commit耗时计入延迟，成功Commit才通知后续worker。
+窗口计数包含本次活动、未绑定活动和所有目标；实现可在同gate/同一DB时刻先统计既有窗口并加当前1，再INSERT最终mode，避免修改冻结事实。重复插入不重复计数/规划资格；无当前binding则只活动，有binding则固定revision/chat与备注。暂停/取消和外发分开：旧活动ordinary/summary继续，尚未投影候选终止。插入到Commit耗时计入延迟，成功Commit才通知后续worker。
 
 activity ID只在持有owner gate的INSERT内分配，不先nextval预取，不回拨或回填；用索引(owner_id,id DESC)支持读取。测试查询pg_sequences确认cache_size=1、increment_by=1、cycle=false；两连接同owner串行形成、不同owner交错、回滚空号与recorded_at回退时，ID及snapshot仍正确。时间回退测试在隔离DB直接构造既有行的时间反序来验证读取，不改主机/生产数据库时钟。保留recorded_at用于滚动统计和时效，不用ID差值推算活动数量。
 
-- [ ] **步骤3：实现并行资料预算、重组隔离及晚资料更新。**metadata与finality并行；确认完成后最多额外2秒，超时保留字段unavailable并形成活动。未知Exchange执行版本仍raw/unverified；不是metadata超时理由。后台补资料仅更新可变metadata，不修改备注、原量、payload、不追加通知。
+- [x] **步骤3：实现并行资料预算、重组隔离及晚资料更新。**metadata与finality并行；确认完成后最多额外2秒，超时保留字段unavailable并形成活动。未知Exchange执行版本仍raw/unverified；不是metadata超时理由。后台补资料仅更新可变metadata，不修改备注、原量、payload、不追加通知。
 
 本步骤同时接续已有market_metadata/combo_metadata解析器、types/metadata、store/metadata及对应查询/测试：增加唯一进度消费入口，getLegs核验后先初始化全部N个PositionID与逐腿unavailable，再发布深拷贝快照。两秒到点直接读取已知部分，无需等待RPC退出；原job继续晚补，默认总截止30秒（可配置资源参数），Run取消并等待退出。前后台共用同一Resolver的4并发，不复制解析算法或重新计活动两秒预算。
 
@@ -686,10 +690,10 @@ func ClassifyActivity(windowCount int64) string {
 }
 ```
 
-确认后深度重组以chain+tx证据建立`trader_sync_finality_anomalies`；在投影新分叉前检查曾发布该tx的冲突证据，隔离该tx后续新分叉候选，原activity保留异常。不能仅以txHash/logIndex跨分叉去重，也不能把同一规范tx多个自身日志合并。
+确认后深度重组以chain+tx证据建立`trader_sync_finality_anomalies`；在投影新分叉前检查曾发布该tx的冲突证据，隔离该tx后续新分叉候选，原activity保留异常；仅removed而替代块未知时conflicting_block_hash允许NULL，不能填零或原hash冒充新分叉。不能仅以txHash/logIndex跨分叉去重，也不能把同一规范tx多个自身日志合并。后续真实接收并确认同交易的不同区块时，可在同交易证据锁下仅补首次未知的冲突哈希；保留首次原因和检测时间，已有冲突哈希不覆盖，不恢复被隔离活动或生成新通知。
 
-- [ ] **步骤4：稳定活动/通知SQL后 `make sqlc-local`，适配EnqueueAccountTx和RevokeTx。**事务内永久撤销所有旧summary membership；解绑/重绑亦终结旧revision。绑定不可达的发送结果及Bot更新沿同一旧revision终止资格，重新connected不复活；暂停/取消不撤销已形成队列。最终Authorize在既有owner gate内复核Trader Sync grant、冻结binding及membership；无资格返回eligible=false而不让结果查询丢行，保证先前已许可的sent/unknown仍能照实落库。不得从notification反向调用会停订阅的RevokeTx；各模块SQL在同一传入事务内写资格，避免循环依赖和重入account gate。测试两个owner共享同一source得到两份独立活动/备注/资格，而owner内部同source只有一份。
-- [ ] **步骤5：运行 `go test -race ./internal/tradersync/... ./internal/notification/...` 和对应真实DB测试。**覆盖投影/暂停/撤权/重绑屏障竞争、activity插入后事务回滚、无binding后再绑定不补发、取消旧队列继续、newgeneration丢旧候选、100关系及全不同目标；提交 `feat(trader-sync): persist activities and alert eligibility atomically`。
+- [x] **步骤4：稳定活动/通知SQL后 `make sqlc-local`，适配EnqueueAccountTx和RevokeTx。**事务内永久撤销所有旧summary membership；解绑/重绑亦终结旧revision。绑定不可达的发送结果及Bot更新沿同一旧revision终止资格，重新connected不复活；暂停/取消不撤销已形成队列。最终Authorize在既有owner gate内复核Trader Sync grant、冻结binding及membership；无资格返回eligible=false而不让结果查询丢行，保证先前已许可的sent/unknown仍能照实落库。不得从notification反向调用会停订阅的RevokeTx；各模块SQL在同一传入事务内写资格，避免循环依赖和重入account gate。测试两个owner共享同一source得到两份独立活动/备注/资格，而owner内部同source只有一份。
+- [x] **步骤5：运行 `go test -race ./internal/tradersync/... ./internal/notification/...` 和对应真实DB测试。**覆盖投影/暂停/撤权/重绑屏障竞争、activity插入后事务回滚、无binding后再绑定不补发、取消旧队列继续、newgeneration丢旧候选、100关系及全不同目标；提交 `feat(trader-sync): persist activities and alert eligibility atomically`。
 
 ## 任务11：不可变完整摘要、分条结果与首条gate
 
@@ -697,12 +701,14 @@ func ClassifyActivity(windowCount int64) string {
 - 新增：`internal/tradersync/summary.go`、`internal/tradersync/types/summary.go`、`internal/tradersync/store/summaries.go`、`internal/tradersync/store/queries/summaries.sql`、`internal/notification/store/summary_heads.go`、`internal/notification/summary_source.go`。
 - 修改：`internal/tradersync/render.go`、`internal/accountstate/txgate/gate.go`、`internal/notification/store/attempts.go`、`internal/notification/dispatcher.go`、权威`internal/accountstate/store/migrations/000001_init.sql`。
 - 测试：`internal/tradersync/render_test.go`、`internal/tradersync/summary_test.go`、`internal/tradersync/store/summaries_integration_test.go`、`internal/notification/summary_source_integration_test.go`、`internal/accountstate/txgate/session_integration_test.go`。
+- 真实消费者接续：`internal/tradersync/activity/`纯摘要渲染、`internal/notification/delivery/payload.go`及摘要part窄事务入队、`notification/store/queries/delivery_attempts.sql`的summary关联资格、account ready查询排除首条抢领；同步同次permit发送核心、budget非阻塞准入与service/recovery的摘要head接续及对应测试/生成物。notification/store不得反向import tradersync/store或根包。
 **Interfaces**
 - 消费：任务4 `WorkSource`、任务2 `Permit`/Sender实际started回调、任务10memberships。
 - 产出：`SummaryWindow(oldest time.Time,previousStart *time.Time) (notBefore,deadline time.Time)`；`RenderSummary(items []tsmodel.Activity,batchID string,siteURL string) ([]tsmodel.RenderedPart,error)`；`RenderedPart{Index,Total int; Text string; ActivityIDs []int64; PayloadDigest []byte}`。
 - 产出：`txgate.AcquireAccountSession(ctx context.Context,pool *pgxpool.Pool,ownerID string) (*AccountSession,error)`；`AccountSession{Conn *pgxpool.Conn}`；`(*AccountSession).Release(ctx context.Context) error`。同一账户键与普通事务锁相互排斥。
-- 产出：`(*notificationstore.SQLStore).AuthorizeTx(ctx context.Context,tx pgx.Tx,ref delivery.WorkRef,incarnation uuid.UUID) (delivery.Permit,error)`；任务2普通Authorize包装account事务并复用它，摘要在session固定连接内BeginTx调用，不能持session锁后向另一个连接请求account锁。
+- 产出：`(*notificationstore.SQLStore).AuthorizeTx(ctx context.Context,tx pgx.Tx,candidate delivery.Candidate,incarnation uuid.UUID,guard func() error) (delivery.Permit,error)`；任务2普通Authorize包装account事务并复用它，摘要在session固定连接内BeginTx调用，不能持session锁后向另一个连接请求account锁。Candidate的实际chat/group路由核验与行锁后的guard保留；预算finish覆盖外层真实Commit/Rollback，不在AuthorizeTx返回时提前解锁或假定提交成功。
 - 产出：`(*SummarySource).Ready(ctx context.Context,now time.Time) ([]delivery.Candidate,error)`；`Dispatch(ctx context.Context,c delivery.Candidate,onStarted func(time.Time)) error`，实现WorkSource；摘要首条ready给出未来notBefore/deadline，后续部分普通许可。
+- 摘要part入队采用独立`EnqueueSummaryPartTx`窄事务入口及稳定batch/part幂等身份，保持activity_id=NULL、source=trader_sync、WorkKind=account；在最终许可SQL以实际part/batch/冻结成员核验资格，不拿首个ActivityID冒充整部分。RenderedPart.PayloadDigest使用最终分页plain载荷经现有delivery.EncodePayload后的原bytes摘要；实际发送只解码已提交Permit.Payload，不另传正文。
 
 - [ ] **步骤1：写首条时间窗口及完整分条红灯。**
 
@@ -773,11 +779,14 @@ application DTO契约如下；每个struct按表中顺序分配连续字段号�
 | TraderSyncResolvedTarget | wallet、canonicalProfileURL、avatar/displayName（StringField）、verified（BoolField）、joinedAt（TimeField）、positionValue/largestWin/predictions（DecimalField）、pnl（恰好六项PnLView）、defaultPeriod=1Y、confirmationToken、expiresAt、usageNotice、savedNote（可缺TargetNote）、existingSubscription（可缺id/status/revision）、quota（used/limit）。 |
 | TraderSyncTargetNote | wallet、note、revision；取消后保留。 |
 | TraderSyncQuota / ExistingSubscription | Quota含used/limit（int32）；ExistingSubscription含id/status字符串及revision（uint64）。 |
-| TraderSyncSubscription | id、wallet、status、revision、generation、note、noteRevision、createdAt/updatedAt/pausedAt/cancelledAt/permissionDisabledAt、currentInterval（可缺）、observation、bindingStatus、queueNotice、queueCounts（六态）。status是六种投影；bindingStatus是当前账户事实，不能冒充每个活动的notificationMode。 |
+| TraderSyncTargetDisplay | displayName、avatar、profileURL；各为StringField，保留确认时查询证据。 |
+| TraderSyncSubscription | id、wallet、status、revision、generation、note、noteRevision、createdAt/updatedAt/pausedAt/cancelledAt/permissionDisabledAt、currentInterval（可缺）、observation、bindingStatus、queueNotice、queueCounts（六态）、targetDisplay。status是六种投影；bindingStatus是当前账户事实，不能冒充每个活动的notificationMode。 |
 | TraderSyncInterval / Observation / HistoryEntry | Interval含effectiveAt、endedAt及generation/epoch；Observation含state、reason、lastReliableAt、latestInterruption（可缺）、interruptionCount。HistoryEntry含id/kind/sortAt及interval或interruption之一；kind=interval/interruption。中断含start/end/recoveredAt（可缺）、reason、uncertainty、possibleMissing=true，不推测遗漏数量。 |
-| TraderSyncActivity | id、subscriptionId、sourceRecordId、wallet、side、positionId、collateralRaw/sharesRaw/feeRaw、collateralSymbol及两种decimals、priceNumerator/priceDenominator和priceEvidence、sourceVersion、settledAt/receivedAt/recordedAt、publicTimeEvidence、metadata、noteSnapshot、notificationMode、notificationReason、delivery（普通可缺）、summaryProgress（摘要可缺）。 |
+| TraderSyncActivity | id、subscriptionId、sourceRecordId、wallet、side、positionId、collateralRaw/sharesRaw/feeRaw、collateralSymbol及两种decimals、priceNumerator/priceDenominator和priceEvidence、sourceVersion、settledAt/receivedAt/recordedAt、publicTimeEvidence、metadata、noteSnapshot、notificationMode、notificationReason、delivery（普通可缺）、summaryProgress（摘要可缺）、targetDisplaySnapshot、finalityAnomaly（可缺）、sourceLocation；priceEvidence/publicTimeEvidence均为FieldEvidence，首次公开时刻当前不可观测。 |
+| TraderSyncSourceLocation | chainId、exchangeAddress、transactionHash、blockHash、blockNumber、logIndex；均string，数字十进制，hash/地址完整0x，读取原source独立列。 |
+| TraderSyncFinalityAnomaly | reason、detectedAt、publishedBlockHash、conflictingBlockHash（可缺string）；仅真实异常存在时返回对象。 |
 | TraderSyncTradeMetadata | market（MarketRef）、legsEvidence、legs（positionId及MarketRef）、relationship；MarketRef含evidence/id/title/url/conditionId/positionId/outcome。 |
-| TraderSyncDelivery / Attempt | Delivery含id、status、reason、authorizedAt、startedAt（可缺）、resultAt、messageId、attemptCount、latestAttempt（可缺）；Attempt含index、authorizedAt/startedAt/resultAt、status/reason，仅最新一次。完整attempts留存但不内嵌。 |
+| TraderSyncDelivery / Attempt | Delivery含id、status、reason、authorizedAt/startedAt/resultAt/messageId（均按实际证据可缺）、attemptCount、latestAttempt（可缺）；Attempt含index、已知authorizedAt、可缺startedAt/resultAt、status/reason，仅最新一次。完整attempts留存但不内嵌。 |
 | TraderSyncStatusCounts / SummaryProgress | Counts为total/pending/sending/sent/failed/unknown/cancelled字符串计数；SummaryProgress含phase、reason、batchId（可缺）、relatedPartCounts、batchPartCounts、oldestAt、firstStartedAt（可缺），不内嵌parts。 |
 | TraderSyncSummaryBatch / SummaryPart | Batch含id、oldestAt、settledFrom/settledTo、recordedFrom/recordedTo、firstStartedAt（可缺）、activityCount、targetCounts（wallet/count）、partCounts、asOf；Part含id、index、total、delivery、associatedActivityCount，不返回消息正文。 |
 | TraderSyncSubscriptionSummary | subscriptionId、accountId/username/email、wallet、status、生命周期时间、安全observation、activityCount、associatedDeliveryCounts（六态distinct逻辑delivery）、asOf；无note、消息或活动正文。 |

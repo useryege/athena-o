@@ -103,7 +103,7 @@ flowchart LR
 
 确认卡包含头像、显示名、完整规范钱包、认证、加入时间、当前持仓价值、最大单笔盈利、Predictions，以及六个 P/L 区间和曲线，默认 1Y。每项使用 `availability`、`reason_code`、`source`、`queried_at` 与可选 value；未知不是 0。金额使用十进制字符串或整数原量加 decimals，position/token ID 以字符串传输，不经 JavaScript number。时间为带 UTC 语义的 timestamp；source/clock/precision 分开保存。
 
-Activity DTO 包含 source_record_id、钱包、BUY/SELL、原量/份额/费用及币种、结算时间、接收和形成时间、可用市场引用、资料缺失状态与备注快照。Combo 是单个活动，保留自身 Outcome、腿数组与逻辑关系。Delivery DTO 分别暴露 authorized_at、可缺失 started_at、结果时间、状态/原因；不把获许可或已提交显示为成功。
+Activity DTO 包含 source_record_id、钱包、BUY/SELL、原量/份额/费用及币种、结算时间、接收和形成时间、可用市场引用、资料缺失状态与备注快照。Combo 是单个活动，保留自身 Outcome、腿数组与逻辑关系。Delivery DTO 分别暴露 authorized_at、可缺失 started_at、结果时间、状态/原因；不把获许可或已提交显示为成功。原始证据通过sourceLocation返回原source的chainId、exchangeAddress、transactionHash、blockHash、blockNumber和logIndex，数值用十进制字符串，地址/哈希完整保留。priceEvidence和publicTimeEvidence复用字段证据；首次公开时间目前不可观测，不以结算/接收/核验时间代填。尚无许可或结果时相应投递时间、messageId可缺，已有attempt的许可时间保留。
 
 ### UI 设计补充的读取边界
 
@@ -150,6 +150,8 @@ module1 腿的 legacy 无值或读取失败时，已持久目录和 Gamma 可提
 
 同一证据键下已有的非冲突partial，在暂时读取失败、取消或并发较差结果晚到时保留；明确身份/condition/position冲突仍须可见，不能用旧available覆盖。缓存及活动显示采用一致的保留规则，合并事务不跨网络；不同来源版本、PositionID或Combo known blockHash的证据不得混合。
 
+订阅成功创建时，在同一账户事务保存本次确认卡的少量公开展示值及原查询证据（名称、头像、已核验的Profile URL）；活动形成时复制公开展示快照。名称取确认卡的字段证据，不从名字推钱包或拼Profile链接。非空备注优先，其次可用名称，最后钱包识别；公开名称字段本身缺失仍明确不可用，完整钱包在确认、详情和通知另列。资料表示确认时状态，可能陈旧；暂停/恢复沿用，新订阅重新确认可取得新值。不复制P/L统计，不新增周期Profile查询，不更改历史快照/冻结消息或监控身份。
+
 ## 6. 采集、基线与最终确认
 
 ### 6.1 来源与单位
@@ -192,7 +194,7 @@ WSS与HTTP端点分别核验Polygon 137；HTTP latest入口复用SourceRPC已有
 
 单次 finality 查询失败保留候选并重试，不以错误响应推进水位，也不单凭该错误丢弃仍健康的 WSS。采集可用性与确认/资料处理积压分别报告；只有真实失去观察能力或无法核准其健康时关闭观察 epoch，不能将所有处理延迟描述为发生了接收中断。
 
-removed 或明确规范链重定位使该 raw 候选无效；null/403/超时或回执必需字段缺失只是未能确认，不当作孤块。适配器须区分字段缺失与合法零值，不能将缺失 status 的默认零误作明确执行失败；完整回执中的明确失败仍为无效证据。重新包含的交易只有再次真实接收的新日志才可形成新候选，不能从查询中补建。只有最终确认后才投影活动；若后续出现与已形成活动冲突的深度重组，保留原事实并标 finality 一致性异常，隔离同交易的新分叉候选，不再自动形成第二份活动或提醒。不能简单以 txHash+logIndex 跨分叉去重，因为区块级 logIndex 可能改变。
+removed 或明确规范链重定位使该 raw 候选无效；null/403/超时或回执必需字段缺失只是未能确认，不当作孤块。适配器须区分字段缺失与合法零值，不能将缺失 status 的默认零误作明确执行失败；完整回执中的明确失败仍为无效证据。重新包含的交易只有再次真实接收的新日志才可形成新候选，不能从查询中补建。只有最终确认后才投影活动；若后续出现与已形成活动冲突的深度重组，保留原事实并标 finality 一致性异常，隔离同交易的新分叉候选，不再自动形成第二份活动或提醒。异常证据必须是已发布的原source自身被撤销/明确失效，或同交易后来真实收到并确认了不同区块；尚未发布且无效的新分叉或同块错误日志不能推翻旧活动。不能简单以 txHash+logIndex 跨分叉去重，因为区块级 logIndex 可能改变。会员活动读取返回可缺的finalityAnomaly，保留原因、检测时刻、原发布块与可缺冲突块。仅收到removed且替代块未知时存NULL并明确未知，不填零hash或原hash；界面单列异常，不改原成交、备注、冻结载荷或已有通知结果。后续真实接收并确认同交易的不同区块时，可在同交易证据锁下仅补首次未知的冲突哈希；保留首次原因和检测时间，已有冲突哈希不覆盖，不恢复被隔离活动或生成新通知。
 
 活动插入以 `(subscription_id,source_record_id)` 唯一。每个 owner 在独立短事务里重查 grant、desired_state=enabled、相同 generation 和原基线成功/区间，插入活动、备注快照及当前绑定资格、普通或摘要归属。不因为 collector epoch 已关闭或当前 observation_state=interrupted 而拒绝原本合格的持久候选。用户暂停/取消/撤权或手动新 generation 则使旧未形成候选失去资格。
 
@@ -226,7 +228,7 @@ WSS ACK、ping/pong、节点头新鲜只证明观察健康，不能证明服务�
 
 以上为逻辑实体，表名统一用所属模块前缀；已有 Notification 实体直接调整，不平行创建两套有效表。涉及 owner 的组合引用通过复合唯一键/FK 或同事务一致性约束保证同 owner，不只靠 DTO 校验。活动历史、取消订阅、备注及投递审计不自动过期；短期 token 和结束的无业务事实任务可清理，不破坏去重或用户可见历史。
 
-账户 gate 使用统一命名空间和 account UUID 的 advisory lock。权限变更、订阅、活动形成、绑定、发送许可使用同一键；普通事务使用 transaction lock。基线注册采用 account gate→wallet intake gate，原始接收只取 intake gate、不反向取得账户 gate；投影只取账户 gate，避免锁序循环。绑定唯一 Telegram 身份锁在账户 gate 后取得，多账户操作必须统一排序。当前全局权限更新 mutex 改按账户串行，数据库 revision CAS 仍是并发依据。
+账户 gate 使用统一命名空间和 account UUID 的 advisory lock。权限变更、订阅、活动形成、绑定、发送许可使用同一键；普通事务使用 transaction lock。基线注册采用 account gate→wallet intake gate，原始接收只取 intake gate、不反向取得账户 gate；投影按账户 gate→链/交易证据锁→原 source 行锁的顺序协调，同交易的不同 owner 分叉不能并发双发布；证据写入不反向取得账户 gate，避免锁序循环。绑定唯一 Telegram 身份锁在账户 gate 后取得，多账户操作必须统一排序。当前全局权限更新 mutex 改按账户串行，数据库 revision CAS 仍是并发依据。
 
 Collector另持专属PG session advisory lock；每次持久写入在取得所需account/wallet gate后锁定控制行并核验当前token及epoch，与换代事务串行。失锁取消会话，后继实例取得所有权后增加token；换代及关闭epoch先独立提交，再逐账户收尾，不能持fence反向等待account。这里保护只读采集及数据库写入，不要求沿用Telegram发送者的外部停止确认操作。
 

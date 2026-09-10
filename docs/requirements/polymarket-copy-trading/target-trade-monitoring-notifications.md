@@ -2,9 +2,9 @@
 
 > 需求状态：已确认
 >
-> 关联技术设计：[Activity Alerts 后端技术设计](../../design/trading/trader-sync-activity-alerts.md)（已确认待实现）
+> 关联技术设计：[Activity Alerts 后端技术设计](../../design/trading/trader-sync-activity-alerts.md)（已确认，实现进行中）
 
-> UI 补充：页面与交互及[完整 UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)已整体确认，[长期 UI 设计](../../design/web-ui/trader-sync-activity-alerts.md)已同步。21项前后端联合计划已编写，尚未执行。
+> UI 补充：页面与交互及[完整 UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)已整体确认，[长期 UI 设计](../../design/web-ui/trader-sync-activity-alerts.md)已同步。21项前后端联合计划已获准逐项执行；完成情况与验收证据以计划为准。
 
 本文定义产品第一阶段的目标行为。产品面向用户人工挑选的低频交易者，核心目标是帮助订阅用户及时识别这些目标正在交易哪些市场；用户收到信息后，自行前往对应市场判断是否手动下单。未来 Copy Trading 的总体方向是复制人工选定的低频交易者的交易，高频监控和高频跟单不属于性能支持目标。Copy Trading 的具体业务规则仍另行讨论，本阶段不提供交易执行入口。
 

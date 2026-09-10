@@ -60,13 +60,19 @@ monitoring/error 可以暂停；paused/permission_disabled 可以手动恢复；
 
 观察时间线分页读取成功区间与中断，保留原因/未知边界/可能遗漏，不推测遗漏数量。自动恢复不删除中断，手动恢复新基线。当前备注和活动备注快照分开，编辑不追溯历史。
 
+订阅保存成功创建所用确认卡的公开展示快照 targetDisplay；活动形成时复制 targetDisplaySnapshot。首行优先非空备注、其次可用名称、最后钱包识别，名称缺失字段仍 unavailable，确认/详情/通知提供完整钱包。名称、头像和可靠 Profile URL 保留原查询证据，按确认时资料展示；暂停/恢复不重新查询，重新订阅可取得新值，不追溯历史。没有已核验 canonical URL 时不生成 Profile 链接。
+
+目标首行优先级只决定主标识，不取消已批准的公开名称展示：有备注时可用公开名称仍作为次级身份信息保留（活动行和详情均可读），不把DisplayName自动加@冒充已核准handle；钱包完整性要求不变。
+
 ### 成交及通知
 
 活动详情先展示市场/组合、Outcome、BUY/SELL、目标、结算时间、成交额、份额及费用，再显示 Telegram，来源/时间展开阅读。数值以原始字符串及 decimals 精确处理，币种依证据，当前三 Exchange 为 pUSD。成交价仅本条 value÷shares，费用不入均价；舍入加近似标记，复制保留精确输入，分母不可用不计算。
 
 Combo YES 为所有腿条件满足，NO 为整体合取的补集，不逐腿取反；仍是一笔成交。未知腿数不同于 0，已知 N/缺 M 才显示计数。市场链接必须可靠，缺资料保留真实 ID，晚补资料不生成/补发通知。
 
-活动 notification_mode 固定 in_app_only/ordinary/summary；summary 区分 waiting/frozen/cancelled_before_freeze。普通及分条各有 pending/sending/sent/failed/unknown/cancelled。sending 只证明许可；缺 started_at 不能推断尚未调用，sent 缺起点仍是成功回执、相关时延不可判定。Telegram 接收不等于用户已读。
+活动 notification_mode 固定 in_app_only/ordinary/summary；summary 区分 waiting/frozen/cancelled_before_freeze。普通及分条各有 pending/sending/sent/failed/unknown/cancelled。sending 只证明许可；缺 started_at 不能推断尚未调用，sent 缺起点仍是成功回执、相关时延不可判定。Telegram 接收不等于用户已读。尚无许可或结果时，相应时间与 messageId 可缺，不用零时间补齐。
+
+原始证据区读取 sourceLocation 的 chainId、exchangeAddress、transactionHash、blockHash、blockNumber、logIndex，全部从原 source 保存值映射，不逐条补 RPC。价格及首次公开时间用独立 FieldEvidence；本期首次公开时刻不可观测，不以其他时间代填。活动存在 finalityAnomaly 时单列“Finality anomaly”标记，详情显示原因、检测时刻、原发布块和可缺冲突块；仅 removed 而替代块未知时明确缺失，不填零哈希或原块冒充。原成交、备注和通知结果保留，随原页刷新更新，不新增重发/删除入口。后续真实接收并确认同交易的不同区块时，可在同交易证据锁下仅补首次未知的冲突哈希；保留首次原因和检测时间，已有冲突哈希不覆盖，不恢复被隔离活动或生成新通知。
 
 一个活动涉及的所有 parts 均可分页读取，并与整批统计分开。仅全部 sent 才称整批成功；每种其他状态保留计数。首期只给当前/最近 attempt 证据与总次数，后端保留完整 attempts，不新增尝试历史浏览器或管理员逐条读取。
 
