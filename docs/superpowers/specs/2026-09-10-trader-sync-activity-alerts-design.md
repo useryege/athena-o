@@ -2,7 +2,7 @@
 
 > 日期：2026-09-10。状态：已确认待实现；用户已整体确认完整书面规格。
 >
-> 后端设计已整体确认并形成[实现计划](../plans/2026-09-10-trader-sync-activity-alerts.md)，尚未执行。用户随后要求先补 UI；[UI spec](2026-09-10-trader-sync-activity-alerts-ui-design.md)各节已确认，完整书面待审阅。本文第 4 节的 UI 读取契约补充随该 spec 审阅，已有业务及后端架构决定继续有效。
+> 后端设计已整体确认并形成[实现计划](../plans/2026-09-10-trader-sync-activity-alerts.md)，尚未执行。用户随后要求先补 UI；[UI spec](2026-09-10-trader-sync-activity-alerts-ui-design.md)已整体确认，第 4 节的 UI 读取契约补充同时获确认；已有业务及后端架构决定继续有效。实现计划已扩展为21项前后端联合任务，尚未执行。
 
 ## 1. 目标、依据与决定
 
@@ -105,7 +105,7 @@ Activity DTO 包含 source_record_id、钱包、BUY/SELL、原量/份额/费用�
 
 ### UI 设计补充的读取边界
 
-以下为本轮 UI 书面规格补全，尚未实现；完整定义与验收见 [UI spec 第 10 节](2026-09-10-trader-sync-activity-alerts-ui-design.md#10-前后端契约补全)。
+以下为随 UI 书面规格整体确认的契约补全，尚未实现；完整定义与验收见 [UI spec 第 10 节](2026-09-10-trader-sync-activity-alerts-ui-design.md#10-前后端契约补全)。
 
 - Resolve 补充 owner 保存备注的存在性/revision、现有未取消订阅和配额快照；六区间各自返回标题值与曲线的独立可用性。Create 仍在事务中最终判断。
 - ListActivities 增加 summary_batch_id 过滤。首次返回 snapshot 和 refresh_cursor；next_cursor 固定 snapshot，refresh_cursor 重读原页固定成员并查询 has_newer，用户点击后才取得最新 snapshot。结算时间筛选为 `[from,to)`，UI 使用 UTC+8 输入、后端 UTC 语义。
@@ -308,4 +308,4 @@ Bot update 的绑定修改、消费进度与回复 outbox 在同一事务；upda
 
 相关长期文档已同步本轮业务边界、所选架构与证据；既有 accountaccess、Notification、运行设计继续描述当前已实现行为，不把此方案提前标为已运行。没有待用户选择的技术事实；协议升级、资料不可用和未完成运行测试均有明确处理或验收条件。
 
-用户已整体确认原后端书面规格；随后已按 writing-plans 形成[14项后端实现任务与验收计划](../plans/2026-09-10-trader-sync-activity-alerts.md)，尚未执行。后续补充的 UI 各节已确认，完整书面待审阅；本轮读取/分页补充随 UI spec 一并审阅，确认后更新前后端联合计划，不能直接按旧计划宣称覆盖全部 UI。
+用户已整体确认后端与 UI 两份书面规格，读取/分页补充也已确认；现已按 writing-plans 形成[21项前后端联合实现任务与验收计划](../plans/2026-09-10-trader-sync-activity-alerts.md)。当前未开始业务实现或运行验收。

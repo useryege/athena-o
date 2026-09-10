@@ -1,8 +1,8 @@
 # Trader Sync / Activity Alerts UI 设计规格
 
-> 日期：2026-09-10。状态：各节设计已确认，完整书面规格待用户整体审阅；尚未实现。
+> 日期：2026-09-10。状态：已确认待实现；用户已整体确认完整书面规格。
 >
-> 本文补充已整体确认的[后端 spec](2026-09-10-trader-sync-activity-alerts-design.md)，同步[长期 UI 设计](../../design/web-ui/trader-sync-activity-alerts.md)与[业务需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)。现有[后端实现计划](../plans/2026-09-10-trader-sync-activity-alerts.md)尚未执行，须在本书面规格确认后更新为前后端联合计划。
+> 本文补充已整体确认的[后端 spec](2026-09-10-trader-sync-activity-alerts-design.md)，同步[长期 UI 设计](../../design/web-ui/trader-sync-activity-alerts.md)与[业务需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)。[前后端联合实现计划](../plans/2026-09-10-trader-sync-activity-alerts.md)已编写，共21项任务，尚未执行。
 
 ## 1. 目标、范围与决定
 
@@ -21,7 +21,7 @@
 | 新活动提示后点击载入 | 阅读、复制与历史位置稳定；查看最新活动需一次点击。状态仍每 5 秒刷新。 |
 | 复用 Notifications；管理员概要与 Service Status 分工 | 沿用已有绑定及运维入口；诊断时可能需要跨页，提供相互链接。 |
 
-这些选择已逐节确认，无需再次选择。以下接口细化由技术核对得出，一并纳入本次书面审阅；不是已实现事实。
+这些选择已逐节确认，无需再次选择。以下接口细化由技术核对得出，已随完整书面规格整体确认；不是已实现事实。
 
 ## 2. 信息架构与导航
 
@@ -249,6 +249,6 @@ ListActivities 请求的 page.cursor 与 refresh_cursor 互斥；两者皆空读
 
 ## 13. 交付边界与下一步
 
-本轮交付完整 UI spec、长期 UI 设计、相关需求/后端接口/索引与 PRODUCT 上下文；自审检查状态、隐私、精度、接口和页面的一致性。书面规格整体确认后，按 writing-plans 更新前后端联合任务及验收顺序，覆盖新增读取、权限矩阵、全部页面、绑定衔接与管理员运行概要。
+本轮交付完整 UI spec、长期 UI 设计、相关需求/后端接口/索引与 PRODUCT 上下文；自审检查状态、隐私、精度、接口和页面的一致性。用户已整体确认书面规格，现已按 writing-plans 更新21项前后端联合任务及验收顺序，覆盖新增读取、权限矩阵、全部页面、绑定衔接与管理员运行概要。
 
-当前各节选择已确认；剩余用户审阅事项是这份完整书面规格。没有将技术事实留给用户猜测，也不因文档状态新增审批环节。此阶段不实施业务源码、数据库/配置变更或发送完成邮件。
+当前各节及完整书面规格均已确认，无待决设计取舍。实现计划已编写，尚未执行；技术事实的运行证据仍按验收要求核实。本阶段没有实施业务源码、数据库/配置变更或发送完成邮件。

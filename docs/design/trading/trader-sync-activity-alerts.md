@@ -4,7 +4,7 @@
 >
 > 关联需求：[Activity Alerts 需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)（已确认；完整书面设计也已整体确认）
 
-本文是目标方案，不代表当前实现。用户已整体确认原后端技术方案；[实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)已形成，尚未执行。随后补充的[UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)各节已确认、完整书面待审阅，本文的 UI 读取补充随该 spec 审阅。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
+本文是目标方案，不代表当前实现。用户已整体确认原后端技术方案；[实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)已形成，尚未执行。随后补充的[UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)已整体确认，本文的 UI 读取补充也已确认；实现计划已扩展为21项前后端联合任务。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
 
 本轮已按 Superpowers 分节确认统一数据库与现有进程边界、发送许可与撤权语义、单供应商 WSS 采集及最终确认路线；同用户集中成交允许限速排队也已确认。接口、资料和验收章节也已确认；[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认。后续实现计划细化了源码、生成依赖与验收步骤；当前仍只修改文档。
 
@@ -27,7 +27,7 @@
 
 本能力负责目标确认、订阅生命周期、实时成交接收、用户活动记录、Telegram 普通提醒与摘要，以及管理员运行概要。它依赖已有账户身份、权限、Telegram 绑定和 Polymarket 公开资料。
 
-Copy Trading 不在本设计内。本文维护后端和跨层数据契约，页面布局、状态呈现与导航见[长期 UI 设计](../web-ui/trader-sync-activity-alerts.md)。UI 各节已确认，整份书面待审阅；不把原后端批准当作 UI 已实现。数据资料查询、处理已收到记录和完成旧通知队列，不属于历史成交补查。
+Copy Trading 不在本设计内。本文维护后端和跨层数据契约，页面布局、状态呈现与导航见[长期 UI 设计](../web-ui/trader-sync-activity-alerts.md)。UI 整份书面已确认，尚未实现。数据资料查询、处理已收到记录和完成旧通知队列，不属于历史成交补查。
 
 ## 现状与目标差距
 
@@ -330,4 +330,4 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 
 后续实现需验证当前协议完整样本矩阵、同秒与重启故障、授权/撤权/绑定竞争、未知结果不重发、摘要临界 60 秒调度、真实容量及公开时间证据。数据缺失/异常的行为已有明确设计；未完成的运行测试不能写成已通过。
 
-2026-09-10 原后端设计确认后已形成14项[实现任务](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)，尚未执行。用户随后要求先补 UI；[UI 书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)各节已确认、整份待审阅，确认后更新前后端联合计划。当前仅设计、可丢弃线框和文档核对，未实施或运行业务测试；计划中的测试命令不是已通过的结果。
+2026-09-10 用户已整体确认[UI 书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)，读取契约补充同时获确认；原后端计划已扩展为21项[前后端联合实现任务](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)，尚未执行。当前仅设计、可丢弃线框和文档核对，未实施或运行业务测试；计划中的测试命令不是已通过的结果。

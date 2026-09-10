@@ -1,6 +1,6 @@
 # Trader Sync：Activity Alerts 界面与交互设计
 
-> 设计状态：设计中；各节已确认，完整书面 UI spec 待整体审阅，尚未实现。
+> 设计状态：已确认待实现；用户已整体确认完整书面 UI spec。
 >
 > 关联：[业务需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)、[后端设计](../trading/trader-sync-activity-alerts.md)、[完整 UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)。后端设计此前已整体确认；本轮补充页面与读取契约，不重开已确认业务决定。
 
@@ -109,4 +109,4 @@ Combo YES 为所有腿条件满足，NO 为整体合取的补集，不逐腿取�
 
 当前仅验证合成数据线框的桌面/手机、主题与交互；没有业务 API、真实 Telegram 或完整可访问性验收。临时浏览器内容在 `.superpowers/`，不是长期依赖；被选结构与流程已写入文档。
 
-本书面 UI spec 整体确认后，更新[前后端联合实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)，再由后续实现任务落实。既有应用壳/Notifications 文档继续描述当前实现，实施时同步对应源码和长期文档；不把目标页面写成已经上线。
+本书面 UI spec 已整体确认，[21项前后端联合实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)已编写，尚未执行。既有应用壳/Notifications 文档继续描述当前实现，实施时同步对应源码和长期文档；不把目标页面写成已经上线。

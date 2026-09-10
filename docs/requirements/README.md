@@ -42,5 +42,5 @@
 
 | 业务域 | 入口 | 状态 | 关联技术设计 |
 | --- | --- | --- | --- |
-| Trader Sync | [产品需求](polymarket-copy-trading/README.md) | `已确认`（Activity Alerts 业务及 UI 交互各节已确认） | [后端设计](../design/trading/trader-sync-activity-alerts.md)（已确认待实现）；[UI 设计](../design/web-ui/trader-sync-activity-alerts.md)（各节已确认，书面待审阅） |
+| Trader Sync | [产品需求](polymarket-copy-trading/README.md) | `已确认`（Activity Alerts 业务及完整 UI 设计已确认） | [后端设计](../design/trading/trader-sync-activity-alerts.md)（已确认待实现）；[UI 设计](../design/web-ui/trader-sync-activity-alerts.md)（已确认待实现） |
 | Token Intelligence | [Token 业务设计与研究资料](token/README.md) | `讨论中`（其中部分独立需求已确认） | [Token Intelligence 当前及目标技术设计](../design/README.md) |
