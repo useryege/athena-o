@@ -5,13 +5,17 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/useryege/athena/internal/accountstate/store/migrations"
 	"github.com/useryege/athena/internal/testutil/pgtest"
 	tm "github.com/useryege/athena/internal/tradersync/types"
 	pm "github.com/useryege/athena/util/polymarket"
+	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func TestMetadataSchema(t *testing.T) {
@@ -181,5 +185,133 @@ func TestMetadataDirectoryLongRoundContinuesCursorAndPacesNextRound(t *testing.T
 	var elapsed bool
 	if e = db.Pool.QueryRow(ctx, `SELECT next_page_at<clock_timestamp()+interval '2 seconds',round_completed_at-round_started_at>interval '19 minutes' FROM trader_sync_directory_refresh`).Scan(&readySoon, &elapsed); e != nil || !readySoon || !elapsed {
 		t.Fatal(readySoon, elapsed, e)
+	}
+}
+
+func TestMetadataDirectoryCancelledFetchPersistsPacingAcrossPools(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	other, err := pgxpool.New(ctx, db.Pool.Config().ConnString())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer other.Close()
+	_, err = db.Pool.Exec(ctx, `INSERT INTO trader_sync_directory_refresh(name,cursor,round_started_at,next_page_at) VALUES('combo_markets','resume-cursor',clock_timestamp(),clock_timestamp()-interval '1 second')`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent, cancel := context.WithCancel(ctx)
+	defer cancel()
+	entered := make(chan struct{})
+	firstDone := make(chan error, 1)
+	go func() {
+		_, err := NewSQLStore(db.Pool).RefreshComboPage(parent, func(fetchCtx context.Context, cursor string, _ int) (pm.ComboMarketPage, error) {
+			if cursor != "resume-cursor" {
+				return pm.ComboMarketPage{}, fmt.Errorf("wrong cursor %q", cursor)
+			}
+			close(entered)
+			<-fetchCtx.Done()
+			return pm.ComboMarketPage{}, fetchCtx.Err()
+		})
+		firstDone <- err
+	}()
+	<-entered
+	var retryCalls atomic.Int32
+	retry := func(_ context.Context, cursor string, _ int) (pm.ComboMarketPage, error) {
+		retryCalls.Add(1)
+		if cursor != "resume-cursor" {
+			return pm.ComboMarketPage{}, fmt.Errorf("wrong retry cursor %q", cursor)
+		}
+		return pm.ComboMarketPage{Markets: []pm.ComboMarket{}, NextCursor: "after-retry"}, nil
+	}
+	secondDone := make(chan error, 1)
+	go func() { _, err := NewSQLStore(other).RefreshComboPage(ctx, retry); secondDone <- err }()
+	cancel()
+	select {
+	case err := <-firstDone:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("cancellation lost: %v", err)
+		}
+	case <-time.After(7 * time.Second):
+		t.Fatal("cancellation cleanup unbounded")
+	}
+	select {
+	case err := <-secondDone:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("second pool stalled")
+	}
+	if retryCalls.Load() != 0 {
+		t.Fatalf("second pool fetched before persisted cooldown: calls=%d", retryCalls.Load())
+	}
+	var cursor string
+	var next time.Time
+	var future bool
+	if err = db.Pool.QueryRow(ctx, `SELECT cursor,next_page_at,next_page_at>clock_timestamp() FROM trader_sync_directory_refresh`).Scan(&cursor, &next, &future); err != nil || cursor != "resume-cursor" || !future {
+		t.Fatal(cursor, next, future, err)
+	}
+	wait := time.Until(next) + 20*time.Millisecond
+	if wait > 2*time.Second {
+		t.Fatal("unexpected cooldown", wait)
+	}
+	if wait > 0 {
+		time.Sleep(wait)
+	}
+	if _, err = NewSQLStore(other).RefreshComboPage(ctx, retry); err != nil {
+		t.Fatal(err)
+	}
+	if retryCalls.Load() != 1 {
+		t.Fatal("eligible retry did not fetch exactly once", retryCalls.Load())
+	}
+}
+
+func TestMetadataDirectoryCancellationReportsPacingCleanupFailure(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	_, err := db.Pool.Exec(ctx, `INSERT INTO trader_sync_directory_refresh(name,cursor,round_started_at,next_page_at) VALUES('combo_markets','resume',clock_timestamp(),clock_timestamp()-interval '1 second');
+ CREATE FUNCTION reject_directory_pacing() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'injected pacing storage failure'; END $$;
+ CREATE TRIGGER reject_pacing BEFORE UPDATE OF next_page_at ON trader_sync_directory_refresh FOR EACH ROW EXECUTE FUNCTION reject_directory_pacing();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent, cancel := context.WithCancel(ctx)
+	defer cancel()
+	_, err = NewSQLStore(db.Pool).RefreshComboPage(parent, func(context.Context, string, int) (pm.ComboMarketPage, error) {
+		cancel()
+		return pm.ComboMarketPage{}, parent.Err()
+	})
+	var storageErr *pgconn.PgError
+	if !errors.Is(err, context.Canceled) || !errors.As(err, &storageErr) || !strings.Contains(err.Error(), "persist directory pacing") {
+		t.Fatalf("cleanup failure or original cancellation hidden: %v", err)
+	}
+}
+
+func TestMetadataDirectoryPageWriteFailureRollsBackMappingsAndCursor(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	_, err := db.Pool.Exec(ctx, `INSERT INTO trader_sync_directory_refresh(name,cursor,round_started_at,next_page_at) VALUES('combo_markets','page',clock_timestamp(),clock_timestamp()-interval '1 second');
+ CREATE FUNCTION reject_second_directory_mapping() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.position_id='2' THEN RAISE EXCEPTION 'injected second mapping failure'; END IF; RETURN NEW; END $$;
+ CREATE TRIGGER reject_mapping BEFORE INSERT ON trader_sync_combo_leg_index FOR EACH ROW EXECUTE FUNCTION reject_second_directory_mapping();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = NewSQLStore(db.Pool).RefreshComboPage(ctx, func(context.Context, string, int) (pm.ComboMarketPage, error) {
+		return pm.ComboMarketPage{Markets: []pm.ComboMarket{{ID: "1", ConditionID: "c", PositionIDs: []string{"1", "2"}}}, NextCursor: "next"}, nil
+	})
+	if err == nil {
+		t.Fatal("second mapping failure hidden")
+	}
+	var count int
+	var cursor string
+	if err = db.Pool.QueryRow(ctx, "SELECT count(*) FROM trader_sync_combo_leg_index").Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.Pool.QueryRow(ctx, "SELECT cursor FROM trader_sync_directory_refresh").Scan(&cursor); err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 || cursor != "page" {
+		t.Fatalf("partial page committed: mappings=%d cursor=%q", count, cursor)
 	}
 }

@@ -56,12 +56,18 @@ func (s *SQLStore) LookupComboPosition(ctx context.Context, position string) ([]
 // RefreshComboPage serializes only the directory state row, never an account or
 // wallet gate. The request has a five-second deadline and its mappings/cursor
 // commit together. Provider failures preserve the cursor but commit page pacing.
-func (s *SQLStore) RefreshComboPage(ctx context.Context, fetch func(context.Context, string, int) (pm.ComboMarketPage, error)) (time.Time, error) {
+func (s *SQLStore) RefreshComboPage(ctx context.Context, fetch func(context.Context, string, int) (pm.ComboMarketPage, error)) (next time.Time, resultErr error) {
 	tx, e := s.pool.BeginTx(ctx, pgx.TxOptions{})
 	if e != nil {
 		return time.Time{}, e
 	}
-	defer tx.Rollback(context.Background())
+	defer func() {
+		rollbackCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second)
+		defer cancel()
+		if err := tx.Rollback(rollbackCtx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			resultErr = errors.Join(resultErr, fmt.Errorf("rollback directory transaction: %w", err))
+		}
+	}()
 	queries := q.New(tx)
 	if e = queries.EnsureComboDirectory(ctx); e != nil {
 		return time.Time{}, e
@@ -88,16 +94,23 @@ func (s *SQLStore) RefreshComboPage(ctx context.Context, fetch func(context.Cont
 	callCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	page, pageErr := fetch(callCtx, state.Cursor, 100)
 	cancel()
+	pageErr = errors.Join(pageErr, ctx.Err())
+	// A sent request consumes a page slot even if its parent is cancelled.
+	// Finish this page under the existing directory lock, with no new HTTP.
+	// Detaching also prevents cancellation between validation and commit from
+	// rolling back already-earned pacing. The owner may stop after this bound.
+	ctx, cleanupCancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	defer cleanupCancel()
 	if pageErr == nil {
 		pageErr = validateComboPage(page, state.Cursor, state.VisitedCursors)
 	}
 	if pageErr != nil {
 		at, e := queries.DelayComboPage(ctx)
 		if e != nil {
-			return time.Time{}, e
+			return time.Time{}, errors.Join(pageErr, fmt.Errorf("persist directory pacing: %w", e))
 		}
 		if e = tx.Commit(ctx); e != nil {
-			return time.Time{}, e
+			return time.Time{}, errors.Join(pageErr, fmt.Errorf("commit directory pacing: %w", e))
 		}
 		return at.Time, pageErr
 	}
