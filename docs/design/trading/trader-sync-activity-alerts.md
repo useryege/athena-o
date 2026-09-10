@@ -121,6 +121,16 @@ flowchart LR
 - 时间分别保存 `settled_at`（区块时间）、`time_basis=chain_settlement`、`received_at`、`recorded_at`、投递尝试和结果时间。页面和消息使用“结算时间”；订阅生效前撮合但生效后结算的成交按新活动判断。不能用 `received_at` 冒充公开可查询时间；不能用链上区块时间冒充链下撮合时间。
 - 私有备注按 Unicode 字符数校验最多 20 个字符；服务端拒绝超限，不截断。修改不追溯活动或冻结通知的备注快照，取消保留 owner-wallet 备注。
 
+### 已实现的成交解码与规范证据组件
+
+[`DecodeOwnTrade`](../../../internal/tradersync/exchange_decode.go)只接受链 137 的三 Exchange 固定版本及 OrderFilled 事件。实际钱包取 topics[2]，不能把仅 topics[3] 命中的目标当作成交归属；后续采集器须再次按实际钱包匹配目标集合。BUY/SELL、position、抵押币/份额与 fee 保留原整数，价格为未含 fee 的精确比值，零份额保留成交且价格不可用。固定 ABI、三实现及实际代理 runtime 的来源见[永久证据](../../../internal/tradersync/abi/README.md)；12 个角色/方向组合含 11 条真实日志及 1 条明确合成 Combo SELL maker，不代表真实来源验收矩阵已全部完成。
+
+[`ConfirmReceived`](../../../internal/tradersync/confirmation.go)先确认 finalized 已覆盖，再重新读取已知 tx receipt，检查成功状态、规范高度头和该条原日志的定位/字节，最后以已知 hash 取时间。不从其他 receipt 日志形成候选，也不缓存正面的规范链结论。removed、明确重组或日志改变为 invalid；空响应、403、超时为 unverified 并另返回底层错误。调用方须保存状态与原因、保留未确认候选，不能因 error 永久丢弃。节点链错误同样仅表示无法确认，不能使已存 Polygon raw 作废。
+
+[`VersionVerifier`](../../../internal/tradersync/source_version.go)显式核验 ChainID、已知头及真实 ParentHash，比较候选/父块部署代码；Combo 还校验实际代理 hash、固定槽和实现代码，并读取仅候选 hash 的完整升级日志。未知版本、读取失败、空升级响应或同块升级均为 FailedPrecondition。仅成功代码证据按 chain/exchange/blockHash 缓存（最多 256 项），不会代替规范链重核；失败不缓存。私有 deployment helper 可供后续模块资料核验复用，但调用者须先建立同实例链 137、known 头/hash 与真实 ParentHash 的前置证据，模块不加入 Exchange 解码白名单。
+
+[`SourceRPC`](../../../internal/tradersync/source_rpc.go)借用不可变端点 ethclient，正面的链 137 验证仅在此实例缓存；重建端点必须新实例。它单独负责成功 finalized 头的 2 秒缓存、过期懒刷新及同在途并发合并，不启动独立 poller；后续采集工作调度只消费此入口，不再另设头缓存或独立 finalized 轮询。读取失败不把过期头当 fresh，每次真实 RPC 最多 5 秒；发起者取消会结束共享读取，其他等待者可独立取消，客户端由所有者关闭。当前交付这些只读组件及回环验证，实际后台采集、公开 API、活动持久化和模块 metadata 留待后续任务接入。
+
 ### 已实现的订阅与撤权边界
 
 [`SubscriptionService`](../../../internal/tradersync/subscriptions.go)要求显式注入身份复核器与 `BaselineRegistrar.RegisterTx`；Task 9 实现采集登记器前，集成验证使用持久写入 pending attempt 的显式 fake，不在服务构造中提供空登记器。公开业务入口仍待组合。

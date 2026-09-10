@@ -1,0 +1,45 @@
+{
+  "at": "2026-09-10T18:01:45.580529+00:00",
+  "url": "https://lb.drpc.live/polygon/Ai_L7JAEMk5hgVgUsOe8aKuLbjItrMIR8Yhzzu2G7ZgM",
+  "request": [
+    {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "method": "eth_getStorageAt",
+      "params": [
+        "0xe3333700cA9d93003F00f0F71f8515005F6c00Aa",
+        "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+        {
+          "blockHash": "0x1d64636dcdfa966bb1c6564f0ff3f4322bfc23150c2579f737eb36c9bb5028ad",
+          "requireCanonical": true
+        }
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "method": "eth_getCode",
+      "params": [
+        "0x641b40ec414a076b9e79e703fc7bf4ebec248bb7",
+        {
+          "blockHash": "0x1d64636dcdfa966bb1c6564f0ff3f4322bfc23150c2579f737eb36c9bb5028ad",
+          "requireCanonical": true
+        }
+      ]
+    }
+  ],
+  "status": 200,
+  "headers": {
+    "Date": "Thu, 10 Sep 2026 18:01:45 GMT",
+    "Content-Type": "application/json",
+    "Transfer-Encoding": "chunked",
+    "Connection": "close",
+    "Vary": "Accept-Encoding",
+    "Access-Control-Allow-Origin": "*",
+    "X-Drpc-Owner-Id": "2fcbec90-0432-4e61-8158-14b0e7bc68ab",
+    "X-Drpc-Owner-Tier": "free",
+    "X-Drpc-Trace-Id": "193563efe0a8285def07687df3c100b2",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains"
+  },
+  "sha256": "30c5355453bbab11e9ab7c8920bf13b1102ffaf9cd4b338080fc4b914032ae96"
+}

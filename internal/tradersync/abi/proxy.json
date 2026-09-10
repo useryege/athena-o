@@ -1,0 +1,15 @@
+[
+  {
+    "name": "Upgraded",
+    "type": "event",
+    "inputs": [
+      {
+        "name": "implementation",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  }
+]
