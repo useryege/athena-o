@@ -125,7 +125,7 @@ flowchart LR
 
 `TargetResolver` 要求显式注入 `GrantCheck` 与 `ResolveContextTx`，缺少任一依赖即构造失败。外部身份和资料查询在账户 gate 外完成，资料请求并发最多 4；随后在同一个短账户事务中核验当前 grant、读取 owner 的备注/现有订阅/配额、使用数据库时钟生成 5 分钟期限并保存确认。SavedNote 的 nil 与空备注保留区别。当前集成测试显式提供授权或拒绝依赖，生产入口尚未注册，不存在临时放行路径。
 
-身份适配器只接受合法 0x 地址或 HTTPS 的 `polymarket.com` / `www.polymarket.com` 单段 `/@handle`。URL 禁止 userinfo、端口、额外路径和 query/fragment；每次读取限制 2 MiB、5 秒，最多 3 次受同样规则验证的跳转。固定版本 RSC SSR 必须有唯一 canonical 与明确钱包，并用 Gamma `GetPublicProfile` 交叉核验；不使用 PublicSearch。摘要仅含规范钱包、canonical 映射和适配器版本，头像、显示名与收益变化不会使身份失效。
+身份适配器只接受合法 0x 地址或 HTTPS 的 `polymarket.com` / `www.polymarket.com` 单段 `/@handle`。URL 禁止 userinfo、端口、额外路径和 query/fragment；每次读取限制 2 MiB、5 秒，最多 3 次受同样规则验证的跳转。固定版本 RSC SSR 必须有唯一 canonical 与明确钱包，并用 Gamma `GetPublicProfile` 交叉核验；不使用 PublicSearch。身份以 `ResolutionInput` 保留规范原始查询地址或原始受限 URL（包含重定向前入口），并随 `identity_json` 持久保存。摘要绑定原始来源到规范钱包 / canonical 的映射及适配器版本；头像、显示名与收益变化不会使身份失效。重验始终重新解析该来源，不能改查已解析钱包或 canonical URL；来源缺失、不可解析或映射变化均要求重新确认，不读取旧格式兼容路径。
 
 确认表只保存 32 字节随机 token 的 SHA-256 digest；`identity_json`/`identity_digest` 用于身份核验，`card_json` 独立保留完整确认卡查询证据。Read 强制 owner、未消费和数据库到期条件；Consume 另核验身份摘要并原子绑定 request ID，提交后任何再次消费均失败，回滚恢复未消费状态。后续 Create 的已提交请求重试应先读 owner/operation/request ID 唯一的幂等结果，不能靠再次消费 token 实现重试。card_json 不参与身份失效判断。
 

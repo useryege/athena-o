@@ -26,13 +26,14 @@ var profileHandle = regexp.MustCompile(`^/@[A-Za-z0-9_-]+$`)
 // ProfileAdapter keeps production origins fixed; only the HTTP transport is injectable.
 type ProfileAdapter struct{ http *http.Client }
 type ProfileIdentity struct {
-	PublicSource  string
-	Wallet        common.Address
-	CanonicalURL  string
-	Public        PublicProfile
-	Stats         ProfileStats
-	PositionValue Decimal
-	QueriedAt     time.Time
+	ResolutionInput string
+	PublicSource    string
+	Wallet          common.Address
+	CanonicalURL    string
+	Public          PublicProfile
+	Stats           ProfileStats
+	PositionValue   Decimal
+	QueriedAt       time.Time
 }
 
 func NewProfileAdapter(transport http.RoundTripper) *ProfileAdapter {
@@ -129,6 +130,7 @@ func (a *ProfileAdapter) ResolveIdentity(ctx context.Context, input string) (Pro
 		if p.ProxyWallet == nil || !common.IsHexAddress(*p.ProxyWallet) || common.HexToAddress(*p.ProxyWallet) == (common.Address{}) {
 			return out, status.Error(codes.FailedPrecondition, "public profile has no unique wallet")
 		}
+		out.ResolutionInput = strings.ToLower(input)
 		out.Wallet = common.HexToAddress(*p.ProxyWallet)
 		out.Public = p
 		out.PublicSource = DefaultGammaBaseURL + "/public-profile?" + url.Values{"address": {strings.ToLower(input)}}.Encode()
@@ -154,6 +156,7 @@ func (a *ProfileAdapter) ResolveIdentity(ctx context.Context, input string) (Pro
 	if p.ProxyWallet == nil || !common.IsHexAddress(*p.ProxyWallet) || common.HexToAddress(*p.ProxyWallet) != out.Wallet {
 		return out, status.Error(codes.FailedPrecondition, "SSR and public profile wallet conflict")
 	}
+	out.ResolutionInput = u.String()
 	out.Public = p
 	out.PublicSource = DefaultGammaBaseURL + "/public-profile?" + url.Values{"address": {strings.ToLower(out.Wallet.Hex())}}.Encode()
 	out.QueriedAt = time.Now().UTC()

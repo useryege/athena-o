@@ -2,6 +2,7 @@ package polymarket
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -163,5 +164,37 @@ func TestProfileMalformedAuxiliaryFieldsDoNotEraseIdentity(t *testing.T) {
 	p, e := a.ResolveIdentity(context.Background(), "0x1111111111111111111111111111111111111111")
 	if e != nil || p.Public.Name != nil || p.Public.ProfileImage != nil || p.Public.VerifiedBadge != nil || p.Public.CreatedAt != nil {
 		t.Fatal(p, e)
+	}
+}
+
+func TestProfileRedirectRetainsOriginalResolutionInput(t *testing.T) {
+	html, public := profileFixture(t, "profile.html"), profileFixture(t, "public-profile.json")
+	a := localProfileAdapter(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/@GCR":
+			http.Redirect(w, r, "https://polymarket.com/@gcr", 302)
+		case "/@gcr":
+			w.Write(html)
+		case "/public-profile":
+			w.Write(public)
+		default:
+			t.Error(r.URL)
+			w.WriteHeader(500)
+		}
+	})
+	p, e := a.ResolveIdentity(context.Background(), "  https://www.polymarket.com/@GCR  ")
+	if e != nil {
+		t.Fatal(e)
+	}
+	raw, e := json.Marshal(p)
+	if e != nil {
+		t.Fatal(e)
+	}
+	var fields map[string]json.RawMessage
+	json.Unmarshal(raw, &fields)
+	var source string
+	json.Unmarshal(fields["ResolutionInput"], &source)
+	if source != "https://www.polymarket.com/@GCR" || p.CanonicalURL != "https://polymarket.com/@gcr" {
+		t.Fatalf("original %q, canonical %q", source, p.CanonicalURL)
 	}
 }

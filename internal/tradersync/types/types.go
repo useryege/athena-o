@@ -7,10 +7,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+// Identity binds the original resolution source to its current canonical wallet mapping.
+// ResolutionInput is persisted and must never be replaced by Wallet during revalidation.
 type Identity struct {
-	Wallet                             common.Address
-	ProfileURL, DisplayName, AvatarURL string
-	Digest                             [32]byte
+	Wallet                                              common.Address
+	ResolutionInput, ProfileURL, DisplayName, AvatarURL string
+	Digest                                              [32]byte
 }
 type Evidence struct {
 	Availability, ReasonCode, Source string

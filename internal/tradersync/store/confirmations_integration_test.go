@@ -27,7 +27,7 @@ func TestConfirmationOwnerExpiryAndConsumption(t *testing.T) {
 	}
 	s := NewSQLStore(db.Pool)
 	owner, other := uuid.NewString(), uuid.NewString()
-	identity := tsmodel.Identity{Wallet: common.HexToAddress("0x1111111111111111111111111111111111111111"), Digest: sha256.Sum256([]byte("identity"))}
+	identity := tsmodel.Identity{ResolutionInput: "0x1111111111111111111111111111111111111111", Wallet: common.HexToAddress("0x1111111111111111111111111111111111111111"), Digest: sha256.Sum256([]byte("identity"))}
 	token := sha256.Sum256([]byte("secret"))
 	tx, e := db.Pool.Begin(ctx)
 	if e != nil {
@@ -138,4 +138,66 @@ func TestConfirmationSchemaProtectsDigestsWalletAndIdempotency(t *testing.T) {
 	if _, e = db.Pool.Exec(ctx, `INSERT INTO trader_sync_targets(wallet) VALUES($1)`, make([]byte, 20)); e == nil {
 		t.Fatal("duplicate wallet accepted")
 	}
+}
+
+func TestConfirmationIdentityResolutionInputRoundTrip(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	s := NewSQLStore(db.Pool)
+	owner := uuid.NewString()
+	identity := tsmodel.Identity{Wallet: common.HexToAddress("0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"), Digest: sha256.Sum256([]byte("source-A-to-wallet-B"))}
+	raw, e := json.Marshal(identity)
+	if e != nil {
+		t.Fatal(e)
+	}
+	var fields map[string]json.RawMessage
+	json.Unmarshal(raw, &fields)
+	fields["ResolutionInput"] = json.RawMessage(`"0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"`)
+	raw, e = json.Marshal(fields)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = json.Unmarshal(raw, &identity); e != nil {
+		t.Fatal(e)
+	}
+	token := sha256.Sum256([]byte("source-bound-token"))
+	tx, e := db.Pool.Begin(ctx)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = s.SaveConfirmationTx(ctx, tx, owner, identity, token[:], time.Now().Add(time.Minute)); e != nil {
+		t.Fatal(e)
+	}
+	if e = tx.Commit(ctx); e != nil {
+		t.Fatal(e)
+	}
+	check := func(identity tsmodel.Identity) {
+		t.Helper()
+		raw, e := json.Marshal(identity)
+		if e != nil {
+			t.Fatal(e)
+		}
+		var got map[string]json.RawMessage
+		if e = json.Unmarshal(raw, &got); e != nil {
+			t.Fatal(e)
+		}
+		if string(got["ResolutionInput"]) != `"0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"` {
+			t.Errorf("original resolution source lost in stored identity: %s", raw)
+		}
+	}
+	tx, e = db.Pool.Begin(ctx)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer tx.Rollback(ctx)
+	read, e := s.ReadConfirmationTx(ctx, tx, owner, token[:])
+	if e != nil {
+		t.Fatal(e)
+	}
+	check(read)
+	consumed, e := s.ConsumeConfirmationTx(ctx, tx, owner, token[:], "create", identity.Digest[:])
+	if e != nil {
+		t.Fatal(e)
+	}
+	check(consumed)
 }

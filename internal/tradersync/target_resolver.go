@@ -38,7 +38,7 @@ func NewTargetResolver(pool *pgxpool.Pool, profiles *polymarket.ProfileAdapter, 
 }
 
 func identityFromProfile(p polymarket.ProfileIdentity) tsmodel.Identity {
-	v := tsmodel.Identity{Wallet: p.Wallet, ProfileURL: p.CanonicalURL}
+	v := tsmodel.Identity{Wallet: p.Wallet, ResolutionInput: p.ResolutionInput, ProfileURL: p.CanonicalURL}
 	if p.Public.Name != nil {
 		v.DisplayName = *p.Public.Name
 	} else if p.Public.Pseudonym != nil {
@@ -47,18 +47,17 @@ func identityFromProfile(p polymarket.ProfileIdentity) tsmodel.Identity {
 	if p.Public.ProfileImage != nil {
 		v.AvatarURL = *p.Public.ProfileImage
 	}
-	v.Digest = sha256.Sum256([]byte(polymarket.ProfileAdapterVersion + "\n" + strings.ToLower(v.Wallet.Hex()) + "\n" + v.ProfileURL))
+	v.Digest = sha256.Sum256([]byte(polymarket.ProfileAdapterVersion + "\n" + v.ResolutionInput + "\n" + strings.ToLower(v.Wallet.Hex()) + "\n" + v.ProfileURL))
 	return v
 }
 
 func (r *TargetResolver) Revalidate(ctx context.Context, identity tsmodel.Identity) error {
-	input := identity.ProfileURL
-	if input == "" {
-		input = identity.Wallet.Hex()
+	if strings.TrimSpace(identity.ResolutionInput) == "" {
+		return ErrIdentityChanged
 	}
-	p, e := r.profiles.ResolveIdentity(ctx, input)
+	p, e := r.profiles.ResolveIdentity(ctx, identity.ResolutionInput)
 	if e != nil {
-		return e
+		return status.Errorf(codes.FailedPrecondition, "target resolution source cannot be revalidated; resolve again: %v", e)
 	}
 	if current := identityFromProfile(p); current.Digest != identity.Digest {
 		return ErrIdentityChanged

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -215,5 +216,166 @@ func TestResolverOwnerContextGrantAndEvidence(t *testing.T) {
 	}
 	if _, e = r.Resolve(ctx, strings.ReplaceAll(owner, "-", ""), wallet); e == nil {
 		t.Fatal("invalid UUID accepted")
+	}
+}
+
+func TestResolverRevalidatesPersistedOriginalAddress(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	owner := uuid.NewString()
+	const addressA = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	const walletB = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+	const walletC = "0xcccccccccccccccccccccccccccccccccccccccc"
+	const addressD = "0xdddddddddddddddddddddddddddddddddddddddd"
+	var mode atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Path != "/public-profile" {
+			w.WriteHeader(503)
+			return
+		}
+		address := req.URL.Query().Get("address")
+		wallet := walletB
+		if address == addressA {
+			switch mode.Load() {
+			case 1:
+				wallet = walletC
+			case 2:
+				w.WriteHeader(404)
+				return
+			}
+		}
+		if address == walletC {
+			wallet = walletC
+		}
+		name, avatar := "Before", "https://example.org/before.png"
+		if mode.Load() == 3 {
+			name, avatar = "After", "https://example.org/after.png"
+		}
+		json.NewEncoder(w).Encode(map[string]string{"proxyWallet": wallet, "name": name, "profileImage": avatar})
+	}))
+	defer server.Close()
+	u, _ := url.Parse(server.URL)
+	r, e := NewTargetResolver(db.Pool, polymarket.NewProfileAdapter(routedHTTP{u, server.Client().Transport}), func(context.Context, pgx.Tx, string) error { return nil }, func(context.Context, pgx.Tx, string, common.Address) (tsmodel.ResolutionContext, error) {
+		return tsmodel.ResolutionContext{}, nil
+	})
+	if e != nil {
+		t.Fatal(e)
+	}
+	resolved, e := r.Resolve(ctx, owner, " 0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA ")
+	if e != nil {
+		t.Fatal(e)
+	}
+	token, e := base64.RawURLEncoding.DecodeString(resolved.Token)
+	if e != nil {
+		t.Fatal(e)
+	}
+	digest := sha256.Sum256(token)
+	read := func() tsmodel.Identity {
+		t.Helper()
+		tx, e := db.Pool.Begin(ctx)
+		if e != nil {
+			t.Fatal(e)
+		}
+		defer tx.Rollback(ctx)
+		identity, e := r.store.ReadConfirmationTx(ctx, tx, owner, digest[:])
+		if e != nil {
+			t.Fatal(e)
+		}
+		return identity
+	}
+	persisted := read()
+	raw, e := json.Marshal(persisted)
+	if e != nil {
+		t.Fatal(e)
+	}
+	var fields map[string]json.RawMessage
+	if e = json.Unmarshal(raw, &fields); e != nil {
+		t.Fatal(e)
+	}
+	var input string
+	_ = json.Unmarshal(fields["ResolutionInput"], &input)
+	if input != addressA {
+		t.Errorf("persistent original query missing: got %q", input)
+	}
+	for _, tt := range []struct {
+		name string
+		mode int32
+		want codes.Code
+	}{{"stable_mapping", 0, codes.OK}, {"display_changes", 3, codes.OK}, {"A_maps_to_C_while_B_still_maps_to_B", 1, codes.FailedPrecondition}, {"A_unavailable_while_B_still_maps_to_B", 2, codes.FailedPrecondition}} {
+		t.Run(tt.name, func(t *testing.T) {
+			mode.Store(tt.mode)
+			if e := r.Revalidate(ctx, read()); status.Code(e) != tt.want {
+				t.Fatalf("revalidation = %v, want %s", e, tt.want)
+			}
+		})
+	}
+	mode.Store(0)
+	other, e := r.Resolve(ctx, owner, addressD)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if other.Card.Identity.Digest == persisted.Digest {
+		t.Error("different original mappings share the same identity digest")
+	}
+	if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_target_confirmations SET identity_json=identity_json-'ResolutionInput' WHERE token_digest=$1`, digest[:]); e != nil {
+		t.Fatal(e)
+	}
+	if e = r.Revalidate(ctx, read()); status.Code(e) != codes.FailedPrecondition {
+		t.Errorf("missing source revalidation = %v", e)
+	}
+	if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_target_confirmations SET identity_json=jsonb_set(identity_json,'{ResolutionInput}',to_jsonb($2::text)) WHERE token_digest=$1`, digest[:], addressD); e != nil {
+		t.Fatal(e)
+	}
+	if e = r.Revalidate(ctx, read()); status.Code(e) != codes.FailedPrecondition {
+		t.Errorf("changed source with unchanged wallet revalidation = %v", e)
+	}
+}
+
+func TestResolverRevalidatesOriginalRedirectURL(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	html, e := os.ReadFile("../../util/polymarket/testdata/profile/profile.html")
+	if e != nil {
+		t.Fatal(e)
+	}
+	public, e := os.ReadFile("../../util/polymarket/testdata/profile/public-profile.json")
+	if e != nil {
+		t.Fatal(e)
+	}
+	var originalUnavailable atomic.Bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/@GCR":
+			if originalUnavailable.Load() {
+				w.WriteHeader(404)
+				return
+			}
+			http.Redirect(w, r, "https://polymarket.com/@gcr", 302)
+		case "/@gcr":
+			w.Write(html)
+		case "/public-profile":
+			w.Write(public)
+		default:
+			w.WriteHeader(503)
+		}
+	}))
+	defer server.Close()
+	u, _ := url.Parse(server.URL)
+	resolver, e := NewTargetResolver(db.Pool, polymarket.NewProfileAdapter(routedHTTP{u, server.Client().Transport}), func(context.Context, pgx.Tx, string) error { return nil }, func(context.Context, pgx.Tx, string, common.Address) (tsmodel.ResolutionContext, error) {
+		return tsmodel.ResolutionContext{}, nil
+	})
+	if e != nil {
+		t.Fatal(e)
+	}
+	resolved, e := resolver.Resolve(ctx, uuid.NewString(), "https://www.polymarket.com/@GCR")
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = resolver.Revalidate(ctx, resolved.Card.Identity); e != nil {
+		t.Fatal("stable redirect mapping", e)
+	}
+	originalUnavailable.Store(true)
+	if e = resolver.Revalidate(ctx, resolved.Card.Identity); status.Code(e) != codes.FailedPrecondition {
+		t.Fatalf("original URL disappeared but canonical remained valid: %v", e)
 	}
 }
