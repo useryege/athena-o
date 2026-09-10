@@ -1,0 +1,295 @@
+{
+  "position_id": "1677415912060011761505225895152832125576889787899132551452768910625300545536",
+  "condition_id": "0x03b5623e2ec8037416edce55a0ed93553a0000000000000000000000000000",
+  "decoded_legs": [
+    "695169841241862167160996901315064183076334912620096596571903877933715947520",
+    "859456143983043703969108701920818153184154941619452660194551913960693563392"
+  ],
+  "binary_leg_mapping": {
+    "endpoint": "https://lb.drpc.live/polygon/Ai_L7JAEMk5hgVgUsOe8aKuLbjItrMIR8Yhzzu2G7ZgM",
+    "requests": [
+      {
+        "jsonrpc": "2.0",
+        "id": 30,
+        "method": "eth_call",
+        "params": [
+          {
+            "to": "0x1000008dD9001B968442c1000017eaE6E0dA00Ba",
+            "data": "0x932094f6018973c28252394425c5350b68169da64f000000000000000000000000000000"
+          },
+          "0x59378a2"
+        ]
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": 31,
+        "method": "eth_call",
+        "params": [
+          {
+            "to": "0x1000008dD9001B968442c1000017eaE6E0dA00Ba",
+            "data": "0xbf5a5595018973c28252394425c5350b68169da64f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "0x59378a2"
+        ]
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": 32,
+        "method": "eth_call",
+        "params": [
+          {
+            "to": "0x1000008dD9001B968442c1000017eaE6E0dA00Ba",
+            "data": "0x932094f601e66f5827b3529cec47a3537d291c5158000000000000000000000000000000"
+          },
+          "0x59378a2"
+        ]
+      },
+      {
+        "jsonrpc": "2.0",
+        "id": 33,
+        "method": "eth_call",
+        "params": [
+          {
+            "to": "0x1000008dD9001B968442c1000017eaE6E0dA00Ba",
+            "data": "0xbf5a559501e66f5827b3529cec47a3537d291c51580000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "0x59378a2"
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "id": 30,
+        "jsonrpc": "2.0",
+        "result": "0x17f9acc22b874fe7ae1cf34376073ff48973c28252394425c5350b68169da64f"
+      },
+      {
+        "id": 31,
+        "jsonrpc": "2.0",
+        "result": "0x61a99c61f58c8de5be3ecb61bd1346bbdbd5168209ba86e44da4a40858ae292e"
+      },
+      {
+        "id": 32,
+        "jsonrpc": "2.0",
+        "result": "0x127ffcc9241eeb1b5125ad9b0617cca9e66f5827b3529cec47a3537d291c5158"
+      },
+      {
+        "id": 33,
+        "jsonrpc": "2.0",
+        "result": "0x8e51fe9e7c12f38e70255ab2b9ebacfc24b93e8c27f0bfd556cfb5beec34ced6"
+      }
+    ]
+  },
+  "gamma_by_market_id": [
+    {
+      "url": "https://gamma-api.polymarket.com/markets/3978602",
+      "status": 200,
+      "response": {
+        "$schema": "https://gamma-api.polymarket.com/schemas/Market.json",
+        "id": "3978602",
+        "question": "Sporting CP vs. Galatasaray SK: Both Teams to Score",
+        "conditionId": "0x17f9acc22b874fe7ae1cf34376073ff48973c28252394425c5350b68169da64f",
+        "slug": "ucl-spo-gal-2026-09-09-btts",
+        "resolutionSource": "https://www.uefa.com/",
+        "endDate": "2026-09-09T19:00:00Z",
+        "startDate": "2026-08-29T18:16:29Z",
+        "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+        "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+        "description": "In the upcoming UEFA Champions League game between Sporting CP and Galatasaray SK, scheduled for September 9 at 3:00 PM ET:\n\nThis market will resolve to \"Yes\" if both Sporting CP and Galatasaray SK each score at least one goal during the game.\n\nThis market will resolve to \"No\" if either team fails to score (i.e., if one or both teams finish with zero goals).\n\nIf the game is postponed, this market will remain open until the game has been completed. If the game is canceled entirely, with no make-up game, this market will resolve 50\u201350.\n\nIf the game is started but not completed, this market will resolve according to the official final score published on uefa.com. This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.\n\nThe primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event's conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome.",
+        "outcomes": "[\"Yes\", \"No\"]",
+        "outcomePrices": "[\"1\", \"0\"]",
+        "volume": "30586.002063000004",
+        "active": true,
+        "closed": true,
+        "marketMakerAddress": "",
+        "createdAt": "2026-08-29T18:16:07.335347Z",
+        "updatedAt": "2026-09-10T09:02:29.675984Z",
+        "closedTime": "2026-09-09 21:15:09+00",
+        "new": false,
+        "featured": false,
+        "archived": false,
+        "resolvedBy": "0x65070BE91477460D8A7AeEb94ef92fe056C2f2A7",
+        "restricted": true,
+        "groupItemTitle": "Both Teams to Score",
+        "groupItemThreshold": "3",
+        "questionID": "0x64f6a6472e9f62d440c337d955a1ff7567157e07fa02d08bbe5abe37518ee7d8",
+        "umaEndDate": "2026-09-09T21:15:09Z",
+        "enableOrderBook": true,
+        "orderPriceMinTickSize": 0.001,
+        "orderMinSize": 5,
+        "umaResolutionStatus": "resolved",
+        "volumeNum": 30586.002063000004,
+        "endDateIso": "2026-09-09",
+        "startDateIso": "2026-08-29",
+        "hasReviewedDates": true,
+        "volume24hr": 29052.946719999996,
+        "volume1wk": 30586.002062999996,
+        "volume1mo": 30586.002062999996,
+        "volume1yr": 30586.002062999996,
+        "gameStartTime": "2026-09-09 19:00:00+00",
+        "secondsDelay": 1,
+        "clobTokenIds": "[\"44174022779928644804163012552948105723842696594170197991608889221484274133294\", \"15453671589145879570137868026954740543370235555836460217180439033223094220769\"]",
+        "positionIds": [
+          "695169841241862167160996901315064183076334912620096596571903877933715947520",
+          "695169841241862167160996901315064183076334912620096596571903877933715947521"
+        ],
+        "comboStatus": "enabled",
+        "umaBond": "250",
+        "umaReward": "0.8",
+        "volume24hrClob": 29052.946719999996,
+        "volume1wkClob": 30586.002062999996,
+        "volume1moClob": 30586.002062999996,
+        "volume1yrClob": 30586.002062999996,
+        "volumeClob": 30586.002063000004,
+        "makerBaseFee": 1000,
+        "takerBaseFee": 1000,
+        "customLiveness": 900,
+        "acceptingOrders": false,
+        "negRisk": false,
+        "ready": false,
+        "funded": false,
+        "acceptingOrdersTimestamp": "2026-08-29T18:16:29Z",
+        "cyom": false,
+        "pagerDutyNotificationEnabled": false,
+        "approved": true,
+        "rewardsMinSize": 50,
+        "rewardsMaxSpread": 4.5,
+        "spread": 0.001,
+        "automaticallyResolved": true,
+        "oneDayPriceChange": 0.3945,
+        "oneWeekPriceChange": 0.4095,
+        "lastTradePrice": 0.999,
+        "bestBid": 0.999,
+        "bestAsk": 1,
+        "automaticallyActive": true,
+        "clearBookOnStart": true,
+        "manualActivation": false,
+        "negRiskOther": false,
+        "sportsMarketType": "both_teams_to_score",
+        "umaResolutionStatuses": "[\"proposed\", \"proposed\"]",
+        "pendingDeployment": false,
+        "deploying": false,
+        "deployingTimestamp": "2026-08-29T18:16:11.490949Z",
+        "rfqEnabled": false,
+        "holdingRewardsEnabled": false,
+        "feesEnabled": true,
+        "requiresTranslation": false,
+        "feeType": "sports_fees_v3",
+        "feeSchedule": {
+          "exponent": 1,
+          "rate": 0.05,
+          "takerOnly": true,
+          "rebateRate": 0.15
+        },
+        "version": "v1"
+      },
+      "leg_position_id": "695169841241862167160996901315064183076334912620096596571903877933715947520"
+    },
+    {
+      "url": "https://gamma-api.polymarket.com/markets/3978659",
+      "status": 200,
+      "response": {
+        "$schema": "https://gamma-api.polymarket.com/schemas/Market.json",
+        "id": "3978659",
+        "question": "Spread: VfB Stuttgart (-1.5)",
+        "conditionId": "0x127ffcc9241eeb1b5125ad9b0617cca9e66f5827b3529cec47a3537d291c5158",
+        "slug": "ucl-stu-vf-2026-09-09-spread-home-1pt5",
+        "resolutionSource": "https://www.uefa.com/",
+        "endDate": "2026-09-09T16:45:00Z",
+        "startDate": "2026-08-29T18:16:38Z",
+        "image": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+        "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/champions-league-pic-QIUFsL8vaDdq.png",
+        "description": "In the upcoming UEFA Champions League game, scheduled for September 9 at 12:45 PM ET:\n\nThis market will resolve to \"VfB Stuttgart\" if VfB Stuttgart win the game by 2 or more goals.\n\nOtherwise, this market will resolve to \"Viking FK\".\n\nIf the game is postponed, this market will remain open until the game has been completed. If the game is canceled entirely, with no make-up game, this market will resolve 50\u201350.\n\nThis market will resolve according to the official final score published on uefa.com. This market refers only to the outcome within the first 90 minutes of regular play plus stoppage time.\n\nThe primary resolution source for this market is the official statistics of the event as recognized by the governing body or event organizers. However, if the governing body or event organizers have not published final match statistics within 2 hours after the event's conclusion, data from Flashscore may be used; if Flashscore data is unavailable, data from Sofascore may be used; if neither is available, a consensus of credible reporting may be used instead. All markets will settle based on the official final result as recognized by the governing body or event organizers. Revisions to officially declared final scores made after market resolution will not be accounted for in determining the outcome.",
+        "outcomes": "[\"VfB Stuttgart\", \"Viking FK\"]",
+        "outcomePrices": "[\"1\", \"0\"]",
+        "volume": "45670.06572499997",
+        "active": true,
+        "closed": true,
+        "marketMakerAddress": "",
+        "createdAt": "2026-08-29T18:16:18.820762Z",
+        "updatedAt": "2026-09-10T09:06:34.700559Z",
+        "closedTime": "2026-09-09 18:54:52+00",
+        "new": false,
+        "featured": false,
+        "archived": false,
+        "resolvedBy": "0x65070BE91477460D8A7AeEb94ef92fe056C2f2A7",
+        "restricted": true,
+        "groupItemTitle": "VfB Stuttgart (-1.5)",
+        "groupItemThreshold": "1",
+        "questionID": "0x2be6feb9db13ae3ae1e8a2cb96934fedf6f8772e20a79bc6954e985708ce9a2a",
+        "umaEndDate": "2026-09-09T18:54:52Z",
+        "enableOrderBook": true,
+        "orderPriceMinTickSize": 0.001,
+        "orderMinSize": 5,
+        "umaResolutionStatus": "resolved",
+        "volumeNum": 45670.06572499997,
+        "endDateIso": "2026-09-09",
+        "startDateIso": "2026-08-29",
+        "hasReviewedDates": true,
+        "volume24hr": 39534.655181,
+        "volume1wk": 45670.06572500001,
+        "volume1mo": 45670.06572500001,
+        "volume1yr": 45670.06572500001,
+        "gameStartTime": "2026-09-09 16:45:00+00",
+        "secondsDelay": 1,
+        "clobTokenIds": "[\"64373296427381054810163421606597670144180750703982812397147747598144600592086\", \"59012217578629269775680730879384762179074835934229955423460431271027730977732\"]",
+        "positionIds": [
+          "859456143983043703969108701920818153184154941619452660194551913960693563392",
+          "859456143983043703969108701920818153184154941619452660194551913960693563393"
+        ],
+        "comboStatus": "enabled",
+        "umaBond": "250",
+        "umaReward": "0.8",
+        "volume24hrClob": 39534.655181,
+        "volume1wkClob": 45670.06572500001,
+        "volume1moClob": 45670.06572500001,
+        "volume1yrClob": 45670.06572500001,
+        "volumeClob": 45670.06572499997,
+        "makerBaseFee": 1000,
+        "takerBaseFee": 1000,
+        "customLiveness": 900,
+        "acceptingOrders": false,
+        "negRisk": false,
+        "ready": false,
+        "funded": false,
+        "acceptingOrdersTimestamp": "2026-08-29T18:16:38Z",
+        "cyom": false,
+        "pagerDutyNotificationEnabled": false,
+        "approved": true,
+        "rewardsMinSize": 50,
+        "rewardsMaxSpread": 4.5,
+        "spread": 0.001,
+        "automaticallyResolved": true,
+        "oneDayPriceChange": 0.3945,
+        "oneHourPriceChange": 0.0995,
+        "oneWeekPriceChange": 0.3995,
+        "lastTradePrice": 0.999,
+        "bestBid": 0.999,
+        "bestAsk": 1,
+        "automaticallyActive": true,
+        "clearBookOnStart": true,
+        "manualActivation": false,
+        "negRiskOther": false,
+        "sportsMarketType": "spreads",
+        "line": -1.5,
+        "umaResolutionStatuses": "[\"proposed\", \"proposed\"]",
+        "pendingDeployment": false,
+        "deploying": false,
+        "deployingTimestamp": "2026-08-29T18:16:25.529657Z",
+        "rfqEnabled": false,
+        "holdingRewardsEnabled": false,
+        "feesEnabled": true,
+        "requiresTranslation": false,
+        "feeType": "sports_fees_v3",
+        "feeSchedule": {
+          "exponent": 1,
+          "rate": 0.05,
+          "takerOnly": true,
+          "rebateRate": 0.15
+        },
+        "version": "v1"
+      },
+      "leg_position_id": "859456143983043703969108701920818153184154941619452660194551913960693563392"
+    }
+  ]
+}

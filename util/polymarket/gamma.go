@@ -22,6 +22,7 @@ const (
 // GammaClient is a typed Polymarket Gamma API client.
 type GammaClient interface {
 	// Markets
+	ListComboMarkets(ctx context.Context, cursor string, limit int) (ComboMarketPage, error)
 	ListMarkets(ctx context.Context, options ListMarketsOptions) ([]Market, error)
 	ListMarketsKeyset(ctx context.Context, options ListMarketsKeysetOptions) (*MarketKeysetResponse, error)
 	GetMarketByID(ctx context.Context, id int64, options GetMarketOptions) (*Market, error)
@@ -68,6 +69,7 @@ type GammaClient interface {
 type GammaConfig struct {
 	HTTPClient   *http.Client
 	GammaBaseURL string
+	ComboBaseURL string
 	Timeout      time.Duration
 }
 
@@ -76,6 +78,10 @@ func (c GammaConfig) WithDefaults() GammaConfig {
 }
 
 func (c GammaConfig) withDefaults() GammaConfig {
+	c.ComboBaseURL = strings.TrimSpace(c.ComboBaseURL)
+	if c.ComboBaseURL == "" {
+		c.ComboBaseURL = "https://combos-rfq-api.polymarket.com"
+	}
 	c.GammaBaseURL = strings.TrimSpace(c.GammaBaseURL)
 	if c.GammaBaseURL == "" {
 		c.GammaBaseURL = DefaultGammaBaseURL
@@ -97,6 +103,9 @@ func NewGammaClient(config GammaConfig) (GammaClient, error) {
 	config = config.withDefaults()
 	if _, err := url.ParseRequestURI(config.GammaBaseURL); err != nil {
 		return nil, fmt.Errorf("invalid polymarket gamma base url: %w", err)
+	}
+	if _, err := url.ParseRequestURI(config.ComboBaseURL); err != nil {
+		return nil, fmt.Errorf("invalid combo base url: %w", err)
 	}
 	client := config.HTTPClient
 	if client == nil {
@@ -352,6 +361,7 @@ type ListTeamsOptions struct {
 // API models.
 
 type Market struct {
+	PositionIDs           *[]string       `json:"positionIds,omitempty"`
 	ID                    string          `json:"id"`
 	Question              *string         `json:"question,omitempty"`
 	SportsMarketType      *string         `json:"sportsMarketType,omitempty"`

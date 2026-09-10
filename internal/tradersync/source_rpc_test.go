@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -422,5 +423,33 @@ func TestSourceRPCReceiptZeroLocationsArePresent(t *testing.T) {
 	got, err := ConfirmReceived(context.Background(), node, raw)
 	if err != nil || got.Status != "confirmed" {
 		t.Fatal("present zero location rejected", got, err)
+	}
+}
+
+func TestSourceRPCCallContractUsesKnownHash(t *testing.T) {
+	hash := common.HexToHash("0x1234")
+	addr := common.HexToAddress("0x42")
+	node := sourceRPCServer(t, func(r rpcRequest) (any, error) {
+		if r.Method != "eth_call" || len(r.Params) != 2 {
+			t.Fatal(r)
+		}
+		var block map[string]any
+		_ = json.Unmarshal(r.Params[1], &block)
+		if block["blockHash"] != hash.Hex() {
+			t.Fatal(block)
+		}
+		var call map[string]any
+		_ = json.Unmarshal(r.Params[0], &call)
+		if call["to"] != addr.Hex() || call["input"] != "0xaabb" {
+			t.Fatal(call)
+		}
+		return "0x1234", nil
+	})
+	b, e := node.CallContractAtHash(context.Background(), ethereum.CallMsg{To: &addr, Data: []byte{0xaa, 0xbb}}, hash)
+	if e != nil || string(b) != string([]byte{0x12, 0x34}) {
+		t.Fatal(b, e)
+	}
+	if _, e = node.CallContractAtHash(context.Background(), ethereum.CallMsg{To: &addr}, common.Hash{}); e == nil {
+		t.Fatal("accepted zero hash")
 	}
 }

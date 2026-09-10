@@ -1,0 +1,45 @@
+[
+  {
+    "name": "getLegacyPositionId",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "_conditionId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "_outcomeIndex",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "legacyConditionId",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes31",
+        "internalType": "ConditionId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  }
+]

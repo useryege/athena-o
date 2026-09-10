@@ -1,0 +1,119 @@
+{
+  "modules": [
+    {
+      "name": "combinatorial",
+      "abiSHA256": "eea52d4fc18bd6811dd30832617e48cfdb450a0d741cd676d1cf99db4134c8de",
+      "originalResponseSHA256": "0ef8d5073bc54a8f6901f313cf35b6bad5cf03f629c45349d9ad3970e791639c",
+      "runtimeFile": "internal/tradersync/testdata/runtime/combinatorial-module.hex",
+      "runtimeTextSHA256": "fba580f08513e5d5a36b1e4bc2d247fdf63b7be69cb7f4c600cbadfec321c7ce",
+      "sourceRequest": {
+        "startedAt": "2026-09-10T18:26:27.642463+00:00",
+        "url": "https://sourcify.dev/server/v2/contract/137/0xf96968a44022b17240b42c557693e7c383d2d8a3?fields=all",
+        "request": null,
+        "method": "GET",
+        "requestHeaders": {
+          "User-Agent": "Mozilla/5.0"
+        },
+        "status": 200,
+        "headers": {
+          "x-powered-by": "Express",
+          "access-control-allow-origin": "*",
+          "content-type": "application/json; charset=utf-8",
+          "etag": "W/\"164149-uMg+XvgipLDU8YatmTjCgwpU+FA\"",
+          "x-cloud-trace-context": "9af538a85c133559581ab32dd10ee3b5",
+          "date": "Thu, 10 Sep 2026 18:26:32 GMT",
+          "server": "Google Frontend",
+          "Content-Length": "1458505",
+          "via": "1.1 google",
+          "Alt-Svc": "h3=\":443\"; ma=2592000",
+          "Connection": "close"
+        },
+        "finishedAt": "2026-09-10T18:26:34.543875+00:00",
+        "responseSHA256": "0ef8d5073bc54a8f6901f313cf35b6bad5cf03f629c45349d9ad3970e791639c"
+      },
+      "abiFile": "combinatorial_module.json",
+      "extraction": "Exact named function entries from approved Sourcify ABI; minimal ABI hash differs from full original ABI hash."
+    },
+    {
+      "name": "binary",
+      "abiSHA256": "9313bf41a49fb35ca3536c0b44901c576feaa2dd1c7d42657312542c933ce3ed",
+      "originalResponseSHA256": "f95bf69a48485c4595cc4323c40d8af9da3f4ad03ad1fa34a32d699d8c4388d9",
+      "runtimeFile": "internal/tradersync/testdata/runtime/binary-module.hex",
+      "runtimeTextSHA256": "5ccf2b1bf3f732a6a4b4316e4bdfd79b442d17ac796890f50f8898469870aba5",
+      "sourceRequest": {
+        "startedAt": "2026-09-10T18:26:27.642877+00:00",
+        "url": "https://sourcify.dev/server/v2/contract/137/0xf6428c0b5fa9361c0708cddb95468cf54c56e9a2?fields=all",
+        "request": null,
+        "method": "GET",
+        "requestHeaders": {
+          "User-Agent": "Mozilla/5.0"
+        },
+        "status": 200,
+        "headers": {
+          "x-powered-by": "Express",
+          "access-control-allow-origin": "*",
+          "content-type": "application/json; charset=utf-8",
+          "etag": "W/\"13a91d-oZcXWDSk9fNCy2KFCjNR35J6xwQ\"",
+          "x-cloud-trace-context": "c6ec041ba1426d739ba02e48bd7846c8",
+          "date": "Thu, 10 Sep 2026 18:26:32 GMT",
+          "server": "Google Frontend",
+          "Content-Length": "1288477",
+          "via": "1.1 google",
+          "Alt-Svc": "h3=\":443\"; ma=2592000",
+          "Connection": "close"
+        },
+        "finishedAt": "2026-09-10T18:26:34.438067+00:00",
+        "responseSHA256": "f95bf69a48485c4595cc4323c40d8af9da3f4ad03ad1fa34a32d699d8c4388d9"
+      },
+      "abiFile": "binary_module.json",
+      "extraction": "Exact named function entries from approved Sourcify ABI; minimal ABI hash differs from full original ABI hash."
+    }
+  ],
+  "fixedEvidence": {
+    "scope": "Suggested fixed approved module registry entries only, not a runtime verification result for arbitrary candidates",
+    "chainID": 137,
+    "observedBlockHash": "0x1d64636dcdfa966bb1c6564f0ff3f4322bfc23150c2579f737eb36c9bb5028ad",
+    "implementationSlot": "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+    "proxyRuntimeKeccak": "0xaaa52c8cc8a0e3fd27ce756cc6b4e70c51423e9b597b11f32d3e49f8b1fc890d",
+    "entries": [
+      {
+        "module": "combinatorial",
+        "proxyAddress": "0x30000034706C7d8e12009DAB006Be20000c031A8",
+        "implementationAddress": "0xf96968a44022b17240b42c557693e7c383d2d8a3",
+        "implementationRuntimeKeccak": "0xddc204af9baf769695592bc704873010537c4e941018dd5eec7cd4b27763f9ca",
+        "abiSHA256": "8196d6b721b7a13e96208b6fe58fb97f3e6bc737699c7246354254c7807060d5",
+        "mappingScope": "getLegs(bytes31)"
+      },
+      {
+        "module": "binary",
+        "proxyAddress": "0x1000008dD9001B968442c1000017eaE6E0dA00Ba",
+        "implementationAddress": "0xf6428c0b5fa9361c0708cddb95468cf54c56e9a2",
+        "implementationRuntimeKeccak": "0xe378ba6d5142d89ab97c857f762043f2a388b9d2049fe1b79b5694881a3d445a",
+        "abiSHA256": "12874a42daa858ae3ccd6e3e0aac1d4248e10e2c37447c09dbaa1cf2e9a7115b",
+        "mappingScope": "Migrated binary legs only: legacyConditionId(bytes31), getLegacyPositionId(bytes32,uint256)"
+      }
+    ],
+    "requiredPerCandidateEvidence": [
+      "known candidate header/hash and its actual ParentHash after endpoint chain 137 verification",
+      "exact approved proxy and implementation code hashes at relevant candidate/parent states",
+      "implementation slot resolves to the approved implementation",
+      "upgrade-boundary evidence per approved version policy; this observation is not upgrade history"
+    ],
+    "metadataFailureBehavior": "unavailable evidence/reason; do not change valid trade direction/amount or drop the trade",
+    "observedRPCBlockObject": {
+      "blockHash": "0x1d64636dcdfa966bb1c6564f0ff3f4322bfc23150c2579f737eb36c9bb5028ad",
+      "requireCanonical": true
+    }
+  },
+  "limits": "Fixed evidence only; runtime candidates and actual parent hashes must be verified. No native Binary inference.",
+  "sourceExcerpts": {
+    "file": "evidence/combinatorial-module-excerpts.json",
+    "sha256": "4c7549b32c17c9476df3c770a3d230adb2670db246d8fa6b8424d5b8a7011bbf"
+  },
+  "sourceFixtures": {
+    "file": "../testdata/metadata.json",
+    "originalFile": "docs/requirements/polymarket-copy-trading/evidence/trader-sync-protocol-current-rpc.json",
+    "originalSHA256": "42db8a0f7a69c7a132c879a85c3780dd81e299885e1ce23f524556d1e15b2229",
+    "extraction": "Only position/condition/legs, exact migration request+responses and market ID Gamma records; original RPC selector was a fixed block number. Unit tests reuse calldata/results with explicit synthetic candidate headers, not historical execution proof."
+  }
+}

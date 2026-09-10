@@ -218,6 +218,12 @@ Combo PositionId 先取得组合自身 YES/NO，再以高 31 字节 condition �
 - 同钱包、同组合 condition 的公开生命周期资料可补充并交叉核对，但不是必达依赖，不产生新成交。持仓为空不等于不存在成交。
 - 目录只覆盖活跃可组合市场；已见映射保留，关闭后不删除。尚未见过的历史腿可能资料缺失，保留精确 PositionId 和逐字段 unknown，允许异步补齐，不丢弃真实已确认 TRADE，也不为补资料重发。
 
+资料实现通过 `MetadataResolver.Resolve` 补全独立 `TradeMetadata`，默认最多 4 个并发解析；单次 Gamma/known-hash RPC 最长 5 秒。调用方拥有最终确认后 2 秒等待预算，Resolve 不固定截断总时长，后台晚补可使用自己的 context。普通 `outcomes`/`clobTokenIds` 保持 JSON 文本；新增 `positionIds` 使用有 presence 的字符串数组，巨大 ID 不经浮点。普通市场和逐腿缺失分别保留 reason；缓存缺失不遍历 Combo 目录。
+
+固定 Module 地址、部署 runtime、最小 ABI 及原始/合成证据边界见 [module-provenance.json](../../../internal/tradersync/abi/module-provenance.json)。模块只在独立固定 registry 中登记，复用候选块/真实父块 code、implementation slot 和候选块升级事件核验，不扩展 Exchange 解码白名单。CombinatorialModule 通过后才按低字节 0/1 解释 YES/NO 并调用 `getLegs(bytes31)`；未知 Outcome 不产生关系表达式。迁移 Binary 先核验 BinaryModule，再向 `getLegacyPositionId(bytes32,uint256)` 传入结构化 condition 的规范补零 bytes32；`legacyConditionId` 返回值用于核对 Gamma condition，不能错误地替代此调用参数。迁移映射不可得时，module 1 可独立走目录与 Gamma 精确核验，来源注明 `combo_directory+gamma`，不声称 native Binary 已被证明；明确冲突保持缺失，不能靠 fallback 消除。
+
+`trader_sync_market_metadata` 保存补全结果/来源；`trader_sync_combo_leg_index` 保留目录声称的 position/market/condition 与完整 positionIds 关系，Resolver 仍须经 Gamma 逐项核验才显示 available。`trader_sync_directory_refresh` 保存 cursor、轮次时刻、next_page_at 与本轮已访问 cursor。目录来自独立 `combos-rfq-api.polymarket.com`，每页不超过 100；专用目录行锁跨单次最多 5 秒的 HTTP 请求，序列化多实例页请求，绝不取得账户/钱包 gate。映射 upsert 与 cursor CAS 同事务；失败保留 cursor 并提交 1 秒节流，已见关闭市场不删除。末页调度为 `max(round_started_at+10分钟, 数据库当前时刻+1秒)`；慢轮和重启继续原 cursor，不重叠开新轮。
+
 资料查询不能长期阻塞成交形成。先并行补全，最终确认可用后最多另等待 2 秒资料；仍缺失则写入独立活动和缺失状态。getLegs 整体失败时腿数组与腿数均 unavailable，不用空数组/0代替；已知 N 条腿、其中 M 条市场未知时才保存明确 N/M。任何缺失不能被表述为全部协议已经完整验收。
 
 ### 活动形成

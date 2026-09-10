@@ -223,3 +223,13 @@ func (s *SourceRPC) UpgradeLogs(ctx context.Context, h common.Hash, a common.Add
 
 var _ CanonicalRPC = (*SourceRPC)(nil)
 var _ VersionRPC = (*SourceRPC)(nil)
+
+// CallContractAtHash only reads the caller's known block; it never falls back to latest.
+func (s *SourceRPC) CallContractAtHash(ctx context.Context, call ethereum.CallMsg, hash common.Hash) ([]byte, error) {
+	if hash == (common.Hash{}) {
+		return nil, errors.New("known block hash is required")
+	}
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	return s.client.CallContractAtHash(ctx, call, hash)
+}

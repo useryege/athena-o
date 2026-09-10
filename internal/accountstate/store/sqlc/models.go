@@ -234,6 +234,29 @@ type TraderSyncBaselineAttempt struct {
 	CreatedAt            pgtype.Timestamptz
 }
 
+type TraderSyncComboLegIndex struct {
+	PositionID  string
+	MarketID    string
+	ConditionID string
+	PositionIds []byte
+	SeenAt      pgtype.Timestamptz
+}
+
+type TraderSyncDirectoryRefresh struct {
+	Name             string
+	Cursor           string
+	VisitedCursors   []string
+	RoundStartedAt   pgtype.Timestamptz
+	RoundCompletedAt pgtype.Timestamptz
+	NextPageAt       pgtype.Timestamptz
+}
+
+type TraderSyncMarketMetadatum struct {
+	CacheKey     string
+	MetadataJson []byte
+	UpdatedAt    pgtype.Timestamptz
+}
+
 type TraderSyncMonitorInterval struct {
 	ID                   pgtype.UUID
 	OwnerID              pgtype.UUID

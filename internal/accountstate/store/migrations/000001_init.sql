@@ -584,7 +584,32 @@ CREATE TABLE trader_sync_monitor_intervals (
  FOREIGN KEY(owner_id,subscription_id,baseline_attempt_id) REFERENCES trader_sync_baseline_attempts(owner_id,subscription_id,id)
 );
 
+CREATE TABLE trader_sync_market_metadata (
+ cache_key TEXT PRIMARY KEY CHECK(length(cache_key)>0),
+ metadata_json JSONB NOT NULL,
+ updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
+CREATE TABLE trader_sync_combo_leg_index (
+ position_id TEXT NOT NULL CHECK(position_id ~ '^(0|[1-9][0-9]{0,77})$'),
+ market_id TEXT NOT NULL CHECK(market_id ~ '^[1-9][0-9]*$'),
+ condition_id TEXT NOT NULL CHECK(length(condition_id)>0),
+ position_ids JSONB NOT NULL CHECK(jsonb_typeof(position_ids)='array'),
+ seen_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+ PRIMARY KEY(position_id,market_id)
+);
+CREATE TABLE trader_sync_directory_refresh (
+ name TEXT PRIMARY KEY CHECK(name='combo_markets'),
+ cursor TEXT NOT NULL DEFAULT '',
+ visited_cursors TEXT[] NOT NULL DEFAULT '{}',
+ round_started_at TIMESTAMPTZ,
+ round_completed_at TIMESTAMPTZ,
+ next_page_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
+
 -- +goose Down
+DROP TABLE trader_sync_directory_refresh;
+DROP TABLE trader_sync_combo_leg_index;
+DROP TABLE trader_sync_market_metadata;
 DROP TABLE trader_sync_monitor_intervals;
 DROP TABLE trader_sync_baseline_attempts;
 DROP FUNCTION trader_sync_guard_attempt_terminal();

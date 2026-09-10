@@ -12,3 +12,9 @@ var CombosExchange []byte
 
 //go:embed proxy.json
 var Proxy []byte
+
+//go:embed combinatorial_module.json
+var CombinatorialModule []byte
+
+//go:embed binary_module.json
+var BinaryModule []byte

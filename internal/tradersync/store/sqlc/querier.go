@@ -11,16 +11,22 @@ import (
 )
 
 type Querier interface {
+	AdvanceComboPage(ctx context.Context, arg AdvanceComboPageParams) (pgtype.Timestamptz, error)
 	ChangeSubscription(ctx context.Context, arg ChangeSubscriptionParams) (TraderSyncSubscription, error)
 	CloseSubscriptionIntervals(ctx context.Context, arg CloseSubscriptionIntervalsParams) error
 	ConfirmationExpiry(ctx context.Context) (pgtype.Timestamptz, error)
 	ConsumeConfirmation(ctx context.Context, arg ConsumeConfirmationParams) ([]byte, error)
 	CountLiveSubscriptions(ctx context.Context, ownerID pgtype.UUID) (int64, error)
 	CreateSubscription(ctx context.Context, arg CreateSubscriptionParams) (TraderSyncSubscription, error)
+	DelayComboPage(ctx context.Context) (pgtype.Timestamptz, error)
+	EnsureComboDirectory(ctx context.Context) error
 	FailSubscriptionBaselines(ctx context.Context, arg FailSubscriptionBaselinesParams) error
 	GetLiveSubscription(ctx context.Context, arg GetLiveSubscriptionParams) (TraderSyncSubscription, error)
 	GetSubscription(ctx context.Context, arg GetSubscriptionParams) (TraderSyncSubscription, error)
 	GetTargetNote(ctx context.Context, arg GetTargetNoteParams) (TraderSyncTargetNote, error)
+	GetTradeMetadata(ctx context.Context, cacheKey string) ([]byte, error)
+	LockComboDirectory(ctx context.Context) (LockComboDirectoryRow, error)
+	LookupComboPosition(ctx context.Context, positionID string) ([]LookupComboPositionRow, error)
 	ReadConfirmation(ctx context.Context, arg ReadConfirmationParams) ([]byte, error)
 	ReadSubscriptionRequestResult(ctx context.Context, arg ReadSubscriptionRequestResultParams) (ReadSubscriptionRequestResultRow, error)
 	RequireTraderSyncGrant(ctx context.Context, ownerID pgtype.UUID) (bool, error)
@@ -32,6 +38,9 @@ type Querier interface {
 	SaveConfirmationCard(ctx context.Context, arg SaveConfirmationCardParams) (int64, error)
 	SaveSubscriptionRequestResult(ctx context.Context, arg SaveSubscriptionRequestResultParams) error
 	SaveTargetNote(ctx context.Context, arg SaveTargetNoteParams) (TraderSyncTargetNote, error)
+	SaveTradeMetadata(ctx context.Context, arg SaveTradeMetadataParams) error
+	StartComboRound(ctx context.Context) error
+	UpsertComboPosition(ctx context.Context, arg UpsertComboPositionParams) error
 }
 
 var _ Querier = (*Queries)(nil)
