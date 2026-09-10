@@ -17,7 +17,7 @@ Use English Conventional Commit messages with a specific subject and concise bod
 - <main behavior or artifact changed>
 - <important API/schema/UI/submodule impact when relevant>
 - <reason/context when it clarifies intent>
-- Validation: <commands run>; tests not run unless explicitly requested
+- Validation: <actual commands and results, including tests; state any unverified scope>
 ```
 
 - Keep the subject imperative, specific, and under 72 characters when practical.
@@ -79,6 +79,6 @@ Use English Conventional Commit messages with a specific subject and concise bod
 - Dirty submodules must be committed in their own repositories; never stage only the parent submodule path as a substitute for committing submodule content.
 - Commit to the current local branch of each dirty repository only; do not create branches, push, open PRs, merge, amend, or deploy.
 - Preserve unrelated staged changes when they are clearly unrelated; otherwise include the current coherent change as-is.
-- Do not run tests, formatters, linters, or PR checks unless the user explicitly asks.
+- Follow Superpowers completion verification before committing. Report evidence for the exact changes being committed; do not treat a commit request as permission to make unrelated formatting or source changes.
 - Do not omit the commit body for normal commits; the body is where the implementation impact and validation status belong.
 - If one repository's change set is too mixed to summarize as one commit, ask the user how to split that repository before continuing with dependent parent commits.

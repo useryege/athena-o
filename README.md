@@ -55,8 +55,10 @@ make stop
 - `internal/`：主要业务实现。
 - `pkg/`：公共 API、合约 ABI 和客户端代码。
 - `ui/`：Web 前端。
-- `docs/requirements/`：业务需求、目标行为与确认状态。
-- `docs/design/`：编码前形成并在实现后持续维护的后端技术设计。
+- `docs/requirements/`：长期维护的业务需求、目标行为与已知决定。
+- `docs/design/`：长期维护的系统设计、实现事实与源码关系。
+- `docs/superpowers/specs/`：Superpowers 架构任务的设计规格。
+- `docs/superpowers/plans/`：Superpowers 多步骤任务的实现计划。
 - `deploy/`：独立服务的部署配置。
 - `hack/`：开发、代码生成和部署脚本。
 
@@ -65,11 +67,11 @@ make stop
 - [文档首页](docs/index.md)
 - [需求目标设计](docs/requirements/README.md)
 - [后端技术设计](docs/design/README.md)
-- [设计主导后端开发工作流](docs/developer-guide/design-led-backend-development.md)
+- [Superpowers 开发工作流](docs/developer-guide/superpowers-development.md)
 - [开发者指南](docs/developer-guide/index.md)
 - [Makefile 操作手册](docs/operator-manual/makefile-commands.md)
 - [API 文档](docs/developer-guide/api-docs.md)
 
 ## 开发约定
 
-后端功能按“需求目标设计 → 后端技术设计 → 明确派发实现 → 设计一致性审查”推进。开始前阅读[需求目标设计](docs/requirements/README.md)、[后端技术设计](docs/design/README.md)和[完整工作流](docs/developer-guide/design-led-backend-development.md)；需求确认、设计确认与实现授权是三个独立门禁。
+开发任务采用原版 [Superpowers 工作流](docs/developer-guide/superpowers-development.md)，按上游规则开展需求探索、设计、计划、TDD、执行与审查。开始前读取相关[业务需求](docs/requirements/README.md)、[系统设计](docs/design/README.md)和实际源码；任务规格与计划使用 `docs/superpowers/specs/`、`docs/superpowers/plans/`，完成后同步项目长期知识。

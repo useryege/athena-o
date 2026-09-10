@@ -10,7 +10,7 @@
 
 ## Preface
 #### Understand the [Code Contribution Preface](submit-your-pr.md#preface)
-#### Follow the [Design-Led Backend Development Workflow](design-led-backend-development.md)
+#### Follow the [Superpowers Development Workflow](superpowers-development.md)
     
 ## Contributing to Athena documentation
 
@@ -65,8 +65,8 @@ As is the case with the development process, this document is under constant cha
 
 ### Perform the development cycle 
 - [Start with the compact local development workflow](how-to-develop.md)
-- [Follow the design-led backend workflow and phase gates](design-led-backend-development.md)
-- How to contribute to documentation: maintain repository Markdown directly and follow the [requirements](../requirements/README.md), [backend technical design](../design/README.md), and [design-led workflow](design-led-backend-development.md) rules
+- [Follow the upstream Superpowers development workflow](superpowers-development.md)
+- How to contribute to documentation: maintain repository Markdown directly, use `docs/superpowers/specs/` and `docs/superpowers/plans/` for task artifacts, and keep the project's long-term [requirements](../requirements/README.md) and [system designs](../design/README.md) current
 
 ### Run and debug Athena locally
 - [Run Athena on your machine for manual testing](running-locally.md)

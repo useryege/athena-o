@@ -14,7 +14,7 @@ Publish related branches from Git repositories and submodules without including 
 - Do not stage, commit, amend, rebase, force-push, clean, stash, or delete worktree changes. Use `local-git-commit` first when the user asks to commit local changes.
 - Exclude untracked, unstaged, and staged worktree content from the PR unless it already belongs to a pushed commit. Report excluded local changes.
 - Never expose tokens, credentials, `.env` values, or authentication output.
-- Do not run tests, builds, linters, formatters, migrations, or browser acceptance unless explicitly requested or required by repository instructions.
+- Follow Superpowers completion verification for the exact commits being published. Use relevant tests, builds, or checks as evidence; preserve unrelated worktree content and avoid modifying source as part of publishing.
 - Do not create an empty PR. Do not duplicate an open PR with the same repository, head, and base.
 - Do not force-push, enable auto-merge, delete branches, or retarget PRs unless explicitly requested.
 - Create draft PRs by default. Mark ready or merge only when the current user request explicitly authorizes that action.
@@ -78,13 +78,13 @@ Write the body in Simplified Chinese with exactly these sections:
 ## 验证
 
 - <validation that actually ran>
-- 未运行测试
+- <实际测试命令与结果；未运行时说明未验证范围>
 ```
 
 - Mention submodule pointer changes and child PRs when relevant.
 - Mention excluded untracked or local-only artifacts when they could be mistaken as part of the PR.
 - Never claim a validation command ran unless its result is known.
-- Omit `未运行测试` only when tests were explicitly requested and actually ran; then report the real commands and results.
+- Report tests only when their execution and results are known for the reviewed changes. Otherwise state that tests were not run; do not infer success from an earlier task or a template.
 
 Create the PR as a draft with maintainer edits enabled. Preserve the exact expected head SHA.
 

@@ -1,7 +1,0 @@
-interface:
-  display_name: "ATHENA 后端设计开发"
-  short_description: "按已确认需求和后端技术设计门禁推进 ATHENA 后端功能开发"
-  default_prompt: "Use $athena-backend-feature-workflow to advance this ATHENA backend feature through its next valid design or implementation phase."
-
-policy:
-  allow_implicit_invocation: true

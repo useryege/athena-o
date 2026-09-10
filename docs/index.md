@@ -20,11 +20,11 @@ Athena is a trading/project sync system for the blockchain.
 
 ## Backend Technical Design
 
-- [后端技术设计索引](design/README.md) — 编码前形成、实现后持续维护，并以状态区分目标方案和当前实现。
+- [后端技术设计索引](design/README.md) — 长期维护系统设计与源码关系，区分目标方案和当前实现。
 
 ## Development Workflow
 
-- [设计主导的后端开发工作流](developer-guide/design-led-backend-development.md)
+- [Superpowers 开发工作流](developer-guide/superpowers-development.md) — 任务规格与计划分别保存在 `docs/superpowers/specs/`、`docs/superpowers/plans/`；需求与系统设计目录保存项目长期知识。
 - [开发者指南](developer-guide/index.md)
 
 ## Operations

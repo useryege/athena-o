@@ -34,7 +34,7 @@ cd ui
 yarn start
 ```
 
-Maintain documentation directly as repository Markdown. Backend features follow the fixed [design-led workflow](design-led-backend-development.md): confirm the relevant [requirement](../requirements/README.md), confirm the [backend technical design](../design/README.md), receive a separate implementation request, and finish with a design-conformance review. Keep the affected documents and their status synchronized in the same task.
+Maintain documentation directly as repository Markdown. Follow the upstream [Superpowers workflow](superpowers-development.md) for discovery, design, planning, TDD, execution, and review. Read the relevant [requirements](../requirements/README.md), [system designs](../design/README.md), and source code as project context. Save task specs and plans under `docs/superpowers/specs/` and `docs/superpowers/plans/`, then update the affected long-term project documents as part of the work.
 
 ### 3. Generated Files
 

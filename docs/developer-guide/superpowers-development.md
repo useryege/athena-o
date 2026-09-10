@@ -1,0 +1,52 @@
+# Superpowers 开发方式
+
+ATHENA 使用 [obra/superpowers](https://github.com/obra/superpowers) 的完整上游技能集推进开发。具体行为以仓库内的原版 `SKILL.md` 为准；本文说明安装、入口和项目资料的位置，不另设一套审批流程。
+
+## 安装与加载
+
+- 完整的 14 个技能及其脚本、参考资料安装在 [`.agents/skills/`](../../.agents/skills/)，与 Impeccable 并列，通过 Codex 的仓库技能发现机制加载。
+- 本次固定上游提交 [`b36e0829c6d0140e93cfef2ca599b1b07d4a7797`](https://github.com/obra/superpowers/tree/b36e0829c6d0140e93cfef2ca599b1b07d4a7797)，该提交的插件清单版本为 `6.3.0`。技能内容未做本地改写；来源记录见 [superpowers.json](../../.agents/superpowers.json)，许可证见 [MIT](../../.agents/licenses/superpowers-MIT.txt)。
+- 这是随仓库分发的完整技能安装，不是 Codex 插件市场的全局安装。上游该版本的 Codex 插件声明仅加载 `skills/`，`hooks` 为空。入口由根目录 [AGENTS.md](../../AGENTS.md) 指向 [using-superpowers](../../.agents/skills/using-superpowers/SKILL.md)。
+- 新安装的技能在下一轮对话可用。直接调用使用 `$using-superpowers`、`$brainstorming` 等名称；上游文中的 `superpowers:<name>` 对应本仓库同名 `<name>` 技能。
+- Codex 工具映射见 [codex-tools.md](../../.agents/skills/using-superpowers/references/codex-tools.md)。工具和模型以当前会话实际提供的能力为准。
+
+Codex 的仓库技能发现方式见 [OpenAI 官方技能文档](https://learn.chatgpt.com/docs/build-skills)。
+
+## 日常入口
+
+| 工作 | 上游技能 |
+| --- | --- |
+| 识别任务需要的技能 | [using-superpowers](../../.agents/skills/using-superpowers/SKILL.md) |
+| 澄清目标、比较方案、审阅设计 | [brainstorming](../../.agents/skills/brainstorming/SKILL.md) |
+| 把设计拆成可执行任务 | [writing-plans](../../.agents/skills/writing-plans/SKILL.md) |
+| 按任务实现和审查 | [subagent-driven-development](../../.agents/skills/subagent-driven-development/SKILL.md)、[executing-plans](../../.agents/skills/executing-plans/SKILL.md) |
+| 并行处理独立问题 | [dispatching-parallel-agents](../../.agents/skills/dispatching-parallel-agents/SKILL.md) |
+| 行为实现与故障修复 | [test-driven-development](../../.agents/skills/test-driven-development/SKILL.md)、[systematic-debugging](../../.agents/skills/systematic-debugging/SKILL.md) |
+| 发起与处理审查 | [requesting-code-review](../../.agents/skills/requesting-code-review/SKILL.md)、[receiving-code-review](../../.agents/skills/receiving-code-review/SKILL.md) |
+| 工作隔离、验证和交付 | [using-git-worktrees](../../.agents/skills/using-git-worktrees/SKILL.md)、[verification-before-completion](../../.agents/skills/verification-before-completion/SKILL.md)、[finishing-a-development-branch](../../.agents/skills/finishing-a-development-branch/SKILL.md) |
+| 改进技能 | [writing-skills](../../.agents/skills/writing-skills/SKILL.md) |
+
+由 `brainstorming` 按任务选取 Spike、Bounded 或 Architectural 路径。局部修改不必一律形成完整 spec 和 plan；需要书面方案的任务按上游技能创建相应文件。方案批准、任务执行和审查遵循所选技能，沿用用户已经明确给出的决定与授权。
+
+## 项目资料与任务产物
+
+| 位置 | 用途 |
+| --- | --- |
+| [`docs/requirements/`](../requirements/README.md) | 长期业务目标、范围、规则和待决问题 |
+| [`docs/design/`](../design/README.md) | 长期架构、契约、关键流程和实际源码索引 |
+| `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` | Superpowers 需要的任务设计说明 |
+| `docs/superpowers/plans/YYYY-MM-DD-<topic>.md` | Superpowers 需要的实现计划 |
+| `.superpowers/` | 临时执行记录、子代理交接和可视化会话，Git 忽略 |
+| `.worktrees/` | 项目内隔离工作树，Git 忽略 |
+
+任务 spec 和 plan 引用相关长期文档，记录本次要改变的内容。完成实现时同步受影响的长期文档与源码链接。已有的 `讨论中`、`已确认`、`设计中`、`已确认待实现`、`已实现` 状态继续描述真实情况，不作为额外的阶段启动条件；切换流程不代表批准尚未决定的业务规则，也不代表已有方案已经实现。
+
+## 项目技能的职责
+
+Superpowers 负责开发方法。Impeccable 负责 `ui/` 下的 UI/UX 能力，并复用任务设计讨论与批准结果。`grpc-rpc-naming`、`sync-athena-changes` 继续提供 RPC 命名、生成源与消费者同步知识；本地提交、多仓库 PR 和浏览器验收技能提供相应操作支持。相关测试与验证遵循 Superpowers，并报告实际证据。
+
+本次切换移除了自制后端阶段路由技能、独立的需求/设计/另行实现门禁、额外的前端布局审批门槛，以及默认禁止测试的规定。开发期允许破坏性重构、中文计划、完成邮件等项目约定继续由 `AGENTS.md` 管理。
+
+## 升级
+
+升级时先选定上游提交，完整更新来源记录列出的技能目录及其资源，保留原版内容、执行权限和许可证。核对 Codex 技能发现结果、上游文件一致性、脚本可执行性及项目说明中的链接，再更新来源提交。若新增或移除上游技能，同步目录清单和本文入口；不要只更新单个 `SKILL.md` 而遗漏配套文件。

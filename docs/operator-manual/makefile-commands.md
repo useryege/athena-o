@@ -273,7 +273,7 @@ UI 相关命令直接在 `ui` 目录执行，例如 `yarn install`、`yarn start
 
 ## 文档
 
-文档直接以仓库内 Markdown 维护。后端功能开发前先阅读 `docs/requirements/README.md`、`docs/design/README.md` 和相关能力文档，按[设计主导后端开发工作流](../developer-guide/design-led-backend-development.md)通过需求确认、设计确认与独立实现授权门禁；实现时在同一任务中同步技术设计。
+文档直接以仓库内 Markdown 维护。开发前读取 `docs/requirements/README.md`、`docs/design/README.md`、相关能力文档和实际源码，按原版 [Superpowers 开发工作流](../developer-guide/superpowers-development.md)推进。任务规格与计划分别保存在 `docs/superpowers/specs/`、`docs/superpowers/plans/`；实现时同步需求与系统设计中的长期知识和源码关系。
 
 ## 生产部署
 

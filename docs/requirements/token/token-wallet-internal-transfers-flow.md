@@ -156,6 +156,6 @@ flowchart TD
 
 ## 待确认问题
 
-本轮范围内的核心业务选择已明确。业务延迟／SLO 继续沿用 [Token 整体待确认事项](token.md#仍待明确的事项)；组件、接口、限流、证据规范、采集与补充资料的失败恢复在需求确认后的技术设计中确定。本轮不预设这些后端方案，也不把当前实现说明改成已具备内部转账能力。
+本轮范围内的核心业务选择已明确。业务延迟／SLO 继续沿用 [Token 整体待确认事项](token.md#仍待明确的事项)；组件、接口、限流、证据规范、采集与补充资料的失败恢复在后续 Superpowers 任务的技术方案中确定。本轮不预设这些后端方案，也不把当前实现说明改成已具备内部转账能力。
 
 当前普通交易实现见[已实现的钱包普通交易设计](../../design/token-intelligence/wallet-normal-transactions.md)；该文档只说明现状，不是本能力的目标技术设计。返回 [Token 目标设计](token.md)、[钱包研究](token-wallet-research-flow.md)、[资金来源图](token-wallet-funding-graph.md)或[需求索引](README.md)。

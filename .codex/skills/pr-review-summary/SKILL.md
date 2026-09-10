@@ -11,8 +11,8 @@ Use this skill to perform a read-only code review of a pull request or branch di
 
 - Keep the work read-only unless the user explicitly asks for code changes.
 - Do not approve, merge, close, push, force-push, retarget, or update the PR.
-- Do not run unit tests, integration tests, E2E tests, formatters, linters, migrations, builds, or generated-code commands unless the user explicitly asks.
-- Obey repository instructions, especially AGENTS.md. In this repository, do not propose or run tests unless explicitly asked.
+- Use relevant tests and checks to substantiate findings under Superpowers completion verification. If a check changes tracked artifacts, use a separate temporary checkout so the review stays read-only on the user's checkout.
+- Obey repository instructions, especially AGENTS.md, and any explicit limits the user places on the review.
 - Preserve user worktree changes. Do not reset, checkout, clean, stash, or revert unrelated changes.
 - Prefer exact source evidence over speculation. If a risk depends on product intent, label it as a question or assumption.
 
@@ -40,7 +40,7 @@ Use this skill to perform a read-only code review of a pull request or branch di
    - For new private authenticated routes, check whether matching `sys_api` and role-permission migrations are needed.
 4. Review in bug-first order:
    - Blocking bugs, data loss, security/privacy issues, permission gaps, migration failures, API incompatibilities, behavioral regressions, race/concurrency risks, nil/empty/enum edge cases, and operational risks.
-   - Missing tests may be mentioned only as residual risk when the user explicitly cares about tests or the repo allows discussing them. In this repository, do not propose tests unless asked.
+   - Assess whether tests protect the changed behavior and its meaningful failure cases. Tie missing coverage to a concrete risk rather than a blanket coverage demand.
 5. Validate findings:
    - Anchor every finding to file and line when possible.
    - Confirm the line exists in the PR head, using `git show <head>:path | nl -ba | sed -n 'start,endp'` or equivalent.

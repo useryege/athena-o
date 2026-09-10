@@ -5,14 +5,14 @@ description: Run evidence-backed local frontend/backend acceptance for the servi
 
 # Make Run Playwright Acceptance
 
-Validate only the changed feature's critical local flows. Produce reproducible evidence without creating a persistent test suite.
+Validate only the changed feature's critical local flows. Produce reproducible runtime evidence alongside the regression tests required by Superpowers.
 
 ## Guardrails
 
 - Read the repository-root `AGENTS.md` completely before any action. Treat it as the source of truth for commands, credentials, ports, mutation policy, and validation limits.
 - Work only against the local `make run` environment. Never target Cloud Run or production.
 - Prefer existing fixtures and read-only inspection. Use normal UI mutations only when the requested flow requires them and the user has authorized that scope. Never write directly to MySQL without explicit approval.
-- Put one-off runners, screenshots, traces, and reports under `.tmp/`. Do not add Playwright specs or generated artifacts to tracked test directories.
+- Put one-off runners, screenshots, traces, and reports under `.tmp/`. Keep this acceptance run's scratch artifacts separate from the project's maintained regression tests.
 - Pass local credentials through environment variables. Never place credentials, tokens, cookies, signed URLs, query IDs, or account numbers in scripts or reports.
 - Do not infer permission to fix code from a request that only asks for a report. When fixing is authorized, preserve failure evidence before editing.
 

@@ -47,5 +47,5 @@ Treat "once" as once per stable SQLC source batch, not once per task. Do not run
 ## Validate and Report Proportionally
 
 - Use the successful generation command and generated diff captured at the source checkpoint as the default validation for generated boundaries; do not unconditionally rerun a generator during final validation.
-- Do not automatically run tests, `make run`, or Playwright. Run broader validation only when the user explicitly requests it or another applicable project rule requires it.
+- Follow Superpowers TDD and completion verification for changed behavior. Choose tests and checks for the affected dependency chain; run `make run` or Playwright when the task needs runtime or browser evidence.
 - Report only the affected sources and consumers, generators actually run, relevant validation results, and unresolved risks. Do not add empty phase summaries.

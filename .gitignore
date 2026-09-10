@@ -37,6 +37,9 @@ third-party/clob-client-v2/
 .playwright-mcp/
 
 .tmp/
+# Superpowers execution state and project-local worktrees.
+.superpowers/
+.worktrees/
 PLAN.md
 PLAN_Market.md
 PLAN_Token.md
