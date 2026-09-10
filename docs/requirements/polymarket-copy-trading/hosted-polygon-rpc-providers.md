@@ -14,7 +14,7 @@
 
 **随后取得的 Chainstack 端点：**HTTP 数据新鲜，WSS 实际收到三个新区块和七条目标成交日志，且与 HTTP、PublicNode 查询一致，可以作为开发实时采集候选。当前套餐拒绝 Archive：约 80 块前的单块日志查询成功，160 块前被拒绝。用户已明确当前不做历史补查，因此该限制不阻碍当前实时监控范围，也不要求为此升级套餐。详见[Chainstack 端点验证](chainstack-endpoint-verification.md)。
 
-**随后取得的 dRPC 账户端点：**HTTP 返回当前区块，与 Chainstack、PublicNode 的同高度哈希一致；WSS 收到三个连续新区块和一条目标成交，与 dRPC HTTP、PublicNode 逐项核对一致。该端点也可作为开发实时采集候选，实际账户套餐与剩余额度未核实。详见[dRPC 端点验证](drpc-endpoint-verification.md)。
+**随后取得的 dRPC 账户端点：**HTTP 返回当前区块，与 Chainstack、PublicNode 的同高度哈希一致；WSS 收到三个连续新区块和一条目标成交，与 dRPC HTTP、PublicNode 逐项核对一致。该端点也可作为开发实时采集候选。用户已说明 Chainstack 与 dRPC 均为免费节点；剩余额度与账单设置未登录核实。详见[dRPC 端点验证](drpc-endpoint-verification.md)。
 
 Alchemy、QuickNode、Chainstack、Infura、dRPC、Chainnodes 都提供 Polygon PoS RPC，可作为 HTTP 日志查询与 WebSocket 订阅的候选。当前低频目标活动监控可以从共享 RPC 服务开始评估，现有需求没有体现必须购买独享节点或固定高吞吐产品的理由。
 
@@ -35,6 +35,8 @@ Alchemy、QuickNode、Chainstack、Infura、dRPC、Chainnodes 都提供 Polygon 
 
 当前先保存为实时监控的开发候选，尚未接入业务运行配置。已确认不做历史补查，Chainstack 的 Archive 权限限制不影响该范围。验证时的临时订阅均已取消；本次集中整理未重新调用节点。
 
+套餐信息由用户补充确认：Chainstack 与 dRPC 当前均使用免费节点。以下容量判断按两家的公开免费额度计算，未读取账户的实际剩余额度；四个 URL 是两家服务的 HTTP/WSS 入口，不能按四份独立免费额度计算。
+
 详细结果与原始证据：[Chainstack 验证报告](chainstack-endpoint-verification.md)、[dRPC 验证报告](drpc-endpoint-verification.md)。
 
 ### Chainnodes 端点存档
@@ -50,11 +52,38 @@ Alchemy、QuickNode、Chainstack、Infura、dRPC、Chainnodes 都提供 Polygon 
 
 ## 开发阶段免费方案建议（2026-09-10 复核）
 
-取得实际端点后，Chainnodes 在验证时存在严重同步异常，Chainstack 与用户提供的 dRPC 账户端点均通过了实时数据与成交推送验证。**按当前不做历史补查的范围，Chainstack 和 dRPC 都可作为开发实时采集候选，无须为历史补查另行配置来源。**下列免费层条件仍属于公开套餐资料，不能由端点可用直接推断实际账户套餐；尚未形成长期稳定性排序、自动故障切换设计或正式技术设计确认。
+取得实际端点后，Chainnodes 在验证时存在严重同步异常，Chainstack 与用户提供的 dRPC 账户端点均通过了实时数据与成交推送验证。用户已明确目前使用两家的免费节点。**按当前低频目标、实时监控且不做历史补查的范围，现有免费节点足以开始功能开发和小规模联调，当前没有为了这些工作购买付费节点的必要。**这是依据公开额度与已有短时验证的评估，不代表已验证长期稳定性、正式通知时效或任意目标规模，也不构成自动故障切换设计或正式技术设计确认。
 
 - **Chainnodes Core**：每月 12.5M 次请求，标称 25 RPS，支持 HTTP/WSS，单次日志查询区块跨度上限 20,000。较宽的历史查询范围不属于当前必需能力；仍受响应大小等限制，免费资源繁忙时可能提前限流。WSS 每条推送与 HTTP 共用请求额度和 RPS；本次实际端点的数据滞后问题仍需区分于公开套餐条件。[官方限制](https://www.chainnodes.org/docs/FAQs/rate_limits)
 - **Chainstack Developer**：每月 3M RU、25 RPS，单次 `eth_getLogs` 最多 100 块，适合近期小范围查询；本次提供的端点拒绝 Archive 请求，但当前不做历史补查。要保持零 RPC 费用，应确认免费套餐的 extra usage 已关闭；额度耗尽后服务会停止，不应假设默认配置绝不会收费。[价格](https://chainstack.com/pricing/)、[查询限制](https://docs.chainstack.com/docs/limits)、[账单设置](https://docs.chainstack.com/docs/manage-your-billing#manage-the-extra-usage-setting)、[实测限制](chainstack-endpoint-verification.md)
-- **dRPC Free**：文档列 210M CU/30 天，但依赖公共节点，免费查询超时 2 秒、最多 10,000 条日志，并可能动态限流，因此暂不作为优先开发入口。免费账户层的额度不能未经核实套到任意匿名公共 RPC URL。[免费层限制](https://drpc.org/docs/howitworks/ratelimiting)
+- **dRPC Free**：文档列 210M CU/30 天，免费请求依赖公共节点，查询超时 2 秒、最多 10,000 条日志，并可能动态限流。用户提供的账户端点已通过实时验证，可用于当前开发；免费账户层的额度不能未经核实套到任意匿名公共 RPC URL。[免费层限制](https://drpc.org/docs/howitworks/ratelimiting)、[实测](drpc-endpoint-verification.md)
+
+### 首个开发入口建议
+
+**推荐先使用 Chainstack 的 HTTP 与 WSS，保留 dRPC 地址供必要时手动切换。**这是当前选型建议，用户尚未确认具体采用哪一家，本次没有修改运行配置或设计自动切换。
+
+推荐依据：Chainstack 的当前数据、目标过滤和实际推送均已验证，每月 3M RU、25 RPS 足以支撑上述开发范围；其 Archive 限制与当前不补历史的范围不冲突。dRPC 虽有更大的等价免费额度，但当前还不需要靠这一额度优势起步，且免费请求存在 2 秒超时和随区域需求变化的限流条件。基于这些条件，优先采用 Chainstack 作为开发入口更便于估算用量和排查联调问题。[Chainstack 套餐](https://chainstack.com/pricing/)、[dRPC 免费限制](https://drpc.org/docs/howitworks/ratelimiting)
+
+两家均只有短时成功证据，这一建议不代表已经证明 Chainstack 比 dRPC 更快或长期更稳定。若实际开发出现持续限流、额度不足或连接问题，可以再评估 dRPC；当前无需为此扩展成两套并行采集。
+
+### 实时开发的额度算例
+
+2026-09-10 再次核对官方资料：Chainstack Developer 每月 3,000,000 RU、25 RPS；Global Node 的近期请求及每条实时推送通常计 1 RU。dRPC Free 每 30 天 210,000,000 CU，EVM 建立订阅和每条推送均计 20 CU；若全部额度只用于此类 20 CU 消耗，等价约 10,500,000 次。[Chainstack 套餐](https://chainstack.com/pricing/)、[RU 与推送计量](https://docs.chainstack.com/docs/request-units)、[dRPC 免费额度](https://drpc.org/docs/howitworks/ratelimiting)、[dRPC 推送计量](https://drpc.org/docs/pricing/subscriptions/evm)
+
+用户已确认[首期按 10 名用户设计](target-trade-monitoring-notifications.md#首期使用规模已确认)，每人最多 10 个未取消订阅。对应容量目标为 100 个订阅关系，目标完全不重叠时为 100 个不同目标；同一目标被多人订阅时，目标数量减少，但用户侧活动和通知仍分别处理。
+
+以**100 个不同目标、每个目标每天 100 条实际匹配成交日志、持续运行 30 天**计算，目标日志推送共 `100 × 100 × 30 = 300,000` 条。其中 100 个不同目标对应上述已确认规模的最坏不重叠情况；每天 100 条日志和 30 天仍为费用算例假设，不能当作已确认的实际负载、低频目标定义或已经验证的承载能力。这个数字按日志计算，不按交易笔数计算；同一目标被多人订阅不能简单当成多份独立目标流量，重复建立相同上游订阅则会增加实际推送。
+
+| 用量项目 | Chainstack Developer | dRPC Free |
+| --- | --- | --- |
+| 300,000 条目标日志推送 | 300,000 RU | 6,000,000 CU |
+| 占各自免费总额度 | 10% | 约 2.86% |
+
+该算例仅包含匹配日志推送，建立订阅、重连、区块或确认状态查询、回执查询和其他开发进程的用量仍需计入各自额度；Polymarket 市场资料 API 和 Telegram 有独立的限制。月额度有余量也不代表瞬时突发不会触发限流。
+
+评估以节点按目标钱包过滤、仅推送匹配成交为用量前提，这一过滤能力已有实测证据；接收全站成交后再由应用过滤，或为每个目标重复订阅整条链的新区块，会产生明显不同的费用。前述算例不锁定最终采集架构。开发阶段可先使用一家、保留另一家的已验证地址供需要时切换，无须为开始开发同时运行两套长期采集。
+
+如需严格维持零 RPC 超额费用，Chainstack 应关闭 extra usage；关闭后额度耗尽会停止服务而不会因超量收费。本次未修改该设置。后续出现持续限流、实际额度接近耗尽，或需要验证正式规模和时效时，再评估升级。[官方账单说明](https://docs.chainstack.com/docs/manage-your-billing#manage-the-extra-usage-setting)
 
 下文每 5 秒查询共享高度加 5 组日志的比较模型，30 天约 3.11M 次基础调用，占 Chainnodes 免费额度约四分之一，尚未计 WSS 推送、重连等用量。该轮询模型不是已确认的实时采集设计，也不能直接当作目标日志推送的实际用量；当前预算不要求预留历史补查流量。
 
@@ -143,6 +172,6 @@ Alchemy 部分旧官方页面仍写付费 Polygon 每次 2,000 块，本报告�
 3. **以后实际用量需要固定月费和更多吞吐余量时，再比较 Chainstack Growth 49 美元/月与 Chainnodes Developer 50 美元/月。** 这些付费条件保留作预算资料，不表示当前需要升级；按量和固定方案的取舍不代表性能排名。
 4. **暂不需要独享节点、高吞吐附加包或一次性购买全部候选服务。** 备用供应商是否需要及其用量属于后续技术设计，不是本次已确认投入。
 
-尚未确定实际部署区域的连接质量、全平台唯一目标数量、目标 OR 分组上限、实时与重连时的调用构成，以及最终实时采集方式。当前不需要为历史补查预留套餐或独立来源；约 50 美元/月仅是入门付费 RPC 的比较量级，不是当前必需费用或任何用户规模下的费用上限。
+首期设计规模已确认为 10 名用户，最多 100 个订阅关系及目标完全不重叠时的 100 个不同目标。尚未确定实际成交速率与目标重叠情况、部署区域的连接质量、目标 OR 分组上限、实时与重连时的调用构成，以及最终实时采集方式。当前不需要为历史补查预留套餐或独立来源；约 50 美元/月仅是入门付费 RPC 的比较量级，不是当前必需费用或任何用户规模下的费用上限。
 
 本次仅查阅官方公开定价和文档、进行费用复算并维护调研记录；未注册账号、购买套餐、联系销售、部署节点或修改后端业务源码，也没有新增或运行测试。
