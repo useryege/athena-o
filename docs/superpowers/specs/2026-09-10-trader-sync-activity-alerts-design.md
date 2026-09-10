@@ -146,6 +146,10 @@ module1 腿的 legacy 无值或读取失败时，已持久目录和 Gamma 可提
 
 两秒是活动投影方在最终确认后的等待预算，不是 MetadataResolver 的总请求截止。解析器遵从调用方取消、单次 HTTP/RPC 最多 5 秒；后台补资料使用自身有界上下文，避免稳定超过两秒的资料请求永远无法补齐。
 
+解析器发布不可变进度快照：getLegs核验成功时先给出全部N个PositionID与逐腿缺省状态，再逐步补齐已核验资料。活动等待到点直接取当前快照，不等待网络退出；同一资料工作继续晚补，默认总截止30秒，运行退出时取消并等待结束，始终共享4并发预算。30秒为可配置资源上限，不承诺在其内取得完整资料。
+
+同一证据键下已有的非冲突partial，在暂时读取失败、取消或并发较差结果晚到时保留；明确身份/condition/position冲突仍须可见，不能用旧available覆盖。缓存及活动显示采用一致的保留规则，合并事务不跨网络；不同来源版本、PositionID或Combo known blockHash的证据不得混合。
+
 ## 6. 采集、基线与最终确认
 
 ### 6.1 来源与单位
@@ -160,21 +164,31 @@ BUY 抵押币量为 makerAmountFilled、份额为 takerAmountFilled；SELL 相�
 
 ### 6.2 共享过滤和基线
 
-默认一条 WSS，普通 CTF/Neg Risk 合用一类 logs 过滤，Combos 独立一类，钱包 OR 每组最多 100。按全体 enabled 订阅目标去重，暂停/取消/撤权且无其他有效订阅时移出；已收到候选继续按原资格处理。目标变更先安装新过滤并取得 ACK，再卸载旧过滤，重复日志幂等；不重建已有目标的用户边界。添加新目标失败只使新目标等待/异常，不破坏已有有效过滤。
+默认一条 WSS，普通 CTF/Neg Risk 合用一类 logs 过滤，Combos 独立一类，钱包 OR 每组最多 100。按全体 enabled 订阅目标去重，暂停/取消/撤权且无其他有效订阅时移出；已收到候选继续按原资格处理。目标变更先安装新过滤并取得 ACK，再卸载旧过滤，重复日志幂等；不重建已有目标的用户边界。添加新目标失败只使新目标等待/异常，不破坏已有有效过滤。已发出但无ACK的请求保留身份；未决ACK达到64项后，后续控制请求以明确容量故障关闭物理会话，由Collector结束epoch并重连，不淘汰身份或永久原地失败。这与单次明确的新目标订阅拒绝区分。
 
 创建/手动恢复在 pending_baseline 事务内同时创建尚未确定边界的 baseline attempt，并在安装过滤前注册接收归属；自动恢复同样先注册新 attempt。注册与该钱包的 raw 持久化用同一钱包 intake gate 串行，保存注册前已观察的最高高度，避免共享过滤已有推送却尚无候选归属的空窗。全部相关过滤 ACK 后，读取新鲜 latest H，要求其高度不低于注册时已观察高度；选择 `effective_at=max(数据库当前时刻的下一整秒,H.timestamp+1秒)`。latest 调用须在 5 秒内完成，区块不落后数据库时钟超过 10 秒、不领先超过 2 秒，否则视为节点/时钟异常，不建立基线。
 
+read loop在入队前记录实际接收时刻、会话内单调序号和钱包观察高水位；注册在同一内存临界区取高水位及序号快照，持久绑定原epoch。注册截点之前已收到但尚在排队的日志，不归给后来注册的订阅。内存锁不跨SQL；Registrar只写入调用方事务，Collector看到已提交登记后才安装过滤，事务回滚不发布生效成员。
+
+WSS与HTTP端点分别核验Polygon 137；HTTP latest入口复用SourceRPC已有的链证明缓存和并发合并，失败不缓存，不能只依赖最终确认调用先发生。WSS日志在标准解码前验证必需定位字段存在且非null，避免缺失字段被当成合法零高度/索引；完整提供的零值仍按实际值处理。
+
 等待前为已注册 attempt 填写订阅 revision/generation、collector epoch、filter revision 与候选边界；若保存时边界已过去则重算将来边界。未定边界期间也保存 raw 及 attempt 归属，最终按成功边界裁定，不直接产生活动。到达边界后复核连接、权限、revision，成功原子把 attempt 转为 succeeded、生成有效区间。失败 attempt 永不成为后来基线的候选；服务重启对未提交成功的 attempt 明确失败并新建实时基线。
+
+创建epoch的提交结果未知时，在独立最多5秒的读回事务核验同token、准确active epoch及未结束状态，确认后才采用；无法确认则明确退出并保留启动/清理错误，不在同一所有权下无限重连。
+
+对尚未绑定epoch的遗留pending，取得采集所有权时在control锁下保存已提交ID快照，换代提交后再逐账户终结并重建；之后登记的新ID不受影响。已暂停、撤权或改变generation的意图优先，不因重建而恢复。首次启动前的未绑定登记也按此截点重新准备，不据此声称已有健康监控或发生了遗漏。
 
 成交资格使用 `settled_at>=effective_at`，区间终点排他。尚未生效即终止时，允许 `ended_at<effective_at`，该区间不覆盖任何成交，仍保留真实终点。暂停/取消/撤权终点使用实际业务事务时间，不向后取整；区块只有秒精度，不伪造同块内逐成交亚秒时刻。用户修改与基线成功共用账户 gate，较新 revision 优先。生效边界建立后没有固定额外等待。
 
 ### 6.3 接收和投影
 
-原始定位键为 `(chain_id,exchange_address,block_hash,transaction_hash,log_index)`，raw 第一次落库同时冻结候选订阅、generation 与 baseline/interval。重复返回只复用原事实，不能补建后来订阅的候选；同键后到的 removed=true 是状态证据，必须应用，不能被去重吞掉。原始接收失败不算可靠收到，要记录中断/可能遗漏，不借后续历史查询掩盖丢失。
+原始定位键为 `(chain_id,exchange_address,block_hash,transaction_hash,log_index)`，raw 第一次落库同时冻结候选订阅、generation 与 baseline/interval。重复返回只复用原事实，不能补建后来订阅的候选；同键后到的 removed=true 是状态证据，必须应用，不能被去重吞掉；即使最后一个目标订阅已暂停、取消或因权限停用，仍保存已经收到的既有source更新，原raw/时间/序号与候选不变。首次source及新候选仍受当前观察目标约束。原始接收失败不算可靠收到，要记录中断/可能遗漏，不借后续历史查询掩盖丢失。
 
 确认工作每 2 秒调度，共享 finalized 由同一 SourceRPC 实例持有：成功头缓存 2 秒，过期按需刷新，在途请求合并且等待可取消，刷新失败不冒用过期头。适配器不另起轮询，空闲时不主动拉 finalized；latest 健康仍每 10 秒查询，不常驻全链 newHeads。候选高度不高于新读 finalized 时，重新查询已知 tx receipt，核验成功状态、当前规范链定位以及已接收日志的地址/topics/data/index，再取已知 blockHash 区块时间。确认前缓存回执不够；必要时用近期高度头交叉核验。回执中其他日志不转为新活动。
 
 读取 finalized 前先核实当前连接的 chain ID 为 137；成功链证明只属于同一不可变端点实例，替换端点必须重建实例。每次真实 RPC 截止 5 秒；版本核验另从已知候选头取得真实 ParentHash。节点错链或读取失败返回 unverified 证据及底层错误，调用者保留候选并分别报告，不能用另一链的头将 Polygon 候选标为 invalid。取消只停止本轮工作。
+
+物理WSS结束独立传播取消，正在等待账户gate或ACK的注册/核对工作及时退出；持久结束epoch先于逐账户收尾，HTTP latest持续成功不能掩盖WSS故障。
 
 单次 finality 查询失败保留候选并重试，不以错误响应推进水位，也不单凭该错误丢弃仍健康的 WSS。采集可用性与确认/资料处理积压分别报告；只有真实失去观察能力或无法核准其健康时关闭观察 epoch，不能将所有处理延迟描述为发生了接收中断。
 
@@ -201,6 +215,7 @@ WSS ACK、ping/pong、节点头新鲜只证明观察健康，不能证明服务�
 | subscriptions | owner、target、desired/observation state、revision、generation、各生命周期时间；owner-target 非 cancelled 部分唯一索引。 |
 | baseline_attempts / monitor_intervals | 候选与成功边界、原 generation/epoch/filter、预期 revision；attempt 状态单向终结，不覆盖旧区间。 |
 | collector_epochs / interruptions | 运行 incarnation/fencing token、过滤集合版本、可靠观察/中断/恢复及不确定性。 |
+| collector_control | 单一采集所有权控制行及单调fencing token；与每次持久写入在事务内串行校验。 |
 | source_records / source_candidates | 不变 raw、定位、首次接收、确认/版本证据、状态；候选绑定原 subscription/generation/attempt，唯一关系防重新归属。 |
 | activities | owner、subscription、generation、interval、source、成交事实、备注与形成时间；每订阅源记录唯一，无自动 TTL。 |
 | market_metadata / combo_leg_index | 来源键、精确映射与核验时间、可用性；保留已见关闭市场。与成交事实分离。 |
@@ -212,6 +227,8 @@ WSS ACK、ping/pong、节点头新鲜只证明观察健康，不能证明服务�
 以上为逻辑实体，表名统一用所属模块前缀；已有 Notification 实体直接调整，不平行创建两套有效表。涉及 owner 的组合引用通过复合唯一键/FK 或同事务一致性约束保证同 owner，不只靠 DTO 校验。活动历史、取消订阅、备注及投递审计不自动过期；短期 token 和结束的无业务事实任务可清理，不破坏去重或用户可见历史。
 
 账户 gate 使用统一命名空间和 account UUID 的 advisory lock。权限变更、订阅、活动形成、绑定、发送许可使用同一键；普通事务使用 transaction lock。基线注册采用 account gate→wallet intake gate，原始接收只取 intake gate、不反向取得账户 gate；投影只取账户 gate，避免锁序循环。绑定唯一 Telegram 身份锁在账户 gate 后取得，多账户操作必须统一排序。当前全局权限更新 mutex 改按账户串行，数据库 revision CAS 仍是并发依据。
+
+Collector另持专属PG session advisory lock；每次持久写入在取得所需account/wallet gate后锁定控制行并核验当前token及epoch，与换代事务串行。失锁取消会话，后继实例取得所有权后增加token；换代及关闭epoch先独立提交，再逐账户收尾，不能持fence反向等待account。这里保护只读采集及数据库写入，不要求沿用Telegram发送者的外部停止确认操作。
 
 权限缓存只能快速拒绝，所有允许行为由数据库核验。`recorded_at` 在取得 gate 后取数据库真实时间，不用事务开始时的 NOW()；插入成功提交后才视为形成，记录到提交的耗时纳入延迟。先赋时间后提交使计时包含事务成本，不以提前启动事务的时间或人为延后赋时规避指标。
 

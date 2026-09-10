@@ -445,7 +445,7 @@ if (module.id === 'trader_sync') {
 - 产出tsmodel：`Trade{Wallet common.Address; Side,PositionID,CollateralRaw,SharesRaw,FeeRaw,CollateralSymbol string; CollateralDecimals,SharesDecimals uint8; Exchange common.Address; SourceVersion,PriceNumerator,PriceDenominator string}`；`CanonicalEvidence{Status string; BlockHash common.Hash; SettledAt time.Time; CheckedAt time.Time; Reason string}`；Status=unverified/invalid/confirmed。
 - 产出：`DecodeOwnTrade(log types.Log,version string) (tsmodel.Trade,error)`；`ConfirmReceived(ctx context.Context,node CanonicalRPC,raw types.Log) (tsmodel.CanonicalEvidence,error)`；`(*VersionVerifier).Verify(ctx context.Context,raw types.Log) (version string,err error)`。
 - CanonicalRPC精确契约：`FinalizedHeader(context.Context) (*types.Header,error)`、`TransactionReceipt(context.Context,common.Hash) (*types.Receipt,error)`、`HeaderByHash(context.Context,common.Hash) (*types.Header,error)`、`HeaderByNumber(context.Context,*big.Int) (*types.Header,error)`；fake按调用记录，不请求真实链。
-- `FinalizedHeader`先保证当前实例连接 chain 137，再取 finalized；正面链证明仅在同不可变端点实例内缓存，失败不永久缓存。`SourceRPC`单一拥有成功头的2秒缓存与可取消并发合并，过期懒刷新且失败不使用旧头；不启动独立 poller。任务9的2秒工作调度消费此入口，不维护第二份 finalized 缓存。每次真实 RPC 截止5秒，回环测试覆盖错链、并发、取消、过期失败和真实超时。
+- `FinalizedHeader`先保证当前实例连接 chain 137，再取 finalized；正面链证明仅在同不可变端点实例内缓存，失败不永久缓存。`SourceRPC`单一拥有成功头的2秒缓存与可取消并发合并，过期懒刷新且失败不使用旧头；不启动独立 poller。任务10 ActivityProjector的2秒工作调度消费此入口，不维护第二份 finalized 缓存。每次真实 RPC 截止5秒，回环测试覆盖错链、并发、取消、过期失败和真实超时。
 - `ConfirmReceived`在读取失败或错链时返回 unverified 证据、稳定 Reason 和底层 error；调用方保留原始候选再报告错误，取消只结束本轮。removed、完整回执的明确失败、明确规范定位或字节不一致才返回 invalid；不能根据另一链的头否定 Polygon 候选。
 
 - [x] **步骤1：固定已核准原始日志fixtures，写BUY/SELL及自身归属红灯。**fixtures逐项存address/topics/data/block/tx/logIndex及预期wallet/方向/原量/fee，至少三Exchange×BUY/SELL×Maker/Taker；同tx两个自身日志必须两个Trade；只topics[3]匹配的目标不得被归属该Trade（纯解码器只取topics[2]，目标过滤由任务9验证），OrdersMatched及SPLIT/MERGE不得产出Trade。
@@ -548,17 +548,18 @@ WHERE name='combo_markets' AND cursor=$1;
 ## 任务9：注册先于过滤的基线、共享WSS与持久接收
 
 **Files**
-- 新增：`internal/tradersync/baseline.go`、`internal/tradersync/collector.go`、`internal/tradersync/intake.go`、`internal/tradersync/config.go`、`internal/tradersync/rpc/session.go`、`internal/tradersync/rpc/http.go`、`internal/tradersync/store/intake.go`、`internal/tradersync/store/baselines.go`、`internal/tradersync/store/queries/intake.sql`、`internal/tradersync/store/queries/baselines.sql`。
+- 新增：`internal/tradersync/baseline.go`、`internal/tradersync/collector.go`、`internal/tradersync/intake.go`、`internal/tradersync/config.go`、`internal/tradersync/rpc/session.go`、`internal/tradersync/rpc/http.go`、`internal/tradersync/store/intake.go`、`internal/tradersync/store/baselines.go`、`internal/tradersync/store/collector_session.go`、`internal/tradersync/store/queries/intake.sql`、`internal/tradersync/store/queries/baselines.sql`。
 - 新增类型：`internal/tradersync/types/candidate.go`。
-- 修改：权威`internal/accountstate/store/migrations/000001_init.sql`；以`util/ethws/dial.go`的真实实现作核对入口，不复用其自动重连语义。
-- 测试：`internal/tradersync/baseline_test.go`、`internal/tradersync/collector_test.go`、`internal/tradersync/rpc/session_test.go`、`internal/tradersync/store/intake_integration_test.go`、`internal/tradersync/store/baselines_integration_test.go`。
+- 修改：权威`internal/accountstate/store/migrations/000001_init.sql`、`internal/tradersync/source_rpc.go`及`source_rpc_test.go`；以`util/ethws/dial.go`的真实实现作核对入口，不复用其自动重连语义。
+- 测试：`internal/tradersync/baseline_test.go`、`internal/tradersync/collector_test.go`、`internal/tradersync/collector_integration_test.go`、`internal/tradersync/rpc/session_test.go`、`internal/tradersync/store/intake_integration_test.go`、`internal/tradersync/store/baselines_integration_test.go`。
 **Interfaces**
-- 消费：任务6 `BaselineRegistrar.RegisterTx`，任务7CanonicalRPC；原始接收不依赖metadata。
-- 产出：`ComputeBaseline(now time.Time,registeredHigh uint64,h *types.Header) (time.Time,error)`；`(*Collector).Run(ctx context.Context) error`；`(*Intake).Persist(ctx context.Context,epoch uint64,raw types.Log,receivedAt time.Time) error`。
-- 产出rpc：`DialSession(ctx context.Context,endpoint,proxyURL string) (*Session,error)`；`(*Session).Subscribe(ctx context.Context,query ethereum.FilterQuery) (subscriptionID string,error)`；`Unsubscribe(ctx context.Context,id string) error`；`Logs() <-chan types.Log`；`Done() <-chan struct{}`；`Err() error`；`Close() error`。每个Session仅一物理WSS，绝不内部重连。
+- 消费：任务6 `BaselineRegistrar.RegisterTx`，任务7SourceRPC的latest `HeaderByNumber`窄能力；原始接收不依赖metadata。最终确认的2秒工作调度、版本核验及候选证据更新由任务10的Projector统一负责。
+- `SourceRPC.HeaderByNumber`先复用已有ChainID正面缓存/并发合并核验Polygon 137再读取；失败不永久缓存。WSS与HTTP端点分别核验，不能用前者证明后者，真实HTTP回环覆盖错误链不读头及恢复。Session在标准Log解码前保留必需定位字段的presence，缺失/null不能变成合法零位置；完整零值仍合法。
+- 产出：`ComputeBaseline(now time.Time,registeredHigh uint64,h *types.Header) (time.Time,error)`；`(*Collector).Run(ctx context.Context) error`；`(*Intake).Persist(ctx context.Context,epoch uint64,received tsmodel.ReceivedLog) error`。
+- 产出rpc：`DialSession(ctx context.Context,endpoint,proxyURL string) (*Session,error)`；`(*Session).Subscribe(ctx context.Context,query ethereum.FilterQuery) (subscriptionID string,error)`；`Unsubscribe(ctx context.Context,id string) error`；`Logs() <-chan tsmodel.ReceivedLog`；钱包观察快照方法；`Done() <-chan struct{}`；`Err() error`；`Close() error`。`ReceivedLog{Raw types.Log; ReceivedAt time.Time; Sequence uint64}`在read loop内记录实际接收时刻及会话序号，再进入有界队列；钱包快照在同一临界区取得ObservedHigh与ReadSequence。每个Session仅一物理WSS，绝不内部重连。
 - 产出tsmodel：`Candidate{SourceID int64; SubscriptionID,OwnerID string; Generation uint64; AttemptID string; ReceivedAt time.Time}`；`Eligibility{Generation uint64; BaselineSucceeded bool; SettledAt,EffectiveAt time.Time; EndedAt *time.Time}`。`Eligible(c tsmodel.Eligibility,s tsmodel.Subscription) bool`只判原区间+当前意图/代次，不判当前epoch健康。
 
-- [ ] **步骤1：写秒级边界红灯测试。**
+- [x] **步骤1：写秒级边界红灯测试。**
 
 ```go
 func TestBaselineIsNextSecondAndNotBelowObservedHead(t *testing.T) {
@@ -572,7 +573,7 @@ func TestBaselineIsNextSecondAndNotBelowObservedHead(t *testing.T) {
 
 运行 `go test ./internal/tradersync -run TestBaseline -count=1`。补充滞后10秒/超前2秒精确端点、同秒结算、等待前保存已过期重算和最新revision竞争。
 
-- [ ] **步骤2：实现基线纯函数和持久状态协议。**
+- [x] **步骤2：实现基线纯函数和持久状态协议。**
 
 ```go
 func ComputeBaseline(now time.Time,registeredHigh uint64,h *types.Header) (time.Time,error) {
@@ -589,9 +590,11 @@ func ComputeBaseline(now time.Time,registeredHigh uint64,h *types.Header) (time.
 }
 ```
 
-RegisterTx在account→wallet gate内记录attempt与当前已观察最高高度，安装过滤前完成；最高高度包含本会话read loop已解出而尚在持久化队列中的该钱包日志，不能只看已写DB高度。未连接attempt保存pending，不能沿用失败attempt。全部相关过滤ACK后新查latest、保存候选未来边界，等到边界再同account gate复核grant/revision/generation/epoch并CAS succeeded+interval。提交结果未知先读真实状态，不能把可能已成功attempt覆盖为failed。已确定未成功的重启attempt终结并新建。
+RegisterTx在account→wallet gate内记录attempt与当前已观察最高高度/会话注册序号，安装过滤前完成；最高高度包含本会话read loop已解出而尚在持久化队列中的该钱包日志，不能只看已写DB高度。候选只匹配原epoch中注册截点之后的接收序号，不给后来注册的订阅追领旧排队记录；不得在消费者出队时补造接收时刻/序号。Registrar只在传入事务登记，Collector读到已提交pending后才安装过滤，不新增after-commit回调或提前发布内存成员。未连接attempt保存pending，不能沿用失败attempt。全部相关过滤ACK后新查latest、保存候选未来边界，等到边界再同account gate复核grant/revision/generation/epoch并CAS succeeded+interval。提交结果未知先读真实状态，不能把可能已成功attempt覆盖为failed。已确定未成功的重启attempt终结并新建。
 
-- [ ] **步骤3：实现显式WSS会话与共享过滤。**用现有gorilla/websocket写一条read loop及串行JSON-RPC写队列，request ID路由ACK，notifications推送有界队列；15秒发送随机关联ping，5秒内只有同nonce pong才成功。队列满/DB无法持久接收关闭epoch并显示可能遗漏，不静默丢日志。HTTP latest成功不得覆盖WSS pong失败，无匹配日志保持健康。
+取得collector所有权时，在control锁下快照已提交且epoch为空的pending attempt ID；换代提交后逐account→wallet→fence仅终结这些原ID并重新建立实时attempt。取得所有权之后的新登记不受影响；暂停、撤权或新generation仍优先。此截点也适用于首次启动前既有未绑定登记，原因不声称此前已健康观察或确有遗漏。
+
+- [x] **步骤3：实现显式WSS会话与共享过滤。**用现有gorilla/websocket写一条read loop及串行JSON-RPC写队列，request ID路由ACK，notifications推送有界队列；15秒发送随机关联ping，5秒内只有同nonce pong才成功。队列满/DB无法持久接收关闭epoch并显示可能遗漏，不静默丢日志。HTTP latest成功不得覆盖WSS pong失败，无匹配日志保持健康。Session Done独立取消阻塞的账户/ACK等待，关闭epoch不等待逐账户收尾完成。已发无ACK占满64个pending后，后续控制请求明确关闭Session交外层恢复；不能因永久占槽而原地无限失败，也不能复用旧请求ID。
 
 ```go
 // 普通CTF/NegRisk共享一组，Combos独立一组；walletTopics每组<=100。
@@ -601,9 +604,9 @@ filter:=ethereum.FilterQuery{
 }
 ```
 
-地址/topic来自任务7版本注册；只topics[2]筛目标。目标集合全局去重，新增过滤ACK后删旧过滤；新增目标失败不拆已有有效过滤、不重建其他用户边界。外层Collector按配置退避重连、建立新epoch/实时边界；单实例持久fencing每次写入CAS，过时代次拒绝写入。
+地址/topic来自任务7版本注册；只topics[2]筛目标。目标集合全局去重，新增过滤ACK后删旧过滤；新增目标失败不拆已有有效过滤、不重建其他用户边界。外层Collector按配置退避重连、建立新epoch/实时边界；专属PG session advisory lock负责单实例所有权，新增collector control行保存单调fencing token，每次写入在同事务以行锁/CAS与换代串行，过时代次拒绝写入。锁序为account→wallet（需要时）→fence，intake只wallet→fence；换代/关闭epoch事务先独立提交，再逐account收尾，不持fence反向等account。失锁取消会话，不套用Telegram sender的外部停止确认CLI。StartEpoch COMMIT未知时有界读回同token/active epoch/未结束状态，不能确认则fatal退出并保留清理错误，不能在同owner无限重连。
 
-- [ ] **步骤4：实现raw第一次落库与候选归属事务。**新增`trader_sync_collector_epochs`、`trader_sync_interruptions`、`trader_sync_source_records`、`trader_sync_source_candidates`；source定位五元唯一。钱包gate内先验证epoch fencing，再插raw+首次候选；重复raw不能添加后来注册的订阅，removed=true必须更新证据。baseline失败的候选保留原attempt，不能归入新attempt。
+- [x] **步骤4：实现raw第一次落库与候选归属事务。**新增`trader_sync_collector_epochs`、`trader_sync_interruptions`、`trader_sync_source_records`、`trader_sync_source_candidates`；source定位五元唯一。钱包gate内先验证epoch fencing，再插raw+首次候选；重复raw不能添加后来注册的订阅，removed=true必须更新证据，包括最后enabled订阅已停用但既有source更新已收到的情况；该更新不改原raw/时刻/序号或补建候选，首次插入仍受当前目标约束。baseline失败的候选保留原attempt，不能归入新attempt。
 
 ```sql
 INSERT INTO trader_sync_source_records
@@ -616,7 +619,7 @@ RETURNING id;
 
 是否首次必须由独立INSERT DO NOTHING RETURNING或显式事务查询判定，不能凭upsert返回ID为每次补候选。source永久原事实与可变确认/removed证据分列；失败回滚意味着未可靠接收，记录中断。稳定SQL后 `make sqlc-local`。
 
-- [ ] **步骤5：运行WSS和两连接集成故障矩阵。**loopback WSS在ACK前后推日志，断言注册无空窗；错误pong/静默连接/队列满/DB断流触发可见中断。单次finality失败仅积压，WSS不关；恢复后只收新推送，旧成功attempt持久候选仍可处理，failed attempt不可复活。spy允许known-block升级查询，拒绝任何历史范围扫描和从receipt其他日志造候选。
+- [x] **步骤5：运行WSS和两连接集成故障矩阵。**loopback WSS在ACK前后推日志，断言注册无空窗；错误pong/静默连接/队列满/DB断流触发可见中断。本任务用spy证明Collector不调用finality、receipt或版本读取；任务10/13组合验证单次finality失败仅积压、WSS不关。恢复后只收新推送，旧成功attempt持久候选仍可处理，failed attempt不可复活。Collector拒绝任何历史范围扫描和从receipt其他日志造候选；Projector需要的known-block升级查询由任务10验收。
 
 ```go
 func Eligible(c tsmodel.Eligibility,s tsmodel.Subscription) bool {
@@ -631,7 +634,7 @@ func Eligible(c tsmodel.Eligibility,s tsmodel.Subscription) bool {
 
 **Files**
 - 新增：`internal/tradersync/projector.go`、`internal/tradersync/store/activities.go`、`internal/tradersync/store/queries/activities.sql`、`internal/tradersync/types/activity.go`、`internal/tradersync/render.go`、`internal/tradersync/render_test.go`、`internal/notification/store/transactional_enqueue.go`。
-- 修改：权威`internal/accountstate/store/migrations/000001_init.sql`、`internal/tradersync/store/revocation.go`、`internal/notification/store/queries/account_notifications.sql`、`internal/notification/store/attempts.go`。
+- 修改：权威`internal/accountstate/store/migrations/000001_init.sql`、`internal/tradersync/store/revocation.go`、`internal/notification/store/queries/account_notifications.sql`、`internal/notification/store/queries/delivery_attempts.sql`、`internal/notification/store/attempts.go`。
 - 测试：`internal/tradersync/projector_test.go`、`internal/tradersync/store/activities_integration_test.go`、`internal/notification/store/transactional_enqueue_integration_test.go`。
 - 最早纯文本消费者适配：共享通知载荷/必要schema-query、Sender/SendRequest及util Telegram实际调用明确保存并消费消息格式；Trader Sync普通纯文本、既有HTML消费者显式保留HTML。格式与正文冻结，摘要任务11复用。
 **Interfaces**
@@ -672,6 +675,10 @@ activity ID只在持有owner gate的INSERT内分配，不先nextval预取，不�
 
 - [ ] **步骤3：实现并行资料预算、重组隔离及晚资料更新。**metadata与finality并行；确认完成后最多额外2秒，超时保留字段unavailable并形成活动。未知Exchange执行版本仍raw/unverified；不是metadata超时理由。后台补资料仅更新可变metadata，不修改备注、原量、payload、不追加通知。
 
+本步骤同时接续已有market_metadata/combo_metadata解析器、types/metadata、store/metadata及对应查询/测试：增加唯一进度消费入口，getLegs核验后先初始化全部N个PositionID与逐腿unavailable，再发布深拷贝快照。两秒到点直接读取已知部分，无需等待RPC退出；原job继续晚补，默认总截止30秒（可配置资源参数），Run取消并等待退出。前后台共用同一Resolver的4并发，不复制解析算法或重新计活动两秒预算。
+
+同证据键的缓存/显示资料按非冲突证据合并，暂时失败/取消及并发晚到的较差结果不清空已知N腿和已核验部分；明确condition/position/来源冲突仍unavailable，不能按available数量或旧成功掩盖。必要合并在短DB事务内完成，不跨网络拿锁；不跨SourceVersion/PositionID/Combo knownHash合并。相关metadata SQL如需调整，纳入本任务稳定生成批次。
+
 ```go
 func ClassifyActivity(windowCount int64) string {
     if windowCount<=10 { return "ordinary" }
@@ -681,7 +688,7 @@ func ClassifyActivity(windowCount int64) string {
 
 确认后深度重组以chain+tx证据建立`trader_sync_finality_anomalies`；在投影新分叉前检查曾发布该tx的冲突证据，隔离该tx后续新分叉候选，原activity保留异常。不能仅以txHash/logIndex跨分叉去重，也不能把同一规范tx多个自身日志合并。
 
-- [ ] **步骤4：稳定活动/通知SQL后 `make sqlc-local`，适配EnqueueAccountTx和RevokeTx。**事务内永久撤销所有旧summary membership；解绑/重绑亦终结旧revision。测试两个owner共享同一source得到两份独立活动/备注/资格，而owner内部同source只有一份。
+- [ ] **步骤4：稳定活动/通知SQL后 `make sqlc-local`，适配EnqueueAccountTx和RevokeTx。**事务内永久撤销所有旧summary membership；解绑/重绑亦终结旧revision。绑定不可达的发送结果及Bot更新沿同一旧revision终止资格，重新connected不复活；暂停/取消不撤销已形成队列。最终Authorize在既有owner gate内复核Trader Sync grant、冻结binding及membership；无资格返回eligible=false而不让结果查询丢行，保证先前已许可的sent/unknown仍能照实落库。不得从notification反向调用会停订阅的RevokeTx；各模块SQL在同一传入事务内写资格，避免循环依赖和重入account gate。测试两个owner共享同一source得到两份独立活动/备注/资格，而owner内部同source只有一份。
 - [ ] **步骤5：运行 `go test -race ./internal/tradersync/... ./internal/notification/...` 和对应真实DB测试。**覆盖投影/暂停/撤权/重绑屏障竞争、activity插入后事务回滚、无binding后再绑定不补发、取消旧队列继续、newgeneration丢旧候选、100关系及全不同目标；提交 `feat(trader-sync): persist activities and alert eligibility atomically`。
 
 ## 任务11：不可变完整摘要、分条结果与首条gate
@@ -953,7 +960,7 @@ RPC spy同时拒绝eth_sendTransaction/eth_sendRawTransaction，交易/签名接
 - models逐项对应任务12 DTO：`FieldEvidence`、`StringField`、`DecimalField`、`Curve`、`PnLView`、`TargetNote`、`ResolvedTarget`、`Quota`、`Subscription`、`HistoryEntry`、`Activity`、`Delivery`、`StatusCounts`、`SummaryProgress`、`SummaryBatch`、`SummaryPart`；时间/ID/金额/revision/计数保持string（quota/part序号等有界int32为number），可缺消息为`undefined`，不造默认数值。
 - 产出：`AbortablePromise<T> = Promise<T> & {abort?:()=>void}`；`MemberTraderSyncService`注册为`memberServices.traderSync`。方法均返回AbortablePromise：`resolveTarget(input:string):ResolvedTarget`、`createSubscription(input:CreateRequest):Subscription`、`listSubscriptions(input:SubscriptionQuery):SubscriptionPage`、`getSubscription(id:string):Subscription`、`listSubscriptionHistory(id:string,page:PageInput):HistoryPage`、`pauseSubscription/resumeSubscription/cancelSubscription(id:string,input:ChangeRequest):Subscription`、`updateTargetNote(wallet:string,input:NoteRequest):TargetNote`、`listActivities(input:ActivityQuery):ActivityPage`、`getActivity(id:string):Activity`、`getSummaryBatch(id:string):SummaryBatch`、`listSummaryParts(id:string,input:PartQuery):PartPage`。
 - 输入：`PageInput{pageSize?:number;cursor?:string}`、`SubscriptionQuery extends PageInput {view?:'current'|'cancelled';state?:string}`、`ActivityQuery extends PageInput {subscriptionId?:string;from?:string;to?:string;summaryBatchId?:string;refreshCursor?:string}`、`PartQuery extends PageInput {activityId?:string}`、`CreateRequest{confirmationToken:string;requestId:string;note?:{value:string}}`、`ChangeRequest{expectedRevision:string;requestId:string}`、`NoteRequest extends ChangeRequest {note:string}`。输出Page封装使用对应items字段`subscriptions/entries/activities/parts`和任务12的page/asOf/quota。
-- 产出shared：`ReadScope{key:string;isCurrent:()=>boolean}`、`useVisibleQuery<T>(load:()=>AbortablePromise<T>,scope:ReadScope,intervalMs:number):{data?:T;error?:Error;loading:boolean;stale:boolean;reload:()=>void}`。AbortablePromise的唯一类型定义放shared use-visible-query.ts，会员/admin仅type import，shared不导入member。轮询load保持最新ref，scope.key变化清数据/abort；每页scope.key由捕获的owner/generation再追加资源ID及规范化筛选/页游标，切换目标立即清理旧请求，不等下次5秒。依赖不使用每次render新函数触发循环。
+- 产出shared：`ReadScope{key:string;isCurrent:()=>boolean;subscribeInvalidation?:(listener:()=>void)=>()=>void}`、`useVisibleQuery<T>(load:()=>AbortablePromise<T>,scope:ReadScope,intervalMs:number):{data?:T;error?:Error;loading:boolean;stale:boolean;reload:()=>void}`。AbortablePromise的唯一类型定义放shared use-visible-query.ts，会员/admin仅type import，shared不导入member。轮询load保持最新ref，scope.key变化清数据/abort；每页scope.key由捕获的owner/generation再追加资源ID及规范化筛选/页游标，切换目标立即清理旧请求，不等下次5秒。依赖不使用每次render新函数触发循环。
 - 产出state：`captureTraderSyncScope(ownerId:string):ReadScope`、`clearTraderSyncState():void`；后者递增generation并清理所有本模块内存草稿/分页缓存。后续任务在此文件扩展同一清理入口，App不为每种缓存另写一套撤权hook。
 - 精度：`formatRaw(raw:string,decimals:number):string`、`formatFillPrice(numerator:string,denominator:string,places?:number):{text:string;approximate:boolean}|undefined`；默认6位小数，微小非零不能变成0，必要时改用精确比值文本。
 
@@ -983,7 +990,7 @@ return result;
 
 `normalizeActivity(value:unknown):Activity`及各顶层响应`normalizeResolvedTarget/Subscription/SubscriptionPage/HistoryPage/ActivityPage/SummaryBatch/PartPage/TargetNote`在models定义；嵌套字段用同一Evidence与string校验器。六period按1D/1W/1M/1Y/YTD/ALL固定输出，不依赖Go map遍历顺序。service测试使用任务12真实JSON fixture验证长ID、revision、零/缺失、note省略/空串及正确scope，捕获request.abort是否调用。所有分页把client pageSize/cursor转换为`{'page.page_size':input.pageSize,'page.cursor':input.cursor}`，刷新另用顶层refresh_cursor，不发送undefined query值。
 - [ ] **步骤4：写读取竞争红灯。**react-test-renderer挂载调用useVisibleQuery的最小Probe组件；fake timers+deferred Promise验证：5秒期间首请求未完不重入，hidden停止，visible立即刷新，失败保留旧data且stale，clearTraderSyncState后旧Promise完成不能发布。deferred在测试内用`new Promise<T>(resolve=>...)`保存resolve，不用真实sleep。
-- [ ] **步骤5：实现单飞读取与generation清理。**每轮只保留一个request；finally在generation匹配时释放slot。首次loading与后续刷新分开，不因刷新卸载已成功子树。visibilitychange/focus使用同一reload去重；cleanup abort并移除监听。发布前必须检查组件mounted、当前请求generation与scope.isCurrent，晚错误也不能覆盖新状态。clearTraderSyncState同步清空Map并递增generation。
+- [ ] **步骤5：实现单飞读取与generation清理。**每轮只保留一个request；finally在generation匹配时释放slot。首次loading与后续刷新分开，不因刷新卸载已成功子树。visibilitychange/focus使用同一reload去重；cleanup abort并移除监听。发布前必须检查组件mounted、当前请求generation与scope.isCurrent，晚错误也不能覆盖新状态。member scope始终提供subscribeInvalidation；clearTraderSyncState同步清空Map、递增generation并通知仍挂载的hook中止请求/清除data/error，订阅时scope已失效也立即通知。仅有isCurrent不能替代主动清屏；真实App的三个清理边界由任务15步骤5接入。
 - [ ] **步骤6：运行新service/precision/state/hook测试、`yarn --cwd ui lint`；提交 `feat(trader-sync-ui): add typed reads and precise display primitives`。**检查改Jest匹配后发现数量增加而原测试仍被发现。此任务不挂空页面或新导航。
 
 ## 任务15：独立添加页与 Telegram 返回草稿
