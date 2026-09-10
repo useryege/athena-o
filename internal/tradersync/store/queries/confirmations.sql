@@ -18,3 +18,6 @@ UPDATE trader_sync_target_confirmations SET consumed_request_id=$3
 WHERE owner_id=$1 AND token_digest=$2 AND expires_at>clock_timestamp()
 AND consumed_request_id IS NULL AND identity_digest=$4
 RETURNING identity_json;
+
+-- name: ReadConfirmationDisplay :one
+SELECT card_json,identity_json FROM trader_sync_target_confirmations WHERE owner_id=$1 AND token_digest=$2 AND identity_digest=$3 AND consumed_request_id IS NULL AND expires_at>clock_timestamp();

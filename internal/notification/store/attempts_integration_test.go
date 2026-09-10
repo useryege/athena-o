@@ -25,14 +25,14 @@ func attemptFixture(t *testing.T, kind string) (*SQLStore, delivery.WorkRef) {
 		if _, err := db.Pool.Exec(ctx, `INSERT INTO telegram_consumed_updates(update_id) VALUES (42)`); err != nil {
 			t.Fatal(err)
 		}
-		if err := db.Pool.QueryRow(ctx, `INSERT INTO telegram_binding_replies(update_id,telegram_chat_id,body,payload_digest) VALUES(42,123,'reply',decode(repeat('ab',32),'hex')) RETURNING id`).Scan(&id); err != nil {
+		if err := db.Pool.QueryRow(ctx, `INSERT INTO telegram_binding_replies(update_id,telegram_chat_id,body,payload_digest,payload) VALUES(42,123,'reply',sha256(convert_to(json_build_object('format','html','text','reply','messageThreadId',0)::text,'UTF8')),convert_to(json_build_object('format','html','text','reply','messageThreadId',0)::text,'UTF8')) RETURNING id`).Scan(&id); err != nil {
 			t.Fatal(err)
 		}
 	} else if kind == "system" {
 		if _, err := db.Pool.Exec(ctx, `INSERT INTO system_notification_topics(telegram_chat,label,message_thread_id) VALUES('test','default',1)`); err != nil {
 			t.Fatal(err)
 		}
-		err := db.Pool.QueryRow(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label) VALUES('test','info','hello','telegram','pending','test','default') RETURNING id`).Scan(&id)
+		err := db.Pool.QueryRow(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label,payload,payload_digest) VALUES('test','info','hello','telegram','pending','test','default',convert_to(json_build_object('format','html','text','hello','messageThreadId',0)::text,'UTF8'),sha256(convert_to(json_build_object('format','html','text','hello','messageThreadId',0)::text,'UTF8'))) RETURNING id`).Scan(&id)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -41,7 +41,7 @@ func attemptFixture(t *testing.T, kind string) (*SQLStore, delivery.WorkRef) {
 		if _, err := db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision) VALUES($1,123,123,'test',1)`, owner); err != nil {
 			t.Fatal(err)
 		}
-		err := db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision) VALUES($1,'key',decode(repeat('ab',32),'hex'),'test','info','hello','telegram','pending',123,1) RETURNING id`, owner).Scan(&id)
+		err := db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision,payload,request_digest) VALUES($1,'key',sha256(convert_to(json_build_object('format','html','text','hello','messageThreadId',0)::text,'UTF8')),'test','info','hello','telegram','pending',123,1,convert_to(json_build_object('format','html','text','hello','messageThreadId',0)::text,'UTF8'),decode(repeat('ab',32),'hex')) RETURNING id`, owner).Scan(&id)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -28,7 +28,7 @@ func TestWorkerPersistsPermitBeforeSendAndRetriesOnlyResult(t *testing.T) {
 		t.Fatal(err)
 	}
 	var id int64
-	if err := db.Pool.QueryRow(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label) VALUES('test','info','hello','telegram','pending','test','worker') RETURNING id`).Scan(&id); err != nil {
+	if err := db.Pool.QueryRow(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label,payload,payload_digest) VALUES('test','info','hello','telegram','pending','test','worker',convert_to(json_build_object('format','html','text','hello','messageThreadId',0)::text,'UTF8'),sha256(convert_to(json_build_object('format','html','text','hello','messageThreadId',0)::text,'UTF8'))) RETURNING id`).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := db.Pool.Exec(ctx, `ALTER TABLE system_notification_deliveries ADD CONSTRAINT reject_sent CHECK(status <> 'sent')`); err != nil {
@@ -89,7 +89,7 @@ func TestWorkerDoesNotResendUnknownOrCrashedPermit(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i := 0; i < 2; i++ {
-		if _, err := db.Pool.Exec(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label) VALUES('test','info','hello','telegram','pending','test','worker')`); err != nil {
+		if _, err := db.Pool.Exec(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label,payload,payload_digest) VALUES('test','info','hello','telegram','pending','test','worker',convert_to(json_build_object('format','html','text','hello','messageThreadId',0)::text,'UTF8'),sha256(convert_to(json_build_object('format','html','text','hello','messageThreadId',0)::text,'UTF8')))`); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -252,11 +252,11 @@ func TestDispatcherConsumesAllSourcesWithDurablePhysicalRoutes(t *testing.T) {
 		if _, err := db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision) VALUES($1,$2,$2,'test',1)`, owner, i); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := db.Pool.Exec(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision) VALUES($1,'key',decode(repeat('ab',32),'hex'),'test','info','body','telegram','pending',$2,1)`, owner, i); err != nil {
+		if _, err := db.Pool.Exec(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision,payload,request_digest) VALUES($1,'key',sha256(convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8')),'test','info','body','telegram','pending',$2,1,convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8'),decode(repeat('ab',32),'hex'))`, owner, i); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if _, err := db.Pool.Exec(ctx, `INSERT INTO system_notification_topics(telegram_chat,label,message_thread_id) VALUES('test','mixed',1); INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label) VALUES('test','info','body','telegram','pending','test','mixed')`); err != nil {
+	if _, err := db.Pool.Exec(ctx, `INSERT INTO system_notification_topics(telegram_chat,label,message_thread_id) VALUES('test','mixed',1); INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label,payload,payload_digest) VALUES('test','info','body','telegram','pending','test','mixed',convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8'),sha256(convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8')))`); err != nil {
 		t.Fatal(err)
 	}
 	if err := store.ApplyBotUpdate(ctx, utiltelegram.Update{ID: 42, Message: &utiltelegram.Message{ChatType: "private", UserID: 123, ChatID: 123, Text: "/start invalid"}}); err != nil {
@@ -299,7 +299,7 @@ func TestDispatchExpiredSlotAfterAccountGateLeavesNoAttempt(t *testing.T) {
 		t.Fatal(err)
 	}
 	var id int64
-	if err := db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision) VALUES($1,'key',decode(repeat('ab',32),'hex'),'test','info','body','telegram','pending',123,1) RETURNING id`, owner).Scan(&id); err != nil {
+	if err := db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision,payload,request_digest) VALUES($1,'key',sha256(convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8')),'test','info','body','telegram','pending',123,1,convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8'),decode(repeat('ab',32),'hex')) RETURNING id`, owner).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	tx, err := db.Pool.Begin(ctx)
@@ -316,7 +316,7 @@ func TestDispatchExpiredSlotAfterAccountGateLeavesNoAttempt(t *testing.T) {
 	service := NewService(store, probe, nil, nil)
 	result := make(chan error, 1)
 	go func() {
-		_, err := service.sendPermittedNotification(slotCtx, delivery.Candidate{Ref: delivery.WorkRef{Kind: "account", ID: id}, ChatID: 123}, SendRequest{TelegramChatID: 123, Text: "body"}, nil)
+		_, err := service.sendPermittedNotification(slotCtx, delivery.Candidate{Ref: delivery.WorkRef{Kind: "account", ID: id}, ChatID: 123}, nil)
 		result <- err
 	}()
 	for {
@@ -365,7 +365,7 @@ func TestDispatchRetryAfterInvalidatesHeldValidSlotAndReschedules(t *testing.T) 
 		t.Fatal(err)
 	}
 	var id int64
-	if err := db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision) VALUES($1,'key',decode(repeat('ab',32),'hex'),'test','info','body','telegram','pending',123,1) RETURNING id`, owner).Scan(&id); err != nil {
+	if err := db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision,payload,request_digest) VALUES($1,'key',sha256(convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8')),'test','info','body','telegram','pending',123,1,convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8'),decode(repeat('ab',32),'hex')) RETURNING id`, owner).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	tx, err := db.Pool.Begin(ctx)
@@ -462,7 +462,7 @@ func TestDispatchCancellationAfterGuardReleasesTightenWriter(t *testing.T) {
 		t.Fatal(err)
 	}
 	var id int64
-	if err := db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision) VALUES($1,'key',decode(repeat('ab',32),'hex'),'test','info','body','telegram','pending',123,1) RETURNING id`, owner).Scan(&id); err != nil {
+	if err := db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision,payload,request_digest) VALUES($1,'key',sha256(convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8')),'test','info','body','telegram','pending',123,1,convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8'),decode(repeat('ab',32),'hex')) RETURNING id`, owner).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	// Block the attempt INSERT after the real post-account-gate authorization guard.
@@ -492,7 +492,7 @@ func TestDispatchCancellationAfterGuardReleasesTightenWriter(t *testing.T) {
 	dispatchCtx = context.WithValue(dispatchCtx, dispatchSlotKey{}, dispatchSlot{clock: clock, until: clock.Now().Add(time.Second), budget: budget, reservation: reservation})
 	result := make(chan error, 1)
 	go func() {
-		_, err := service.sendPermittedNotification(dispatchCtx, c, SendRequest{TelegramChatID: 123, Text: "body"}, nil)
+		_, err := service.sendPermittedNotification(dispatchCtx, c, nil)
 		result <- err
 	}()
 	for {
@@ -560,7 +560,7 @@ func TestDispatchCommittedPermitWaitsForLaterRetryAfterAtHTTPEntry(t *testing.T)
 				t.Fatal(err)
 			}
 			var id int64
-			if err := db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision) VALUES($1,'key',decode(repeat('ab',32),'hex'),'test','info','body','telegram','pending',123,1) RETURNING id`, owner).Scan(&id); err != nil {
+			if err := db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision,payload,request_digest) VALUES($1,'key',sha256(convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8')),'test','info','body','telegram','pending',123,1,convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8'),decode(repeat('ab',32),'hex')) RETURNING id`, owner).Scan(&id); err != nil {
 				t.Fatal(err)
 			}
 			var calls atomic.Int32
@@ -603,7 +603,7 @@ func TestDispatchCommittedPermitWaitsForLaterRetryAfterAtHTTPEntry(t *testing.T)
 			dispatchCtx = context.WithValue(dispatchCtx, dispatchSlotKey{}, dispatchSlot{clock: clock, until: clock.Now().Add(time.Second), budget: budget, reservation: reservation})
 			done := make(chan delivery.Outcome, 1)
 			go func() {
-				out, err := service.sendPermittedNotification(dispatchCtx, c, SendRequest{Text: "body"}, func(time.Time) { budget.Start(c, clock.Now()) })
+				out, err := service.sendPermittedNotification(dispatchCtx, c, func(time.Time) { budget.Start(c, clock.Now()) })
 				if err != nil {
 					t.Error(err)
 				}
@@ -700,5 +700,55 @@ func TestDispatchCommittedPermitWaitsForLaterRetryAfterAtHTTPEntry(t *testing.T)
 				t.Fatal("admission leaked lock")
 			}
 		})
+	}
+}
+
+func TestWorkerSendsFrozenPlainBytesAndAttemptDigest(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	owner := uuid.NewString()
+	text := "  <鲸>&🙂\nhttps://athena.test/a?x=1&y=2  "
+	payload, e := delivery.EncodePayload(delivery.Payload{Format: "plain", Text: text})
+	if e != nil {
+		t.Fatal(e)
+	}
+	if _, e = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner); e != nil {
+		t.Fatal(e)
+	}
+	var id int64
+	if e = db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision,payload,request_digest)VALUES($1,'frozen',sha256($2::bytea),'test','info','changed display body','telegram','pending',123,1,$2,sha256($2::bytea))RETURNING id`, owner, payload).Scan(&id); e != nil {
+		t.Fatal(e)
+	}
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		if e := r.ParseMultipartForm(1 << 20); e != nil {
+			t.Error(e)
+		}
+		if r.Form.Get("text") != text || r.Form.Get("parse_mode") != "" {
+			t.Errorf("actual request differs from frozen plain payload: %#v", r.Form)
+		}
+		var digest []byte
+		if e := db.Pool.QueryRow(ctx, `SELECT payload_digest FROM notification_delivery_attempts WHERE work_kind='account' AND work_id=$1`, id).Scan(&digest); e != nil || string(digest) != string(delivery.PayloadDigest(payload)) {
+			t.Errorf("attempt digest not actual payload: %x %v", digest, e)
+		}
+		io.WriteString(w, `{"ok":true,"result":{"message_id":55}}`)
+	}))
+	defer server.Close()
+	client, e := utiltelegram.NewClient(utiltelegram.Config{BotToken: "test", BaseURL: server.URL})
+	if e != nil {
+		t.Fatal(e)
+	}
+	s := NewService(notificationstore.NewSQLStore(db.Pool), NewTelegramSender(client, nil), nil, nil)
+	source := s.workSources()[0]
+	rows, e := source.Ready(ctx, time.Now())
+	if e != nil || len(rows) != 1 {
+		t.Fatal(rows, e)
+	}
+	if e = source.Dispatch(ctx, rows[0], nil); e != nil {
+		t.Fatal(e)
+	}
+	if calls.Load() != 1 {
+		t.Fatal(calls.Load())
 	}
 }

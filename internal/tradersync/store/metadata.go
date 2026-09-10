@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5"
+	"github.com/useryege/athena/internal/tradersync/activity"
 	q "github.com/useryege/athena/internal/tradersync/store/sqlc"
 	tm "github.com/useryege/athena/internal/tradersync/types"
 	pm "github.com/useryege/athena/util/polymarket"
@@ -28,11 +29,37 @@ func (s *SQLStore) LoadMetadata(ctx context.Context, key string) (tm.TradeMetada
 	return result, e == nil, e
 }
 func (s *SQLStore) SaveMetadata(ctx context.Context, key string, result tm.TradeMetadata) error {
+	tx, e := s.pool.Begin(ctx)
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback(context.Background())
+	if e = s.saveMetadataTx(ctx, tx, key, result); e != nil {
+		return e
+	}
+	return tx.Commit(ctx)
+}
+func (s *SQLStore) saveMetadataTx(ctx context.Context, tx pgx.Tx, key string, result tm.TradeMetadata) error {
+	queries := q.New(tx)
+	if e := queries.LockTradeMetadata(ctx, key); e != nil {
+		return e
+	}
+	raw, e := queries.GetTradeMetadata(ctx, key)
+	if e != nil && !errors.Is(e, pgx.ErrNoRows) {
+		return e
+	}
+	if e == nil {
+		var old tm.TradeMetadata
+		if e = json.Unmarshal(raw, &old); e != nil {
+			return e
+		}
+		result = activity.MergeMetadata(old, result)
+	}
 	b, e := json.Marshal(result)
 	if e != nil {
 		return e
 	}
-	return q.New(s.pool).SaveTradeMetadata(ctx, q.SaveTradeMetadataParams{CacheKey: key, MetadataJson: b})
+	return queries.SaveTradeMetadata(ctx, q.SaveTradeMetadataParams{CacheKey: key, MetadataJson: b})
 }
 
 // LookupComboPosition returns directory claims, not verified MarketRefs.

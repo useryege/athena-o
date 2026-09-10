@@ -78,7 +78,7 @@ func TestBaselineBoundaryRequiresACKFutureTimeAndCurrentIntent(t *testing.T) {
 		t.Helper()
 		var id string
 		address := common.HexToAddress(wallet)
-		if err := db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state)VALUES($1,$2,'enabled','pending_baseline')RETURNING id`, owner.ID, address.Bytes()).Scan(&id); err != nil {
+		if err := db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,$2,'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb)RETURNING id`, owner.ID, address.Bytes()).Scan(&id); err != nil {
 			t.Fatal(err)
 		}
 		err := txgate.WithAccountTx(ctx, db.Pool, owner.ID, func(tx pgx.Tx) error {
@@ -161,7 +161,7 @@ func TestBaselineOwnershipSnapshotSerializesRegistrationAndPreservesNewPending(t
 		t.Helper()
 		address := common.HexToAddress(wallet)
 		var id string
-		if err := tx.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state)VALUES($1,$2,'enabled','pending_baseline')RETURNING id`, owner.ID, address.Bytes()).Scan(&id); err != nil {
+		if err := tx.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,$2,'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb)RETURNING id`, owner.ID, address.Bytes()).Scan(&id); err != nil {
 			t.Fatal(err)
 		}
 		if err := txgate.LockWallet(ctx, tx, address); err != nil {
@@ -312,7 +312,7 @@ func TestBaselineUnknownCommitReadsPersistedSuccessBeforeAnyRetry(t *testing.T) 
 	}
 	wallet := common.HexToAddress("0x1111111111111111111111111111111111111111")
 	var subID, attempt string
-	if err = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state)VALUES($1,$2,'enabled','pending_baseline')RETURNING id`, owner.ID, wallet.Bytes()).Scan(&subID); err != nil {
+	if err = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,$2,'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb)RETURNING id`, owner.ID, wallet.Bytes()).Scan(&subID); err != nil {
 		t.Fatal(err)
 	}
 	err = txgate.WithAccountTx(ctx, db.Pool, owner.ID, func(tx pgx.Tx) error {

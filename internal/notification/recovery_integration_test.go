@@ -66,7 +66,7 @@ func TestRecoverSenderUnknownAndHistoricalBudget(t *testing.T) {
 		t.Fatal(err)
 	}
 	var id int64
-	if err = db.Pool.QueryRow(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label) VALUES('test','info','body','telegram','pending','test','recover') RETURNING id`).Scan(&id); err != nil {
+	if err = db.Pool.QueryRow(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label,payload,payload_digest) VALUES('test','info','body','telegram','pending','test','recover',convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8'),sha256(convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8'))) RETURNING id`).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	c := delivery.Candidate{Ref: delivery.WorkRef{Kind: "system", ID: id}, ChatID: -123, Group: true}
@@ -172,13 +172,13 @@ func TestRecoverSenderPreservesKnownResultsAcrossAllSources(t *testing.T) {
 		t.Fatal(err)
 	}
 	var account, system, reply int64
-	if err = db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision) VALUES($1,'recover',decode(repeat('ab',32),'hex'),'test','info','body','telegram','pending',123,1) RETURNING id`, owner).Scan(&account); err != nil {
+	if err = db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision,payload,request_digest) VALUES($1,'recover',sha256(convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8')),'test','info','body','telegram','pending',123,1,convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8'),decode(repeat('ab',32),'hex')) RETURNING id`, owner).Scan(&account); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = db.Pool.Exec(ctx, `INSERT INTO system_notification_topics(telegram_chat,label,message_thread_id) VALUES('test','recover',1)`); err != nil {
 		t.Fatal(err)
 	}
-	if err = db.Pool.QueryRow(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label) VALUES('test','info','body','telegram','pending','test','recover') RETURNING id`).Scan(&system); err != nil {
+	if err = db.Pool.QueryRow(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label,payload,payload_digest) VALUES('test','info','body','telegram','pending','test','recover',convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8'),sha256(convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8'))) RETURNING id`).Scan(&system); err != nil {
 		t.Fatal(err)
 	}
 	if err = store.ApplyBotUpdate(ctx, utiltelegram.Update{ID: 1, Message: &utiltelegram.Message{ChatType: "private", UserID: 456, ChatID: 456, Text: "/start invalid"}}); err != nil {
@@ -263,7 +263,7 @@ func TestRecoverSenderDoesNotMistakeKnownReceiptForRepairedDelivery(t *testing.T
 		t.Fatal(err)
 	}
 	var id int64
-	if err = db.Pool.QueryRow(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label) VALUES('test','info','body','telegram','pending','test','recover') RETURNING id`).Scan(&id); err != nil {
+	if err = db.Pool.QueryRow(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label,payload,payload_digest) VALUES('test','info','body','telegram','pending','test','recover',convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8'),sha256(convert_to(json_build_object('format','html','text','body','messageThreadId',0)::text,'UTF8'))) RETURNING id`).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	p, err := s.Authorize(ctx, delivery.Candidate{Ref: delivery.WorkRef{Kind: "system", ID: id}, ChatID: -123, Group: true}, inc, nil)

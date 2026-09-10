@@ -88,7 +88,7 @@ func conditionParts(position string) ([31]byte, [32]byte, byte, byte, error) {
 	padded[31] = 0
 	return cond, padded, module, outcome, nil
 }
-func (r *MetadataResolver) resolveCombo(ctx context.Context, position string, hash common.Hash) tm.TradeMetadata {
+func (r *MetadataResolver) resolveCombo(ctx context.Context, position string, hash common.Hash, publish func(tm.TradeMetadata)) tm.TradeMetadata {
 	result := tm.TradeMetadata{Market: missingMarket(position, "combo_identity_unavailable", "combinatorial_module"), LegsEvidence: metadataEvidence("unavailable", "module_version_unavailable", "combinatorial_module")}
 	cond, padded, module, outcome, e := conditionParts(position)
 	if e != nil || module != 3 {
@@ -124,11 +124,17 @@ func (r *MetadataResolver) resolveCombo(ctx context.Context, position string, ha
 		return result
 	}
 	result.LegsEvidence = metadataEvidence("available", "", source)
-	result.Legs = make([]tm.ComboLeg, 0, len(legs))
-	for _, leg := range legs {
+	result.Legs = make([]tm.ComboLeg, len(legs))
+	for i, leg := range legs {
 		id := leg.String()
-		result.Legs = append(result.Legs, tm.ComboLeg{PositionID: id, Market: r.resolveLeg(ctx, id, hash)})
+		result.Legs[i] = tm.ComboLeg{PositionID: id, Market: missingMarket(id, "metadata_pending", source)}
 	}
+	publish(result)
+	for i := range result.Legs {
+		result.Legs[i].Market = r.resolveLeg(ctx, result.Legs[i].PositionID, hash)
+		publish(result)
+	}
+
 	return result
 }
 func (r *MetadataResolver) resolveLeg(ctx context.Context, position string, hash common.Hash) tm.MarketRef {

@@ -7,7 +7,10 @@ SELECT d.*, EXISTS (
   WHERE b.account_id = d.account_id AND b.telegram_chat_id = d.telegram_chat_id
     AND b.telegram_user_id = b.telegram_chat_id AND b.revision = d.binding_revision
     AND b.status = 'connected'
-) AS binding_eligible
+) AND (d.source <> 'trader_sync' OR (
+ EXISTS (SELECT 1 FROM account_module_access m JOIN athena_account a USING(account_id) WHERE m.account_id=d.account_id AND m.module='trader_sync' AND m.access_level='read_write' AND NOT a.administrator)
+ AND EXISTS (SELECT 1 FROM trader_sync_alert_memberships m WHERE m.activity_id=d.activity_id AND m.owner_id=d.account_id AND m.binding_revision=d.binding_revision AND m.chat_id=d.telegram_chat_id AND m.eligibility_revoked_at IS NULL)
+)) AS binding_eligible
 FROM account_notification_deliveries d WHERE d.id = $1 FOR UPDATE OF d;
 
 -- name: GetSystemDeliveryForPermit :one

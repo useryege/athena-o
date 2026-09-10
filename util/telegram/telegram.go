@@ -235,8 +235,8 @@ func (c *clientImpl) SendMessage(ctx context.Context, request SendMessageRequest
 	if err != nil {
 		return nil, classifySendError(err, observation)
 	}
-	text := strings.TrimSpace(request.Text)
-	if text == "" {
+	text := request.Text
+	if strings.TrimSpace(text) == "" {
 		return nil, classifySendError(errors.New("telegram message text is required"), observation)
 	}
 

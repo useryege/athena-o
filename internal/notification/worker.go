@@ -91,7 +91,7 @@ func (s *Service) runWorker(ctx context.Context) error {
 	return dispatchErr
 }
 
-func (s *Service) sendPermittedNotification(ctx context.Context, candidate delivery.Candidate, request SendRequest, onStarted func(time.Time)) (delivery.Outcome, error) {
+func (s *Service) sendPermittedNotification(ctx context.Context, candidate delivery.Candidate, onStarted func(time.Time)) (delivery.Outcome, error) {
 	var finishAuthorization func(bool)
 	permit, err := s.store.Authorize(ctx, candidate, s.senderIncarnation, func() error {
 		if s.senderSession != nil {
@@ -110,7 +110,11 @@ func (s *Service) sendPermittedNotification(ctx context.Context, candidate deliv
 		log.WithError(err).WithField("notification_id", candidate.Ref.ID).Debug("notification send was not authorized")
 		return delivery.Outcome{}, err
 	}
-	request.TelegramChatID = permit.ChatID
+	payload, err := delivery.DecodePayload(permit.Payload)
+	if err != nil {
+		return delivery.Outcome{}, err
+	}
+	request := SendRequest{TelegramChatID: permit.ChatID, MessageThreadID: payload.MessageThreadID, Text: payload.Text, Format: payload.Format}
 	started := make(chan time.Time, 1)
 	result := make(chan delivery.Outcome, 1)
 	// The transport starts its HTTP timeout after cancellable local budget admission.

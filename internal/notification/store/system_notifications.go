@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/useryege/athena/internal/notification/delivery"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -13,6 +14,7 @@ import (
 )
 
 type CreateSystemNotificationDeliveryRequest struct {
+	Payload      []byte
 	Source       string
 	Severity     string
 	Title        string
@@ -65,13 +67,16 @@ type SystemNotificationDeliveryCounts struct {
 }
 
 func (s *SQLStore) CreateSystemNotificationDelivery(ctx context.Context, req CreateSystemNotificationDeliveryRequest) (*v1alpha1.SystemNotificationDeliveryDetail, error) {
+	if _, err := delivery.DecodePayload(req.Payload); err != nil {
+		return nil, err
+	}
 	if err := s.configured(); err != nil {
 		return nil, err
 	}
 	row, err := s.queries.CreateSystemNotificationDelivery(ctx, notificationsqlc.CreateSystemNotificationDeliveryParams{
 		Source: req.Source, Severity: req.Severity, Title: nullableText(req.Title), Body: req.Body,
 		Link: nullableText(req.Link), Channel: req.Channel, Status: req.Status,
-		TelegramChat: req.TelegramChat, TopicLabel: req.TopicLabel,
+		TelegramChat: req.TelegramChat, TopicLabel: req.TopicLabel, Payload: req.Payload, PayloadDigest: delivery.PayloadDigest(req.Payload),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create system notification delivery: %w", err)

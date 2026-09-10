@@ -127,7 +127,7 @@ func TestCollectorCommittedRegistrationPrecedesACKWithoutOwningFinality(t *testi
 	}
 	defer tx.Rollback(context.Background())
 	var subID string
-	if err = tx.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state)VALUES($1,$2,'enabled','pending_baseline')RETURNING id`, owner.ID, wallet.Bytes()).Scan(&subID); err != nil {
+	if err = tx.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,$2,'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb)RETURNING id`, owner.ID, wallet.Bytes()).Scan(&subID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended('athena:account:' || $1::text,0))`, owner.ID); err != nil {
@@ -182,11 +182,48 @@ func TestCollectorCommittedRegistrationPrecedesACKWithoutOwningFinality(t *testi
 	if node.finalityCalls.Load() != 0 {
 		t.Fatal("Collector must not own Projector finality scheduling", node.finalityCalls.Load())
 	}
+
+	// The collector remains healthy while the actual Projector confirmation call fails.
+	projectionStore := store.NewSQLStore(db.Pool)
+	if err = projectionStore.ConfigureActivities("https://athena.test"); err != nil {
+		t.Fatal(err)
+	}
+	projector, err := NewProjector(projectionStore, node, waitForConfirmationFailureVersion{}, NewMetadataResolver(nil, nil, projectionStore), ProjectorConfig{Interval: 20 * time.Millisecond})
+	if err != nil {
+		t.Fatal(err)
+	}
+	projectedRun := make(chan error, 1)
+	go func() { projectedRun <- projector.Run(ctx) }()
+	deadline = time.Now().Add(time.Second)
+	for {
+		var observed string
+		if err = db.Pool.QueryRow(ctx, `SELECT confirmation_state FROM trader_sync_source_records LIMIT 1`).Scan(&observed); err != nil {
+			t.Fatal(err)
+		}
+		if node.finalityCalls.Load() > 0 && observed == "unverified" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("Projector did not persist actual finality failure", node.finalityCalls.Load(), observed)
+		}
+		time.Sleep(time.Millisecond * 5)
+	}
+	if err = db.Pool.QueryRow(ctx, `SELECT observation_state FROM trader_sync_subscriptions WHERE id=$1`, subID).Scan(&state); err != nil || state != "healthy" {
+		t.Fatal("confirmation failure changed collector health", state, err)
+	}
+	if err = db.Pool.QueryRow(ctx, `SELECT count(*) FROM trader_sync_source_candidates WHERE disposition='pending'`).Scan(&candidates); err != nil || candidates != 1 {
+		t.Fatal("confirmation failure discarded candidate", candidates, err)
+	}
 	var ended bool
 	if err = db.Pool.QueryRow(ctx, `SELECT ended_at IS NOT NULL FROM trader_sync_collector_epochs ORDER BY id DESC LIMIT 1`).Scan(&ended); err != nil || ended {
 		t.Fatal("finality failure closed WSS epoch", ended, err)
 	}
 	cancel()
+	select {
+	case <-projectedRun:
+	case <-time.After(time.Second):
+		t.Fatal("Projector did not join after failed confirmation")
+	}
 	select {
 	case err = <-running:
 		if err != nil {
@@ -210,7 +247,7 @@ func TestCollectorReconnectCreatesNewAttemptWithoutReassigningOldSource(t *testi
 	}
 	wallet := common.HexToAddress("0x1111111111111111111111111111111111111111")
 	var subID string
-	if err = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state)VALUES($1,$2,'enabled','pending_baseline')RETURNING id`, owner.ID, wallet.Bytes()).Scan(&subID); err != nil {
+	if err = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,$2,'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb)RETURNING id`, owner.ID, wallet.Bytes()).Scan(&subID); err != nil {
 		t.Fatal(err)
 	}
 	var connections atomic.Int32
@@ -356,7 +393,7 @@ func TestCollectorNewFilterFailureStillBaselinesAlreadyCoveredWallet(t *testing.
 	insert := func(owner string, wallet common.Address) string {
 		t.Helper()
 		var id string
-		if err := db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state)VALUES($1,$2,'enabled','pending_baseline')RETURNING id`, owner, wallet.Bytes()).Scan(&id); err != nil {
+		if err := db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,$2,'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb)RETURNING id`, owner, wallet.Bytes()).Scan(&id); err != nil {
 			t.Fatal(err)
 		}
 		return id
@@ -481,7 +518,7 @@ func TestCollectorPersistenceFailureRecordsLastReliableReceiveAndReconnects(t *t
 		t.Fatal(err)
 	}
 	wallet := common.HexToAddress("0x1111111111111111111111111111111111111111")
-	if _, err = db.Pool.Exec(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state)VALUES($1,$2,'enabled','pending_baseline')`, owner.ID, wallet.Bytes()); err != nil {
+	if _, err = db.Pool.Exec(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,$2,'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb)`, owner.ID, wallet.Bytes()); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = db.Pool.Exec(ctx, `CREATE FUNCTION reject_second_raw()RETURNS trigger LANGUAGE plpgsql AS $$BEGIN IF NEW.log_index=2 THEN RAISE EXCEPTION 'injected durable receive failure'; END IF;RETURN NEW;END$$;CREATE TRIGGER reject_second_raw BEFORE INSERT ON trader_sync_source_records FOR EACH ROW EXECUTE FUNCTION reject_second_raw()`); err != nil {
@@ -730,7 +767,7 @@ func TestCollectorLatestHealthContinuesWhileBaselineWaitsForAccount(t *testing.T
 		t.Fatal(err)
 	}
 	// Committed work is visible, but its baseline must wait for another account TX.
-	if _, err = db.Pool.Exec(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state)VALUES($1,$2,'enabled','pending_baseline')`, owner.ID, common.HexToAddress("0x1111111111111111111111111111111111111111").Bytes()); err != nil {
+	if _, err = db.Pool.Exec(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,$2,'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb)`, owner.ID, common.HexToAddress("0x1111111111111111111111111111111111111111").Bytes()); err != nil {
 		t.Fatal(err)
 	}
 	node := &collectorHealthNode{}
@@ -773,7 +810,7 @@ func TestCollectorWSSFailureCancelsAccountWaitWithHealthyLatest(t *testing.T) {
 	insert := func(wallet string) string {
 		t.Helper()
 		var id string
-		if err := db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state)VALUES($1,$2,'enabled','pending_baseline')RETURNING id`, owner.ID, common.HexToAddress(wallet).Bytes()).Scan(&id); err != nil {
+		if err := db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,$2,'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb)RETURNING id`, owner.ID, common.HexToAddress(wallet).Bytes()).Scan(&id); err != nil {
 			t.Fatal(err)
 		}
 		return id
@@ -949,4 +986,14 @@ CREATE TRIGGER reject_owner_release BEFORE UPDATE ON trader_sync_collector_contr
 	if err = owner.Close(ctx); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// In this failure-only composition version work is cancelled by the failed
+// canonical branch. Successful version/runtime/receipt combinations are covered
+// independently; no fake version success is claimed for this synthetic raw log.
+type waitForConfirmationFailureVersion struct{}
+
+func (waitForConfirmationFailureVersion) Verify(ctx context.Context, _ ethtypes.Log) (string, error) {
+	<-ctx.Done()
+	return "", ctx.Err()
 }

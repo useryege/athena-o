@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/useryege/athena/internal/tradersync/activity"
 	"math/big"
 	"net/url"
 	"strings"
@@ -48,7 +49,14 @@ func missingMarket(position, reason, source string) tm.MarketRef {
 // Resolve only enriches display data. The activity caller owns its post-finality
 // wait budget; background enrichment may keep working with a longer context.
 func (r *MetadataResolver) Resolve(ctx context.Context, trade tm.Trade, blockHash common.Hash) tm.TradeMetadata {
+	return r.ResolveProgress(ctx, trade, blockHash, nil)
+}
+
+func (r *MetadataResolver) ResolveProgress(ctx context.Context, trade tm.Trade, blockHash common.Hash, publish func(tm.TradeMetadata)) tm.TradeMetadata {
 	unavailable := tm.TradeMetadata{Market: missingMarket(trade.PositionID, "metadata_unavailable", "gamma"), LegsEvidence: metadataEvidence("unavailable", "not_combo", "gamma")}
+	if trade.SourceVersion == ComboExchangeVersion {
+		unavailable.LegsEvidence.ReasonCode = "metadata_unavailable"
+	}
 	select {
 	case r.slots <- struct{}{}:
 		defer func() { <-r.slots }()
@@ -64,45 +72,40 @@ func (r *MetadataResolver) Resolve(ctx context.Context, trade tm.Trade, blockHas
 		unavailable.Market.ReasonCode = "unknown_source_version"
 		return unavailable
 	}
-	key := trade.SourceVersion + ":" + trade.PositionID
-	if trade.SourceVersion == ComboExchangeVersion {
-		key += ":" + blockHash.Hex()
+	key := activity.MetadataKey(trade, blockHash.Hex())
+	latest := unavailable
+	emit := func(v tm.TradeMetadata) {
+		latest = activity.MergeMetadata(latest, v)
+		if publish != nil {
+			publish(activity.CloneMetadata(latest))
+		}
 	}
 	if r.store != nil {
 		cached, found, err := r.store.LoadMetadata(ctx, key)
-		if err == nil && found && completeMetadata(cached, trade.SourceVersion == ComboExchangeVersion) {
-			return cached
+		if err == nil && found {
+			emit(cached)
+			if completeMetadata(cached, trade.SourceVersion == ComboExchangeVersion) {
+				return activity.CloneMetadata(cached)
+			}
 		}
 	}
 	result := unavailable
 	if trade.SourceVersion == ComboExchangeVersion {
-		result = r.resolveCombo(ctx, trade.PositionID, blockHash)
+		result = r.resolveCombo(ctx, trade.PositionID, blockHash, emit)
 	} else if r.gamma != nil {
 		result.Market = r.resolveToken(ctx, trade.PositionID, "")
 	}
+	emit(result)
+	result = activity.CloneMetadata(latest)
 	if r.store != nil {
-		if err := r.store.SaveMetadata(ctx, key, result); err != nil && result.Market.Availability != "available" {
+		if err := r.store.SaveMetadata(ctx, key, result); err != nil && result.Market.Availability != "available" && !strings.Contains(result.Market.ReasonCode, "conflict") {
 			result.Market.ReasonCode = "metadata_cache_unavailable"
 		}
 	}
 	return result
 }
 func completeMetadata(m tm.TradeMetadata, combo bool) bool {
-	if m.Market.Availability != "available" {
-		return false
-	}
-	if !combo {
-		return true
-	}
-	if m.LegsEvidence.Availability != "available" {
-		return false
-	}
-	for _, leg := range m.Legs {
-		if leg.Market.Availability != "available" {
-			return false
-		}
-	}
-	return true
+	return activity.CompleteMetadata(m, combo)
 }
 func decimalID(s string) (*big.Int, bool) {
 	if s == "" || (len(s) > 1 && s[0] == '0') {

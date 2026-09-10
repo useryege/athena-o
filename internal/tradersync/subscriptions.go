@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
@@ -121,7 +122,15 @@ func (s *SubscriptionService) Create(ctx context.Context, ownerID string, in tm.
 				return e
 			}
 		}
-		row, e := queries.CreateSubscription(ctx, q.CreateSubscriptionParams{OwnerID: owner, Wallet: identity.Wallet.Bytes()})
+		display, e := s.store.ReadConfirmationDisplayTx(ctx, tx, ownerID, digest[:], current)
+		if e != nil {
+			return e
+		}
+		displayJSON, e := json.Marshal(display)
+		if e != nil {
+			return e
+		}
+		row, e := queries.CreateSubscription(ctx, q.CreateSubscriptionParams{OwnerID: owner, Wallet: identity.Wallet.Bytes(), TargetDisplay: displayJSON})
 		if e != nil {
 			return e
 		}

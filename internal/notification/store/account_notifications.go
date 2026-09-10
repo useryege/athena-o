@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/useryege/athena/internal/notification/delivery"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -23,6 +24,7 @@ const (
 )
 
 type CreateAccountNotificationDeliveryRequest struct {
+	Payload        []byte
 	AccountID      string
 	IdempotencyKey string
 	PayloadDigest  []byte
@@ -86,6 +88,9 @@ type AccountNotificationRuntimeCounts struct {
 }
 
 func (s *SQLStore) EnqueueAccountNotification(ctx context.Context, req CreateAccountNotificationDeliveryRequest) (EnqueueAccountNotificationResult, error) {
+	if _, err := delivery.DecodePayload(req.Payload); err != nil {
+		return EnqueueAccountNotificationResult{}, err
+	}
 	if err := s.transactional(); err != nil {
 		return EnqueueAccountNotificationResult{}, err
 	}
@@ -106,7 +111,7 @@ func (s *SQLStore) EnqueueAccountNotification(ctx context.Context, req CreateAcc
 		AccountID: accountUUID, Source: req.Source, IdempotencyKey: req.IdempotencyKey,
 	})
 	if err == nil {
-		if !bytes.Equal(existing.PayloadDigest, req.PayloadDigest) {
+		if !bytes.Equal(existing.RequestDigest, req.PayloadDigest) {
 			return EnqueueAccountNotificationResult{}, ErrAccountNotificationIdempotencyConflict
 		}
 		return EnqueueAccountNotificationResult{
@@ -135,7 +140,7 @@ func (s *SQLStore) EnqueueAccountNotification(ctx context.Context, req CreateAcc
 
 	params := notificationsqlc.CreateAccountNotificationDeliveryParams{
 		AccountID: accountUUID, IdempotencyKey: req.IdempotencyKey,
-		PayloadDigest: append([]byte(nil), req.PayloadDigest...), Source: req.Source,
+		PayloadDigest: delivery.PayloadDigest(req.Payload), RequestDigest: append([]byte(nil), req.PayloadDigest...), Payload: req.Payload, CreatedAt: timestamptzValue(time.Now().UTC()), Source: req.Source,
 		Severity: req.Severity, Title: nullableText(req.Title), Body: req.Body,
 		Link: nullableText(req.Link), Channel: req.Channel, Status: req.Status,
 		TelegramChatID: binding.TelegramChatID, BindingRevision: binding.Revision,
@@ -150,7 +155,7 @@ func (s *SQLStore) EnqueueAccountNotification(ctx context.Context, req CreateAcc
 		if getErr != nil {
 			return EnqueueAccountNotificationResult{}, fmt.Errorf("failed to resolve account notification idempotency result: %w", getErr)
 		}
-		if !bytes.Equal(existing.PayloadDigest, req.PayloadDigest) {
+		if !bytes.Equal(existing.RequestDigest, req.PayloadDigest) {
 			return EnqueueAccountNotificationResult{}, ErrAccountNotificationIdempotencyConflict
 		}
 		delivery = accountNotificationDeliveryFromValues(

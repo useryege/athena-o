@@ -257,7 +257,7 @@ func (q *Queries) GetBaselineAttempt(ctx context.Context, id pgtype.UUID) (Trade
 }
 
 const getBaselineSubscription = `-- name: GetBaselineSubscription :one
-SELECT id, owner_id, wallet, desired_state, observation_state, reason, revision, activation_generation, effective_at, ended_at, created_at, updated_at FROM trader_sync_subscriptions WHERE id=$1
+SELECT id, owner_id, wallet, desired_state, observation_state, reason, revision, activation_generation, effective_at, ended_at, created_at, updated_at, target_display FROM trader_sync_subscriptions WHERE id=$1
 `
 
 func (q *Queries) GetBaselineSubscription(ctx context.Context, id pgtype.UUID) (TraderSyncSubscription, error) {
@@ -276,6 +276,7 @@ func (q *Queries) GetBaselineSubscription(ctx context.Context, id pgtype.UUID) (
 		&i.EndedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TargetDisplay,
 	)
 	return i, err
 }
@@ -411,7 +412,7 @@ func (q *Queries) ListPendingBaselines(ctx context.Context) ([]TraderSyncBaselin
 }
 
 const listSubscriptionsNeedingBaseline = `-- name: ListSubscriptionsNeedingBaseline :many
-SELECT s.id, s.owner_id, s.wallet, s.desired_state, s.observation_state, s.reason, s.revision, s.activation_generation, s.effective_at, s.ended_at, s.created_at, s.updated_at FROM trader_sync_subscriptions s WHERE s.desired_state='enabled'
+SELECT s.id, s.owner_id, s.wallet, s.desired_state, s.observation_state, s.reason, s.revision, s.activation_generation, s.effective_at, s.ended_at, s.created_at, s.updated_at, s.target_display FROM trader_sync_subscriptions s WHERE s.desired_state='enabled'
 AND NOT EXISTS(SELECT 1 FROM trader_sync_baseline_attempts a WHERE a.subscription_id=s.id AND a.state='pending')
 AND NOT EXISTS(SELECT 1 FROM trader_sync_monitor_intervals i JOIN trader_sync_collector_epochs e ON e.id=i.collector_epoch WHERE i.subscription_id=s.id AND i.activation_generation=s.activation_generation AND i.ended_at IS NULL AND e.ended_at IS NULL)
 ORDER BY s.owner_id,s.id
@@ -439,6 +440,7 @@ func (q *Queries) ListSubscriptionsNeedingBaseline(ctx context.Context) ([]Trade
 			&i.EndedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.TargetDisplay,
 		); err != nil {
 			return nil, err
 		}

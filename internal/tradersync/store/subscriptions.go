@@ -116,6 +116,9 @@ func subscriptionTime(t pgtype.Timestamptz) *time.Time {
 }
 func (s *SQLStore) ProjectSubscriptionTx(ctx context.Context, tx pgx.Tx, row q.TraderSyncSubscription) (tm.Subscription, error) {
 	result := tm.Subscription{ID: uuid.UUID(row.ID.Bytes).String(), OwnerID: uuid.UUID(row.OwnerID.Bytes).String(), Wallet: common.BytesToAddress(row.Wallet), DesiredState: row.DesiredState, ObservationState: row.ObservationState, Reason: row.Reason, Revision: uint64(row.Revision), Generation: uint64(row.ActivationGeneration), EffectiveAt: subscriptionTime(row.EffectiveAt), EndedAt: subscriptionTime(row.EndedAt), CreatedAt: row.CreatedAt.Time, UpdatedAt: row.UpdatedAt.Time}
+	if e := json.Unmarshal(row.TargetDisplay, &result.TargetDisplay); e != nil {
+		return result, e
+	}
 	n, e := q.New(tx).GetTargetNote(ctx, q.GetTargetNoteParams{OwnerID: row.OwnerID, Wallet: row.Wallet})
 	if e == nil {
 		result.Note = n.Note

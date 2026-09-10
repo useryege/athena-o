@@ -5,7 +5,10 @@ import (
 	"time"
 )
 
+type TargetDisplay struct{ DisplayName, Avatar, ProfileURL Scalar }
+
 type Subscription struct {
+	TargetDisplay                          TargetDisplay
 	ID, OwnerID                            string
 	Wallet                                 common.Address
 	DesiredState, ObservationState, Reason string

@@ -34,7 +34,7 @@ func TestEmptyIntervalKeepsActualEndpoint(t *testing.T) {
 		t.Fatal(e)
 	}
 	var sub, attempt string
-	if e = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,effective_at) VALUES($1,decode(repeat('11',20),'hex'),'enabled','healthy',clock_timestamp()+interval '1 hour') RETURNING id`, account.ID).Scan(&sub); e != nil {
+	if e = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,effective_at,target_display) VALUES($1,decode(repeat('11',20),'hex'),'enabled','healthy',clock_timestamp()+interval '1 hour','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb) RETURNING id`, account.ID).Scan(&sub); e != nil {
 		t.Fatal(e)
 	}
 	if e = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_baseline_attempts(owner_id,subscription_id,activation_generation,expected_revision,state) VALUES($1,$2,1,1,'succeeded') RETURNING id`, account.ID, sub).Scan(&attempt); e != nil {
@@ -64,7 +64,7 @@ func TestAccessFlagsDoNotRevokeProduct(t *testing.T) {
 	s := NewSQLStore(db.Pool)
 	a.SetAccessChangeHook(s.ApplyAccessChangeTx)
 	var id string
-	if e = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state) VALUES($1,decode(repeat('12',20),'hex'),'enabled','pending_baseline') RETURNING id`, account.ID).Scan(&id); e != nil {
+	if e = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,decode(repeat('12',20),'hex'),'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb) RETURNING id`, account.ID).Scan(&id); e != nil {
 		t.Fatal(e)
 	}
 	access, e := a.GetAccountAccess(ctx, account.ID)
@@ -126,7 +126,7 @@ func TestResolutionContextOwnerNotesAndQuota(t *testing.T) {
 		t.Fatal(e)
 	}
 	var id string
-	if e = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state) VALUES($1,$2,'enabled','pending_baseline') RETURNING id`, account.ID, wallet.Bytes()).Scan(&id); e != nil {
+	if e = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,$2,'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb) RETURNING id`, account.ID, wallet.Bytes()).Scan(&id); e != nil {
 		t.Fatal(e)
 	}
 	for _, pair := range [][3]string{{"enabled", "pending_baseline", "pending_baseline"}, {"enabled", "healthy", "healthy"}, {"enabled", "interrupted", "interrupted"}, {"paused", "healthy", "paused"}, {"permission_disabled", "healthy", "permission_disabled"}} {

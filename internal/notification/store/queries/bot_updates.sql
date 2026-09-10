@@ -4,8 +4,8 @@ VALUES ($1, clock_timestamp()) ON CONFLICT (update_id) DO NOTHING
 RETURNING update_id;
 
 -- name: CreateTelegramBindingReply :exec
-INSERT INTO telegram_binding_replies(update_id, account_id, binding_revision, telegram_chat_id, body, payload_digest)
-VALUES ($1, $2, $3, $4, $5, $6);
+INSERT INTO telegram_binding_replies(update_id, account_id, binding_revision, telegram_chat_id, body, payload_digest, payload)
+VALUES ($1, $2, $3, $4, $5, $6, $7);
 
 -- name: CancelTelegramBindingReplies :exec
 UPDATE telegram_binding_replies

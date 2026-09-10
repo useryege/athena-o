@@ -132,8 +132,8 @@ func (q *Queries) CountSystemNotificationDeliveries(ctx context.Context, arg Cou
 }
 
 const createSystemNotificationDelivery = `-- name: CreateSystemNotificationDelivery :one
-INSERT INTO system_notification_deliveries (source, severity, title, body, link, channel, status, telegram_chat, topic_label)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO system_notification_deliveries (source, severity, title, body, link, channel, status, telegram_chat, topic_label, payload, payload_digest)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 RETURNING id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status, telegram_chat, topic_label, provider_message_id, error_message, created_at, sent_at,
   (SELECT authorized_at FROM notification_delivery_attempts WHERE notification_delivery_attempts.id = system_notification_deliveries.current_attempt_id) AS authorized_at,
   (SELECT started_at FROM notification_delivery_attempts WHERE notification_delivery_attempts.id = system_notification_deliveries.current_attempt_id) AS started_at,
@@ -141,15 +141,17 @@ RETURNING id, source, severity, COALESCE(title, '') AS title, body, COALESCE(lin
 `
 
 type CreateSystemNotificationDeliveryParams struct {
-	Source       string
-	Severity     string
-	Title        pgtype.Text
-	Body         string
-	Link         pgtype.Text
-	Channel      string
-	Status       string
-	TelegramChat string
-	TopicLabel   string
+	Source        string
+	Severity      string
+	Title         pgtype.Text
+	Body          string
+	Link          pgtype.Text
+	Channel       string
+	Status        string
+	TelegramChat  string
+	TopicLabel    string
+	Payload       []byte
+	PayloadDigest []byte
 }
 
 type CreateSystemNotificationDeliveryRow struct {
@@ -183,6 +185,8 @@ func (q *Queries) CreateSystemNotificationDelivery(ctx context.Context, arg Crea
 		arg.Status,
 		arg.TelegramChat,
 		arg.TopicLabel,
+		arg.Payload,
+		arg.PayloadDigest,
 	)
 	var i CreateSystemNotificationDeliveryRow
 	err := row.Scan(
@@ -342,7 +346,7 @@ func (q *Queries) GetSystemNotificationTopic(ctx context.Context, arg GetSystemN
 }
 
 const listDispatchSystems = `-- name: ListDispatchSystems :many
-SELECT d.id, d.source, d.severity, d.title, d.body, d.link, d.channel, d.status, d.provider_message_id, d.error_message, d.created_at, d.sent_at, d.telegram_chat, d.topic_label, d.attempts, d.next_attempt_at, d.last_attempt_at, d.locked_at, d.locked_by, d.current_attempt_id, t.message_thread_id FROM system_notification_deliveries d
+SELECT d.id, d.source, d.severity, d.title, d.body, d.link, d.channel, d.status, d.provider_message_id, d.error_message, d.created_at, d.sent_at, d.telegram_chat, d.topic_label, d.attempts, d.next_attempt_at, d.last_attempt_at, d.locked_at, d.locked_by, d.current_attempt_id, d.payload, d.payload_digest, t.message_thread_id FROM system_notification_deliveries d
 JOIN system_notification_topics t ON t.telegram_chat=d.telegram_chat AND t.label=d.topic_label
 WHERE d.status = 'pending' AND d.attempts < 5
 ORDER BY d.telegram_chat, d.next_attempt_at, d.id
@@ -369,6 +373,8 @@ type ListDispatchSystemsRow struct {
 	LockedAt          pgtype.Timestamptz
 	LockedBy          pgtype.Text
 	CurrentAttemptID  pgtype.UUID
+	Payload           []byte
+	PayloadDigest     []byte
 	MessageThreadID   int32
 }
 
@@ -402,6 +408,8 @@ func (q *Queries) ListDispatchSystems(ctx context.Context) ([]ListDispatchSystem
 			&i.LockedAt,
 			&i.LockedBy,
 			&i.CurrentAttemptID,
+			&i.Payload,
+			&i.PayloadDigest,
 			&i.MessageThreadID,
 		); err != nil {
 			return nil, err

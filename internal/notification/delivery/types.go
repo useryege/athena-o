@@ -11,6 +11,7 @@ type WorkRef struct {
 	ID   int64
 }
 type Permit struct {
+	Payload           []byte
 	ChatID            int64
 	Group             bool
 	Work              WorkRef

@@ -92,6 +92,15 @@ func (q *Queries) LockComboDirectory(ctx context.Context) (LockComboDirectoryRow
 	return i, err
 }
 
+const lockTradeMetadata = `-- name: LockTradeMetadata :exec
+SELECT pg_advisory_xact_lock(hashtextextended('athena:metadata:' || $1::text,0))
+`
+
+func (q *Queries) LockTradeMetadata(ctx context.Context, cacheKey string) error {
+	_, err := q.db.Exec(ctx, lockTradeMetadata, cacheKey)
+	return err
+}
+
 const lookupComboPosition = `-- name: LookupComboPosition :many
 SELECT market_id,condition_id,position_ids FROM trader_sync_combo_leg_index WHERE position_id=$1 ORDER BY market_id
 `

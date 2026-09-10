@@ -3,8 +3,6 @@ package store
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -21,6 +19,7 @@ var ErrDeliveryNotEligible = errors.New("notification delivery is not eligible")
 var ErrStalePermit = errors.New("notification permit is stale or invalid")
 
 type permitWork struct {
+	payload  []byte
 	owner    string
 	digest   []byte
 	status   string
@@ -38,25 +37,20 @@ func lockPermitWork(ctx context.Context, queries *q.Queries, ref delivery.WorkRe
 		if err != nil {
 			return permitWork{}, err
 		}
-		return permitWork{owner: uuidString(r.AccountID), digest: r.PayloadDigest, status: r.Status, attempts: int(r.Attempts), eligible: r.BindingEligible && !r.EligibilityRevokedAt.Valid, next: r.NextAttemptAt.Time, current: r.CurrentAttemptID, chat: r.TelegramChatID}, nil
+		return permitWork{owner: uuidString(r.AccountID), digest: r.PayloadDigest, payload: r.Payload, status: r.Status, attempts: int(r.Attempts), eligible: r.BindingEligible.Valid && r.BindingEligible.Bool && !r.EligibilityRevokedAt.Valid, next: r.NextAttemptAt.Time, current: r.CurrentAttemptID, chat: r.TelegramChatID}, nil
 	case "reply":
 		r, err := queries.GetReplyDeliveryForPermit(ctx, ref.ID)
 		if err != nil {
 			return permitWork{}, err
 		}
-		return permitWork{owner: uuidString(r.AccountID), digest: r.PayloadDigest, status: r.Status, attempts: int(r.Attempts), eligible: r.BindingEligible.Valid && r.BindingEligible.Bool && !r.EligibilityRevokedAt.Valid, next: r.NextAttemptAt.Time, current: r.CurrentAttemptID, chat: r.TelegramChatID}, nil
+		return permitWork{owner: uuidString(r.AccountID), digest: r.PayloadDigest, payload: r.Payload, status: r.Status, attempts: int(r.Attempts), eligible: r.BindingEligible.Valid && r.BindingEligible.Bool && !r.EligibilityRevokedAt.Valid, next: r.NextAttemptAt.Time, current: r.CurrentAttemptID, chat: r.TelegramChatID}, nil
 	case "system":
 		r, err := queries.GetSystemDeliveryForPermit(ctx, ref.ID)
 		if err != nil {
 			return permitWork{}, err
 		}
-		// Freeze every routing and rendering input, without mutable dispatch metadata.
-		payload, err := json.Marshal([]any{r.Source, r.Severity, r.Title.String, r.Body, r.Link.String, r.Channel, r.TelegramChat, r.TopicLabel, r.MessageThreadID})
-		if err != nil {
-			return permitWork{}, err
-		}
-		digest := sha256.Sum256(payload)
-		return permitWork{digest: digest[:], status: r.Status, attempts: int(r.Attempts), eligible: true, next: r.NextAttemptAt.Time, current: r.CurrentAttemptID}, nil
+		return permitWork{digest: r.PayloadDigest, payload: r.Payload, status: r.Status, attempts: int(r.Attempts), eligible: true, next: r.NextAttemptAt.Time, current: r.CurrentAttemptID}, nil
+
 	default:
 		return permitWork{}, ErrDeliveryNotEligible
 	}
@@ -116,6 +110,12 @@ func (s *SQLStore) Authorize(ctx context.Context, candidate delivery.Candidate, 
 		if err != nil {
 			return err
 		}
+		if _, err := delivery.DecodePayload(work.payload); err != nil {
+			return err
+		}
+		if !bytes.Equal(delivery.PayloadDigest(work.payload), work.digest) {
+			return ErrStalePermit
+		}
 		if work.owner != owner || work.status != "pending" || !work.eligible || work.attempts >= 5 {
 			return ErrDeliveryNotEligible
 		}
@@ -155,7 +155,7 @@ func (s *SQLStore) Authorize(ctx context.Context, candidate delivery.Candidate, 
 		if rows != 1 {
 			return ErrDeliveryNotEligible
 		}
-		permit = delivery.Permit{ChatID: candidate.ChatID, Group: candidate.Group, Work: ref, AttemptID: uuid.UUID(r.ID.Bytes), OwnerID: owner, SenderIncarnation: incarnation, PayloadDigest: append([]byte(nil), work.digest...), AuthorizedAt: now}
+		permit = delivery.Permit{ChatID: candidate.ChatID, Group: candidate.Group, Work: ref, AttemptID: uuid.UUID(r.ID.Bytes), OwnerID: owner, SenderIncarnation: incarnation, PayloadDigest: append([]byte(nil), work.digest...), Payload: append([]byte(nil), work.payload...), AuthorizedAt: now}
 		return nil
 	})
 	if err != nil {

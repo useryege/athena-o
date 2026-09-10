@@ -2,6 +2,7 @@ package tradersync
 
 import (
 	"fmt"
+	"github.com/useryege/athena/internal/tradersync/activity"
 	"math"
 	"time"
 
@@ -27,5 +28,5 @@ func ComputeBaseline(now time.Time, registeredHigh uint64, h *types.Header) (tim
 // Eligible keeps the original successful interval meaningful after connection
 // loss. Only explicit user intent/generation changes revoke unprojected work.
 func Eligible(c tm.Eligibility, s tm.Subscription) bool {
-	return s.DesiredState == "enabled" && s.Generation == c.Generation && c.BaselineSucceeded && !c.SettledAt.Before(c.EffectiveAt) && (c.EndedAt == nil || c.SettledAt.Before(*c.EndedAt))
+	return activity.Eligible(c, s)
 }

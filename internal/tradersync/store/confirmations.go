@@ -105,3 +105,50 @@ func (s *SQLStore) ConsumeConfirmationTx(ctx context.Context, tx pgx.Tx, ownerID
 	raw, e := tradersyncsqlc.New(tx).ConsumeConfirmation(ctx, tradersyncsqlc.ConsumeConfirmationParams{OwnerID: owner, TokenDigest: tokenDigest, ConsumedRequestID: pgtype.Text{String: requestID, Valid: true}, IdentityDigest: identityDigest})
 	return decodeConfirmation(raw, e)
 }
+
+// ReadConfirmationDisplayTx reads only the still-live card bound to this exact token/identity.
+func (s *SQLStore) ReadConfirmationDisplayTx(ctx context.Context, tx pgx.Tx, ownerID string, token []byte, identity tsmodel.Identity) (tsmodel.TargetDisplay, error) {
+	var result tsmodel.TargetDisplay
+	owner, e := confirmationArgs(tx, ownerID, token)
+	if e != nil {
+		return result, e
+	}
+	row, e := tradersyncsqlc.New(tx).ReadConfirmationDisplay(ctx, tradersyncsqlc.ReadConfirmationDisplayParams{OwnerID: owner, TokenDigest: token, IdentityDigest: identity.Digest[:]})
+	if errors.Is(e, pgx.ErrNoRows) {
+		return result, status.Error(codes.FailedPrecondition, "confirmation card unavailable")
+	}
+	if e != nil {
+		return result, e
+	}
+	var card tsmodel.ConfirmationCard
+	var saved tsmodel.Identity
+	if e = json.Unmarshal(row.CardJson, &card); e != nil {
+		return result, e
+	}
+	if e = json.Unmarshal(row.IdentityJson, &saved); e != nil {
+		return result, e
+	}
+	if card.Identity.Wallet != identity.Wallet || card.Identity.Digest != identity.Digest || saved.Wallet != identity.Wallet || saved.Digest != identity.Digest {
+		return result, status.Error(codes.FailedPrecondition, "confirmation card identity mismatch")
+	}
+	normalize := func(v tsmodel.Scalar) tsmodel.Scalar {
+		if v.Availability != "available" || v.Value == nil || strings.TrimSpace(*v.Value) == "" {
+			v.Value = nil
+			v.Availability = "unavailable"
+			if v.ReasonCode == "" {
+				v.ReasonCode = "missing_or_invalid"
+			}
+		}
+		return v
+	}
+	result.DisplayName = normalize(card.DisplayName)
+	result.Avatar = normalize(card.Avatar)
+	result.ProfileURL = tsmodel.Scalar{Evidence: tsmodel.Evidence{Availability: "unavailable", ReasonCode: "canonical_profile_unavailable", Source: "verified_profile_identity", QueriedAt: card.DisplayName.QueriedAt}}
+	if saved.ProfileURL != "" {
+		value := saved.ProfileURL
+		result.ProfileURL.Value = &value
+		result.ProfileURL.Availability = "available"
+		result.ProfileURL.ReasonCode = ""
+	}
+	return result, nil
+}

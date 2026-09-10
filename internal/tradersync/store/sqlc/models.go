@@ -58,6 +58,9 @@ type AccountNotificationDelivery struct {
 	CurrentAttemptID         pgtype.UUID
 	EligibilityRevokedAt     pgtype.Timestamptz
 	EligibilityRevokedReason pgtype.Text
+	Payload                  []byte
+	RequestDigest            []byte
+	ActivityID               pgtype.Int8
 }
 
 type AccountPreference struct {
@@ -143,6 +146,8 @@ type SystemNotificationDelivery struct {
 	LockedAt          pgtype.Timestamptz
 	LockedBy          pgtype.Text
 	CurrentAttemptID  pgtype.UUID
+	Payload           []byte
+	PayloadDigest     []byte
 }
 
 type SystemNotificationTopic struct {
@@ -197,6 +202,7 @@ type TelegramBindingReply struct {
 	SentAt                   pgtype.Timestamptz
 	EligibilityRevokedAt     pgtype.Timestamptz
 	EligibilityRevokedReason pgtype.Text
+	Payload                  []byte
 }
 
 type TelegramBindingVersion struct {
@@ -215,6 +221,37 @@ type TelegramPollingState struct {
 	LastPollAt   pgtype.Timestamptz
 	LastUpdateAt pgtype.Timestamptz
 	UpdatedAt    pgtype.Timestamptz
+}
+
+type TraderSyncActivity struct {
+	ID                    int64
+	OwnerID               pgtype.UUID
+	SubscriptionID        pgtype.UUID
+	SourceRecordID        int64
+	IntervalID            pgtype.UUID
+	ActivationGeneration  int64
+	TradeJson             []byte
+	MetadataKey           string
+	TargetDisplaySnapshot []byte
+	NoteSnapshot          string
+	NotificationMode      string
+	NotificationReason    string
+	SettledAt             pgtype.Timestamptz
+	ReceivedAt            pgtype.Timestamptz
+	RecordedAt            pgtype.Timestamptz
+}
+
+type TraderSyncAlertMembership struct {
+	ActivityID           int64
+	OwnerID              pgtype.UUID
+	BindingRevision      int64
+	ChatID               int64
+	Form                 string
+	State                string
+	CreatedAt            pgtype.Timestamptz
+	EligibilityRevokedAt pgtype.Timestamptz
+	Reason               string
+	BatchID              pgtype.Int8
 }
 
 type TraderSyncBaselineAttempt struct {
@@ -270,6 +307,15 @@ type TraderSyncDirectoryRefresh struct {
 	NextPageAt       pgtype.Timestamptz
 }
 
+type TraderSyncFinalityAnomaly struct {
+	ChainID              int64
+	TransactionHash      []byte
+	PublishedBlockHash   []byte
+	ConflictingBlockHash []byte
+	Reason               string
+	DetectedAt           pgtype.Timestamptz
+}
+
 type TraderSyncInterruption struct {
 	ID               int64
 	CollectorEpoch   int64
@@ -318,6 +364,8 @@ type TraderSyncSourceCandidate struct {
 	ActivationGeneration int64
 	BaselineAttemptID    pgtype.UUID
 	ReceivedAt           pgtype.Timestamptz
+	Disposition          string
+	DispositionReason    string
 }
 
 type TraderSyncSourceRecord struct {
@@ -340,6 +388,7 @@ type TraderSyncSourceRecord struct {
 	SettledAt          pgtype.Timestamptz
 	SourceVersion      string
 	TradeJson          []byte
+	MetadataComplete   bool
 }
 
 type TraderSyncSubscription struct {
@@ -355,6 +404,7 @@ type TraderSyncSubscription struct {
 	EndedAt              pgtype.Timestamptz
 	CreatedAt            pgtype.Timestamptz
 	UpdatedAt            pgtype.Timestamptz
+	TargetDisplay        []byte
 }
 
 type TraderSyncTarget struct {

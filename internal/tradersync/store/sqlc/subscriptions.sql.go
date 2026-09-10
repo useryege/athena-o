@@ -18,7 +18,7 @@ UPDATE trader_sync_subscriptions SET desired_state=$1,
  activation_generation=activation_generation+CASE WHEN $1::text='enabled' THEN 1 ELSE 0 END,
  effective_at=CASE WHEN $1::text='enabled' THEN NULL ELSE effective_at END,
  ended_at=CASE WHEN $1::text='enabled' THEN NULL ELSE clock_timestamp() END,updated_at=clock_timestamp()
-WHERE owner_id=$2 AND id=$3 AND revision=$4 RETURNING id, owner_id, wallet, desired_state, observation_state, reason, revision, activation_generation, effective_at, ended_at, created_at, updated_at
+WHERE owner_id=$2 AND id=$3 AND revision=$4 RETURNING id, owner_id, wallet, desired_state, observation_state, reason, revision, activation_generation, effective_at, ended_at, created_at, updated_at, target_display
 `
 
 type ChangeSubscriptionParams struct {
@@ -49,6 +49,7 @@ func (q *Queries) ChangeSubscription(ctx context.Context, arg ChangeSubscription
 		&i.EndedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TargetDisplay,
 	)
 	return i, err
 }
@@ -80,16 +81,17 @@ func (q *Queries) CountLiveSubscriptions(ctx context.Context, ownerID pgtype.UUI
 }
 
 const createSubscription = `-- name: CreateSubscription :one
-INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state) VALUES($1,$2,'enabled','pending_baseline') RETURNING id, owner_id, wallet, desired_state, observation_state, reason, revision, activation_generation, effective_at, ended_at, created_at, updated_at
+INSERT INTO trader_sync_subscriptions(owner_id,wallet,target_display,desired_state,observation_state) VALUES($1,$2,$3,'enabled','pending_baseline') RETURNING id, owner_id, wallet, desired_state, observation_state, reason, revision, activation_generation, effective_at, ended_at, created_at, updated_at, target_display
 `
 
 type CreateSubscriptionParams struct {
-	OwnerID pgtype.UUID
-	Wallet  []byte
+	OwnerID       pgtype.UUID
+	Wallet        []byte
+	TargetDisplay []byte
 }
 
 func (q *Queries) CreateSubscription(ctx context.Context, arg CreateSubscriptionParams) (TraderSyncSubscription, error) {
-	row := q.db.QueryRow(ctx, createSubscription, arg.OwnerID, arg.Wallet)
+	row := q.db.QueryRow(ctx, createSubscription, arg.OwnerID, arg.Wallet, arg.TargetDisplay)
 	var i TraderSyncSubscription
 	err := row.Scan(
 		&i.ID,
@@ -104,6 +106,7 @@ func (q *Queries) CreateSubscription(ctx context.Context, arg CreateSubscription
 		&i.EndedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TargetDisplay,
 	)
 	return i, err
 }
@@ -124,7 +127,7 @@ func (q *Queries) FailSubscriptionBaselines(ctx context.Context, arg FailSubscri
 }
 
 const getLiveSubscription = `-- name: GetLiveSubscription :one
-SELECT id, owner_id, wallet, desired_state, observation_state, reason, revision, activation_generation, effective_at, ended_at, created_at, updated_at FROM trader_sync_subscriptions WHERE owner_id=$1 AND wallet=$2 AND desired_state<>'cancelled'
+SELECT id, owner_id, wallet, desired_state, observation_state, reason, revision, activation_generation, effective_at, ended_at, created_at, updated_at, target_display FROM trader_sync_subscriptions WHERE owner_id=$1 AND wallet=$2 AND desired_state<>'cancelled'
 `
 
 type GetLiveSubscriptionParams struct {
@@ -148,12 +151,13 @@ func (q *Queries) GetLiveSubscription(ctx context.Context, arg GetLiveSubscripti
 		&i.EndedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TargetDisplay,
 	)
 	return i, err
 }
 
 const getSubscription = `-- name: GetSubscription :one
-SELECT id, owner_id, wallet, desired_state, observation_state, reason, revision, activation_generation, effective_at, ended_at, created_at, updated_at FROM trader_sync_subscriptions WHERE owner_id=$1 AND id=$2
+SELECT id, owner_id, wallet, desired_state, observation_state, reason, revision, activation_generation, effective_at, ended_at, created_at, updated_at, target_display FROM trader_sync_subscriptions WHERE owner_id=$1 AND id=$2
 `
 
 type GetSubscriptionParams struct {
@@ -177,6 +181,7 @@ func (q *Queries) GetSubscription(ctx context.Context, arg GetSubscriptionParams
 		&i.EndedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TargetDisplay,
 	)
 	return i, err
 }
@@ -276,6 +281,20 @@ type RevokeTraderSyncIntervalsParams struct {
 
 func (q *Queries) RevokeTraderSyncIntervals(ctx context.Context, arg RevokeTraderSyncIntervalsParams) error {
 	_, err := q.db.Exec(ctx, revokeTraderSyncIntervals, arg.OwnerID, arg.Reason)
+	return err
+}
+
+const revokeTraderSyncMemberships = `-- name: RevokeTraderSyncMemberships :exec
+UPDATE trader_sync_alert_memberships SET eligibility_revoked_at=COALESCE(eligibility_revoked_at,clock_timestamp()),reason=CASE WHEN eligibility_revoked_at IS NULL THEN $2 ELSE reason END,state=CASE WHEN state='waiting' AND batch_id IS NULL THEN 'cancelled' ELSE state END WHERE owner_id=$1
+`
+
+type RevokeTraderSyncMembershipsParams struct {
+	OwnerID pgtype.UUID
+	Reason  string
+}
+
+func (q *Queries) RevokeTraderSyncMemberships(ctx context.Context, arg RevokeTraderSyncMembershipsParams) error {
+	_, err := q.db.Exec(ctx, revokeTraderSyncMemberships, arg.OwnerID, arg.Reason)
 	return err
 }
 

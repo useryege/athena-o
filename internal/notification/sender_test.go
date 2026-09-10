@@ -46,10 +46,47 @@ func TestSenderOutcomes(t *testing.T) {
 				t.Fatal(err)
 			}
 			sender := NewTelegramSender(client, nil)
-			o := sender.Send(context.Background(), SendRequest{TelegramChatID: 123, Text: tt.text}, func(time.Time) { started.Add(1) })
+			o := sender.Send(context.Background(), SendRequest{TelegramChatID: 123, Format: "html", Text: tt.text}, func(time.Time) { started.Add(1) })
 			if o.Kind != tt.kind || o.Code != tt.code || o.MessageID != tt.id || o.RetryAfter != tt.wait || calls.Load() != tt.calls || started.Load() != tt.calls {
 				t.Fatalf("outcome %#v calls %d started %d", o, calls.Load(), started.Load())
 			}
 		})
+	}
+}
+
+func TestSenderFrozenPlainPayloadReachesHTTPUnchanged(t *testing.T) {
+	const text = "  <A>&🙂 https://example.test/path?q=a&b=c\n"
+	var body map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseMultipartForm(1 << 20); err != nil {
+			t.Error(err)
+		}
+		body = make(map[string]any)
+		for key, v := range r.Form {
+			if len(v) > 0 {
+				body[key] = v[0]
+			}
+		}
+		io.WriteString(w, `{"ok":true,"result":{"message_id":3}}`)
+	}))
+	defer server.Close()
+	client, err := utiltelegram.NewClient(utiltelegram.Config{BotToken: "test", BaseURL: server.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sender := NewTelegramSender(client, nil)
+	got := sender.Send(context.Background(), SendRequest{TelegramChatID: 123, Format: "plain", Text: text}, nil)
+	if got.Kind != "sent" {
+		t.Fatal(got)
+	}
+	if body["text"] != text {
+		t.Fatalf("frozen text changed: %q", body["text"])
+	}
+	if _, ok := body["parse_mode"]; ok {
+		t.Fatalf("plain payload sent with parse_mode: %v", body)
+	}
+	got = sender.Send(context.Background(), SendRequest{TelegramChatID: 123, Format: "html", Text: "<b>old</b>"}, nil)
+	if got.Kind != "sent" || body["parse_mode"] != "HTML" {
+		t.Fatal(got, body)
 	}
 }

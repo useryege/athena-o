@@ -25,7 +25,7 @@ SELECT * FROM trader_sync_subscriptions WHERE owner_id=$1 AND id=$2;
 SELECT * FROM trader_sync_subscriptions WHERE owner_id=$1 AND wallet=$2 AND desired_state<>'cancelled';
 
 -- name: CreateSubscription :one
-INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state) VALUES($1,$2,'enabled','pending_baseline') RETURNING *;
+INSERT INTO trader_sync_subscriptions(owner_id,wallet,target_display,desired_state,observation_state) VALUES($1,$2,$3,'enabled','pending_baseline') RETURNING *;
 
 -- name: ChangeSubscription :one
 UPDATE trader_sync_subscriptions SET desired_state=sqlc.arg(desired_state),
@@ -53,3 +53,6 @@ UPDATE trader_sync_baseline_attempts SET state='failed',ended_at=clock_timestamp
 
 -- name: RevokeTraderSyncDeliveries :exec
 UPDATE account_notification_deliveries SET eligibility_revoked_at=COALESCE(eligibility_revoked_at,clock_timestamp()),eligibility_revoked_reason=COALESCE(eligibility_revoked_reason,$2),status=CASE WHEN status='pending' THEN 'cancelled' ELSE status END WHERE account_id=$1 AND source='trader_sync';
+
+-- name: RevokeTraderSyncMemberships :exec
+UPDATE trader_sync_alert_memberships SET eligibility_revoked_at=COALESCE(eligibility_revoked_at,clock_timestamp()),reason=CASE WHEN eligibility_revoked_at IS NULL THEN $2 ELSE reason END,state=CASE WHEN state='waiting' AND batch_id IS NULL THEN 'cancelled' ELSE state END WHERE owner_id=$1;

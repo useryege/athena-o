@@ -6,11 +6,13 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcredentials"
 	as "github.com/useryege/athena/internal/accountstate/store"
@@ -80,7 +82,11 @@ func TestSubscriptionTransactions(t *testing.T) {
 		wallet := common.BigToAddress(big.NewInt(int64(w)))
 		id := tm.Identity{Wallet: wallet, ResolutionInput: wallet.Hex(), Digest: sha256.Sum256(wallet.Bytes())}
 		e := txgate.WithAccountTx(ctx, db.Pool, owner, func(tx pgx.Tx) error {
-			return s.SaveConfirmationTx(ctx, tx, owner, id, d[:], time.Now().Add(time.Minute))
+			if e := s.SaveConfirmationTx(ctx, tx, owner, id, d[:], time.Now().Add(time.Minute)); e != nil {
+				return e
+			}
+			name := fmt.Sprintf("confirmed target %d", w)
+			return s.SaveConfirmationCardTx(ctx, tx, owner, d[:], tm.ConfirmationCard{Identity: id, DisplayName: tm.Scalar{Value: &name, Evidence: tm.Evidence{Availability: "available", Source: "fixture_gamma", QueriedAt: time.Date(2026, 9, 10, 1, 0, 0, 0, time.UTC)}}})
 		})
 		if e != nil {
 			t.Fatal(e)
@@ -93,6 +99,9 @@ func TestSubscriptionTransactions(t *testing.T) {
 	sub, e := svc.Create(ctx, owner, in)
 	if e != nil {
 		t.Fatal(e)
+	}
+	if sub.TargetDisplay.DisplayName.Value == nil || *sub.TargetDisplay.DisplayName.Value != "confirmed target 1" || sub.TargetDisplay.DisplayName.Source != "fixture_gamma" || sub.TargetDisplay.ProfileURL.Availability != "unavailable" {
+		t.Fatal("display not persisted from exact card", sub.TargetDisplay)
 	}
 	if sub.Note != note || sub.Generation != 1 || sub.NoteRevision != 1 {
 		t.Fatal(sub)
@@ -121,7 +130,7 @@ func TestSubscriptionTransactions(t *testing.T) {
 		t.Fatal(saved, e)
 	}
 	var queuedID int64
-	if e = db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision) VALUES($1,'before-pause',decode(repeat('cd',32),'hex'),'trader_sync','info','frozen note','telegram','pending',123,1) RETURNING id`, owner).Scan(&queuedID); e != nil {
+	if e = db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision,payload,request_digest) VALUES($1,'before-pause',sha256(convert_to(json_build_object('format','html','text','frozen note','messageThreadId',0)::text,'UTF8')),'trader_sync','info','frozen note','telegram','pending',123,1,convert_to(json_build_object('format','html','text','frozen note','messageThreadId',0)::text,'UTF8'),decode(repeat('cd',32),'hex')) RETURNING id`, owner).Scan(&queuedID); e != nil {
 		t.Fatal(e)
 	}
 	var attemptID string
@@ -143,6 +152,9 @@ func TestSubscriptionTransactions(t *testing.T) {
 		t.Fatal(emptyCoverage, e)
 	}
 	resumed, e := svc.Change(ctx, owner, "resume", tm.ChangeInput{SubscriptionID: sub.ID, RequestID: "resume", ExpectedRevision: 2})
+	if resumed.TargetDisplay.DisplayName.Value == nil || *resumed.TargetDisplay.DisplayName.Value != "confirmed target 1" {
+		t.Fatal("resume changed display", resumed.TargetDisplay)
+	}
 	if e != nil || resumed.Generation != 2 {
 		t.Fatal(resumed, e)
 	}
@@ -213,7 +225,7 @@ func TestAccessHookAtomicRevocation(t *testing.T) {
 	}
 	s := ts.NewSQLStore(db.Pool)
 	var subID string
-	if e = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state) VALUES($1,decode(repeat('44',20),'hex'),'enabled','pending_baseline') RETURNING id`, acct.ID).Scan(&subID); e != nil {
+	if e = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,decode(repeat('44',20),'hex'),'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb) RETURNING id`, acct.ID).Scan(&subID); e != nil {
 		t.Fatal(e)
 	}
 	before, e := a.GetAccountAccess(ctx, acct.ID)
@@ -295,7 +307,10 @@ func TestConcurrentDuplicateAndIdempotentCreate(t *testing.T) {
 				wallet := common.HexToAddress("0x1111111111111111111111111111111111111111")
 				id := tm.Identity{Wallet: wallet, ResolutionInput: wallet.Hex(), Digest: sha256.Sum256(wallet.Bytes())}
 				if e := txgate.WithAccountTx(ctx, db.Pool, acct.ID, func(tx pgx.Tx) error {
-					return store.SaveConfirmationTx(ctx, tx, acct.ID, id, d[:], time.Now().Add(time.Minute))
+					if e := store.SaveConfirmationTx(ctx, tx, acct.ID, id, d[:], time.Now().Add(time.Minute)); e != nil {
+						return e
+					}
+					return store.SaveConfirmationCardTx(ctx, tx, acct.ID, d[:], tm.ConfirmationCard{Identity: id})
 				}); e != nil {
 					t.Fatal(e)
 				}
@@ -358,10 +373,7 @@ func TestRevocationAndPermitShareOwnerGate(t *testing.T) {
 				if _, e = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision) VALUES($1,123,123,'test',1)`, acct.ID); e != nil {
 					t.Fatal(e)
 				}
-				var id int64
-				if e = db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision) VALUES($1,'old',decode(repeat('ab',32),'hex'),'trader_sync','info','hello','telegram','pending',123,1) RETURNING id`, acct.ID).Scan(&id); e != nil {
-					t.Fatal(e)
-				}
+				id := projectPermitFixture(t, db.Pool, s, acct.ID)
 				candidate := delivery.Candidate{Ref: delivery.WorkRef{Kind: "account", ID: id}, ChatID: 123}
 				access, e := a.GetAccountAccess(ctx, acct.ID)
 				if e != nil {
@@ -493,4 +505,52 @@ func TestControllerUpdatesDifferentOwnersIndependently(t *testing.T) {
 	if e = <-done; e != nil {
 		t.Fatal(e)
 	}
+}
+
+// projectPermitFixture forms real Trader Sync membership/payload under the owner
+// transaction; the permit race therefore exercises the production qualification.
+func projectPermitFixture(t *testing.T, pool *pgxpool.Pool, s *ts.SQLStore, owner string) int64 {
+	t.Helper()
+	ctx := context.Background()
+	f := sourceFixtures(t)[0]
+	wallet := common.BytesToAddress(f.Log.Topics[2].Bytes())
+	at := time.Now().UTC().Truncate(time.Second).Add(-time.Second)
+	var sub, attempt string
+	display, _ := json.Marshal(tm.TargetDisplay{DisplayName: tm.Scalar{Evidence: tm.Evidence{Availability: "unavailable", ReasonCode: "fixture_not_queried"}}})
+	if err := pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display)VALUES($1,$2,'enabled','healthy',$3)RETURNING id`, owner, wallet.Bytes(), display).Scan(&sub); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO trader_sync_baseline_attempts(owner_id,subscription_id,activation_generation,expected_revision,state,effective_at)VALUES($1,$2,1,1,'succeeded',$3)RETURNING id`, owner, sub, at.Add(-time.Minute)).Scan(&attempt); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO trader_sync_monitor_intervals(owner_id,subscription_id,baseline_attempt_id,activation_generation,collector_epoch,filter_revision,expected_revision,registered_high,candidate_effective_at,effective_at)VALUES($1,$2,$3,1,1,1,1,0,$4,$4)`, owner, sub, attempt, at.Add(-time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	var epoch, source int64
+	if err := pool.QueryRow(ctx, `INSERT INTO trader_sync_collector_epochs(fencing_token)VALUES(1)RETURNING id`).Scan(&epoch); err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := json.Marshal(f.Log)
+	if err := pool.QueryRow(ctx, `INSERT INTO trader_sync_source_records(chain_id,exchange_address,wallet,block_hash,transaction_hash,log_index,block_number,raw_json,collector_epoch,read_sequence,received_at,removed)VALUES(137,$1,$2,$3,$4,$5,$6,$7,$8,1,$9,false)RETURNING id`, f.Log.Address.Bytes(), wallet.Bytes(), f.Log.BlockHash.Bytes(), f.Log.TxHash.Bytes(), int64(f.Log.Index), int64(f.Log.BlockNumber), raw, epoch, at).Scan(&source); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO trader_sync_source_candidates(source_record_id,owner_id,subscription_id,activation_generation,baseline_attempt_id,received_at)VALUES($1,$2,$3,1,$4,$5)`, source, owner, sub, attempt, at); err != nil {
+		t.Fatal(err)
+	}
+	trade, err := DecodeOwnTrade(f.Log, f.Version)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = s.ConfigureActivities("https://athena.test"); err != nil {
+		t.Fatal(err)
+	}
+	id, created, err := s.Project(ctx, tm.Projection{Candidate: tm.Candidate{SourceID: source, OwnerID: owner, SubscriptionID: sub, AttemptID: attempt, Generation: 1, ReceivedAt: at}, Trade: trade, Confirmation: tm.CanonicalEvidence{Status: "confirmed", BlockHash: f.Log.BlockHash, SettledAt: at, CheckedAt: at}})
+	if err != nil || !created {
+		t.Fatal(id, created, err)
+	}
+	var deliveryID int64
+	if err = pool.QueryRow(ctx, `SELECT id FROM account_notification_deliveries WHERE activity_id=$1`, id).Scan(&deliveryID); err != nil {
+		t.Fatal(err)
+	}
+	return deliveryID
 }

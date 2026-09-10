@@ -32,3 +32,6 @@ UPDATE trader_sync_directory_refresh SET cursor=sqlc.arg(next_cursor),
  round_completed_at=CASE WHEN sqlc.arg(next_cursor)::text='' THEN clock_timestamp() ELSE round_completed_at END,
  next_page_at=CASE WHEN sqlc.arg(next_cursor)::text='' THEN greatest(round_started_at+interval '10 minutes',clock_timestamp()+interval '1 second') ELSE clock_timestamp()+interval '1 second' END
 WHERE name='combo_markets' AND cursor=sqlc.arg(expected_cursor) RETURNING next_page_at;
+
+-- name: LockTradeMetadata :exec
+SELECT pg_advisory_xact_lock(hashtextextended('athena:metadata:' || sqlc.arg(cache_key)::text,0));

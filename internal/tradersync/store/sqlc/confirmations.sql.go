@@ -65,6 +65,28 @@ func (q *Queries) ReadConfirmation(ctx context.Context, arg ReadConfirmationPara
 	return identity_json, err
 }
 
+const readConfirmationDisplay = `-- name: ReadConfirmationDisplay :one
+SELECT card_json,identity_json FROM trader_sync_target_confirmations WHERE owner_id=$1 AND token_digest=$2 AND identity_digest=$3 AND consumed_request_id IS NULL AND expires_at>clock_timestamp()
+`
+
+type ReadConfirmationDisplayParams struct {
+	OwnerID        pgtype.UUID
+	TokenDigest    []byte
+	IdentityDigest []byte
+}
+
+type ReadConfirmationDisplayRow struct {
+	CardJson     []byte
+	IdentityJson []byte
+}
+
+func (q *Queries) ReadConfirmationDisplay(ctx context.Context, arg ReadConfirmationDisplayParams) (ReadConfirmationDisplayRow, error) {
+	row := q.db.QueryRow(ctx, readConfirmationDisplay, arg.OwnerID, arg.TokenDigest, arg.IdentityDigest)
+	var i ReadConfirmationDisplayRow
+	err := row.Scan(&i.CardJson, &i.IdentityJson)
+	return i, err
+}
+
 const saveConfirmation = `-- name: SaveConfirmation :exec
 INSERT INTO trader_sync_target_confirmations(owner_id,identity_json,identity_digest,token_digest,expires_at)
 VALUES($1,$2,$3,$4,$5)

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/useryege/athena/internal/notification/delivery"
 	"html"
 	"strings"
 	"sync"
@@ -225,15 +226,20 @@ func (s *Service) SendSystemNotification(ctx context.Context, req *apiclient.Sen
 	if err := validateRenderedTelegramMessage(params); err != nil {
 		return nil, err
 	}
-	if _, err := s.store.EnsureSystemNotificationTopic(ctx, params.telegramChat, params.topicLabel, func(createCtx context.Context) (int, error) {
+	topic, err := s.store.EnsureSystemNotificationTopic(ctx, params.telegramChat, params.topicLabel, func(createCtx context.Context) (int, error) {
 		return s.sender.CreateSystemTopic(createCtx, params.telegramChat, params.topicLabel)
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, status.Errorf(codes.Unavailable, "failed to ensure system notification topic: %v", err)
+	}
+	frozen, err := delivery.EncodePayload(delivery.Payload{Format: "html", Text: renderNotificationMessage(params).Text, MessageThreadID: topic})
+	if err != nil {
+		return nil, err
 	}
 	delivery, err := s.store.CreateSystemNotificationDelivery(ctx, notificationstore.CreateSystemNotificationDeliveryRequest{
 		Source: params.source, Severity: params.severity, Title: params.title, Body: params.body,
 		Link: params.link, Channel: notificationChannelTelegram, Status: notificationStatusPending,
-		TelegramChat: params.telegramChat, TopicLabel: params.topicLabel,
+		TelegramChat: params.telegramChat, TopicLabel: params.topicLabel, Payload: frozen,
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create system notification delivery: %v", err)
@@ -398,8 +404,12 @@ func (s *Service) SendAccountNotification(ctx context.Context, req *apiclient.Se
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to digest account notification payload: %v", err)
 	}
+	frozen, err := delivery.EncodePayload(delivery.Payload{Format: "html", Text: renderNotificationMessage(params).Text})
+	if err != nil {
+		return nil, err
+	}
 	result, err := s.store.EnqueueAccountNotification(ctx, notificationstore.CreateAccountNotificationDeliveryRequest{
-		AccountID: accountID, IdempotencyKey: idempotencyKey, PayloadDigest: payloadDigest,
+		AccountID: accountID, IdempotencyKey: idempotencyKey, PayloadDigest: payloadDigest, Payload: frozen,
 		Source: params.source, Severity: params.severity, Title: params.title, Body: params.body,
 		Link: params.link, Channel: notificationChannelTelegram, Status: notificationStatusPending,
 	})

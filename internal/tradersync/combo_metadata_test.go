@@ -305,3 +305,56 @@ func TestComboDirectoryRunReportsFailureAndCancels(t *testing.T) {
 		t.Fatal(err, reported)
 	}
 }
+
+func TestComboProgressPublishesAllPositionsBeforeLegIO(t *testing.T) {
+	n := newModuleNode()
+	a := new(big.Int).Lsh(big.NewInt(2), 248)
+	b := new(big.Int).Add(a, big.NewInt(1))
+	n.legs = []*big.Int{a, b}
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	done := make(chan tm.TradeMetadata, 1)
+	progress := make(chan tm.TradeMetadata, 10)
+	memory := &metadataMemory{index: map[string][]pm.ComboMarket{a.String(): {{ID: "1", ConditionID: "condition", PositionIDs: []string{a.String(), b.String()}}}, b.String(): {{ID: "1", ConditionID: "condition", PositionIDs: []string{a.String(), b.String()}}}}}
+	first := true
+	g := metadataGamma{byID: func(int64) (*pm.Market, error) {
+		if first {
+			first = false
+			close(entered)
+			<-release
+		}
+		return &pm.Market{ID: "1", ConditionID: textptr("condition"), PositionIDs: &[]string{a.String(), b.String()}, Outcomes: textptr(`["YES","NO"]`)}, nil
+	}}
+	resolver := NewMetadataResolver(g, n, memory)
+	go func() {
+		done <- resolver.ResolveProgress(context.Background(), tm.Trade{SourceVersion: ComboExchangeVersion, PositionID: "1677415912060011761505225895152832125576889787899132551452768910625300545536"}, n.header.Hash(), func(v tm.TradeMetadata) { progress <- v })
+	}()
+	select {
+	case <-entered:
+	case <-time.After(time.Second):
+		t.Fatal("leg lookup not started")
+	}
+	defer func() {
+		close(release)
+		result := <-done
+		if len(result.Legs) != 2 || result.Legs[0].PositionID != a.String() {
+			t.Error("snapshot mutation corrupted resolver", result)
+		}
+	}()
+	var snapshot tm.TradeMetadata
+	for {
+		select {
+		case snapshot = <-progress:
+		default:
+			goto drained
+		}
+	}
+drained:
+	if len(snapshot.Legs) != 2 || snapshot.Legs[0].PositionID != a.String() || snapshot.Legs[1].PositionID != b.String() {
+		t.Fatalf("no complete positions at in-flight boundary: %+v", snapshot)
+	}
+	if snapshot.Legs[0].Market.Availability != "unavailable" {
+		t.Fatal("unverified leg published available")
+	}
+	snapshot.Legs[0].PositionID = "caller mutation"
+}

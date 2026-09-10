@@ -339,7 +339,9 @@ CREATE TABLE system_notification_deliveries (
     CHECK (channel = 'telegram'),
   CONSTRAINT system_notification_deliveries_topic_fk
     FOREIGN KEY (telegram_chat, topic_label)
-    REFERENCES system_notification_topics (telegram_chat, label)
+    REFERENCES system_notification_topics (telegram_chat, label),
+  payload BYTEA NOT NULL CHECK(octet_length(payload)>0),
+  payload_digest BYTEA NOT NULL CHECK(octet_length(payload_digest)=32)
 );
 
 CREATE INDEX idx_system_notification_deliveries_created_at
@@ -436,7 +438,8 @@ CREATE TABLE telegram_binding_replies (
   eligibility_revoked_at TIMESTAMPTZ,
   eligibility_revoked_reason TEXT,
   CHECK ((account_id IS NULL) = (binding_revision IS NULL)),
-  CHECK (binding_revision IS NULL OR binding_revision > 0)
+  CHECK (binding_revision IS NULL OR binding_revision > 0),
+  payload BYTEA NOT NULL CHECK(octet_length(payload)>0)
 );
 CREATE INDEX idx_telegram_binding_replies_ready ON telegram_binding_replies(status, next_attempt_at, id);
 
@@ -475,7 +478,10 @@ CREATE TABLE account_notification_deliveries (
   CONSTRAINT account_notification_deliveries_severity_check
     CHECK (severity IN ('info', 'warning', 'error', 'critical')),
   CONSTRAINT account_notification_deliveries_channel_check
-    CHECK (channel = 'telegram')
+    CHECK (channel = 'telegram'),
+  payload BYTEA NOT NULL CHECK(octet_length(payload)>0),
+  request_digest BYTEA NOT NULL CHECK(octet_length(request_digest)=32),
+  activity_id BIGINT
 );
 
 CREATE INDEX idx_account_notification_deliveries_account_created
@@ -670,7 +676,96 @@ CREATE TABLE trader_sync_source_candidates (
 );
 CREATE INDEX trader_sync_sources_unverified ON trader_sync_source_records(id) WHERE confirmation_state='unverified';
 
+
+ALTER TABLE trader_sync_subscriptions ADD COLUMN target_display JSONB NOT NULL;
+ALTER TABLE trader_sync_source_candidates ADD COLUMN disposition TEXT NOT NULL DEFAULT 'pending' CHECK(disposition IN ('pending','projected','ineligible'));
+ALTER TABLE trader_sync_source_candidates ADD COLUMN disposition_reason TEXT NOT NULL DEFAULT '';
+ALTER TABLE trader_sync_source_candidates ADD UNIQUE(owner_id,subscription_id,source_record_id);
+ALTER TABLE trader_sync_source_records ADD COLUMN metadata_complete BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trader_sync_monitor_intervals ADD UNIQUE(owner_id,subscription_id,id);
+CREATE SEQUENCE trader_sync_activity_id_seq AS bigint INCREMENT BY 1 CACHE 1 NO CYCLE;
+CREATE TABLE trader_sync_activities (
+ id BIGINT PRIMARY KEY DEFAULT nextval('trader_sync_activity_id_seq'),
+ owner_id UUID NOT NULL,
+ subscription_id UUID NOT NULL,
+ source_record_id BIGINT NOT NULL,
+ interval_id UUID NOT NULL,
+ activation_generation BIGINT NOT NULL CHECK(activation_generation>0),
+ trade_json JSONB NOT NULL,
+ metadata_key TEXT NOT NULL REFERENCES trader_sync_market_metadata(cache_key),
+ target_display_snapshot JSONB NOT NULL,
+ note_snapshot TEXT NOT NULL,
+ notification_mode TEXT NOT NULL CHECK(notification_mode IN ('in_app_only','ordinary','summary')),
+ notification_reason TEXT NOT NULL DEFAULT '',
+ settled_at TIMESTAMPTZ NOT NULL,
+ received_at TIMESTAMPTZ NOT NULL,
+ recorded_at TIMESTAMPTZ NOT NULL,
+ UNIQUE(subscription_id,source_record_id),
+ UNIQUE(owner_id,id),
+ FOREIGN KEY(owner_id,subscription_id,source_record_id) REFERENCES trader_sync_source_candidates(owner_id,subscription_id,source_record_id),
+ FOREIGN KEY(owner_id,subscription_id,interval_id) REFERENCES trader_sync_monitor_intervals(owner_id,subscription_id,id)
+);
+ALTER SEQUENCE trader_sync_activity_id_seq OWNED BY trader_sync_activities.id;
+CREATE INDEX trader_sync_activity_owner_id ON trader_sync_activities(owner_id,id DESC);
+CREATE INDEX trader_sync_activity_owner_time ON trader_sync_activities(owner_id,recorded_at);
+-- +goose StatementBegin
+CREATE FUNCTION trader_sync_guard_activity_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+ IF NEW IS DISTINCT FROM OLD THEN RAISE EXCEPTION 'activity facts are immutable'; END IF;
+ RETURN NEW;
+END;
+$$;
+-- +goose StatementEnd
+CREATE TRIGGER trader_sync_activity_immutable BEFORE UPDATE ON trader_sync_activities FOR EACH ROW EXECUTE FUNCTION trader_sync_guard_activity_immutable();
+CREATE TABLE trader_sync_alert_memberships (
+ activity_id BIGINT PRIMARY KEY,
+ owner_id UUID NOT NULL,
+ binding_revision BIGINT NOT NULL CHECK(binding_revision>0),
+ chat_id BIGINT NOT NULL CHECK(chat_id>0),
+ form TEXT NOT NULL CHECK(form IN ('ordinary','summary')),
+ state TEXT NOT NULL CHECK(state IN ('waiting','frozen','cancelled')),
+ created_at TIMESTAMPTZ NOT NULL,
+ eligibility_revoked_at TIMESTAMPTZ,
+ reason TEXT NOT NULL DEFAULT '',
+ batch_id BIGINT,
+ FOREIGN KEY(owner_id,activity_id) REFERENCES trader_sync_activities(owner_id,id),
+ CHECK(form='summary' OR state<>'waiting'),
+ CHECK(batch_id IS NULL OR form='summary')
+);
+CREATE INDEX trader_sync_waiting_memberships ON trader_sync_alert_memberships(owner_id,activity_id) WHERE state='waiting' AND eligibility_revoked_at IS NULL;
+ALTER TABLE account_notification_deliveries ADD FOREIGN KEY(account_id,activity_id) REFERENCES trader_sync_activities(owner_id,id);
+CREATE UNIQUE INDEX account_notification_activity ON account_notification_deliveries(activity_id) WHERE activity_id IS NOT NULL;
+CREATE TABLE trader_sync_finality_anomalies (
+ chain_id BIGINT NOT NULL CHECK(chain_id=137),
+ transaction_hash BYTEA NOT NULL CHECK(octet_length(transaction_hash)=32),
+ published_block_hash BYTEA NOT NULL CHECK(octet_length(published_block_hash)=32),
+ conflicting_block_hash BYTEA CHECK(conflicting_block_hash IS NULL OR octet_length(conflicting_block_hash)=32),
+ reason TEXT NOT NULL,
+ detected_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+ PRIMARY KEY(chain_id,transaction_hash)
+);
+
+-- Every attempt sends the already frozen format/text bytes; status updates cannot rewrite them.
+-- +goose StatementBegin
+CREATE FUNCTION notification_guard_frozen_payload() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+ IF NEW.payload IS DISTINCT FROM OLD.payload OR NEW.payload_digest IS DISTINCT FROM OLD.payload_digest THEN
+  RAISE EXCEPTION 'notification payload is immutable';
+ END IF;
+ RETURN NEW;
+END;
+$$;
+-- +goose StatementEnd
+CREATE TRIGGER system_notification_frozen_payload BEFORE UPDATE ON system_notification_deliveries FOR EACH ROW EXECUTE FUNCTION notification_guard_frozen_payload();
+CREATE TRIGGER account_notification_frozen_payload BEFORE UPDATE ON account_notification_deliveries FOR EACH ROW EXECUTE FUNCTION notification_guard_frozen_payload();
+CREATE TRIGGER binding_reply_frozen_payload BEFORE UPDATE ON telegram_binding_replies FOR EACH ROW EXECUTE FUNCTION notification_guard_frozen_payload();
+
 -- +goose Down
+ALTER TABLE account_notification_deliveries DROP CONSTRAINT account_notification_deliveries_account_id_activity_id_fkey;
+DROP TABLE trader_sync_finality_anomalies;
+DROP TABLE trader_sync_alert_memberships;
+DROP TABLE trader_sync_activities;
+DROP FUNCTION trader_sync_guard_activity_immutable();
 DROP TABLE IF EXISTS trader_sync_source_candidates;
 DROP TABLE IF EXISTS trader_sync_source_records;
 DROP TABLE IF EXISTS trader_sync_collector_control;
@@ -698,6 +793,7 @@ DROP TABLE telegram_bindings;
 DROP TABLE telegram_binding_versions;
 DROP TABLE system_notification_deliveries;
 DROP TABLE notification_delivery_attempts;
+DROP FUNCTION notification_guard_frozen_payload();
 DROP TABLE notification_sender_instances;
 DROP TABLE system_notification_topics;
 

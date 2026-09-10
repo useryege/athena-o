@@ -315,3 +315,53 @@ func TestMetadataDirectoryPageWriteFailureRollsBackMappingsAndCursor(t *testing.
 		t.Fatalf("partial page committed: mappings=%d cursor=%q", count, cursor)
 	}
 }
+
+func TestMetadataPreservesKnownPartialAcrossTransientFailure(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	s := NewSQLStore(db.Pool)
+	ctx := context.Background()
+	original := tm.TradeMetadata{Market: tm.MarketRef{PositionID: "100"}, LegsEvidence: tm.Evidence{Availability: "available"}, Legs: []tm.ComboLeg{{PositionID: "1", Market: tm.MarketRef{PositionID: "1", ID: "11", Evidence: tm.Evidence{Availability: "available", Source: "gamma"}}}, {PositionID: "2", Market: tm.MarketRef{PositionID: "2", Evidence: tm.Evidence{Availability: "unavailable", ReasonCode: "market_not_found"}}}}}
+	if err := s.SaveMetadata(ctx, "combo:100:hash", original); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SaveMetadata(ctx, "combo:100:hash", tm.TradeMetadata{Market: tm.MarketRef{PositionID: "100", Evidence: tm.Evidence{Availability: "unavailable", ReasonCode: "module_call_failed"}}}); err != nil {
+		t.Fatal(err)
+	}
+	got, _, err := s.LoadMetadata(ctx, "combo:100:hash")
+	if err != nil || len(got.Legs) != 2 || got.Legs[0].Market.ID != "11" {
+		t.Fatalf("transient failure erased known legs: %+v %v", got, err)
+	}
+}
+
+func TestMetadataConcurrentOldAvailableCannotHideExplicitConflict(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	other, e := pgxpool.New(ctx, db.Pool.Config().ConnString())
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer other.Close()
+	one, two := NewSQLStore(db.Pool), NewSQLStore(other)
+	old := tm.TradeMetadata{Market: tm.MarketRef{PositionID: "1", ID: "known", Evidence: tm.Evidence{Availability: "available"}}, LegsEvidence: tm.Evidence{Availability: "available"}, Legs: []tm.ComboLeg{{PositionID: "2", Market: tm.MarketRef{PositionID: "2", Evidence: tm.Evidence{Availability: "available"}, ID: "leg"}}}}
+	conflict := old
+	conflict.Market.Availability = "unavailable"
+	conflict.Market.ReasonCode = "condition_conflict"
+	done := make(chan error, 2)
+	go func() { done <- one.SaveMetadata(ctx, "same-version:1:hash", old) }()
+	go func() { done <- two.SaveMetadata(ctx, "same-version:1:hash", conflict) }()
+	for range 2 {
+		if e = <-done; e != nil {
+			t.Fatal(e)
+		}
+	}
+	if e = one.SaveMetadata(ctx, "same-version:1:hash", old); e != nil {
+		t.Fatal(e)
+	}
+	got, found, e := two.LoadMetadata(ctx, "same-version:1:hash")
+	if e != nil || !found || got.Market.Availability != "unavailable" || got.Market.ReasonCode != "condition_conflict" || len(got.Legs) != 1 {
+		t.Fatal(got, found, e)
+	}
+	if _, found, e = two.LoadMetadata(ctx, "same-version:1:other-hash"); e != nil || found {
+		t.Fatal("merged across evidence keys", found, e)
+	}
+}

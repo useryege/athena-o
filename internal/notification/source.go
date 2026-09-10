@@ -52,11 +52,7 @@ func (s *notificationSource) Dispatch(ctx context.Context, c delivery.Candidate,
 	if !ok {
 		return ErrDispatchDeferred
 	}
-	text := item.Body
-	if s.kind != "reply" {
-		text = renderNotificationMessage(sendNotificationParams{source: item.Source, severity: item.Severity, title: item.Title, body: item.Body, link: item.Link}).Text
-	}
-	outcome, err := s.service.sendPermittedNotification(ctx, c, SendRequest{TelegramChatID: c.ChatID, MessageThreadID: item.ThreadID, Text: text}, onStarted)
+	outcome, err := s.service.sendPermittedNotification(ctx, c, onStarted)
 	if err != nil {
 		if errors.Is(err, notificationstore.ErrDeliveryNotEligible) {
 			return ErrDispatchDeferred

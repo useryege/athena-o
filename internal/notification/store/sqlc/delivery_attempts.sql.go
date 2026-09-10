@@ -101,12 +101,15 @@ func (q *Queries) CreateDeliveryAttempt(ctx context.Context, arg CreateDeliveryA
 }
 
 const getAccountDeliveryForPermit = `-- name: GetAccountDeliveryForPermit :one
-SELECT d.id, d.account_id, d.idempotency_key, d.payload_digest, d.source, d.severity, d.title, d.body, d.link, d.channel, d.status, d.telegram_chat_id, d.binding_revision, d.provider_message_id, d.error_message, d.created_at, d.sent_at, d.attempts, d.next_attempt_at, d.last_attempt_at, d.locked_at, d.locked_by, d.current_attempt_id, d.eligibility_revoked_at, d.eligibility_revoked_reason, EXISTS (
+SELECT d.id, d.account_id, d.idempotency_key, d.payload_digest, d.source, d.severity, d.title, d.body, d.link, d.channel, d.status, d.telegram_chat_id, d.binding_revision, d.provider_message_id, d.error_message, d.created_at, d.sent_at, d.attempts, d.next_attempt_at, d.last_attempt_at, d.locked_at, d.locked_by, d.current_attempt_id, d.eligibility_revoked_at, d.eligibility_revoked_reason, d.payload, d.request_digest, d.activity_id, EXISTS (
   SELECT 1 FROM telegram_bindings b
   WHERE b.account_id = d.account_id AND b.telegram_chat_id = d.telegram_chat_id
     AND b.telegram_user_id = b.telegram_chat_id AND b.revision = d.binding_revision
     AND b.status = 'connected'
-) AS binding_eligible
+) AND (d.source <> 'trader_sync' OR (
+ EXISTS (SELECT 1 FROM account_module_access m JOIN athena_account a USING(account_id) WHERE m.account_id=d.account_id AND m.module='trader_sync' AND m.access_level='read_write' AND NOT a.administrator)
+ AND EXISTS (SELECT 1 FROM trader_sync_alert_memberships m WHERE m.activity_id=d.activity_id AND m.owner_id=d.account_id AND m.binding_revision=d.binding_revision AND m.chat_id=d.telegram_chat_id AND m.eligibility_revoked_at IS NULL)
+)) AS binding_eligible
 FROM account_notification_deliveries d WHERE d.id = $1 FOR UPDATE OF d
 `
 
@@ -136,7 +139,10 @@ type GetAccountDeliveryForPermitRow struct {
 	CurrentAttemptID         pgtype.UUID
 	EligibilityRevokedAt     pgtype.Timestamptz
 	EligibilityRevokedReason pgtype.Text
-	BindingEligible          bool
+	Payload                  []byte
+	RequestDigest            []byte
+	ActivityID               pgtype.Int8
+	BindingEligible          pgtype.Bool
 }
 
 func (q *Queries) GetAccountDeliveryForPermit(ctx context.Context, id int64) (GetAccountDeliveryForPermitRow, error) {
@@ -168,6 +174,9 @@ func (q *Queries) GetAccountDeliveryForPermit(ctx context.Context, id int64) (Ge
 		&i.CurrentAttemptID,
 		&i.EligibilityRevokedAt,
 		&i.EligibilityRevokedReason,
+		&i.Payload,
+		&i.RequestDigest,
+		&i.ActivityID,
 		&i.BindingEligible,
 	)
 	return i, err
@@ -241,7 +250,7 @@ func (q *Queries) GetDeliveryAttemptForUpdate(ctx context.Context, id pgtype.UUI
 }
 
 const getSystemDeliveryForPermit = `-- name: GetSystemDeliveryForPermit :one
-SELECT d.id, d.source, d.severity, d.title, d.body, d.link, d.channel, d.status, d.provider_message_id, d.error_message, d.created_at, d.sent_at, d.telegram_chat, d.topic_label, d.attempts, d.next_attempt_at, d.last_attempt_at, d.locked_at, d.locked_by, d.current_attempt_id, t.message_thread_id FROM system_notification_deliveries d
+SELECT d.id, d.source, d.severity, d.title, d.body, d.link, d.channel, d.status, d.provider_message_id, d.error_message, d.created_at, d.sent_at, d.telegram_chat, d.topic_label, d.attempts, d.next_attempt_at, d.last_attempt_at, d.locked_at, d.locked_by, d.current_attempt_id, d.payload, d.payload_digest, t.message_thread_id FROM system_notification_deliveries d
 JOIN system_notification_topics t ON t.telegram_chat = d.telegram_chat AND t.label = d.topic_label
 WHERE d.id = $1 FOR UPDATE OF d
 `
@@ -267,6 +276,8 @@ type GetSystemDeliveryForPermitRow struct {
 	LockedAt          pgtype.Timestamptz
 	LockedBy          pgtype.Text
 	CurrentAttemptID  pgtype.UUID
+	Payload           []byte
+	PayloadDigest     []byte
 	MessageThreadID   int32
 }
 
@@ -294,6 +305,8 @@ func (q *Queries) GetSystemDeliveryForPermit(ctx context.Context, id int64) (Get
 		&i.LockedAt,
 		&i.LockedBy,
 		&i.CurrentAttemptID,
+		&i.Payload,
+		&i.PayloadDigest,
 		&i.MessageThreadID,
 	)
 	return i, err

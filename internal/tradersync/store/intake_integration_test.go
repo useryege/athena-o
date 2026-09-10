@@ -29,7 +29,7 @@ func TestIntakeFirstSequenceFreezesOriginalCandidatesAndRemovedEvidence(t *testi
 	}
 	wallet := common.HexToAddress("0x1111111111111111111111111111111111111111")
 	var subID string
-	if err = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state)VALUES($1,$2,'enabled','pending_baseline') RETURNING id`, owner.ID, wallet.Bytes()).Scan(&subID); err != nil {
+	if err = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,$2,'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb) RETURNING id`, owner.ID, wallet.Bytes()).Scan(&subID); err != nil {
 		t.Fatal(err)
 	}
 	session, err := s.AcquireCollectorSession(ctx)
@@ -117,7 +117,7 @@ func TestIntakeRemovedFirstAndCounterpartyPushNeverBindNewAttempt(t *testing.T) 
 	}
 	wallet := common.HexToAddress("0x1111111111111111111111111111111111111111")
 	var subID string
-	if err = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state)VALUES($1,$2,'enabled','pending_baseline')RETURNING id`, owner.ID, wallet.Bytes()).Scan(&subID); err != nil {
+	if err = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,$2,'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb)RETURNING id`, owner.ID, wallet.Bytes()).Scan(&subID); err != nil {
 		t.Fatal(err)
 	}
 	ownerSession, err := s.AcquireCollectorSession(ctx)
@@ -234,7 +234,7 @@ func TestIntakeRemovedAfterLastTargetDisabledPreservesOriginalFact(t *testing.T)
 			}
 			wallet := common.HexToAddress("0x1111111111111111111111111111111111111111")
 			var sub string
-			if err = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state)VALUES($1,$2,'enabled','pending_baseline')RETURNING id`, owner.ID, wallet.Bytes()).Scan(&sub); err != nil {
+			if err = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,$2,'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb)RETURNING id`, owner.ID, wallet.Bytes()).Scan(&sub); err != nil {
 				t.Fatal(err)
 			}
 			session, err := s.AcquireCollectorSession(ctx)

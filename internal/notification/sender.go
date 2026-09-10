@@ -20,6 +20,7 @@ type Sender interface {
 }
 
 type SendRequest struct {
+	Format          string
 	TelegramChatID  int64
 	MessageThreadID int
 	Text            string
@@ -56,9 +57,17 @@ func (s *TelegramSender) Send(ctx context.Context, request SendRequest, started 
 	if request.TelegramChatID == 0 {
 		return delivery.Outcome{Kind: "failed", Code: "invalid_recipient"}
 	}
+	var mode models.ParseMode
+	switch request.Format {
+	case "plain":
+	case "html":
+		mode = models.ParseModeHTML
+	default:
+		return delivery.Outcome{Kind: "failed", Code: "invalid_format"}
+	}
 	chatID := strconv.FormatInt(request.TelegramChatID, 10)
 	resp, err := s.client.SendMessage(utiltelegram.WithSendStarted(utiltelegram.WithSendTimeout(ctx, 5*time.Second), started), utiltelegram.SendMessageRequest{
-		ChatID: chatID, Text: request.Text, MessageThreadID: request.MessageThreadID, ParseMode: models.ParseModeHTML,
+		ChatID: chatID, Text: request.Text, MessageThreadID: request.MessageThreadID, ParseMode: mode,
 	})
 	if err != nil {
 		var sendErr *utiltelegram.SendError

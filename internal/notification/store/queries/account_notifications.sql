@@ -1,17 +1,17 @@
 -- name: CreateAccountNotificationDelivery :one
 INSERT INTO account_notification_deliveries (
   account_id, idempotency_key, payload_digest, source, severity, title, body,
-  link, channel, status, telegram_chat_id, binding_revision
+  link, channel, status, telegram_chat_id, binding_revision, payload, request_digest, activity_id, created_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 ON CONFLICT (account_id, source, idempotency_key) DO NOTHING
-RETURNING id, account_id, idempotency_key, payload_digest, source, severity,
+RETURNING id, account_id, idempotency_key, payload_digest, request_digest, source, severity,
   COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status,
   telegram_chat_id, binding_revision, provider_message_id, error_message,
   created_at, sent_at;
 
 -- name: GetAccountNotificationDeliveryByIdempotency :one
-SELECT id, account_id, idempotency_key, payload_digest, source, severity,
+SELECT id, account_id, idempotency_key, payload_digest, request_digest, source, severity,
   COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status,
   telegram_chat_id, binding_revision, provider_message_id, error_message,
   created_at, sent_at
@@ -52,7 +52,8 @@ RETURNING delivery.id, delivery.account_id, delivery.source, delivery.severity,
   delivery.telegram_chat_id, delivery.binding_revision, delivery.attempts;
 
 -- name: CancelPendingAccountNotificationDeliveries :execrows
-UPDATE account_notification_deliveries
+WITH revoked_memberships AS (UPDATE trader_sync_alert_memberships AS m SET eligibility_revoked_at=COALESCE(eligibility_revoked_at,clock_timestamp()),reason=CASE WHEN eligibility_revoked_at IS NULL THEN 'binding_changed' ELSE reason END,state=CASE WHEN state='waiting' AND batch_id IS NULL THEN 'cancelled' ELSE state END WHERE m.owner_id=$1 RETURNING m.activity_id)
+UPDATE account_notification_deliveries AS d
 SET status = CASE WHEN status = 'pending' THEN 'cancelled' ELSE status END,
     eligibility_revoked_at = COALESCE(eligibility_revoked_at, clock_timestamp()),
     eligibility_revoked_reason = COALESCE(eligibility_revoked_reason, 'binding_changed'),
@@ -63,16 +64,17 @@ WHERE account_id = $1
   AND status IN ('pending', 'sending');
 
 -- name: CancelPendingAccountNotificationDeliveriesForBinding :execrows
-UPDATE account_notification_deliveries
+WITH revoked_memberships AS (UPDATE trader_sync_alert_memberships AS m SET eligibility_revoked_at=COALESCE(eligibility_revoked_at,clock_timestamp()),reason=CASE WHEN eligibility_revoked_at IS NULL THEN 'binding_changed' ELSE reason END,state=CASE WHEN state='waiting' AND batch_id IS NULL THEN 'cancelled' ELSE state END WHERE m.owner_id=$1 AND m.chat_id=$2 AND m.binding_revision=$3 RETURNING m.activity_id)
+UPDATE account_notification_deliveries AS d
 SET status = CASE WHEN status = 'pending' THEN 'cancelled' ELSE status END,
     eligibility_revoked_at = COALESCE(eligibility_revoked_at, clock_timestamp()),
     eligibility_revoked_reason = COALESCE(eligibility_revoked_reason, 'binding_changed'),
     error_message = 'telegram recipient is unreachable',
     locked_at = NULL,
     locked_by = NULL
-WHERE account_id = $1
-  AND telegram_chat_id = $2
-  AND binding_revision = $3
+WHERE d.account_id = $1
+  AND d.telegram_chat_id = $2
+  AND d.binding_revision = $3
   AND status IN ('pending', 'sending');
 
 -- name: GetAccountNotificationRuntimeCounts :one

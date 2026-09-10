@@ -76,7 +76,7 @@ WITH ready AS (
 )
 UPDATE telegram_binding_replies AS reply
 SET locked_at = NOW(), locked_by = $2
-FROM ready WHERE reply.id = ready.id RETURNING reply.id, reply.update_id, reply.account_id, reply.binding_revision, reply.telegram_chat_id, reply.body, reply.payload_digest, reply.status, reply.attempts, reply.created_at, reply.next_attempt_at, reply.last_attempt_at, reply.locked_at, reply.locked_by, reply.current_attempt_id, reply.provider_message_id, reply.error_message, reply.sent_at, reply.eligibility_revoked_at, reply.eligibility_revoked_reason
+FROM ready WHERE reply.id = ready.id RETURNING reply.id, reply.update_id, reply.account_id, reply.binding_revision, reply.telegram_chat_id, reply.body, reply.payload_digest, reply.status, reply.attempts, reply.created_at, reply.next_attempt_at, reply.last_attempt_at, reply.locked_at, reply.locked_by, reply.current_attempt_id, reply.provider_message_id, reply.error_message, reply.sent_at, reply.eligibility_revoked_at, reply.eligibility_revoked_reason, reply.payload
 `
 
 type ClaimPendingTelegramBindingRepliesParams struct {
@@ -115,6 +115,7 @@ func (q *Queries) ClaimPendingTelegramBindingReplies(ctx context.Context, arg Cl
 			&i.SentAt,
 			&i.EligibilityRevokedAt,
 			&i.EligibilityRevokedReason,
+			&i.Payload,
 		); err != nil {
 			return nil, err
 		}
@@ -140,8 +141,8 @@ func (q *Queries) ConsumeTelegramUpdate(ctx context.Context, updateID int64) (in
 }
 
 const createTelegramBindingReply = `-- name: CreateTelegramBindingReply :exec
-INSERT INTO telegram_binding_replies(update_id, account_id, binding_revision, telegram_chat_id, body, payload_digest)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO telegram_binding_replies(update_id, account_id, binding_revision, telegram_chat_id, body, payload_digest, payload)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 `
 
 type CreateTelegramBindingReplyParams struct {
@@ -151,6 +152,7 @@ type CreateTelegramBindingReplyParams struct {
 	TelegramChatID  int64
 	Body            string
 	PayloadDigest   []byte
+	Payload         []byte
 }
 
 func (q *Queries) CreateTelegramBindingReply(ctx context.Context, arg CreateTelegramBindingReplyParams) error {
@@ -161,12 +163,13 @@ func (q *Queries) CreateTelegramBindingReply(ctx context.Context, arg CreateTele
 		arg.TelegramChatID,
 		arg.Body,
 		arg.PayloadDigest,
+		arg.Payload,
 	)
 	return err
 }
 
 const getReplyDeliveryForPermit = `-- name: GetReplyDeliveryForPermit :one
-SELECT r.id, r.update_id, r.account_id, r.binding_revision, r.telegram_chat_id, r.body, r.payload_digest, r.status, r.attempts, r.created_at, r.next_attempt_at, r.last_attempt_at, r.locked_at, r.locked_by, r.current_attempt_id, r.provider_message_id, r.error_message, r.sent_at, r.eligibility_revoked_at, r.eligibility_revoked_reason, (r.account_id IS NULL OR EXISTS (
+SELECT r.id, r.update_id, r.account_id, r.binding_revision, r.telegram_chat_id, r.body, r.payload_digest, r.status, r.attempts, r.created_at, r.next_attempt_at, r.last_attempt_at, r.locked_at, r.locked_by, r.current_attempt_id, r.provider_message_id, r.error_message, r.sent_at, r.eligibility_revoked_at, r.eligibility_revoked_reason, r.payload, (r.account_id IS NULL OR EXISTS (
  SELECT 1 FROM telegram_bindings b WHERE b.account_id = r.account_id
  AND b.telegram_chat_id = r.telegram_chat_id AND b.telegram_user_id = b.telegram_chat_id
  AND b.revision = r.binding_revision AND b.status = 'connected'
@@ -195,6 +198,7 @@ type GetReplyDeliveryForPermitRow struct {
 	SentAt                   pgtype.Timestamptz
 	EligibilityRevokedAt     pgtype.Timestamptz
 	EligibilityRevokedReason pgtype.Text
+	Payload                  []byte
 	BindingEligible          pgtype.Bool
 }
 
@@ -222,6 +226,7 @@ func (q *Queries) GetReplyDeliveryForPermit(ctx context.Context, id int64) (GetR
 		&i.SentAt,
 		&i.EligibilityRevokedAt,
 		&i.EligibilityRevokedReason,
+		&i.Payload,
 		&i.BindingEligible,
 	)
 	return i, err
@@ -239,7 +244,7 @@ func (q *Queries) GetReplyDeliveryOwner(ctx context.Context, id int64) (pgtype.U
 }
 
 const listDispatchReplies = `-- name: ListDispatchReplies :many
-SELECT id, update_id, account_id, binding_revision, telegram_chat_id, body, payload_digest, status, attempts, created_at, next_attempt_at, last_attempt_at, locked_at, locked_by, current_attempt_id, provider_message_id, error_message, sent_at, eligibility_revoked_at, eligibility_revoked_reason FROM telegram_binding_replies
+SELECT id, update_id, account_id, binding_revision, telegram_chat_id, body, payload_digest, status, attempts, created_at, next_attempt_at, last_attempt_at, locked_at, locked_by, current_attempt_id, provider_message_id, error_message, sent_at, eligibility_revoked_at, eligibility_revoked_reason, payload FROM telegram_binding_replies
 WHERE status = 'pending' AND attempts < 5 AND eligibility_revoked_at IS NULL
 ORDER BY account_id, next_attempt_at, id
 `
@@ -274,6 +279,7 @@ func (q *Queries) ListDispatchReplies(ctx context.Context) ([]TelegramBindingRep
 			&i.SentAt,
 			&i.EligibilityRevokedAt,
 			&i.EligibilityRevokedReason,
+			&i.Payload,
 		); err != nil {
 			return nil, err
 		}

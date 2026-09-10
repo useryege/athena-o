@@ -4,9 +4,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/useryege/athena/internal/notification/delivery"
 	"strings"
 	"time"
 
@@ -96,12 +96,12 @@ func applyBotMessageTx(ctx context.Context, tx pgx.Tx, id int64, message *utilte
 		owner, _ = uuidValue(binding.AccountID)
 		revision = pgtype.Int8{Int64: binding.Revision, Valid: true}
 	}
-	payload, err := json.Marshal([]any{message.ChatID, body})
+	payload, err := delivery.EncodePayload(delivery.Payload{Format: "html", Text: body})
 	if err != nil {
 		return err
 	}
 	digest := sha256.Sum256(payload)
-	return q.New(tx).CreateTelegramBindingReply(ctx, q.CreateTelegramBindingReplyParams{UpdateID: id, AccountID: owner, BindingRevision: revision, TelegramChatID: message.ChatID, Body: body, PayloadDigest: digest[:]})
+	return q.New(tx).CreateTelegramBindingReply(ctx, q.CreateTelegramBindingReplyParams{UpdateID: id, AccountID: owner, BindingRevision: revision, TelegramChatID: message.ChatID, Body: body, PayloadDigest: digest[:], Payload: payload})
 }
 
 type ClaimedTelegramBindingReply struct {

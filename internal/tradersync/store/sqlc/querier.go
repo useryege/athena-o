@@ -13,6 +13,7 @@ import (
 type Querier interface {
 	AckCollectorFilters(ctx context.Context, arg AckCollectorFiltersParams) (int64, error)
 	ActivateCollectorEpoch(ctx context.Context, arg ActivateCollectorEpochParams) (int64, error)
+	ActivityDatabaseTime(ctx context.Context) (pgtype.Timestamptz, error)
 	AdvanceComboPage(ctx context.Context, arg AdvanceComboPageParams) (pgtype.Timestamptz, error)
 	BaselineDatabaseNow(ctx context.Context) (pgtype.Timestamptz, error)
 	BindBaselineEpoch(ctx context.Context, arg BindBaselineEpochParams) (int64, error)
@@ -23,6 +24,7 @@ type Querier interface {
 	CloseSubscriptionIntervals(ctx context.Context, arg CloseSubscriptionIntervalsParams) error
 	ConfirmationExpiry(ctx context.Context) (pgtype.Timestamptz, error)
 	ConsumeConfirmation(ctx context.Context, arg ConsumeConfirmationParams) ([]byte, error)
+	CountActivityWindow(ctx context.Context, arg CountActivityWindowParams) (int64, error)
 	CountLiveSubscriptions(ctx context.Context, ownerID pgtype.UUID) (int64, error)
 	CreateBaselineAttempt(ctx context.Context, arg CreateBaselineAttemptParams) (TraderSyncBaselineAttempt, error)
 	CreateCollectorEpoch(ctx context.Context, fencingToken int64) (TraderSyncCollectorEpoch, error)
@@ -33,28 +35,46 @@ type Querier interface {
 	FailBaselineAttempt(ctx context.Context, arg FailBaselineAttemptParams) (int64, error)
 	FailStoppedEpochBaselines(ctx context.Context, ownerID pgtype.UUID) error
 	FailSubscriptionBaselines(ctx context.Context, arg FailSubscriptionBaselinesParams) error
+	FindPublishedTransaction(ctx context.Context, arg FindPublishedTransactionParams) ([][]byte, error)
+	FinishInvalidProjectionCandidates(ctx context.Context, sourceRecordID int64) error
+	FinishProjectionCandidate(ctx context.Context, arg FinishProjectionCandidateParams) error
 	GetBaselineAttempt(ctx context.Context, id pgtype.UUID) (TraderSyncBaselineAttempt, error)
 	GetBaselineSubscription(ctx context.Context, id pgtype.UUID) (TraderSyncSubscription, error)
 	GetCollectorEpoch(ctx context.Context, id int64) (TraderSyncCollectorEpoch, error)
 	GetLiveSubscription(ctx context.Context, arg GetLiveSubscriptionParams) (TraderSyncSubscription, error)
+	GetProjectedActivity(ctx context.Context, arg GetProjectedActivityParams) (TraderSyncActivity, error)
+	GetProjectionEligibility(ctx context.Context, arg GetProjectionEligibilityParams) (GetProjectionEligibilityRow, error)
+	GetProjectionSource(ctx context.Context, id int64) (TraderSyncSourceRecord, error)
 	GetSubscription(ctx context.Context, arg GetSubscriptionParams) (TraderSyncSubscription, error)
 	GetTargetNote(ctx context.Context, arg GetTargetNoteParams) (TraderSyncTargetNote, error)
 	GetTradeMetadata(ctx context.Context, cacheKey string) ([]byte, error)
 	HasBaselineInterval(ctx context.Context, baselineAttemptID pgtype.UUID) (bool, error)
+	HasFinalityAnomaly(ctx context.Context, arg HasFinalityAnomalyParams) (bool, error)
+	HasPublishedSource(ctx context.Context, sourceRecordID int64) (bool, error)
+	InsertActivity(ctx context.Context, arg InsertActivityParams) (TraderSyncActivity, error)
+	InsertAlertMembership(ctx context.Context, arg InsertAlertMembershipParams) error
 	InsertBaselineInterval(ctx context.Context, id pgtype.UUID) error
+	InsertFinalityAnomaly(ctx context.Context, arg InsertFinalityAnomalyParams) error
 	InsertSourceCandidates(ctx context.Context, id int64) error
 	InsertSourceRecord(ctx context.Context, arg InsertSourceRecordParams) (TraderSyncSourceRecord, error)
 	ListClosedEpochOwners(ctx context.Context) ([]pgtype.UUID, error)
 	ListCollectorTargets(ctx context.Context) ([][]byte, error)
 	ListPendingBaselines(ctx context.Context) ([]TraderSyncBaselineAttempt, error)
 	ListSubscriptionsNeedingBaseline(ctx context.Context) ([]TraderSyncSubscription, error)
+	LockActivityTransaction(ctx context.Context, transactionHash []byte) error
 	LockCollectorControl(ctx context.Context) (TraderSyncCollectorControl, error)
 	LockComboDirectory(ctx context.Context) (LockComboDirectoryRow, error)
+	LockTradeMetadata(ctx context.Context, cacheKey string) error
 	LookupComboPosition(ctx context.Context, positionID string) ([]LookupComboPositionRow, error)
 	ObserveCollectorReceipt(ctx context.Context, arg ObserveCollectorReceiptParams) (int64, error)
 	ProjectBaselineHealthy(ctx context.Context, arg ProjectBaselineHealthyParams) (int64, error)
 	ProjectStoppedEpochSubscriptions(ctx context.Context, ownerID pgtype.UUID) error
+	ProjectionCandidates(ctx context.Context, sourceRecordID int64) ([]TraderSyncSourceCandidate, error)
+	ProjectionSources(ctx context.Context, limit int32) ([]TraderSyncSourceRecord, error)
 	ReadConfirmation(ctx context.Context, arg ReadConfirmationParams) ([]byte, error)
+	ReadConfirmationDisplay(ctx context.Context, arg ReadConfirmationDisplayParams) (ReadConfirmationDisplayRow, error)
+	ReadOwnerActivities(ctx context.Context, arg ReadOwnerActivitiesParams) ([]ReadOwnerActivitiesRow, error)
+	ReadOwnerActivitySnapshot(ctx context.Context, ownerID pgtype.UUID) (int64, error)
 	ReadSubscriptionRequestResult(ctx context.Context, arg ReadSubscriptionRequestResultParams) (ReadSubscriptionRequestResultRow, error)
 	RecordCollectorInterruption(ctx context.Context, id int64) error
 	ReleaseCollectorOwnership(ctx context.Context, fencingToken int64) (int64, error)
@@ -62,13 +82,16 @@ type Querier interface {
 	RevokeTraderSyncBaselines(ctx context.Context, arg RevokeTraderSyncBaselinesParams) error
 	RevokeTraderSyncDeliveries(ctx context.Context, arg RevokeTraderSyncDeliveriesParams) error
 	RevokeTraderSyncIntervals(ctx context.Context, arg RevokeTraderSyncIntervalsParams) error
+	RevokeTraderSyncMemberships(ctx context.Context, arg RevokeTraderSyncMembershipsParams) error
 	RevokeTraderSyncSubscriptions(ctx context.Context, arg RevokeTraderSyncSubscriptionsParams) error
 	SaveBaselineBoundary(ctx context.Context, arg SaveBaselineBoundaryParams) (int64, error)
 	SaveConfirmation(ctx context.Context, arg SaveConfirmationParams) error
 	SaveConfirmationCard(ctx context.Context, arg SaveConfirmationCardParams) (int64, error)
+	SaveProjectionEvidence(ctx context.Context, arg SaveProjectionEvidenceParams) error
 	SaveSubscriptionRequestResult(ctx context.Context, arg SaveSubscriptionRequestResultParams) error
 	SaveTargetNote(ctx context.Context, arg SaveTargetNoteParams) (TraderSyncTargetNote, error)
 	SaveTradeMetadata(ctx context.Context, arg SaveTradeMetadataParams) error
+	SetProjectionMetadataComplete(ctx context.Context, arg SetProjectionMetadataCompleteParams) error
 	StartComboRound(ctx context.Context) error
 	SucceedBaselineAttempt(ctx context.Context, id pgtype.UUID) (TraderSyncBaselineAttempt, error)
 	UpdateSourceRemoved(ctx context.Context, arg UpdateSourceRemovedParams) (int64, error)

@@ -25,6 +25,9 @@ func (s *SQLStore) RevokeTx(ctx context.Context, tx pgx.Tx, ownerID, reason stri
 	if e = queries.RevokeTraderSyncSubscriptions(ctx, q.RevokeTraderSyncSubscriptionsParams{OwnerID: owner, Reason: reason}); e != nil {
 		return e
 	}
+	if e = queries.RevokeTraderSyncMemberships(ctx, q.RevokeTraderSyncMembershipsParams{OwnerID: owner, Reason: reason}); e != nil {
+		return e
+	}
 	return queries.RevokeTraderSyncDeliveries(ctx, q.RevokeTraderSyncDeliveriesParams{AccountID: owner, EligibilityRevokedReason: pgtype.Text{String: reason, Valid: true}})
 }
 

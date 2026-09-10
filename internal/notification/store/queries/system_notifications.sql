@@ -1,6 +1,6 @@
 -- name: CreateSystemNotificationDelivery :one
-INSERT INTO system_notification_deliveries (source, severity, title, body, link, channel, status, telegram_chat, topic_label)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO system_notification_deliveries (source, severity, title, body, link, channel, status, telegram_chat, topic_label, payload, payload_digest)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 RETURNING id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status, telegram_chat, topic_label, provider_message_id, error_message, created_at, sent_at,
   (SELECT authorized_at FROM notification_delivery_attempts WHERE notification_delivery_attempts.id = system_notification_deliveries.current_attempt_id) AS authorized_at,
   (SELECT started_at FROM notification_delivery_attempts WHERE notification_delivery_attempts.id = system_notification_deliveries.current_attempt_id) AS started_at,
