@@ -66,7 +66,7 @@ func TestAttemptPermitIsSingleUseAndOutcomeCAS(t *testing.T) {
 		t.Run(kind, func(t *testing.T) {
 			s, ref := attemptFixture(t, kind)
 			ctx := context.Background()
-			p, err := s.Authorize(ctx, ref, uuid.New())
+			p, err := s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -77,7 +77,7 @@ func TestAttemptPermitIsSingleUseAndOutcomeCAS(t *testing.T) {
 				t.Fatalf("permit not persisted: %s", state)
 			}
 			// A crash immediately after authorization can never put this work back in the claim queue.
-			if _, err = s.Authorize(ctx, ref, uuid.New()); !errors.Is(err, ErrDeliveryNotEligible) {
+			if _, err = s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil); !errors.Is(err, ErrDeliveryNotEligible) {
 				t.Fatalf("second permit: %v", err)
 			}
 			stale := p
@@ -109,7 +109,7 @@ func TestAttemptPermitIsSingleUseAndOutcomeCAS(t *testing.T) {
 func TestOutcomeFailedWriteRetriesOnlyResult(t *testing.T) {
 	s, ref := attemptFixture(t, "system")
 	ctx := context.Background()
-	p, err := s.Authorize(ctx, ref, uuid.New())
+	p, err := s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,7 +122,7 @@ func TestOutcomeFailedWriteRetriesOnlyResult(t *testing.T) {
 	if err = s.RecordOutcome(ctx, p, outcome, time.Now()); err == nil {
 		t.Fatal("expected result transaction failure")
 	}
-	if _, err = s.Authorize(ctx, ref, uuid.New()); !errors.Is(err, ErrDeliveryNotEligible) {
+	if _, err = s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil); !errors.Is(err, ErrDeliveryNotEligible) {
 		t.Fatalf("failed write allowed resend: %v", err)
 	}
 	_, err = s.pool.Exec(ctx, `ALTER TABLE system_notification_deliveries DROP CONSTRAINT reject_sent`)
@@ -140,7 +140,7 @@ func TestOutcomeFailedWriteRetriesOnlyResult(t *testing.T) {
 func TestOutcomeRevocationCannotBeUndoneByRegrant(t *testing.T) {
 	s, ref := attemptFixture(t, "account")
 	ctx := context.Background()
-	p, err := s.Authorize(ctx, ref, uuid.New())
+	p, err := s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,7 +159,7 @@ func TestOutcomeRevocationCannotBeUndoneByRegrant(t *testing.T) {
 	if state := deliveryState(t, s, ref); state != "cancelled" {
 		t.Fatal(state)
 	}
-	if _, err = s.Authorize(ctx, ref, uuid.New()); !errors.Is(err, ErrDeliveryNotEligible) {
+	if _, err = s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil); !errors.Is(err, ErrDeliveryNotEligible) {
 		t.Fatalf("revived: %v", err)
 	}
 }
@@ -167,14 +167,14 @@ func TestOutcomeRevocationCannotBeUndoneByRegrant(t *testing.T) {
 func TestOutcomeUnknownRemainsTerminal(t *testing.T) {
 	s, ref := attemptFixture(t, "account")
 	ctx := context.Background()
-	p, err := s.Authorize(ctx, ref, uuid.New())
+	p, err := s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err = s.RecordOutcome(ctx, p, delivery.Outcome{Kind: "unknown", Code: "response_lost"}, time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.Authorize(ctx, ref, uuid.New()); !errors.Is(err, ErrDeliveryNotEligible) {
+	if _, err = s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil); !errors.Is(err, ErrDeliveryNotEligible) {
 		t.Fatalf("unknown revived: %v", err)
 	}
 	counts, err := s.GetAccountNotificationRuntimeCounts(ctx)
@@ -206,7 +206,7 @@ func TestAttemptBindingGateSerializesDeleteAndAuthorize(t *testing.T) {
 	go func() { _, err := s.DeleteTelegramBinding(ctx, uuidString(owner)); deleted <- err }()
 	waitForAccountGateWaiters(t, ctx, s, 1)
 	authorized := make(chan error, 1)
-	go func() { _, err := s.Authorize(ctx, ref, uuid.New()); authorized <- err }()
+	go func() { _, err := s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil); authorized <- err }()
 	waitForAccountGateWaiters(t, ctx, s, 2)
 	if err = tx.Commit(ctx); err != nil {
 		t.Fatal(err)
@@ -245,7 +245,7 @@ func TestOutcomeRetryDelaysAndFifthAttemptCeiling(t *testing.T) {
 	s, ref := attemptFixture(t, "system")
 	ctx := context.Background()
 	for attempt := 1; attempt <= 5; attempt++ {
-		p, err := s.Authorize(ctx, ref, uuid.New())
+		p, err := s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -275,7 +275,7 @@ func TestOutcomeRetryDelaysAndFifthAttemptCeiling(t *testing.T) {
 			t.Fatalf("fifth result: %s", state)
 		}
 	}
-	if _, err := s.Authorize(ctx, ref, uuid.New()); !errors.Is(err, ErrDeliveryNotEligible) {
+	if _, err := s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil); !errors.Is(err, ErrDeliveryNotEligible) {
 		t.Fatalf("sixth send permitted: %v", err)
 	}
 }
@@ -283,7 +283,7 @@ func TestOutcomeRetryDelaysAndFifthAttemptCeiling(t *testing.T) {
 func TestAttemptPermitFieldsCannotBeReused(t *testing.T) {
 	s, ref := attemptFixture(t, "account")
 	ctx := context.Background()
-	p, err := s.Authorize(ctx, ref, uuid.New())
+	p, err := s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -328,7 +328,7 @@ func TestAttemptBindingGateSerializesRebindAndAuthorize(t *testing.T) {
 	}()
 	waitForAccountGateWaiters(t, ctx, s, 1)
 	authorized := make(chan error, 1)
-	go func() { _, err := s.Authorize(ctx, ref, uuid.New()); authorized <- err }()
+	go func() { _, err := s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil); authorized <- err }()
 	waitForAccountGateWaiters(t, ctx, s, 2)
 	if err = tx.Commit(ctx); err != nil {
 		t.Fatal(err)
@@ -351,7 +351,7 @@ func TestAttemptBindingGateSerializesRebindAndAuthorize(t *testing.T) {
 func TestOutcomeRevokedPermanentFailureCancelsWorkPreservesAttempt(t *testing.T) {
 	s, ref := attemptFixture(t, "account")
 	ctx := context.Background()
-	p, err := s.Authorize(ctx, ref, uuid.New())
+	p, err := s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -372,4 +372,13 @@ func TestOutcomeRevokedPermanentFailureCancelsWorkPreservesAttempt(t *testing.T)
 	if kind != "failed" || code != "provider_400" {
 		t.Fatalf("attempt lost provider evidence: %s %s", kind, code)
 	}
+}
+
+func testPermitCandidate(ref delivery.WorkRef) delivery.Candidate {
+	c := delivery.Candidate{Ref: ref, ChatID: 123}
+	if ref.Kind == "system" {
+		c.ChatID = -123
+		c.Group = true
+	}
+	return c
 }

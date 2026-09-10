@@ -57,3 +57,8 @@ UPDATE telegram_binding_replies SET status = sqlc.arg('status'), provider_messag
  error_message = sqlc.arg('error_message'), sent_at = CASE WHEN sqlc.arg('status')::text = 'sent' THEN sqlc.arg('result_at')::timestamptz ELSE NULL END,
  next_attempt_at = sqlc.arg('next_attempt_at'), locked_at = NULL, locked_by = NULL
 WHERE id = sqlc.arg('id') AND current_attempt_id = sqlc.arg('current_attempt_id') AND status = 'sending';
+
+-- name: ListDispatchReplies :many
+SELECT * FROM telegram_binding_replies
+WHERE status = 'pending' AND attempts < 5 AND eligibility_revoked_at IS NULL
+ORDER BY account_id, next_attempt_at, id;

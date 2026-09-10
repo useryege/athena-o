@@ -1,6 +1,6 @@
 # 账户 Telegram 通知
 
-> 设计状态：已实现；发送恢复与新调度器的后续范围见文末。
+> 设计状态：已实现；Trader Sync 摘要及产品授权扩展见文末。
 
 ## 范围
 
@@ -17,7 +17,7 @@
 | 公开鉴权 | [internal/server/authz.go](../../../internal/server/authz.go) | `ordinaryMemberInteractiveGRPCMethods`, `authorizeOrdinaryInteractiveAccount` |
 | 绑定与入队逻辑 | [internal/notification/service.go](../../../internal/notification/service.go) | `GetTelegramBinding`, `CreateTelegramBindingAttempt`, `DeleteTelegramBinding`, `SendAccountNotification` |
 | Telegram 更新消费 | [internal/notification/poller.go](../../../internal/notification/poller.go) | `TelegramPoller`、`ApplyBotUpdate` |
-| 公平投递与共享发送器 | [internal/notification/worker.go](../../../internal/notification/worker.go), [internal/notification/sender.go](../../../internal/notification/sender.go) | `claimFairNotificationBatch`, `processClaimedAccountNotification`, `TelegramSender` |
+| 公平投递与共享发送器 | [internal/notification/worker.go](../../../internal/notification/worker.go), [internal/notification/sender.go](../../../internal/notification/sender.go) | `Dispatcher`、`notificationSource`、`sendPermittedNotification`、`TelegramSender` |
 | Telegram 适配器 | [util/telegram/telegram.go](../../../util/telegram/telegram.go) | `Client`, `PollUpdates`, `GetWebhookInfo`, dynamic `SendMessageRequest.ChatID` |
 | 持久模型与查询 | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql), [internal/notification/store/queries/telegram_bindings.sql](../../../internal/notification/store/queries/telegram_bindings.sql), [internal/notification/store/queries/account_notifications.sql](../../../internal/notification/store/queries/account_notifications.sql) | 绑定、尝试、消费位置、版本及账户投递表 |
 | 事务存储入口 | [internal/notification/store/bot_updates.go](../../../internal/notification/store/bot_updates.go)、[internal/notification/store/telegram_bindings.go](../../../internal/notification/store/telegram_bindings.go), [internal/notification/store/account_notifications.go](../../../internal/notification/store/account_notifications.go) | `ApplyBotUpdate`、`EnqueueAccountNotification`, `Authorize`、`RecordStarted`、`RecordOutcome` |
@@ -56,7 +56,7 @@ flowchart LR
 7. 消费记录、绑定/版本及尝试变化、`telegram_binding_replies` 回复和持久 offset 在同一个 `pgx.Tx` 提交。失败全回滚；提交确认丢失只重放这个数据库事务，幂等记录防止重复增 revision 或回复。成功后重启从持久 offset 继续；空成功轮询仍更新 `last_poll_at`。Poller 不调用 `SendMessage`。
 8. `my_chat_member` 的离开/封禁更新将对应绑定标为 unreachable，取消 pending 并撤销 sending 的后续尝试资格。之后的 `member` 更新恢复同一绑定可达性，但不复活已取消投递或资格墓碑。
 9. `SendAccountNotification` 规范化账户 UUID、内容、来源、严重程度和幂等键，计算 payload digest，在账户 gate 内入队。相同 `(account_id, source, idempotency_key)` 返回原投递；不同 payload 冲突。绑定不存在或不可达时不插入投递；只有 connected 绑定产生 pending 并返回 `QUEUED` 与 ID。
-10. Worker 交替领取账户与系统队列，并在每轮追加至多一条 reply，三者共享现有串行 1.1 秒发送间隔；当前批量上限用于账户/系统，reply 为额外一条。领取只占用调度锁，不增加发送尝试数。`Authorize` 在共享账户 gate 的短事务中再次核验 owner、私聊身份、chat/revision、connected、pending、永久资格墓碑、重试时间与五次上限，插入 attempt 并将投递改为 sending，提交后才调用 Telegram。
+10. 账户、系统和 reply 三个 `WorkSource` 统一进入 `Dispatcher`；候选读取不使用会被单 owner 占满的全局前 N 条，未来 `NotBefore` 仍可见。按 owner 公平轮转并优先即将到期任务，默认跨 chat 并发 12，同一物理 chat 只有一个执行中尝试。共享 Bot 20 次/秒、私聊至少一秒、群组 20 次/分钟；以真实 HTTP 起点回调推进运行内 monotonic 时钟窗口，持久 UTC started 独立保存。先预留容量再等待账户 gate，取得 gate 后检查一秒有效槽，过期则不生成 attempt 并重新调度。`Authorize` 短事务再次核验私聊身份、chat/revision、connected、pending、永久资格墓碑、重试时间与五次上限，插入 attempt 并将投递改为 sending，提交后才调用 Telegram。
 11. HTTP `RoundTrip` 入口通过容量为一的 channel 握手记录实际 started 时间；回调不等待数据库或 HTTP 响应。结果通过独立事务按投递 ID、attempt UUID、sending 状态 CAS 写入。
 
 ## 状态与数据
@@ -67,7 +67,7 @@ flowchart LR
 - `telegram_polling_state` 为单例，保存 next update ID、最近成功轮询/处理时间及更新时间。`telegram_consumed_updates` 按 update ID 唯一，消费证据无自动清理。
 - `telegram_binding_replies` 按 update ID 唯一，冻结私聊 chat、正文、payload digest。成功回复保存 owner/revision，解绑、重绑或不可达终止旧 pending 并永久禁止旧 sending 后续尝试。无效、过期或身份冲突回复没有成功绑定资格，owner/revision 为空，目标只来自已验证私聊 update。全部回复以 `work_kind=reply` 使用统一 `Authorize`、`RecordStarted`、`RecordOutcome`；最多五次，unknown 不重发。
 - `account_notification_deliveries` 固定 owner、来源、幂等键、payload digest、正文、私聊 chat ID 与 revision；状态为 pending/sending/sent/failed/unknown/cancelled。`current_attempt_id` 指向当前许可，`eligibility_revoked_at/reason` 永久禁止旧投递重试。
-- `notification_delivery_attempts` 保存 UUID、work kind/ID、账户 owner、sender incarnation、payload digest、authorized/started/result 时间、provider message ID、outcome/code 和 retry-after。许可事务核验 kind 对应的投递及 owner；不可把许可用于不同 payload。缺失的实际起点保留 NULL，不由授权或结果时间补造。
+- `notification_delivery_attempts` 保存 UUID、work kind/ID、账户 owner、sender incarnation、实际数字 chat ID/群组分类、payload digest、authorized/started/result 时间、provider message ID、outcome/code、retry-after 与 monotonic 届满后写入的 retry_after_released_at。许可事务核验 kind 对应的投递及 owner；不可把许可用于不同 payload。缺失的实际起点保留 NULL，不由授权或结果时间补造。
 
 通知与账户表共用 Athena 数据库及唯一权威迁移。通知表没有账户外键，owner 由认证公开入口或可信内部调用提供。原始绑定 token 只出现在创建响应、标签页存储和 Telegram 命令中。
 
@@ -81,8 +81,7 @@ flowchart LR
 | `ATHENA_NOTIFICATION_TELEGRAM_API_URL` | Telegram API 地址，默认官方地址。 |
 | `ATHENA_NOTIFICATION_TELEGRAM_TIMEOUT_SECONDS` | 非轮询适配器 HTTP 超时；worker 发送另有五秒 context 截止。长轮询使用独立客户端和超时。 |
 | `ATHENA_NOTIFICATION_TELEGRAM_BOT_NAME`、`..._SHORT_DESCRIPTION`、`..._DESCRIPTION` | 启动同步的 Bot 资料。 |
-| `ATHENA_NOTIFICATION_WORKER_SEND_INTERVAL` | 当前共享串行发送间隔，默认 1.1 秒。 |
-| `ATHENA_NOTIFICATION_WORKER_POLL_INTERVAL`、`..._BATCH_SIZE`、`..._LOCK_TIMEOUT` | 队列轮询、公平批量与尚未许可的领取锁恢复。发送总尝试上限固定为五次。 |
+| `ATHENA_NOTIFICATION_WORKER_CONCURRENCY` / `--worker-concurrency` | 跨 chat 并发，默认 12；CLI 读取环境范围 1–12。Bot/私聊/群组窗口及五次上限保持统一。 |
 
 进程只运行一个长轮询消费者。Procfile 提供本地内部凭据；生产 Compose 把同一凭据注入 Notification 与可信调用方。Bot token 和具体系统群组 ID 仅提供给 Notification 容器。
 
@@ -98,13 +97,29 @@ flowchart LR
 
 配置 webhook 会阻止启动，因为 Telegram 不允许其与 `getUpdates` 共存。Poller 失败使用有上限指数退避，从持久 offset 恢复；仅处理成功才推进。无效、已消费、过期或冲突 token 不能接管身份；身份冲突只将本次尝试失败，不暴露其他账户。
 
-适配器在生成外部错误文本前保存结构化分类；Retry-After 和稳定不可达类别仍可供机器读取，原始 provider 描述、响应体、请求 URL、凭据不写入投递错误。只有 pending 的领取锁可超时重领；已许可 sending 不因领取锁超时重发。进程取消等待 poller 和 worker 退出。
+适配器在生成外部错误文本前保存结构化分类；Retry-After 和稳定不可达类别仍可供机器读取，原始 provider 描述、响应体、请求 URL、凭据不写入投递错误。调度候选不持有领取锁；已许可 sending 不重新入队。进程取消后先等待 poller，再等待全部 dispatch、Sender 与结果补记退出，最后登记正常停止。
 
 ## 可观测性与后续范围
 
 管理员运行入口报告进程生命周期、Bot 可用性/ID/名称、poller 状态、最近轮询/更新时间、账户 pending/retry/failed/sending/unknown 独立计数与不可达绑定数。gRPC health 在资料同步、webhook 检查、poller 与 worker 启动后才为 SERVING。诊断日志使用内部更新/投递/attempt ID；轮询失败、结果写库失败和绑定更新错误为 warning。
 
-当前持久发送许可与结果路径以及 Bot update 原子消费、回复 outbox 已实现。运行 RPC 暂未增加独立 reply 队列计数。崩溃遗留 sending 保留事实且不会重新领取；确认旧 sender 已停止后，将无结果 attempt 终结为 unknown 的恢复入口和跨 chat 调度属于 [Trader Sync 后续实现](../trading/trader-sync-activity-alerts.md)，尚未实现。产品 grant 撤销钩子也由后续任务接入，不能把已有绑定墓碑误称为完整产品撤权实现。
+持久发送许可、共享调度、单 sender 登记和显式恢复入口已经实现。运行 RPC 暂未增加独立 reply 队列计数。Trader Sync 摘要首条源和产品 grant 撤销钩子由后续任务接入，不能把已有绑定墓碑误称为完整产品撤权实现。
+
+## 单 sender 与恢复操作
+
+进程先取得固定 PostgreSQL session advisory lock，再登记 `notification_sender_instances` 的 incarnation、主机、PID 和进程标识。任何未确认停止实例都会阻止新实例启动；DB 连接断开、锁消失、端口释放和 PID 复用都不是停止证明。心跳及授权前检查发现失锁时取消调度与 poller，health 变为 NOT_SERVING，致命错误传到命令入口并退出。异常实例保留未确认状态。
+
+正常 Stop 等待所有发送和结果补记后保存 `stop_confirmation=graceful` 并恢复仍无结果的 consumed permit。故障恢复由操作员查询实例登记，结合对应主机的 supervisor/container 状态确认该登记进程已经退出，然后运行：
+
+```bash
+athena-notification --recover-stopped-sender=<incarnation-UUID>
+```
+
+这个参数本身是操作员对**对应已登记进程已退出**的明确确认；命令不会通过 lease、PID 或端口自动推断。命令持独占 session lock 验证登记，保存 `operator` 确认并调用 `RecoverSender`，成功后退出，不创建 Telegram 客户端或发送消息。所有部署（包括自动重启容器）仍须先完成此确认；未确认时安全拒绝启动。
+
+恢复只处理该 incarnation 当前仍 sending 的 attempt：已有明确结果按原事实补记，无结果 CAS 为 unknown；终态和其他 incarnation 不受影响。结果补记失败如实返回错误，可在修复数据库后重跑同一确认命令。之后正常启动重建预算。只有在独占锁内证明实例登记和全部 attempt 历史均为空时，才豁免首次等待；其余每次启动都先等待完整 60 秒 monotonic 恢复屏障，期间不授权，不能因 UTC 前跳而清除窗口。该屏障单列本地恢复延迟并保留总体投递时延，不计为外部 Telegram 耗时。读取全部相关历史 attempt，不限 current_attempt。真实 started 还原原 chat/group 窗口；缺起点但有结果用 result_at 作为保守上界；无起点的 unknown 在确认停止后的完整一分钟内保持 Bot 冷却，不回填 started_at。尚未由 monotonic 计时证明届满的 Retry-After 以 attempt 的空 retry_after_released_at 保留；启动读取全部未解除记录，不按 UTC 时间过滤，并保守等待完整未解除最大值（可超过60秒）。运行内的回执同样立即缩紧预算，只有等待真实完成后才写解除标记；已解除历史不会在后续启动重复触发长等待。恢复等待属于运行异常，不宣称为正常发送时效。历史实际路由固定在 attempt，不从重启后的 test/prod 配置反推。
+
+实现入口为 [dispatcher.go](../../../internal/notification/dispatcher.go)、[budget.go](../../../internal/notification/budget.go)、[source.go](../../../internal/notification/source.go)、[sender_session.go](../../../internal/notification/store/sender_session.go) 和 [recovery.go](../../../internal/notification/store/recovery.go)。
 
 ## 维护检查
 

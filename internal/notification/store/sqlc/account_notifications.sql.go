@@ -325,3 +325,55 @@ func (q *Queries) GetAccountNotificationRuntimeCounts(ctx context.Context) (GetA
 	)
 	return i, err
 }
+
+const listDispatchAccounts = `-- name: ListDispatchAccounts :many
+SELECT id, account_id, idempotency_key, payload_digest, source, severity, title, body, link, channel, status, telegram_chat_id, binding_revision, provider_message_id, error_message, created_at, sent_at, attempts, next_attempt_at, last_attempt_at, locked_at, locked_by, current_attempt_id, eligibility_revoked_at, eligibility_revoked_reason FROM account_notification_deliveries
+WHERE status = 'pending' AND attempts < 5 AND eligibility_revoked_at IS NULL
+ORDER BY account_id, next_attempt_at, id
+`
+
+func (q *Queries) ListDispatchAccounts(ctx context.Context) ([]AccountNotificationDelivery, error) {
+	rows, err := q.db.Query(ctx, listDispatchAccounts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AccountNotificationDelivery
+	for rows.Next() {
+		var i AccountNotificationDelivery
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccountID,
+			&i.IdempotencyKey,
+			&i.PayloadDigest,
+			&i.Source,
+			&i.Severity,
+			&i.Title,
+			&i.Body,
+			&i.Link,
+			&i.Channel,
+			&i.Status,
+			&i.TelegramChatID,
+			&i.BindingRevision,
+			&i.ProviderMessageID,
+			&i.ErrorMessage,
+			&i.CreatedAt,
+			&i.SentAt,
+			&i.Attempts,
+			&i.NextAttemptAt,
+			&i.LastAttemptAt,
+			&i.LockedAt,
+			&i.LockedBy,
+			&i.CurrentAttemptID,
+			&i.EligibilityRevokedAt,
+			&i.EligibilityRevokedReason,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

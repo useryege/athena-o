@@ -2,230 +2,117 @@ package notification
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"os"
-	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/notification/delivery"
 	notificationstore "github.com/useryege/athena/internal/notification/store"
 )
 
-const (
-	defaultWorkerSendInterval = 1100 * time.Millisecond
-	defaultWorkerPollInterval = 500 * time.Millisecond
-	defaultWorkerBatchSize    = 10
-	defaultWorkerLockTimeout  = 2 * time.Minute
-	defaultWorkerID           = "notification-worker"
-)
-
 type WorkerConfig struct {
-	SendInterval time.Duration
-	PollInterval time.Duration
-	BatchSize    int
-	LockTimeout  time.Duration
-	WorkerID     string
-	Disabled     bool
+	Concurrency int
+	Disabled    bool
 }
 
-func DefaultWorkerConfig() WorkerConfig {
-	return WorkerConfig{
-		SendInterval: defaultWorkerSendInterval, PollInterval: defaultWorkerPollInterval,
-		BatchSize:   defaultWorkerBatchSize,
-		LockTimeout: defaultWorkerLockTimeout, WorkerID: defaultWorkerID,
+func DefaultWorkerConfig() WorkerConfig { return WorkerConfig{Concurrency: 12} }
+func normalizeWorkerConfig(c WorkerConfig) WorkerConfig {
+	if c.Concurrency <= 0 {
+		c.Concurrency = 12
 	}
+	return c
 }
-
-func normalizeWorkerConfig(config WorkerConfig) WorkerConfig {
-	defaults := DefaultWorkerConfig()
-	if config.SendInterval <= 0 {
-		config.SendInterval = defaults.SendInterval
-	}
-	if config.PollInterval <= 0 {
-		config.PollInterval = defaults.PollInterval
-	}
-	if config.BatchSize <= 0 {
-		config.BatchSize = defaults.BatchSize
-	}
-	if config.LockTimeout <= 0 {
-		config.LockTimeout = defaults.LockTimeout
-	}
-	config.WorkerID = strings.TrimSpace(config.WorkerID)
-	if config.WorkerID == "" {
-		config.WorkerID = defaults.WorkerID
-		if hostname, err := os.Hostname(); err == nil && strings.TrimSpace(hostname) != "" {
-			config.WorkerID += "-" + strings.TrimSpace(hostname)
-		}
-	}
-	return config
-}
-
 func (s *Service) startWorkerLocked(ctx context.Context) {
 	if s.workerConfig.Disabled {
 		return
 	}
-	workerCtx, cancel := context.WithCancel(ctx)
-	s.workerCancel = cancel
-	s.senderIncarnation = uuid.New()
-	s.workerWG.Add(1)
+	s.workerWG.Add(2)
 	go func() {
 		defer s.workerWG.Done()
-		s.runWorker(workerCtx)
+		if err := s.runWorker(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			s.failRuntime(err)
+		}
+	}()
+	go func() {
+		defer s.workerWG.Done()
+		ticker := time.NewTicker(250 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				checkCtx, cancel := context.WithTimeout(ctx, time.Second)
+				err := s.senderSession.Check(checkCtx)
+				cancel()
+				if err != nil {
+					if ctx.Err() == nil {
+						s.failRuntime(err)
+					}
+					return
+				}
+			}
+		}
 	}()
 }
-
-func (s *Service) stopWorkerLocked() {
-	if s.workerCancel == nil {
-		return
-	}
-	s.workerCancel()
-	s.workerWG.Wait()
-	s.workerCancel = nil
-}
-
-type claimedNotification struct {
-	reply   *notificationstore.ClaimedTelegramBindingReply
-	system  *notificationstore.ClaimedSystemNotificationDelivery
-	account *notificationstore.ClaimedAccountNotificationDelivery
-}
-
-func (s *Service) runWorker(ctx context.Context) {
-	preferAccount := false
-	for ctx.Err() == nil {
-		claimed := s.claimFairNotificationBatch(ctx, preferAccount)
-		preferAccount = !preferAccount
-		if len(claimed) == 0 {
-			if !sleepWorker(ctx, s.workerConfig.PollInterval) {
-				return
-			}
-			continue
+func (s *Service) failRuntime(err error) {
+	if s.runtimeFailed.CompareAndSwap(false, true) {
+		s.workerCancel()
+		if s.onFatal != nil {
+			s.onFatal(err)
 		}
-		for _, delivery := range claimed {
-			if ctx.Err() != nil {
-				return
-			}
-			if delivery.reply != nil {
-				s.processClaimedTelegramBindingReply(ctx, *delivery.reply)
-			} else if delivery.system != nil {
-				s.processClaimedSystemNotification(ctx, *delivery.system)
-			} else if delivery.account != nil {
-				s.processClaimedAccountNotification(ctx, *delivery.account)
-			}
-			if !sleepWorker(ctx, s.workerConfig.SendInterval) {
-				return
-			}
-		}
+		s.runtimeErrors <- err
 	}
 }
 
-func (s *Service) claimFairNotificationBatch(ctx context.Context, preferAccount bool) []claimedNotification {
-	batchSize := s.workerConfig.BatchSize
-	accountLimit := batchSize / 2
-	systemLimit := batchSize - accountLimit
-	if preferAccount {
-		accountLimit, systemLimit = systemLimit, accountLimit
+func (s *Service) runWorker(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	budget := NewBudget(20, time.Second, 20, time.Minute)
+	if err := restoreBudget(ctx, s.store, budget, time.Now()); err != nil {
+		return err
 	}
-	claimOptions := func(limit int) notificationstore.ClaimDeliveriesOptions {
-		return notificationstore.ClaimDeliveriesOptions{
-			Limit: limit, LockedBy: s.workerConfig.WorkerID, LockTimeout: s.workerConfig.LockTimeout,
-		}
-	}
-	var systemItems []notificationstore.ClaimedSystemNotificationDelivery
-	if systemLimit > 0 {
-		items, err := s.store.ClaimPendingSystemNotificationDeliveries(ctx, claimOptions(systemLimit))
-		if err != nil {
-			log.WithError(err).Warn("failed to claim system notification deliveries")
-		} else {
-			systemItems = items
-		}
-	}
-	var accountItems []notificationstore.ClaimedAccountNotificationDelivery
-	if accountLimit > 0 {
-		items, err := s.store.ClaimPendingAccountNotificationDeliveries(ctx, claimOptions(accountLimit))
-		if err != nil {
-			log.WithError(err).Warn("failed to claim account notification deliveries")
-		} else {
-			accountItems = items
-		}
-	}
-	items := interleaveClaimedNotifications(systemItems, accountItems, preferAccount)
-	// Replies share this worker and its send interval until the unified scheduler replaces claiming.
-	replies, err := s.store.ClaimPendingTelegramBindingReplies(ctx, claimOptions(1))
+	firstStart := s.senderSession == nil || s.senderSession.FirstStart()
+	retries, err := recoverStartupBudget(ctx, s.store, budget, wallClock{}, firstStart)
 	if err != nil {
-		log.WithError(err).Warn("failed to claim telegram binding replies")
-	} else {
-		for _, reply := range replies {
-			item := reply
-			items = append(items, claimedNotification{reply: &item})
-		}
+		return err
 	}
-	return items
-}
-
-func interleaveClaimedNotifications(
-	systemItems []notificationstore.ClaimedSystemNotificationDelivery,
-	accountItems []notificationstore.ClaimedAccountNotificationDelivery,
-	preferAccount bool,
-) []claimedNotification {
-	items := make([]claimedNotification, 0, len(systemItems)+len(accountItems))
-	for systemIndex, accountIndex := 0, 0; systemIndex < len(systemItems) || accountIndex < len(accountItems); {
-		if preferAccount && accountIndex < len(accountItems) {
-			item := accountItems[accountIndex]
-			items = append(items, claimedNotification{account: &item})
-			accountIndex++
-		}
-		if systemIndex < len(systemItems) {
-			item := systemItems[systemIndex]
-			items = append(items, claimedNotification{system: &item})
-			systemIndex++
-		}
-		if !preferAccount && accountIndex < len(accountItems) {
-			item := accountItems[accountIndex]
-			items = append(items, claimedNotification{account: &item})
-			accountIndex++
-		}
+	ctx = context.WithValue(ctx, retryBudgetKey{}, retries)
+	retryDone := make(chan error, 1)
+	go func() { err := retries.run(ctx); retryDone <- err; cancel() }()
+	dispatchErr := NewDispatcher(wallClock{}, s.workSources(), budget, s.workerConfig.Concurrency).Run(ctx)
+	cancel()
+	retryErr := <-retryDone
+	if retryErr != nil && !errors.Is(retryErr, context.Canceled) {
+		return retryErr
 	}
-	return items
+	return dispatchErr
 }
 
-func (s *Service) processClaimedSystemNotification(ctx context.Context, item notificationstore.ClaimedSystemNotificationDelivery) {
-	message := renderNotificationMessage(sendNotificationParams{source: item.Source, severity: item.Severity, title: item.Title, body: item.Body, link: item.Link, telegramChat: item.TelegramChat, topicLabel: item.TopicLabel})
-	s.sendPermittedNotification(ctx, delivery.WorkRef{Kind: "system", ID: item.ID}, SendRequest{SystemTelegramChat: item.TelegramChat, MessageThreadID: item.MessageThreadID, Text: message.Text})
-}
-
-func (s *Service) processClaimedAccountNotification(ctx context.Context, item notificationstore.ClaimedAccountNotificationDelivery) {
-	message := renderNotificationMessage(sendNotificationParams{source: item.Source, severity: item.Severity, title: item.Title, body: item.Body, link: item.Link})
-	outcome := s.sendPermittedNotification(ctx, delivery.WorkRef{Kind: "account", ID: item.ID}, SendRequest{TelegramChatID: item.TelegramChatID, Text: message.Text})
-	if outcome.Code == "recipient_unreachable" {
-		if err := s.store.MarkTelegramBindingUnreachable(ctx, item.AccountID, item.TelegramChatID, item.BindingRevision, outcome.Code); err != nil {
-			log.WithError(err).Warn("failed to mark telegram binding unreachable")
+func (s *Service) sendPermittedNotification(ctx context.Context, candidate delivery.Candidate, request SendRequest, onStarted func(time.Time)) (delivery.Outcome, error) {
+	permit, err := s.store.Authorize(ctx, candidate, s.senderIncarnation, func() error {
+		if s.senderSession != nil {
+			if err := s.senderSession.Check(ctx); err != nil {
+				return err
+			}
 		}
-	}
-}
-
-func (s *Service) processClaimedTelegramBindingReply(ctx context.Context, item notificationstore.ClaimedTelegramBindingReply) {
-	outcome := s.sendPermittedNotification(ctx, delivery.WorkRef{Kind: "reply", ID: item.ID}, SendRequest{TelegramChatID: item.TelegramChatID, Text: item.Body})
-	if outcome.Code == "recipient_unreachable" && item.AccountID != "" {
-		if err := s.store.MarkTelegramBindingUnreachable(ctx, item.AccountID, item.TelegramChatID, item.BindingRevision, outcome.Code); err != nil {
-			log.WithError(err).Warn("failed to mark reply binding unreachable")
-		}
-	}
-}
-
-func (s *Service) sendPermittedNotification(ctx context.Context, ref delivery.WorkRef, request SendRequest) delivery.Outcome {
-	permit, err := s.store.Authorize(ctx, ref, s.senderIncarnation)
+		return checkDispatchSlot(ctx)
+	})
 	if err != nil {
-		log.WithError(err).WithField("notification_id", ref.ID).Debug("notification send was not authorized")
-		return delivery.Outcome{Kind: "failed", Code: "not_authorized"}
+		log.WithError(err).WithField("notification_id", candidate.Ref.ID).Debug("notification send was not authorized")
+		return delivery.Outcome{}, err
 	}
+	request.TelegramChatID = permit.ChatID
 	started := make(chan time.Time, 1)
 	result := make(chan delivery.Outcome, 1)
 	sendCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	go func() {
 		result <- s.sender.Send(sendCtx, request, func(at time.Time) {
+			if onStarted != nil {
+				onStarted(at)
+			}
 			select {
 			case started <- at:
 			default:
@@ -257,6 +144,9 @@ func (s *Service) sendPermittedNotification(ctx context.Context, ref delivery.Wo
 	}
 received:
 	resultAt := time.Now().UTC()
+	if retries, ok := ctx.Value(retryBudgetKey{}).(*retryBudget); ok {
+		retries.track(permit.AttemptID, outcome.RetryAfter)
+	}
 	recordCtx, recordCancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 	defer recordCancel()
 	if !startedAt.IsZero() {
@@ -267,14 +157,14 @@ received:
 	for {
 		err = s.store.RecordOutcome(recordCtx, permit, outcome, resultAt)
 		if err == nil {
-			return outcome
+			return outcome, nil
 		}
 		if err == notificationstore.ErrStalePermit || !sleepWorker(recordCtx, 100*time.Millisecond) {
 			break
 		}
 	}
 	log.WithError(err).WithField("attempt_id", permit.AttemptID).Warn("notification result remains unconfirmed; send will not be repeated")
-	return outcome
+	return outcome, nil
 }
 
 func sleepWorker(ctx context.Context, duration time.Duration) bool {
@@ -292,6 +182,5 @@ func sleepWorker(ctx context.Context, duration time.Duration) bool {
 }
 
 func (c WorkerConfig) String() string {
-	return fmt.Sprintf("send_interval=%s poll_interval=%s batch_size=%d lock_timeout=%s worker_id=%s disabled=%t",
-		c.SendInterval, c.PollInterval, c.BatchSize, c.LockTimeout, c.WorkerID, c.Disabled)
+	return fmt.Sprintf("concurrency=%d disabled=%t", c.Concurrency, c.Disabled)
 }

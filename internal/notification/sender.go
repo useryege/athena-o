@@ -14,15 +14,15 @@ import (
 )
 
 type Sender interface {
+	SystemChatID(string) (int64, error)
 	CreateSystemTopic(ctx context.Context, telegramChat string, label string) (int, error)
 	Send(ctx context.Context, request SendRequest, started func(time.Time)) delivery.Outcome
 }
 
 type SendRequest struct {
-	SystemTelegramChat string
-	TelegramChatID     int64
-	MessageThreadID    int
-	Text               string
+	TelegramChatID  int64
+	MessageThreadID int
+	Text            string
 }
 
 type TelegramSender struct {
@@ -53,16 +53,10 @@ func (s *TelegramSender) Send(ctx context.Context, request SendRequest, started 
 	if s.client == nil {
 		return delivery.Outcome{Kind: "failed", Code: "client_unavailable"}
 	}
-	chatID := ""
-	if request.TelegramChatID > 0 {
-		chatID = strconv.FormatInt(request.TelegramChatID, 10)
-	} else {
-		var err error
-		chatID, err = s.systemChatID(request.SystemTelegramChat)
-		if err != nil || request.MessageThreadID <= 0 {
-			return delivery.Outcome{Kind: "failed", Code: "invalid_recipient"}
-		}
+	if request.TelegramChatID == 0 {
+		return delivery.Outcome{Kind: "failed", Code: "invalid_recipient"}
 	}
+	chatID := strconv.FormatInt(request.TelegramChatID, 10)
 	resp, err := s.client.SendMessage(utiltelegram.WithSendStarted(ctx, started), utiltelegram.SendMessageRequest{
 		ChatID: chatID, Text: request.Text, MessageThreadID: request.MessageThreadID, ParseMode: models.ParseModeHTML,
 	})
@@ -101,4 +95,16 @@ func copySystemChatIDs(chatIDs map[string]string) map[string]string {
 		}
 	}
 	return out
+}
+
+func (s *TelegramSender) SystemChatID(name string) (int64, error) {
+	raw, err := s.systemChatID(name)
+	if err != nil {
+		return 0, err
+	}
+	id, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || id >= 0 {
+		return 0, fmt.Errorf("system Telegram chat %q requires a numeric group ID", name)
+	}
+	return id, nil
 }

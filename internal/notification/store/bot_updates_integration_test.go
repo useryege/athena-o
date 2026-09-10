@@ -222,7 +222,7 @@ func TestApplyBotUpdateRebindRevokesReplyAttempts(t *testing.T) {
 			var permit delivery.Permit
 			if sending {
 				var err error
-				permit, err = s.Authorize(ctx, ref, uuid.New())
+				permit, err = s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -252,7 +252,7 @@ func TestApplyBotUpdateRebindRevokesReplyAttempts(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if _, err := s.Authorize(ctx, ref, uuid.New()); !errors.Is(err, ErrDeliveryNotEligible) {
+			if _, err := s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil); !errors.Is(err, ErrDeliveryNotEligible) {
 				t.Fatalf("revived old reply %v", err)
 			}
 			b, err := s.GetTelegramBinding(ctx, owner)
@@ -286,7 +286,7 @@ func TestReplyRetryCeilingAndUnknown(t *testing.T) {
 				n = 1
 			}
 			for i := 1; i <= n; i++ {
-				p, err := s.Authorize(ctx, ref, uuid.New())
+				p, err := s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -321,7 +321,7 @@ func TestReplyRetryCeilingAndUnknown(t *testing.T) {
 					}
 				}
 			}
-			if _, err := s.Authorize(ctx, ref, uuid.New()); !errors.Is(err, ErrDeliveryNotEligible) {
+			if _, err := s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil); !errors.Is(err, ErrDeliveryNotEligible) {
 				t.Fatalf("terminal reply revived %v", err)
 			}
 		})

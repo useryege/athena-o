@@ -83,3 +83,8 @@ SELECT
   (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'sending') AS sending_count,
   (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'unknown') AS unknown_count,
   (SELECT COUNT(*)::bigint FROM telegram_bindings WHERE status = 'unreachable') AS unreachable_binding_count;
+
+-- name: ListDispatchAccounts :many
+SELECT * FROM account_notification_deliveries
+WHERE status = 'pending' AND attempts < 5 AND eligibility_revoked_at IS NULL
+ORDER BY account_id, next_attempt_at, id;

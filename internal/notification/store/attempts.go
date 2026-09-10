@@ -28,6 +28,7 @@ type permitWork struct {
 	eligible bool
 	next     time.Time
 	current  pgtype.UUID
+	chat     int64
 }
 
 func lockPermitWork(ctx context.Context, queries *q.Queries, ref delivery.WorkRef) (permitWork, error) {
@@ -37,13 +38,13 @@ func lockPermitWork(ctx context.Context, queries *q.Queries, ref delivery.WorkRe
 		if err != nil {
 			return permitWork{}, err
 		}
-		return permitWork{owner: uuidString(r.AccountID), digest: r.PayloadDigest, status: r.Status, attempts: int(r.Attempts), eligible: r.BindingEligible && !r.EligibilityRevokedAt.Valid, next: r.NextAttemptAt.Time, current: r.CurrentAttemptID}, nil
+		return permitWork{owner: uuidString(r.AccountID), digest: r.PayloadDigest, status: r.Status, attempts: int(r.Attempts), eligible: r.BindingEligible && !r.EligibilityRevokedAt.Valid, next: r.NextAttemptAt.Time, current: r.CurrentAttemptID, chat: r.TelegramChatID}, nil
 	case "reply":
 		r, err := queries.GetReplyDeliveryForPermit(ctx, ref.ID)
 		if err != nil {
 			return permitWork{}, err
 		}
-		return permitWork{owner: uuidString(r.AccountID), digest: r.PayloadDigest, status: r.Status, attempts: int(r.Attempts), eligible: r.BindingEligible.Valid && r.BindingEligible.Bool && !r.EligibilityRevokedAt.Valid, next: r.NextAttemptAt.Time, current: r.CurrentAttemptID}, nil
+		return permitWork{owner: uuidString(r.AccountID), digest: r.PayloadDigest, status: r.Status, attempts: int(r.Attempts), eligible: r.BindingEligible.Valid && r.BindingEligible.Bool && !r.EligibilityRevokedAt.Valid, next: r.NextAttemptAt.Time, current: r.CurrentAttemptID, chat: r.TelegramChatID}, nil
 	case "system":
 		r, err := queries.GetSystemDeliveryForPermit(ctx, ref.ID)
 		if err != nil {
@@ -80,7 +81,11 @@ func (s *SQLStore) withPermitTx(ctx context.Context, owner string, fn func(*q.Qu
 }
 
 // Authorize consumes a work item before any HTTP call. A failed/uncertain commit never permits a send.
-func (s *SQLStore) Authorize(ctx context.Context, ref delivery.WorkRef, incarnation uuid.UUID) (delivery.Permit, error) {
+func (s *SQLStore) Authorize(ctx context.Context, candidate delivery.Candidate, incarnation uuid.UUID, guard func() error) (delivery.Permit, error) {
+	ref := candidate.Ref
+	if candidate.ChatID == 0 {
+		return delivery.Permit{}, ErrDeliveryNotEligible
+	}
 	if err := s.transactional(); err != nil {
 		return delivery.Permit{}, err
 	}
@@ -114,10 +119,21 @@ func (s *SQLStore) Authorize(ctx context.Context, ref delivery.WorkRef, incarnat
 		if work.owner != owner || work.status != "pending" || !work.eligible || work.attempts >= 5 {
 			return ErrDeliveryNotEligible
 		}
+		if work.chat != 0 && (work.chat != candidate.ChatID || candidate.Group) {
+			return ErrDeliveryNotEligible
+		}
+		if ref.Kind == "system" && (!candidate.Group || candidate.ChatID >= 0) {
+			return ErrDeliveryNotEligible
+		}
+		if guard != nil {
+			if err := guard(); err != nil {
+				return err
+			}
+		}
 		// Evaluate the deadline against database time, not a worker's clock.
 		var now time.Time
 		// The attempt INSERT supplies the database timestamp used by all permit transitions.
-		r, err := queries.CreateDeliveryAttempt(ctx, q.CreateDeliveryAttemptParams{ID: uuidPG(uuid.New()), WorkKind: ref.Kind, WorkID: ref.ID, OwnerID: optionalUUID(owner), SenderIncarnation: uuidPG(incarnation), PayloadDigest: work.digest})
+		r, err := queries.CreateDeliveryAttempt(ctx, q.CreateDeliveryAttemptParams{ID: uuidPG(uuid.New()), WorkKind: ref.Kind, WorkID: ref.ID, OwnerID: optionalUUID(owner), SenderIncarnation: uuidPG(incarnation), PayloadDigest: work.digest, TelegramChatID: candidate.ChatID, TelegramGroup: candidate.Group})
 		if err != nil {
 			return err
 		}
@@ -139,7 +155,7 @@ func (s *SQLStore) Authorize(ctx context.Context, ref delivery.WorkRef, incarnat
 		if rows != 1 {
 			return ErrDeliveryNotEligible
 		}
-		permit = delivery.Permit{Work: ref, AttemptID: uuid.UUID(r.ID.Bytes), OwnerID: owner, SenderIncarnation: incarnation, PayloadDigest: append([]byte(nil), work.digest...), AuthorizedAt: now}
+		permit = delivery.Permit{ChatID: candidate.ChatID, Group: candidate.Group, Work: ref, AttemptID: uuid.UUID(r.ID.Bytes), OwnerID: owner, SenderIncarnation: incarnation, PayloadDigest: append([]byte(nil), work.digest...), AuthorizedAt: now}
 		return nil
 	})
 	if err != nil {
@@ -149,7 +165,7 @@ func (s *SQLStore) Authorize(ctx context.Context, ref delivery.WorkRef, incarnat
 }
 
 func validatePermit(p delivery.Permit, r q.NotificationDeliveryAttempt) error {
-	if p.AttemptID == uuid.Nil || r.ID != uuidPG(p.AttemptID) || r.WorkKind != p.Work.Kind || r.WorkID != p.Work.ID || uuidString(r.OwnerID) != p.OwnerID || r.SenderIncarnation != uuidPG(p.SenderIncarnation) || !bytes.Equal(r.PayloadDigest, p.PayloadDigest) || !r.AuthorizedAt.Time.Equal(p.AuthorizedAt) {
+	if p.ChatID != r.TelegramChatID || p.Group != r.TelegramGroup || p.AttemptID == uuid.Nil || r.ID != uuidPG(p.AttemptID) || r.WorkKind != p.Work.Kind || r.WorkID != p.Work.ID || uuidString(r.OwnerID) != p.OwnerID || r.SenderIncarnation != uuidPG(p.SenderIncarnation) || !bytes.Equal(r.PayloadDigest, p.PayloadDigest) || !r.AuthorizedAt.Time.Equal(p.AuthorizedAt) {
 		return ErrStalePermit
 	}
 	return nil
@@ -196,6 +212,7 @@ func (s *SQLStore) RecordOutcome(ctx context.Context, p delivery.Permit, o deliv
 	if o.Kind == "sent" && o.MessageID == "" {
 		return fmt.Errorf("sent notification requires a provider message ID")
 	}
+	hadOutcome := false
 	err := s.withPermitTx(ctx, p.OwnerID, func(queries *q.Queries) error {
 		work, err := lockPermitWork(ctx, queries, p.Work)
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -214,11 +231,14 @@ func (s *SQLStore) RecordOutcome(ctx context.Context, p delivery.Permit, o deliv
 		if err = validatePermit(p, r); err != nil {
 			return err
 		}
+		hadOutcome = r.ResultAt.Valid
 		if r.ResultAt.Valid {
-			if sameOutcome(r, o) {
+			if !sameOutcome(r, o) {
+				return ErrStalePermit
+			}
+			if work.status != "sending" {
 				return nil
 			}
-			return ErrStalePermit
 		}
 		if work.owner != p.OwnerID || work.current != r.ID || work.status != "sending" || !bytes.Equal(work.digest, p.PayloadDigest) {
 			return ErrStalePermit
@@ -238,6 +258,9 @@ func (s *SQLStore) RecordOutcome(ctx context.Context, p delivery.Permit, o deliv
 		if rows != 1 {
 			return ErrStalePermit
 		}
+		if r.ResultAt.Valid {
+			return nil
+		}
 		rows, err = queries.RecordDeliveryAttemptOutcome(ctx, q.RecordDeliveryAttemptOutcomeParams{ID: r.ID, Outcome: textValue(o.Kind), ResultAt: timestamptzValue(at), MessageID: nullableText(o.MessageID), OutcomeCode: nullableText(o.Code), RetryAfter: intervalValue(o.RetryAfter)})
 		if err != nil {
 			return err
@@ -253,7 +276,7 @@ func (s *SQLStore) RecordOutcome(ctx context.Context, p delivery.Permit, o deliv
 	// A lost COMMIT acknowledgement can already have committed the receipt. Read by UUID;
 	// if it cannot be confirmed, leave the consumed permit untouched and report the error.
 	r, readErr := s.queries.GetDeliveryAttempt(ctx, uuidPG(p.AttemptID))
-	if readErr == nil && validatePermit(p, r) == nil && sameOutcome(r, o) {
+	if !hadOutcome && readErr == nil && validatePermit(p, r) == nil && sameOutcome(r, o) {
 		return nil
 	}
 	return err

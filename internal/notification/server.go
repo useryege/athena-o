@@ -42,14 +42,16 @@ func NewServer(opts ServerOpts) (*Server, error) {
 	opts.InternalAuthToken = ""
 	healthService := health.NewServer()
 	healthService.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
-	return &Server{
+	server := &Server{
 		ServerOpts: opts,
 		service: NewServiceWithWorkerConfig(
 			opts.Store, opts.Sender, opts.ProfileSyncer, opts.Poller, opts.WorkerConfig,
 		),
 		healthService:         healthService,
 		internalAuthTokenHash: sha256.Sum256([]byte(token)),
-	}, nil
+	}
+	server.service.onFatal = func(error) { server.setHealthStatus(grpc_health_v1.HealthCheckResponse_NOT_SERVING) }
+	return server, nil
 }
 
 func (s *Server) CreateGRPC() *grpc.Server {
@@ -114,6 +116,9 @@ func (s *Server) Start(ctx context.Context) error {
 		return err
 	}
 	s.setHealthStatus(grpc_health_v1.HealthCheckResponse_SERVING)
+	if s.service.runtimeFailed.Load() {
+		s.setHealthStatus(grpc_health_v1.HealthCheckResponse_NOT_SERVING)
+	}
 	return nil
 }
 
@@ -127,3 +132,5 @@ func (s *Server) setHealthStatus(statusValue grpc_health_v1.HealthCheckResponse_
 		s.healthService.SetServingStatus("", statusValue)
 	}
 }
+
+func (s *Server) Errors() <-chan error { return s.service.runtimeErrors }

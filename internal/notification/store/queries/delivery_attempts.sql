@@ -16,8 +16,8 @@ JOIN system_notification_topics t ON t.telegram_chat = d.telegram_chat AND t.lab
 WHERE d.id = $1 FOR UPDATE OF d;
 
 -- name: CreateDeliveryAttempt :one
-INSERT INTO notification_delivery_attempts(id, work_kind, work_id, owner_id, sender_incarnation, payload_digest)
-VALUES ($1,$2,$3,$4,$5,$6) RETURNING *;
+INSERT INTO notification_delivery_attempts(id, work_kind, work_id, owner_id, sender_incarnation, payload_digest, telegram_chat_id, telegram_group)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *;
 
 -- name: GetDeliveryAttempt :one
 SELECT * FROM notification_delivery_attempts WHERE id = $1;

@@ -100,3 +100,9 @@ SELECT
   COUNT(*) FILTER (WHERE status = 'sending')::bigint AS sending_count,
   COUNT(*) FILTER (WHERE status = 'unknown')::bigint AS unknown_count
 FROM system_notification_deliveries;
+
+-- name: ListDispatchSystems :many
+SELECT d.*, t.message_thread_id FROM system_notification_deliveries d
+JOIN system_notification_topics t ON t.telegram_chat=d.telegram_chat AND t.label=d.topic_label
+WHERE d.status = 'pending' AND d.attempts < 5
+ORDER BY d.telegram_chat, d.next_attempt_at, d.id;

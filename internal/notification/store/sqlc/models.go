@@ -94,19 +94,32 @@ type AthenaAccount struct {
 }
 
 type NotificationDeliveryAttempt struct {
-	ID                pgtype.UUID
-	WorkKind          string
-	WorkID            int64
-	OwnerID           pgtype.UUID
-	SenderIncarnation pgtype.UUID
-	PayloadDigest     []byte
-	AuthorizedAt      pgtype.Timestamptz
-	StartedAt         pgtype.Timestamptz
-	ResultAt          pgtype.Timestamptz
-	MessageID         pgtype.Text
-	Outcome           pgtype.Text
-	OutcomeCode       pgtype.Text
-	RetryAfter        pgtype.Interval
+	ID                   pgtype.UUID
+	WorkKind             string
+	WorkID               int64
+	OwnerID              pgtype.UUID
+	SenderIncarnation    pgtype.UUID
+	TelegramChatID       int64
+	TelegramGroup        bool
+	PayloadDigest        []byte
+	AuthorizedAt         pgtype.Timestamptz
+	StartedAt            pgtype.Timestamptz
+	ResultAt             pgtype.Timestamptz
+	MessageID            pgtype.Text
+	Outcome              pgtype.Text
+	OutcomeCode          pgtype.Text
+	RetryAfter           pgtype.Interval
+	RetryAfterReleasedAt pgtype.Timestamptz
+}
+
+type NotificationSenderInstance struct {
+	Incarnation      pgtype.UUID
+	Hostname         string
+	ProcessID        int32
+	ProcessIdentity  string
+	RegisteredAt     pgtype.Timestamptz
+	StoppedAt        pgtype.Timestamptz
+	StopConfirmation pgtype.Text
 }
 
 type SystemNotificationDelivery struct {

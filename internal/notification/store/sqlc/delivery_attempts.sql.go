@@ -52,8 +52,8 @@ func (q *Queries) AuthorizeSystemDelivery(ctx context.Context, arg AuthorizeSyst
 }
 
 const createDeliveryAttempt = `-- name: CreateDeliveryAttempt :one
-INSERT INTO notification_delivery_attempts(id, work_kind, work_id, owner_id, sender_incarnation, payload_digest)
-VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, work_kind, work_id, owner_id, sender_incarnation, payload_digest, authorized_at, started_at, result_at, message_id, outcome, outcome_code, retry_after
+INSERT INTO notification_delivery_attempts(id, work_kind, work_id, owner_id, sender_incarnation, payload_digest, telegram_chat_id, telegram_group)
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id, work_kind, work_id, owner_id, sender_incarnation, telegram_chat_id, telegram_group, payload_digest, authorized_at, started_at, result_at, message_id, outcome, outcome_code, retry_after, retry_after_released_at
 `
 
 type CreateDeliveryAttemptParams struct {
@@ -63,6 +63,8 @@ type CreateDeliveryAttemptParams struct {
 	OwnerID           pgtype.UUID
 	SenderIncarnation pgtype.UUID
 	PayloadDigest     []byte
+	TelegramChatID    int64
+	TelegramGroup     bool
 }
 
 func (q *Queries) CreateDeliveryAttempt(ctx context.Context, arg CreateDeliveryAttemptParams) (NotificationDeliveryAttempt, error) {
@@ -73,6 +75,8 @@ func (q *Queries) CreateDeliveryAttempt(ctx context.Context, arg CreateDeliveryA
 		arg.OwnerID,
 		arg.SenderIncarnation,
 		arg.PayloadDigest,
+		arg.TelegramChatID,
+		arg.TelegramGroup,
 	)
 	var i NotificationDeliveryAttempt
 	err := row.Scan(
@@ -81,6 +85,8 @@ func (q *Queries) CreateDeliveryAttempt(ctx context.Context, arg CreateDeliveryA
 		&i.WorkID,
 		&i.OwnerID,
 		&i.SenderIncarnation,
+		&i.TelegramChatID,
+		&i.TelegramGroup,
 		&i.PayloadDigest,
 		&i.AuthorizedAt,
 		&i.StartedAt,
@@ -89,6 +95,7 @@ func (q *Queries) CreateDeliveryAttempt(ctx context.Context, arg CreateDeliveryA
 		&i.Outcome,
 		&i.OutcomeCode,
 		&i.RetryAfter,
+		&i.RetryAfterReleasedAt,
 	)
 	return i, err
 }
@@ -178,7 +185,7 @@ func (q *Queries) GetAccountDeliveryOwner(ctx context.Context, id int64) (pgtype
 }
 
 const getDeliveryAttempt = `-- name: GetDeliveryAttempt :one
-SELECT id, work_kind, work_id, owner_id, sender_incarnation, payload_digest, authorized_at, started_at, result_at, message_id, outcome, outcome_code, retry_after FROM notification_delivery_attempts WHERE id = $1
+SELECT id, work_kind, work_id, owner_id, sender_incarnation, telegram_chat_id, telegram_group, payload_digest, authorized_at, started_at, result_at, message_id, outcome, outcome_code, retry_after, retry_after_released_at FROM notification_delivery_attempts WHERE id = $1
 `
 
 func (q *Queries) GetDeliveryAttempt(ctx context.Context, id pgtype.UUID) (NotificationDeliveryAttempt, error) {
@@ -190,6 +197,8 @@ func (q *Queries) GetDeliveryAttempt(ctx context.Context, id pgtype.UUID) (Notif
 		&i.WorkID,
 		&i.OwnerID,
 		&i.SenderIncarnation,
+		&i.TelegramChatID,
+		&i.TelegramGroup,
 		&i.PayloadDigest,
 		&i.AuthorizedAt,
 		&i.StartedAt,
@@ -198,12 +207,13 @@ func (q *Queries) GetDeliveryAttempt(ctx context.Context, id pgtype.UUID) (Notif
 		&i.Outcome,
 		&i.OutcomeCode,
 		&i.RetryAfter,
+		&i.RetryAfterReleasedAt,
 	)
 	return i, err
 }
 
 const getDeliveryAttemptForUpdate = `-- name: GetDeliveryAttemptForUpdate :one
-SELECT id, work_kind, work_id, owner_id, sender_incarnation, payload_digest, authorized_at, started_at, result_at, message_id, outcome, outcome_code, retry_after FROM notification_delivery_attempts WHERE id = $1 FOR UPDATE
+SELECT id, work_kind, work_id, owner_id, sender_incarnation, telegram_chat_id, telegram_group, payload_digest, authorized_at, started_at, result_at, message_id, outcome, outcome_code, retry_after, retry_after_released_at FROM notification_delivery_attempts WHERE id = $1 FOR UPDATE
 `
 
 func (q *Queries) GetDeliveryAttemptForUpdate(ctx context.Context, id pgtype.UUID) (NotificationDeliveryAttempt, error) {
@@ -215,6 +225,8 @@ func (q *Queries) GetDeliveryAttemptForUpdate(ctx context.Context, id pgtype.UUI
 		&i.WorkID,
 		&i.OwnerID,
 		&i.SenderIncarnation,
+		&i.TelegramChatID,
+		&i.TelegramGroup,
 		&i.PayloadDigest,
 		&i.AuthorizedAt,
 		&i.StartedAt,
@@ -223,6 +235,7 @@ func (q *Queries) GetDeliveryAttemptForUpdate(ctx context.Context, id pgtype.UUI
 		&i.Outcome,
 		&i.OutcomeCode,
 		&i.RetryAfter,
+		&i.RetryAfterReleasedAt,
 	)
 	return i, err
 }

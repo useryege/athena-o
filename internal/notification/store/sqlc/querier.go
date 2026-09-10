@@ -41,6 +41,7 @@ type Querier interface {
 	GetDeliveryAttemptForUpdate(ctx context.Context, id pgtype.UUID) (NotificationDeliveryAttempt, error)
 	GetReplyDeliveryForPermit(ctx context.Context, id int64) (GetReplyDeliveryForPermitRow, error)
 	GetReplyDeliveryOwner(ctx context.Context, id int64) (pgtype.UUID, error)
+	GetSenderInstance(ctx context.Context, incarnation pgtype.UUID) (NotificationSenderInstance, error)
 	GetSystemDeliveryForPermit(ctx context.Context, id int64) (GetSystemDeliveryForPermitRow, error)
 	GetSystemNotificationDelivery(ctx context.Context, id int64) (GetSystemNotificationDeliveryRow, error)
 	GetSystemNotificationDeliveryCounts(ctx context.Context) (GetSystemNotificationDeliveryCountsRow, error)
@@ -52,8 +53,16 @@ type Querier interface {
 	GetTelegramBindingByIdentity(ctx context.Context, arg GetTelegramBindingByIdentityParams) (GetTelegramBindingByIdentityRow, error)
 	GetTelegramBindingForShare(ctx context.Context, accountID pgtype.UUID) (GetTelegramBindingForShareRow, error)
 	GetTelegramPollingState(ctx context.Context) (GetTelegramPollingStateRow, error)
+	HasSenderHistory(ctx context.Context) (pgtype.Bool, error)
+	ListBudgetEvidence(ctx context.Context, startedAt pgtype.Timestamptz) ([]NotificationDeliveryAttempt, error)
+	ListDispatchAccounts(ctx context.Context) ([]AccountNotificationDelivery, error)
+	ListDispatchReplies(ctx context.Context) ([]TelegramBindingReply, error)
+	ListDispatchSystems(ctx context.Context) ([]ListDispatchSystemsRow, error)
+	ListSenderRecoveryAttempts(ctx context.Context, senderIncarnation pgtype.UUID) ([]NotificationDeliveryAttempt, error)
 	ListSystemNotificationDeliveries(ctx context.Context, arg ListSystemNotificationDeliveriesParams) ([]ListSystemNotificationDeliveriesRow, error)
 	ListTelegramBindingsByIdentityForShare(ctx context.Context, arg ListTelegramBindingsByIdentityForShareParams) ([]ListTelegramBindingsByIdentityForShareRow, error)
+	ListUnreleasedRetryAfters(ctx context.Context) ([]ListUnreleasedRetryAftersRow, error)
+	ListUnstoppedSenders(ctx context.Context) ([]NotificationSenderInstance, error)
 	LockSystemNotificationTopic(ctx context.Context, arg LockSystemNotificationTopicParams) error
 	LockTelegramBindingAccount(ctx context.Context, accountID pgtype.UUID) error
 	LockTelegramBindingIdentity(ctx context.Context, arg LockTelegramBindingIdentityParams) error
@@ -67,7 +76,10 @@ type Querier interface {
 	RecordReplyDeliveryOutcome(ctx context.Context, arg RecordReplyDeliveryOutcomeParams) (int64, error)
 	RecordSystemDeliveryOutcome(ctx context.Context, arg RecordSystemDeliveryOutcomeParams) (int64, error)
 	RecordTelegramPoll(ctx context.Context, lastPollAt pgtype.Timestamptz) (RecordTelegramPollRow, error)
+	RegisterSender(ctx context.Context, arg RegisterSenderParams) error
+	ReleaseRetryAfter(ctx context.Context, id pgtype.UUID) (int64, error)
 	ReplaceTelegramBinding(ctx context.Context, arg ReplaceTelegramBindingParams) (ReplaceTelegramBindingRow, error)
+	StopSenderInstance(ctx context.Context, arg StopSenderInstanceParams) (int64, error)
 	UpsertTelegramBindingAttempt(ctx context.Context, arg UpsertTelegramBindingAttemptParams) (TelegramBindingAttempt, error)
 }
 

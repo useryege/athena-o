@@ -11,6 +11,8 @@ type WorkRef struct {
 	ID   int64
 }
 type Permit struct {
+	ChatID            int64
+	Group             bool
 	Work              WorkRef
 	AttemptID         uuid.UUID
 	OwnerID           string
@@ -47,4 +49,14 @@ func NextState(o Outcome, attempts int, eligible bool) (string, time.Duration) {
 	default:
 		return "unknown", 0
 	}
+}
+
+// Candidate is a visible pending item; future deadline work remains visible to reserve capacity.
+type Candidate struct {
+	Ref       WorkRef
+	OwnerID   string
+	ChatID    int64
+	Group     bool
+	NotBefore time.Time
+	Deadline  *time.Time
 }

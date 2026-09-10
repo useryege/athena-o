@@ -238,6 +238,53 @@ func (q *Queries) GetReplyDeliveryOwner(ctx context.Context, id int64) (pgtype.U
 	return account_id, err
 }
 
+const listDispatchReplies = `-- name: ListDispatchReplies :many
+SELECT id, update_id, account_id, binding_revision, telegram_chat_id, body, payload_digest, status, attempts, created_at, next_attempt_at, last_attempt_at, locked_at, locked_by, current_attempt_id, provider_message_id, error_message, sent_at, eligibility_revoked_at, eligibility_revoked_reason FROM telegram_binding_replies
+WHERE status = 'pending' AND attempts < 5 AND eligibility_revoked_at IS NULL
+ORDER BY account_id, next_attempt_at, id
+`
+
+func (q *Queries) ListDispatchReplies(ctx context.Context) ([]TelegramBindingReply, error) {
+	rows, err := q.db.Query(ctx, listDispatchReplies)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TelegramBindingReply
+	for rows.Next() {
+		var i TelegramBindingReply
+		if err := rows.Scan(
+			&i.ID,
+			&i.UpdateID,
+			&i.AccountID,
+			&i.BindingRevision,
+			&i.TelegramChatID,
+			&i.Body,
+			&i.PayloadDigest,
+			&i.Status,
+			&i.Attempts,
+			&i.CreatedAt,
+			&i.NextAttemptAt,
+			&i.LastAttemptAt,
+			&i.LockedAt,
+			&i.LockedBy,
+			&i.CurrentAttemptID,
+			&i.ProviderMessageID,
+			&i.ErrorMessage,
+			&i.SentAt,
+			&i.EligibilityRevokedAt,
+			&i.EligibilityRevokedReason,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const recordReplyDeliveryOutcome = `-- name: RecordReplyDeliveryOutcome :execrows
 UPDATE telegram_binding_replies SET status = $1, provider_message_id = $2,
  error_message = $3, sent_at = CASE WHEN $1::text = 'sent' THEN $4::timestamptz ELSE NULL END,

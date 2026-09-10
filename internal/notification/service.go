@@ -11,6 +11,7 @@ import (
 	"html"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode/utf8"
 
@@ -54,6 +55,10 @@ type Service struct {
 	profileSyncer     ProfileSyncer
 	poller            *TelegramPoller
 	senderIncarnation uuid.UUID
+	senderSession     *notificationstore.SenderSession
+	runtimeErrors     chan error
+	runtimeFailed     atomic.Bool
+	onFatal           func(error)
 	workerConfig      WorkerConfig
 	workerCancel      context.CancelFunc
 	workerWG          sync.WaitGroup
@@ -73,7 +78,7 @@ func NewService(store *notificationstore.SQLStore, sender Sender, profileSyncer 
 func NewServiceWithWorkerConfig(store *notificationstore.SQLStore, sender Sender, profileSyncer ProfileSyncer, poller *TelegramPoller, workerConfig WorkerConfig) *Service {
 	return &Service{
 		store: store, sender: sender, profileSyncer: profileSyncer, poller: poller,
-		workerConfig: normalizeWorkerConfig(workerConfig), senderIncarnation: uuid.New(),
+		workerConfig: normalizeWorkerConfig(workerConfig), senderIncarnation: uuid.New(), runtimeErrors: make(chan error, 1),
 	}
 }
 
@@ -95,19 +100,36 @@ func (s *Service) Start(ctx context.Context) error {
 	if s.poller == nil {
 		return status.Error(codes.FailedPrecondition, "telegram poller is required")
 	}
-	identity, err := s.profileSyncer.SyncProfile(ctx)
+	s.senderIncarnation = uuid.New()
+	session, err := s.store.AcquireSender(ctx, s.senderIncarnation)
+	if err != nil {
+		return err
+	}
+	s.senderSession = session
+	workerCtx, cancel := context.WithCancel(ctx)
+	s.workerCancel = cancel
+	s.runtimeFailed.Store(false)
+	defer func() {
+		if !s.started {
+			cancel()
+			_ = session.Finish(context.Background())
+			session.Close()
+			s.senderSession = nil
+		}
+	}()
+	identity, err := s.profileSyncer.SyncProfile(workerCtx)
 	if err != nil {
 		return status.Errorf(codes.Unavailable, "failed to sync notification telegram bot profile: %v", err)
 	}
 	if identity == nil || strings.TrimSpace(identity.Username) == "" {
 		return status.Error(codes.FailedPrecondition, "notification telegram bot username is required")
 	}
-	if err := s.poller.Start(ctx); err != nil {
+	if err := s.poller.Start(workerCtx); err != nil {
 		return status.Errorf(codes.Unavailable, "failed to start telegram poller: %v", err)
 	}
 	identityCopy := *identity
 	s.botIdentity = &identityCopy
-	s.startWorkerLocked(ctx)
+	s.startWorkerLocked(workerCtx)
 	s.started = true
 	return nil
 }
@@ -115,12 +137,29 @@ func (s *Service) Start(ctx context.Context) error {
 func (s *Service) Stop() error {
 	s.startStopMu.Lock()
 	defer s.startStopMu.Unlock()
-	s.stopWorkerLocked()
+	if s.workerCancel != nil {
+		s.workerCancel()
+	}
 	if s.poller != nil {
 		s.poller.Stop()
 	}
+	s.workerWG.Wait()
+	var err error
+	if s.senderSession != nil {
+		if !s.runtimeFailed.Load() {
+			stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			err = s.senderSession.Finish(stopCtx)
+			if err == nil {
+				err = s.store.RecoverSender(stopCtx, s.senderIncarnation)
+			}
+			cancel()
+		}
+		s.senderSession.Close()
+		s.senderSession = nil
+	}
+	s.workerCancel = nil
 	s.started = false
-	return nil
+	return err
 }
 
 func (s *Service) GetNotificationRuntimeStatus(ctx context.Context, _ *apiclient.GetNotificationRuntimeStatusRequest) (*apiclient.NotificationRuntimeStatus, error) {
@@ -145,7 +184,9 @@ func (s *Service) GetNotificationRuntimeStatus(ctx context.Context, _ *apiclient
 		pollerStatus = s.poller.Status()
 	}
 	statusText := "stopped"
-	if started && pollerStatus.Active {
+	if s.runtimeFailed.Load() {
+		statusText = "failed"
+	} else if started && pollerStatus.Active {
 		statusText = "running"
 	} else if started {
 		statusText = "degraded"

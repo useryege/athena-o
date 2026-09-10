@@ -274,12 +274,24 @@ VALUES ('prod', '[POLY] UMA Disputed', 559)
 ON CONFLICT (telegram_chat, label) DO UPDATE
 SET message_thread_id = EXCLUDED.message_thread_id;
 
+CREATE TABLE notification_sender_instances (
+  incarnation UUID PRIMARY KEY,
+  hostname TEXT NOT NULL,
+  process_id INTEGER NOT NULL,
+  process_identity TEXT NOT NULL,
+  registered_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  stopped_at TIMESTAMPTZ,
+  stop_confirmation TEXT CHECK (stop_confirmation IN ('graceful', 'operator'))
+);
+
 CREATE TABLE notification_delivery_attempts (
   id UUID PRIMARY KEY,
   work_kind TEXT NOT NULL CHECK (work_kind IN ('account', 'system', 'reply')),
   work_id BIGINT NOT NULL CHECK (work_id > 0),
   owner_id UUID,
   sender_incarnation UUID NOT NULL,
+  telegram_chat_id BIGINT NOT NULL CHECK (telegram_chat_id <> 0),
+  telegram_group BOOLEAN NOT NULL,
   payload_digest BYTEA NOT NULL CHECK (octet_length(payload_digest) = 32),
   authorized_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
   started_at TIMESTAMPTZ,
@@ -288,6 +300,7 @@ CREATE TABLE notification_delivery_attempts (
   outcome TEXT CHECK (outcome IN ('sent', 'retryable', 'failed', 'unknown')),
   outcome_code TEXT,
   retry_after INTERVAL,
+  retry_after_released_at TIMESTAMPTZ,
   CHECK ((work_kind <> 'account' OR owner_id IS NOT NULL) AND (work_kind <> 'system' OR owner_id IS NULL)),
   CHECK ((result_at IS NULL) = (outcome IS NULL))
 );
@@ -478,6 +491,7 @@ DROP TABLE telegram_bindings;
 DROP TABLE telegram_binding_versions;
 DROP TABLE system_notification_deliveries;
 DROP TABLE notification_delivery_attempts;
+DROP TABLE notification_sender_instances;
 DROP TABLE system_notification_topics;
 
 DROP TABLE account_api_key;

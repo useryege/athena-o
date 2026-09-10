@@ -6,7 +6,7 @@
 
 本文是目标方案，不代表当前实现。用户已整体确认原后端技术方案；[实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)已形成并正在执行。随后补充的[UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)已整体确认，本文的 UI 读取补充也已确认；实现计划已扩展为21项前后端联合任务。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
 
-本轮已按 Superpowers 分节确认统一数据库与现有进程边界、发送许可与撤权语义、单供应商 WSS 采集及最终确认路线；同用户集中成交允许限速排队也已确认。接口、资料和验收章节也已确认；[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认。后续实现计划细化了源码、生成依赖与验收步骤；当前已实现共享数据库基础、持久发送许可/结果路径及 Bot update 原子消费，其余目标按联合计划继续实施。
+本轮已按 Superpowers 分节确认统一数据库与现有进程边界、发送许可与撤权语义、单供应商 WSS 采集及最终确认路线；同用户集中成交允许限速排队也已确认。接口、资料和验收章节也已确认；[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认。后续实现计划细化了源码、生成依赖与验收步骤；当前已实现共享数据库基础、持久发送许可/结果路径、Bot update 原子消费、共享调度和单 sender 恢复，其余目标按联合计划继续实施。
 
 新增技术证据见[数据源契约核验](../../requirements/polymarket-copy-trading/source-contract-verification.md)与[RPC 过滤、确认和额度复核](../../requirements/polymarket-copy-trading/collector-contract-verification.md)。它们记录当前实现版本、100 钱包 OR 推送、Combo 腿映射、Profile 与收益资料的证据及限制。技术参数是可验证的设计默认值，不表示已完成运行验收。
 
@@ -35,15 +35,15 @@ Copy Trading 不在本设计内。本文维护后端和跨层数据契约，页�
 | --- | --- |
 | [账户权限](../../../internal/accountaccess/access.go)是九个模块与 NONE/READ/READ_WRITE 矩阵；[更新控制器](../../../internal/accountaccess/controller.go)提交后发布进程内快照。 | 新增 Trader Sync 权限；后台操作必须核验数据库权限，撤权必须与订阅、活动及投递串行化，不能只靠页面或缓存刷新。 |
 | [账户状态存储](../../../internal/accountstate/store/sql_store.go)与[通知存储](../../../internal/notification/store/sql_store.go)共用 `athena` 数据库及唯一权威迁移集；[账户 gate](../../../internal/accountstate/txgate/gate.go)统一账户事务锁。 | 同库基础已实现；Trader Sync 业务仍需把权限、订阅和活动形成接入这些事务。 |
-| [发送许可](../../../internal/notification/store/attempts.go)已在短事务提交 sending 与 attempt；[worker](../../../internal/notification/worker.go)以实际 HTTP 起点和结果 CAS 补记，unknown 不重发，绑定变化写永久墓碑。 | 产品 grant 撤权钩子、确认旧 sender 停止后的恢复与统一并发调度仍待后续任务；现有入队绑定仍不能代替活动形成时的资格快照。 |
-| [Bot update](../../../internal/notification/store/bot_updates.go)将绑定变更、回复 outbox 和消费进度原子提交；[poller](../../../internal/notification/poller.go)只调用该入口，reply 复用 worker 的发送许可。 | 回复当前共用旧串行发送间隔；跨 chat 公平调度、统一预算和停止确认恢复由后续任务实现。 |
+| [发送许可](../../../internal/notification/store/attempts.go)已在短事务提交 sending 与 attempt；[worker](../../../internal/notification/worker.go)以实际 HTTP 起点和结果 CAS 补记，unknown 不重发，绑定变化写永久墓碑。 | 共享并发调度、单 sender 登记和显式停止恢复已经实现；产品 grant 撤权钩子仍待接入，现有入队绑定不能代替活动形成时的资格快照。 |
+| [Bot update](../../../internal/notification/store/bot_updates.go)将绑定变更、回复 outbox 和消费进度原子提交；[poller](../../../internal/notification/poller.go)只调用该入口，reply 复用 worker 的发送许可。 | reply 已接入跨 chat 公平调度、统一预算和停止确认恢复；Trader Sync 摘要首条尚待接入。 |
 | [Data API 客户端](../../../util/polymarket/data.go)有活动、成交和持仓；[Gamma 客户端](../../../util/polymarket/gamma.go)有公开 Profile 与市场数据。 | 缺少 Trader Sync 的类型化源记录、确认卡契约、实时接收和收益曲线适配。现有通用 map 不作为持久业务契约。 |
 | [Managed OO](../../../internal/managedoo/log_sync.go)与 [BSC Swap](../../../internal/bscswap/scanner.go)有持久游标扫描。 | 业务事件、网络及中断回补语义不同，不能直接沿用为 Trader Sync 监控。 |
 | 当前源码没有 Trader Sync 服务、订阅、站内活动或摘要。 | 本文列出的 Trader Sync 路径均为预计新增；既有设计继续描述当前实现。 |
 
 ## 关键决定
 
-2026-09-10 本轮已确认以下总体架构、采集路线与发送许可边界；接口和验收章节也已确认，完整书面规格已获整体确认；当前已实现共享数据库基础、持久发送许可/结果路径及 Bot update 原子消费，其余目标按联合计划继续实施。
+2026-09-10 本轮已确认以下总体架构、采集路线与发送许可边界；接口和验收章节也已确认，完整书面规格已获整体确认；当前已实现共享数据库基础、持久发送许可/结果路径、Bot update 原子消费、共享调度和单 sender 恢复，其余目标按联合计划继续实施。
 
 1. **进程部署：**`internal/tradersync.Service` 运行在现有 `athena-server` 内，提供业务 RPC 和后台监控；Telegram 仍由现有 `athena-notification` 的单一 Bot、poller 和 sender 负责。不新增服务进程、消息中间件或 Redis。
 2. **事务范围（已确认）：**账户权限、Trader Sync 数据及全部 Notification 数据统一放在 `athena` PostgreSQL 数据库，包括账户绑定、账户投递、系统群组通知、Bot polling offset 和绑定回复 outbox。各模块保留独立 query adapter，共享受控事务和一个权威迁移集；每个进程建立自己的连接池，不跨进程共享连接池对象。Notification 不再因账户/系统通知而持有两个数据库 store。
@@ -258,9 +258,9 @@ member 读取在同一数据库事务/gate 下核验 grant 并读取 owner 数�
 
 每个部分对应独立投递和不可变 payload digest，逐条执行发送状态机。某部分成功或未知均不再次提交；明确未成功的暂时失败只重试该部分，仍属于原批次，不重置批次首次提交时间，其余未提交部分按当前资格继续。批次保存总条数以及 pending/sending/sent/failed/unknown/cancelled 数量；全部 sent 才展示整批成功，存在未完成或混合终态时分别呈现，不以单一成功覆盖部分未知。一个活动展示对应部分的结果及批次进度；因组合跨条而涉及多个部分时保留全部相关结果，不将部分成功视为完整成功。
 
-调度按账户公平轮转，优先处理即将达到目标时限的就绪工作；跨 chat 有界并行，同一 chat 串行，并统一取得 Bot 总预算及对应私聊/群组预算，不以一个用户的大队列吞掉其他用户工作。现有全局串行 worker 每次发送后等待 1.1 秒，十个账户同时各有一条普通提醒时也可能使尾部排队超过 5 秒，必须替换为上述调度，不能仅减小全局等待间隔或保留串行出口后宣称满足时效。
+调度按账户公平轮转，优先处理即将达到目标时限的就绪工作；跨 chat 有界并行，同一 chat 串行，并统一取得 Bot 总预算及对应私聊/群组预算，不以一个用户的大队列吞掉其他用户工作。共享 Dispatcher 已替换全局串行出口；只有实例登记与attempt历史均为空才能豁免首次恢复等待，其他启动在新授权前等待完整60秒monotonic屏障；未解除长Retry-After跨重启保留并等待完整最大值，monotonic届满后才持久解除。该等待单列本地恢复延迟并保留总体时延。账户、系统和 reply 源均使用同一 Budget，历史 attempt 记录物理 chat/group。其调度与单 sender 恢复操作见[通知设计](../notifications/account-telegram-notifications.md#单-sender-与恢复操作)。摘要首条源尚待后续任务接入；本次调度单元和隔离数据库测试不代表整个产品时效验收通过。
 
-全 Bot 预算覆盖账户提醒、系统通知及 poller 的绑定成功/失败回复；现有 `sendBindingReply` 直接调用 Telegram client 的路径也必须接入同一调度与限速器，不能只在业务 worker 内限速。各路径仍保留自己的内容、资格及投递结果语义；共享预算不使系统消息或绑定回复加入 Trader Sync 摘要。速率等待在取得账户 gate 前完成。站内活动不以取得发送名额为形成前提；待发送队列不设置静默丢弃上限，积压影响健康和延迟指标。
+全 Bot 预算覆盖账户提醒、系统通知及 poller 的绑定成功/失败回复；Bot 回复已通过持久 reply outbox 接入同一调度与限速器，poller 不直接发送。各路径仍保留自己的内容、资格及投递结果语义；共享预算不使系统消息或绑定回复加入 Trader Sync 摘要。速率等待在取得账户 gate 前完成。站内活动不以取得发送名额为形成前提；待发送队列不设置静默丢弃上限，积压影响健康和延迟指标。
 
 摘要首条开始提交、每部分回执和整批完成是三个不同指标；只有首条提交适用本次确认的 60 秒目标。旧批次后续部分不能长期挡住新批次首条或普通通知；按截止时间和公平预算调度，必要时不同批次交错发送，通过批次序号保持可辨识。调度也检查尚未到最早发送时刻的下一批首条，按有限 HTTP 超时与 chat 间隔提前预留槽位，其他部分和 Bot 回复不得占用会导致该截止点失守的预算。每条都受 chat 限速及账户 gate 约束，无法满足的积压如实显示，不因 10 人规模就宣称任意事件量达标。已确认保留短时集中中的前 10 条普通提醒，允许同用户限速排队；平稳流量保留成功回执 P95≤5 秒，集中成交单列时延且保留总体统计，不提前改派摘要。[Bot 限速说明](https://core.telegram.org/bots/faq#my-bot-is-hitting-limits-how-do-i-avoid-this)
 
