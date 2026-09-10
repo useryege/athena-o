@@ -93,7 +93,7 @@ gRPC health 报告生命周期就绪。共享运行 RPC 报告 Bot 可用性/ID/
 
 共享调度、显式停止恢复和历史预算重建已实现，操作步骤及安全边界见[单 sender 与恢复操作](account-telegram-notifications.md#单-sender-与恢复操作)。命令 `--recover-stopped-sender=<UUID>` 是操作员对对应登记进程已退出的明确确认，持独占锁恢复后退出，不发送 Telegram。不能因 incarnation 不同、lease 失效或端口释放而接管仍可能存活的 sender。
 
-调度对未来 Deadline 保留同 chat 的“HTTP 最长五秒 + 一秒间隔”槽，同时预留 worker 和即将到期的 Bot 信用；取得账户 gate 后已过期的槽回到调度，不消耗 attempt。数据库运行错误或失锁取消新授权、停止 poller 并令 health 失败，命令以错误退出；不会保留一个表面健康但静默停发的进程。重启窗口恢复覆盖历史 retry attempt、缺起点的已知结果、非首次启动的完整60秒 monotonic恢复屏障，以及不按UTC过滤的未解除长 Retry-After，历史实际 chat/group 不从当前环境变量反推。摘要首条源仍由 Trader Sync 后续任务提供。
+调度对未来 Deadline 保留同 chat 的“HTTP 最长五秒 + 一秒间隔”槽，同时预留 worker 和即将到期的 Bot 信用；取得账户 gate 后已过期或被后来 Retry-After 收紧作废的槽回到调度，不消耗 attempt。许可已提交但 HTTP 尚未开始时同样等待新冷却，保留原 attempt；可取消准入等待不持账户 gate，五秒 HTTP 超时在准入后起算。本地预算延迟与外部耗时分开，仍保留总体时延。数据库运行错误或失锁取消新授权、停止 poller 并令 health 失败，命令以错误退出；不会保留一个表面健康但静默停发的进程。重启窗口恢复覆盖历史 retry attempt、缺起点的已知结果、非首次启动的完整60秒 monotonic恢复屏障，以及不按UTC过滤的未解除长 Retry-After，历史实际 chat/group 不从当前环境变量反推。摘要首条源仍由 Trader Sync 后续任务提供。
 
 
 ## 维护检查

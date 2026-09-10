@@ -1,6 +1,7 @@
 package notification
 
 import (
+	"context"
 	"github.com/useryege/athena/internal/notification/delivery"
 	"sort"
 	"sync"
@@ -12,12 +13,21 @@ type budgetEvent struct {
 	group bool
 	at    time.Time
 }
+type budgetReservation struct {
+	candidate   delivery.Candidate
+	authorizing bool
+	authorized  bool
+}
 type Budget struct {
+	// Authorization holds a read lock only from the post-gate guard through commit.
+	// HTTP admission also holds it through the constant-time started handshake only.
+	// Tighten takes the write lock; actual start accounting uses mu independently.
+	authorizationMu              sync.RWMutex
 	mu                           sync.Mutex
 	botCount, groupCount         int
 	privateInterval, groupWindow time.Duration
 	events                       []budgetEvent
-	reservations                 map[uint64]delivery.Candidate
+	reservations                 map[uint64]budgetReservation
 	sequence                     uint64
 	blockedUntil                 time.Time
 }
@@ -26,7 +36,7 @@ func NewBudget(botPerSecond int, privateInterval time.Duration, groupCount int, 
 	if botPerSecond < 1 || privateInterval <= 0 || groupCount < 1 || groupWindow <= 0 {
 		panic("invalid notification budget")
 	}
-	return &Budget{botCount: botPerSecond, privateInterval: privateInterval, groupCount: groupCount, groupWindow: groupWindow, reservations: make(map[uint64]delivery.Candidate)}
+	return &Budget{botCount: botPerSecond, privateInterval: privateInterval, groupCount: groupCount, groupWindow: groupWindow, reservations: make(map[uint64]budgetReservation)}
 }
 func (b *Budget) Next(c delivery.Candidate, now time.Time) time.Time {
 	b.mu.Lock()
@@ -59,7 +69,7 @@ func (b *Budget) next(c delivery.Candidate, now time.Time) time.Time {
 	reservedBot, reservedChat := 0, 0
 	for _, r := range b.reservations {
 		reservedBot++
-		if r.ChatID == c.ChatID {
+		if r.candidate.ChatID == c.ChatID {
 			reservedChat++
 		}
 	}
@@ -92,7 +102,7 @@ func (b *Budget) Reserve(c delivery.Candidate, now time.Time) (uint64, bool) {
 		return 0, false
 	}
 	b.sequence++
-	b.reservations[b.sequence] = c
+	b.reservations[b.sequence] = budgetReservation{candidate: c}
 	return b.sequence, true
 }
 func (b *Budget) Release(id uint64) { b.mu.Lock(); defer b.mu.Unlock(); delete(b.reservations, id) }
@@ -100,7 +110,7 @@ func (b *Budget) Start(c delivery.Candidate, at time.Time) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	for id, r := range b.reservations {
-		if r.Ref == c.Ref {
+		if r.candidate.Ref == c.Ref {
 			delete(b.reservations, id)
 			break
 		}
@@ -116,9 +126,46 @@ func (b *Budget) Start(c delivery.Candidate, at time.Time) {
 	b.events = kept
 }
 func (b *Budget) Tighten(until time.Time) {
+	b.authorizationMu.Lock()
+	defer b.authorizationMu.Unlock()
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	b.blockedUntil = maxTime(b.blockedUntil, until)
+	if !until.After(b.blockedUntil) {
+		return
+	}
+	b.blockedUntil = until
+	for id, r := range b.reservations {
+		if !r.authorized {
+			delete(b.reservations, id)
+		}
+	}
+}
+
+// beginAuthorization validates the reservation after account/row locks and orders the
+// permission commit against Tighten. The caller must finish after commit/rollback,
+// before invoking Sender. Start never waits for this database coordination lock.
+func (b *Budget) beginAuthorization(id uint64, now time.Time) (finish func(bool), ok bool) {
+	b.authorizationMu.RLock()
+	b.mu.Lock()
+	r, exists := b.reservations[id]
+	if !exists || r.authorizing || r.authorized || b.blockedUntil.After(now) {
+		b.mu.Unlock()
+		b.authorizationMu.RUnlock()
+		return nil, false
+	}
+	r.authorizing = true
+	b.reservations[id] = r
+	b.mu.Unlock()
+	return func(committed bool) {
+		b.mu.Lock()
+		if r, exists := b.reservations[id]; exists {
+			r.authorizing = false
+			r.authorized = committed
+			b.reservations[id] = r
+		}
+		b.mu.Unlock()
+		b.authorizationMu.RUnlock()
+	}, true
 }
 
 // roomForDeadline preserves bot credits for all imminent distinct deadline chats.
@@ -135,4 +182,39 @@ func (b *Budget) roomForDeadline(f delivery.Candidate, slots int) bool {
 		count++
 	}
 	return count+slots <= b.botCount
+}
+
+// admitStart waits without any account gate or budget lock. The returned release
+// must run immediately after the transport's actual started handshake, before I/O.
+// TryRLock keeps cancellation responsive even when a writer awaits another commit.
+func (b *Budget) admitStart(ctx context.Context, clock Clock) (func(), error) {
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		if !b.authorizationMu.TryRLock() {
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(time.Millisecond):
+			}
+			continue
+		}
+		b.mu.Lock()
+		remaining := b.blockedUntil.Sub(clock.Now())
+		b.mu.Unlock()
+		if err := ctx.Err(); err != nil {
+			b.authorizationMu.RUnlock()
+			return nil, err
+		}
+		if remaining <= 0 {
+			return b.authorizationMu.RUnlock, nil
+		}
+		b.authorizationMu.RUnlock()
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-clock.After(remaining):
+		}
+	}
 }

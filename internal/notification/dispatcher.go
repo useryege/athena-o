@@ -147,7 +147,7 @@ func (d *Dispatcher) Run(ctx context.Context) error {
 				defer wg.Done()
 				defer d.budget.Release(reservation)
 				var once sync.Once
-				dispatchCtx := context.WithValue(ctx, dispatchSlotKey{}, dispatchSlot{clock: d.clock, until: now.Add(time.Second)})
+				dispatchCtx := context.WithValue(ctx, dispatchSlotKey{}, dispatchSlot{clock: d.clock, until: now.Add(time.Second), budget: d.budget, reservation: reservation})
 				err := w.source.Dispatch(dispatchCtx, c, func(time.Time) { once.Do(func() { d.budget.Start(c, d.clock.Now()) }) })
 				completed <- dispatchResult{c, err}
 			}()
@@ -180,8 +180,10 @@ func (e *RateLimitError) Error() string { return "notification provider rate lim
 
 type dispatchSlotKey struct{}
 type dispatchSlot struct {
-	clock Clock
-	until time.Time
+	budget      *Budget
+	reservation uint64
+	clock       Clock
+	until       time.Time
 }
 
 func checkDispatchSlot(ctx context.Context) error {
@@ -192,4 +194,25 @@ func checkDispatchSlot(ctx context.Context) error {
 		return ErrDispatchDeferred
 	}
 	return nil
+}
+
+// beginDispatchAuthorization is entered only after the database account and row gates.
+func beginDispatchAuthorization(ctx context.Context) (func(bool), error) {
+	if err := checkDispatchSlot(ctx); err != nil {
+		return nil, err
+	}
+	slot, ok := ctx.Value(dispatchSlotKey{}).(dispatchSlot)
+	if !ok || slot.budget == nil {
+		return nil, nil
+	}
+	finish, ok := slot.budget.beginAuthorization(slot.reservation, slot.clock.Now())
+	if !ok {
+		return nil, ErrDispatchDeferred
+	}
+	// Waiting for a concurrent Tighten/commit must not extend the original slot deadline.
+	if err := checkDispatchSlot(ctx); err != nil {
+		finish(false)
+		return nil, err
+	}
+	return finish, nil
 }

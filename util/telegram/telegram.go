@@ -193,11 +193,11 @@ func NewClient(config Config) (Client, error) {
 	botClient, err := tgbot.New(
 		config.BotToken,
 		tgbot.WithServerURL(config.BaseURL),
-		tgbot.WithHTTPClient(config.Timeout, &http.Client{
+		tgbot.WithHTTPClient(config.Timeout, &sendHTTPClient{client: &http.Client{
 			Timeout:       config.Timeout,
 			Transport:     &sendTransport{base: http.DefaultTransport},
 			CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
-		}),
+		}}),
 		tgbot.WithSkipGetMe(),
 	)
 	if err != nil {

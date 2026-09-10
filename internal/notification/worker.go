@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/notification/delivery"
 	notificationstore "github.com/useryege/athena/internal/notification/store"
+	utiltelegram "github.com/useryege/athena/util/telegram"
 )
 
 type WorkerConfig struct {
@@ -91,14 +92,20 @@ func (s *Service) runWorker(ctx context.Context) error {
 }
 
 func (s *Service) sendPermittedNotification(ctx context.Context, candidate delivery.Candidate, request SendRequest, onStarted func(time.Time)) (delivery.Outcome, error) {
+	var finishAuthorization func(bool)
 	permit, err := s.store.Authorize(ctx, candidate, s.senderIncarnation, func() error {
 		if s.senderSession != nil {
 			if err := s.senderSession.Check(ctx); err != nil {
 				return err
 			}
 		}
-		return checkDispatchSlot(ctx)
+		var err error
+		finishAuthorization, err = beginDispatchAuthorization(ctx)
+		return err
 	})
+	if finishAuthorization != nil {
+		finishAuthorization(err == nil)
+	}
 	if err != nil {
 		log.WithError(err).WithField("notification_id", candidate.Ref.ID).Debug("notification send was not authorized")
 		return delivery.Outcome{}, err
@@ -106,7 +113,11 @@ func (s *Service) sendPermittedNotification(ctx context.Context, candidate deliv
 	request.TelegramChatID = permit.ChatID
 	started := make(chan time.Time, 1)
 	result := make(chan delivery.Outcome, 1)
-	sendCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	// The transport starts its HTTP timeout after cancellable local budget admission.
+	sendCtx, cancel := context.WithCancel(ctx)
+	if slot, ok := ctx.Value(dispatchSlotKey{}).(dispatchSlot); ok && slot.budget != nil {
+		sendCtx = utiltelegram.WithSendAdmission(sendCtx, func(ctx context.Context) (func(), error) { return slot.budget.admitStart(ctx, slot.clock) })
+	}
 	defer cancel()
 	go func() {
 		result <- s.sender.Send(sendCtx, request, func(at time.Time) {

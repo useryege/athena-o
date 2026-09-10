@@ -5,6 +5,7 @@ package notification
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/useryege/athena/internal/accountstate/store/migrations"
 	"github.com/useryege/athena/internal/notification/delivery"
@@ -341,5 +342,363 @@ func TestDispatchExpiredSlotAfterAccountGateLeavesNoAttempt(t *testing.T) {
 	}
 	if count != 0 || len(probe.started) != 0 {
 		t.Fatal("expired slot consumed attempt or HTTP")
+	}
+}
+
+type observedDispatchSource struct {
+	WorkSource
+	results chan error
+}
+
+func (s *observedDispatchSource) Dispatch(ctx context.Context, c delivery.Candidate, onStarted func(time.Time)) error {
+	err := s.WorkSource.Dispatch(ctx, c, onStarted)
+	s.results <- err
+	return err
+}
+func TestDispatchRetryAfterInvalidatesHeldValidSlotAndReschedules(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	store := notificationstore.NewSQLStore(db.Pool)
+	owner := uuid.NewString()
+	if _, err := db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision) VALUES($1,123,123,'test',1)`, owner); err != nil {
+		t.Fatal(err)
+	}
+	var id int64
+	if err := db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision) VALUES($1,'key',decode(repeat('ab',32),'hex'),'test','info','body','telegram','pending',123,1) RETURNING id`, owner).Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	tx, err := db.Pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(context.Background())
+	if _, err = tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended('athena:account:' || $1::text,0))`, owner); err != nil {
+		t.Fatal(err)
+	}
+	clock := &manualDispatchClock{now: time.Now()}
+	at := clock.Now()
+	budget := NewBudget(20, time.Second, 20, time.Minute)
+	probe := &concurrentSendProbe{started: make(chan SendRequest, 1), release: make(chan struct{})}
+	close(probe.release)
+	service := NewService(store, probe, nil, nil)
+	session, err := store.AcquireSender(ctx, service.senderIncarnation)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer session.Close()
+	service.senderSession = session
+	source := &observedDispatchSource{WorkSource: service.workSources()[0], results: make(chan error, 4)}
+	finished := make(chan error, 1)
+	go func() { finished <- NewDispatcher(clock, []WorkSource{source}, budget, 12).Run(ctx) }()
+	defer func() { cancel(); <-finished }()
+	for {
+		var waiting int
+		if err = db.Pool.QueryRow(ctx, `SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND wait_event='advisory'`).Scan(&waiting); err != nil {
+			t.Fatal(err)
+		}
+		if waiting > 0 {
+			break
+		}
+		runtime.Gosched()
+	}
+	// Another sender receives 429 while this unpermitted delivery still holds a fresh slot.
+	tracker := &retryBudget{store: store, budget: budget, clock: clock, pending: map[uuid.UUID]time.Time{}, wake: make(chan struct{}, 1)}
+	tracker.track(uuid.New(), 120*time.Second)
+	if err = tx.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case err = <-source.results:
+		if !errors.Is(err, ErrDispatchDeferred) {
+			t.Fatalf("fresh slot bypassed later Retry-After: %v", err)
+		}
+	case <-ctx.Done():
+		t.Fatal("waiting source did not defer")
+	}
+	if !clock.Now().Equal(at) {
+		t.Fatal("test must keep original slot unexpired")
+	}
+	var attempts int
+	if err = db.Pool.QueryRow(ctx, `SELECT count(*) FROM notification_delivery_attempts`).Scan(&attempts); err != nil {
+		t.Fatal(err)
+	}
+	if attempts != 0 || len(probe.started) != 0 {
+		t.Fatalf("cooldown consumed attempt/HTTP: %d/%d", attempts, len(probe.started))
+	}
+	clock.advance(120 * time.Second)
+	select {
+	case req := <-probe.started:
+		if req.TelegramChatID != 123 {
+			t.Fatal(req)
+		}
+	case <-ctx.Done():
+		t.Fatal("delivery did not reschedule after cooldown")
+	}
+	select {
+	case err = <-source.results:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-ctx.Done():
+		t.Fatal("rescheduled delivery did not finish")
+	}
+	var state string
+	if err = db.Pool.QueryRow(ctx, `SELECT status,attempts FROM account_notification_deliveries WHERE id=$1`, id).Scan(&state, &attempts); err != nil {
+		t.Fatal(err)
+	}
+	if state != "sent" || attempts != 1 {
+		t.Fatalf("requeue consumed attempt before permission: %s/%d", state, attempts)
+	}
+}
+
+func TestDispatchCancellationAfterGuardReleasesTightenWriter(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	store := notificationstore.NewSQLStore(db.Pool)
+	owner := uuid.NewString()
+	if _, err := db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision) VALUES($1,123,123,'test',1)`, owner); err != nil {
+		t.Fatal(err)
+	}
+	var id int64
+	if err := db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision) VALUES($1,'key',decode(repeat('ab',32),'hex'),'test','info','body','telegram','pending',123,1) RETURNING id`, owner).Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	// Block the attempt INSERT after the real post-account-gate authorization guard.
+	if _, err := db.Pool.Exec(ctx, `CREATE FUNCTION block_test_attempt() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_advisory_xact_lock(987654321); RETURN NEW; END $$; CREATE TRIGGER block_test_attempt BEFORE INSERT ON notification_delivery_attempts FOR EACH ROW EXECUTE FUNCTION block_test_attempt()`); err != nil {
+		t.Fatal(err)
+	}
+	tx, err := db.Pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(context.Background())
+	if _, err = tx.Exec(ctx, `SELECT pg_advisory_xact_lock(987654321)`); err != nil {
+		t.Fatal(err)
+	}
+	clock := &manualDispatchClock{now: time.Now()}
+	budget := NewBudget(20, time.Second, 20, time.Minute)
+	c := delivery.Candidate{Ref: delivery.WorkRef{Kind: "account", ID: id}, OwnerID: owner, ChatID: 123}
+	reservation, ok := budget.Reserve(c, clock.Now())
+	if !ok {
+		t.Fatal("reserve failed")
+	}
+	defer budget.Release(reservation)
+	probe := &concurrentSendProbe{started: make(chan SendRequest, 1), release: make(chan struct{})}
+	service := NewService(store, probe, nil, nil)
+	dispatchCtx, stop := context.WithCancel(ctx)
+	defer stop()
+	dispatchCtx = context.WithValue(dispatchCtx, dispatchSlotKey{}, dispatchSlot{clock: clock, until: clock.Now().Add(time.Second), budget: budget, reservation: reservation})
+	result := make(chan error, 1)
+	go func() {
+		_, err := service.sendPermittedNotification(dispatchCtx, c, SendRequest{TelegramChatID: 123, Text: "body"}, nil)
+		result <- err
+	}()
+	for {
+		var waiting int
+		if err = db.Pool.QueryRow(ctx, `SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND wait_event='advisory' AND query LIKE '%INSERT INTO notification_delivery_attempts%'`).Scan(&waiting); err != nil {
+			t.Fatal(err)
+		}
+		if waiting > 0 {
+			break
+		}
+		runtime.Gosched()
+	}
+	tightened := make(chan struct{})
+	go func() { budget.Tighten(clock.Now().Add(120 * time.Second)); close(tightened) }()
+	waitBudgetWriter(t, budget)
+	stop()
+	select {
+	case err = <-result:
+		if err == nil {
+			t.Fatal("cancelled attempt insert acquired permit")
+		}
+	case <-ctx.Done():
+		t.Fatal("cancelled authorization did not return")
+	}
+	select {
+	case <-tightened:
+	case <-ctx.Done():
+		t.Fatal("cancelled authorization retained read lock and blocked Tighten")
+	}
+	var count int
+	if err = db.Pool.QueryRow(ctx, `SELECT count(*) FROM notification_delivery_attempts`).Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 || len(probe.started) != 0 {
+		t.Fatal("cancelled post-guard transaction consumed attempt/HTTP")
+	}
+}
+
+// Pauses the real client after permit commit, before its HTTP transport is entered.
+type pausedMessageClient struct {
+	utiltelegram.Client
+	entered chan struct{}
+	resume  chan struct{}
+}
+
+func (c *pausedMessageClient) SendMessage(ctx context.Context, r utiltelegram.SendMessageRequest) (*utiltelegram.SendMessageResponse, error) {
+	close(c.entered)
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-c.resume:
+	}
+	return c.Client.SendMessage(ctx, r)
+}
+
+func TestDispatchCommittedPermitWaitsForLaterRetryAfterAtHTTPEntry(t *testing.T) {
+	for _, cancelWait := range []bool{false, true} {
+		t.Run(fmt.Sprint("cancel=", cancelWait), func(t *testing.T) {
+			db := pgtest.New(t, migrations.FS, migrations.Dir)
+			ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+			defer cancel()
+			store := notificationstore.NewSQLStore(db.Pool)
+			owner := uuid.NewString()
+			if _, err := db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision) VALUES($1,123,123,'test',1)`, owner); err != nil {
+				t.Fatal(err)
+			}
+			var id int64
+			if err := db.Pool.QueryRow(ctx, `INSERT INTO account_notification_deliveries(account_id,idempotency_key,payload_digest,source,severity,body,channel,status,telegram_chat_id,binding_revision) VALUES($1,'key',decode(repeat('ab',32),'hex'),'test','info','body','telegram','pending',123,1) RETURNING id`, owner).Scan(&id); err != nil {
+				t.Fatal(err)
+			}
+			var calls atomic.Int32
+			httpEntered := make(chan struct{})
+			httpRelease := make(chan struct{})
+			defer func() {
+				select {
+				case <-httpRelease:
+				default:
+					close(httpRelease)
+				}
+			}()
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				calls.Add(1)
+				close(httpEntered)
+				select {
+				case <-httpRelease:
+				case <-r.Context().Done():
+				}
+				_, _ = io.Copy(io.Discard, r.Body)
+				_, _ = io.WriteString(w, `{"ok":true,"result":{"message_id":42}}`)
+			}))
+			defer server.Close()
+			raw, err := utiltelegram.NewClient(utiltelegram.Config{BotToken: "test", BaseURL: server.URL})
+			if err != nil {
+				t.Fatal(err)
+			}
+			client := &pausedMessageClient{Client: raw, entered: make(chan struct{}), resume: make(chan struct{})}
+			service := NewService(store, NewTelegramSender(client, nil), nil, nil)
+			clock := &manualDispatchClock{now: time.Now()}
+			budget := NewBudget(20, time.Second, 20, time.Minute)
+			c := delivery.Candidate{Ref: delivery.WorkRef{Kind: "account", ID: id}, OwnerID: owner, ChatID: 123}
+			reservation, ok := budget.Reserve(c, clock.Now())
+			if !ok {
+				t.Fatal("reserve failed")
+			}
+			defer budget.Release(reservation)
+			dispatchCtx, stop := context.WithCancel(ctx)
+			defer stop()
+			dispatchCtx = context.WithValue(dispatchCtx, dispatchSlotKey{}, dispatchSlot{clock: clock, until: clock.Now().Add(time.Second), budget: budget, reservation: reservation})
+			done := make(chan delivery.Outcome, 1)
+			go func() {
+				out, err := service.sendPermittedNotification(dispatchCtx, c, SendRequest{Text: "body"}, func(time.Time) { budget.Start(c, clock.Now()) })
+				if err != nil {
+					t.Error(err)
+				}
+				done <- out
+			}()
+			select {
+			case <-client.entered:
+			case <-ctx.Done():
+				t.Fatal("permit not committed")
+			}
+			assertAttempt := func(wantStarted bool) {
+				t.Helper()
+				var attempts, starts int
+				if err := db.Pool.QueryRow(ctx, `SELECT count(*),count(started_at) FROM notification_delivery_attempts`).Scan(&attempts, &starts); err != nil {
+					t.Fatal(err)
+				}
+				if attempts != 1 || (starts > 0) != wantStarted {
+					t.Fatalf("attempts=%d starts=%d", attempts, starts)
+				}
+			}
+			assertAttempt(false)
+			budget.Tighten(clock.Now().Add(120 * time.Second))
+			close(client.resume)
+			for {
+				clock.mu.Lock()
+				waiting := len(clock.waiters) > 0
+				clock.mu.Unlock()
+				if waiting {
+					break
+				}
+				select {
+				case out := <-done:
+					t.Fatalf("committed permit bypassed later cooldown: %#v HTTP=%d", out, calls.Load())
+				case <-ctx.Done():
+					t.Fatal("pre-start gate did not wait")
+				default:
+					runtime.Gosched()
+				}
+			}
+			if calls.Load() != 0 {
+				t.Fatal("HTTP entered during cooldown")
+			}
+			assertAttempt(false)
+			// A fresh account gate can be acquired while this committed attempt waits locally.
+			tx, err := db.Pool.Begin(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var locked bool
+			if err = tx.QueryRow(ctx, `SELECT pg_try_advisory_xact_lock(hashtextextended('athena:account:' || $1::text,0))`, owner).Scan(&locked); err != nil {
+				t.Fatal(err)
+			}
+			_ = tx.Rollback(ctx)
+			if !locked {
+				t.Fatal("budget wait retained account gate")
+			}
+			if cancelWait {
+				stop()
+			} else {
+				clock.advance(120 * time.Second)
+				select {
+				case <-httpEntered:
+				case <-ctx.Done():
+					t.Fatal("cooled attempt did not enter HTTP")
+				}
+				tightened := make(chan struct{})
+				go func() { budget.Tighten(clock.Now().Add(120 * time.Second)); close(tightened) }()
+				select {
+				case <-tightened:
+				case <-ctx.Done():
+					t.Fatal("Tighten waited for HTTP receipt")
+				}
+				close(httpRelease)
+			}
+			select {
+			case out := <-done:
+				if cancelWait {
+					if out.Kind != "failed" || out.Code != "not_started" || calls.Load() != 0 {
+						t.Fatalf("cancelled wait: %#v HTTP=%d", out, calls.Load())
+					}
+				} else if out.Kind != "sent" || calls.Load() != 1 {
+					t.Fatalf("resumed same permit: %#v HTTP=%d", out, calls.Load())
+				}
+			case <-ctx.Done():
+				t.Fatal("pre-start wait did not finish")
+			}
+			assertAttempt(!cancelWait)
+			// Neither successful nor cancelled admission may retain a read lock and block shutdown/results.
+			tightened := make(chan struct{})
+			go func() { budget.Tighten(clock.Now().Add(240 * time.Second)); close(tightened) }()
+			select {
+			case <-tightened:
+			case <-ctx.Done():
+				t.Fatal("admission leaked lock")
+			}
+		})
 	}
 }

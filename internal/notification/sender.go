@@ -57,7 +57,7 @@ func (s *TelegramSender) Send(ctx context.Context, request SendRequest, started 
 		return delivery.Outcome{Kind: "failed", Code: "invalid_recipient"}
 	}
 	chatID := strconv.FormatInt(request.TelegramChatID, 10)
-	resp, err := s.client.SendMessage(utiltelegram.WithSendStarted(ctx, started), utiltelegram.SendMessageRequest{
+	resp, err := s.client.SendMessage(utiltelegram.WithSendStarted(utiltelegram.WithSendTimeout(ctx, 5*time.Second), started), utiltelegram.SendMessageRequest{
 		ChatID: chatID, Text: request.Text, MessageThreadID: request.MessageThreadID, ParseMode: models.ParseModeHTML,
 	})
 	if err != nil {

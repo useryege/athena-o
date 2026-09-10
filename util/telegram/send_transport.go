@@ -26,19 +26,66 @@ func (e *SendError) Error() string {
 }
 func (e *SendError) Unwrap() error { return e.Err }
 
+type sendAdmissionKey struct{}
+type sendTimeoutKey struct{}
 type sendStartedKey struct{}
 type sendObservationKey struct{}
 type sendObservation struct {
-	once     sync.Once
-	started  bool
-	callback func(time.Time)
-	response *telegramAPIResponse
+	once             sync.Once
+	started          bool
+	callback         func(time.Time)
+	releaseAdmission func()
+	response         *telegramAPIResponse
 }
 
 // WithSendStarted attaches a constant-time callback invoked at actual RoundTrip entry.
 // Callers should hand off the timestamp through a buffered channel, never wait for I/O here.
 func WithSendStarted(ctx context.Context, started func(time.Time)) context.Context {
 	return context.WithValue(ctx, sendStartedKey{}, started)
+}
+
+// WithSendAdmission attaches a cancellable pre-start gate. Waiting must hold no
+// application gate. Its release callback is invoked immediately after the actual
+// RoundTrip started handshake, or on any failure before that handshake.
+func WithSendAdmission(ctx context.Context, admit func(context.Context) (func(), error)) context.Context {
+	return context.WithValue(ctx, sendAdmissionKey{}, admit)
+}
+
+// WithSendTimeout limits HTTP execution, excluding local pre-start admission.
+func WithSendTimeout(ctx context.Context, timeout time.Duration) context.Context {
+	return context.WithValue(ctx, sendTimeoutKey{}, timeout)
+}
+
+// SDK request construction is complete here; admission precedes http.Client's
+// timeout. The read lock is handed to sendTransport so Tighten cannot overtake
+// admission between Do and the actual started event. It never spans HTTP I/O.
+type sendHTTPClient struct{ client *http.Client }
+
+func (c *sendHTTPClient) Do(req *http.Request) (*http.Response, error) {
+	observation, _ := req.Context().Value(sendObservationKey{}).(*sendObservation)
+	if observation == nil {
+		return c.client.Do(req)
+	}
+	if admit, ok := req.Context().Value(sendAdmissionKey{}).(func(context.Context) (func(), error)); ok {
+		release, err := admit(req.Context())
+		if err != nil {
+			if req.Body != nil {
+				_ = req.Body.Close()
+			}
+			return nil, err
+		}
+		if release != nil {
+			var once sync.Once
+			observation.releaseAdmission = func() { once.Do(release) }
+			defer observation.releaseAdmission()
+		}
+	}
+	if timeout, ok := req.Context().Value(sendTimeoutKey{}).(time.Duration); ok && timeout > 0 {
+		ctx, cancel := context.WithTimeout(req.Context(), timeout)
+		defer cancel() // sendTransport buffers the complete response before returning.
+		req = req.WithContext(ctx)
+	}
+	return c.client.Do(req)
 }
 
 type sendTransport struct{ base http.RoundTripper }
@@ -54,6 +101,9 @@ func (t *sendTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 			observation.callback(time.Now().UTC())
 		}
 	})
+	if observation.releaseAdmission != nil {
+		observation.releaseAdmission()
+	}
 	resp, err := t.base.RoundTrip(req)
 	if err != nil {
 		return resp, err

@@ -56,7 +56,7 @@ flowchart LR
 7. 消费记录、绑定/版本及尝试变化、`telegram_binding_replies` 回复和持久 offset 在同一个 `pgx.Tx` 提交。失败全回滚；提交确认丢失只重放这个数据库事务，幂等记录防止重复增 revision 或回复。成功后重启从持久 offset 继续；空成功轮询仍更新 `last_poll_at`。Poller 不调用 `SendMessage`。
 8. `my_chat_member` 的离开/封禁更新将对应绑定标为 unreachable，取消 pending 并撤销 sending 的后续尝试资格。之后的 `member` 更新恢复同一绑定可达性，但不复活已取消投递或资格墓碑。
 9. `SendAccountNotification` 规范化账户 UUID、内容、来源、严重程度和幂等键，计算 payload digest，在账户 gate 内入队。相同 `(account_id, source, idempotency_key)` 返回原投递；不同 payload 冲突。绑定不存在或不可达时不插入投递；只有 connected 绑定产生 pending 并返回 `QUEUED` 与 ID。
-10. 账户、系统和 reply 三个 `WorkSource` 统一进入 `Dispatcher`；候选读取不使用会被单 owner 占满的全局前 N 条，未来 `NotBefore` 仍可见。按 owner 公平轮转并优先即将到期任务，默认跨 chat 并发 12，同一物理 chat 只有一个执行中尝试。共享 Bot 20 次/秒、私聊至少一秒、群组 20 次/分钟；以真实 HTTP 起点回调推进运行内 monotonic 时钟窗口，持久 UTC started 独立保存。先预留容量再等待账户 gate，取得 gate 后检查一秒有效槽，过期则不生成 attempt 并重新调度。`Authorize` 短事务再次核验私聊身份、chat/revision、connected、pending、永久资格墓碑、重试时间与五次上限，插入 attempt 并将投递改为 sending，提交后才调用 Telegram。
+10. 账户、系统和 reply 三个 `WorkSource` 统一进入 `Dispatcher`；候选读取不使用会被单 owner 占满的全局前 N 条，未来 `NotBefore` 仍可见。按 owner 公平轮转并优先即将到期任务，默认跨 chat 并发 12，同一物理 chat 只有一个执行中尝试。共享 Bot 20 次/秒、私聊至少一秒、群组 20 次/分钟；以真实 HTTP 起点回调推进运行内 monotonic 时钟窗口，持久 UTC started 独立保存。先预留容量再等待账户 gate，取得 gate 后检查一秒有效槽及共享预算资格；过期或后来收到 Retry-After 收紧而失效的预留均不生成 attempt，释放后重新调度。`Authorize` 短事务再次核验私聊身份、chat/revision、connected、pending、永久资格墓碑、重试时间与五次上限，插入 attempt 并将投递改为 sending，提交后才调用 Telegram。
 11. HTTP `RoundTrip` 入口通过容量为一的 channel 握手记录实际 started 时间；回调不等待数据库或 HTTP 响应。结果通过独立事务按投递 ID、attempt UUID、sending 状态 CAS 写入。
 
 ## 状态与数据
@@ -79,7 +79,7 @@ flowchart LR
 | `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | 内部共享 Bearer，至少 32 字节且不含空白/控制字符。 |
 | `ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN` | 账户/系统共享 Bot 的必需 token。 |
 | `ATHENA_NOTIFICATION_TELEGRAM_API_URL` | Telegram API 地址，默认官方地址。 |
-| `ATHENA_NOTIFICATION_TELEGRAM_TIMEOUT_SECONDS` | 非轮询适配器 HTTP 超时；worker 发送另有五秒 context 截止。长轮询使用独立客户端和超时。 |
+| `ATHENA_NOTIFICATION_TELEGRAM_TIMEOUT_SECONDS` | 非轮询适配器 HTTP 超时；worker 发送在可取消的本地预算准入完成后开始五秒 HTTP context 截止。长轮询使用独立客户端和超时。 |
 | `ATHENA_NOTIFICATION_TELEGRAM_BOT_NAME`、`..._SHORT_DESCRIPTION`、`..._DESCRIPTION` | 启动同步的 Bot 资料。 |
 | `ATHENA_NOTIFICATION_WORKER_CONCURRENCY` / `--worker-concurrency` | 跨 chat 并发，默认 12；CLI 读取环境范围 1–12。Bot/私聊/群组窗口及五次上限保持统一。 |
 
@@ -130,3 +130,11 @@ athena-notification --recover-stopped-sender=<incarnation-UUID>
 - 幂等、无收件人结果、公平领取、持久许可、HTTP 起点和结果 CAS 同步维护。
 - 会员页面三秒可见轮询、焦点行为、本地 QR 与响应式控件匹配 API。
 - 源码链接和[设计索引](../README.md)保持正确。
+
+### 动态限流与实际起点
+
+`Tighten` 与许可 guard/提交由独立读写锁排序：收紧先完成则未许可预留失效；guard 已取得读锁则提交或回滚后才释放，收紧随后处理。该锁不跨账户 gate 等待。已提交但未开始 HTTP 的许可仍受后来 Retry-After 约束，保留同一 attempt 等待，不能以撤权后的已许可例外豁免动态限流。
+
+`WithSendAdmission` 将可取消的预算准入传至 Telegram HTTP 客户端。等待时不持账户 gate 或预算锁；最终准入读锁仅保留至 transport 实际 started 握手，立即释放后才执行网络请求。`Tighten` 写锁与这一真实起点排序，已进入 HTTP 的尝试保留原请求及结果。Started 回调只做内存记账和有界通道交接，不等待预算或写库。准入取消返回 not_started，持久许可仍只消耗原一次 attempt；事务取消、HTTP 前失败及正常起点均清理读锁。
+
+五秒 HTTP 超时在准入后起算，本地冷却等待不算外部 Telegram 耗时；创建、授权、真实开始和结果时间保留总体延迟。后续摘要消费者在预算等待时须释放短 gate，恢复同一冻结批次及许可，重入 gate 后完成最后准入与 started 补记；该组合由摘要源接入任务实现。
