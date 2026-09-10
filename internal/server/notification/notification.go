@@ -93,6 +93,8 @@ func (s *Server) GetNotificationRuntimeStatus(ctx context.Context, _ *notificati
 		SystemFailedCount: response.GetSystemFailedCount(), AccountPendingCount: response.GetAccountPendingCount(),
 		AccountRetryCount: response.GetAccountRetryCount(), AccountFailedCount: response.GetAccountFailedCount(),
 		UnreachableBindingCount: response.GetUnreachableBindingCount(),
+		SystemSendingCount:      response.GetSystemSendingCount(), SystemUnknownCount: response.GetSystemUnknownCount(),
+		AccountSendingCount: response.GetAccountSendingCount(), AccountUnknownCount: response.GetAccountUnknownCount(),
 	}, nil
 }
 
@@ -206,6 +208,10 @@ func deliveryStatusString(value notificationapiclient.NotificationDeliveryStatus
 		return "sent"
 	case notificationapiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_FAILED:
 		return "failed"
+	case notificationapiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_SENDING:
+		return "sending"
+	case notificationapiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_UNKNOWN:
+		return "unknown"
 	case notificationapiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_CANCELLED:
 		return "cancelled"
 	default:

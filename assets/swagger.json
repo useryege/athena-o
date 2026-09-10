@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "v1.0.0-1110-ga2cce704-dirty"
+    "version": "v1.0.0-1165-gc97660ea-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -3741,6 +3741,14 @@
           "type": "integer",
           "format": "int64"
         },
+        "account_sending_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "account_unknown_count": {
+          "type": "integer",
+          "format": "int64"
+        },
         "bot_available": {
           "type": "boolean"
         },
@@ -3775,6 +3783,14 @@
           "format": "int64"
         },
         "system_retry_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "system_sending_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "system_unknown_count": {
           "type": "integer",
           "format": "int64"
         },
@@ -5867,6 +5883,9 @@
     "v1alpha1SystemNotificationDeliveryDetail": {
       "type": "object",
       "properties": {
+        "authorized_at": {
+          "type": "string"
+        },
         "body": {
           "type": "string"
         },
@@ -5889,6 +5908,9 @@
         "provider_message_id": {
           "type": "string"
         },
+        "result_at": {
+          "type": "string"
+        },
         "sent_at": {
           "type": "string"
         },
@@ -5896,6 +5918,9 @@
           "type": "string"
         },
         "source": {
+          "type": "string"
+        },
+        "started_at": {
           "type": "string"
         },
         "status": {
@@ -5915,6 +5940,9 @@
     "v1alpha1SystemNotificationDeliveryItem": {
       "type": "object",
       "properties": {
+        "authorized_at": {
+          "type": "string"
+        },
         "body": {
           "type": "string"
         },
@@ -5937,6 +5965,9 @@
         "provider_message_id": {
           "type": "string"
         },
+        "result_at": {
+          "type": "string"
+        },
         "sent_at": {
           "type": "string"
         },
@@ -5944,6 +5975,9 @@
           "type": "string"
         },
         "source": {
+          "type": "string"
+        },
+        "started_at": {
           "type": "string"
         },
         "status": {

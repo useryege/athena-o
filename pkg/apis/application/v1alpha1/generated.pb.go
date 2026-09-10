@@ -1585,6 +1585,25 @@ func (m *SystemNotificationDeliveryDetail) MarshalToSizedBuffer(dAtA []byte) (in
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.ResultAt)
+	copy(dAtA[i:], m.ResultAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.ResultAt)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x8a
+	i -= len(m.StartedAt)
+	copy(dAtA[i:], m.StartedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.StartedAt)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x82
+	i -= len(m.AuthorizedAt)
+	copy(dAtA[i:], m.AuthorizedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.AuthorizedAt)))
+	i--
+	dAtA[i] = 0x7a
 	i -= len(m.TelegramChat)
 	copy(dAtA[i:], m.TelegramChat)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TelegramChat)))
@@ -1676,6 +1695,25 @@ func (m *SystemNotificationDeliveryItem) MarshalToSizedBuffer(dAtA []byte) (int,
 	_ = i
 	var l int
 	_ = l
+	i -= len(m.ResultAt)
+	copy(dAtA[i:], m.ResultAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.ResultAt)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x8a
+	i -= len(m.StartedAt)
+	copy(dAtA[i:], m.StartedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.StartedAt)))
+	i--
+	dAtA[i] = 0x1
+	i--
+	dAtA[i] = 0x82
+	i -= len(m.AuthorizedAt)
+	copy(dAtA[i:], m.AuthorizedAt)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.AuthorizedAt)))
+	i--
+	dAtA[i] = 0x7a
 	i -= len(m.TelegramChat)
 	copy(dAtA[i:], m.TelegramChat)
 	i = encodeVarintGenerated(dAtA, i, uint64(len(m.TelegramChat)))
@@ -5431,6 +5469,12 @@ func (m *SystemNotificationDeliveryDetail) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.TelegramChat)
 	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.AuthorizedAt)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.StartedAt)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.ResultAt)
+	n += 2 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -5467,6 +5511,12 @@ func (m *SystemNotificationDeliveryItem) Size() (n int) {
 	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.TelegramChat)
 	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.AuthorizedAt)
+	n += 1 + l + sovGenerated(uint64(l))
+	l = len(m.StartedAt)
+	n += 2 + l + sovGenerated(uint64(l))
+	l = len(m.ResultAt)
+	n += 2 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -6995,6 +7045,9 @@ func (this *SystemNotificationDeliveryDetail) String() string {
 		`SentAt:` + fmt.Sprintf("%v", this.SentAt) + `,`,
 		`TopicLabel:` + fmt.Sprintf("%v", this.TopicLabel) + `,`,
 		`TelegramChat:` + fmt.Sprintf("%v", this.TelegramChat) + `,`,
+		`AuthorizedAt:` + fmt.Sprintf("%v", this.AuthorizedAt) + `,`,
+		`StartedAt:` + fmt.Sprintf("%v", this.StartedAt) + `,`,
+		`ResultAt:` + fmt.Sprintf("%v", this.ResultAt) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -7018,6 +7071,9 @@ func (this *SystemNotificationDeliveryItem) String() string {
 		`SentAt:` + fmt.Sprintf("%v", this.SentAt) + `,`,
 		`TopicLabel:` + fmt.Sprintf("%v", this.TopicLabel) + `,`,
 		`TelegramChat:` + fmt.Sprintf("%v", this.TelegramChat) + `,`,
+		`AuthorizedAt:` + fmt.Sprintf("%v", this.AuthorizedAt) + `,`,
+		`StartedAt:` + fmt.Sprintf("%v", this.StartedAt) + `,`,
+		`ResultAt:` + fmt.Sprintf("%v", this.ResultAt) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -14287,6 +14343,102 @@ func (m *SystemNotificationDeliveryDetail) Unmarshal(dAtA []byte) error {
 			}
 			m.TelegramChat = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AuthorizedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AuthorizedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StartedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StartedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 17:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ResultAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ResultAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -14771,6 +14923,102 @@ func (m *SystemNotificationDeliveryItem) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.TelegramChat = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AuthorizedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AuthorizedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StartedAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StartedAt = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 17:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ResultAt", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ResultAt = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

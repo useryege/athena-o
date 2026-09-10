@@ -450,6 +450,12 @@ message SystemNotificationDeliveryDetail {
   optional string topic_label = 13;
 
   optional string telegram_chat = 14;
+
+  optional string authorized_at = 15;
+
+  optional string started_at = 16;
+
+  optional string result_at = 17;
 }
 
 message SystemNotificationDeliveryItem {
@@ -480,6 +486,12 @@ message SystemNotificationDeliveryItem {
   optional string topic_label = 13;
 
   optional string telegram_chat = 14;
+
+  optional string authorized_at = 15;
+
+  optional string started_at = 16;
+
+  optional string result_at = 17;
 }
 
 message TokenChain {

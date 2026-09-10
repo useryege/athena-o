@@ -23,6 +23,8 @@ enum NotificationDeliveryStatus {
   NOTIFICATION_DELIVERY_STATUS_SENT = 2;
   NOTIFICATION_DELIVERY_STATUS_FAILED = 3;
   NOTIFICATION_DELIVERY_STATUS_CANCELLED = 4;
+  NOTIFICATION_DELIVERY_STATUS_SENDING = 5;
+  NOTIFICATION_DELIVERY_STATUS_UNKNOWN = 6;
 }
 
 // TelegramChat selects the configured system Telegram chat.
@@ -50,6 +52,10 @@ message NotificationRuntimeStatus {
   int64 account_retry_count = 13;
   int64 account_failed_count = 14;
   int64 unreachable_binding_count = 15;
+  int64 system_sending_count = 16;
+  int64 system_unknown_count = 17;
+  int64 account_sending_count = 18;
+  int64 account_unknown_count = 19;
 }
 
 message SendSystemNotificationRequest {

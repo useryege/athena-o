@@ -1,6 +1,6 @@
 module.exports = {
   preset: 'ts-jest',
-  testEnvironment: 'jsdom',
+  testEnvironment: '<rootDir>/jest-environment.cjs',
   reporters: ['default', 'jest-junit'],
   collectCoverage: true,
   testMatch: [
@@ -11,6 +11,7 @@ module.exports = {
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
       isolatedModules: true,
+      tsconfig: {moduleResolution: 'node'},
     }]
   },
   globals: {

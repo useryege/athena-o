@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	tgbot "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
+	"github.com/useryege/athena/internal/notification/delivery"
 	utiltelegram "github.com/useryege/athena/util/telegram"
 )
 
 type Sender interface {
 	CreateSystemTopic(ctx context.Context, telegramChat string, label string) (int, error)
-	Send(ctx context.Context, request SendRequest) (string, error)
+	Send(ctx context.Context, request SendRequest, started func(time.Time)) delivery.Outcome
 }
 
 type SendRequest struct {
@@ -23,22 +23,6 @@ type SendRequest struct {
 	TelegramChatID     int64
 	MessageThreadID    int
 	Text               string
-}
-
-type RateLimitError struct {
-	RetryAfter time.Duration
-	Err        error
-}
-
-func (e *RateLimitError) Error() string {
-	if e.Err == nil {
-		return fmt.Sprintf("telegram rate limited: retry_after %s", e.RetryAfter)
-	}
-	return e.Err.Error()
-}
-
-func (e *RateLimitError) Unwrap() error {
-	return e.Err
 }
 
 type TelegramSender struct {
@@ -65,9 +49,9 @@ func (s *TelegramSender) CreateSystemTopic(ctx context.Context, telegramChat str
 	return topic.MessageThreadID, nil
 }
 
-func (s *TelegramSender) Send(ctx context.Context, request SendRequest) (string, error) {
+func (s *TelegramSender) Send(ctx context.Context, request SendRequest, started func(time.Time)) delivery.Outcome {
 	if s.client == nil {
-		return "", errors.New("telegram client is required")
+		return delivery.Outcome{Kind: "failed", Code: "client_unavailable"}
 	}
 	chatID := ""
 	if request.TelegramChatID > 0 {
@@ -75,27 +59,24 @@ func (s *TelegramSender) Send(ctx context.Context, request SendRequest) (string,
 	} else {
 		var err error
 		chatID, err = s.systemChatID(request.SystemTelegramChat)
-		if err != nil {
-			return "", err
-		}
-		if request.MessageThreadID <= 0 {
-			return "", errors.New("system telegram message thread id is required")
+		if err != nil || request.MessageThreadID <= 0 {
+			return delivery.Outcome{Kind: "failed", Code: "invalid_recipient"}
 		}
 	}
-	resp, err := s.client.SendMessage(ctx, utiltelegram.SendMessageRequest{
-		ChatID:          chatID,
-		Text:            request.Text,
-		MessageThreadID: request.MessageThreadID,
-		ParseMode:       models.ParseModeHTML,
+	resp, err := s.client.SendMessage(utiltelegram.WithSendStarted(ctx, started), utiltelegram.SendMessageRequest{
+		ChatID: chatID, Text: request.Text, MessageThreadID: request.MessageThreadID, ParseMode: models.ParseModeHTML,
 	})
 	if err != nil {
-		var rateLimitErr *tgbot.TooManyRequestsError
-		if errors.As(err, &rateLimitErr) && rateLimitErr.RetryAfter > 0 {
-			return "", &RateLimitError{RetryAfter: time.Duration(rateLimitErr.RetryAfter) * time.Second, Err: err}
+		var sendErr *utiltelegram.SendError
+		if errors.As(err, &sendErr) {
+			return delivery.Outcome{Kind: sendErr.Kind, Code: sendErr.Code, RetryAfter: sendErr.RetryAfter}
 		}
-		return "", err
+		return delivery.Outcome{Kind: "unknown", Code: "unclassified_send_error"}
 	}
-	return strconv.Itoa(resp.MessageID), nil
+	if resp == nil || resp.MessageID <= 0 {
+		return delivery.Outcome{Kind: "unknown", Code: "invalid_receipt"}
+	}
+	return delivery.Outcome{Kind: "sent", MessageID: strconv.Itoa(resp.MessageID)}
 }
 
 func (s *TelegramSender) systemChatID(telegramChat string) (string, error) {
@@ -120,23 +101,4 @@ func copySystemChatIDs(chatIDs map[string]string) map[string]string {
 		}
 	}
 	return out
-}
-
-func RetryAfterFromError(err error) (time.Duration, bool) {
-	var rateLimitErr *RateLimitError
-	if errors.As(err, &rateLimitErr) && rateLimitErr.RetryAfter > 0 {
-		return rateLimitErr.RetryAfter, true
-	}
-	return 0, false
-}
-
-func IsTelegramRecipientUnreachable(err error) bool {
-	if errors.Is(err, utiltelegram.ErrRecipientUnreachable) ||
-		errors.Is(err, tgbot.ErrorForbidden) || errors.Is(err, tgbot.ErrorNotFound) {
-		return true
-	}
-	message := strings.ToLower(err.Error())
-	return strings.Contains(message, "chat not found") ||
-		strings.Contains(message, "bot was blocked by the user") ||
-		strings.Contains(message, "user is deactivated")
 }

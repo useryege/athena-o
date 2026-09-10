@@ -1,225 +1,116 @@
-# Account Telegram Notifications
+# 账户 Telegram 通知
 
-> 设计状态：已实现
+> 设计状态：已实现；发送恢复与新调度器的后续范围见文末。
 
-## Scope
+## 范围
 
-Account Telegram Notifications owns the ordinary-account binding lifecycle and
-durable, account-targeted Telegram delivery inside the `athena-notification`
-process. It covers browser binding attempts, Bot update consumption, one-to-one
-Athena-account/Telegram-private-chat identity, binding revisions, account
-delivery idempotency, and unreachable-recipient recovery.
+账户 Telegram 通知在 `athena-notification` 进程中负责普通账户绑定与持久私聊投递，包括浏览器绑定尝试、Bot 更新消费、账户与 Telegram 私聊的一对一关系、绑定 revision、投递幂等及不可达收件人恢复。
 
-Business services decide when an account should be notified and call the
-internal account contract. This capability does not subscribe to business
-events, expose account delivery history or a personal test-send operation, or
-own administrator system-notification topics and records. System operations are
-documented in [System Notification Operations](system-notification-operations.md).
+业务服务决定何时通知账户，并调用内部账户契约。本能力不订阅业务事件，不公开账户投递历史或个人测试发送接口，也不管理管理员系统通知的 Topic 和记录；后者见[系统通知运营](system-notification-operations.md)。
 
-## Source Locations
+## 源码入口
 
-| Concern | Source | Key symbols |
+| 职责 | 源码 | 关键符号 |
 | --- | --- | --- |
-| Internal account and shared runtime contracts | [internal/notification/notification.proto](../../../internal/notification/notification.proto) | `AccountNotificationService`, `NotificationRuntimeService`, `SendAccountNotification` |
-| Public member facade | [internal/server/notification/notification.proto](../../../internal/server/notification/notification.proto), [internal/server/notification/notification.go](../../../internal/server/notification/notification.go) | member binding HTTP routes, `authenticatedAccountID`, `publicTelegramBinding` |
-| Public authorization | [internal/server/authz.go](../../../internal/server/authz.go) | `ordinaryMemberInteractiveGRPCMethods`, `authorizeOrdinaryInteractiveAccount` |
-| Binding and enqueue application logic | [internal/notification/service.go](../../../internal/notification/service.go) | `GetTelegramBinding`, `CreateTelegramBindingAttempt`, `DeleteTelegramBinding`, `SendAccountNotification` |
-| Telegram update consumer | [internal/notification/poller.go](../../../internal/notification/poller.go) | `TelegramPoller`, `handleMessage`, `handleMyChatMember` |
-| Fair delivery worker and shared sender | [internal/notification/worker.go](../../../internal/notification/worker.go), [internal/notification/sender.go](../../../internal/notification/sender.go) | `claimFairNotificationBatch`, `processClaimedAccountNotification`, `TelegramSender` |
-| Telegram provider adapter | [util/telegram/telegram.go](../../../util/telegram/telegram.go) | `Client`, `PollUpdates`, `GetWebhookInfo`, dynamic `SendMessageRequest.ChatID` |
-| Durable schema and queries | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql), [internal/notification/store/queries/telegram_bindings.sql](../../../internal/notification/store/queries/telegram_bindings.sql), [internal/notification/store/queries/account_notifications.sql](../../../internal/notification/store/queries/account_notifications.sql) | binding, attempt, offset, version, and account-delivery tables |
-| Transactional store facade | [internal/notification/store/telegram_bindings.go](../../../internal/notification/store/telegram_bindings.go), [internal/notification/store/account_notifications.go](../../../internal/notification/store/account_notifications.go) | `CompleteTelegramBindingAttempt`, `EnqueueAccountNotification`, `SendAccountNotificationWithBindingLock` |
-| Process wiring and internal authentication | [cmd/athena-notification/commands/athena_notification.go](../../../cmd/athena-notification/commands/athena_notification.go), [internal/notification/server.go](../../../internal/notification/server.go), [internal/notification/apiclient/internal_auth.go](../../../internal/notification/apiclient/internal_auth.go) | one Telegram client, `InternalAuthTokenEnv`, gRPC interceptors |
-| Member UI | [ui/src/app/member/pages/notifications.tsx](../../../ui/src/app/member/pages/notifications.tsx), [ui/src/app/member/notification-service.ts](../../../ui/src/app/member/notification-service.ts), [ui/src/app/member/notification-storage.ts](../../../ui/src/app/member/notification-storage.ts) | `NotificationsPage`, `MemberNotificationService`, one-tab binding instructions |
+| 内部账户与共享运行契约 | [internal/notification/notification.proto](../../../internal/notification/notification.proto) | `AccountNotificationService`, `NotificationRuntimeService`, `SendAccountNotification` |
+| 公开会员入口 | [internal/server/notification/notification.proto](../../../internal/server/notification/notification.proto), [internal/server/notification/notification.go](../../../internal/server/notification/notification.go) | 会员绑定 HTTP 路由, `authenticatedAccountID`, `publicTelegramBinding` |
+| 公开鉴权 | [internal/server/authz.go](../../../internal/server/authz.go) | `ordinaryMemberInteractiveGRPCMethods`, `authorizeOrdinaryInteractiveAccount` |
+| 绑定与入队逻辑 | [internal/notification/service.go](../../../internal/notification/service.go) | `GetTelegramBinding`, `CreateTelegramBindingAttempt`, `DeleteTelegramBinding`, `SendAccountNotification` |
+| Telegram 更新消费 | [internal/notification/poller.go](../../../internal/notification/poller.go) | `TelegramPoller`, `handleMessage`, `handleMyChatMember` |
+| 公平投递与共享发送器 | [internal/notification/worker.go](../../../internal/notification/worker.go), [internal/notification/sender.go](../../../internal/notification/sender.go) | `claimFairNotificationBatch`, `processClaimedAccountNotification`, `TelegramSender` |
+| Telegram 适配器 | [util/telegram/telegram.go](../../../util/telegram/telegram.go) | `Client`, `PollUpdates`, `GetWebhookInfo`, dynamic `SendMessageRequest.ChatID` |
+| 持久模型与查询 | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql), [internal/notification/store/queries/telegram_bindings.sql](../../../internal/notification/store/queries/telegram_bindings.sql), [internal/notification/store/queries/account_notifications.sql](../../../internal/notification/store/queries/account_notifications.sql) | 绑定、尝试、消费位置、版本及账户投递表 |
+| 事务存储入口 | [internal/notification/store/telegram_bindings.go](../../../internal/notification/store/telegram_bindings.go), [internal/notification/store/account_notifications.go](../../../internal/notification/store/account_notifications.go) | `CompleteTelegramBindingAttempt`, `EnqueueAccountNotification`, `Authorize`、`RecordStarted`、`RecordOutcome` |
+| 进程装配与内部鉴权 | [cmd/athena-notification/commands/athena_notification.go](../../../cmd/athena-notification/commands/athena_notification.go), [internal/notification/server.go](../../../internal/notification/server.go), [internal/notification/apiclient/internal_auth.go](../../../internal/notification/apiclient/internal_auth.go) | 单一 Telegram 客户端, `InternalAuthTokenEnv`, gRPC 拦截器 |
+| 会员界面 | [ui/src/app/member/pages/notifications.tsx](../../../ui/src/app/member/pages/notifications.tsx), [ui/src/app/member/notification-service.ts](../../../ui/src/app/member/notification-service.ts), [ui/src/app/member/notification-storage.ts](../../../ui/src/app/member/notification-storage.ts) | `NotificationsPage`, `MemberNotificationService`, 单标签页绑定指引 |
+| 持久发送许可及结果 | [attempts.go](../../../internal/notification/store/attempts.go)、[delivery/types.go](../../../internal/notification/delivery/types.go)、[delivery_attempts.sql](../../../internal/notification/store/queries/delivery_attempts.sql) | `Permit`、`Outcome`、`Authorize`、`RecordStarted`、`RecordOutcome` |
+| HTTP 调用证据 | [send_transport.go](../../../util/telegram/send_transport.go) | `WithSendStarted`、`SendError`、`sendTransport` |
 
-## Architecture
+## 架构与权限
 
-The member browser calls only the public binding facade. The API Server obtains
-the account UUID from the authenticated member context and constructs the
-internal request; public messages contain no target account field. The internal
-account service and runtime service share one PostgreSQL store, one Telegram Bot
-client, one long poller, and the same outbound sender as the system domain.
+会员浏览器只调用公开绑定入口。API Server 从已认证会员上下文取得账户 UUID，构造内部请求；公开请求不含目标账户字段。内部账户服务与运行服务共用 PostgreSQL 存储、Telegram Bot、长轮询器及系统通知发送器。
 
 ```mermaid
 flowchart LR
-    U[Member browser] -->|interactive member session| A[API Server binding facade]
-    A -->|account UUID + internal Bearer| N[AccountNotificationService]
-    T[Telegram private chat] --> P[Single long poller]
+    U[会员浏览器] -->|交互会员会话| A[API Server 绑定入口]
+    A -->|账户 UUID 与内部 Bearer| N[AccountNotificationService]
+    T[Telegram 私聊] --> P[单一长轮询器]
     P --> N
-    N --> D[(notification PostgreSQL)]
-    B[Trusted business service] -->|account UUID + idempotency key| N
-    D --> W[Fair shared worker]
-    W --> G[Shared Telegram sender]
+    N --> D[(Athena PostgreSQL)]
+    B[可信业务服务] -->|账户 UUID 与幂等键| N
+    D --> W[公平共享 worker]
+    W --> G[持久许可与共享发送器]
     G --> T
 ```
 
-The public authorization boundary admits Pending and active ordinary accounts
-only when the credential is an interactive member login. Administrator sessions
-and API Keys are rejected. All non-health internal notification RPCs require the
-same validated Bearer credential; standard gRPC health remains unauthenticated.
+公开鉴权只允许使用交互会员登录凭据的 Pending 或活跃普通账户，拒绝管理员会话与 API Key。除标准 gRPC health 外，全部内部通知 RPC 要求同一经过校验的 Bearer；health 无需认证。
 
-## Runtime Flow
+## 运行流程
 
-1. `athena-notification` creates one Telegram client from the Bot token, maps
-   the configured `test` and `prod` system chat IDs, validates the internal
-   Bearer, synchronizes the Bot profile, verifies that no webhook is configured,
-   and loads the durable `next_update_id` before starting its poller and worker.
-2. `GET /api/v1/notification-bindings/telegram` injects the authenticated
-   account UUID and returns the current safe binding projection, current attempt,
-   and Bot username/availability. Telegram numeric user and private-chat IDs are
-   never returned to the browser.
-3. Creating an attempt generates 32 cryptographically random bytes, encodes a
-   43-character unpadded Base64URL token, persists only its SHA-256 digest, and
-   replaces the account's prior attempt with a ten-minute pending attempt. The
-   response returns `https://t.me/<bot>?start=<token>` and `/start <token>` once.
-4. The member page stores the attempt ID, deep link, and fallback command in the
-   current tab's `sessionStorage`. While visible it performs one non-overlapping
-   status read every three seconds; focus and visibility restoration trigger an
-   immediate read. Success, failure, local expiry, attempt-ID mismatch, cancel,
-   disconnect, session end, and account-identity change clear the stored value.
-5. The poller accepts a start token only from a non-Bot user in a private chat
-   whose Telegram user ID equals the chat ID. It resolves the attempt without
-   logging the token or update body, takes the account and Telegram-identity
-   advisory locks, locks and revalidates the attempt, verifies identity
-   uniqueness, allocates the next durable binding revision, cancels pending
-   deliveries for a replaced revision, replaces the binding, and deletes the
-   successful attempt in one transaction. The identity lock serializes attempts
-   from different Athena accounts before either can reach the unique indexes.
-6. A reconnect attempt does not alter the old binding before successful token
-   consumption. Cancelling deletes only the attempt. Disconnect takes the same
-   account lock, deletes binding and attempt, and cancels every pending account
-   delivery for that account.
-7. After each handled Telegram update the poller advances the durable offset.
-   Empty successful polls update `last_poll_at`; handled updates also update
-   `last_update_at`. Replayed binding and membership transitions are constrained
-   by token state, identity, account lock, and binding revision.
-8. `my_chat_member` updates for the bound private identity mark `left`/blocked
-   recipients unreachable and cancel that revision's pending deliveries.
-   A later `member` update restores the same binding to connected.
-9. `SendAccountNotification` canonicalizes the account UUID, content, source,
-   severity, and idempotency key, computes a payload digest, and serializes the
-   enqueue under the account lock. An existing `(account_id, source,
-   idempotency_key)` returns its original delivery and rejects a different
-   payload. A missing or unreachable binding returns the corresponding result
-   without inserting a delivery. Only a connected binding inserts a pending row
-   and returns `QUEUED` with a delivery ID.
-10. The shared worker claims account and system rows in alternating order. Before
-    an account send, `SendAccountNotificationWithBindingLock` reacquires the
-    account lock, verifies the current chat ID, revision, connected state, and
-    pending row, then holds that lock through the Telegram call and sent-state
-    commit. A completed disconnect or reconnect therefore cannot be followed by
-    a send to the superseded private chat.
+1. 进程根据 Bot token 创建一个 Telegram 客户端，映射 `test`/`prod` 系统 chat ID，校验内部 Bearer，同步 Bot 资料，确认没有 webhook，加载持久 `next_update_id`，再启动 poller 与 worker。
+2. `GET /api/v1/notification-bindings/telegram` 注入当前账户 UUID，返回安全绑定投影、当前绑定尝试和 Bot 名称/可用性；浏览器不接收 Telegram 数字 user ID 或私聊 chat ID。
+3. 创建绑定尝试生成 32 字节加密随机数，编码为无 padding 的 43 字符 Base64URL token，仅保存 SHA-256 digest。新尝试替换该账户旧尝试，有效期十分钟；响应只返回一次 `https://t.me/<bot>?start=<token>` 与 `/start <token>`。
+4. 会员页面把尝试 ID、深链接与备用命令保存在当前标签页 `sessionStorage`。可见时每三秒单飞读取状态；恢复焦点/可见时立即读取。成功、失败、本地过期、尝试 ID 不符、取消、解绑、会话结束和账户变化均清理缓存。
+5. Poller 只接受非 Bot 用户在私聊中发送的 token，且 Telegram user ID 必须等于 chat ID。解析时不记录 token 或更新正文；取得账户和 Telegram 身份 advisory lock，锁定并复核尝试，检查身份唯一性，分配新 revision，终止旧绑定未许可投递，替换绑定并删除已消费尝试，全部在同一事务完成。身份锁在唯一索引之前串行化不同账户的竞争。
+6. 重绑在新 token 成功消费前保持原绑定有效。取消只删除尝试。解绑在同一账户 gate 内删除绑定和尝试，取消 pending 投递，并给 sending 投递写永久资格墓碑；已有许可仍可完成或成为 unknown。
+7. 每条更新处理成功后推进持久 offset；空成功轮询更新 `last_poll_at`，处理更新也写 `last_update_at`。重复更新受 token 状态、身份、账户锁和 revision 约束。
+8. `my_chat_member` 的离开/封禁更新将对应绑定标为 unreachable，取消 pending 并撤销 sending 的后续尝试资格。之后的 `member` 更新恢复同一绑定可达性，但不复活已取消投递或资格墓碑。
+9. `SendAccountNotification` 规范化账户 UUID、内容、来源、严重程度和幂等键，计算 payload digest，在账户 gate 内入队。相同 `(account_id, source, idempotency_key)` 返回原投递；不同 payload 冲突。绑定不存在或不可达时不插入投递；只有 connected 绑定产生 pending 并返回 `QUEUED` 与 ID。
+10. Worker 交替领取账户与系统队列。领取只占用调度锁，不增加发送尝试数。`Authorize` 在共享账户 gate 的短事务中再次核验 owner、私聊身份、chat/revision、connected、pending、永久资格墓碑、重试时间与五次上限，插入 attempt 并将投递改为 sending，提交后才调用 Telegram。
+11. HTTP `RoundTrip` 入口通过容量为一的 channel 握手记录实际 started 时间；回调不等待数据库或 HTTP 响应。结果通过独立事务按投递 ID、attempt UUID、sending 状态 CAS 写入。
 
-## State / Data
+## 状态与数据
 
-- `telegram_binding_versions` retains one monotonically increasing revision per
-  account, including across disconnects.
-- `telegram_bindings` is keyed by account UUID. Telegram user ID and private-chat
-  ID are independently unique; safe username/display name, status, revision,
-  binding time, update time, and last provider error are stored.
-- `telegram_binding_attempts` permits one row per account and a globally unique
-  32-byte token digest. State is `pending` or `failed`; failure reasons are
-  stable codes such as `expired` and `telegram_identity_in_use`.
-- `telegram_polling_state` is a singleton containing the next update ID, last
-  successful poll time, last handled-update time, and update time.
-- `account_notification_deliveries` freezes account UUID, source, idempotency
-  key, payload digest, content, private chat ID, and binding revision. Its states
-  are `pending`, `sent`, `failed`, and `cancelled`; attempt, lock, retry,
-  provider-message, error, and send timestamps support durable work recovery.
+- `telegram_binding_versions` 为每个账户保存跨解绑持续递增的 revision；只有成功 token 建立/替换绑定才递增，可达性变化不改变 revision。
+- `telegram_bindings` 以账户 UUID 为键，Telegram user ID 与私聊 chat ID 各自唯一；保存安全名称、状态、revision、绑定/更新时间与错误类别。
+- `telegram_binding_attempts` 每账户一行，全局唯一 32 字节 token digest；状态为 pending/failed，失败码如 `expired`、`telegram_identity_in_use`。绑定尝试状态与消息状态分离。
+- `telegram_polling_state` 为单例，保存 next update ID、最近成功轮询/处理时间及更新时间。
+- `account_notification_deliveries` 固定 owner、来源、幂等键、payload digest、正文、私聊 chat ID 与 revision；状态为 pending/sending/sent/failed/unknown/cancelled。`current_attempt_id` 指向当前许可，`eligibility_revoked_at/reason` 永久禁止旧投递重试。
+- `notification_delivery_attempts` 保存 UUID、work kind/ID、账户 owner、sender incarnation、payload digest、authorized/started/result 时间、provider message ID、outcome/code 和 retry-after。许可事务核验 kind 对应的投递及 owner；不可把许可用于不同 payload。缺失的实际起点保留 NULL，不由授权或结果时间补造。
 
-The notification tables share the Athena database with account tables, but
-intentionally have no account foreign key. Account ownership is supplied by the
-authenticated public facade or a trusted internal caller. Raw binding tokens
-exist only in the create response, browser tab storage, and the Telegram command.
+通知与账户表共用 Athena 数据库及唯一权威迁移。通知表没有账户外键，owner 由认证公开入口或可信内部调用提供。原始绑定 token 只出现在创建响应、标签页存储和 Telegram 命令中。
 
-## Configuration
+## 配置
 
-| Setting | Behavior |
+| 配置 | 行为 |
 | --- | --- |
-| `ATHENA_SERVER_POSTGRES_DSN` | Shared Athena database connection and authoritative embedded migration source. |
-| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Shared internal gRPC Bearer; at least 32 bytes with no whitespace/control characters. |
-| `ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN` | Required token for the single account/system Bot client. |
-| `ATHENA_NOTIFICATION_TELEGRAM_API_URL` | Telegram API base; defaults to the official API URL. |
-| `ATHENA_NOTIFICATION_TELEGRAM_TIMEOUT_SECONDS` | Non-polling Telegram request timeout; defaults to the provider adapter timeout. |
-| `ATHENA_NOTIFICATION_TELEGRAM_BOT_NAME`, `..._SHORT_DESCRIPTION`, `..._DESCRIPTION` | Desired Bot profile synchronized at startup. |
-| `ATHENA_NOTIFICATION_WORKER_SEND_INTERVAL` | Shared delay between account and system sends; default 1.1 seconds. |
-| `ATHENA_NOTIFICATION_WORKER_POLL_INTERVAL`, `..._BATCH_SIZE`, `..._MAX_ATTEMPTS`, `..._LOCK_TIMEOUT` | Queue polling, fair batch size, retry cap, and stale-claim recovery. |
+| `ATHENA_SERVER_POSTGRES_DSN` | 共享 Athena 数据库与权威嵌入迁移。 |
+| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | 内部共享 Bearer，至少 32 字节且不含空白/控制字符。 |
+| `ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN` | 账户/系统共享 Bot 的必需 token。 |
+| `ATHENA_NOTIFICATION_TELEGRAM_API_URL` | Telegram API 地址，默认官方地址。 |
+| `ATHENA_NOTIFICATION_TELEGRAM_TIMEOUT_SECONDS` | 非轮询适配器 HTTP 超时；worker 发送另有五秒 context 截止。长轮询使用独立客户端和超时。 |
+| `ATHENA_NOTIFICATION_TELEGRAM_BOT_NAME`、`..._SHORT_DESCRIPTION`、`..._DESCRIPTION` | 启动同步的 Bot 资料。 |
+| `ATHENA_NOTIFICATION_WORKER_SEND_INTERVAL` | 当前共享串行发送间隔，默认 1.1 秒。 |
+| `ATHENA_NOTIFICATION_WORKER_POLL_INTERVAL`、`..._BATCH_SIZE`、`..._LOCK_TIMEOUT` | 队列轮询、公平批量与尚未许可的领取锁恢复。发送总尝试上限固定为五次。 |
 
-The process runs one long-polling consumer. Procfile supplies the local internal
-credential; production Compose requires and injects the same value into the
-Notification process and its trusted callers. Production Compose exposes the
-Bot token and concrete system group IDs only to the Notification container.
+进程只运行一个长轮询消费者。Procfile 提供本地内部凭据；生产 Compose 把同一凭据注入 Notification 与可信调用方。Bot token 和具体系统群组 ID 仅提供给 Notification 容器。
 
-## Invariants
+## 不变量与故障处理
 
-- One ordinary Athena account has at most one Telegram private binding, and one
-  Telegram user/chat identity belongs to at most one Athena account. Account
-  and identity advisory locks make the one-to-one decision deterministic under
-  concurrent binding attempts.
-- A binding revision increases only when a start token successfully establishes
-  or replaces a binding; status changes do not change the revision.
-- A reconnect leaves the current binding usable until the replacement commits.
-- Browser binding requests never accept an account UUID, and API Keys and
-  administrator sessions never cross the ordinary interactive boundary.
-- Raw binding tokens, full Telegram updates, and private chat IDs are absent from
-  logs and public responses.
-- No account delivery row is created for a currently missing or unreachable
-  binding, and one idempotency tuple cannot create two rows.
-- Account sends revalidate and hold the same advisory lock used by reconnect and
-  disconnect, so committed binding changes fence old private chats.
-- Account history and personal test-send operations are not public V1 features.
+- 普通账户最多一个私聊绑定，Telegram 身份最多归属一个账户；账户和身份 advisory lock 保护并发绑定。一致的账户 gate 名称为 `athena:account:<UUID>`。
+- 公开绑定请求不接受目标 UUID，管理员与 API Key 不跨普通会员交互边界；原始 token、完整更新、Bot 凭据和私聊数字身份不进入日志或公开响应。
+- 缺失/不可达收件人不入队，一个幂等 tuple 不产生多行；账户历史和个人测试发送不是公开 V1 功能。
+- 解绑/重绑先提交则不能取得旧资格的新许可；已有单条许可可完成。重新绑定或恢复可达性都不能清除旧投递的资格墓碑。
+- sent/failed/unknown/cancelled 为终态。失去资格后的明确 failed/retryable 结果将投递终结为 cancelled，attempt 仍保存原始 failed/retryable 证据。只有明确 retryable 且仍有资格、尝试数小于五才回 pending；等待为 1/2/4/8 秒退避与 Telegram Retry-After 的最大值。网络断连、超时、取消、响应读取或解析失败发生在 HTTP 起点之后时结果为 unknown，不自动重发。发送不跟随重定向，不使用隐式 POST 重放。
+- 成功回执即使缺 started 也写 sent。结果写库失败只重试相同 attempt 的结果 CAS；提交不确定先按 UUID 查询结果，无法确认则继续保留已消耗许可，不能发送。迟到或冲突结果不能覆盖终态。
+- 明确 forbidden/not-found/blocked 结果失败当前投递，将仍匹配的绑定标为 unreachable 并取消余下未许可任务；之后恢复绑定也不重建旧任务。
 
-## Failure Recovery
+配置 webhook 会阻止启动，因为 Telegram 不允许其与 `getUpdates` 共存。Poller 失败使用有上限指数退避，从持久 offset 恢复；仅处理成功才推进。无效、已消费、过期或冲突 token 不能接管身份；身份冲突只将本次尝试失败，不暴露其他账户。
 
-A configured webhook prevents Notification startup because Telegram disallows
-`getUpdates` while it is active. Poll failures use bounded exponential backoff;
-the persisted offset resumes after restart and is advanced only after an update
-handler succeeds. Invalid, consumed, expired, or conflicting tokens never take
-over an identity. A conflict marks the attempt failed without exposing another
-Athena account.
+适配器在生成外部错误文本前保存结构化分类；Retry-After 和稳定不可达类别仍可供机器读取，原始 provider 描述、响应体、请求 URL、凭据不写入投递错误。只有 pending 的领取锁可超时重领；已许可 sending 不因领取锁超时重发。进程取消等待 poller 和 worker 退出。
 
-Temporary Telegram and database failures leave a pending delivery eligible for
-retry. HTTP 429 honors Telegram's retry delay; other transient failures use the
-worker backoff and bounded attempt count. Permanent forbidden/not-found/block
-responses fail the active delivery, mark the still-current binding unreachable,
-and cancel its remaining pending rows. A later membership update restores
-reachability but does not recreate cancelled rows.
+## 可观测性与后续范围
 
-Provider and SDK failures are converted at the Telegram adapter boundary to
-bounded typed errors. Retry-after seconds and stable forbidden/not-found/
-unreachable categories remain machine-readable, while response bodies,
-provider descriptions, request URLs, Bot tokens, and private identities are not
-propagated into logs or persisted delivery errors. Account retry and terminal
-failure transitions reacquire the account advisory lock and update only the
-matching chat, revision, and still-pending row. A reconnect or disconnect that
-commits first therefore keeps the delivery cancelled instead of being
-overwritten by a late worker transition.
+管理员运行入口报告进程生命周期、Bot 可用性/ID/名称、poller 状态、最近轮询/更新时间、账户 pending/retry/failed/sending/unknown 独立计数与不可达绑定数。gRPC health 在资料同步、webhook 检查、poller 与 worker 启动后才为 SERVING。诊断日志使用内部更新/投递/attempt ID；轮询失败、结果写库失败和绑定更新错误为 warning。
 
-Claim locks are durable timestamps and may be reclaimed after the configured
-timeout. A worker revalidates binding state after claim, so cancellation or a
-new revision converts stale work into a no-send result. Process cancellation
-stops the poller and worker and waits for both before shutdown completes.
+当前持久发送许可与结果路径已实现。崩溃遗留 sending 保留事实且不会重新领取；确认旧 sender 已停止后，将无结果 attempt 终结为 unknown 的恢复入口和跨 chat 调度属于 [Trader Sync 后续实现](../trading/trader-sync-activity-alerts.md)，尚未实现。产品 grant 撤销钩子也由后续任务接入，不能把已有绑定墓碑误称为完整产品撤权实现。
 
-## Observability
+## 维护检查
 
-`NotificationRuntimeService.GetNotificationRuntimeStatus`, exposed only through
-the administrator facade, reports process lifecycle, Bot availability/ID/name,
-poller activity, last poll/update timestamps, account pending/retry/failed
-counts, and unreachable-binding count. Standard gRPC health is `SERVING` only
-after profile synchronization, webhook validation, poller startup, and worker
-startup succeed.
-
-Logs identify update or delivery records by internal numeric IDs when needed,
-but omit the raw token, complete update, Bot credential, and private Telegram
-identity. Poll failures, retry scheduling, terminal delivery failure, and
-binding state update errors are warning-level diagnostic events.
-
-## Change Checklist
-
-- [ ] Public member routes still inject the current account and require an ordinary interactive login.
-- [ ] Token generation, hashing, TTL, one-time response, and tab-storage cleanup remain synchronized.
-- [ ] Attempt, identity, revision, reconnect, cancel, and disconnect transactions preserve their invariants.
-- [ ] Polling offset, webhook exclusion, membership recovery, and safe logging remain current.
-- [ ] Account idempotency, no-recipient results, fair claiming, retry behavior, and binding-locked send remain current.
-- [ ] Member UI states, three-second visible polling, focus behavior, local QR generation, and responsive controls match the API.
-- [ ] Source links resolve and the [design index](../README.md) contains the correct entry.
+- 会员入口继续注入当前账户并要求普通交互登录。
+- token 生成、digest、TTL、单次返回及标签页清理保持一致。
+- 尝试、身份、revision、重绑、取消、解绑和永久墓碑事务保持不变量。
+- offset、webhook 排斥、成员状态恢复、安全日志保持有效。
+- 幂等、无收件人结果、公平领取、持久许可、HTTP 起点和结果 CAS 同步维护。
+- 会员页面三秒可见轮询、焦点行为、本地 QR 与响应式控件匹配 API。
+- 源码链接和[设计索引](../README.md)保持正确。

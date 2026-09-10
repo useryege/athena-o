@@ -49,16 +49,17 @@ type Service struct {
 	apiclient.UnimplementedAccountNotificationServiceServer
 	apiclient.UnimplementedNotificationRuntimeServiceServer
 
-	store         *notificationstore.SQLStore
-	sender        Sender
-	profileSyncer ProfileSyncer
-	poller        *TelegramPoller
-	workerConfig  WorkerConfig
-	workerCancel  context.CancelFunc
-	workerWG      sync.WaitGroup
-	startStopMu   sync.Mutex
-	started       bool
-	botIdentity   *utiltelegram.BotIdentity
+	store             *notificationstore.SQLStore
+	sender            Sender
+	profileSyncer     ProfileSyncer
+	poller            *TelegramPoller
+	senderIncarnation uuid.UUID
+	workerConfig      WorkerConfig
+	workerCancel      context.CancelFunc
+	workerWG          sync.WaitGroup
+	startStopMu       sync.Mutex
+	started           bool
+	botIdentity       *utiltelegram.BotIdentity
 }
 
 type ProfileSyncer interface {
@@ -72,7 +73,7 @@ func NewService(store *notificationstore.SQLStore, sender Sender, profileSyncer 
 func NewServiceWithWorkerConfig(store *notificationstore.SQLStore, sender Sender, profileSyncer ProfileSyncer, poller *TelegramPoller, workerConfig WorkerConfig) *Service {
 	return &Service{
 		store: store, sender: sender, profileSyncer: profileSyncer, poller: poller,
-		workerConfig: normalizeWorkerConfig(workerConfig),
+		workerConfig: normalizeWorkerConfig(workerConfig), senderIncarnation: uuid.New(),
 	}
 }
 
@@ -155,6 +156,8 @@ func (s *Service) GetNotificationRuntimeStatus(ctx context.Context, _ *apiclient
 		SystemFailedCount: systemCounts.Failed, AccountPendingCount: accountCounts.Pending,
 		AccountRetryCount: accountCounts.Retry, AccountFailedCount: accountCounts.Failed,
 		UnreachableBindingCount: accountCounts.UnreachableBindings,
+		SystemSendingCount:      systemCounts.Sending, SystemUnknownCount: systemCounts.Unknown,
+		AccountSendingCount: accountCounts.Sending, AccountUnknownCount: accountCounts.Unknown,
 	}
 	if identity != nil {
 		response.BotAvailable = true
@@ -507,7 +510,7 @@ func normalizeDeliveryStatusFilter(value string) (string, error) {
 		return "", nil
 	}
 	switch value {
-	case notificationStatusPending, notificationStatusSent, notificationStatusFailed:
+	case notificationStatusPending, notificationStatusSent, notificationStatusFailed, "sending", "unknown", "cancelled":
 		return value, nil
 	default:
 		return "", status.Error(codes.InvalidArgument, "status filter is invalid")

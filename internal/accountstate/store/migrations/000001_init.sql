@@ -274,6 +274,26 @@ VALUES ('prod', '[POLY] UMA Disputed', 559)
 ON CONFLICT (telegram_chat, label) DO UPDATE
 SET message_thread_id = EXCLUDED.message_thread_id;
 
+CREATE TABLE notification_delivery_attempts (
+  id UUID PRIMARY KEY,
+  work_kind TEXT NOT NULL CHECK (work_kind IN ('account', 'system')),
+  work_id BIGINT NOT NULL CHECK (work_id > 0),
+  owner_id UUID,
+  sender_incarnation UUID NOT NULL,
+  payload_digest BYTEA NOT NULL CHECK (octet_length(payload_digest) = 32),
+  authorized_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  started_at TIMESTAMPTZ,
+  result_at TIMESTAMPTZ,
+  message_id TEXT,
+  outcome TEXT CHECK (outcome IN ('sent', 'retryable', 'failed', 'unknown')),
+  outcome_code TEXT,
+  retry_after INTERVAL,
+  CHECK ((work_kind = 'account') = (owner_id IS NOT NULL)),
+  CHECK ((result_at IS NULL) = (outcome IS NULL))
+);
+CREATE INDEX idx_notification_delivery_attempts_work
+  ON notification_delivery_attempts (work_kind, work_id, authorized_at);
+
 CREATE TABLE system_notification_deliveries (
   id BIGSERIAL PRIMARY KEY,
   source TEXT NOT NULL,
@@ -294,8 +314,9 @@ CREATE TABLE system_notification_deliveries (
   last_attempt_at TIMESTAMPTZ,
   locked_at TIMESTAMPTZ,
   locked_by TEXT,
+  current_attempt_id UUID REFERENCES notification_delivery_attempts(id),
   CONSTRAINT system_notification_deliveries_status_check
-    CHECK (status IN ('pending', 'sent', 'failed')),
+    CHECK (status IN ('pending', 'sending', 'sent', 'failed', 'unknown', 'cancelled')),
   CONSTRAINT system_notification_deliveries_severity_check
     CHECK (severity IN ('info', 'warning', 'error', 'critical')),
   CONSTRAINT system_notification_deliveries_channel_check
@@ -395,12 +416,15 @@ CREATE TABLE account_notification_deliveries (
   last_attempt_at TIMESTAMPTZ,
   locked_at TIMESTAMPTZ,
   locked_by TEXT,
+  current_attempt_id UUID REFERENCES notification_delivery_attempts(id),
+  eligibility_revoked_at TIMESTAMPTZ,
+  eligibility_revoked_reason TEXT,
   CONSTRAINT account_notification_deliveries_idempotency_unique
     UNIQUE (account_id, source, idempotency_key),
   CONSTRAINT account_notification_deliveries_payload_digest_check
     CHECK (octet_length(payload_digest) = 32),
   CONSTRAINT account_notification_deliveries_status_check
-    CHECK (status IN ('pending', 'sent', 'failed', 'cancelled')),
+    CHECK (status IN ('pending', 'sending', 'sent', 'failed', 'unknown', 'cancelled')),
   CONSTRAINT account_notification_deliveries_severity_check
     CHECK (severity IN ('info', 'warning', 'error', 'critical')),
   CONSTRAINT account_notification_deliveries_channel_check
@@ -420,6 +444,7 @@ DROP TABLE telegram_binding_attempts;
 DROP TABLE telegram_bindings;
 DROP TABLE telegram_binding_versions;
 DROP TABLE system_notification_deliveries;
+DROP TABLE notification_delivery_attempts;
 DROP TABLE system_notification_topics;
 
 DROP TABLE account_api_key;

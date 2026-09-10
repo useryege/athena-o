@@ -33,28 +33,31 @@ type AccountModuleAccess struct {
 }
 
 type AccountNotificationDelivery struct {
-	ID                int64
-	AccountID         pgtype.UUID
-	IdempotencyKey    string
-	PayloadDigest     []byte
-	Source            string
-	Severity          string
-	Title             pgtype.Text
-	Body              string
-	Link              pgtype.Text
-	Channel           string
-	Status            string
-	TelegramChatID    int64
-	BindingRevision   int64
-	ProviderMessageID pgtype.Text
-	ErrorMessage      pgtype.Text
-	CreatedAt         pgtype.Timestamptz
-	SentAt            pgtype.Timestamptz
-	Attempts          int32
-	NextAttemptAt     pgtype.Timestamptz
-	LastAttemptAt     pgtype.Timestamptz
-	LockedAt          pgtype.Timestamptz
-	LockedBy          pgtype.Text
+	ID                       int64
+	AccountID                pgtype.UUID
+	IdempotencyKey           string
+	PayloadDigest            []byte
+	Source                   string
+	Severity                 string
+	Title                    pgtype.Text
+	Body                     string
+	Link                     pgtype.Text
+	Channel                  string
+	Status                   string
+	TelegramChatID           int64
+	BindingRevision          int64
+	ProviderMessageID        pgtype.Text
+	ErrorMessage             pgtype.Text
+	CreatedAt                pgtype.Timestamptz
+	SentAt                   pgtype.Timestamptz
+	Attempts                 int32
+	NextAttemptAt            pgtype.Timestamptz
+	LastAttemptAt            pgtype.Timestamptz
+	LockedAt                 pgtype.Timestamptz
+	LockedBy                 pgtype.Text
+	CurrentAttemptID         pgtype.UUID
+	EligibilityRevokedAt     pgtype.Timestamptz
+	EligibilityRevokedReason pgtype.Text
 }
 
 type AccountPreference struct {
@@ -90,6 +93,22 @@ type AthenaAccount struct {
 	LastLoginAt      pgtype.Timestamptz
 }
 
+type NotificationDeliveryAttempt struct {
+	ID                pgtype.UUID
+	WorkKind          string
+	WorkID            int64
+	OwnerID           pgtype.UUID
+	SenderIncarnation pgtype.UUID
+	PayloadDigest     []byte
+	AuthorizedAt      pgtype.Timestamptz
+	StartedAt         pgtype.Timestamptz
+	ResultAt          pgtype.Timestamptz
+	MessageID         pgtype.Text
+	Outcome           pgtype.Text
+	OutcomeCode       pgtype.Text
+	RetryAfter        pgtype.Interval
+}
+
 type SystemNotificationDelivery struct {
 	ID                int64
 	Source            string
@@ -110,6 +129,7 @@ type SystemNotificationDelivery struct {
 	LastAttemptAt     pgtype.Timestamptz
 	LockedAt          pgtype.Timestamptz
 	LockedBy          pgtype.Text
+	CurrentAttemptID  pgtype.UUID
 }
 
 type SystemNotificationTopic struct {

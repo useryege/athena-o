@@ -14,7 +14,6 @@ import (
 
 var (
 	ErrAccountNotificationIdempotencyConflict = errors.New("account notification idempotency conflict")
-	ErrAccountNotificationBindingChanged      = errors.New("account notification binding changed")
 )
 
 const (
@@ -78,6 +77,8 @@ type ClaimedAccountNotificationDelivery struct {
 }
 
 type AccountNotificationRuntimeCounts struct {
+	Sending             int64
+	Unknown             int64
 	Pending             int64
 	Retry               int64
 	Failed              int64
@@ -200,129 +201,6 @@ func (s *SQLStore) ClaimPendingAccountNotificationDeliveries(ctx context.Context
 	return items, nil
 }
 
-// SendAccountNotificationWithBindingLock closes the gap between queue claiming and delivery.
-// Binding mutations take the same account advisory lock, so a successful return guarantees
-// the message was sent only while the queued binding revision was still current and connected.
-func (s *SQLStore) SendAccountNotificationWithBindingLock(
-	ctx context.Context,
-	accountID string,
-	chatID int64,
-	revision int64,
-	deliveryID int64,
-	send func(context.Context) (string, error),
-) (string, error) {
-	if err := s.transactional(); err != nil {
-		return "", err
-	}
-	if send == nil {
-		return "", errors.New("account notification send callback is required")
-	}
-	accountUUID, err := uuidValue(accountID)
-	if err != nil {
-		return "", err
-	}
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return "", fmt.Errorf("failed to begin account notification send transaction: %w", err)
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
-	queries := notificationsqlc.New(tx)
-	if err := queries.LockTelegramBindingAccount(ctx, accountUUID); err != nil {
-		return "", fmt.Errorf("failed to lock account notification binding: %w", err)
-	}
-	binding, err := queries.GetTelegramBindingForShare(ctx, accountUUID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return "", ErrAccountNotificationBindingChanged
-		}
-		return "", fmt.Errorf("failed to revalidate account notification binding: %w", err)
-	}
-	if binding.Status != TelegramBindingStatusConnected ||
-		binding.TelegramChatID != chatID || binding.Revision != revision {
-		return "", ErrAccountNotificationBindingChanged
-	}
-	if _, err := queries.GetPendingAccountNotificationDeliveryForUpdate(ctx, notificationsqlc.GetPendingAccountNotificationDeliveryForUpdateParams{
-		ID: deliveryID, AccountID: accountUUID, TelegramChatID: chatID, BindingRevision: revision,
-	}); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return "", ErrAccountNotificationBindingChanged
-		}
-		return "", fmt.Errorf("failed to revalidate pending account notification delivery: %w", err)
-	}
-	providerMessageID, err := send(ctx)
-	if err != nil {
-		return "", err
-	}
-	if err := queries.MarkAccountNotificationDeliverySent(ctx, notificationsqlc.MarkAccountNotificationDeliverySentParams{
-		ID: deliveryID, ProviderMessageID: textValue(providerMessageID),
-	}); err != nil {
-		return "", fmt.Errorf("failed to mark account notification delivery sent: %w", err)
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return "", fmt.Errorf("failed to commit account notification delivery: %w", err)
-	}
-	return providerMessageID, nil
-}
-
-func (s *SQLStore) MarkAccountNotificationDeliveryFailed(ctx context.Context, delivery ClaimedAccountNotificationDelivery, message string) error {
-	if err := s.transactional(); err != nil {
-		return err
-	}
-	accountUUID, err := uuidValue(delivery.AccountID)
-	if err != nil {
-		return err
-	}
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to begin account notification failure transaction: %w", err)
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
-	queries := notificationsqlc.New(tx)
-	if err := queries.LockTelegramBindingAccount(ctx, accountUUID); err != nil {
-		return fmt.Errorf("failed to lock account notification failure transition: %w", err)
-	}
-	if _, err := queries.MarkAccountNotificationDeliveryFailed(ctx, notificationsqlc.MarkAccountNotificationDeliveryFailedParams{
-		ID: delivery.ID, AccountID: accountUUID, TelegramChatID: delivery.TelegramChatID,
-		BindingRevision: delivery.BindingRevision, ErrorMessage: textValue(message),
-	}); err != nil {
-		return fmt.Errorf("failed to mark account notification delivery failed: %w", err)
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("failed to commit account notification failure transition: %w", err)
-	}
-	return nil
-}
-
-func (s *SQLStore) ScheduleAccountNotificationDeliveryRetry(ctx context.Context, delivery ClaimedAccountNotificationDelivery, message string, nextAttemptAt time.Time) error {
-	if err := s.transactional(); err != nil {
-		return err
-	}
-	accountUUID, err := uuidValue(delivery.AccountID)
-	if err != nil {
-		return err
-	}
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to begin account notification retry transaction: %w", err)
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
-	queries := notificationsqlc.New(tx)
-	if err := queries.LockTelegramBindingAccount(ctx, accountUUID); err != nil {
-		return fmt.Errorf("failed to lock account notification retry transition: %w", err)
-	}
-	if _, err := queries.ScheduleAccountNotificationDeliveryRetry(ctx, notificationsqlc.ScheduleAccountNotificationDeliveryRetryParams{
-		ID: delivery.ID, AccountID: accountUUID, TelegramChatID: delivery.TelegramChatID,
-		BindingRevision: delivery.BindingRevision, ErrorMessage: textValue(message),
-		NextAttemptAt: timestamptzValue(nextAttemptAt),
-	}); err != nil {
-		return fmt.Errorf("failed to schedule account notification delivery retry: %w", err)
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("failed to commit account notification retry transition: %w", err)
-	}
-	return nil
-}
-
 func (s *SQLStore) GetAccountNotificationRuntimeCounts(ctx context.Context) (AccountNotificationRuntimeCounts, error) {
 	if err := s.configured(); err != nil {
 		return AccountNotificationRuntimeCounts{}, err
@@ -332,7 +210,7 @@ func (s *SQLStore) GetAccountNotificationRuntimeCounts(ctx context.Context) (Acc
 		return AccountNotificationRuntimeCounts{}, fmt.Errorf("failed to get account notification runtime counts: %w", err)
 	}
 	return AccountNotificationRuntimeCounts{
-		Pending: row.PendingCount, Retry: row.RetryCount, Failed: row.FailedCount,
+		Sending: row.SendingCount, Unknown: row.UnknownCount, Pending: row.PendingCount, Retry: row.RetryCount, Failed: row.FailedCount,
 		UnreachableBindings: row.UnreachableBindingCount,
 	}, nil
 }

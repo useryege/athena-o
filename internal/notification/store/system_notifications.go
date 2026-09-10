@@ -57,6 +57,8 @@ type ClaimedSystemNotificationDelivery struct {
 }
 
 type SystemNotificationDeliveryCounts struct {
+	Sending int64
+	Unknown int64
 	Pending int64
 	Retry   int64
 	Failed  int64
@@ -78,7 +80,7 @@ func (s *SQLStore) CreateSystemNotificationDelivery(ctx context.Context, req Cre
 		ID: row.ID, Source: row.Source, Severity: row.Severity, Title: row.Title, Body: row.Body,
 		Link: row.Link, Channel: row.Channel, Status: row.Status, TelegramChat: row.TelegramChat,
 		TopicLabel: row.TopicLabel, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage,
-		CreatedAt: row.CreatedAt, SentAt: row.SentAt,
+		CreatedAt: row.CreatedAt, SentAt: row.SentAt, AuthorizedAt: row.AuthorizedAt, StartedAt: row.StartedAt, ResultAt: row.ResultAt,
 	}), nil
 }
 
@@ -158,38 +160,6 @@ func (s *SQLStore) ClaimPendingSystemNotificationDeliveries(ctx context.Context,
 	return items, nil
 }
 
-func (s *SQLStore) MarkSystemNotificationDeliverySent(ctx context.Context, id int64, providerMessageID string) error {
-	if err := s.configured(); err != nil {
-		return err
-	}
-	if err := s.queries.MarkSystemNotificationDeliverySent(ctx, notificationsqlc.MarkSystemNotificationDeliverySentParams{ID: id, ProviderMessageID: textValue(providerMessageID)}); err != nil {
-		return fmt.Errorf("failed to mark system notification delivery sent: %w", err)
-	}
-	return nil
-}
-
-func (s *SQLStore) MarkSystemNotificationDeliveryFailed(ctx context.Context, id int64, message string) error {
-	if err := s.configured(); err != nil {
-		return err
-	}
-	if err := s.queries.MarkSystemNotificationDeliveryFailed(ctx, notificationsqlc.MarkSystemNotificationDeliveryFailedParams{ID: id, ErrorMessage: textValue(message)}); err != nil {
-		return fmt.Errorf("failed to mark system notification delivery failed: %w", err)
-	}
-	return nil
-}
-
-func (s *SQLStore) ScheduleSystemNotificationDeliveryRetry(ctx context.Context, id int64, message string, nextAttemptAt time.Time) error {
-	if err := s.configured(); err != nil {
-		return err
-	}
-	if err := s.queries.ScheduleSystemNotificationDeliveryRetry(ctx, notificationsqlc.ScheduleSystemNotificationDeliveryRetryParams{
-		ID: id, ErrorMessage: textValue(message), NextAttemptAt: timestamptzValue(nextAttemptAt),
-	}); err != nil {
-		return fmt.Errorf("failed to schedule system notification delivery retry: %w", err)
-	}
-	return nil
-}
-
 func (s *SQLStore) ListSystemNotificationDeliveries(ctx context.Context, opts ListSystemNotificationDeliveriesOptions) ([]*v1alpha1.SystemNotificationDeliveryItem, int64, error) {
 	if err := s.configured(); err != nil {
 		return nil, 0, err
@@ -223,7 +193,7 @@ func (s *SQLStore) ListSystemNotificationDeliveries(ctx context.Context, opts Li
 			ID: row.ID, Source: row.Source, Severity: row.Severity, Title: row.Title, Body: row.Body,
 			Link: row.Link, Channel: row.Channel, Status: row.Status, TelegramChat: row.TelegramChat,
 			TopicLabel: row.TopicLabel, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage,
-			CreatedAt: row.CreatedAt, SentAt: row.SentAt,
+			CreatedAt: row.CreatedAt, SentAt: row.SentAt, AuthorizedAt: row.AuthorizedAt, StartedAt: row.StartedAt, ResultAt: row.ResultAt,
 		}))
 	}
 	return items, total, nil
@@ -241,7 +211,7 @@ func (s *SQLStore) GetSystemNotificationDelivery(ctx context.Context, id int64) 
 		ID: row.ID, Source: row.Source, Severity: row.Severity, Title: row.Title, Body: row.Body,
 		Link: row.Link, Channel: row.Channel, Status: row.Status, TelegramChat: row.TelegramChat,
 		TopicLabel: row.TopicLabel, ProviderMessageID: row.ProviderMessageID, ErrorMessage: row.ErrorMessage,
-		CreatedAt: row.CreatedAt, SentAt: row.SentAt,
+		CreatedAt: row.CreatedAt, SentAt: row.SentAt, AuthorizedAt: row.AuthorizedAt, StartedAt: row.StartedAt, ResultAt: row.ResultAt,
 	}), nil
 }
 
@@ -253,7 +223,7 @@ func (s *SQLStore) GetSystemNotificationDeliveryCounts(ctx context.Context) (Sys
 	if err != nil {
 		return SystemNotificationDeliveryCounts{}, fmt.Errorf("failed to get system notification delivery counts: %w", err)
 	}
-	return SystemNotificationDeliveryCounts{Pending: row.PendingCount, Retry: row.RetryCount, Failed: row.FailedCount}, nil
+	return SystemNotificationDeliveryCounts{Sending: row.SendingCount, Unknown: row.UnknownCount, Pending: row.PendingCount, Retry: row.RetryCount, Failed: row.FailedCount}, nil
 }
 
 func normalizeClaimOptions(opts ClaimDeliveriesOptions) (int, time.Duration) {
@@ -295,6 +265,9 @@ type systemDeliveryRow struct {
 	ErrorMessage      pgtype.Text
 	CreatedAt         pgtype.Timestamptz
 	SentAt            pgtype.Timestamptz
+	AuthorizedAt      pgtype.Timestamptz
+	StartedAt         pgtype.Timestamptz
+	ResultAt          pgtype.Timestamptz
 }
 
 func systemDeliveryItemFromRow(row systemDeliveryRow) *v1alpha1.SystemNotificationDeliveryItem {
@@ -307,6 +280,15 @@ func systemDeliveryItemFromRow(row systemDeliveryRow) *v1alpha1.SystemNotificati
 	if row.SentAt.Valid {
 		item.SentAt = formatTime(row.SentAt.Time)
 	}
+	if row.AuthorizedAt.Valid {
+		item.AuthorizedAt = formatTime(row.AuthorizedAt.Time)
+	}
+	if row.StartedAt.Valid {
+		item.StartedAt = formatTime(row.StartedAt.Time)
+	}
+	if row.ResultAt.Valid {
+		item.ResultAt = formatTime(row.ResultAt.Time)
+	}
 	return item
 }
 
@@ -316,6 +298,6 @@ func systemDeliveryDetailFromRow(row systemDeliveryRow) *v1alpha1.SystemNotifica
 		ID: item.ID, Source: item.Source, Severity: item.Severity, Title: item.Title, Body: item.Body,
 		Link: item.Link, Channel: item.Channel, Status: item.Status, TelegramChat: item.TelegramChat,
 		TopicLabel: item.TopicLabel, ProviderMessageID: item.ProviderMessageID,
-		ErrorMessage: item.ErrorMessage, CreatedAt: item.CreatedAt, SentAt: item.SentAt,
+		ErrorMessage: item.ErrorMessage, CreatedAt: item.CreatedAt, SentAt: item.SentAt, AuthorizedAt: item.AuthorizedAt, StartedAt: item.StartedAt, ResultAt: item.ResultAt,
 	}
 }

@@ -13,12 +13,14 @@ import (
 
 const cancelPendingAccountNotificationDeliveries = `-- name: CancelPendingAccountNotificationDeliveries :execrows
 UPDATE account_notification_deliveries
-SET status = 'cancelled',
+SET status = CASE WHEN status = 'pending' THEN 'cancelled' ELSE status END,
+    eligibility_revoked_at = COALESCE(eligibility_revoked_at, clock_timestamp()),
+    eligibility_revoked_reason = COALESCE(eligibility_revoked_reason, 'binding_changed'),
     error_message = 'telegram binding disconnected',
     locked_at = NULL,
     locked_by = NULL
 WHERE account_id = $1
-  AND status = 'pending'
+  AND status IN ('pending', 'sending')
 `
 
 func (q *Queries) CancelPendingAccountNotificationDeliveries(ctx context.Context, accountID pgtype.UUID) (int64, error) {
@@ -31,14 +33,16 @@ func (q *Queries) CancelPendingAccountNotificationDeliveries(ctx context.Context
 
 const cancelPendingAccountNotificationDeliveriesForBinding = `-- name: CancelPendingAccountNotificationDeliveriesForBinding :execrows
 UPDATE account_notification_deliveries
-SET status = 'cancelled',
+SET status = CASE WHEN status = 'pending' THEN 'cancelled' ELSE status END,
+    eligibility_revoked_at = COALESCE(eligibility_revoked_at, clock_timestamp()),
+    eligibility_revoked_reason = COALESCE(eligibility_revoked_reason, 'binding_changed'),
     error_message = 'telegram recipient is unreachable',
     locked_at = NULL,
     locked_by = NULL
 WHERE account_id = $1
   AND telegram_chat_id = $2
   AND binding_revision = $3
-  AND status = 'pending'
+  AND status IN ('pending', 'sending')
 `
 
 type CancelPendingAccountNotificationDeliveriesForBindingParams struct {
@@ -60,6 +64,8 @@ WITH ready AS (
   SELECT id
   FROM account_notification_deliveries
   WHERE status = 'pending'
+    AND eligibility_revoked_at IS NULL
+    AND attempts < 5
     AND next_attempt_at <= NOW()
     AND (locked_at IS NULL OR locked_at < NOW() - $3::interval)
     AND EXISTS (
@@ -76,9 +82,7 @@ WITH ready AS (
 )
 UPDATE account_notification_deliveries AS delivery
 SET locked_at = NOW(),
-    locked_by = $2,
-    attempts = delivery.attempts + 1,
-    last_attempt_at = NOW()
+    locked_by = $2
 FROM ready
 WHERE delivery.id = ready.id
 RETURNING delivery.id, delivery.account_id, delivery.source, delivery.severity,
@@ -294,6 +298,8 @@ SELECT
   (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'pending') AS pending_count,
   (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'pending' AND attempts > 0) AS retry_count,
   (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'failed') AS failed_count,
+  (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'sending') AS sending_count,
+  (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'unknown') AS unknown_count,
   (SELECT COUNT(*)::bigint FROM telegram_bindings WHERE status = 'unreachable') AS unreachable_binding_count
 `
 
@@ -301,6 +307,8 @@ type GetAccountNotificationRuntimeCountsRow struct {
 	PendingCount            int64
 	RetryCount              int64
 	FailedCount             int64
+	SendingCount            int64
+	UnknownCount            int64
 	UnreachableBindingCount int64
 }
 
@@ -311,130 +319,9 @@ func (q *Queries) GetAccountNotificationRuntimeCounts(ctx context.Context) (GetA
 		&i.PendingCount,
 		&i.RetryCount,
 		&i.FailedCount,
+		&i.SendingCount,
+		&i.UnknownCount,
 		&i.UnreachableBindingCount,
 	)
 	return i, err
-}
-
-const getPendingAccountNotificationDeliveryForUpdate = `-- name: GetPendingAccountNotificationDeliveryForUpdate :one
-SELECT id
-FROM account_notification_deliveries
-WHERE id = $1
-  AND account_id = $2
-  AND telegram_chat_id = $3
-  AND binding_revision = $4
-  AND status = 'pending'
-FOR UPDATE
-`
-
-type GetPendingAccountNotificationDeliveryForUpdateParams struct {
-	ID              int64
-	AccountID       pgtype.UUID
-	TelegramChatID  int64
-	BindingRevision int64
-}
-
-func (q *Queries) GetPendingAccountNotificationDeliveryForUpdate(ctx context.Context, arg GetPendingAccountNotificationDeliveryForUpdateParams) (int64, error) {
-	row := q.db.QueryRow(ctx, getPendingAccountNotificationDeliveryForUpdate,
-		arg.ID,
-		arg.AccountID,
-		arg.TelegramChatID,
-		arg.BindingRevision,
-	)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
-}
-
-const markAccountNotificationDeliveryFailed = `-- name: MarkAccountNotificationDeliveryFailed :execrows
-UPDATE account_notification_deliveries
-SET status = 'failed',
-    error_message = $1,
-    locked_at = NULL,
-    locked_by = NULL
-WHERE id = $2
-  AND account_id = $3
-  AND telegram_chat_id = $4
-  AND binding_revision = $5
-  AND status = 'pending'
-`
-
-type MarkAccountNotificationDeliveryFailedParams struct {
-	ErrorMessage    pgtype.Text
-	ID              int64
-	AccountID       pgtype.UUID
-	TelegramChatID  int64
-	BindingRevision int64
-}
-
-func (q *Queries) MarkAccountNotificationDeliveryFailed(ctx context.Context, arg MarkAccountNotificationDeliveryFailedParams) (int64, error) {
-	result, err := q.db.Exec(ctx, markAccountNotificationDeliveryFailed,
-		arg.ErrorMessage,
-		arg.ID,
-		arg.AccountID,
-		arg.TelegramChatID,
-		arg.BindingRevision,
-	)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
-const markAccountNotificationDeliverySent = `-- name: MarkAccountNotificationDeliverySent :exec
-UPDATE account_notification_deliveries
-SET status = 'sent',
-    provider_message_id = $2,
-    error_message = NULL,
-    sent_at = NOW(),
-    locked_at = NULL,
-    locked_by = NULL
-WHERE id = $1
-`
-
-type MarkAccountNotificationDeliverySentParams struct {
-	ID                int64
-	ProviderMessageID pgtype.Text
-}
-
-func (q *Queries) MarkAccountNotificationDeliverySent(ctx context.Context, arg MarkAccountNotificationDeliverySentParams) error {
-	_, err := q.db.Exec(ctx, markAccountNotificationDeliverySent, arg.ID, arg.ProviderMessageID)
-	return err
-}
-
-const scheduleAccountNotificationDeliveryRetry = `-- name: ScheduleAccountNotificationDeliveryRetry :execrows
-UPDATE account_notification_deliveries
-SET error_message = $1,
-    next_attempt_at = $2,
-    locked_at = NULL,
-    locked_by = NULL
-WHERE id = $3
-  AND account_id = $4
-  AND telegram_chat_id = $5
-  AND binding_revision = $6
-  AND status = 'pending'
-`
-
-type ScheduleAccountNotificationDeliveryRetryParams struct {
-	ErrorMessage    pgtype.Text
-	NextAttemptAt   pgtype.Timestamptz
-	ID              int64
-	AccountID       pgtype.UUID
-	TelegramChatID  int64
-	BindingRevision int64
-}
-
-func (q *Queries) ScheduleAccountNotificationDeliveryRetry(ctx context.Context, arg ScheduleAccountNotificationDeliveryRetryParams) (int64, error) {
-	result, err := q.db.Exec(ctx, scheduleAccountNotificationDeliveryRetry,
-		arg.ErrorMessage,
-		arg.NextAttemptAt,
-		arg.ID,
-		arg.AccountID,
-		arg.TelegramChatID,
-		arg.BindingRevision,
-	)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
 }

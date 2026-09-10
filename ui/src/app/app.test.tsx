@@ -161,5 +161,8 @@ test('Bootstrap redirects logged-out protected routes to login', async () => {
     });
 
     expect(window.location.pathname).toBe('/login');
-    expect(containsText(tree.toJSON(), 'Log in')).toBe(true);
+    const methods = tree.root.findByProps({'role': 'group', 'aria-label': 'Sign-in methods'});
+    const buttons = methods.findAllByType(Button);
+    expect(buttons).toHaveLength(2);
+    expect(buttons.every(button => typeof button.props.onClick === 'function' && !button.props.disabled)).toBe(true);
 });

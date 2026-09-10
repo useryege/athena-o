@@ -25,6 +25,8 @@ WITH ready AS (
   SELECT id
   FROM account_notification_deliveries
   WHERE status = 'pending'
+    AND eligibility_revoked_at IS NULL
+    AND attempts < 5
     AND next_attempt_at <= NOW()
     AND (locked_at IS NULL OR locked_at < NOW() - sqlc.arg('lock_timeout')::interval)
     AND EXISTS (
@@ -41,9 +43,7 @@ WITH ready AS (
 )
 UPDATE account_notification_deliveries AS delivery
 SET locked_at = NOW(),
-    locked_by = $2,
-    attempts = delivery.attempts + 1,
-    last_attempt_at = NOW()
+    locked_by = $2
 FROM ready
 WHERE delivery.id = ready.id
 RETURNING delivery.id, delivery.account_id, delivery.source, delivery.severity,
@@ -51,73 +51,35 @@ RETURNING delivery.id, delivery.account_id, delivery.source, delivery.severity,
   COALESCE(delivery.link, '') AS link, delivery.channel, delivery.status,
   delivery.telegram_chat_id, delivery.binding_revision, delivery.attempts;
 
--- name: GetPendingAccountNotificationDeliveryForUpdate :one
-SELECT id
-FROM account_notification_deliveries
-WHERE id = $1
-  AND account_id = $2
-  AND telegram_chat_id = $3
-  AND binding_revision = $4
-  AND status = 'pending'
-FOR UPDATE;
-
--- name: MarkAccountNotificationDeliverySent :exec
-UPDATE account_notification_deliveries
-SET status = 'sent',
-    provider_message_id = $2,
-    error_message = NULL,
-    sent_at = NOW(),
-    locked_at = NULL,
-    locked_by = NULL
-WHERE id = $1;
-
--- name: ScheduleAccountNotificationDeliveryRetry :execrows
-UPDATE account_notification_deliveries
-SET error_message = sqlc.arg('error_message'),
-    next_attempt_at = sqlc.arg('next_attempt_at'),
-    locked_at = NULL,
-    locked_by = NULL
-WHERE id = sqlc.arg('id')
-  AND account_id = sqlc.arg('account_id')
-  AND telegram_chat_id = sqlc.arg('telegram_chat_id')
-  AND binding_revision = sqlc.arg('binding_revision')
-  AND status = 'pending';
-
--- name: MarkAccountNotificationDeliveryFailed :execrows
-UPDATE account_notification_deliveries
-SET status = 'failed',
-    error_message = sqlc.arg('error_message'),
-    locked_at = NULL,
-    locked_by = NULL
-WHERE id = sqlc.arg('id')
-  AND account_id = sqlc.arg('account_id')
-  AND telegram_chat_id = sqlc.arg('telegram_chat_id')
-  AND binding_revision = sqlc.arg('binding_revision')
-  AND status = 'pending';
-
 -- name: CancelPendingAccountNotificationDeliveries :execrows
 UPDATE account_notification_deliveries
-SET status = 'cancelled',
+SET status = CASE WHEN status = 'pending' THEN 'cancelled' ELSE status END,
+    eligibility_revoked_at = COALESCE(eligibility_revoked_at, clock_timestamp()),
+    eligibility_revoked_reason = COALESCE(eligibility_revoked_reason, 'binding_changed'),
     error_message = 'telegram binding disconnected',
     locked_at = NULL,
     locked_by = NULL
 WHERE account_id = $1
-  AND status = 'pending';
+  AND status IN ('pending', 'sending');
 
 -- name: CancelPendingAccountNotificationDeliveriesForBinding :execrows
 UPDATE account_notification_deliveries
-SET status = 'cancelled',
+SET status = CASE WHEN status = 'pending' THEN 'cancelled' ELSE status END,
+    eligibility_revoked_at = COALESCE(eligibility_revoked_at, clock_timestamp()),
+    eligibility_revoked_reason = COALESCE(eligibility_revoked_reason, 'binding_changed'),
     error_message = 'telegram recipient is unreachable',
     locked_at = NULL,
     locked_by = NULL
 WHERE account_id = $1
   AND telegram_chat_id = $2
   AND binding_revision = $3
-  AND status = 'pending';
+  AND status IN ('pending', 'sending');
 
 -- name: GetAccountNotificationRuntimeCounts :one
 SELECT
   (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'pending') AS pending_count,
   (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'pending' AND attempts > 0) AS retry_count,
   (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'failed') AS failed_count,
+  (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'sending') AS sending_count,
+  (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'unknown') AS unknown_count,
   (SELECT COUNT(*)::bigint FROM telegram_bindings WHERE status = 'unreachable') AS unreachable_binding_count;

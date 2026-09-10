@@ -4,9 +4,9 @@
 >
 > 关联需求：[Activity Alerts 需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)（已确认；完整书面设计也已整体确认）
 
-本文是目标方案，不代表当前实现。用户已整体确认原后端技术方案；[实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)已形成，尚未执行。随后补充的[UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)已整体确认，本文的 UI 读取补充也已确认；实现计划已扩展为21项前后端联合任务。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
+本文是目标方案，不代表当前实现。用户已整体确认原后端技术方案；[实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)已形成并正在执行。随后补充的[UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)已整体确认，本文的 UI 读取补充也已确认；实现计划已扩展为21项前后端联合任务。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
 
-本轮已按 Superpowers 分节确认统一数据库与现有进程边界、发送许可与撤权语义、单供应商 WSS 采集及最终确认路线；同用户集中成交允许限速排队也已确认。接口、资料和验收章节也已确认；[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认。后续实现计划细化了源码、生成依赖与验收步骤；当前仍只修改文档。
+本轮已按 Superpowers 分节确认统一数据库与现有进程边界、发送许可与撤权语义、单供应商 WSS 采集及最终确认路线；同用户集中成交允许限速排队也已确认。接口、资料和验收章节也已确认；[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认。后续实现计划细化了源码、生成依赖与验收步骤；当前已实现共享数据库基础及持久发送许可/结果路径，其余目标按联合计划继续实施。
 
 新增技术证据见[数据源契约核验](../../requirements/polymarket-copy-trading/source-contract-verification.md)与[RPC 过滤、确认和额度复核](../../requirements/polymarket-copy-trading/collector-contract-verification.md)。它们记录当前实现版本、100 钱包 OR 推送、Combo 腿映射、Profile 与收益资料的证据及限制。技术参数是可验证的设计默认值，不表示已完成运行验收。
 
@@ -35,14 +35,14 @@ Copy Trading 不在本设计内。本文维护后端和跨层数据契约，页�
 | --- | --- |
 | [账户权限](../../../internal/accountaccess/access.go)是九个模块与 NONE/READ/READ_WRITE 矩阵；[更新控制器](../../../internal/accountaccess/controller.go)提交后发布进程内快照。 | 新增 Trader Sync 权限；后台操作必须核验数据库权限，撤权必须与订阅、活动及投递串行化，不能只靠页面或缓存刷新。 |
 | [账户状态存储](../../../internal/accountstate/store/sql_store.go)默认使用 `athena` 库；[通知存储](../../../internal/notification/store/sql_store.go)默认使用独立 `notification` 库。 | 两库内相同 advisory lock 名称不构成共同事务；按账户判断权限、绑定、活动形成和待发状态需要统一事务范围。 |
-| [现有发送路径](../../../internal/notification/store/account_notifications.go)在 Telegram 发送成功后写数据库；[worker](../../../internal/notification/worker.go)对一般错误安排重试。 | 发送成功但写库失败时可能重复发送；缺少 durable `sending` 和 `unknown` 状态。现有入队时取绑定也不能代替活动形成时的绑定资格。 |
+| [发送许可](../../../internal/notification/store/attempts.go)已在短事务提交 sending 与 attempt；[worker](../../../internal/notification/worker.go)以实际 HTTP 起点和结果 CAS 补记，unknown 不重发，绑定变化写永久墓碑。 | 产品 grant 撤权钩子、确认旧 sender 停止后的恢复与统一并发调度仍待后续任务；现有入队绑定仍不能代替活动形成时的资格快照。 |
 | [Data API 客户端](../../../util/polymarket/data.go)有活动、成交和持仓；[Gamma 客户端](../../../util/polymarket/gamma.go)有公开 Profile 与市场数据。 | 缺少 Trader Sync 的类型化源记录、确认卡契约、实时接收和收益曲线适配。现有通用 map 不作为持久业务契约。 |
 | [Managed OO](../../../internal/managedoo/log_sync.go)与 [BSC Swap](../../../internal/bscswap/scanner.go)有持久游标扫描。 | 业务事件、网络及中断回补语义不同，不能直接沿用为 Trader Sync 监控。 |
 | 当前源码没有 Trader Sync 服务、订阅、站内活动或摘要。 | 本文列出的 Trader Sync 路径均为预计新增；既有设计继续描述当前实现。 |
 
 ## 关键决定
 
-2026-09-10 本轮已确认以下总体架构、采集路线与发送许可边界；接口和验收章节也已确认，完整书面规格已获整体确认，尚未开始实现。
+2026-09-10 本轮已确认以下总体架构、采集路线与发送许可边界；接口和验收章节也已确认，完整书面规格已获整体确认；当前已实现共享数据库基础及持久发送许可/结果路径，其余目标按联合计划继续实施。
 
 1. **进程部署：**`internal/tradersync.Service` 运行在现有 `athena-server` 内，提供业务 RPC 和后台监控；Telegram 仍由现有 `athena-notification` 的单一 Bot、poller 和 sender 负责。不新增服务进程、消息中间件或 Redis。
 2. **事务范围（已确认）：**账户权限、Trader Sync 数据及全部 Notification 数据统一放在 `athena` PostgreSQL 数据库，包括账户绑定、账户投递、系统群组通知、Bot polling offset 和绑定回复 outbox。各模块保留独立 query adapter，共享受控事务和一个权威迁移集；每个进程建立自己的连接池，不跨进程共享连接池对象。Notification 不再因账户/系统通知而持有两个数据库 store。
@@ -330,4 +330,4 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 
 后续实现需验证当前协议完整样本矩阵、同秒与重启故障、授权/撤权/绑定竞争、未知结果不重发、摘要临界 60 秒调度、真实容量及公开时间证据。数据缺失/异常的行为已有明确设计；未完成的运行测试不能写成已通过。
 
-2026-09-10 用户已整体确认[UI 书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)，读取契约补充同时获确认；原后端计划已扩展为21项[前后端联合实现任务](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)，尚未执行。当前仅设计、可丢弃线框和文档核对，未实施或运行业务测试；计划中的测试命令不是已通过的结果。
+2026-09-10 用户已整体确认[UI 书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)，读取契约补充同时获确认；原后端计划已扩展为21项[前后端联合实现任务](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)，正在执行。当前已实施共享数据库基础及通知许可/结果路径，并验证既有管理员通知状态消费者；新的 Trader Sync 业务页面、采集与完整验收仍待后续任务。计划中的其他测试命令不代表已通过。

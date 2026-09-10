@@ -1,5 +1,5 @@
 -- name: LockTelegramBindingAccount :exec
-SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg('account_id')::uuid::text, 0));
+SELECT pg_advisory_xact_lock(hashtextextended('athena:account:' || sqlc.arg('account_id')::uuid::text, 0));
 
 -- name: LockTelegramBindingIdentity :exec
 SELECT pg_advisory_xact_lock(

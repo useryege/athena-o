@@ -46,7 +46,6 @@ func NewCommand() *cobra.Command {
 		workerSendInterval time.Duration
 		workerPollInterval time.Duration
 		workerBatchSize    int
-		workerMaxAttempts  int
 		workerLockTimeout  time.Duration
 
 		storeSrc func(context.Context) (*notificationstore.SQLStore, error)
@@ -94,7 +93,6 @@ func NewCommand() *cobra.Command {
 					SendInterval: workerSendInterval,
 					PollInterval: workerPollInterval,
 					BatchSize:    workerBatchSize,
-					MaxAttempts:  workerMaxAttempts,
 					LockTimeout:  workerLockTimeout,
 				},
 			})
@@ -148,7 +146,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().DurationVar(&workerSendInterval, "worker-send-interval", env.ParseDurationFromEnv("ATHENA_NOTIFICATION_WORKER_SEND_INTERVAL", notification.DefaultWorkerConfig().SendInterval, time.Millisecond, time.Minute), "Delay between Telegram notification sends")
 	command.Flags().DurationVar(&workerPollInterval, "worker-poll-interval", env.ParseDurationFromEnv("ATHENA_NOTIFICATION_WORKER_POLL_INTERVAL", notification.DefaultWorkerConfig().PollInterval, time.Millisecond, time.Minute), "Delay between empty notification queue polls")
 	command.Flags().IntVar(&workerBatchSize, "worker-batch-size", env.ParseNumFromEnv("ATHENA_NOTIFICATION_WORKER_BATCH_SIZE", notification.DefaultWorkerConfig().BatchSize, 1, 100), "Maximum notification deliveries claimed per worker poll")
-	command.Flags().IntVar(&workerMaxAttempts, "worker-max-attempts", env.ParseNumFromEnv("ATHENA_NOTIFICATION_WORKER_MAX_ATTEMPTS", notification.DefaultWorkerConfig().MaxAttempts, 1, 100), "Maximum Telegram send attempts before a notification delivery fails")
 	command.Flags().DurationVar(&workerLockTimeout, "worker-lock-timeout", env.ParseDurationFromEnv("ATHENA_NOTIFICATION_WORKER_LOCK_TIMEOUT", notification.DefaultWorkerConfig().LockTimeout, time.Second, time.Hour), "Duration after which an in-flight notification delivery lock can be reclaimed")
 
 	storeSrc = notificationstore.NewSQLStoreSource()

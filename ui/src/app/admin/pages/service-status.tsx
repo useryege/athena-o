@@ -99,9 +99,13 @@ export const ServiceStatusPage = () => {
                             {label: 'System pending', value: runtime.systemPendingCount},
                             {label: 'System retry', value: runtime.systemRetryCount},
                             {label: 'System failed', value: runtime.systemFailedCount},
+                            {label: 'System sending', value: runtime.systemSendingCount},
+                            {label: 'System unknown', value: runtime.systemUnknownCount},
                             {label: 'Account pending', value: runtime.accountPendingCount},
                             {label: 'Account retry', value: runtime.accountRetryCount},
                             {label: 'Account failed', value: runtime.accountFailedCount},
+                            {label: 'Account sending', value: runtime.accountSendingCount},
+                            {label: 'Account unknown', value: runtime.accountUnknownCount},
                             {label: 'Unreachable bindings', value: runtime.unreachableBindingCount}
                         ]}
                     />

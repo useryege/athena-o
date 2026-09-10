@@ -1,12 +1,13 @@
 import {ArrowLeftOutlined} from '@ant-design/icons';
-import {Button} from 'antd';
+import {Alert, Button, Tag} from 'antd';
 import {useNavigate, useParams} from 'react-router-dom';
 import {AppPage, KeyValueGrid, Section, useAsyncData} from '../../components';
 import {formatBeijingDateTime} from '../../shared/format';
 import {fmt} from '../../shared/pages/shared';
 import {adminServices as services} from '../services';
 
-const timeFields = new Set(['createdAt', 'sentAt']);
+const timeFields = new Set(['createdAt', 'authorizedAt', 'startedAt', 'resultAt', 'sentAt']);
+const fieldLabels: Record<string, string> = {createdAt: 'Created', authorizedAt: 'Send authorized', startedAt: 'HTTP started', resultAt: 'Result recorded', sentAt: 'Sent'};
 
 const safeExternalLink = (value: unknown) => {
     const raw = String(value || '');
@@ -41,11 +42,25 @@ export const SystemNotificationDetailPage = () => {
                     All notifications
                 </Button>
             }>
+            {data.data?.status === 'unknown' && (
+                <Alert type='warning' title='Delivery result unknown' description='Telegram may have received this message. It will not be resent automatically.' />
+            )}
             <Section title='Delivery'>
                 <KeyValueGrid
                     items={Object.entries(data.data || {}).map(([label, value]) => ({
-                        label,
-                        value: label === 'link' ? safeExternalLink(value) : timeFields.has(label) ? formatBeijingDateTime(String(value)) || '-' : fmt(value)
+                        label: fieldLabels[label] || label,
+                        value:
+                            label === 'status' ? (
+                                <Tag color={value === 'sent' ? 'green' : value === 'failed' ? 'red' : value === 'unknown' ? 'orange' : value === 'sending' ? 'cyan' : 'default'}>
+                                    {String(value)}
+                                </Tag>
+                            ) : label === 'link' ? (
+                                safeExternalLink(value)
+                            ) : timeFields.has(label) ? (
+                                formatBeijingDateTime(String(value)) || '-'
+                            ) : (
+                                fmt(value)
+                            )
                     }))}
                 />
             </Section>

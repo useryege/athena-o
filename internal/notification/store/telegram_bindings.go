@@ -327,7 +327,6 @@ func (s *SQLStore) MarkTelegramBindingUnreachable(
 	accountID string,
 	chatID int64,
 	revision int64,
-	deliveryID int64,
 	reason string,
 ) error {
 	if err := s.transactional(); err != nil {
@@ -351,14 +350,6 @@ func (s *SQLStore) MarkTelegramBindingUnreachable(
 	})
 	if err != nil {
 		return fmt.Errorf("failed to mark telegram binding unreachable: %w", err)
-	}
-	if deliveryID > 0 {
-		if _, err := queries.MarkAccountNotificationDeliveryFailed(ctx, notificationsqlc.MarkAccountNotificationDeliveryFailedParams{
-			ID: deliveryID, AccountID: accountUUID, TelegramChatID: chatID,
-			BindingRevision: revision, ErrorMessage: textValue(reason),
-		}); err != nil {
-			return fmt.Errorf("failed to mark unreachable account notification delivery failed: %w", err)
-		}
 	}
 	if _, err := queries.CancelPendingAccountNotificationDeliveriesForBinding(ctx, notificationsqlc.CancelPendingAccountNotificationDeliveriesForBindingParams{
 		AccountID: accountUUID, TelegramChatID: chatID, BindingRevision: revision,

@@ -12,21 +12,28 @@ import (
 
 type Querier interface {
 	AdvanceTelegramPollingState(ctx context.Context, arg AdvanceTelegramPollingStateParams) (AdvanceTelegramPollingStateRow, error)
+	AuthorizeAccountDelivery(ctx context.Context, arg AuthorizeAccountDeliveryParams) (int64, error)
+	AuthorizeSystemDelivery(ctx context.Context, arg AuthorizeSystemDeliveryParams) (int64, error)
 	CancelPendingAccountNotificationDeliveries(ctx context.Context, accountID pgtype.UUID) (int64, error)
 	CancelPendingAccountNotificationDeliveriesForBinding(ctx context.Context, arg CancelPendingAccountNotificationDeliveriesForBindingParams) (int64, error)
 	ClaimPendingAccountNotificationDeliveries(ctx context.Context, arg ClaimPendingAccountNotificationDeliveriesParams) ([]ClaimPendingAccountNotificationDeliveriesRow, error)
 	ClaimPendingSystemNotificationDeliveries(ctx context.Context, arg ClaimPendingSystemNotificationDeliveriesParams) ([]ClaimPendingSystemNotificationDeliveriesRow, error)
 	CountSystemNotificationDeliveries(ctx context.Context, arg CountSystemNotificationDeliveriesParams) (int64, error)
 	CreateAccountNotificationDelivery(ctx context.Context, arg CreateAccountNotificationDeliveryParams) (CreateAccountNotificationDeliveryRow, error)
+	CreateDeliveryAttempt(ctx context.Context, arg CreateDeliveryAttemptParams) (NotificationDeliveryAttempt, error)
 	CreateSystemNotificationDelivery(ctx context.Context, arg CreateSystemNotificationDeliveryParams) (CreateSystemNotificationDeliveryRow, error)
 	CreateSystemNotificationTopic(ctx context.Context, arg CreateSystemNotificationTopicParams) (SystemNotificationTopic, error)
 	DeleteTelegramBinding(ctx context.Context, accountID pgtype.UUID) (DeleteTelegramBindingRow, error)
 	DeleteTelegramBindingAttemptByAccount(ctx context.Context, accountID pgtype.UUID) (int64, error)
 	DeleteTelegramBindingAttemptByID(ctx context.Context, id pgtype.UUID) (int64, error)
 	FailTelegramBindingAttempt(ctx context.Context, arg FailTelegramBindingAttemptParams) (TelegramBindingAttempt, error)
+	GetAccountDeliveryForPermit(ctx context.Context, id int64) (GetAccountDeliveryForPermitRow, error)
+	GetAccountDeliveryOwner(ctx context.Context, id int64) (pgtype.UUID, error)
 	GetAccountNotificationDeliveryByIdempotency(ctx context.Context, arg GetAccountNotificationDeliveryByIdempotencyParams) (GetAccountNotificationDeliveryByIdempotencyRow, error)
 	GetAccountNotificationRuntimeCounts(ctx context.Context) (GetAccountNotificationRuntimeCountsRow, error)
-	GetPendingAccountNotificationDeliveryForUpdate(ctx context.Context, arg GetPendingAccountNotificationDeliveryForUpdateParams) (int64, error)
+	GetDeliveryAttempt(ctx context.Context, id pgtype.UUID) (NotificationDeliveryAttempt, error)
+	GetDeliveryAttemptForUpdate(ctx context.Context, id pgtype.UUID) (NotificationDeliveryAttempt, error)
+	GetSystemDeliveryForPermit(ctx context.Context, id int64) (GetSystemDeliveryForPermitRow, error)
 	GetSystemNotificationDelivery(ctx context.Context, id int64) (GetSystemNotificationDeliveryRow, error)
 	GetSystemNotificationDeliveryCounts(ctx context.Context) (GetSystemNotificationDeliveryCountsRow, error)
 	GetSystemNotificationTopic(ctx context.Context, arg GetSystemNotificationTopicParams) (SystemNotificationTopic, error)
@@ -42,18 +49,16 @@ type Querier interface {
 	LockSystemNotificationTopic(ctx context.Context, arg LockSystemNotificationTopicParams) error
 	LockTelegramBindingAccount(ctx context.Context, accountID pgtype.UUID) error
 	LockTelegramBindingIdentity(ctx context.Context, arg LockTelegramBindingIdentityParams) error
-	MarkAccountNotificationDeliveryFailed(ctx context.Context, arg MarkAccountNotificationDeliveryFailedParams) (int64, error)
-	MarkAccountNotificationDeliverySent(ctx context.Context, arg MarkAccountNotificationDeliverySentParams) error
-	MarkSystemNotificationDeliveryFailed(ctx context.Context, arg MarkSystemNotificationDeliveryFailedParams) error
-	MarkSystemNotificationDeliverySent(ctx context.Context, arg MarkSystemNotificationDeliverySentParams) error
 	MarkTelegramBindingConnectedByIdentity(ctx context.Context, arg MarkTelegramBindingConnectedByIdentityParams) (int64, error)
 	MarkTelegramBindingUnreachable(ctx context.Context, arg MarkTelegramBindingUnreachableParams) (int64, error)
 	MarkTelegramBindingUnreachableByIdentity(ctx context.Context, arg MarkTelegramBindingUnreachableByIdentityParams) (MarkTelegramBindingUnreachableByIdentityRow, error)
 	NextTelegramBindingRevision(ctx context.Context, accountID pgtype.UUID) (int64, error)
+	RecordAccountDeliveryOutcome(ctx context.Context, arg RecordAccountDeliveryOutcomeParams) (int64, error)
+	RecordDeliveryAttemptOutcome(ctx context.Context, arg RecordDeliveryAttemptOutcomeParams) (int64, error)
+	RecordDeliveryAttemptStarted(ctx context.Context, arg RecordDeliveryAttemptStartedParams) (int64, error)
+	RecordSystemDeliveryOutcome(ctx context.Context, arg RecordSystemDeliveryOutcomeParams) (int64, error)
 	RecordTelegramPoll(ctx context.Context, lastPollAt pgtype.Timestamptz) (RecordTelegramPollRow, error)
 	ReplaceTelegramBinding(ctx context.Context, arg ReplaceTelegramBindingParams) (ReplaceTelegramBindingRow, error)
-	ScheduleAccountNotificationDeliveryRetry(ctx context.Context, arg ScheduleAccountNotificationDeliveryRetryParams) (int64, error)
-	ScheduleSystemNotificationDeliveryRetry(ctx context.Context, arg ScheduleSystemNotificationDeliveryRetryParams) error
 	UpsertTelegramBindingAttempt(ctx context.Context, arg UpsertTelegramBindingAttemptParams) (TelegramBindingAttempt, error)
 }
 
