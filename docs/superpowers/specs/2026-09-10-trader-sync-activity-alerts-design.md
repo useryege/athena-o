@@ -93,6 +93,8 @@ flowchart LR
 | ListSubscriptionSummaries / GetSubscriptionSummary | 独立管理员接口；用户身份、完整目标钱包、生命周期/健康、活动及结果数量。 |
 | GetTraderSyncRuntimeStatus | 管理员安全概要：连接、目标/关系数量、积压、缺失和异常统计。 |
 
+公共 JSON 的资源 ID、金额和 position 使用字符串；revision 等 uint64 在实际 gateway 中也用字符串，时间为 UTC RFC3339Nano。可缺值/时间/对象统一省略缺失 key，availability/evidence 显式保留；非 nil 空串、false、真 0 必须输出。Create 的 note:null 与未传均表示沿用，note.value 空串表示清空。分页规范 query 为 `page.page_size`、`page.cursor`，服务器沿用 runtime 对 protobuf JSONName 别名的接受。
+
 方法按仓库 gRPC 规范使用动词开头 PascalCase。member 请求没有 account_id，由服务端注入；所有查询和写入均包含 owner 条件，跨 owner 与不存在资源都返回 NotFound。管理员 DTO/SQL 从源头不选择私有备注、活动正文、消息正文和逐条投递，无管理用户订阅或重发入口。
 
 分页默认 50、最多 100，游标签名并绑定身份、过滤条件、方向及相应页边界。UI 补充将活动排序修订为 owner 内形成顺序 `id DESC`，其 bigint ID 在账户 gate 内由持久 sequence（CACHE 1、正向、NO CYCLE）分配，不预取或回拨；读取在同 gate 取得该 owner 已提交 max(id) 为 snapshot。recorded_at 继续记录真实时间，避免将可回退时钟当新活动水位。其他资源按相应稳定时间/ID，摘要部分按序号。
@@ -154,7 +156,7 @@ BUY 抵押币量为 makerAmountFilled、份额为 takerAmountFilled；SELL 相�
 
 等待前为已注册 attempt 填写订阅 revision/generation、collector epoch、filter revision 与候选边界；若保存时边界已过去则重算将来边界。未定边界期间也保存 raw 及 attempt 归属，最终按成功边界裁定，不直接产生活动。到达边界后复核连接、权限、revision，成功原子把 attempt 转为 succeeded、生成有效区间。失败 attempt 永不成为后来基线的候选；服务重启对未提交成功的 attempt 明确失败并新建实时基线。
 
-成交资格使用 `settled_at>=effective_at`，区间终点排他。暂停/取消/撤权终点使用实际业务事务时间，不向后取整；区块只有秒精度，不伪造同块内逐成交亚秒时刻。用户修改与基线成功共用账户 gate，较新 revision 优先。生效边界建立后没有固定额外等待。
+成交资格使用 `settled_at>=effective_at`，区间终点排他。尚未生效即终止时，允许 `ended_at<effective_at`，该区间不覆盖任何成交，仍保留真实终点。暂停/取消/撤权终点使用实际业务事务时间，不向后取整；区块只有秒精度，不伪造同块内逐成交亚秒时刻。用户修改与基线成功共用账户 gate，较新 revision 优先。生效边界建立后没有固定额外等待。
 
 ### 6.3 接收和投影
 

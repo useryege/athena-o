@@ -368,7 +368,7 @@ RETURNING identity_json;
 - 产出：`accountstatestore.AccessChangeHook func(ctx context.Context,tx pgx.Tx,accountID string,previous,next accountaccess.Access) error`，通过`SetAccessChangeHook(hook AccessChangeHook)`在服务启动前一次注入；`(*tradersyncstore.SQLStore).RevokeTx(ctx context.Context,tx pgx.Tx,ownerID,reason string) error`。accountstate不导入tradersync业务包。
 - 基线注册接口由本任务定义、任务9实现：`BaselineRegistrar.RegisterTx(ctx context.Context,tx pgx.Tx,sub tsmodel.Subscription) error`。Create/resume事务在account gate后调用，未连接也持久pending attempt；禁止提交后才异步补登记归属。
 
-- [ ] **步骤1：写授权与Unicode备注红灯测试。**
+- [x] **步骤1：写授权与Unicode备注红灯测试。**
 
 ```go
 func TestTraderSyncGrantDiffersFromReadRequirement(t *testing.T) {
@@ -383,7 +383,7 @@ func TestTraderSyncGrantDiffersFromReadRequirement(t *testing.T) {
 
 `ValidateNote`测试用`strings.Repeat("🙂",20)`成功、21失败；不要用字节长度。运行 `go test ./internal/accountaccess ./internal/tradersync -run 'TestTraderSyncGrant|TestNote' -count=1`。
 
-- [ ] **步骤2：补齐schema约束和完整矩阵写入。**订阅表以(owner,wallet)非cancelled部分唯一，revision/generation>0；备注独立(owner,wallet)唯一且保留取消后数据。baseline_attempts/monitor_intervals在本批建立基础列：subscription/generation/epoch/filter_revision/expected_revision、registered_high、candidate_effective_at、state、effective_at/ended_at及原因，attempt状态pending/succeeded/failed单向结束。owner引用和订阅引用使用复合FK保持一致；request结果事务失败不落库。
+- [x] **步骤2：补齐schema约束和完整矩阵写入。**订阅表以(owner,wallet)非cancelled部分唯一，revision/generation>0；备注独立(owner,wallet)唯一且保留取消后数据。baseline_attempts/monitor_intervals在本批建立基础列：subscription/generation/epoch/filter_revision/expected_revision、registered_high、candidate_effective_at、state、effective_at/ended_at及原因，attempt状态pending/succeeded/failed单向结束。owner引用和订阅引用使用复合FK保持一致；request结果事务失败不落库。
 
 ```sql
 CREATE UNIQUE INDEX trader_sync_one_live_target
@@ -396,7 +396,7 @@ WHERE owner_id=$1 AND desired_state<>'cancelled';
 
 account_module_access的合法模块与grant检查、ReplaceAccountModuleAccess及Go读写参数均扩为十项；Trader Sync READ用CHECK和Go校验双重拒绝。`make sqlc-local`后适配stores。
 
-- [ ] **步骤3：实现创建/状态/备注事务及并发测试。**Create分两次短事务：首次account gate内核验grant→ReadCreateResultTx，有成功则立即返回，不访问token/外部身份；未命中才ReadConfirmationTx。锁外Revalidate身份；再次account gate核验grant→再次ReadCreateResultTx→重新核验token/identity digest/配额/唯一性→备注（nil沿用，指针空清空）→subscription→RegisterTx→消费token→成功结果。第二次检查处理并发同request已完成；外部核验不能跨锁。暂停/取消用事务实际时间关闭区间、revision+1；resume生成新generation且登记新pending attempt；自动网络恢复不经过resume。取消不可恢复，重建新ID沿用备注。UpdateNote返回保存后的值/revision，响应丢失亦重取相同成功结果。
+- [x] **步骤3：实现创建/状态/备注事务及并发测试。**Create分两次短事务：首次account gate内核验grant→ReadCreateResultTx，有成功则立即返回，不访问token/外部身份；未命中才ReadConfirmationTx。锁外Revalidate身份；再次account gate核验grant→再次ReadCreateResultTx→重新核验token/identity digest/配额/唯一性→备注（nil沿用，指针空清空）→subscription→RegisterTx→消费token→成功结果。第二次检查处理并发同request已完成；外部核验不能跨锁。暂停/取消用事务实际时间关闭区间、revision+1；允许ended_at早于effective_at，表示尚未生效即终止的空覆盖区间，不钳制真实终点；resume生成新generation且登记新pending attempt；自动网络恢复不经过resume。取消不可恢复，重建新ID沿用备注。UpdateNote返回保存后的值/revision，响应丢失亦重取相同成功结果。
 
 ```go
 func ValidateNote(note string) error {
@@ -409,7 +409,7 @@ func ValidateNote(note string) error {
 
 真实数据库两连接屏障测试同时创建第10/11项只一成功、同wallet仅一未取消、失败token不占配额、相同幂等返回同ID而不同payload拒绝。首次成功后将token置过期并令身份adapter调用即失败，重试仍返回原ID；撤权后同请求必须拒绝。ResolveContextTx验证nil备注、保留空串、取消后保留、五态占位与另owner不可见。取消/重建及改备注均不重写历史、generation或基线。
 
-- [ ] **步骤4：将撤权hook嵌入权限事务并验证不可复活。**controller全局更新mutex改为按账户串行，缓存发布仍在Commit后；DB revision CAS保留。UpdateAccountAccess在同account gate/tx内执行hook，RW→NONE时关闭区间、permission_disabled、取消无许可工作、给包括sending在内的旧Trader Sync delivery写永久墓碑。登录/API Key开关变化不触发产品撤权；重授不清墓碑、不自动resume。
+- [x] **步骤4：将撤权hook嵌入权限事务并验证不可复活。**controller全局更新mutex改为按账户串行，缓存发布仍在Commit后；DB revision CAS保留。UpdateAccountAccess在同account gate/tx内执行hook，RW→NONE时关闭区间、permission_disabled、取消无许可工作、给包括sending在内的旧Trader Sync delivery写永久墓碑。登录/API Key开关变化不触发产品撤权；重授不清墓碑、不自动resume。
 
 ```sql
 UPDATE account_notification_deliveries
@@ -421,7 +421,7 @@ WHERE account_id=$1 AND source='trader_sync';
 
 未冻结摘要资格由任务10与其表一起接入RevokeTx；当前任务只操作已经存在的订阅、区间及delivery，不能引用未来尚未创建的表。任务10上线前尚无活动或摘要业务入口。sending原attempt结果照实记录，明确失败因墓碑cancelled。hook注入是必需启动依赖，缺失时server启动错误，不能静默漏撤权；使用fake registrar验证当前任务，不提前实现采集。
 
-- [ ] **步骤5：生成权限proto并适配实际UI矩阵。**AccountDataModule使用空闲enum值12（6、10已reserved），不是因十模块而占用10；拆开grant校验和requirement校验。稳定后 `make protogen`，适配Go映射及UI共享allowedAccessLevels。非法READ从解析端fail-closed为NONE，绝不提升RW；选择器只NONE/RW，十项序列化/克隆/比较/概览一致。业务页面与导航由任务15–19交付，本任务不挂空路由。
+- [x] **步骤5：生成权限proto并适配实际UI矩阵。**AccountDataModule使用空闲enum值12（6、10已reserved），不是因十模块而占用10；拆开grant校验和requirement校验。稳定后 `make protogen`，适配Go映射及UI共享allowedAccessLevels。非法READ从解析端fail-closed为NONE，绝不提升RW；选择器只NONE/RW，十项序列化/克隆/比较/概览一致。业务页面与导航由任务15–19交付，本任务不挂空路由。
 
 ```ts
 // access-modules.ts共享允许值；其他模块沿用已有maxAccess逻辑。
@@ -432,7 +432,7 @@ if (module.id === 'trader_sync') {
 
 共享函数命名为`allowedAccessLevels(module: AccountDataModuleDefinition): AccountDataAccess[]`，使用现有AccountDataAccess枚举。测试不仅检查选项，还检查parse→edit→serialize十项往返与RW→NONE缓存清理。
 
-- [ ] **步骤6：运行 `go test ./internal/accountaccess ./internal/accountstate/... ./internal/tradersync/... ./internal/server/account`、上述真实数据库集成测试和 `yarn --cwd ui test --runInBand --watch=false`。**提交 `feat(trader-sync): manage isolated subscriptions and revocation`。
+- [x] **步骤6：运行 `go test ./internal/accountaccess ./internal/accountstate/... ./internal/tradersync/... ./internal/server/account`、上述真实数据库集成测试和 `yarn --cwd ui test --runInBand --watch=false`。**提交 `feat(trader-sync): manage isolated subscriptions and revocation`。
 
 ## 任务7：三Exchange成交解码、规范链确认与版本证据
 
@@ -445,7 +445,7 @@ if (module.id === 'trader_sync') {
 - 产出：`DecodeOwnTrade(log types.Log,version string) (tsmodel.Trade,error)`；`ConfirmReceived(ctx context.Context,node CanonicalRPC,raw types.Log) (tsmodel.CanonicalEvidence,error)`；`(*VersionVerifier).Verify(ctx context.Context,raw types.Log) (version string,err error)`。
 - CanonicalRPC精确契约：`FinalizedHeader(context.Context) (*types.Header,error)`、`TransactionReceipt(context.Context,common.Hash) (*types.Receipt,error)`、`HeaderByHash(context.Context,common.Hash) (*types.Header,error)`、`HeaderByNumber(context.Context,*big.Int) (*types.Header,error)`；fake按调用记录，不请求真实链。
 
-- [ ] **步骤1：固定已核准原始日志fixtures，写BUY/SELL及自身归属红灯。**fixtures逐项存address/topics/data/block/tx/logIndex及预期wallet/方向/原量/fee，至少三Exchange×BUY/SELL×Maker/Taker；同tx两个自身日志必须两个Trade；只topics[3]匹配、OrdersMatched及SPLIT/MERGE不得产出Trade。
+- [ ] **步骤1：固定已核准原始日志fixtures，写BUY/SELL及自身归属红灯。**fixtures逐项存address/topics/data/block/tx/logIndex及预期wallet/方向/原量/fee，至少三Exchange×BUY/SELL×Maker/Taker；同tx两个自身日志必须两个Trade；只topics[3]匹配的目标不得被归属该Trade（纯解码器只取topics[2]，目标过滤由任务9验证），OrdersMatched及SPLIT/MERGE不得产出Trade。
 
 ```go
 func TestUnknownExecutionVersionIsNotDecoded(t *testing.T) {
@@ -478,7 +478,7 @@ same:=received.Address==raw.Address && received.Index==raw.Index &&
 if !same { return tsmodel.CanonicalEvidence{Status:"invalid",Reason:"canonical_log_changed"},nil }
 ```
 
-- [ ] **步骤4：加入按blockHash的版本证据缓存。**HTTP adapter用StorageAtHash/CodeAtHash读取已知候选块及父块代理/实现，核对已核准升级记录语义；仅允许候选known blockHash的升级事件查询，不用latest槽证明旧执行。不认识实现或无法排除同块升级保持unverified，不能用块末实现盲解。该能力通过窄接口`VersionRPC`定义StorageAtHash、CodeAtHash及`UpgradeLogs(ctx context.Context,blockHash common.Hash,proxy common.Address) ([]types.Log,error)`；不提供任意from/to扫描接口。
+- [ ] **步骤4：加入按blockHash的版本证据缓存。**HTTP adapter用StorageAtHash/CodeAtHash读取已知候选块及父块代理/实现，核对已核准升级记录语义；仅允许候选known blockHash的升级事件查询，不用latest槽证明旧执行。不认识实现或无法排除同块升级保持unverified，不能用块末实现盲解。该能力通过窄接口`VersionRPC`定义`ChainID(context.Context) (*big.Int,error)`、`HeaderByHash(context.Context,common.Hash) (*types.Header,error)`、StorageAtHash、CodeAtHash及`UpgradeLogs(ctx context.Context,blockHash common.Hash,proxy common.Address) ([]types.Log,error)`；先核实节点chain 137，再从已知候选头取得ParentHash，不以配置常量或按高度猜父块代替；不提供任意from/to扫描接口。
 
 ```go
 if parentImplementation!=blockImplementation || len(upgrades)>0 || !upgradeEvidenceComplete {
@@ -745,7 +745,7 @@ SELECT pg_advisory_unlock(hashtextextended('athena:account:' || $1::text,0));
 - 产出handler：`New(service *tradersync.Service) *Server`；全部RPC标准`(context.Context,*Request)(*Response,error)`，精确消息字段如下表。内部Service转发会员方法时显式传owner；管理员读取另用仅概要的store方法，不复用Activity。
 - 游标：`Cursor{Version int; Kind,PrincipalID,FilterDigest,Direction string; PageSize int32; SnapshotID,UpperID,LowerID,AfterID,Time,ID string; Empty bool}`；Kind为activity_snapshot/activity_next/activity_refresh/history/subscription/part/admin_subscription，互不混用。`EncodeCursor(c Cursor,key []byte) (string,error)`、`DecodeCursor(token string,key []byte,principalID,filterDigest,kind string,pageSize int32) (Cursor,error)`。HMAC-SHA256保护规范JSON，base64url编码payload和签名，constant-time核验；activity数值键内部解析int64，不能按字符串词典序排序。history/subscription使用Time/ID，part使用稳定序号键。
 
-所有API资源ID/金额/链上position用string，revision用uint64并验证实际gateway表示；时间用UTC RFC3339Nano字符串。member请求不增加account_id。列表`PageInput{int32 page_size; string cursor}`，`PageInfo{string next_cursor}`；activity另用`ActivityPageInfo{nextCursor,refreshCursor,snapshot,asOf string; hasNewer bool}`。snapshot为签名不透明标记，refreshCursor已含原水位，客户端不另传latest_marker。具体DTO使用明确字段及独立availability wrapper，不能把map[string]any暴露为契约。HTTP GET分页必须用嵌套query `page.page_size`与`page.cursor`，普通过滤为`subscription_id`等；真实gateway测试固定此形状，不照抄其他模块的顶层page_size。
+所有API资源ID/金额/链上position用string，revision用uint64并验证实际gateway表示；时间用UTC RFC3339Nano字符串。生产gateway使用encoding/json，revision及其他uint64字段需局部JSON string tag并与实际Swagger一致；不全局更换marshaler。可缺value/时间/对象统一省略缺失key，evidence仍保留，非nil空串/false/真0必须输出；输入note:null与缺note同为nil。member请求不增加account_id。列表`PageInput{int32 page_size; string cursor}`，`PageInfo{string next_cursor}`；activity另用`ActivityPageInfo{nextCursor,refreshCursor,snapshot,asOf string; hasNewer bool}`。snapshot为签名不透明标记，refreshCursor已含原水位，客户端不另传latest_marker。具体DTO使用明确字段及独立availability wrapper，不能把map[string]any暴露为契约。HTTP GET分页必须用嵌套query `page.page_size`与`page.cursor`，普通过滤为`subscription_id`等；真实gateway测试固定此形状，不照抄其他模块的顶层page_size。服务器沿用runtime的protobuf JSONName别名接受面，不新增严格query parser；测试须断言handler实际收到嵌套值，不能只检查HTTP200。
 
 application DTO契约如下；每个struct按表中顺序分配连续字段号，从1开始，嵌套对象使用独立struct。可选值用指针/nullable消息，重复字段保留nil与availability，JSON tag使用camelCase。
 
