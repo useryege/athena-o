@@ -47,6 +47,23 @@ func (s *SQLStore) PersistReceived(ctx context.Context, token, epoch uint64, rec
 	if err = checkCollectorFence(ctx, queries, token, epoch); err != nil {
 		return err
 	}
+	observe := func() error {
+		_, err := queries.ObserveCollectorReceipt(ctx, q.ObserveCollectorReceiptParams{ID: int64(epoch), LastReceivedAt: pgtype.Timestamptz{Time: received.ReceivedAt, Valid: true}, LastReadSequence: seq})
+		return err
+	}
+	// Known facts retain newly received removal evidence even after their last
+	// subscription stops. This path never recreates raw facts or candidates.
+	update := q.UpdateSourceRemovedParams{ExchangeAddress: raw.Address.Bytes(), BlockHash: raw.BlockHash.Bytes(), TransactionHash: raw.TxHash.Bytes(), LogIndex: index, Wallet: wallet.Bytes(), Removed: raw.Removed}
+	affected, err := queries.UpdateSourceRemoved(ctx, update)
+	if err != nil {
+		return err
+	}
+	if affected > 0 {
+		if err = observe(); err != nil {
+			return err
+		}
+		return tx.Commit(ctx)
+	}
 	// A provider's broad/counterparty-only push cannot register this target.
 	targets, err := queries.ListCollectorTargets(ctx)
 	if err != nil {
@@ -72,10 +89,10 @@ func (s *SQLStore) PersistReceived(ctx context.Context, token, epoch uint64, rec
 	} else if !errors.Is(err, pgx.ErrNoRows) {
 		return err
 	}
-	if err = queries.UpdateSourceRemoved(ctx, q.UpdateSourceRemovedParams{ExchangeAddress: raw.Address.Bytes(), BlockHash: raw.BlockHash.Bytes(), TransactionHash: raw.TxHash.Bytes(), LogIndex: index, Wallet: wallet.Bytes(), Removed: raw.Removed}); err != nil {
+	if _, err = queries.UpdateSourceRemoved(ctx, update); err != nil {
 		return err
 	}
-	if _, err = queries.ObserveCollectorReceipt(ctx, q.ObserveCollectorReceiptParams{ID: int64(epoch), LastReceivedAt: pgtype.Timestamptz{Time: received.ReceivedAt, Valid: true}, LastReadSequence: seq}); err != nil {
+	if err = observe(); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)

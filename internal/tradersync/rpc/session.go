@@ -27,6 +27,8 @@ type sessionConfig struct {
 	ping, pong, request time.Duration
 }
 
+var errPendingCapacity = errors.New("wss_pending_ack_capacity_exhausted")
+
 var defaultSessionConfig = sessionConfig{1024, 15 * time.Second, 5 * time.Second, 5 * time.Second}
 
 type wireRequest struct {
@@ -169,7 +171,10 @@ func (s *Session) call(ctx context.Context, method string, params any) (json.Raw
 	s.mu.Lock()
 	if len(s.pending) >= 64 {
 		s.mu.Unlock()
-		return nil, errors.New("WSS pending request capacity exhausted")
+		// Unacknowledged wire requests cannot be evicted or have their IDs reused.
+		// Close this physical protocol session so its owner can establish a new epoch.
+		s.fail(errPendingCapacity)
+		return nil, errPendingCapacity
 	}
 	s.nextID++
 	id := s.nextID

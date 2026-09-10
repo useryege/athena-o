@@ -187,7 +187,7 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 	epoch, err := c.store.StartCollectorEpoch(ctx, token)
 	if err != nil {
 		session.Close()
-		return err
+		return fmt.Errorf("%w: start epoch: %w", errCollectorBoundary, err)
 	}
 	sessionCtx, cancel := context.WithCancel(ctx)
 	c.mu.Lock()
@@ -197,8 +197,22 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 	intake := NewIntake(c.store, token)
 	receivedErr := make(chan error, 1)
 	healthErr := make(chan error, 1)
+	wssErr := make(chan error, 1)
 	var receiver sync.WaitGroup
-	receiver.Add(2)
+	receiver.Add(3)
+	// Done must cancel SQL/gate/ACK waits independently of reconcile and HTTP.
+	go func() {
+		defer receiver.Done()
+		select {
+		case <-sessionCtx.Done():
+			return
+		case <-session.Done():
+			if sessionCtx.Err() == nil {
+				wssErr <- fmt.Errorf("WSS session: %w", session.Err())
+				cancel()
+			}
+		}
+	}()
 	go func() {
 		defer receiver.Done()
 		for {
@@ -263,6 +277,11 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 		receiver.Wait()
 		// Cancellation may first surface from an in-flight ACK/SQL request. Preserve
 		// the receiver's causal error after join instead of recording only "cancelled".
+		select {
+		case err := <-wssErr:
+			result = err
+		default:
+		}
 		select {
 		case receiveErr := <-receivedErr:
 			result = fmt.Errorf("raw persistence failed: %w", receiveErr)

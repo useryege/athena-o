@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/useryege/athena/internal/accountstate/txgate"
 	q "github.com/useryege/athena/internal/tradersync/store/sqlc"
 )
 
@@ -182,7 +183,10 @@ func checkCollectorFence(ctx context.Context, queries *q.Queries, token, epoch u
 	return nil
 }
 func (s *SQLStore) collectorTx(ctx context.Context, token, epoch uint64, fn func(*q.Queries) error) error {
-	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
+	return s.collectorTxUsing(ctx, s.pool, token, epoch, fn)
+}
+func (s *SQLStore) collectorTxUsing(ctx context.Context, beginner txgate.Beginner, token, epoch uint64, fn func(*q.Queries) error) error {
+	tx, err := beginner.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
@@ -207,8 +211,11 @@ func endEpoch(ctx context.Context, queries *q.Queries, epoch int64, reason strin
 	return err
 }
 func (s *SQLStore) StartCollectorEpoch(ctx context.Context, token uint64) (uint64, error) {
+	return s.startCollectorEpochUsing(ctx, s.pool, token)
+}
+func (s *SQLStore) startCollectorEpochUsing(ctx context.Context, beginner txgate.Beginner, token uint64) (uint64, error) {
 	var epoch uint64
-	err := s.collectorTx(ctx, token, 0, func(queries *q.Queries) error {
+	err := s.collectorTxUsing(ctx, beginner, token, 0, func(queries *q.Queries) error {
 		control, err := queries.LockCollectorControl(ctx)
 		if err != nil {
 			return err
@@ -230,6 +237,17 @@ func (s *SQLStore) StartCollectorEpoch(ctx context.Context, token uint64) (uint6
 		epoch = uint64(row.ID)
 		return nil
 	})
+	if err != nil && epoch != 0 {
+		// A lost COMMIT response is not evidence of rollback. The control row lock
+		// waits out the original transaction and verifies this exact active epoch.
+		readCtx, stop := cleanupContext()
+		defer stop()
+		readErr := s.collectorTx(readCtx, token, epoch, func(*q.Queries) error { return nil })
+		if readErr == nil {
+			return epoch, nil
+		}
+		err = errors.Join(err, fmt.Errorf("confirm created collector epoch: %w", readErr))
+	}
 	return epoch, err
 }
 func (s *SQLStore) CloseCollectorEpoch(ctx context.Context, token, epoch uint64, reason string) error {

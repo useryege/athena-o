@@ -71,7 +71,7 @@ type Querier interface {
 	SaveTradeMetadata(ctx context.Context, arg SaveTradeMetadataParams) error
 	StartComboRound(ctx context.Context) error
 	SucceedBaselineAttempt(ctx context.Context, id pgtype.UUID) (TraderSyncBaselineAttempt, error)
-	UpdateSourceRemoved(ctx context.Context, arg UpdateSourceRemovedParams) error
+	UpdateSourceRemoved(ctx context.Context, arg UpdateSourceRemovedParams) (int64, error)
 	UpsertComboPosition(ctx context.Context, arg UpsertComboPositionParams) error
 }
 

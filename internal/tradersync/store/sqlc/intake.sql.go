@@ -83,7 +83,7 @@ func (q *Queries) InsertSourceRecord(ctx context.Context, arg InsertSourceRecord
 	return i, err
 }
 
-const updateSourceRemoved = `-- name: UpdateSourceRemoved :exec
+const updateSourceRemoved = `-- name: UpdateSourceRemoved :execrows
 UPDATE trader_sync_source_records SET removed=removed OR $6,confirmation_state=CASE WHEN $6 THEN 'invalid' ELSE confirmation_state END,confirmation_reason=CASE WHEN $6 THEN 'removed' ELSE confirmation_reason END
 WHERE chain_id=137 AND exchange_address=$1 AND block_hash=$2 AND transaction_hash=$3 AND log_index=$4 AND wallet=$5
 `
@@ -97,8 +97,8 @@ type UpdateSourceRemovedParams struct {
 	Removed         bool
 }
 
-func (q *Queries) UpdateSourceRemoved(ctx context.Context, arg UpdateSourceRemovedParams) error {
-	_, err := q.db.Exec(ctx, updateSourceRemoved,
+func (q *Queries) UpdateSourceRemoved(ctx context.Context, arg UpdateSourceRemovedParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateSourceRemoved,
 		arg.ExchangeAddress,
 		arg.BlockHash,
 		arg.TransactionHash,
@@ -106,5 +106,8 @@ func (q *Queries) UpdateSourceRemoved(ctx context.Context, arg UpdateSourceRemov
 		arg.Wallet,
 		arg.Removed,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

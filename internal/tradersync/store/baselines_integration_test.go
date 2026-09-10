@@ -267,7 +267,8 @@ func TestBaselineOwnershipSnapshotSerializesRegistrationAndPreservesNewPending(t
 
 type baselineCommitReplyLost struct {
 	txgate.Beginner
-	calls int
+	calls    int
+	rollback bool
 }
 type baselineCommittedTx struct {
 	pgx.Tx
@@ -282,6 +283,9 @@ func (b *baselineCommitReplyLost) BeginTx(ctx context.Context, options pgx.TxOpt
 	return &baselineCommittedTx{Tx: tx, parent: b}, nil
 }
 func (tx *baselineCommittedTx) Commit(ctx context.Context) error {
+	if tx.parent.rollback {
+		return errors.Join(errors.New("injected unknown rolled-back COMMIT"), tx.Tx.Rollback(ctx))
+	}
 	if err := tx.Tx.Commit(ctx); err != nil {
 		return err
 	}
@@ -344,5 +348,58 @@ func TestBaselineUnknownCommitReadsPersistedSuccessBeforeAnyRetry(t *testing.T) 
 	var n int
 	if err = db.Pool.QueryRow(ctx, `SELECT count(*) FROM trader_sync_monitor_intervals WHERE baseline_attempt_id=$1`, attempt).Scan(&n); err != nil || n != 1 {
 		t.Fatal("unknown reply duplicated interval", n, err)
+	}
+}
+
+func TestBaselineEpochUnknownCommitRecoversDurableActiveEpoch(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	s := NewSQLStore(db.Pool)
+	owner, err := s.AcquireCollectorSession(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer owner.Close(ctx)
+	lost := &baselineCommitReplyLost{Beginner: db.Pool}
+	epoch, err := s.startCollectorEpochUsing(ctx, lost, owner.Token)
+	if err != nil || epoch == 0 {
+		t.Fatal("committed active epoch stranded after lost reply", epoch, err)
+	}
+	if lost.calls != 1 {
+		t.Fatal("test did not commit and lose response", lost.calls)
+	}
+	var active int64
+	if err = db.Pool.QueryRow(ctx, `SELECT active_epoch FROM trader_sync_collector_control`).Scan(&active); err != nil || active != int64(epoch) {
+		t.Fatal("recovery chose wrong epoch", active, epoch, err)
+	}
+	if err = owner.Check(ctx); err != nil {
+		t.Fatal("ownership connection was not independently healthy", err)
+	}
+	if err = s.CloseCollectorEpoch(ctx, owner.Token, epoch, "test recovered startup"); err != nil {
+		t.Fatal(err)
+	}
+	next, err := s.StartCollectorEpoch(ctx, owner.Token)
+	if err != nil || next <= epoch {
+		t.Fatal("same owner could not advance after recovered startup", next, err)
+	}
+}
+
+func TestBaselineEpochUnknownRollbackCannotBecomeActiveEvidence(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	s := NewSQLStore(db.Pool)
+	owner, err := s.AcquireCollectorSession(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer owner.Close(ctx)
+	lost := &baselineCommitReplyLost{Beginner: db.Pool, rollback: true}
+	epoch, err := s.startCollectorEpochUsing(ctx, lost, owner.Token)
+	if epoch == 0 || err == nil || !errors.Is(err, ErrCollectorFenced) {
+		t.Fatal("uncommitted epoch adopted as durable active", epoch, err)
+	}
+	next, err := s.StartCollectorEpoch(ctx, owner.Token)
+	if err != nil || next <= epoch {
+		t.Fatal("rolled-back epoch leaked control state", next, err)
 	}
 }

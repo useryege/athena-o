@@ -2,7 +2,7 @@
 INSERT INTO trader_sync_source_records(chain_id,exchange_address,wallet,block_hash,transaction_hash,log_index,block_number,raw_json,collector_epoch,read_sequence,received_at,removed)
 VALUES(137,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
 ON CONFLICT(chain_id,exchange_address,block_hash,transaction_hash,log_index) DO NOTHING RETURNING *;
--- name: UpdateSourceRemoved :exec
+-- name: UpdateSourceRemoved :execrows
 UPDATE trader_sync_source_records SET removed=removed OR $6,confirmation_state=CASE WHEN $6 THEN 'invalid' ELSE confirmation_state END,confirmation_reason=CASE WHEN $6 THEN 'removed' ELSE confirmation_reason END
 WHERE chain_id=137 AND exchange_address=$1 AND block_hash=$2 AND transaction_hash=$3 AND log_index=$4 AND wallet=$5;
 -- name: InsertSourceCandidates :exec

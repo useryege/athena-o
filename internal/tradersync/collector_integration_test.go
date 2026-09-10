@@ -761,3 +761,192 @@ func TestCollectorLatestHealthContinuesWhileBaselineWaitsForAccount(t *testing.T
 		t.Fatal("account wait suppressed 10-second latest health", reason)
 	}
 }
+
+func TestCollectorWSSFailureCancelsAccountWaitWithHealthyLatest(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	owner, err := accountstore.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
+	if err != nil {
+		t.Fatal(err)
+	}
+	insert := func(wallet string) string {
+		t.Helper()
+		var id string
+		if err := db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state)VALUES($1,$2,'enabled','pending_baseline')RETURNING id`, owner.ID, common.HexToAddress(wallet).Bytes()).Scan(&id); err != nil {
+			t.Fatal(err)
+		}
+		return id
+	}
+	original := insert("0x1111111111111111111111111111111111111111")
+	connections := make(chan *websocket.Conn, 4)
+	up := websocket.Upgrader{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, e := up.Upgrade(w, r, nil)
+		if e != nil {
+			return
+		}
+		defer conn.Close()
+		connections <- conn
+		for {
+			var req struct {
+				ID     uint64 `json:"id"`
+				Method string `json:"method"`
+			}
+			if conn.ReadJSON(&req) != nil {
+				return
+			}
+			result := any(true)
+			if req.Method == "eth_chainId" {
+				result = "0x89"
+			}
+			if req.Method == "eth_subscribe" {
+				result = fmt.Sprintf("filter-%d", req.ID)
+			}
+			if conn.WriteJSON(map[string]any{"jsonrpc": "2.0", "id": req.ID, "result": result}) != nil {
+				return
+			}
+		}
+	}))
+	defer server.Close()
+	node := &collectorNode{} // Every latest read succeeds; it cannot cancel the account wait.
+	collector, err := NewCollector(store.NewSQLStore(db.Pool), node, Config{WebSocketURL: "ws" + strings.TrimPrefix(server.URL, "http"), ReconnectMin: 10 * time.Millisecond, ReconnectMax: 20 * time.Millisecond})
+	if err != nil {
+		t.Fatal(err)
+	}
+	running := make(chan error, 1)
+	go func() { running <- collector.Run(ctx) }()
+	wait := func(label string, fn func() bool) {
+		t.Helper()
+		deadline := time.Now().Add(3 * time.Second)
+		for time.Now().Before(deadline) {
+			if fn() {
+				return
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		t.Fatal(label)
+	}
+	wait("existing A did not become healthy", func() bool {
+		var state string
+		_ = db.Pool.QueryRow(ctx, `SELECT observation_state FROM trader_sync_subscriptions WHERE id=$1`, original).Scan(&state)
+		return state == "healthy"
+	})
+	var epoch int64
+	if err = db.Pool.QueryRow(ctx, `SELECT active_epoch FROM trader_sync_collector_control`).Scan(&epoch); err != nil {
+		t.Fatal(err)
+	}
+	blocker, err := db.Pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer blocker.Rollback(ctx)
+	if _, err = blocker.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended('athena:account:' || $1::text,0))`, owner.ID); err != nil {
+		t.Fatal(err)
+	}
+	insert("0x2222222222222222222222222222222222222222")
+	wait("reconcile did not wait for account gate", func() bool {
+		var waiting bool
+		_ = db.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pg_locks WHERE locktype='advisory' AND NOT granted AND database=(SELECT oid FROM pg_database WHERE datname=current_database()) AND objid=(hashtextextended('athena:account:' || $1::text,0)&4294967295)::oid)`, owner.ID).Scan(&waiting)
+		return waiting
+	})
+	conn := <-connections
+	_ = conn.Close()
+	var reason string
+	var ended bool
+	deadline := time.Now().Add(time.Second)
+	for time.Now().Before(deadline) {
+		_ = db.Pool.QueryRow(ctx, `SELECT ended_at IS NOT NULL,reason FROM trader_sync_collector_epochs WHERE id=$1`, epoch).Scan(&ended, &reason)
+		if ended {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if !ended || !strings.Contains(reason, "WSS session") {
+		_ = blocker.Rollback(ctx)
+		cancel()
+		<-running
+		t.Fatal("WSS failure remained hidden behind account gate", ended, reason)
+	}
+	if node.latestCalls.Load() == 0 {
+		t.Fatal("healthy latest fake was never used")
+	}
+	_ = blocker.Rollback(ctx)
+	wait("closed epoch did not recover to a fresh session", func() bool {
+		var active int64
+		_ = db.Pool.QueryRow(ctx, `SELECT COALESCE(active_epoch,0) FROM trader_sync_collector_control`).Scan(&active)
+		return active > epoch
+	})
+	cancel()
+	select {
+	case err = <-running:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("WSS watcher did not join")
+	}
+}
+
+func TestCollectorStartFailureIsFatalAndPreservesCleanupError(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	if _, err := db.Pool.Exec(ctx, `CREATE FUNCTION reject_epoch_start() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN RAISE EXCEPTION 'injected epoch start failure';END$$;
+CREATE TRIGGER reject_epoch_start BEFORE INSERT ON trader_sync_collector_epochs FOR EACH ROW EXECUTE FUNCTION reject_epoch_start();
+CREATE FUNCTION reject_owner_release() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN IF NEW.owner_id IS NULL THEN RAISE EXCEPTION 'injected owner cleanup failure';END IF;RETURN NEW;END$$;
+CREATE TRIGGER reject_owner_release BEFORE UPDATE ON trader_sync_collector_control FOR EACH ROW EXECUTE FUNCTION reject_owner_release()`); err != nil {
+		t.Fatal(err)
+	}
+	var connections atomic.Int32
+	up := websocket.Upgrader{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := up.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		connections.Add(1)
+		defer conn.Close()
+		for {
+			var req struct {
+				ID uint64 `json:"id"`
+			}
+			if conn.ReadJSON(&req) != nil {
+				return
+			}
+			if conn.WriteJSON(map[string]any{"jsonrpc": "2.0", "id": req.ID, "result": "0x89"}) != nil {
+				return
+			}
+		}
+	}))
+	defer server.Close()
+	collector, err := NewCollector(store.NewSQLStore(db.Pool), &collectorNode{}, Config{WebSocketURL: "ws" + strings.TrimPrefix(server.URL, "http"), ReconnectMin: 10 * time.Millisecond, ReconnectMax: 20 * time.Millisecond})
+	if err != nil {
+		t.Fatal(err)
+	}
+	running := make(chan error, 1)
+	go func() { running <- collector.Run(ctx) }()
+	select {
+	case err = <-running:
+		if err == nil || !strings.Contains(err.Error(), "injected epoch start failure") || !strings.Contains(err.Error(), "injected owner cleanup failure") {
+			t.Fatal("lost start/cleanup cause", err)
+		}
+		if connections.Load() != 1 {
+			t.Fatal("unconfirmed epoch retried same owner", connections.Load())
+		}
+	case <-time.After(time.Second):
+		cancel()
+		<-running
+		t.Fatal("start failure trapped collector in same-owner reconnect")
+	}
+	if _, err = db.Pool.Exec(ctx, `DROP TRIGGER reject_epoch_start ON trader_sync_collector_epochs;DROP TRIGGER reject_owner_release ON trader_sync_collector_control`); err != nil {
+		t.Fatal(err)
+	}
+	owner, err := store.NewSQLStore(db.Pool).AcquireCollectorSession(ctx)
+	if err != nil {
+		t.Fatal("fatal cleanup leaked physical ownership lock", err)
+	}
+	if err = owner.Close(ctx); err != nil {
+		t.Fatal(err)
+	}
+}

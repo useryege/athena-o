@@ -221,3 +221,86 @@ func TestIntakeWaitingWalletCannotCrossClosedEpochFence(t *testing.T) {
 		t.Fatal("stale intake did not finish")
 	}
 }
+
+func TestIntakeRemovedAfterLastTargetDisabledPreservesOriginalFact(t *testing.T) {
+	for _, state := range []string{"paused", "cancelled", "permission_disabled"} {
+		t.Run(state, func(t *testing.T) {
+			db := pgtest.New(t, migrations.FS, migrations.Dir)
+			ctx := context.Background()
+			s := NewSQLStore(db.Pool)
+			owner, err := accountstore.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
+			if err != nil {
+				t.Fatal(err)
+			}
+			wallet := common.HexToAddress("0x1111111111111111111111111111111111111111")
+			var sub string
+			if err = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state)VALUES($1,$2,'enabled','pending_baseline')RETURNING id`, owner.ID, wallet.Bytes()).Scan(&sub); err != nil {
+				t.Fatal(err)
+			}
+			session, err := s.AcquireCollectorSession(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer session.Close(ctx)
+			epoch, err := s.StartCollectorEpoch(ctx, session.Token)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = txgate.WithAccountTx(ctx, db.Pool, owner.ID, func(tx pgx.Tx) error {
+				if e := txgate.LockWallet(ctx, tx, wallet); e != nil {
+					return e
+				}
+				return s.RegisterBaselineTx(ctx, tx, tm.Subscription{ID: sub, OwnerID: owner.ID, Wallet: wallet, Revision: 1, Generation: 1}, session.Token, epoch, tm.WalletObservation{})
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			raw := ethtypes.Log{Address: common.HexToAddress("0xe111180000d2663c0091e4f400237545b87b996b"), Topics: []common.Hash{{}, {}, common.BytesToHash(wallet.Bytes()), {}}, Data: make([]byte, 224), BlockNumber: 10, BlockHash: common.HexToHash("0xaa"), TxHash: common.HexToHash("0xbb"), Index: 1}
+			first := time.Now().UTC().Truncate(time.Microsecond)
+			if err = s.PersistReceived(ctx, session.Token, epoch, tm.ReceivedLog{Raw: raw, ReceivedAt: first, Sequence: 1}); err != nil {
+				t.Fatal(err)
+			}
+			if _, err = db.Pool.Exec(ctx, `UPDATE trader_sync_source_records SET confirmation_state='confirmed'`); err != nil {
+				t.Fatal(err)
+			}
+			err = txgate.WithAccountTx(ctx, db.Pool, owner.ID, func(tx pgx.Tx) error {
+				_, e := tx.Exec(ctx, `UPDATE trader_sync_subscriptions SET desired_state=$2,revision=revision+1 WHERE id=$1`, sub, state)
+				return e
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			raw.Removed = true
+			if err = s.PersistReceived(ctx, session.Token, epoch, tm.ReceivedLog{Raw: raw, ReceivedAt: first.Add(time.Second), Sequence: 2}); err != nil {
+				t.Fatal(err)
+			}
+			var removed bool
+			var confirmation, reason string
+			var original []byte
+			var received time.Time
+			var sequence int64
+			if err = db.Pool.QueryRow(ctx, `SELECT removed,confirmation_state,confirmation_reason,raw_json,received_at,read_sequence FROM trader_sync_source_records`).Scan(&removed, &confirmation, &reason, &original, &received, &sequence); err != nil {
+				t.Fatal(err)
+			}
+			var persisted ethtypes.Log
+			_ = json.Unmarshal(original, &persisted)
+			if !removed || confirmation != "invalid" || reason != "removed" {
+				t.Fatal("disabled target lost received removed evidence", removed, confirmation, reason)
+			}
+			if persisted.Removed || !received.Equal(first) || sequence != 1 {
+				t.Fatal("removed rewrote original receive", persisted.Removed, received, sequence)
+			}
+			raw.Index++
+			raw.Removed = false
+			if err = s.PersistReceived(ctx, session.Token, epoch, tm.ReceivedLog{Raw: raw, ReceivedAt: first.Add(2 * time.Second), Sequence: 3}); err != nil {
+				t.Fatal(err)
+			}
+			var records, candidates int
+			_ = db.Pool.QueryRow(ctx, `SELECT count(*) FROM trader_sync_source_records`).Scan(&records)
+			_ = db.Pool.QueryRow(ctx, `SELECT count(*) FROM trader_sync_source_candidates`).Scan(&candidates)
+			if records != 1 || candidates != 1 {
+				t.Fatal("disabled target gained first source/candidate", records, candidates)
+			}
+		})
+	}
+}

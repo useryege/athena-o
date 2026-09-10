@@ -3,6 +3,7 @@ package rpc
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -326,5 +328,85 @@ func TestSessionLogLocationRequiresPresenceButAcceptsZero(t *testing.T) {
 				t.Fatal("log admission did not complete")
 			}
 		})
+	}
+}
+
+func TestSessionExhaustedSentACKsCloseAndFreshSessionRecovers(t *testing.T) {
+	var connections, sent, closed atomic.Int32
+	endpoint := serveSession(t, func(conn *websocket.Conn) {
+		number := connections.Add(1)
+		defer closed.Add(1)
+		if chainHandshake(conn) != nil {
+			return
+		}
+		for {
+			request, err := readRequest(conn)
+			if err != nil {
+				return
+			}
+			if number == 1 {
+				if sent.Load() == 0 {
+					if ack(conn, request, "old-live-subscription") != nil {
+						return
+					}
+					sent.Add(1)
+					continue
+				}
+				sent.Add(1) // These requests reached the wire, but their ACKs never return.
+				continue
+			}
+			// An old, unrelated request ID cannot satisfy this new Session's call.
+			_ = conn.WriteJSON(map[string]any{"jsonrpc": "2.0", "id": 66, "result": "late-old-ACK"})
+			if ack(conn, request, "fresh-subscription") != nil {
+				return
+			}
+		}
+	})
+	cfg := sessionConfig{queue: 8, ping: 10 * time.Millisecond, pong: 100 * time.Millisecond, request: 10 * time.Millisecond}
+	session, err := dialSession(context.Background(), endpoint, "", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer session.Close()
+	if _, err = session.Subscribe(context.Background(), ethereum.FilterQuery{}); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 64; i++ {
+		if _, err = session.Subscribe(context.Background(), ethereum.FilterQuery{}); !errors.Is(err, context.DeadlineExceeded) {
+			t.Fatal("expected sent request timeout", i, err)
+		}
+	}
+	if sent.Load() != 65 {
+		t.Fatal("test did not actually send all pending requests", sent.Load())
+	}
+	if _, err = session.Subscribe(context.Background(), ethereum.FilterQuery{}); err == nil {
+		t.Fatal("exhausted request admitted")
+	}
+	select {
+	case <-session.Done():
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("exhausted ACK capacity stranded a live Session")
+	}
+	if !strings.Contains(session.Err().Error(), "capacity") {
+		t.Fatal(session.Err())
+	}
+	session.Close()
+	if closed.Load() == 0 {
+		deadline := time.Now().Add(time.Second)
+		for closed.Load() == 0 && time.Now().Before(deadline) {
+			time.Sleep(time.Millisecond)
+		}
+	}
+	if closed.Load() == 0 {
+		t.Fatal("old connection subscriptions did not close")
+	}
+	fresh, err := dialSession(context.Background(), endpoint, "", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer fresh.Close()
+	id, err := fresh.Subscribe(context.Background(), ethereum.FilterQuery{})
+	if err != nil || id != "fresh-subscription" {
+		t.Fatal("fresh control request did not recover or took stale ACK", id, err)
 	}
 }
