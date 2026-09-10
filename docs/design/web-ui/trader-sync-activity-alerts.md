@@ -109,4 +109,4 @@ Combo YES 为所有腿条件满足，NO 为整体合取的补集，不逐腿取�
 
 当前仅验证合成数据线框的桌面/手机、主题与交互；没有业务 API、真实 Telegram 或完整可访问性验收。临时浏览器内容在 `.superpowers/`，不是长期依赖；被选结构与流程已写入文档。
 
-本书面 UI spec 已整体确认，[21项前后端联合实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)正在独立工作区逐项实施。Trader Sync 目标页面尚未实现；既有应用壳/Notifications 文档随对应源码同步，具体进度与验证见计划。
+本书面 UI spec 已整体确认，[21项前后端联合实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)正在独立工作区逐项实施。共享权限矩阵及管理员授权行已实现十模块；Trader Sync 选择器仅提供 No access / Read & write，解析、编辑、克隆和提交对非法 READ 统一关闭为 NONE。会员壳按相同模块矩阵处理 RW→NONE 的请求中止、缓存清理和晚响应隔离，当前没有新增 Trader Sync 空路由或导航。Trader Sync 目标页面尚未实现；既有应用壳/Notifications 文档随对应源码同步，具体进度与验证见计划。

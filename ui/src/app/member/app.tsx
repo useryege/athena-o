@@ -574,16 +574,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                         if (priorAccess.user.access.profitSharingEnabled && !next.user.access.profitSharingEnabled) {
                             requests.abortAuthorizationFeatureRequests('profit-sharing');
                         }
-                        accountDataModules.forEach(definition => {
-                            const prior = priorAccess.moduleAccess[definition.module];
-                            const current = next.moduleAccess[definition.module];
-                            if (prior >= AccountDataAccess.Read && current < AccountDataAccess.Read) {
-                                requests.abortAuthorizationRequests(definition.module);
-                                clearAsyncDataCache(definition.module);
-                            } else if (prior >= AccountDataAccess.ReadWrite && current < AccountDataAccess.ReadWrite) {
-                                requests.abortAuthorizationRequests(definition.module, 'write');
-                            }
-                        });
+                        revokeLostModuleAccess(priorAccess.moduleAccess, next.moduleAccess);
                         if (!isPendingAccess(priorAccess) && isPendingAccess(next)) {
                             clearAsyncDataCache();
                         }
@@ -1280,4 +1271,19 @@ const RegistrationBootstrap = () => (
 const AppEntry = () => {
     const location = useLocation();
     return location.pathname === '/register' ? <RegistrationBootstrap /> : <Bootstrap />;
+};
+
+// Apply the same module lifecycle to every grant, including modules whose pages
+// have not yet been registered. Cache invalidation fences in-flight responses.
+export const revokeLostModuleAccess = (previous: ModuleAccessLevels, next: ModuleAccessLevels) => {
+    accountDataModules.forEach(definition => {
+        const prior = previous[definition.module];
+        const current = next[definition.module];
+        if (prior >= AccountDataAccess.Read && current < AccountDataAccess.Read) {
+            requests.abortAuthorizationRequests(definition.module);
+            clearAsyncDataCache(definition.module);
+        } else if (prior >= AccountDataAccess.ReadWrite && current < AccountDataAccess.ReadWrite) {
+            requests.abortAuthorizationRequests(definition.module, 'write');
+        }
+    });
 };

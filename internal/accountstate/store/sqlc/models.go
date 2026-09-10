@@ -217,6 +217,40 @@ type TelegramPollingState struct {
 	UpdatedAt    pgtype.Timestamptz
 }
 
+type TraderSyncBaselineAttempt struct {
+	ID                   pgtype.UUID
+	OwnerID              pgtype.UUID
+	SubscriptionID       pgtype.UUID
+	ActivationGeneration int64
+	CollectorEpoch       pgtype.Int8
+	FilterRevision       pgtype.Int8
+	ExpectedRevision     int64
+	RegisteredHigh       pgtype.Int8
+	CandidateEffectiveAt pgtype.Timestamptz
+	State                string
+	EffectiveAt          pgtype.Timestamptz
+	EndedAt              pgtype.Timestamptz
+	Reason               string
+	CreatedAt            pgtype.Timestamptz
+}
+
+type TraderSyncMonitorInterval struct {
+	ID                   pgtype.UUID
+	OwnerID              pgtype.UUID
+	SubscriptionID       pgtype.UUID
+	BaselineAttemptID    pgtype.UUID
+	ActivationGeneration int64
+	CollectorEpoch       int64
+	FilterRevision       int64
+	ExpectedRevision     int64
+	RegisteredHigh       int64
+	CandidateEffectiveAt pgtype.Timestamptz
+	State                string
+	EffectiveAt          pgtype.Timestamptz
+	EndedAt              pgtype.Timestamptz
+	Reason               string
+}
+
 type TraderSyncRequestResult struct {
 	OwnerID       pgtype.UUID
 	Operation     string
@@ -224,6 +258,21 @@ type TraderSyncRequestResult struct {
 	PayloadDigest []byte
 	ResultJson    []byte
 	CreatedAt     pgtype.Timestamptz
+}
+
+type TraderSyncSubscription struct {
+	ID                   pgtype.UUID
+	OwnerID              pgtype.UUID
+	Wallet               []byte
+	DesiredState         string
+	ObservationState     string
+	Reason               string
+	Revision             int64
+	ActivationGeneration int64
+	EffectiveAt          pgtype.Timestamptz
+	EndedAt              pgtype.Timestamptz
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
 }
 
 type TraderSyncTarget struct {
@@ -241,4 +290,12 @@ type TraderSyncTargetConfirmation struct {
 	CreatedAt         pgtype.Timestamptz
 	ExpiresAt         pgtype.Timestamptz
 	ConsumedRequestID pgtype.Text
+}
+
+type TraderSyncTargetNote struct {
+	OwnerID   pgtype.UUID
+	Wallet    []byte
+	Note      string
+	Revision  int64
+	UpdatedAt pgtype.Timestamptz
 }

@@ -10,6 +10,7 @@ import {
     parseAccountProfile
 } from '../shared/models';
 import requests from '../shared/services/requests';
+import {cloneAccountAccess} from '../shared/account-access';
 
 type AbortablePromise<T> = Promise<T> & {abort?: () => void};
 
@@ -81,7 +82,7 @@ export class AdminAccountsService {
                 apiKeyEnabled: access.apiKeyEnabled,
                 profitSharingEnabled: access.profitSharingEnabled,
                 revision: access.revision,
-                moduleAccess: access.moduleAccess.map(item => ({module: item.module, dataAccess: item.dataAccess}))
+                moduleAccess: cloneAccountAccess(access).moduleAccess.map(item => ({module: item.module, dataAccess: item.dataAccess}))
             })
             .then(res => account(res.body));
     }

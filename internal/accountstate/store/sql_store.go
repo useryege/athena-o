@@ -20,6 +20,7 @@ import (
 	"github.com/useryege/athena/internal/accountcredentials"
 	accountstatemigrations "github.com/useryege/athena/internal/accountstate/store/migrations"
 	accountstatesqlc "github.com/useryege/athena/internal/accountstate/store/sqlc"
+	"github.com/useryege/athena/internal/accountstate/txgate"
 	"github.com/useryege/athena/util/db/postgres"
 )
 
@@ -30,8 +31,9 @@ func Migrations() embed.FS {
 // SQLStore is the shared durable adapter for account identity, access, API
 // Keys, profiles, and preferences.
 type SQLStore struct {
-	pool    *pgxpool.Pool
-	queries accountstatesqlc.Querier
+	accessChangeHook AccessChangeHook
+	pool             *pgxpool.Pool
+	queries          accountstatesqlc.Querier
 }
 
 func NewSQLStore(pool *pgxpool.Pool) *SQLStore {
@@ -240,7 +242,7 @@ func (s *SQLStore) GetAccountAccess(ctx context.Context, accountID string) (acco
 }
 
 // UpdateAccountAccess replaces one ordinary account's full access aggregate.
-// The head CAS and all nine module updates commit atomically.
+// The head CAS and all ten module updates commit atomically.
 func (s *SQLStore) UpdateAccountAccess(ctx context.Context, accountID string, next accountaccess.Access, expectedRevision uint64) (accountaccess.Access, error) {
 	if err := s.requireDatabase(); err != nil {
 		return accountaccess.Access{}, err
@@ -263,65 +265,86 @@ func (s *SQLStore) UpdateAccountAccess(ctx context.Context, accountID string, ne
 		return accountaccess.Access{}, fmt.Errorf("validate account %q access: %w", canonicalID, err)
 	}
 
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return accountaccess.Access{}, fmt.Errorf("begin account %q access update: %w", canonicalID, err)
-	}
-	committed := false
-	defer func() {
-		if !committed {
-			_ = tx.Rollback(context.Background())
+	err = txgate.WithAccountTx(ctx, s.pool, canonicalID, func(tx pgx.Tx) error {
+		txQueries := accountstatesqlc.New(tx)
+		previousHead, e := txQueries.GetAccountAccessHead(ctx, accountIDValue)
+		if e != nil {
+			return e
 		}
-	}()
-	txQueries := accountstatesqlc.New(tx)
-	head, err := txQueries.UpdateAccountAccessHead(ctx, accountstatesqlc.UpdateAccountAccessHeadParams{
-		LoginEnabled: next.LoginEnabled, ApiKeyEnabled: next.APIKeyEnabled,
-		ProfitSharingEnabled: next.ProfitSharingEnabled, AccountID: accountIDValue,
-		ExpectedRevision: int64(expectedRevision),
+		previous, e := accessFromHead(canonicalID, previousHead.Administrator, previousHead.LoginEnabled, previousHead.ApiKeyEnabled, previousHead.ProfitSharingEnabled, previousHead.Revision)
+		if e != nil {
+			return e
+		}
+		previousRows, e := txQueries.ListAccountModuleAccessByAccount(ctx, accountIDValue)
+		if e != nil {
+			return e
+		}
+		snapshot := map[string]accountaccess.Access{canonicalID: previous}
+		if e = attachModuleAccess(snapshot, previousRows); e != nil {
+			return e
+		}
+		previous = snapshot[canonicalID]
+		if e = previous.Validate(); e != nil {
+			return e
+		}
+		if previous.Modules[accountaccess.ModuleTraderSync] == accountaccess.AccessLevelReadWrite && next.Modules[accountaccess.ModuleTraderSync] == accountaccess.AccessLevelNone {
+			if e = s.RequireAccessChangeHook(); e != nil {
+				return e
+			}
+		}
+
+		head, err := txQueries.UpdateAccountAccessHead(ctx, accountstatesqlc.UpdateAccountAccessHeadParams{
+			LoginEnabled: next.LoginEnabled, ApiKeyEnabled: next.APIKeyEnabled,
+			ProfitSharingEnabled: next.ProfitSharingEnabled, AccountID: accountIDValue,
+			ExpectedRevision: int64(expectedRevision),
+		})
+		if errors.Is(err, pgx.ErrNoRows) {
+			return accountaccess.ErrRevisionConflict
+		}
+		if err != nil {
+			return fmt.Errorf("update account %q access head: %w", canonicalID, err)
+		}
+		returnedID, err := accountIDFromPG(head.AccountID)
+		if err != nil {
+			return fmt.Errorf("project updated account %q access head ID: %w", canonicalID, err)
+		}
+		if returnedID != canonicalID || head.LoginEnabled != next.LoginEnabled || head.ApiKeyEnabled != next.APIKeyEnabled || head.ProfitSharingEnabled != next.ProfitSharingEnabled {
+			return fmt.Errorf("account %q access update returned an inconsistent head", canonicalID)
+		}
+		if head.Revision <= 0 || uint64(head.Revision) != expectedRevision+1 {
+			return fmt.Errorf("account %q access update returned revision %d after expected revision %d", canonicalID, head.Revision, expectedRevision)
+		}
+		rowsAffected, err := txQueries.ReplaceAccountModuleAccess(ctx, accountstatesqlc.ReplaceAccountModuleAccessParams{
+			MarketRadarAccessLevel: string(next.Modules[accountaccess.ModuleMarketRadar]), SportsLiveAccessLevel: string(next.Modules[accountaccess.ModuleSportsLive]),
+			SportsHistoryAccessLevel: string(next.Modules[accountaccess.ModuleSportsHistory]), ManagedOoAccessLevel: string(next.Modules[accountaccess.ModuleManagedOO]),
+			WormMarketsAccessLevel:     string(next.Modules[accountaccess.ModuleWormMarkets]),
+			WormTradingAccessLevel:     string(next.Modules[accountaccess.ModuleWormTrading]),
+			WorldCupCornersAccessLevel: string(next.Modules[accountaccess.ModuleWorldCupCorners]),
+			TokenAccessLevel:           string(next.Modules[accountaccess.ModuleToken]),
+			WalletAccessLevel:          string(next.Modules[accountaccess.ModuleWallet]),
+			TraderSyncAccessLevel:      string(next.Modules[accountaccess.ModuleTraderSync]),
+			AccountID:                  accountIDValue,
+		})
+		if err != nil {
+			return fmt.Errorf("replace account %q module access: %w", canonicalID, err)
+		}
+		expectedModuleRows := int64(len(accountaccess.AllModules()))
+		if rowsAffected != expectedModuleRows {
+			return fmt.Errorf("replace account %q module access affected %d rows, expected %d", canonicalID, rowsAffected, expectedModuleRows)
+		}
+
+		next.Revision = uint64(head.Revision)
+		if s.accessChangeHook != nil {
+			if e := s.accessChangeHook(ctx, tx, canonicalID, previous, next.Clone()); e != nil {
+				return e
+			}
+		}
+		return nil
 	})
-	if errors.Is(err, pgx.ErrNoRows) {
-		return accountaccess.Access{}, accountaccess.ErrRevisionConflict
-	}
 	if err != nil {
-		return accountaccess.Access{}, fmt.Errorf("update account %q access head: %w", canonicalID, err)
+		return accountaccess.Access{}, err
 	}
-	returnedID, err := accountIDFromPG(head.AccountID)
-	if err != nil {
-		return accountaccess.Access{}, fmt.Errorf("project updated account %q access head ID: %w", canonicalID, err)
-	}
-	if returnedID != canonicalID || head.LoginEnabled != next.LoginEnabled || head.ApiKeyEnabled != next.APIKeyEnabled || head.ProfitSharingEnabled != next.ProfitSharingEnabled {
-		return accountaccess.Access{}, fmt.Errorf("account %q access update returned an inconsistent head", canonicalID)
-	}
-	if head.Revision <= 0 || uint64(head.Revision) != expectedRevision+1 {
-		return accountaccess.Access{}, fmt.Errorf("account %q access update returned revision %d after expected revision %d", canonicalID, head.Revision, expectedRevision)
-	}
-	rowsAffected, err := txQueries.ReplaceAccountModuleAccess(ctx, accountstatesqlc.ReplaceAccountModuleAccessParams{
-		MarketRadarAccessLevel: string(next.Modules[accountaccess.ModuleMarketRadar]), SportsLiveAccessLevel: string(next.Modules[accountaccess.ModuleSportsLive]),
-		SportsHistoryAccessLevel: string(next.Modules[accountaccess.ModuleSportsHistory]), ManagedOoAccessLevel: string(next.Modules[accountaccess.ModuleManagedOO]),
-		WormMarketsAccessLevel:     string(next.Modules[accountaccess.ModuleWormMarkets]),
-		WormTradingAccessLevel:     string(next.Modules[accountaccess.ModuleWormTrading]),
-		WorldCupCornersAccessLevel: string(next.Modules[accountaccess.ModuleWorldCupCorners]),
-		TokenAccessLevel:           string(next.Modules[accountaccess.ModuleToken]),
-		WalletAccessLevel:          string(next.Modules[accountaccess.ModuleWallet]),
-		AccountID:                  accountIDValue,
-	})
-	if err != nil {
-		return accountaccess.Access{}, fmt.Errorf("replace account %q module access: %w", canonicalID, err)
-	}
-	expectedModuleRows := int64(len(accountaccess.AllModules()))
-	if rowsAffected != expectedModuleRows {
-		return accountaccess.Access{}, fmt.Errorf("replace account %q module access affected %d rows, expected %d", canonicalID, rowsAffected, expectedModuleRows)
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return accountaccess.Access{}, fmt.Errorf("commit account %q access update: %w", canonicalID, err)
-	}
-	committed = true
-	return accountaccess.Access{
-		Administrator: false,
-		LoginEnabled:  head.LoginEnabled, APIKeyEnabled: head.ApiKeyEnabled,
-		ProfitSharingEnabled: head.ProfitSharingEnabled, Modules: next.Modules,
-		Revision: uint64(head.Revision),
-	}.Clone(), nil
+	return next.Clone(), nil
 }
 
 func accessFromHead(accountID string, administrator, loginEnabled, apiKeyEnabled, profitSharingEnabled bool, revision int64) (accountaccess.Access, error) {

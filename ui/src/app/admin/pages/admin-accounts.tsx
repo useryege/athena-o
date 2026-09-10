@@ -5,6 +5,7 @@ import {useBlocker, useSearchParams} from 'react-router-dom';
 import {AppPage, ChoiceGroup, KeyValueGrid, Section, StatusTag, useAsyncData} from '../../components';
 import {accountAccessEqual, cloneAccountAccess, moduleAccessLevel, moduleAccessSummary, replaceModuleAccess} from '../../shared/account-access';
 import {
+    allowedAccessLevels,
     AccountDataAccess,
     AccountDataModuleDefinition,
     accountAccessDisplayModules,
@@ -46,13 +47,9 @@ const identityListTime = (value: number) => (value > 0 ? new Date(value * 1000).
 const accountIdentityValue = (account: Account) => identityPresentation(account.identity).value;
 const accountPrimaryLabel = (account: Account) => account.profile.displayName || accountIdentityValue(account) || account.username;
 
-const moduleOptions = (definition: AccountDataModuleDefinition) => [
-    {value: AccountDataAccess.None, label: 'No access'},
-    {value: AccountDataAccess.Read, label: 'Read only'},
-    ...(definition.maxAccess === AccountDataAccess.ReadWrite ? [{value: AccountDataAccess.ReadWrite, label: 'Read & write'}] : [])
-];
+const moduleOptions = (definition: AccountDataModuleDefinition) => allowedAccessLevels(definition).map(value => ({value, label: accountDataAccessLabel(value)}));
 
-const AccountAccessEditor = (props: {
+export const AccountAccessEditor = (props: {
     account: Account;
     access: AccountAccess;
     editable: boolean;

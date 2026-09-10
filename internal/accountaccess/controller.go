@@ -23,7 +23,7 @@ type Controller struct {
 	mu      sync.RWMutex
 	store   Store
 	access  map[string]Access
-	updates sync.Mutex
+	updates sync.Map
 }
 
 // NewController loads the durable, complete access state for every account.
@@ -119,8 +119,10 @@ func (c *Controller) Update(ctx context.Context, accountID string, next Access, 
 		return Access{}, err
 	}
 
-	c.updates.Lock()
-	defer c.updates.Unlock()
+	lock, _ := c.updates.LoadOrStore(accountID, &sync.Mutex{})
+	updateLock := lock.(*sync.Mutex)
+	updateLock.Lock()
+	defer updateLock.Unlock()
 
 	c.mu.RLock()
 	current, exists := c.access[accountID]

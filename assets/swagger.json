@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "v1.0.0-1165-gc97660ea-dirty"
+    "version": "v1.0.0-1175-ga444ad33-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -3076,7 +3076,8 @@
         "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
         "ACCOUNT_DATA_MODULE_TOKEN",
         "ACCOUNT_DATA_MODULE_WALLET",
-        "ACCOUNT_DATA_MODULE_WORM_TRADING"
+        "ACCOUNT_DATA_MODULE_WORM_TRADING",
+        "ACCOUNT_DATA_MODULE_TRADER_SYNC"
       ]
     },
     "accountAccountIdentity": {

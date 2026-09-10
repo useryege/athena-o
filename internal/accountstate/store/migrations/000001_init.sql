@@ -159,8 +159,10 @@ CREATE TABLE account_module_access (
       'worm_trading',
       'world_cup_corners',
       'token',
-      'wallet'
+      'wallet',
+      'trader_sync'
     )),
+  CHECK (module <> 'trader_sync' OR access_level <> 'read'),
   CONSTRAINT account_module_access_level_check
     CHECK (access_level IN ('none', 'read', 'read_write')),
   CONSTRAINT account_module_access_max_level_check CHECK (
@@ -170,7 +172,8 @@ CREATE TABLE account_module_access (
       'managed_oo',
       'worm_trading',
       'token',
-      'wallet'
+      'wallet',
+      'trader_sync'
     )
   )
 );
@@ -509,7 +512,84 @@ CREATE TABLE trader_sync_request_results (
   PRIMARY KEY (owner_id, operation, request_id)
 );
 
+CREATE TABLE trader_sync_target_notes (
+ owner_id UUID NOT NULL REFERENCES athena_account(account_id),
+ wallet BYTEA NOT NULL CHECK (octet_length(wallet)=20),
+ note TEXT NOT NULL CHECK (char_length(note)<=20),
+ revision BIGINT NOT NULL CHECK (revision>0),
+ updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+ PRIMARY KEY(owner_id,wallet)
+);
+CREATE TABLE trader_sync_subscriptions (
+ id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+ owner_id UUID NOT NULL REFERENCES athena_account(account_id),
+ wallet BYTEA NOT NULL CHECK (octet_length(wallet)=20),
+ desired_state TEXT NOT NULL CHECK (desired_state IN ('enabled','paused','permission_disabled','cancelled')),
+ observation_state TEXT NOT NULL CHECK (observation_state IN ('pending_baseline','healthy','interrupted')),
+ reason TEXT NOT NULL DEFAULT '',
+ revision BIGINT NOT NULL DEFAULT 1 CHECK (revision>0),
+ activation_generation BIGINT NOT NULL DEFAULT 1 CHECK (activation_generation>0),
+ effective_at TIMESTAMPTZ,
+ ended_at TIMESTAMPTZ,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+ updated_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+ UNIQUE(owner_id,id)
+);
+CREATE UNIQUE INDEX trader_sync_one_live_target ON trader_sync_subscriptions(owner_id,wallet) WHERE desired_state<>'cancelled';
+CREATE TABLE trader_sync_baseline_attempts (
+ id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+ owner_id UUID NOT NULL,
+ subscription_id UUID NOT NULL,
+ activation_generation BIGINT NOT NULL CHECK (activation_generation>0),
+ collector_epoch BIGINT,
+ filter_revision BIGINT,
+ expected_revision BIGINT NOT NULL CHECK(expected_revision>0),
+ registered_high BIGINT,
+ candidate_effective_at TIMESTAMPTZ,
+ state TEXT NOT NULL DEFAULT 'pending' CHECK(state IN ('pending','succeeded','failed')),
+ effective_at TIMESTAMPTZ,
+ ended_at TIMESTAMPTZ,
+ reason TEXT NOT NULL DEFAULT '',
+ created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+ FOREIGN KEY(owner_id,subscription_id) REFERENCES trader_sync_subscriptions(owner_id,id),
+ UNIQUE(owner_id,subscription_id,id)
+);
+-- +goose StatementBegin
+CREATE FUNCTION trader_sync_guard_attempt_terminal() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+ IF OLD.state <> 'pending' AND NEW IS DISTINCT FROM OLD THEN
+  RAISE EXCEPTION 'baseline attempt is terminal';
+ END IF;
+ RETURN NEW;
+END;
+$$;
+-- +goose StatementEnd
+CREATE TRIGGER trader_sync_attempt_terminal BEFORE UPDATE ON trader_sync_baseline_attempts FOR EACH ROW EXECUTE FUNCTION trader_sync_guard_attempt_terminal();
+CREATE TABLE trader_sync_monitor_intervals (
+ id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+ owner_id UUID NOT NULL,
+ subscription_id UUID NOT NULL,
+ baseline_attempt_id UUID NOT NULL,
+ activation_generation BIGINT NOT NULL CHECK(activation_generation>0),
+ collector_epoch BIGINT NOT NULL,
+ filter_revision BIGINT NOT NULL,
+ expected_revision BIGINT NOT NULL CHECK(expected_revision>0),
+ registered_high BIGINT NOT NULL,
+ candidate_effective_at TIMESTAMPTZ NOT NULL,
+ state TEXT NOT NULL DEFAULT 'open' CHECK(state IN ('open','closed')),
+ effective_at TIMESTAMPTZ NOT NULL,
+ ended_at TIMESTAMPTZ,
+ reason TEXT NOT NULL DEFAULT '',
+ FOREIGN KEY(owner_id,subscription_id) REFERENCES trader_sync_subscriptions(owner_id,id),
+ FOREIGN KEY(owner_id,subscription_id,baseline_attempt_id) REFERENCES trader_sync_baseline_attempts(owner_id,subscription_id,id)
+);
+
 -- +goose Down
+DROP TABLE trader_sync_monitor_intervals;
+DROP TABLE trader_sync_baseline_attempts;
+DROP FUNCTION trader_sync_guard_attempt_terminal();
+DROP TABLE trader_sync_subscriptions;
+DROP TABLE trader_sync_target_notes;
 
 DROP TABLE trader_sync_request_results;
 DROP TABLE trader_sync_target_confirmations;

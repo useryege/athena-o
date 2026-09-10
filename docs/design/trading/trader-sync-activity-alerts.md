@@ -33,13 +33,13 @@ Copy Trading 不在本设计内。本文维护后端和跨层数据契约，页�
 
 | 当前事实 | 目标差距与影响 |
 | --- | --- |
-| [账户权限](../../../internal/accountaccess/access.go)是九个模块与 NONE/READ/READ_WRITE 矩阵；[更新控制器](../../../internal/accountaccess/controller.go)提交后发布进程内快照。 | 新增 Trader Sync 权限；后台操作必须核验数据库权限，撤权必须与订阅、活动及投递串行化，不能只靠页面或缓存刷新。 |
-| [账户状态存储](../../../internal/accountstate/store/sql_store.go)与[通知存储](../../../internal/notification/store/sql_store.go)共用 `athena` 数据库及唯一权威迁移集；[账户 gate](../../../internal/accountstate/txgate/gate.go)统一账户事务锁。 | 同库基础已实现；Trader Sync 业务仍需把权限、订阅和活动形成接入这些事务。 |
-| [发送许可](../../../internal/notification/store/attempts.go)已在短事务提交 sending 与 attempt；[worker](../../../internal/notification/worker.go)以实际 HTTP 起点和结果 CAS 补记，unknown 不重发，绑定变化写永久墓碑。 | 共享并发调度、单 sender 登记和显式停止恢复已经实现；产品 grant 撤权钩子仍待接入，现有入队绑定不能代替活动形成时的资格快照。 |
+| [账户权限](../../../internal/accountaccess/access.go)已扩为十模块；Trader Sync grant 仅允许 NONE/RW，READ requirement 合法；[更新控制器](../../../internal/accountaccess/controller.go)按账户串行并在提交后发布快照。 | 订阅和产品撤权已接入账户 gate；活动形成的 grant 核验仍待后续业务实现。 |
+| [账户状态存储](../../../internal/accountstate/store/sql_store.go)与[通知存储](../../../internal/notification/store/sql_store.go)共用 `athena` 数据库及唯一权威迁移集；[账户 gate](../../../internal/accountstate/txgate/gate.go)统一账户事务锁。 | 同库基础、权限与订阅事务已实现；活动形成仍待接入。 |
+| [发送许可](../../../internal/notification/store/attempts.go)已在短事务提交 sending 与 attempt；[worker](../../../internal/notification/worker.go)以实际 HTTP 起点和结果 CAS 补记，unknown 不重发，绑定变化写永久墓碑。 | 共享并发调度、单 sender 登记和显式停止恢复已经实现；产品 grant 撤权钩子已在账户存储提交前接入，现有入队绑定不能代替活动形成时的资格快照。 |
 | [Bot update](../../../internal/notification/store/bot_updates.go)将绑定变更、回复 outbox 和消费进度原子提交；[poller](../../../internal/notification/poller.go)只调用该入口，reply 复用 worker 的发送许可。 | reply 已接入跨 chat 公平调度、统一预算和停止确认恢复；Trader Sync 摘要首条尚待接入。 |
-| [Profile 适配器](../../../util/polymarket/profile_identity.go)、[六区间 P/L](../../../internal/tradersync/pnl.go)与[目标确认](../../../internal/tradersync/target_resolver.go)已实现精确数值、逐字段 evidence 和 owner token。 | 官方显示参考时间、YTD 执行时区、舍入语义仍缺证据，对应字段 unavailable；实际 grant/context SQL 与公开入口尚待接入。 |
+| [Profile 适配器](../../../util/polymarket/profile_identity.go)、[六区间 P/L](../../../internal/tradersync/pnl.go)与[目标确认](../../../internal/tradersync/target_resolver.go)已实现精确数值、逐字段 evidence 和 owner token。 | 官方显示参考时间、YTD 执行时区、舍入语义仍缺证据，对应字段 unavailable；实际 grant/context SQL 已实现；公开入口尚待接入。 |
 | [Managed OO](../../../internal/managedoo/log_sync.go)与 [BSC Swap](../../../internal/bscswap/scanner.go)有持久游标扫描。 | 业务事件、网络及中断回补语义不同，不能直接沿用为 Trader Sync 监控。 |
-| 当前已有独立 Trader Sync types、TargetResolver 与 confirmations/request-results/targets 表；尚无订阅、站内活动或摘要。 | 下文除明确标注已实现的目标确认契约外，仍为后续目标；不将确认资料组件视为公开服务已上线。 |
+| 当前已有独立 Trader Sync types、TargetResolver、SubscriptionService 及确认/请求结果/目标/备注/订阅/基线 attempt/观察区间基础表；尚无站内活动或摘要。 | 下文除明确标注已实现的目标确认、订阅与撤权契约外，仍为后续目标；不将确认资料组件视为公开服务已上线。 |
 
 ## 关键决定
 
@@ -120,6 +120,16 @@ flowchart LR
 - 活动保存 `source_record_id`、来源类型、目标、BUY/SELL、原始量、原始事实及市场引用。普通活动有单市场描述；Combo 保存组合自身的 YES/NO Outcome 和同一活动内的 `legs[]`，每腿标注真实市场和 Outcome。组合 NO 是整组腿合取条件的补集，不能解释为逐腿取反，也不能把组合 BUY/SELL 表述为每腿独立成交。生命周期 SPLIT/MERGE 仅能作为资料，不新增成交。[组合语义](https://docs.polymarket.com/trading/positions/combinatorial)
 - 时间分别保存 `settled_at`（区块时间）、`time_basis=chain_settlement`、`received_at`、`recorded_at`、投递尝试和结果时间。页面和消息使用“结算时间”；订阅生效前撮合但生效后结算的成交按新活动判断。不能用 `received_at` 冒充公开可查询时间；不能用链上区块时间冒充链下撮合时间。
 - 私有备注按 Unicode 字符数校验最多 20 个字符；服务端拒绝超限，不截断。修改不追溯活动或冻结通知的备注快照，取消保留 owner-wallet 备注。
+
+### 已实现的订阅与撤权边界
+
+[`SubscriptionService`](../../../internal/tradersync/subscriptions.go)要求显式注入身份复核器与 `BaselineRegistrar.RegisterTx`；Task 9 实现采集登记器前，集成验证使用持久写入 pending attempt 的显式 fake，不在服务构造中提供空登记器。公开业务入口仍待组合。
+
+创建分为两次短账户事务：各自在当前 grant 之后先读取已提交请求结果。首个事务仅为未成功请求读取 token，锁外沿用 `Identity.ResolutionInput` 复核；第二个事务再次检查幂等结果、token/身份摘要、10 个未取消配额及 owner-wallet 唯一性，随后将备注、订阅、基线登记、token 消费及成功结果一起提交。相同 request 不同 payload 拒绝；过期或已消费 token 不影响已提交成功的重放，但撤权后的重放仍拒绝。
+
+备注独立按 owner-wallet 保存，20 个 Unicode code point；未保存与显式空串分别保留。备注 CAS 使用 note revision，取消保留备注，重新订阅创建新 ID。暂停/取消结束当前区间和 pending attempt；恢复递增 activation generation 并在事务内重新登记。若立即暂停/取消/撤权使 `ended_at < effective_at`，该区间覆盖为空且保留真实终点；资格仍同时要求起点包含、终点排他。
+
+[`AccessChangeHook`](../../../internal/accountstate/store/access_hooks.go)在服务启动时必需注入：账户 gate 内读取真实 previous，在 head CAS 和十模块替换后、commit 前调用。错误使账户与订阅/投递变更一起回滚；`ApplyAccessChangeTx`仅对 RW→NONE 执行关闭区间、permission_disabled、结束 pending attempt 和旧 delivery 永久墓碑，包括 sending。登录/API Key 开关不触发产品撤权，重授不复活订阅或旧 attempt。未冻结摘要成员将在其表实现时接入同一撤权事务。
 
 ### 已实现的目标确认边界
 
@@ -329,7 +339,7 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 | 运行配置与部署 | [local-runtime.sh](../../../hack/local-runtime.sh)、[docker-compose.prod.yml](../../../docker-compose.prod.yml)、[数据库初始化](../../../hack/postgres/init/00-databases.sql) | 账户 DSN、通知账户 store、迁移初始化 | 沿用既有进程；无需新服务端口或 Trader Sync 独立数据库。 |
 | 现有设计消费者 | [账户权限设计](../identity-access/account-access-control.md)、[账户通知设计](../notifications/account-telegram-notifications.md)、[本地运行设计](../development-runtime/local-runtime-orchestration.md) | 当前实现说明 | 实现时同步，设计阶段不把目标方案写成已实现。 |
 
-前端模块枚举、授权编辑器、访问概览和服务契约是 API 消费方，需随实现保持十模块矩阵一致；新产品导航及页面布局仍待设计，不在本设计中隐含通过。
+前端模块枚举、授权编辑器、访问概览和服务契约是 API 消费方，需随实现保持十模块矩阵一致；新产品导航及页面布局已由独立 UI spec 确认，页面仍待后续任务实现；当前只交付授权行，不注册空页面。
 
 ## 旧实现清理
 

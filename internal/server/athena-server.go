@@ -69,6 +69,7 @@ import (
 	sportshistoryapiclient "github.com/useryege/athena/internal/sportshistory/apiclient"
 	sportsliveapiclient "github.com/useryege/athena/internal/sportslive/apiclient"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
+	tradersyncstore "github.com/useryege/athena/internal/tradersync/store"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	"github.com/useryege/athena/internal/walletsecret"
 	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
@@ -245,6 +246,9 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	errorsutil.CheckError(err)
 	accountStateStore, err := accountstatestore.NewSQLStoreSource()(ctx)
 	errorsutil.CheckError(err)
+	traderSyncStore := tradersyncstore.NewSQLStore(accountStateStore.Pool())
+	accountStateStore.SetAccessChangeHook(traderSyncStore.ApplyAccessChangeTx)
+	errorsutil.CheckError(accountStateStore.RequireAccessChangeHook())
 	developmentAccountIDs := make(map[accountcredentials.ApplicationRealm]string, 2)
 	if opts.DisableAuth {
 		developmentIdentities := []struct {

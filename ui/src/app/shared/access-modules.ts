@@ -13,7 +13,8 @@ export enum AccountDataModule {
     WorldCupCorners = 7,
     Token = 8,
     Wallet = 9,
-    WormTrading = 11
+    WormTrading = 11,
+    TraderSync = 12
 }
 
 export type AccountDataModuleGroup = 'markets' | 'token-risk';
@@ -106,6 +107,14 @@ export const accountDataModules: AccountDataModuleDefinition[] = [
         description: 'Wallet inventory, creation, import, aliases, and sensitive secret access.',
         group: 'token-risk',
         maxAccess: AccountDataAccess.ReadWrite
+    },
+    {
+        module: AccountDataModule.TraderSync,
+        id: 'trader_sync',
+        label: 'Trader Sync',
+        description: 'Independent trader subscriptions and activity alerts.',
+        group: 'markets',
+        maxAccess: AccountDataAccess.ReadWrite
     }
 ];
 
@@ -149,3 +158,17 @@ export const accountDataAccessLabel = (value: AccountDataAccess): string => {
 
 export const accountDataModuleDefinition = (module: AccountDataModule): AccountDataModuleDefinition | undefined =>
     accountDataModules.find(definition => definition.module === module);
+
+export const allowedAccessLevels = (module: AccountDataModuleDefinition): AccountDataAccess[] => {
+    if (module.id === 'trader_sync') {
+        return [AccountDataAccess.None, AccountDataAccess.ReadWrite];
+    }
+    return module.maxAccess === AccountDataAccess.ReadWrite
+        ? [AccountDataAccess.None, AccountDataAccess.Read, AccountDataAccess.ReadWrite]
+        : [AccountDataAccess.None, AccountDataAccess.Read];
+};
+
+export const normalizeModuleGrant = (module: AccountDataModuleDefinition, level: AccountDataAccess): AccountDataAccess => {
+    const clamped = Math.min(level, module.maxAccess) as AccountDataAccess;
+    return allowedAccessLevels(module).includes(clamped) ? clamped : AccountDataAccess.None;
+};

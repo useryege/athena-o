@@ -21,6 +21,7 @@ const (
 	ModuleWorldCupCorners Module = "world_cup_corners"
 	ModuleToken           Module = "token"
 	ModuleWallet          Module = "wallet"
+	ModuleTraderSync      Module = "trader_sync"
 )
 
 var allModules = [...]Module{
@@ -33,6 +34,7 @@ var allModules = [...]Module{
 	ModuleWorldCupCorners,
 	ModuleToken,
 	ModuleWallet,
+	ModuleTraderSync,
 }
 
 // AccessLevel is the hierarchical data-access level for one module.
@@ -56,7 +58,7 @@ func MaxAccessLevel(module Module) (AccessLevel, bool) {
 	switch module {
 	case ModuleMarketRadar, ModuleSportsLive, ModuleWormMarkets, ModuleWorldCupCorners:
 		return AccessLevelRead, true
-	case ModuleSportsHistory, ModuleManagedOO, ModuleWormTrading, ModuleToken, ModuleWallet:
+	case ModuleSportsHistory, ModuleManagedOO, ModuleWormTrading, ModuleToken, ModuleWallet, ModuleTraderSync:
 		return AccessLevelReadWrite, true
 	default:
 		return "", false
@@ -143,6 +145,9 @@ func (a Access) Validate() error {
 		level, exists := a.Modules[module]
 		if !exists {
 			return status.Errorf(codes.InvalidArgument, "account module access is missing module %q", module)
+		}
+		if module == ModuleTraderSync && level == AccessLevelRead {
+			return status.Error(codes.InvalidArgument, "Trader Sync grant requires NONE or READ_WRITE")
 		}
 		if err := validateModuleAccessLevel(module, level); err != nil {
 			return err

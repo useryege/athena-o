@@ -134,7 +134,8 @@ WITH inserted_account AS (
       ('worm_trading'),
       ('world_cup_corners'),
       ('token'),
-      ('wallet')
+      ('wallet'),
+      ('trader_sync')
   ) AS module(name)
   RETURNING account_id
 ), inserted_profile AS (
@@ -219,7 +220,8 @@ WITH inserted_account AS (
       ('worm_trading'),
       ('world_cup_corners'),
       ('token'),
-      ('wallet')
+      ('wallet'),
+      ('trader_sync')
   ) AS module(name)
   RETURNING account_id
 ), inserted_profile AS (
@@ -297,7 +299,8 @@ WITH inserted_account AS (
       ('worm_trading', 'read_write'),
       ('world_cup_corners', 'read'),
       ('token', 'read_write'),
-      ('wallet', 'read_write')
+      ('wallet', 'read_write'),
+      ('trader_sync', 'read_write')
   ) AS module(name, access_level)
   RETURNING account_id
 ), inserted_profile AS (
@@ -375,7 +378,8 @@ WITH inserted_account AS (
       ('worm_trading'),
       ('world_cup_corners'),
       ('token'),
-      ('wallet')
+      ('wallet'),
+      ('trader_sync')
   ) AS module(name)
   RETURNING account_id
 ), inserted_profile AS (

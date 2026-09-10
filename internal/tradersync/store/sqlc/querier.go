@@ -11,11 +11,27 @@ import (
 )
 
 type Querier interface {
+	ChangeSubscription(ctx context.Context, arg ChangeSubscriptionParams) (TraderSyncSubscription, error)
+	CloseSubscriptionIntervals(ctx context.Context, arg CloseSubscriptionIntervalsParams) error
 	ConfirmationExpiry(ctx context.Context) (pgtype.Timestamptz, error)
 	ConsumeConfirmation(ctx context.Context, arg ConsumeConfirmationParams) ([]byte, error)
+	CountLiveSubscriptions(ctx context.Context, ownerID pgtype.UUID) (int64, error)
+	CreateSubscription(ctx context.Context, arg CreateSubscriptionParams) (TraderSyncSubscription, error)
+	FailSubscriptionBaselines(ctx context.Context, arg FailSubscriptionBaselinesParams) error
+	GetLiveSubscription(ctx context.Context, arg GetLiveSubscriptionParams) (TraderSyncSubscription, error)
+	GetSubscription(ctx context.Context, arg GetSubscriptionParams) (TraderSyncSubscription, error)
+	GetTargetNote(ctx context.Context, arg GetTargetNoteParams) (TraderSyncTargetNote, error)
 	ReadConfirmation(ctx context.Context, arg ReadConfirmationParams) ([]byte, error)
+	ReadSubscriptionRequestResult(ctx context.Context, arg ReadSubscriptionRequestResultParams) (ReadSubscriptionRequestResultRow, error)
+	RequireTraderSyncGrant(ctx context.Context, ownerID pgtype.UUID) (bool, error)
+	RevokeTraderSyncBaselines(ctx context.Context, arg RevokeTraderSyncBaselinesParams) error
+	RevokeTraderSyncDeliveries(ctx context.Context, arg RevokeTraderSyncDeliveriesParams) error
+	RevokeTraderSyncIntervals(ctx context.Context, arg RevokeTraderSyncIntervalsParams) error
+	RevokeTraderSyncSubscriptions(ctx context.Context, arg RevokeTraderSyncSubscriptionsParams) error
 	SaveConfirmation(ctx context.Context, arg SaveConfirmationParams) error
 	SaveConfirmationCard(ctx context.Context, arg SaveConfirmationCardParams) (int64, error)
+	SaveSubscriptionRequestResult(ctx context.Context, arg SaveSubscriptionRequestResultParams) error
+	SaveTargetNote(ctx context.Context, arg SaveTargetNoteParams) (TraderSyncTargetNote, error)
 }
 
 var _ Querier = (*Queries)(nil)
