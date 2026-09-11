@@ -396,7 +396,7 @@ func (s *SQLStore) ReadSubscriptionSummaries(ctx context.Context, admin string, 
 	}
 	return result, nil
 }
-func (s *SQLStore) ReadRuntimeStatus(ctx context.Context, admin string) (result tm.RuntimeStatus, err error) {
+func (s *SQLStore) ReadRuntimeStatus(ctx context.Context, admin string, clock tm.ObservationClock) (result tm.RuntimeStatus, err error) {
 	err = s.readTx(ctx, admin, true, func(queries *q.Queries, _ pgtype.UUID, now time.Time) error {
 		r, e := queries.ReadTraderSyncRuntime(ctx)
 		if e != nil {
@@ -431,6 +431,14 @@ func (s *SQLStore) ReadRuntimeStatus(ctx context.Context, admin string) (result 
 		for _, m := range timing {
 			result.Metrics = append(result.Metrics, tm.RuntimeMetric{Name: m.Name, Value: m.Value, Unit: m.Unit, Kind: "gauge"})
 		}
+		finality, e := queries.ReadFinalityRollups(ctx, q.ReadFinalityRollupsParams{ClockID: clock.ID, ClockValid: clock.Valid, ElapsedNs: clock.ElapsedNS, Cutoff: clock.Cutoff})
+		if e != nil {
+			return e
+		}
+		for _, m := range finality {
+			result.Metrics = append(result.Metrics, tm.RuntimeMetric{Name: m.Name, Value: m.Value, Unit: m.Unit, Kind: "gauge"})
+		}
+
 		return nil
 	})
 	if err != nil {

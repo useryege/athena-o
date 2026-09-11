@@ -1065,7 +1065,7 @@ func TestTimingRuntimeIncludesUnacknowledgedActivitiesAndAllOutcomes(t *testing.
 			t.Fatal(e)
 		}
 	}
-	snapshot, e := s.ReadRuntimeStatus(ctx, admin.ID)
+	snapshot, e := s.ReadRuntimeStatus(ctx, admin.ID, tm.ObservationClock{})
 	if e != nil {
 		t.Fatal(e)
 	}

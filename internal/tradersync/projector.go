@@ -14,6 +14,8 @@ import (
 
 type ProjectionStore interface {
 	ProjectionSources(context.Context, int) ([]tm.ProjectionSource, error)
+	FinalityObservationCutoff(context.Context) (int64, error)
+	RecordFinalityObservation(context.Context, int64, tm.FinalityRoundObservation) error
 	SaveProjectionEvidence(context.Context, int64, tm.CanonicalEvidence, *tm.Trade) error
 	Project(context.Context, tm.Projection) (int64, bool, error)
 	SaveMetadata(context.Context, string, tm.TradeMetadata) error
@@ -30,13 +32,16 @@ type ProjectorConfig struct {
 	MaxInFlightSources                      int
 }
 type Projector struct {
-	store    ProjectionStore
-	node     CanonicalRPC
-	version  ProjectionVersion
-	metadata ProjectionMetadata
-	config   ProjectorConfig
-	running  atomic.Bool
-	metrics  projectorMetrics
+	store          ProjectionStore
+	node           CanonicalRPC
+	version        ProjectionVersion
+	metadata       ProjectionMetadata
+	config         ProjectorConfig
+	running        atomic.Bool
+	metrics        projectorMetrics
+	finalityOnce   sync.Once
+	finalityCutoff int64
+	finalityReady  atomic.Bool
 }
 
 func NewProjector(store ProjectionStore, node CanonicalRPC, version ProjectionVersion, metadata ProjectionMetadata, config ProjectorConfig) (*Projector, error) {
@@ -65,6 +70,7 @@ func (p *Projector) Run(ctx context.Context) error {
 		return fmt.Errorf("projector already running")
 	}
 	defer p.running.Store(false)
+	p.initializeFinality(ctx)
 	ctx, cancel := context.WithCancel(ctx)
 	var workers sync.WaitGroup
 	defer func() { cancel(); workers.Wait() }()
@@ -124,6 +130,7 @@ func (p *Projector) Run(ctx context.Context) error {
 
 func (p *Projector) process(ctx context.Context, source tm.ProjectionSource) error {
 	roundBegan := time.Now()
+	p.initializeFinality(ctx)
 	p.metrics.inFlight(1)
 	defer func() { p.metrics.inFlight(-1); p.metrics.observe("source_round", roundBegan) }()
 	jobCtx, cancel := context.WithCancel(ctx)
@@ -156,10 +163,16 @@ func (p *Projector) process(ctx context.Context, source tm.ProjectionSource) err
 	}()
 	go func() {
 		defer workers.Done()
-		began := time.Now()
-		defer p.metrics.observe("confirmation_round", began)
+		began, start := p.metrics.observationPoint()
 		e, _ := ConfirmReceived(jobCtx, p.node, source.Raw)
-		confirmations <- confirmationResult{e, time.Now(), time.Since(began)}
+		returned, end := p.metrics.observationPoint()
+		p.metrics.observe("confirmation_round", began)
+		// The original result/deadline is available before telemetry persistence.
+		confirmations <- confirmationResult{e, returned, returned.Sub(began)}
+		p.recordFinality(ctx, source.ID, tm.FinalityRoundObservation{
+			ClockID: start.ID, StartedAt: began, ReturnedAt: returned, StartedNS: start.ElapsedNS, ReturnedNS: end.ElapsedNS,
+			Confirmed: e.Status == "confirmed", Reliable: start.Valid && end.Valid, SourceAfterCutoff: source.ID > p.finalityCutoff,
+		})
 	}()
 	var trade tm.Trade
 	var confirmation confirmationResult

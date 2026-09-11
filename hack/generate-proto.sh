@@ -221,6 +221,10 @@ EOF
                 elif . == "canonical_profile_url" then "canonicalProfileURL"
                 else split("_") | .[0] + (.[1:] | map((.[0:1] | ascii_upcase) + .[1:]) | join("")) end))) |
           # Wallet REST uses the reviewed camelCase contract even though its protobuf field names remain snake_case.
+          rename_definition_property("notificationNotificationRecoveryStatus"; "started_at"; "startedAt") |
+          rename_definition_property("notificationNotificationRecoveryStatus"; "remaining_millis"; "remainingMillis") |
+          rename_definition_property("notificationNotificationRecoveryStatus"; "elapsed_millis"; "elapsedMillis") |
+          rename_definition_property("notificationNotificationRecoveryStatus"; "clock_source"; "clockSource") |
           rename_definition_property("v1alpha1WalletItem"; "wallet_type"; "walletType") |
           rename_definition_property("v1alpha1WalletItem"; "avatar_kind"; "avatarKind") |
           rename_definition_property("v1alpha1WalletItem"; "avatar_preset_id"; "avatarPresetId") |

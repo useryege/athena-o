@@ -660,6 +660,7 @@ CREATE TABLE trader_sync_source_records (
  collector_epoch BIGINT NOT NULL REFERENCES trader_sync_collector_epochs(id),
  read_sequence BIGINT NOT NULL CHECK(read_sequence>0),
  received_elapsed_ns BIGINT CHECK(received_elapsed_ns>=0),
+ finality_timing JSONB NOT NULL DEFAULT '{}'::jsonb CHECK(jsonb_typeof(finality_timing)='object'),
  received_at TIMESTAMPTZ NOT NULL,
  removed BOOLEAN NOT NULL,
  confirmation_state TEXT NOT NULL DEFAULT 'unverified' CHECK(confirmation_state IN ('unverified','invalid','confirmed')),

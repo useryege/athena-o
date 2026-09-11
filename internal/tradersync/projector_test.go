@@ -3,8 +3,10 @@ package tradersync
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	et "github.com/ethereum/go-ethereum/core/types"
+	"github.com/useryege/athena/internal/tradersync/activity"
 	tm "github.com/useryege/athena/internal/tradersync/types"
 	"math/big"
 	"sort"
@@ -15,13 +17,19 @@ import (
 )
 
 type projectorStoreFake struct {
-	mu        sync.Mutex
-	source    tm.ProjectionSource
-	projected chan tm.Projection
-	late      chan tm.TradeMetadata
-	checks    []tm.CanonicalEvidence
-	projects  int
-	complete  bool
+	mu               sync.Mutex
+	source           tm.ProjectionSource
+	projected        chan tm.Projection
+	late             chan tm.TradeMetadata
+	checks           []tm.CanonicalEvidence
+	projects         int
+	complete         bool
+	observations     []tm.FinalityRoundObservation
+	observationError error
+	cutoff           int64
+	cutoffError      error
+	finality         tm.FinalityTiming
+	recordHook       func(context.Context, tm.FinalityRoundObservation) error
 }
 
 func (s *projectorStoreFake) ProjectionSources(context.Context, int) ([]tm.ProjectionSource, error) {
@@ -357,5 +365,261 @@ func TestProjectorMetricsObserveFailedConfirmationWithoutInventingProjection(t *
 	}
 	if s.projects != 0 {
 		t.Fatal("failed confirmation formed activity")
+	}
+}
+
+func (s *projectorStoreFake) FinalityObservationCutoff(context.Context) (int64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.cutoff, s.cutoffError
+}
+func (s *projectorStoreFake) RecordFinalityObservation(ctx context.Context, _ int64, o tm.FinalityRoundObservation) error {
+	s.mu.Lock()
+	hook := s.recordHook
+	s.mu.Unlock()
+	if hook != nil {
+		if e := hook(ctx, o); e != nil {
+			return e
+		}
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.observations = append(s.observations, o)
+	if s.observationError != nil {
+		return s.observationError
+	}
+	s.finality = activity.MergeFinalityObservation(s.finality, o)
+	return nil
+}
+
+type immediateProjectorMetadata struct{}
+
+func (immediateProjectorMetadata) ResolveProgress(_ context.Context, _ tm.Trade, _ common.Hash, _ func(tm.TradeMetadata)) tm.TradeMetadata {
+	return tm.TradeMetadata{}
+}
+func TestProjectorRecordsActualFinalityAcrossRetries(t *testing.T) {
+	store, node, version, _ := projectorFixture(t)
+	close(node.release)
+	node.failure = true
+	p, e := NewProjector(store, node, version, immediateProjectorMetadata{}, ProjectorConfig{})
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = p.process(context.Background(), store.source); e != nil {
+		t.Fatal(e)
+	}
+	time.Sleep(20 * time.Millisecond)
+	node.failure = false
+	if e = p.process(context.Background(), store.source); e != nil {
+		t.Fatal(e)
+	}
+	store.mu.Lock()
+	observed := append([]tm.FinalityRoundObservation(nil), store.observations...)
+	store.mu.Unlock()
+	if len(observed) != 2 {
+		t.Fatalf("actual confirmation rounds persisted=%d want 2", len(observed))
+	}
+	if observed[0].Confirmed || !observed[1].Confirmed {
+		t.Fatalf("wrong round outcomes: %+v", observed)
+	}
+	if observed[0].ClockID == "" || observed[0].ClockID != observed[1].ClockID || !observed[0].Reliable || !observed[1].Reliable {
+		t.Fatalf("clock evidence: %+v", observed)
+	}
+	if observed[1].StartedNS-observed[0].ReturnedNS < int64(20*time.Millisecond) {
+		t.Fatal("retry interval lost")
+	}
+	if observed[0].ReturnedNS < observed[0].StartedNS || observed[1].ReturnedNS < observed[1].StartedNS {
+		t.Fatal("negative actual round")
+	}
+}
+
+func (s *fairProjectionStore) FinalityObservationCutoff(context.Context) (int64, error) {
+	return 0, nil
+}
+func (s *fairProjectionStore) RecordFinalityObservation(context.Context, int64, tm.FinalityRoundObservation) error {
+	return nil
+}
+
+type orderedVersionFailure struct{ after <-chan struct{} }
+
+func (v orderedVersionFailure) Verify(ctx context.Context, _ et.Log) (string, error) {
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	case <-v.after:
+		return "", errors.New("version unavailable")
+	}
+}
+
+type cancellationRaceCanonical struct {
+	*projectorCanonical
+	atLastRead chan struct{}
+}
+
+func (n cancellationRaceCanonical) HeaderByHash(ctx context.Context, _ common.Hash) (*et.Header, error) {
+	close(n.atLastRead)
+	<-ctx.Done()
+	// The response won at the transport boundary; cancellation cannot retract
+	// evidence that the RPC has actually returned successfully.
+	return n.header, nil
+}
+func TestProjectorFinalitySurvivesVersionFailureOrder(t *testing.T) {
+	for _, order := range []string{"confirmed_before_version_failure", "version_failure_cancels_returning_confirmation"} {
+		t.Run(order, func(t *testing.T) {
+			s, n, _, _ := projectorFixture(t)
+			close(n.release)
+			ready := make(chan struct{})
+			var node CanonicalRPC = n
+			if order == "confirmed_before_version_failure" {
+				s.recordHook = func(_ context.Context, o tm.FinalityRoundObservation) error {
+					if !o.Confirmed {
+						t.Error("expected actual confirmed before version release")
+					}
+					close(ready)
+					return nil
+				}
+			} else {
+				node = cancellationRaceCanonical{projectorCanonical: n, atLastRead: ready}
+			}
+			p, e := NewProjector(s, node, orderedVersionFailure{ready}, immediateProjectorMetadata{}, ProjectorConfig{})
+			if e != nil {
+				t.Fatal(e)
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			if e = p.process(ctx, s.source); e != nil {
+				t.Fatal(e)
+			}
+			s.mu.Lock()
+			defer s.mu.Unlock()
+			if s.finality.State != "completed" || len(s.observations) != 1 || !s.observations[0].Confirmed {
+				t.Fatalf("lost actual confirmed: %+v %+v", s.finality, s.observations)
+			}
+			if s.projects != 0 || len(s.checks) != 1 || s.checks[0].Reason != "source_version_or_decode_unverified" {
+				t.Fatalf("telemetry changed business evidence: %+v", s.checks)
+			}
+		})
+	}
+}
+func TestProjectorLostConfirmedObservationCannotTakeLaterFirst(t *testing.T) {
+	s, n, v, _ := projectorFixture(t)
+	close(n.release)
+	n.failure = true
+	p, e := NewProjector(s, n, v, immediateProjectorMetadata{}, ProjectorConfig{})
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = p.process(context.Background(), s.source); e != nil {
+		t.Fatal(e)
+	}
+	if s.finality.State != "waiting" {
+		t.Fatal(s.finality)
+	}
+	n.failure = false
+	s.observationError = errors.New("unknown commit")
+	if e = p.process(context.Background(), s.source); e != nil {
+		t.Fatal(e)
+	}
+	if p.ObservationClock().Valid {
+		t.Fatal("lost confirmed did not invalidate clock")
+	}
+	s.observationError = nil
+	if e = p.process(context.Background(), s.source); e != nil {
+		t.Fatal(e)
+	}
+	if s.finality.State != "unavailable" || s.finality.FirstConfirmedNS != nil || s.observations[2].Reliable {
+		t.Fatalf("later confirmed invented first: %+v", s.finality)
+	}
+	if len(s.observations) != 3 || s.projects != 2 {
+		t.Fatal("telemetry changed business retry count")
+	}
+}
+func TestProjectorFinalityCutoffAndRepeatedRunIdentity(t *testing.T) {
+	for _, fail := range []bool{false, true} {
+		s, n, v, _ := projectorFixture(t)
+		close(n.release)
+		s.complete = true
+		s.cutoff = 1
+		if fail {
+			s.cutoffError = errors.New("cutoff unavailable")
+		}
+		p, e := NewProjector(s, n, v, immediateProjectorMetadata{}, ProjectorConfig{})
+		if e != nil {
+			t.Fatal(e)
+		}
+		before := p.ObservationClock().ID
+		for i := 0; i < 2; i++ {
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Millisecond)
+			e = p.Run(ctx)
+			cancel()
+			if !errors.Is(e, context.DeadlineExceeded) {
+				t.Fatal(e)
+			}
+			if p.ObservationClock().ID != before {
+				t.Fatal("same object Run reset identity")
+			}
+		}
+		if e = p.process(context.Background(), s.source); e != nil {
+			t.Fatal(e)
+		}
+		if s.finality.State != "unavailable" || s.projects != 1 {
+			t.Fatalf("startup unknown changed qualification: %+v", s.finality)
+		}
+		if fail && p.ObservationClock().Valid {
+			t.Fatal("cutoff failure became reliable")
+		}
+	}
+}
+func TestProjectorObservationCancellationIsBoundedAndJoined(t *testing.T) {
+	s, n, v, _ := projectorFixture(t)
+	close(n.release)
+	entered := make(chan struct{})
+	exited := make(chan struct{})
+	s.recordHook = func(ctx context.Context, _ tm.FinalityRoundObservation) error {
+		defer close(exited)
+		if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > 5*time.Second {
+			t.Error("observation lacks five second bound")
+		}
+		close(entered)
+		<-ctx.Done()
+		return ctx.Err()
+	}
+	p, e := NewProjector(s, n, v, immediateProjectorMetadata{}, ProjectorConfig{})
+	if e != nil {
+		t.Fatal(e)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { done <- p.process(ctx, s.source) }()
+	<-entered
+	began := time.Now()
+	cancel()
+	select {
+	case <-done:
+		t.Fatal("process escaped its observation join")
+	case <-time.After(20 * time.Millisecond):
+	}
+	select {
+	case <-done:
+	case <-time.After(6 * time.Second):
+		t.Fatal("observation join not bounded")
+	}
+	select {
+	case <-exited:
+	default:
+		t.Fatal("observation worker leaked")
+	}
+	if time.Since(began) < 4*time.Second || p.ObservationClock().Valid {
+		t.Fatal("actual timeout not observed")
+	}
+	var roundNS int64
+	for _, m := range p.MetricsSnapshot() {
+		if m.Name == "projector_source_round_elapsed_ns_total" {
+			fmt.Sscan(m.Value, &roundNS)
+		}
+	}
+	if roundNS < int64(4*time.Second) {
+		t.Fatal("source round excluded observation join cost")
 	}
 }

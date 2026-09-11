@@ -32,6 +32,26 @@ import (
 // runtime method/facade, and production JSON. Public administrator authorization
 // remains the server policy's separate test; this harness does not replace it.
 func TestRecoveryRuntimeRealGatewayEvidence(t *testing.T) {
+	swaggerRaw, err := os.ReadFile("../../assets/swagger.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var swagger struct {
+		Definitions map[string]struct{ Properties map[string]json.RawMessage }
+	}
+	if err = json.Unmarshal(swaggerRaw, &swagger); err != nil {
+		t.Fatal(err)
+	}
+	properties := swagger.Definitions["notificationNotificationRecoveryStatus"].Properties
+	for _, name := range []string{"state", "reason", "startedAt", "remainingMillis", "elapsedMillis", "clockSource"} {
+		if _, ok := properties[name]; !ok {
+			t.Errorf("generated recovery Swagger missing %s; properties=%v", name, properties)
+		}
+	}
+	if len(properties) != 6 {
+		t.Errorf("unexpected Swagger recovery shape: %v", properties)
+	}
+
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -101,6 +121,11 @@ func TestRecoveryRuntimeRealGatewayEvidence(t *testing.T) {
 			var recovery map[string]json.RawMessage
 			if e = json.Unmarshal(body["recovery"], &recovery); e != nil {
 				t.Fatal(e)
+			}
+			for key := range recovery {
+				if _, ok := properties[key]; !ok {
+					t.Errorf("real recovery wire property %s absent from generated Swagger", key)
+				}
 			}
 			for key, want := range map[string]string{"state": state, "clockSource": "sender_monotonic", "elapsedMillis": elapsed} {
 				if string(recovery[key]) != fmt.Sprintf("%q", want) {

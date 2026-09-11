@@ -1,6 +1,8 @@
 package tradersync
 
 import (
+	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -44,5 +46,58 @@ func TestTimingBoundsAndClockFailures(t *testing.T) {
 				t.Fatalf("%+v", r)
 			}
 		})
+	}
+}
+
+func TestProjectorMetricsEpochIdentity(t *testing.T) {
+	var m projectorMetrics
+	check := func() string {
+		t.Helper()
+		var id string
+		for _, v := range m.snapshot() {
+			if v.Name == "projector_sources_in_flight" {
+				if v.Kind != "gauge" || v.ServiceEpoch != nil {
+					t.Errorf("gauge contract: %+v", v)
+				}
+				continue
+			}
+			if v.Kind != "epoch" || v.ServiceEpoch == nil || *v.ServiceEpoch == "" {
+				t.Errorf("accumulated metric lacks epoch identity: %+v", v)
+				continue
+			}
+			if id != "" && id != *v.ServiceEpoch {
+				t.Error("different identities within one snapshot")
+			}
+			id = *v.ServiceEpoch
+		}
+		return id
+	}
+	first := check()
+	m.observe("confirmation_round", time.Now())
+	if next := check(); next != first {
+		t.Fatalf("identity changed %q -> %q", first, next)
+	}
+	for _, v := range m.snapshot() {
+		if v.ServiceEpoch != nil {
+			*v.ServiceEpoch = "caller-mutated"
+		}
+	}
+	if next := check(); next != first {
+		t.Fatal("caller mutated internal identity")
+	}
+	var wg sync.WaitGroup
+	for i := 0; i < 12; i++ {
+		wg.Add(1)
+		go func() { defer wg.Done(); check() }()
+	}
+	wg.Wait()
+	var other projectorMetrics
+	for _, v := range other.snapshot() {
+		if v.Kind == "epoch" && (v.ServiceEpoch == nil || *v.ServiceEpoch == first) {
+			t.Fatal("new instance reused identity")
+		}
+		if strings.HasSuffix(v.Name, "_count") && v.Value != "0" {
+			t.Fatal("new instance did not reset")
+		}
 	}
 }

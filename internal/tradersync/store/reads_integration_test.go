@@ -417,7 +417,7 @@ func TestAdminCountsDistinctDeliveryAcrossSubscriptionsAndRetries(t *testing.T) 
 			t.Fatal("shared part or retry double counted", v)
 		}
 	}
-	runtime, e := s.ReadRuntimeStatus(ctx, admin.ID)
+	runtime, e := s.ReadRuntimeStatus(ctx, admin.ID, tm.ObservationClock{})
 	if e != nil {
 		t.Fatal(e)
 	}

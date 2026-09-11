@@ -386,6 +386,7 @@ type TraderSyncSourceRecord struct {
 	CollectorEpoch     int64
 	ReadSequence       int64
 	ReceivedElapsedNs  pgtype.Int8
+	FinalityTiming     []byte
 	ReceivedAt         pgtype.Timestamptz
 	Removed            bool
 	ConfirmationState  string

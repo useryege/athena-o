@@ -4,6 +4,7 @@ package acceptance
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	tm "github.com/useryege/athena/internal/tradersync/types"
@@ -28,6 +29,11 @@ func TestRecordedPayloadTraversesActualPipeline(t *testing.T) {
 		t.Fatal(s)
 	}
 	t.Logf("actual pipeline: %+v", s)
+	metrics := h.captureRuntime("tradersync-fix1-ordinary")
+	if metrics["finality_sources_completed"] != "1" {
+		t.Fatalf("actual first confirmation missing: %v", metrics)
+	}
+
 }
 
 func TestActualConfirmationFailureKeepsWSSAndClosedEpochCandidate(t *testing.T) {
@@ -45,6 +51,15 @@ func TestActualConfirmationFailureKeepsWSSAndClosedEpochCandidate(t *testing.T) 
 				s := h.Stats()
 				return s.Sources == 1 && s.Unverified == 1 && s.Costs["block_finalized"] > 0
 			})
+			h.wait("first finality attempt persistently waiting", time.Second, func() bool {
+				var state string
+				e := h.db.Pool.QueryRow(h.ctx, `SELECT finality_timing->>'state' FROM trader_sync_source_records`).Scan(&state)
+				return e == nil && state == "waiting"
+			})
+			waitingMetrics := h.captureRuntime("tradersync-fix1-finality-waiting-" + fault)
+			if waitingMetrics["finality_sources_waiting"] != "1" || waitingMetrics["finality_pending_oldest_monotonic_seconds"] == "" {
+				t.Fatal(waitingMetrics)
+			}
 			var epoch int64
 			var attempt string
 			var state string
@@ -73,6 +88,22 @@ func TestActualConfirmationFailureKeepsWSSAndClosedEpochCandidate(t *testing.T) 
 			if e := h.db.Pool.QueryRow(h.ctx, `SELECT baseline_attempt_id::text FROM trader_sync_source_candidates`).Scan(&retained); e != nil || retained != attempt {
 				t.Fatal("candidate rebound to new attempt", retained, attempt, e)
 			}
+			var timingJSON []byte
+			if e := h.db.Pool.QueryRow(h.ctx, `SELECT finality_timing FROM trader_sync_source_records`).Scan(&timingJSON); e != nil {
+				t.Fatal(e)
+			}
+			var timing tm.FinalityTiming
+			if e := json.Unmarshal(timingJSON, &timing); e != nil {
+				t.Fatal(e)
+			}
+			if timing.State != "completed" || timing.FirstStartedNS == nil || timing.FirstConfirmedNS == nil || timing.FirstRoundNS == nil || *timing.FirstConfirmedNS-*timing.FirstStartedNS <= *timing.FirstRoundNS {
+				t.Fatalf("cross-retry interval lost: %s", timingJSON)
+			}
+			metrics := h.captureRuntime("tradersync-fix1-finality-completed-" + fault)
+			if metrics["finality_sources_completed"] != "1" || metrics["finality_first_attempt_to_first_confirmed_usable"] != "1" || metrics["finality_after_first_attempt_to_first_confirmed_p95_monotonic_seconds"] == "" {
+				t.Fatal(metrics)
+			}
+			t.Logf("actual persisted finality retry: %s", timingJSON)
 			t.Logf("%s restored original candidate: %+v", fault, h.Stats())
 		})
 	}

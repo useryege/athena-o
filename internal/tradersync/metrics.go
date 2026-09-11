@@ -1,6 +1,7 @@
 package tradersync
 
 import (
+	"github.com/google/uuid"
 	tm "github.com/useryege/athena/internal/tradersync/types"
 	"strconv"
 	"sync"
@@ -57,9 +58,12 @@ func EvaluateTiming(sample TimingSample) TimingResult {
 // Bounded, process-local counters include failed/cancelled rounds. Persistent
 // activity/delivery/attempt totals are queried separately; these are not cohorts.
 type projectorMetrics struct {
-	mu     sync.Mutex
-	stages map[string]phaseMetric
-	active int64
+	mu                 sync.Mutex
+	stages             map[string]phaseMetric
+	active             int64
+	epoch              string
+	origin             time.Time
+	observationInvalid bool
 }
 type phaseMetric struct {
 	count   int64
@@ -84,12 +88,33 @@ func (m *projectorMetrics) inFlight(delta int64) { m.mu.Lock(); m.active += delt
 func (m *projectorMetrics) snapshot() []tm.RuntimeMetric {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	m.initializeLocked()
+	epoch := func() *string { v := m.epoch; return &v }
 	out := []tm.RuntimeMetric{{Name: "projector_sources_in_flight", Value: strconv.FormatInt(m.active, 10), Unit: "sources", Kind: "gauge"}}
 	for _, name := range projectorStages {
 		v := m.stages[name]
 		out = append(out,
-			tm.RuntimeMetric{Name: "projector_" + name + "_count", Value: strconv.FormatInt(v.count, 10), Unit: "rounds", Kind: "counter"},
-			tm.RuntimeMetric{Name: "projector_" + name + "_elapsed_ns_total", Value: strconv.FormatInt(v.elapsed.Nanoseconds(), 10), Unit: "nanoseconds_sender_independent_monotonic", Kind: "counter"})
+			tm.RuntimeMetric{Name: "projector_" + name + "_count", Value: strconv.FormatInt(v.count, 10), Unit: "rounds", Kind: "epoch", ServiceEpoch: epoch()},
+			tm.RuntimeMetric{Name: "projector_" + name + "_elapsed_ns_total", Value: strconv.FormatInt(v.elapsed.Nanoseconds(), 10), Unit: "nanoseconds_sender_independent_monotonic", Kind: "epoch", ServiceEpoch: epoch()})
 	}
 	return out
+}
+
+func (m *projectorMetrics) initializeLocked() {
+	if m.epoch == "" {
+		m.epoch = uuid.NewString()
+		m.origin = time.Now()
+	}
+}
+func (m *projectorMetrics) observationPoint() (time.Time, tm.ObservationClock) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.initializeLocked()
+	now := time.Now()
+	return now, tm.ObservationClock{ID: m.epoch, ElapsedNS: now.Sub(m.origin).Nanoseconds(), Valid: !m.observationInvalid}
+}
+func (m *projectorMetrics) invalidateObservation() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.observationInvalid = true
 }

@@ -27,7 +27,7 @@ func (q *Queries) InsertSourceCandidates(ctx context.Context, id int64) error {
 const insertSourceRecord = `-- name: InsertSourceRecord :one
 INSERT INTO trader_sync_source_records(chain_id,exchange_address,wallet,block_hash,transaction_hash,log_index,block_number,raw_json,collector_epoch,read_sequence,received_at,removed,received_elapsed_ns)
 VALUES(137,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-ON CONFLICT(chain_id,exchange_address,block_hash,transaction_hash,log_index) DO NOTHING RETURNING id, chain_id, exchange_address, wallet, block_hash, transaction_hash, log_index, block_number, raw_json, collector_epoch, read_sequence, received_elapsed_ns, received_at, removed, confirmation_state, confirmation_reason, checked_at, settled_at, source_version, trade_json, metadata_complete
+ON CONFLICT(chain_id,exchange_address,block_hash,transaction_hash,log_index) DO NOTHING RETURNING id, chain_id, exchange_address, wallet, block_hash, transaction_hash, log_index, block_number, raw_json, collector_epoch, read_sequence, received_elapsed_ns, finality_timing, received_at, removed, confirmation_state, confirmation_reason, checked_at, settled_at, source_version, trade_json, metadata_complete
 `
 
 type InsertSourceRecordParams struct {
@@ -74,6 +74,7 @@ func (q *Queries) InsertSourceRecord(ctx context.Context, arg InsertSourceRecord
 		&i.CollectorEpoch,
 		&i.ReadSequence,
 		&i.ReceivedElapsedNs,
+		&i.FinalityTiming,
 		&i.ReceivedAt,
 		&i.Removed,
 		&i.ConfirmationState,

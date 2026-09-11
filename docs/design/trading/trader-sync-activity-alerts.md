@@ -404,7 +404,7 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 
 ## 验证方式与审阅进度
 
-设计阶段的只读来源核验及限制见关联证据报告。当前组件实现包含本地 WSS 回环、纯基线及隔离 PostgreSQL 集成测试：注册提交可见性、ACK 前接收、过滤部分失败、重连、fencing、持久化错误和取消收尾均有定向覆盖。没有连接真实链或发送 Telegram；ActivityProjector 与健康 WSS 组合已真实调用失败确认并保留 pending/unverified，未关闭观察 epoch；窗口、跨 owner 分叉、回滚、100 关系（共享/全不同目标）、资料晚补和三类冻结 payload 有隔离回归。完整 runtime、真实来源及吞吐/时效验收仍由 Task 13 完成。
+设计阶段的只读来源核验及限制见关联证据报告。当前组件实现包含本地 WSS 回环、纯基线及隔离 PostgreSQL 集成测试：注册提交可见性、ACK 前接收、过滤部分失败、重连、fencing、持久化错误和取消收尾均有定向覆盖。上述早期组件回归未连接真实链或发送 Telegram；ActivityProjector 与健康 WSS 组合已真实调用失败确认并保留 pending/unverified，未关闭观察 epoch；窗口、跨 owner 分叉、回滚、100 关系（共享/全不同目标）、资料晚补和三类冻结 payload 有隔离回归。Task13 的受控 runtime/来源/单条 Telegram 证据及仍未验证的实网吞吐、公开时效边界见[限定验收报告](../../testing/trader-sync-activity-alerts-acceptance.md)。
 
 已确认：首期规模及既有业务；集中成交保留前 10 条逐条并允许排队；全部通知同库；发送许可边界；单供应商采集、最终确认、秒级基线与故障不补查。原接口、资料和验收章节也已确认，[后端任务 spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)已获用户整体确认，原后端设计阶段完成。UI 补充进度见下文；长期需求状态与设计状态不增加额外审批流程。
 
@@ -450,8 +450,15 @@ Session 在实际 pong 接收回调捕获带单调部分的时间与 nonce，wri
 
 arrival_and_owner_queue_v1 只有同私聊绑定、同 Session mono 间隔小于 1 秒、前件已确认且首次普通投递仍竞争时才分 ordinary_burst。ordinary_default 与 ordinary_unclassified 均保留非 burst 及普通总体，全部 cohort 在活动 INSERT 时冻结，不据后续慢结果重新分类。队列只代表该 SQL 已提交 snapshot，不包含尚未落库 raw、未提交事务或 dispatcher 内存。规则是保守分组，不证明延迟原因，也不提供 SLO 豁免。
 
-Projector 的确认/版本/额外资料等待记录实际本轮 monotonic 耗时，失败轮次也计入有限 process counter。形成记录包含本轮 processing 与账户 Begin/pool、advisory 两段 gate 事实；候选事务结束及普通/摘要许可、冻结、渲染耗时在锁外受控 debug 日志中记录。recorded_at 是事务中的 DB 打点，不能称 COMMIT 完成时间；本轮确认完成时间也不是跨重试首次确认时刻。
+Projector 的确认/版本/额外资料等待记录实际本轮 monotonic 耗时，失败轮次也计入有限实例累计指标（kind=epoch，serviceEpoch 为稳定 Projector UUID）。形成记录包含本轮 processing 与账户 Begin/pool、advisory 两段 gate 事实；候选事务结束及普通/摘要许可、冻结、渲染耗时在锁外受控 debug 日志中记录。recorded_at 是事务中的 DB 打点，不能称 COMMIT 完成时间；本轮确认完成时间也不是跨重试首次确认时刻。
 
-管理员原 runtime 的有限 metrics 同时统计 activity、去重 logical delivery/summary part、全部 HTTP attempt。无授权、未冻结、无 ACK 和失败/未知/取消样本仍在总数、状态及年龄中。一个摘要 part 的多个成员不能乘成多个 HTTP。名称中的 utc 表示持久时间差，monotonic 表示实际同进程采样；缺失量不填零，负 UTC 顺序另计 clock anomaly，不把 block time 或 received time 当公开时刻。普通全部及非 burst 的 P95/P99 与 cohort 分项并存。确认/版本形成百分位按活动加权，process round counter 按实际核验轮次计，两者分母不同。
+管理员原 runtime 的有限 metrics 同时统计 activity、去重 logical delivery/summary part、全部 HTTP attempt。无授权、未冻结、无 ACK 和失败/未知/取消样本仍在总数、状态及年龄中。一个摘要 part 的多个成员不能乘成多个 HTTP。名称中的 utc 表示持久时间差，monotonic 表示实际同进程采样；缺失量不填零，负 UTC 顺序另计 clock anomaly，不把 block time 或 received time 当公开时刻。普通全部及非 burst 的 P95/P99 与 cohort 分项并存。确认/版本形成百分位按活动加权，实例累计 round 指标按实际核验轮次计，两者分母不同。
 
 独立公开区间缺失时公开→站内 P95/P99 不可判定。Sender 已解析成功响应的本地返回上界为 ACK 证据，不是 Telegram 服务端或用户设备送达时间。非首次 sender 恢复等待单列为本地恢复进度，仍保留总体排队时延。测试构造、故障与来源限制见[指标与容量验收](../../testing/trader-sync-activity-alerts-acceptance.md)。
+
+
+首次 finality 观测独立保存于 source 的 typed finality_timing，不使用最后 checked_at 回填首次。首次起点紧邻该 Projector 的 ConfirmReceived 调用前，首个 confirmed 终点紧邻真实返回后；首次轮、首次起点至首个完成、首轮结束后的跨重试等待分别聚合，首轮即成功的后者为合法零。分母是 source。它是单个实例连续可证序列，不是并行进程全局最早；Service 同时启动 Collector/Projector，Collector 锁不能证明 Projector 全局独占。
+
+同实例 epoch/mono origin 在反复快照、再次 Run 与 Collector 重连中稳定；新对象换 UUID。启动已提交 max(id) 截点之前的空 timing 保持 unavailable，不把重启后的新调用冒称首次。失败截点或任何未能确认保存的观察使该实例后续未完成序列及等待年龄失效，包括已 waiting 后丢失 confirmed 的情况；跨实例未完成序列不可串联。已完整保存的同 clock 区间仍是历史有效证据，后续版本/资料失败不改写。runtime 仅聚合有限安全标量，明确 not_started/waiting/completed/unavailable 及原因；当前等待年龄只接受匹配且有效的内部 ObservationClock，不拿 UTC 相减补 mono。
+
+确认 channel 和 metadata deadline 先使用原返回时间，观测写入独立于 version 分支对 job 的取消；原 source worker 最多五秒完成 Begin/source行锁读/更新/Commit并由 workers.Wait 收尾，不持 account gate、不启动新 leader，不额外 RPC。提交失败或未知直接令观测资格失效，不为遥测重试确认。每轮额外数据库成本及收尾等待保留 source_round 和总体，不承诺零成本。管理员 SQL 不选择 activity/delivery/attempt 全行或私密 formation 对象；worker result UTC 段、摘要 oldest/start 与相邻 start 明列正常/负序/缺失分母，首批无前件及未冻结成员独立列示。

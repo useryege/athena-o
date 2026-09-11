@@ -196,7 +196,11 @@ func (s *Service) GetSubscriptionSummary(ctx context.Context, admin, id string) 
 	return p.Summaries[0], nil
 }
 func (s *Service) GetRuntimeStatus(ctx context.Context, admin string) (tm.RuntimeStatus, error) {
-	result, err := s.reads.ReadRuntimeStatus(ctx, admin)
+	var clock tm.ObservationClock
+	if s.deps.Projector != nil {
+		clock = s.deps.Projector.ObservationClock()
+	}
+	result, err := s.reads.ReadRuntimeStatus(ctx, admin, clock)
 	if err != nil {
 		return tm.RuntimeStatus{}, err
 	}

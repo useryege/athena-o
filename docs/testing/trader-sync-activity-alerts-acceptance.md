@@ -79,6 +79,25 @@ A 为10 owner各10互异 wallet；B 为10 owner共享10 wallet。每场景100关
 
 两个公开钱包0x31e5d54aded22aa7cd80dbe9e33102abe2504879与0x07db5765beba17be154cbfbd6324a15f3c81fa4f，16HTTP均200；六区间金额全unavailable：五个非ALL区间reference_unknown、ALL金额rounding_unknown。只有ALL曲线available，原始点/HTTP200不能充作官网展示一致性；无新币种、参考时刻、官方舍入规则证明。没有独立公开时间。观测overlay重建的396包/2351输入核对与相同binary SHA保留为临时受控证据，其限度没有覆盖编译器全部传递工具。
 
-真实100活跃目标压力、公开时刻P95/P99、供应商静默漏推完整性和长期稳定性仍待验证。缺失Combo SELL maker recorded不能改名补格。Telegram仍待明确测试接收者授权；本页不冒称已外发成功。
+真实100活跃目标压力、公开时刻P95/P99、供应商静默漏推完整性和长期稳定性仍待验证。缺失Combo SELL maker recorded不能改名补格。Telegram 已于 2026-09-11 按明确授权完成下述单条直接 Sender 传输；不外推全实网数据库链或 SLO。
 
 最终类型自审另以真实PG大整数重现前件JSON通用对象的float64舍入：9007199254740993变成9007199254740992。已将SQL显式jsonb生成[]byte并直接typed解析；形成同snapshot测试同时证明大整数/最近未形成前件/不可变cohort。该变更后仅重跑受影响真实消费者的定向race，前述完整矩阵是修复前运行，不混称同一源树。没有改变业务分类或配额。
+
+
+## Task13 fix1：聚合边界与首次确认
+
+修复基点 27b2caa0408aae97a73b4bd6dbe56f8142a0b469。管理员聚合 SQL 显式读取关联键、状态、时间与安全 gate/processing 标量；不选择 delivery/activity/attempt 全行或正文、备注、交易原件。测试同时检查源 SQL、生成 SQL 与真实 PG 三层分母。worker 结果 UTC 等待按 usable/clock_anomalies/missing 对账全部 attempt；摘要 oldest→firstStarted 与相邻批次同样区分，首批另列 no_predecessor，未冻结成员单列 waiting_members，不伪造批次起点。
+
+Projector 累计指标为 kind=epoch，serviceEpoch 是本对象稳定 UUID；重连与同对象再次 Run 不重置，新对象归零并换 ID；in-flight 仍 gauge。recovery Swagger 与真实 JSON 的 startedAt/remainingMillis/elapsedMillis/clockSource 一致，保留旧顶层 snake_case。
+
+首次 finality 是同一 Projector 时钟实例对该 source 连续可证的首次调用到首次 confirmed，不代表所有并行进程全局最早确认。源表 typed finality_timing 保存真实调用前/返回后 UTC 与同源 mono；完成区间不因后续版本/资料失败或重试重新计长。首次轮耗时、首次起点→首次完成及首轮结束→首次完成各有可用分母和 P95/P99，按 source 计，不按活动/owner 乘算。等待年龄只在当前匹配且有效时钟下计算。
+
+启动只读取已提交 max(source.id) 截点；此前缺证据、跨实例未完成序列和任何丢失观察均保守 unavailable。一次写入失败会使该实例所有未完成观测失去连续资格，不能用后轮 confirmed 补称首次；已完成历史仍保留。实际确认结果先进入原 channel，metadata deadline 使用原返回时刻；随后在原 source worker 中最多五秒写库并由 workers.Wait 收尾。无新 leader/全局串行器或重试算法；每轮多一次 Begin、source 行锁读、更新和 Commit，失败/未知提交不重新 RPC，其耗时包括在 source_round 与总体中。
+
+定向测试包括纯首次/跨 clock reducer、真实 Projector 两轮及版本失败顺序、已 waiting 丢失 confirmed、同实例再次 Run、截点失败和实际五秒取消/join；真实 PG 持久/幂等/大整数与安全聚合；实际普通/摘要及 403/null 恢复 pipeline→facade→gateway。最终 scoped race：tradersync 6.152s、activity 1.012s、store 8.866s、acceptance 35.630s、notification 5.066s、server 9.351s，exit0。未重跑未变容量和全部故障矩阵；profile info/recovery warning 仍存在，未全部断言（M1 deferred）。原静态扫描中间失败是越过生成 SELECT 扫到说明注释中的 wallet，修正扫描边界后通过，未删合法业务读取。
+
+## 单条真实 Telegram 发送
+
+用户明确授权固定三行纯文本、本人私聊 8815996650、一次且不重试；Bot 为 @test_bot_athena_bot（8945962939，此 ID 不是收件者）。实际 util Telegram + NewTelegramSender 五秒调用一次，1 个 HTTP 请求/1 次连接，HTTP200，messageID=4。Started 为 2026-09-11T04:57:39.307927395Z，返回为 04:57:40.031407655Z，原 Started mono 到返回 0.723480265 秒。准确授权/正文、原请求响应及 SHA 见[固定发送证据](evidence/trader-sync-telegram-send.json)。
+
+这是直接 Sender 公网传输；没有 worker/PG，故 Outcome.Timing 两字段为 null，本次时间由探针在真实 Started 和 Send 返回旁路采样。结果只证明 Telegram 成功响应与本地返回，不证明用户设备送达、实际来源到消息的端到端 SLO或全实网持久链。未执行第二次发送或消费 updates。

@@ -164,3 +164,6 @@ HTTP Started 保留原 time.Now 的 monotonic 部分，只有持久/序列化时
 原恢复 owner 发布 recovery：initializing、waiting、completed、cancelled、failed。Start 在启动 worker 前同步清除旧 completed 快照；历史读取前开始计时，首次空历史也有 completed 证据。原内部/公开 runtime 透传 state/reason/startedAt/remainingMillis/elapsedMillis/clockSource，毫秒为 string；未知剩余省略，合法零为 "0"，来源为 sender_monotonic。fatal/stopped 优先，尚未完成恢复为 recovering，不能因 poller 活跃就显示 running。API 不创建另一个恢复计时器、不解除预算。恢复暂停与许可后动态预算等待是本地延迟，保留总体；HTTP 五秒截止仍在预算准入之后起算。
 
 txgate 的可选观察仅赋本地变量，区分 Begin/pool 与 advisory，调用层锁外输出。普通 Authorize 与摘要初始及重新取得短 gate 都复用这一入口，不改变任何许可、撤权、锁序或首条握手协议。
+
+
+新 recovery 对象的 Swagger 通过既有逐定义规范化链生成，与真实 gateway 保持 startedAt/remainingMillis/elapsedMillis/clockSource；旧 Runtime 顶层字段命名不变。真实 gateway 测试同时核对 Swagger properties、未知剩余缺失和合法字符串零。直接 TelegramSender 调用不经过 worker，因此 Outcome.Timing 可为空；worker 路径才在 Send 返回旁路冻结 timing 并随原结果 CAS 保存。单条真实公网探针的时间/授权边界见[限定验收报告](../../testing/trader-sync-activity-alerts-acceptance.md#单条真实-telegram-发送)。

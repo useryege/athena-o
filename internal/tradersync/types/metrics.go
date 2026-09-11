@@ -61,3 +61,30 @@ type GatePhase struct {
 	ElapsedNS int64  `json:"elapsedNs"`
 	Succeeded bool   `json:"succeeded"`
 }
+
+// ObservationClock belongs to one Projector metrics instance. ElapsedNS is never
+// compared across IDs; Valid is false after any lost observation or cutoff failure.
+type ObservationClock struct {
+	ID        string
+	ElapsedNS int64
+	Cutoff    int64
+	Valid     bool
+}
+type FinalityTiming struct {
+	State            string     `json:"state"`
+	Reason           string     `json:"reason,omitempty"`
+	ClockID          string     `json:"clockId,omitempty"`
+	FirstStartedAt   *time.Time `json:"firstStartedAt,omitempty"`
+	FirstStartedNS   *int64     `json:"firstStartedNs,omitempty"`
+	FirstRoundNS     *int64     `json:"firstRoundNs,omitempty"`
+	FirstConfirmedAt *time.Time `json:"firstConfirmedAt,omitempty"`
+	FirstConfirmedNS *int64     `json:"firstConfirmedNs,omitempty"`
+}
+
+// FinalityRoundObservation is sampled at the actual call boundary, not CheckedAt.
+type FinalityRoundObservation struct {
+	ClockID                                string
+	StartedAt, ReturnedAt                  time.Time
+	StartedNS, ReturnedNS                  int64
+	Confirmed, Reliable, SourceAfterCutoff bool
+}

@@ -15,14 +15,18 @@ WITH links AS MATERIALIZED (
  UNION
  SELECT i.activity_id,p.delivery_id FROM trader_sync_summary_part_items i JOIN trader_sync_summary_parts p ON p.id=i.part_id
 ), deliveries AS MATERIALIZED (
- SELECT d.id, d.account_id, d.idempotency_key, d.payload_digest, d.source, d.severity, d.title, d.body, d.link, d.channel, d.status, d.telegram_chat_id, d.binding_revision, d.provider_message_id, d.error_message, d.created_at, d.sent_at, d.attempts, d.next_attempt_at, d.last_attempt_at, d.locked_at, d.locked_by, d.current_attempt_id, d.eligibility_revoked_at, d.eligibility_revoked_reason, d.payload, d.request_digest, d.activity_id FROM account_notification_deliveries d WHERE EXISTS(SELECT 1 FROM links l WHERE l.delivery_id=d.id)
+ SELECT d.id,d.status,d.created_at FROM account_notification_deliveries d WHERE EXISTS(SELECT 1 FROM links l WHERE l.delivery_id=d.id)
 ), attempts AS MATERIALIZED (
- SELECT a.id, a.work_kind, a.work_id, a.owner_id, a.sender_incarnation, a.telegram_chat_id, a.telegram_group, a.payload_digest, a.authorized_at, a.started_at, a.result_at, a.sender_returned_at, a.sender_elapsed_ns, a.message_id, a.outcome, a.outcome_code, a.retry_after, a.retry_after_released_at FROM notification_delivery_attempts a JOIN deliveries d ON a.work_kind='account' AND a.work_id=d.id
+ SELECT a.id,a.work_id,a.authorized_at,a.started_at,a.result_at,a.sender_returned_at,a.sender_elapsed_ns,a.outcome FROM notification_delivery_attempts a JOIN deliveries d ON a.work_kind='account' AND a.work_id=d.id
 ), delivery_times AS (
  SELECT work_id,min(authorized_at) AS authorized_at,min(started_at) AS started_at,
  max(sender_returned_at) FILTER(WHERE outcome='sent') AS ack_at FROM attempts GROUP BY work_id
 ), activity_times AS MATERIALIZED (
- SELECT a.id, a.owner_id, a.subscription_id, a.source_record_id, a.interval_id, a.activation_generation, a.trade_json, a.metadata_key, a.target_display_snapshot, a.note_snapshot, a.notification_mode, a.notification_reason, a.formation_evidence, a.settled_at, a.received_at, a.recorded_at,
+ SELECT a.id,a.notification_mode,a.recorded_at,a.received_at,
+ a.formation_evidence->'gate' AS gate_phases,
+ a.formation_evidence->'processing'->>'confirmationRoundNs' AS confirmation_round_ns,
+ a.formation_evidence->'processing'->>'versionRoundNs' AS version_round_ns,
+ a.formation_evidence->'processing'->>'metadataExtraWaitNs' AS metadata_extra_wait_ns,
  CASE WHEN a.formation_evidence->>'cohort' IN('ordinary_default','ordinary_unclassified','ordinary_burst','summary','in_app_only')
  THEN a.formation_evidence->>'cohort' ELSE 'ordinary_unclassified' END AS cohort,
  d.authorized_at,d.started_at,d.ack_at
@@ -51,13 +55,13 @@ WITH links AS MATERIALIZED (
  percentile_cont(0.99) WITHIN GROUP(ORDER BY extract(epoch FROM a.ack_at-a.recorded_at)) FILTER(WHERE a.ack_at>=a.recorded_at) AS ack_p99
  FROM scopes s LEFT JOIN expanded a ON a.scope=s.scope GROUP BY s.scope
 ), summary_times AS (
- SELECT b.id, b.owner_id, b.binding_revision, b.chat_id, b.oldest_at, b.frozen_at, b.sealed, b.first_started_at, b.recovery_basis_at, b.recovery_reason, b.budget_wait_started_at, b.budget_wait_ended_at, b.budget_wait_ms, b.budget_reason, b.local_gate_wait_ms, b.start_evidence_missing,lag(first_started_at)OVER(PARTITION BY owner_id ORDER BY id) AS previous_started_at FROM trader_sync_summary_batches b
+ SELECT b.oldest_at,b.first_started_at,lag(first_started_at)OVER(PARTITION BY owner_id ORDER BY id) AS previous_started_at,row_number()OVER(PARTITION BY owner_id ORDER BY id) AS batch_ordinal FROM trader_sync_summary_batches b
 ), phases AS (
  SELECT 'gate_'||(p->>'phase') AS phase,(p->>'elapsedNs')::double precision/1000000000 AS seconds
- FROM activity_times a CROSS JOIN LATERAL jsonb_array_elements(a.formation_evidence->'gate') p WHERE p->>'phase' IN('begin','advisory')
- UNION ALL SELECT 'confirmation_round',(formation_evidence->'processing'->>'confirmationRoundNs')::double precision/1000000000 FROM activity_times
- UNION ALL SELECT 'version_round',(formation_evidence->'processing'->>'versionRoundNs')::double precision/1000000000 FROM activity_times
- UNION ALL SELECT 'metadata_extra_wait',(formation_evidence->'processing'->>'metadataExtraWaitNs')::double precision/1000000000 FROM activity_times
+ FROM activity_times a CROSS JOIN LATERAL jsonb_array_elements(a.gate_phases) p WHERE p->>'phase' IN('begin','advisory')
+ UNION ALL SELECT 'confirmation_round',confirmation_round_ns::double precision/1000000000 FROM activity_times
+ UNION ALL SELECT 'version_round',version_round_ns::double precision/1000000000 FROM activity_times
+ UNION ALL SELECT 'metadata_extra_wait',metadata_extra_wait_ns::double precision/1000000000 FROM activity_times
 ), metrics AS (
  SELECT 'timing_activity_'||scope||'_total' AS name,total::text AS value,'activities' AS unit FROM stats
  UNION ALL SELECT 'timing_activity_'||scope||'_no_ack',no_ack::text,'activities' FROM stats
@@ -85,9 +89,20 @@ WITH links AS MATERIALIZED (
  UNION ALL SELECT 'timing_attempts_'||s.state,count(a.id)::text,'attempts' FROM (SELECT unnest(ARRAY['sent','failed','unknown','retryable'])::text AS state)s LEFT JOIN attempts a ON a.outcome=s.state GROUP BY s.state
  UNION ALL SELECT 'timing_sender_p95_monotonic_seconds',(percentile_cont(0.95)WITHIN GROUP(ORDER BY sender_elapsed_ns::double precision/1000000000))::text,'seconds' FROM attempts WHERE sender_elapsed_ns IS NOT NULL
  UNION ALL SELECT 'timing_sender_p99_monotonic_seconds',(percentile_cont(0.99)WITHIN GROUP(ORDER BY sender_elapsed_ns::double precision/1000000000))::text,'seconds' FROM attempts WHERE sender_elapsed_ns IS NOT NULL
+ UNION ALL SELECT 'timing_worker_result_wait_usable',count(*)::text,'attempts' FROM attempts WHERE result_at>=sender_returned_at
+ UNION ALL SELECT 'timing_worker_result_wait_clock_anomalies',count(*)::text,'attempts' FROM attempts WHERE result_at<sender_returned_at
+ UNION ALL SELECT 'timing_worker_result_wait_missing',count(*)::text,'attempts' FROM attempts WHERE result_at IS NULL OR sender_returned_at IS NULL
+ UNION ALL SELECT 'timing_summary_oldest_start_usable',count(*)::text,'summary_batches' FROM summary_times WHERE first_started_at>=oldest_at
+ UNION ALL SELECT 'timing_summary_oldest_start_clock_anomalies',count(*)::text,'summary_batches' FROM summary_times WHERE first_started_at<oldest_at
+ UNION ALL SELECT 'timing_summary_oldest_start_missing',count(*)::text,'summary_batches' FROM summary_times WHERE first_started_at IS NULL
+ UNION ALL SELECT 'timing_summary_adjacent_start_usable',count(*)::text,'summary_batches' FROM summary_times WHERE batch_ordinal>1 AND first_started_at>=previous_started_at
+ UNION ALL SELECT 'timing_summary_adjacent_start_clock_anomalies',count(*)::text,'summary_batches' FROM summary_times WHERE batch_ordinal>1 AND first_started_at<previous_started_at
+ UNION ALL SELECT 'timing_summary_adjacent_start_missing',count(*)::text,'summary_batches' FROM summary_times WHERE batch_ordinal>1 AND (first_started_at IS NULL OR previous_started_at IS NULL)
+ UNION ALL SELECT 'timing_summary_adjacent_start_no_predecessor',count(*)::text,'summary_batches' FROM summary_times WHERE batch_ordinal=1
+ UNION ALL SELECT 'timing_summary_batches_total',count(*)::text,'summary_batches' FROM summary_times
  UNION ALL SELECT 'timing_worker_result_wait_p95_utc_seconds',(percentile_cont(0.95)WITHIN GROUP(ORDER BY extract(epoch FROM result_at-sender_returned_at)))::text,'seconds' FROM attempts WHERE result_at>=sender_returned_at
  UNION ALL SELECT 'timing_summary_oldest_start_p95_utc_seconds',(percentile_cont(0.95)WITHIN GROUP(ORDER BY extract(epoch FROM first_started_at-oldest_at)))::text,'seconds' FROM summary_times WHERE first_started_at>=oldest_at
- UNION ALL SELECT 'timing_summary_adjacent_start_min_utc_seconds',min(extract(epoch FROM first_started_at-previous_started_at))::text,'seconds' FROM summary_times WHERE first_started_at IS NOT NULL AND previous_started_at IS NOT NULL
+ UNION ALL SELECT 'timing_summary_adjacent_start_min_utc_seconds',min(extract(epoch FROM first_started_at-previous_started_at))::text,'seconds' FROM summary_times WHERE batch_ordinal>1 AND first_started_at>=previous_started_at
  UNION ALL SELECT 'timing_summary_deadline_misses',count(*)::text,'summary_batches' FROM summary_times WHERE first_started_at>oldest_at+interval '60 seconds'
  UNION ALL SELECT 'timing_summary_start_missing',count(*)::text,'summary_batches' FROM summary_times WHERE first_started_at IS NULL
 )

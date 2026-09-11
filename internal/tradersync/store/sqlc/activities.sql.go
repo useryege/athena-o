@@ -194,7 +194,7 @@ func (q *Queries) GetProjectionEligibility(ctx context.Context, arg GetProjectio
 }
 
 const getProjectionSource = `-- name: GetProjectionSource :one
-SELECT id, chain_id, exchange_address, wallet, block_hash, transaction_hash, log_index, block_number, raw_json, collector_epoch, read_sequence, received_elapsed_ns, received_at, removed, confirmation_state, confirmation_reason, checked_at, settled_at, source_version, trade_json, metadata_complete FROM trader_sync_source_records WHERE id=$1 FOR SHARE
+SELECT id, chain_id, exchange_address, wallet, block_hash, transaction_hash, log_index, block_number, raw_json, collector_epoch, read_sequence, received_elapsed_ns, finality_timing, received_at, removed, confirmation_state, confirmation_reason, checked_at, settled_at, source_version, trade_json, metadata_complete FROM trader_sync_source_records WHERE id=$1 FOR SHARE
 `
 
 func (q *Queries) GetProjectionSource(ctx context.Context, id int64) (TraderSyncSourceRecord, error) {
@@ -213,6 +213,7 @@ func (q *Queries) GetProjectionSource(ctx context.Context, id int64) (TraderSync
 		&i.CollectorEpoch,
 		&i.ReadSequence,
 		&i.ReceivedElapsedNs,
+		&i.FinalityTiming,
 		&i.ReceivedAt,
 		&i.Removed,
 		&i.ConfirmationState,
@@ -409,7 +410,7 @@ func (q *Queries) ProjectionCandidates(ctx context.Context, sourceRecordID int64
 }
 
 const projectionSources = `-- name: ProjectionSources :many
-SELECT r.id, r.chain_id, r.exchange_address, r.wallet, r.block_hash, r.transaction_hash, r.log_index, r.block_number, r.raw_json, r.collector_epoch, r.read_sequence, r.received_elapsed_ns, r.received_at, r.removed, r.confirmation_state, r.confirmation_reason, r.checked_at, r.settled_at, r.source_version, r.trade_json, r.metadata_complete FROM trader_sync_source_records r WHERE
+SELECT r.id, r.chain_id, r.exchange_address, r.wallet, r.block_hash, r.transaction_hash, r.log_index, r.block_number, r.raw_json, r.collector_epoch, r.read_sequence, r.received_elapsed_ns, r.finality_timing, r.received_at, r.removed, r.confirmation_state, r.confirmation_reason, r.checked_at, r.settled_at, r.source_version, r.trade_json, r.metadata_complete FROM trader_sync_source_records r WHERE
  EXISTS(SELECT 1 FROM trader_sync_source_candidates c WHERE c.source_record_id=r.id AND c.disposition='pending')
  OR (NOT r.metadata_complete AND r.confirmation_state<>'invalid' AND NOT EXISTS(SELECT 1 FROM trader_sync_finality_anomalies f WHERE f.chain_id=r.chain_id AND f.transaction_hash=r.transaction_hash) AND EXISTS(SELECT 1 FROM trader_sync_activities a WHERE a.source_record_id=r.id))
  OR (r.removed AND EXISTS(SELECT 1 FROM trader_sync_activities a WHERE a.source_record_id=r.id) AND NOT EXISTS(SELECT 1 FROM trader_sync_finality_anomalies f WHERE f.chain_id=r.chain_id AND f.transaction_hash=r.transaction_hash))
@@ -438,6 +439,7 @@ func (q *Queries) ProjectionSources(ctx context.Context, limit int32) ([]TraderS
 			&i.CollectorEpoch,
 			&i.ReadSequence,
 			&i.ReceivedElapsedNs,
+			&i.FinalityTiming,
 			&i.ReceivedAt,
 			&i.Removed,
 			&i.ConfirmationState,
@@ -460,11 +462,11 @@ func (q *Queries) ProjectionSources(ctx context.Context, limit int32) ([]TraderS
 
 const readFormationSnapshot = `-- name: ReadFormationSnapshot :one
 WITH current_arrival AS (
- SELECT r.id, r.chain_id, r.exchange_address, r.wallet, r.block_hash, r.transaction_hash, r.log_index, r.block_number, r.raw_json, r.collector_epoch, r.read_sequence, r.received_elapsed_ns, r.received_at, r.removed, r.confirmation_state, r.confirmation_reason, r.checked_at, r.settled_at, r.source_version, r.trade_json, r.metadata_complete,c.owner_id,c.subscription_id,c.baseline_attempt_id,c.activation_generation
+ SELECT r.id, r.chain_id, r.exchange_address, r.wallet, r.block_hash, r.transaction_hash, r.log_index, r.block_number, r.raw_json, r.collector_epoch, r.read_sequence, r.received_elapsed_ns, r.finality_timing, r.received_at, r.removed, r.confirmation_state, r.confirmation_reason, r.checked_at, r.settled_at, r.source_version, r.trade_json, r.metadata_complete,c.owner_id,c.subscription_id,c.baseline_attempt_id,c.activation_generation
  FROM trader_sync_source_records r JOIN trader_sync_source_candidates c ON c.source_record_id=r.id
  WHERE r.id=$1 AND c.owner_id=$2 AND c.subscription_id=$3
 ), observed AS MATERIALIZED (SELECT clock_timestamp() AS at), previous_arrival AS (
- SELECT r.id, r.chain_id, r.exchange_address, r.wallet, r.block_hash, r.transaction_hash, r.log_index, r.block_number, r.raw_json, r.collector_epoch, r.read_sequence, r.received_elapsed_ns, r.received_at, r.removed, r.confirmation_state, r.confirmation_reason, r.checked_at, r.settled_at, r.source_version, r.trade_json, r.metadata_complete,c.subscription_id,c.baseline_attempt_id,c.activation_generation
+ SELECT r.id, r.chain_id, r.exchange_address, r.wallet, r.block_hash, r.transaction_hash, r.log_index, r.block_number, r.raw_json, r.collector_epoch, r.read_sequence, r.received_elapsed_ns, r.finality_timing, r.received_at, r.removed, r.confirmation_state, r.confirmation_reason, r.checked_at, r.settled_at, r.source_version, r.trade_json, r.metadata_complete,c.subscription_id,c.baseline_attempt_id,c.activation_generation
  FROM current_arrival cur JOIN trader_sync_source_candidates c ON c.owner_id=cur.owner_id
  JOIN trader_sync_source_records r ON r.id=c.source_record_id
  WHERE r.collector_epoch=cur.collector_epoch AND r.read_sequence<cur.read_sequence

@@ -717,15 +717,28 @@ func (h *harness) captureRuntime(name string) map[string]string {
 	}
 	var body struct {
 		Status struct {
-			Metrics []struct{ Name, Value string }
+			Metrics []struct {
+				Name, Value, Kind string
+				ServiceEpoch      *string
+			}
 		}
 	}
 	if e = json.Unmarshal(raw, &body); e != nil {
 		h.t.Fatal(e)
 	}
 	metrics := map[string]string{}
+	var projectorEpoch string
 	for _, m := range body.Status.Metrics {
 		metrics[m.Name] = m.Value
+		if strings.HasPrefix(m.Name, "projector_") && m.Name != "projector_sources_in_flight" {
+			if m.Kind != "epoch" || m.ServiceEpoch == nil || *m.ServiceEpoch == "" {
+				h.t.Fatalf("real gateway accumulated metric contract: %+v", m)
+			}
+			if projectorEpoch != "" && projectorEpoch != *m.ServiceEpoch {
+				h.t.Fatal("real gateway mixed metric identities")
+			}
+			projectorEpoch = *m.ServiceEpoch
+		}
 	}
 	if metrics["timing_activity_all_total"] != strconv.Itoa(h.Stats().Activities) || metrics["projector_confirmation_round_count"] == "" {
 		h.t.Fatalf("actual runtime omitted complete totals/rounds: %s", raw)

@@ -339,6 +339,12 @@ cohort与notification_mode分别保存：
 
 - TimingSample/EvaluateTiming按实现计划提供纯函数求值；公开时间区间须有独立来源/可信时钟，不以block/received替代。无ACK也保留总体、状态和年龄；负/不可比时间标异常，不钳零或换时间。
 - Projector在真实分支记录本轮确认/版本、真正额外metadata等待、候选处理/gate/事务收尾，首次/跨重试等待与本轮duration分别命名。CheckedAt是核验轮次时间，不能当首次完成；recorded_at仍是原事务中DB打点，不冒充COMMIT完成。
+
+首次 finality 限定为一个 Projector 计数/时钟实例对 source 连续可证的首次 ConfirmReceived 调用到首次 confirmed 返回，不声称并行进程全局最早。Service 不持 Projector 分布式单例锁，不能借 Collector 锁推断。typed source.finality_timing 保存调用前/返回后原 UTC 与同实例 mono；首次轮、首次起点至首次完成、首轮结束至首次完成分别有 source 分母/分位。当前 waiting 年龄只使用匹配有效实例时钟，完成历史不因后续版本/资料重试改写。
+
+启动已提交 max(source.id) 截点前的空证据保持 unavailable；跨实例未完成序列、失败截点及任何未确认持久的观测均不补造首次。丢失 confirmed 即使此前已有 waiting 起点，也使该实例后续未完成观测和年龄不可用；已完成历史保留。无无界source状态表或新leader。原结果先传递、metadata deadline使用原返回；观测在原worker最多五秒写库并join，独立于version取消，不为遥测再次RPC，实际数据库成本计入source_round和总体。
+
+Projector累计指标沿kind=epoch，非空serviceEpoch为真实对象生命周期内稳定UUID；同对象再次Run、快照、Collector重连不变，新对象归零换ID。in-flight为gauge。管理员SQL仅必要键/状态/时间和安全形成子项，不选择私密全行或raw；worker结果UTC等待与摘要UTC时段提供usable/clock_anomalies/missing分母，首批无前件、未冻结成员独立，不过滤后隐去异常。
 - txgate允许窄可选timing观察，分别度量BeginTx（含pool获取）和实际advisory acquisition；callback只赋值、不SQL/阻塞日志，调用层在锁外输出/持久所需形成事实。Project/Authorize总时间不能叫纯gate等待；普通/摘要真实入口均须覆盖，复用唯一gate逻辑，不改变锁序和隔离级别。
 - worker在Sender.Send返回后立即捕获带mono的时间，将Outcome+时间放内部envelope；保持Send接口不为遥测另发调用。真实Started回调保留原time.Now的mono，只有DB/序列化边界转UTC，仍constant-time。新增attempt可缺sender_returned_at及可缺Started→返回mono耗时，随原结果CAS/UUID读回持久；既有result_at保持worker处理结果/释放gate后的观察语义。二者差值是本地处理等待，不是Telegram网络。
 - sent的sender_returned是“Sender已解析明确成功结果”的本地ACK观察上界，非Telegram服务端时间或设备送达；其它Outcome只有结果观察，无成功ACK。无实际Started则mono耗时缺失，不用worker迟到接收时间补起点。

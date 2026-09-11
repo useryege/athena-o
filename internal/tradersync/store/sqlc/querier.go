@@ -39,6 +39,7 @@ type Querier interface {
 	FailBaselineAttempt(ctx context.Context, arg FailBaselineAttemptParams) (int64, error)
 	FailStoppedEpochBaselines(ctx context.Context, ownerID pgtype.UUID) error
 	FailSubscriptionBaselines(ctx context.Context, arg FailSubscriptionBaselinesParams) error
+	FinalityObservationCutoff(ctx context.Context) (int64, error)
 	FindPublishedTransaction(ctx context.Context, arg FindPublishedTransactionParams) ([][]byte, error)
 	FinishInvalidProjectionCandidates(ctx context.Context, sourceRecordID int64) error
 	FinishProjectionCandidate(ctx context.Context, arg FinishProjectionCandidateParams) error
@@ -72,6 +73,7 @@ type Querier interface {
 	LockActivityTransaction(ctx context.Context, transactionHash []byte) error
 	LockCollectorControl(ctx context.Context) (TraderSyncCollectorControl, error)
 	LockComboDirectory(ctx context.Context) (LockComboDirectoryRow, error)
+	LockFinalityTiming(ctx context.Context, id int64) ([]byte, error)
 	LockTradeMetadata(ctx context.Context, cacheKey string) error
 	LookupComboPosition(ctx context.Context, positionID string) ([]LookupComboPositionRow, error)
 	MemberBatchActivityExists(ctx context.Context, arg MemberBatchActivityExistsParams) (bool, error)
@@ -88,6 +90,9 @@ type Querier interface {
 	ReadCommittedOwnerSnapshot(ctx context.Context, ownerID pgtype.UUID) (int64, error)
 	ReadConfirmation(ctx context.Context, arg ReadConfirmationParams) ([]byte, error)
 	ReadConfirmationDisplay(ctx context.Context, arg ReadConfirmationDisplayParams) (ReadConfirmationDisplayRow, error)
+	// Only scalar timing evidence enters this administrator query; no raw source,
+	// wallet, owner, transaction, payload or private formation JSON is requested.
+	ReadFinalityRollups(ctx context.Context, arg ReadFinalityRollupsParams) ([]ReadFinalityRollupsRow, error)
 	// One statement snapshot, before current activity insertion. Original arrival
 	// predecessor selection deliberately precedes activity/route eligibility joins.
 	ReadFormationSnapshot(ctx context.Context, arg ReadFormationSnapshotParams) (ReadFormationSnapshotRow, error)
@@ -116,6 +121,7 @@ type Querier interface {
 	SaveBaselineBoundary(ctx context.Context, arg SaveBaselineBoundaryParams) (int64, error)
 	SaveConfirmation(ctx context.Context, arg SaveConfirmationParams) error
 	SaveConfirmationCard(ctx context.Context, arg SaveConfirmationCardParams) (int64, error)
+	SaveFinalityTiming(ctx context.Context, arg SaveFinalityTimingParams) error
 	SaveIntervalCheckpoint(ctx context.Context, arg SaveIntervalCheckpointParams) (int64, error)
 	SaveProjectionEvidence(ctx context.Context, arg SaveProjectionEvidenceParams) error
 	SaveSubscriptionRequestResult(ctx context.Context, arg SaveSubscriptionRequestResultParams) error
