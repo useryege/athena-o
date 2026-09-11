@@ -10,6 +10,11 @@ import fixture from '../../testdata/trader-sync/01.json';
 let tree: renderer.ReactTestRenderer;
 const sub = normalizeSubscription(fixture.subscription);
 const button = (label: string) => tree.root.findAllByType(Button).find(item => item.props.children === label)!;
+const deferredPage = () => {
+    let resolve!: (value: Awaited<ReturnType<typeof services.traderSync.listSubscriptions>>) => void;
+    const request = Object.assign(new Promise<Awaited<ReturnType<typeof services.traderSync.listSubscriptions>>>(yes => (resolve = yes)), {abort: jest.fn()});
+    return {request, resolve};
+};
 beforeEach(() => {
     ensureMemberBusinessServices();
     window.matchMedia = jest.fn().mockImplementation(query => ({matches: false, media: query, addListener: jest.fn(), removeListener: jest.fn()}));
@@ -55,6 +60,43 @@ test('current and cancelled have independent page cursors and show complete wall
     expect(button('Resume')).toBeUndefined();
     await act(async () => button('Current').props.onClick());
     expect(list.mock.calls.at(-1)![0]?.cursor).toBe('current-next');
+});
+
+test('Latest subscriptions immediately reloads page one and repeated clicks remain single flight', async () => {
+    const next = deferredPage();
+    const page = {subscriptions: [sub], page: {}, quota: {used: 1, limit: 10}, asOf: sub.updatedAt};
+    const list = jest.spyOn(services.traderSync, 'listSubscriptions').mockResolvedValueOnce(page).mockReturnValue(next.request);
+    await act(async () => {
+        tree = renderer.create(
+            <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                <TraderSyncSubscriptionsPage ownerId='A' />
+            </MemoryRouter>
+        );
+    });
+    expect(list).toHaveBeenCalledTimes(1);
+    act(() => button('Latest subscriptions').props.onClick());
+    expect(list).toHaveBeenCalledTimes(2);
+    expect(list.mock.calls[1][0]).toMatchObject({view: 'current', cursor: undefined});
+    act(() => button('Latest subscriptions').props.onClick());
+    expect(list).toHaveBeenCalledTimes(2);
+    await act(async () => next.resolve(page));
+});
+
+test('Latest subscriptions returns from history to the first page without reloading the old cursor', async () => {
+    const first = {subscriptions: [sub], page: {nextCursor: 'current-next'}, quota: {used: 1, limit: 10}, asOf: sub.updatedAt};
+    const list = jest.spyOn(services.traderSync, 'listSubscriptions').mockResolvedValue({...first, page: {}}).mockResolvedValueOnce(first);
+    await act(async () => {
+        tree = renderer.create(
+            <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                <TraderSyncSubscriptionsPage ownerId='A' />
+            </MemoryRouter>
+        );
+    });
+    await act(async () => button('Next').props.onClick());
+    expect(list.mock.calls.at(-1)![0]?.cursor).toBe('current-next');
+    await act(async () => button('Latest subscriptions').props.onClick());
+    expect(list.mock.calls.at(-1)![0]?.cursor).toBeUndefined();
+    expect(list.mock.calls.filter(call => call[0]?.cursor === 'current-next')).toHaveLength(1);
 });
 
 test('switching views restores their separate scroll positions', async () => {

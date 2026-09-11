@@ -76,6 +76,11 @@ const Subscriptions = ({ownerId}: {ownerId: string}) => {
         </>
     );
     const details = (item: Subscription) => <Link to={`/trader-sync/subscriptions/${item.id}`}>View subscription</Link>;
+    const loadLatest = () => {
+        const alreadyOnFirstPage = current.index === 0 && current.cursors[0] === undefined;
+        update({...session, [session.view]: blankCursorSession<SubscriptionPage>()});
+        if (alreadyOnFirstPage) query.reload();
+    };
     return (
         <AppPage title='Subscriptions' subtitle='Manage current traders and retained cancellation history.' extra={<Link to='/trader-sync/add'>Add trader</Link>}>
             <Space wrap={true}>
@@ -139,7 +144,7 @@ const Subscriptions = ({ownerId}: {ownerId: string}) => {
                     }>
                     Next
                 </Button>
-                <Button onClick={() => update({...session, [session.view]: blankCursorSession<SubscriptionPage>()})}>Latest subscriptions</Button>
+                <Button onClick={loadLatest}>Latest subscriptions</Button>
             </Space>
         </AppPage>
     );

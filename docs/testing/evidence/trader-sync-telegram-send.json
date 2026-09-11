@@ -67,6 +67,9 @@
     "startedRetainedMonotonic": true,
     "startedUTC": "2026-09-11T04:57:39.307927395Z"
   },
+  "sourceArchive": {
+    ".superpowers/sdd/2026-09-10-trader-sync-activity-alerts/task-13-telegram/send.go": "docs/testing/evidence/trader-sync-telegram-send.go.txt"
+  },
   "sourceSHA256": {
     ".superpowers/sdd/2026-09-10-trader-sync-activity-alerts/task-13-telegram/send.go": "d838bb0981a837ab508b6fbc212bdd6a4b12cacb4a721de2e6cb8e191875ce25",
     "internal/notification/sender.go": "0ba38ae18f76d908a1659bfdf4ddc1d2ed58a547506fe7d2cc77c6024efea0ec",

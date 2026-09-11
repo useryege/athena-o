@@ -44,6 +44,31 @@ func TestRenderActivityPreservesExactFactsAndPlainCharacters(t *testing.T) {
 	}
 }
 
+func TestRenderActivityPreservesUnknownAndPartialComboLegCounts(t *testing.T) {
+	a := tm.Activity{ID: 18, Trade: tm.Trade{Wallet: common.HexToAddress("0x1111111111111111111111111111111111111111"), Side: "BUY", PositionID: "123", CollateralRaw: "1", SharesRaw: "1", FeeRaw: "0", CollateralSymbol: "USDC", PriceNumerator: "1", PriceDenominator: "2"}, SettledAt: time.Date(2026, 9, 10, 1, 2, 3, 0, time.UTC)}
+	a.Metadata = tm.TradeMetadata{Relationship: "AND(legs)", Market: tm.MarketRef{Outcome: "YES", Evidence: tm.Evidence{Availability: "available"}}, LegsEvidence: tm.Evidence{Availability: "unavailable", ReasonCode: "get_legs_unavailable"}}
+
+	text, err := RenderActivity(a, "https://athena.test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, fact := range []string{"Outcome: YES", "Combo: AND(legs)", "Leg metadata: unknown", "Legs: get_legs_unavailable"} {
+		if !strings.Contains(text, fact) {
+			t.Fatalf("unknown Combo leg evidence lost %q in %s", fact, text)
+		}
+	}
+	if strings.Contains(text, "Leg metadata: 0/0") {
+		t.Fatal("unknown total leg count was frozen as zero", text)
+	}
+
+	a.Metadata.LegsEvidence = tm.Evidence{Availability: "available"}
+	a.Metadata.Legs = []tm.ComboLeg{{PositionID: "1", Market: tm.MarketRef{Evidence: tm.Evidence{Availability: "available"}}}, {PositionID: "2", Market: tm.MarketRef{Evidence: tm.Evidence{Availability: "unavailable", ReasonCode: "metadata_pending"}}}}
+	text, err = RenderActivity(a, "https://athena.test")
+	if err != nil || !strings.Contains(text, "Leg metadata: 1/2") || strings.Contains(text, "Leg metadata: unknown") {
+		t.Fatalf("known total with partial metadata rendered inaccurately: %s %v", text, err)
+	}
+}
+
 func TestRenderConfirmedNameDisclosesSnapshotQueryTime(t *testing.T) {
 	name := "公开名称"
 	at := time.Date(2026, 9, 10, 1, 2, 3, 0, time.UTC)

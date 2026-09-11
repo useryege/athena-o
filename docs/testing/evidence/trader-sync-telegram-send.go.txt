@@ -1,0 +1,32 @@
+package main
+import("bufio";"bytes";"context";"encoding/json";"fmt";"io";"net/http";"net/http/httptrace";"os";"path/filepath";"strings";"sync/atomic";"time";"github.com/joho/godotenv";tg "github.com/useryege/athena/util/telegram";"github.com/useryege/athena/internal/notification")
+type capture struct{base http.RoundTripper;dir string;calls atomic.Int32}
+func(c *capture)RoundTrip(r *http.Request)(*http.Response,error){
+ c.calls.Add(1)
+ // API method is recorded separately; the Bot token is not an evidence field.
+ rawRequest,re:=io.ReadAll(r.Body);if re!=nil{return nil,re};r.Body.Close();r.Body=io.NopCloser(bytes.NewReader(rawRequest));os.WriteFile(filepath.Join(c.dir,"send-request-body.raw"),rawRequest,0600)
+ began:=time.Now();response,e:=c.base.RoundTrip(r)
+ record:=map[string]any{"method":r.Method,"apiMethod":filepath.Base(r.URL.Path),"host":r.URL.Host,"startedUTC":began.UTC(),"elapsedNS":time.Since(began).Nanoseconds()}
+ if e!=nil{record["transportFailed"]=true}else{record["status"]=response.StatusCode;raw,re:=io.ReadAll(response.Body);response.Body.Close();if re!=nil{return nil,re};os.WriteFile(filepath.Join(c.dir,"send-response.json"),raw,0600);response.Body=io.NopCloser(bytes.NewReader(raw))}
+ b,_:=json.MarshalIndent(record,"","  ");os.WriteFile(filepath.Join(c.dir,"send-request.json"),b,0600);return response,e
+}
+func main(){
+ dir:=os.Args[1];f,e:=os.Open("/home/yege/work/athena/.env");if e!=nil{panic(e)};defer f.Close()
+ allowed:=map[string]bool{"ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN":true,"HTTP_PROXY":true,"HTTPS_PROXY":true,"NO_PROXY":true,"http_proxy":true,"https_proxy":true,"no_proxy":true}
+ values:=map[string]string{};scan:=bufio.NewScanner(f)
+ for scan.Scan(){line:=strings.TrimSpace(scan.Text());line=strings.TrimPrefix(line,"export ");k,_,ok:=strings.Cut(line,"=");if !ok||!allowed[strings.TrimSpace(k)]{continue};m,e:=godotenv.Unmarshal(line);if e!=nil{panic("selected dotenv value could not be parsed")};for k,v:=range m{if allowed[k]{values[k]=v}}}
+ if scan.Err()!=nil{panic(scan.Err())}
+ for k,v:=range values{if k!="ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN"{os.Setenv(k,v)}}
+ cap:=&capture{base:http.DefaultTransport,dir:dir};http.DefaultTransport=cap
+ client,e:=tg.NewClient(tg.Config{BotToken:values["ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN"],Timeout:5*time.Second});if e!=nil{panic(e)}
+ var connections atomic.Int32
+ ctx,cancel:=context.WithTimeout(context.Background(),5*time.Second);defer cancel()
+ ctx=httptrace.WithClientTrace(ctx,&httptrace.ClientTrace{ConnectStart:func(string,string){connections.Add(1)}})
+ var started atomic.Pointer[time.Time]
+ began:=time.Now()
+ outcome:=notification.NewTelegramSender(client,nil).Send(ctx,notification.SendRequest{TelegramChatID:8815996650,Format:"plain",Text:"ATHENA Trader Sync 联调测试\n这是一条经明确授权发送的测试通知。\n仅验证纯文本发送与本地 ACK，不触发交易。"},func(at time.Time){started.CompareAndSwap(nil,&at)})
+ returned:=time.Now()
+ result:=map[string]any{"recipientChatID":"8815996650","botID":"8945962939","botUsername":"test_bot_athena_bot","outcome":outcome,"rpcCalls":cap.calls.Load(),"connectionAttempts":connections.Load(),"callElapsedNS":returned.Sub(began).Nanoseconds(),"returnedUTC":returned.UTC(),"authorizedSendLimit":1}
+ if at:=started.Load();at!=nil{result["startedUTC"]=at.UTC();result["startedRetainedMonotonic"]=*at!=at.Round(0);result["senderElapsedNS"]=returned.Sub(*at).Nanoseconds()}
+ b,_:=json.MarshalIndent(result,"","  ");os.WriteFile(filepath.Join(dir,"send-result.json"),b,0600);fmt.Println(string(b));if outcome.Kind!="sent"{os.Exit(1)}
+}

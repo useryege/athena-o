@@ -82,13 +82,18 @@ func Render(a tm.Activity, siteURL string) (string, error) {
 		lines = append(lines, "Market unavailable: "+reason)
 	}
 	if a.Metadata.Relationship != "" {
-		known := 0
-		for _, leg := range a.Metadata.Legs {
-			if leg.Market.Availability == "available" {
-				known++
+		lines = append(lines, "Combo: "+a.Metadata.Relationship)
+		if a.Metadata.LegsEvidence.Availability == "available" {
+			known := 0
+			for _, leg := range a.Metadata.Legs {
+				if leg.Market.Availability == "available" {
+					known++
+				}
 			}
+			lines = append(lines, fmt.Sprintf("Leg metadata: %d/%d", known, len(a.Metadata.Legs)))
+		} else {
+			lines = append(lines, "Leg metadata: unknown")
 		}
-		lines = append(lines, "Combo: "+a.Metadata.Relationship, fmt.Sprintf("Leg metadata: %d/%d", known, len(a.Metadata.Legs)))
 	}
 	if a.Metadata.LegsEvidence.ReasonCode != "" && a.Metadata.LegsEvidence.ReasonCode != "not_combo" {
 		lines = append(lines, "Legs: "+a.Metadata.LegsEvidence.ReasonCode)

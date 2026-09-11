@@ -109,9 +109,9 @@ JOIN trader_sync_source_records r ON r.id=a.source_record_id
 JOIN trader_sync_market_metadata md ON md.cache_key=a.metadata_key
 LEFT JOIN trader_sync_finality_anomalies fa ON fa.chain_id=r.chain_id AND fa.transaction_hash=r.transaction_hash
 LEFT JOIN account_notification_deliveries d ON d.account_id=a.owner_id AND d.activity_id=a.id
-LEFT JOIN LATERAL (SELECT t.id,t.authorized_at,t.started_at,t.result_at,t.message_id,t.outcome,t.outcome_code,count(*) OVER() AS attempt_count
- FROM notification_delivery_attempts t WHERE t.work_kind='account' AND t.work_id=d.id AND t.owner_id=d.account_id
- ORDER BY t.authorized_at DESC,t.id DESC LIMIT 1) latest ON true
+LEFT JOIN LATERAL (SELECT t.id,t.authorized_at,t.started_at,t.result_at,t.message_id,t.outcome,t.outcome_code,
+ (SELECT count(*) FROM notification_delivery_attempts counted WHERE counted.work_kind='account' AND counted.work_id=d.id AND counted.owner_id=d.account_id) AS attempt_count
+ FROM notification_delivery_attempts t WHERE t.id=d.current_attempt_id AND t.work_kind='account' AND t.work_id=d.id AND t.owner_id=d.account_id) latest ON true
 LEFT JOIN trader_sync_alert_memberships am ON am.owner_id=a.owner_id AND am.activity_id=a.id
 LEFT JOIN trader_sync_summary_batches b ON b.owner_id=am.owner_id AND b.id=am.batch_id
 WHERE a.owner_id=$1::uuid
@@ -575,9 +575,9 @@ SELECT p.id,p.part_index,p.total,
  'Status',COALESCE(latest.outcome,'sending'),'Reason',COALESCE(latest.outcome_code,'')) END) END::jsonb AS delivery_json,
  (SELECT count(*) FROM trader_sync_summary_part_items pi WHERE pi.owner_id=p.owner_id AND pi.part_id=p.id)::bigint AS activity_count
 FROM trader_sync_summary_parts p JOIN account_notification_deliveries d ON d.account_id=p.owner_id AND d.id=p.delivery_id
-LEFT JOIN LATERAL (SELECT t.id,t.authorized_at,t.started_at,t.result_at,t.message_id,t.outcome,t.outcome_code,count(*) OVER() AS attempt_count
- FROM notification_delivery_attempts t WHERE t.work_kind='account' AND t.work_id=d.id AND t.owner_id=d.account_id
- ORDER BY t.authorized_at DESC,t.id DESC LIMIT 1) latest ON true
+LEFT JOIN LATERAL (SELECT t.id,t.authorized_at,t.started_at,t.result_at,t.message_id,t.outcome,t.outcome_code,
+ (SELECT count(*) FROM notification_delivery_attempts counted WHERE counted.work_kind='account' AND counted.work_id=d.id AND counted.owner_id=d.account_id) AS attempt_count
+ FROM notification_delivery_attempts t WHERE t.id=d.current_attempt_id AND t.work_kind='account' AND t.work_id=d.id AND t.owner_id=d.account_id) latest ON true
 WHERE p.owner_id=$1::uuid AND p.batch_id=$2::bigint
 AND ($3::bigint IS NULL OR EXISTS(SELECT 1 FROM trader_sync_summary_part_items pi WHERE pi.owner_id=p.owner_id AND pi.part_id=p.id AND pi.activity_id=$3))
 AND p.part_index>$4::integer ORDER BY p.part_index LIMIT $5::integer

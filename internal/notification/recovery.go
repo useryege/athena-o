@@ -51,6 +51,8 @@ type retryBudget struct {
 }
 type retryBudgetKey struct{}
 
+const retryAfterPersistenceRecheck = 100 * time.Millisecond
+
 func (r *retryBudget) track(id uuid.UUID, wait time.Duration) {
 	if wait <= 0 {
 		return
@@ -76,11 +78,16 @@ func (r *retryBudget) releaseElapsed(ctx context.Context) error {
 	}
 	r.mu.Unlock()
 	for _, id := range due {
-		if err := r.store.ReleaseRetryAfter(ctx, id); err != nil {
+		released, err := r.store.ReleaseRetryAfter(ctx, id)
+		if err != nil {
 			return err
 		}
 		r.mu.Lock()
-		delete(r.pending, id)
+		if released {
+			delete(r.pending, id)
+		} else if until, exists := r.pending[id]; exists && !until.After(now) {
+			r.pending[id] = now.Add(retryAfterPersistenceRecheck)
+		}
 		r.mu.Unlock()
 	}
 	return nil

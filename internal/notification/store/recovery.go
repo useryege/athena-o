@@ -59,7 +59,14 @@ func (s *SQLStore) UnreleasedRetryAfters(ctx context.Context) ([]RetryBudgetEvid
 	}
 	return items, nil
 }
-func (s *SQLStore) ReleaseRetryAfter(ctx context.Context, id uuid.UUID) error {
-	_, err := s.queries.ReleaseRetryAfter(ctx, uuidPG(id))
-	return err
+func (s *SQLStore) ReleaseRetryAfter(ctx context.Context, id uuid.UUID) (bool, error) {
+	rows, err := s.queries.ReleaseRetryAfter(ctx, uuidPG(id))
+	if err != nil || rows == 1 {
+		return rows == 1, err
+	}
+	attempt, err := s.queries.GetDeliveryAttempt(ctx, uuidPG(id))
+	if err != nil {
+		return false, err
+	}
+	return attempt.RetryAfterReleasedAt.Valid, nil
 }

@@ -154,3 +154,15 @@ go test -v -tags=integration,uiharness ./internal/tradersync/acceptance -run '^T
 Task20 留下的 14 条 Prettier 报错只涉及 6 个页面的 `className` 闭合换行；定点格式化后 lint 与 build 通过。当前 219 项生产构建资产与 Task20 已验收清单比较：213 项逐字节相同，6 项变化全部是对应页面的 `.js.map`；实际 JS/CSS/HTML/font/manifest 均相同。因此沿用 Task20 浏览器执行证据，没有为 source map 或纯格式变化重跑浏览器。346 项 UI 单元发生在格式化前；纯格式 diff、最终 lint 和相同执行资产共同限定该复用依据。
 
 永久 Telegram JSON 的 `requestBody` 已恢复实际 UTF-8 原字节：447 bytes，SHA-256 `fe9c52598c326dfe1179400dacc18cd4d9a0f04332acbaa1a0d97c0b033b827c`，精确保留外层 CRLF 与正文内 LF。没有再次发送、消费 update 或访问真实 Bot。最终命令、输入清单、原始日志、失败到修复顺序和资产比较将保留在本地未提交目录 `.superpowers/trader-sync-acceptance/task21-final/`；该目录是执行证据，不是产品运行依赖。
+
+### 最终全分支审查修复波次
+
+2026-09-11 以 `4ac5ad1b2476f176a08769ff8bdff7b1c8d606dd` 为固定修复基线，针对全分支审查确认的 I1/I2/M1/M2 完成单次统一修复。Combo 的关系与自身 Outcome 已知而完整腿集合不可用时，普通冻结正文显示 `Leg metadata: unknown` 并保留 `get_legs_unavailable` 原因，不再把未知总数写成 0/0；完整腿集合已知但部分市场资料缺失时仍显示准确的已知数/总数。活动与摘要分条的最近 attempt 改由持久 `current_attempt_id` 读取，且以 account owner、work kind、work ID 核对身份并独立统计真实 attempt 总数；UTC 回退和相同 UTC 不再把较早 retryable 结果拼到当前 sent 投影，缺失 HTTP started 仍保持缺失。
+
+Retry-After 的本地单调等待期满后，只有数据库确认 `retry_after_released_at` 已持久化才移除 pending；结果尚未落库导致 UPDATE 0 行时以 100ms 有界、可取消间隔重查，不形成到期时间在过去的忙循环，也没有缩短原 Retry-After 或非首次启动 60 秒屏障。订阅列表页一的 `Latest subscriptions` 现在触发现有 `useVisibleQuery` 的同一 single-flight reload；重复点击不并发，从历史页返回仍由新 cursor key 只请求首页，current/cancelled 会话、失败保留数据、scope 失效和滚动语义不变。
+
+真实 RED 分别观察到 0/0 冻结、按 UTC 选到旧 attempt、Retry-After 解除 0 行后 pending 丢失，以及页一 Latest 未立即请求。修复后，Notification 与 Trader Sync 受影响 Go 单元包通过；真实 PostgreSQL 的 `./internal/notification/...`、notification store 与 Trader Sync store 集成通过，其中普通活动和摘要分条各覆盖 UTC 回退/完全相同时刻，迟落库 Retry-After 覆盖持久解除与取消；受影响 race 通过。订阅页与共享读取 hook 27 项通过，UI lint 和 build 通过；build 仍报告既有 821.27kB chunk 告警，本波次未提高阈值。原始命令与输出保存在本 SDD 的 `final-fix-evidence/`，未重跑未变的浏览器矩阵、未访问外部 provider、未发送 Telegram。
+
+Task13 单次真实 Telegram 发送探针源码已从原 SDD 路径原样持久复制为 [`evidence/trader-sync-telegram-send.go.txt`](evidence/trader-sync-telegram-send.go.txt)，两份均为 3609 bytes，SHA-256 `d838bb0981a837ab508b6fbc212bdd6a4b12cacb4a721de2e6cb8e191875ce25`。原 JSON 新增 `sourceArchive` 路径映射；原 `sourceSHA256`、`rawSHA256` 与请求正文哈希均未修改，也没有重新执行探针。
+
+外部边界仍按原审查保留：真实 100 个持续活跃目标、公开时刻 P95/P99、长期 provider/进程稳定、Profile 六区间公开金额一致性、缺失的 Combo SELL maker 实录与设备送达均未由本地修复转为通过。Task21 步骤3/5与整计划完成状态由控制器在限定复审后裁定，本段不提前标完成或发送完成通知。

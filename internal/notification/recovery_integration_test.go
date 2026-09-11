@@ -439,6 +439,59 @@ func TestRetryBudgetReleasesOnlyAfterMonotonicWait(t *testing.T) {
 	}
 }
 
+func TestRetryBudgetRetainsElapsedAttemptUntilLateOutcomeIsPersisted(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	s := notificationstore.NewSQLStore(db.Pool)
+	ctx := context.Background()
+	id := uuid.New()
+	if _, err := db.Pool.Exec(ctx, `INSERT INTO notification_delivery_attempts(id,work_kind,work_id,sender_incarnation,payload_digest,telegram_chat_id,telegram_group) VALUES($1,'system',999,$2,decode(repeat('ab',32),'hex'),-123,true)`, id, uuid.New()); err != nil {
+		t.Fatal(err)
+	}
+	clock := &manualDispatchClock{now: time.Now()}
+	r := &retryBudget{store: s, budget: NewBudget(20, time.Second, 20, time.Minute), clock: clock, pending: map[uuid.UUID]time.Time{}, wake: make(chan struct{}, 1)}
+	r.track(id, time.Second)
+	clock.advance(time.Second)
+	if err := r.releaseElapsed(ctx); err != nil {
+		t.Fatal(err)
+	}
+	r.mu.Lock()
+	recheckAt, retained := r.pending[id]
+	r.mu.Unlock()
+	if !retained || !recheckAt.After(clock.Now()) {
+		t.Fatalf("zero-row release was dropped or left due in the past: retained=%v recheck=%v now=%v", retained, recheckAt, clock.Now())
+	}
+	runCtx, cancel := context.WithCancel(ctx)
+	done := make(chan error, 1)
+	go func() { done <- r.run(runCtx) }()
+	waitClockTimer(t, clock)
+	cancel()
+	select {
+	case err := <-done:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatal(err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("bounded late-persistence recheck was not cancellable")
+	}
+	if _, err := db.Pool.Exec(ctx, `UPDATE notification_delivery_attempts SET result_at=clock_timestamp(),outcome='retryable',retry_after=interval '1 second' WHERE id=$1`, id); err != nil {
+		t.Fatal(err)
+	}
+	clock.advance(recheckAt.Sub(clock.Now()))
+	if err := r.releaseElapsed(ctx); err != nil {
+		t.Fatal(err)
+	}
+	var released bool
+	if err := db.Pool.QueryRow(ctx, `SELECT retry_after_released_at IS NOT NULL FROM notification_delivery_attempts WHERE id=$1`, id).Scan(&released); err != nil || !released {
+		t.Fatalf("late persisted retry-after was not released: %v/%v", released, err)
+	}
+	r.mu.Lock()
+	_, retained = r.pending[id]
+	r.mu.Unlock()
+	if retained {
+		t.Fatal("persistently released attempt remained pending")
+	}
+}
+
 func TestRuntimeCannotReportReadyBeforeRecoveryCompleted(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
 	s := NewService(notificationstore.NewSQLStore(db.Pool), nil, nil, nil)

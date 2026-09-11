@@ -263,6 +263,111 @@ func TestReadSummaryPartsBeyondHundredAndSentWithoutStart(t *testing.T) {
 	}
 }
 
+func seedTwoDeliveryAttemptsWithCurrentCausality(t *testing.T, pool *pgxpool.Pool, owner string, deliveryID int64, equalAuthorizedAt bool) (time.Time, time.Time) {
+	t.Helper()
+	ctx := context.Background()
+	var digest []byte
+	var chatID int64
+	if err := pool.QueryRow(ctx, `SELECT payload_digest,telegram_chat_id FROM account_notification_deliveries WHERE account_id=$1 AND id=$2`, owner, deliveryID).Scan(&digest, &chatID); err != nil {
+		t.Fatal(err)
+	}
+	currentAuthorizedAt := time.Date(2026, 9, 10, 10, 0, 8, 123000000, time.UTC)
+	earlierAuthorizedAt := currentAuthorizedAt.Add(2 * time.Second)
+	if equalAuthorizedAt {
+		earlierAuthorizedAt = currentAuthorizedAt
+	}
+	currentResultAt := currentAuthorizedAt.Add(3 * time.Second)
+	earlierID := "ffffffff-ffff-4fff-8fff-ffffffffffff"
+	currentID := "00000000-0000-4000-8000-000000000001"
+	incarnation := uuid.New()
+	if _, err := pool.Exec(ctx, `INSERT INTO notification_delivery_attempts(id,work_kind,work_id,owner_id,sender_incarnation,telegram_chat_id,telegram_group,payload_digest,authorized_at,result_at,outcome,outcome_code,message_id)
+VALUES($1,'account',$2,$3,$4,$5,false,$6,$7,$8,'retryable','earlier_retryable',NULL),
+      ($9,'account',$2,$3,$4,$5,false,$6,$10,$11,'sent','','current-message')`, earlierID, deliveryID, owner, incarnation, chatID, digest, earlierAuthorizedAt, earlierAuthorizedAt.Add(time.Second), currentID, currentAuthorizedAt, currentResultAt); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO notification_delivery_attempts(id,work_kind,work_id,owner_id,sender_incarnation,telegram_chat_id,telegram_group,payload_digest)
+VALUES($1,'system',$3,NULL,$4,-123,true,$5),($2,'account',$3,$6,$4,$7,false,$5)`, uuid.New(), uuid.New(), deliveryID, incarnation, digest, uuid.New(), chatID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE account_notification_deliveries SET status='sent',attempts=2,current_attempt_id=$3,last_attempt_at=$4,sent_at=$5,provider_message_id='current-message',error_message=NULL WHERE account_id=$1 AND id=$2`, owner, deliveryID, currentID, currentAuthorizedAt, currentResultAt); err != nil {
+		t.Fatal(err)
+	}
+	return currentAuthorizedAt, currentResultAt
+}
+
+func assertCurrentDeliveryAttempt(t *testing.T, got *tm.DeliveryDetails, authorizedAt, resultAt time.Time) {
+	t.Helper()
+	if got == nil || got.LatestAttempt == nil {
+		t.Fatalf("current delivery attempt missing: %+v", got)
+	}
+	if got.Status != "sent" || got.AttemptCount != 2 || got.LatestAttempt.Index != 2 || got.LatestAttempt.Status != "sent" || got.LatestAttempt.Reason != "" {
+		t.Fatalf("current attempt result/count mixed with earlier attempt: %+v", got)
+	}
+	if got.AuthorizedAt == nil || !got.AuthorizedAt.Equal(authorizedAt) || !got.LatestAttempt.AuthorizedAt.Equal(authorizedAt) || got.ResultAt == nil || !got.ResultAt.Equal(resultAt) || got.LatestAttempt.ResultAt == nil || !got.LatestAttempt.ResultAt.Equal(resultAt) {
+		t.Fatalf("current attempt timestamps lost: %+v want authorized=%v result=%v", got, authorizedAt, resultAt)
+	}
+	if got.StartedAt != nil || got.LatestAttempt.StartedAt != nil || got.MessageID == nil || *got.MessageID != "current-message" {
+		t.Fatalf("missing start or current message ID was fabricated/mixed: %+v", got)
+	}
+}
+
+func TestReadActivityUsesPersistedCurrentAttemptAcrossClockRollbackAndTie(t *testing.T) {
+	for _, equalAuthorizedAt := range []bool{false, true} {
+		t.Run(fmt.Sprintf("equal_authorized_at=%v", equalAuthorizedAt), func(t *testing.T) {
+			db := pgtest.New(t, migrations.FS, migrations.Dir)
+			ctx := context.Background()
+			owner, err := ac.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID); err != nil {
+				t.Fatal(err)
+			}
+			s := NewSQLStore(db.Pool)
+			if err = s.ConfigureActivities("https://athena.test"); err != nil {
+				t.Fatal(err)
+			}
+			activityID, _, err := s.Project(ctx, activityFixture(t, db.Pool, owner.ID, 1))
+			if err != nil {
+				t.Fatal(err)
+			}
+			var deliveryID int64
+			if err = db.Pool.QueryRow(ctx, `SELECT id FROM account_notification_deliveries WHERE account_id=$1 AND activity_id=$2`, owner.ID, activityID).Scan(&deliveryID); err != nil {
+				t.Fatal(err)
+			}
+			authorizedAt, resultAt := seedTwoDeliveryAttemptsWithCurrentCausality(t, db.Pool, owner.ID, deliveryID, equalAuthorizedAt)
+			page, err := s.ReadActivities(ctx, owner.ID, tm.ActivityReadInput{Limit: 1, ActivityID: activityID})
+			if err != nil || len(page.Activities) != 1 {
+				t.Fatalf("read activity: %+v %v", page, err)
+			}
+			assertCurrentDeliveryAttempt(t, page.Activities[0].Delivery, authorizedAt, resultAt)
+		})
+	}
+}
+
+func TestReadSummaryPartUsesPersistedCurrentAttemptAcrossClockRollbackAndTie(t *testing.T) {
+	for _, equalAuthorizedAt := range []bool{false, true} {
+		t.Run(fmt.Sprintf("equal_authorized_at=%v", equalAuthorizedAt), func(t *testing.T) {
+			pool, s, owner := summaryStoreFixture(t)
+			ctx := context.Background()
+			var batch tm.SummaryBatch
+			if err := txgate.WithAccountTx(ctx, pool, owner, func(tx pgx.Tx) error {
+				var err error
+				batch, err = s.FreezeSummaryTx(ctx, tx, owner, 1, 123)
+				return err
+			}); err != nil {
+				t.Fatal(err)
+			}
+			authorizedAt, resultAt := seedTwoDeliveryAttemptsWithCurrentCausality(t, pool, owner, batch.Parts[0].DeliveryID, equalAuthorizedAt)
+			parts, err := s.ReadSummaryParts(ctx, owner, batch.ID, 0, tm.ReadPage{Limit: 1})
+			if err != nil || len(parts.Parts) != 1 {
+				t.Fatalf("read summary part: %+v %v", parts, err)
+			}
+			assertCurrentDeliveryAttempt(t, &parts.Parts[0].Delivery, authorizedAt, resultAt)
+		})
+	}
+}
+
 func TestReadWaitsForOwnerGrantAndDiscardsDeniedPage(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
 	ctx := context.Background()

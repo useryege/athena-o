@@ -702,6 +702,39 @@ func TestActivityPayloadUsesExistingNonConflictingPartialAtDeadline(t *testing.T
 	}
 }
 
+func TestActivityPayloadPreservesUnknownComboLegCountAtFreeze(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	owner, e := ac.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
+	if e != nil {
+		t.Fatal(e)
+	}
+	s := NewSQLStore(db.Pool)
+	s.ConfigureActivities("https://athena.test")
+	in := activityFixture(t, db.Pool, owner.ID, 1)
+	if _, e = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID); e != nil {
+		t.Fatal(e)
+	}
+	unknown := tm.TradeMetadata{Relationship: "AND(legs)", Market: tm.MarketRef{Outcome: "YES", Evidence: tm.Evidence{Availability: "available"}}, LegsEvidence: tm.Evidence{Availability: "unavailable", ReasonCode: "get_legs_unavailable"}}
+	in.Metadata = unknown
+	id, _, e := s.Project(ctx, in)
+	if e != nil {
+		t.Fatal(e)
+	}
+	var raw []byte
+	if e = db.Pool.QueryRow(ctx, `SELECT payload FROM account_notification_deliveries WHERE activity_id=$1`, id).Scan(&raw); e != nil {
+		t.Fatal(e)
+	}
+	for _, fact := range [][]byte{[]byte("Outcome: YES"), []byte("Combo: AND(legs)"), []byte("Leg metadata: unknown"), []byte("Legs: get_legs_unavailable")} {
+		if !bytes.Contains(raw, fact) {
+			t.Fatalf("frozen payload lost unknown Combo fact %q: %s", fact, raw)
+		}
+	}
+	if bytes.Contains(raw, []byte("Leg metadata: 0/0")) {
+		t.Fatal("frozen payload invented a zero-leg total", string(raw))
+	}
+}
+
 func TestActivityHundredRelationsSharedAndDistinctTargets(t *testing.T) {
 	for _, distinct := range []bool{false, true} {
 		t.Run(fmt.Sprint("distinct=", distinct), func(t *testing.T) {
