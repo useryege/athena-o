@@ -11,6 +11,7 @@ import (
 	"github.com/useryege/athena/internal/accountstate/store/migrations"
 	"github.com/useryege/athena/internal/testutil/pgtest"
 	tm "github.com/useryege/athena/internal/tradersync/types"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -193,12 +194,49 @@ func TestObservationHistoryRecoveryUsesSameGenerationAndRealBoundaries(t *testin
 		t.Fatal(e)
 	}
 	observed := before.Subscriptions[0]
+	admin, e := ac.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleAdministrator)
+	if e != nil {
+		t.Fatal(e)
+	}
+	assertShared := func(state string, count int64) {
+		t.Helper()
+		memberPage, err := s.ReadSubscriptions(ctx, owner.ID, tm.SubscriptionFilter{ID: in.Candidate.SubscriptionID, State: state}, tm.ReadPage{Limit: 1})
+		if err != nil || len(memberPage.Subscriptions) != 1 {
+			t.Fatal("member shared state filter", memberPage, err)
+		}
+		adminPage, err := s.ReadSubscriptionSummaries(ctx, admin.ID, tm.AdminSubscriptionFilter{ID: in.Candidate.SubscriptionID, State: state}, tm.ReadPage{Limit: 1})
+		if err != nil || len(adminPage.Summaries) != 1 {
+			t.Fatal("admin shared state filter", adminPage, err)
+		}
+		left, right := memberPage.Subscriptions[0].Observation, adminPage.Summaries[0].Observation
+		if !reflect.DeepEqual(left, right) || left.InterruptionCount != count {
+			t.Fatal("member/admin observation rules diverged", left, right)
+		}
+		history, err := s.ReadHistory(ctx, owner.ID, in.Candidate.SubscriptionID, tm.ReadPage{Limit: 51})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var total int64
+		for _, entry := range history.Entries {
+			if entry.Interruption != nil {
+				total++
+				if left.LatestInterruption != nil && entry.Interruption.ID == left.LatestInterruption.ID && !reflect.DeepEqual(entry.Interruption, left.LatestInterruption) {
+					t.Fatal("latest/history recovery diverged")
+				}
+			}
+		}
+		if total != count {
+			t.Fatal("history/count related epoch divergence", total, count)
+		}
+	}
+	assertShared("interrupted", 1)
 	if observed.CurrentInterval.EndedAt == nil || observed.Observation.State != "interrupted" || observed.Observation.LatestInterruption == nil || observed.Observation.LatestInterruption.Start != nil || observed.Observation.LatestInterruption.End != nil {
 		t.Fatal("logical close manufactured observation times", observed)
 	}
 	if e = s.CleanupStoppedBaselines(ctx, session.Token); e != nil {
 		t.Fatal(e)
 	}
+	assertShared("interrupted", 1)
 	epoch2, e := s.StartCollectorEpoch(ctx, session.Token)
 	if e != nil {
 		t.Fatal(e)
@@ -227,6 +265,7 @@ func TestObservationHistoryRecoveryUsesSameGenerationAndRealBoundaries(t *testin
 	if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_subscriptions SET observation_state='healthy' WHERE id=$1`, in.Candidate.SubscriptionID); e != nil {
 		t.Fatal(e)
 	}
+	assertShared("healthy", 2)
 	history, e := s.ReadHistory(ctx, owner.ID, in.Candidate.SubscriptionID, tm.ReadPage{Limit: 51})
 	if e != nil {
 		t.Fatal(e)
@@ -323,5 +362,35 @@ func TestObservationExcludesAlreadyStoppedIntervalsAndPreparationFailure(t *test
 		if v.CurrentInterval == nil || v.CurrentInterval.EndedAt == nil || !v.CurrentInterval.EndedAt.Equal(stopped) || len(history.Entries) != 1 {
 			t.Fatal("epoch close overwrote earlier user stop", v, history)
 		}
+	}
+}
+
+func TestObservationViewsExposeOnlySafeSharedFacts(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	var count int
+	if e := db.Pool.QueryRow(ctx, `SELECT count(*) FROM pg_class WHERE relnamespace='public'::regnamespace AND relkind='v' AND relname IN ('trader_sync_subscription_interruptions','trader_sync_subscription_observations')`).Scan(&count); e != nil {
+		t.Fatal(e)
+	}
+	if count != 2 {
+		t.Fatal("shared safe observation interfaces missing", count)
+	}
+	rows, e := db.Pool.Query(ctx, `SELECT table_name,column_name FROM information_schema.columns WHERE table_schema='public' AND table_name IN ('trader_sync_subscription_interruptions','trader_sync_subscription_observations')`)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer rows.Close()
+	allowed := map[string]bool{"owner_id": true, "subscription_id": true, "activation_generation": true, "epoch_id": true, "id": true, "recorded_at": true, "ended_at": true, "reason": true, "awaiting_cleanup": true, "interruption_json": true, "status": true, "observation_json": true}
+	for rows.Next() {
+		var table, column string
+		if e = rows.Scan(&table, &column); e != nil {
+			t.Fatal(e)
+		}
+		if !allowed[column] {
+			t.Fatal("private or unrelated field in shared observation view", table, column)
+		}
+	}
+	if e = rows.Err(); e != nil {
+		t.Fatal(e)
 	}
 }

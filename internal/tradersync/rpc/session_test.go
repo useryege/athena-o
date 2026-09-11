@@ -450,3 +450,75 @@ func TestSessionQuietMatchedPongPublishesHealthEvidence(t *testing.T) {
 		}
 	}
 }
+
+func TestSessionQueuedPongRetainsReceiveTimeBeforeNewCoverage(t *testing.T) {
+	ping := make(chan string, 1)
+	release := make(chan struct{})
+	endpoint := serveSession(t, func(c *websocket.Conn) {
+		c.SetPingHandler(func(nonce string) error {
+			select {
+			case ping <- nonce:
+				<-release
+			default:
+			}
+			return c.WriteControl(websocket.PongMessage, []byte(nonce), time.Now().Add(time.Second))
+		})
+		if chainHandshake(c) != nil {
+			return
+		}
+		for {
+			if _, err := readRequest(c); err != nil {
+				return
+			}
+		}
+	})
+	s, err := dialSession(context.Background(), endpoint, "", sessionConfig{8, 10 * time.Millisecond, time.Second, time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	select {
+	case <-ping:
+	case <-time.After(time.Second):
+		t.Fatal("no ping")
+	}
+	// Block writer publication, while the actual read callback remains runnable.
+	s.mu.Lock()
+	original := s.conn.PongHandler()
+	received := make(chan [2]time.Time, 1)
+	s.conn.SetPongHandler(func(nonce string) error {
+		before := time.Now()
+		err := original(nonce)
+		received <- [2]time.Time{before, time.Now()}
+		return err
+	})
+	close(release)
+	var bounds [2]time.Time
+	select {
+	case bounds = <-received:
+	case <-time.After(time.Second):
+		s.mu.Unlock()
+		t.Fatal("pong callback not received")
+	}
+	coverage := time.Now() // new filter coverage is published after receipt, before writer consumption.
+	s.mu.Unlock()
+	deadline := time.NewTimer(time.Second)
+	defer deadline.Stop()
+	tick := time.NewTicker(time.Millisecond)
+	defer tick.Stop()
+	for {
+		select {
+		case <-deadline.C:
+			t.Fatal("pong not published")
+		case <-tick.C:
+			p := s.PongSnapshot()
+			if p.Sequence == 0 {
+				continue
+			}
+			if p.At.Before(bounds[0]) || p.At.After(bounds[1]) || !p.At.Before(coverage) {
+				t.Fatalf("pong retimed after receipt/new coverage: received=%v..%v coverage=%v published=%v", bounds[0], bounds[1], coverage, p.At)
+			}
+			return
+		}
+	}
+}

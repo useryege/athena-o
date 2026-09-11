@@ -3,13 +3,16 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	ethabi "github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	et "github.com/ethereum/go-ethereum/core/types"
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -23,9 +26,11 @@ import (
 	facade "github.com/useryege/athena/internal/server/tradersync"
 	"github.com/useryege/athena/internal/testutil/pgtest"
 	ts "github.com/useryege/athena/internal/tradersync"
+	sourceabi "github.com/useryege/athena/internal/tradersync/abi"
 	tsstore "github.com/useryege/athena/internal/tradersync/store"
 	tm "github.com/useryege/athena/internal/tradersync/types"
 	api "github.com/useryege/athena/pkg/apiclient/tradersync"
+	app "github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	gu "github.com/useryege/athena/util/grpc"
 	session "github.com/useryege/athena/util/session"
 	"google.golang.org/grpc"
@@ -37,6 +42,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -51,7 +57,24 @@ func (s *gatewayRevocations) RevokeToken(_ context.Context, id string, _ time.Du
 }
 func (s *gatewayRevocations) IsTokenRevoked(id string) bool { return s.revoked[id] }
 
-func TestTraderSyncGatewayRealCredentialsAndOwnerPrivacy(t *testing.T) {
+type traderSyncGatewayHarness struct {
+	httpServer                         *httptest.Server
+	tokens                             map[string]string
+	ctx                                context.Context
+	db                                 *pgtest.DB
+	traderStore                        *tsstore.SQLStore
+	composition                        *traderSyncRuntime
+	controller                         *accountaccess.Controller
+	ids                                map[string]string
+	profileRequests                    *atomic.Int32
+	profileWallet, owner, subscription string
+	wallet                             []byte
+	get                                func(string, string, int) []byte
+	postAs                             func(string, string, string, int) []byte
+}
+
+func newTraderSyncGatewayHarness(t *testing.T, configure func(*ts.Config)) *traderSyncGatewayHarness {
+	t.Helper()
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
 	ctx := context.Background()
 	accounts := ac.NewSQLStore(db.Pool)
@@ -109,17 +132,23 @@ func TestTraderSyncGatewayRealCredentialsAndOwnerPrivacy(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	composition, e := newTraderSyncRuntime(ctx, ts.Config{HTTPURL: "http://127.0.0.1:1", WebSocketURL: "ws://127.0.0.1:1", SiteURL: "https://athena.test", CursorHMACKey: "gateway-cursor-key"}, db.Pool, traderStore)
+	cfg := ts.Config{HTTPURL: "http://127.0.0.1:1", WebSocketURL: "ws://127.0.0.1:1", SiteURL: "https://athena.test", CursorHMACKey: "gateway-cursor-key"}
+	if configure != nil {
+		configure(&cfg)
+	}
+	composition, e := newTraderSyncRuntime(ctx, cfg, db.Pool, traderStore)
 	if e != nil {
 		t.Fatal(e)
 	}
-	defer composition.Close()
-	var profileRequests atomic.Int32
+	t.Cleanup(func() { _ = composition.Close() })
+	profileRequests := &atomic.Int32{}
 	profileWallet := "0x00000000000000000000000000000000000000cc"
 	profileHTTP := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		profileRequests.Add(1)
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
+		case "/v1/rfq/combo-markets":
+			w.WriteHeader(http.StatusServiceUnavailable) // bounded runtime test provider failure
 		case "/public-profile":
 			fmt.Fprintf(w, `{"proxyWallet":%q,"name":"Gateway Target","verifiedBadge":false}`, profileWallet)
 		case "/v1/user-stats":
@@ -135,7 +164,7 @@ func TestTraderSyncGatewayRealCredentialsAndOwnerPrivacy(t *testing.T) {
 			w.WriteHeader(500)
 		}
 	}))
-	defer profileHTTP.Close()
+	t.Cleanup(profileHTTP.Close)
 	// Test-only routing keeps the actual ProfileAdapter/request paths while every
 	// socket is loopback. No deployment transport disables certificate validation.
 	profileURL, _ := url.Parse(profileHTTP.URL)
@@ -175,18 +204,18 @@ func TestTraderSyncGatewayRealCredentialsAndOwnerPrivacy(t *testing.T) {
 	}))
 	api.RegisterTraderSyncServiceServer(grpcServer, facade.New(composition.service))
 	go grpcServer.Serve(listener)
-	defer grpcServer.Stop()
+	t.Cleanup(grpcServer.Stop)
 	conn, e := grpc.Dial(listener.Addr().String(), grpc.WithInsecure())
 	if e != nil {
 		t.Fatal(e)
 	}
-	defer conn.Close()
+	t.Cleanup(func() { _ = conn.Close() })
 	mux := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, new(gu.JSONMarshaler)))
 	if e = api.RegisterTraderSyncServiceHandler(ctx, mux, conn); e != nil {
 		t.Fatal(e)
 	}
 	httpServer := httptest.NewServer(mux)
-	defer httpServer.Close()
+	t.Cleanup(httpServer.Close)
 	captureIndex := 0
 	get := func(principal, path string, want int) []byte {
 		t.Helper()
@@ -234,6 +263,17 @@ func TestTraderSyncGatewayRealCredentialsAndOwnerPrivacy(t *testing.T) {
 		}
 		return raw
 	}
+	return &traderSyncGatewayHarness{httpServer, tokens, ctx, db, traderStore, composition, controller, ids, profileRequests, profileWallet, owner, subscription, wallet, get, postAs}
+}
+
+func TestTraderSyncGatewayRealCredentialsAndOwnerPrivacy(t *testing.T) {
+	h := newTraderSyncGatewayHarness(t, nil)
+	ctx, db, traderStore, controller := h.ctx, h.db, h.traderStore, h.controller
+	owner, subscription, wallet := h.owner, h.subscription, h.wallet
+	profileRequests, profileWallet := h.profileRequests, h.profileWallet
+	get, postAs := h.get, h.postAs
+	httpServer, tokens := h.httpServer, h.tokens
+	var e error
 	post := func(path, body string, want int) []byte { return postAs("member", path, body, want) }
 	base := "/api/v1/trader-sync/subscriptions"
 	bad := post(base, fmt.Sprintf(`{"confirmationToken":"%%%%","requestId":%q}`, uuid.NewString()), 400)
@@ -491,4 +531,174 @@ func gatewayProjection(t *testing.T, pool *pgxpool.Pool, owner, sub, attempt str
 		t.Fatal(e)
 	}
 	return tm.Projection{Candidate: tm.Candidate{SourceID: id, OwnerID: owner, SubscriptionID: sub, Generation: 1, AttemptID: attempt, ReceivedAt: at}, Trade: tm.Trade{Wallet: wallet, Exchange: raw.Address, Side: "BUY", PositionID: "90071992547409931234567890", CollateralRaw: "0", SharesRaw: "10000000", FeeRaw: "0", CollateralSymbol: "USDC", CollateralDecimals: 6, SharesDecimals: 6, SourceVersion: "polygon137-core-v2-ccc0596074f4", PriceNumerator: "0", PriceDenominator: "1"}, Confirmation: tm.CanonicalEvidence{Status: "confirmed", BlockHash: raw.BlockHash, SettledAt: at, CheckedAt: at}}
+}
+
+func TestTraderSyncRuntimeRawGaugesUseLiveQueueAndPersist(t *testing.T) {
+	type wireWriter struct {
+		conn *websocket.Conn
+		mu   *sync.Mutex
+	}
+	ready := make(chan wireWriter, 1)
+	up := websocket.Upgrader{}
+	wss := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c, e := up.Upgrade(w, r, nil)
+		if e != nil {
+			return
+		}
+		defer c.Close()
+		mu := &sync.Mutex{}
+		for {
+			var req struct {
+				ID     uint64 `json:"id"`
+				Method string `json:"method"`
+			}
+			if c.ReadJSON(&req) != nil {
+				return
+			}
+			result := any(true)
+			if req.Method == "eth_chainId" {
+				result = "0x89"
+			}
+			if req.Method == "eth_subscribe" {
+				result = fmt.Sprint(req.ID)
+			}
+			mu.Lock()
+			e = c.WriteJSON(map[string]any{"jsonrpc": "2.0", "id": req.ID, "result": result})
+			mu.Unlock()
+			if e != nil {
+				return
+			}
+			if req.Method == "eth_chainId" {
+				ready <- wireWriter{c, mu}
+			}
+		}
+	}))
+	defer wss.Close()
+	h := newTraderSyncGatewayHarness(t, func(c *ts.Config) { c.WebSocketURL = "ws" + strings.TrimPrefix(wss.URL, "http") })
+	runtimeStatus := func() app.TraderSyncRuntimeStatus {
+		raw := h.get("admin", "/api/v1/admin/trader-sync/status", 200)
+		var result struct {
+			Status app.TraderSyncRuntimeStatus `json:"status"`
+		}
+		if e := json.Unmarshal(raw, &result); e != nil {
+			t.Fatal(e)
+		}
+		return result.Status
+	}
+	find := func(result app.TraderSyncRuntimeStatus, name string) *app.TraderSyncRuntimeMetric {
+		for i := range result.Metrics {
+			if result.Metrics[i].Name == name {
+				return &result.Metrics[i]
+			}
+		}
+		return nil
+	}
+	unavailable := func(result app.TraderSyncRuntimeStatus) {
+		v := find(result, "raw_observation_available")
+		if v == nil || v.Value != "0" || v.Unit != "boolean" || v.Kind != "gauge" || find(result, "raw_queue_depth") != nil || find(result, "raw_persist_in_flight") != nil {
+			t.Fatalf("unavailable raw evidence must omit values: %+v", result)
+		}
+	}
+	unavailable(runtimeStatus())
+	lock, e := h.db.Pool.Begin(h.ctx)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer lock.Rollback(h.ctx)
+	if e = txgate.LockWallet(h.ctx, lock, common.BytesToAddress(h.wallet)); e != nil {
+		t.Fatal(e)
+	}
+	ctx, cancel := context.WithCancel(h.ctx)
+	defer cancel()
+	done := make(chan error, 1)
+	joined := false
+	go func() { done <- h.composition.run(ctx) }()
+	defer func() {
+		if joined {
+			return
+		}
+		cancel()
+		select {
+		case e := <-done:
+			if e != nil {
+				t.Error(e)
+			}
+		case <-time.After(7 * time.Second):
+			t.Error("runtime did not join")
+		}
+	}()
+	var writer wireWriter
+	select {
+	case writer = <-ready:
+	case <-time.After(time.Second):
+		t.Fatal("no session")
+	}
+	parsed, e := ethabi.JSON(bytes.NewReader(sourceabi.CoreExchange))
+	if e != nil {
+		t.Fatal(e)
+	}
+	raw := et.Log{Address: common.HexToAddress("0xe111180000d2663c0091e4f400237545b87b996b"), Topics: []common.Hash{parsed.Events["OrderFilled"].ID, {}, common.BytesToHash(h.wallet), {}}, Data: []byte{}, BlockNumber: 1, BlockHash: common.HexToHash("0xaa"), TxHash: common.HexToHash("0xbb")}
+	for i := 0; i < 4; i++ {
+		raw.Index = uint(i)
+		writer.mu.Lock()
+		e = writer.conn.WriteJSON(map[string]any{"jsonrpc": "2.0", "method": "eth_subscription", "params": map[string]any{"subscription": "fixture", "result": raw}})
+		writer.mu.Unlock()
+		if e != nil {
+			t.Fatal(e)
+		}
+	}
+	deadline := time.NewTimer(2 * time.Second)
+	defer deadline.Stop()
+	tick := time.NewTicker(10 * time.Millisecond)
+	defer tick.Stop()
+	var active app.TraderSyncRuntimeStatus
+	for {
+		active = runtimeStatus()
+		depth, inflight := find(active, "raw_queue_depth"), find(active, "raw_persist_in_flight")
+		if depth != nil && inflight != nil && depth.Value == "3" && inflight.Value == "1" {
+			for _, v := range []*app.TraderSyncRuntimeMetric{depth, inflight} {
+				if v.Kind != "gauge" || v.Unit != "raw_logs" || v.ServiceEpoch == nil || *v.ServiceEpoch != active.CollectorEpoch {
+					t.Fatal("raw gauge scope", v)
+				}
+			}
+			if find(active, "raw_observation_available").Value != "1" {
+				t.Fatal("active observation unavailable")
+			}
+			break
+		}
+		select {
+		case <-deadline.C:
+			t.Fatalf("real blocked Persist/queued logs absent: %+v", active)
+		case <-tick.C:
+		}
+	}
+	// Deliberately change only the durable read-side epoch while the old local
+	// receiver is still blocked. Both epochs are present; a boolean connected
+	// check alone must not expose the previous session's raw gauges.
+	var otherEpoch int64
+	if e = h.db.Pool.QueryRow(h.ctx, `INSERT INTO trader_sync_collector_epochs(fencing_token) SELECT fencing_token FROM trader_sync_collector_control WHERE singleton RETURNING id`).Scan(&otherEpoch); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = h.db.Pool.Exec(h.ctx, `UPDATE trader_sync_collector_control SET active_epoch=$1 WHERE singleton`, otherEpoch); e != nil {
+		t.Fatal(e)
+	}
+	mismatch := runtimeStatus()
+	if !mismatch.CollectorConnected || mismatch.CollectorEpoch == active.CollectorEpoch {
+		t.Fatal("epoch mismatch fixture invalid", mismatch)
+	}
+	unavailable(mismatch)
+	if _, e = h.db.Pool.Exec(h.ctx, `UPDATE trader_sync_collector_control SET active_epoch=$1 WHERE singleton`, active.CollectorEpoch); e != nil {
+		t.Fatal(e)
+	}
+	cancel()
+	select {
+	case e := <-done:
+		joined = true
+		if e != nil {
+			t.Fatal(e)
+		}
+	case <-time.After(7 * time.Second):
+		t.Fatal("runtime did not join")
+	}
+	unavailable(runtimeStatus())
 }

@@ -238,51 +238,20 @@ func (q *Queries) ReadActivityFacts(ctx context.Context, arg ReadActivityFactsPa
 
 const readAdminSubscriptionFacts = `-- name: ReadAdminSubscriptionFacts :many
 SELECT s.id,s.owner_id,ac.username,COALESCE(ac.verified_email,'')::text AS email,s.wallet,
- CASE WHEN s.desired_state='enabled' THEN (CASE WHEN s.desired_state='enabled' AND EXISTS(SELECT 1 FROM trader_sync_baseline_attempts ba JOIN trader_sync_collector_epochs ep ON ep.id=ba.collector_epoch
-WHERE ba.owner_id=s.owner_id AND ba.subscription_id=s.id AND ba.activation_generation=s.activation_generation AND ep.ended_at IS NOT NULL
-AND (ba.state='pending' OR EXISTS(SELECT 1 FROM trader_sync_monitor_intervals i WHERE i.baseline_attempt_id=ba.id AND i.ended_at IS NULL))) THEN 'interrupted' ELSE s.observation_state END) ELSE s.desired_state END::text AS status,s.desired_state,s.observation_state,s.reason,s.created_at,s.updated_at,s.ended_at,obs.observation_json,
+ obs.status::text AS status,s.desired_state,s.observation_state,s.reason,s.created_at,s.updated_at,s.ended_at,obs.observation_json,
  (SELECT count(*) FROM trader_sync_activities a WHERE a.owner_id=s.owner_id AND a.subscription_id=s.id)::bigint AS activity_count,
  (SELECT jsonb_build_object('Total',count(*),'Pending',count(*) FILTER(WHERE counted.status='pending'),'Sending',count(*) FILTER(WHERE counted.status='sending'),'Sent',count(*) FILTER(WHERE counted.status='sent'),'Failed',count(*) FILTER(WHERE counted.status='failed'),'Unknown',count(*) FILTER(WHERE counted.status='unknown'),'Cancelled',count(*) FILTER(WHERE counted.status='cancelled')) FROM (SELECT DISTINCT d.id,d.status FROM account_notification_deliveries d
 WHERE d.account_id=s.owner_id AND (
  EXISTS(SELECT 1 FROM trader_sync_activities a WHERE a.owner_id=s.owner_id AND a.subscription_id=s.id AND a.id=d.activity_id)
  OR EXISTS(SELECT 1 FROM trader_sync_summary_parts p JOIN trader_sync_summary_part_items pi ON pi.part_id=p.id AND pi.owner_id=p.owner_id JOIN trader_sync_activities a ON a.owner_id=pi.owner_id AND a.id=pi.activity_id WHERE p.owner_id=s.owner_id AND p.delivery_id=d.id AND a.subscription_id=s.id))) counted)::jsonb AS delivery_counts
 FROM trader_sync_subscriptions s JOIN athena_account ac ON ac.account_id=s.owner_id
-LEFT JOIN LATERAL (SELECT jsonb_build_object('State',CASE WHEN s.desired_state='enabled' AND EXISTS(SELECT 1 FROM trader_sync_baseline_attempts ba JOIN trader_sync_collector_epochs ep ON ep.id=ba.collector_epoch
-WHERE ba.owner_id=s.owner_id AND ba.subscription_id=s.id AND ba.activation_generation=s.activation_generation AND ep.ended_at IS NOT NULL
-AND (ba.state='pending' OR EXISTS(SELECT 1 FROM trader_sync_monitor_intervals i WHERE i.baseline_attempt_id=ba.id AND i.ended_at IS NULL))) THEN 'interrupted' ELSE s.observation_state END,'Reason',CASE WHEN s.desired_state='enabled' AND EXISTS(SELECT 1 FROM trader_sync_baseline_attempts ba JOIN trader_sync_collector_epochs ep ON ep.id=ba.collector_epoch
-WHERE ba.owner_id=s.owner_id AND ba.subscription_id=s.id AND ba.activation_generation=s.activation_generation AND ep.ended_at IS NOT NULL
-AND (ba.state='pending' OR EXISTS(SELECT 1 FROM trader_sync_monitor_intervals i WHERE i.baseline_attempt_id=ba.id AND i.ended_at IS NULL))) THEN 'collector_interrupted'
- WHEN s.observation_state='pending_baseline' THEN COALESCE((SELECT ba.reason FROM trader_sync_baseline_attempts ba WHERE ba.owner_id=s.owner_id AND ba.subscription_id=s.id AND ba.activation_generation=s.activation_generation AND ba.state='failed' ORDER BY ba.created_at DESC,ba.id DESC LIMIT 1),s.reason) ELSE s.reason END,
-'LastReliableAt',(SELECT i.last_reliable_at FROM trader_sync_monitor_intervals i WHERE i.owner_id=s.owner_id AND i.subscription_id=s.id AND i.activation_generation=s.activation_generation AND i.last_reliable_at IS NOT NULL ORDER BY i.collector_epoch DESC,i.effective_at DESC,i.id DESC LIMIT 1),
-'InterruptionCount',(SELECT count(DISTINCT rr.epoch_id) FROM (SELECT DISTINCT ep.id AS epoch_id,ir.id,ir.recorded_at,ep.ended_at,ep.reason,ba.activation_generation
-FROM trader_sync_baseline_attempts ba
-JOIN trader_sync_collector_epochs ep ON ep.id=ba.collector_epoch AND ep.ended_at IS NOT NULL
-JOIN trader_sync_interruptions ir ON ir.collector_epoch=ep.id
-WHERE ba.owner_id=s.owner_id AND ba.subscription_id=s.id AND (
- ba.state='pending' OR (ba.state='failed' AND ba.ended_at=ep.ended_at AND ba.reason=ep.reason)
- OR EXISTS(SELECT 1 FROM trader_sync_monitor_intervals i WHERE i.baseline_attempt_id=ba.id AND
- (i.ended_at IS NULL OR (i.ended_at=ep.ended_at AND i.reason=ep.reason))))) rr),
-'LatestInterruption',(SELECT jsonb_build_object('ID',rel.id::text,'Start',NULL,'End',recovered.effective_at,'RecoveredAt',recovered.effective_at,
-'Reason',rel.reason,'Uncertainty','actual_start_unknown;recorded_stop_boundary_available' ||
- CASE WHEN recovered.effective_at<rel.ended_at THEN ';clock_order_uncertain' ELSE '' END,'PossibleMissing',true) FROM (SELECT DISTINCT ep.id AS epoch_id,ir.id,ir.recorded_at,ep.ended_at,ep.reason,ba.activation_generation
-FROM trader_sync_baseline_attempts ba
-JOIN trader_sync_collector_epochs ep ON ep.id=ba.collector_epoch AND ep.ended_at IS NOT NULL
-JOIN trader_sync_interruptions ir ON ir.collector_epoch=ep.id
-WHERE ba.owner_id=s.owner_id AND ba.subscription_id=s.id AND (
- ba.state='pending' OR (ba.state='failed' AND ba.ended_at=ep.ended_at AND ba.reason=ep.reason)
- OR EXISTS(SELECT 1 FROM trader_sync_monitor_intervals i WHERE i.baseline_attempt_id=ba.id AND
- (i.ended_at IS NULL OR (i.ended_at=ep.ended_at AND i.reason=ep.reason))))) rel LEFT JOIN LATERAL(SELECT i.effective_at FROM trader_sync_monitor_intervals i
-JOIN trader_sync_baseline_attempts ba ON ba.id=i.baseline_attempt_id AND ba.state='succeeded'
-WHERE i.owner_id=s.owner_id AND i.subscription_id=s.id AND i.activation_generation=rel.activation_generation
-AND i.collector_epoch>rel.epoch_id ORDER BY i.collector_epoch,ba.created_at,ba.id LIMIT 1) recovered ON true ORDER BY rel.recorded_at DESC,rel.id DESC LIMIT 1))::jsonb AS observation_json) obs ON true
+JOIN trader_sync_subscription_observations obs ON obs.owner_id=s.owner_id AND obs.subscription_id=s.id
 WHERE ($1::uuid IS NULL OR s.owner_id=$1)
 AND ($2::bytea IS NULL OR s.wallet=$2)
 AND ($3::boolean OR s.desired_state<>'cancelled' OR $4::uuid IS NOT NULL)
 AND ($5::timestamptz IS NULL OR (s.created_at,s.id)<($5,$6::uuid))
 AND ($4::uuid IS NULL OR s.id=$4)
-AND ($7::text='' OR CASE WHEN s.desired_state='enabled' THEN (CASE WHEN s.desired_state='enabled' AND EXISTS(SELECT 1 FROM trader_sync_baseline_attempts ba JOIN trader_sync_collector_epochs ep ON ep.id=ba.collector_epoch
-WHERE ba.owner_id=s.owner_id AND ba.subscription_id=s.id AND ba.activation_generation=s.activation_generation AND ep.ended_at IS NOT NULL
-AND (ba.state='pending' OR EXISTS(SELECT 1 FROM trader_sync_monitor_intervals i WHERE i.baseline_attempt_id=ba.id AND i.ended_at IS NULL))) THEN 'interrupted' ELSE s.observation_state END) ELSE s.desired_state END=$7)
+AND ($7::text='' OR obs.status=$7)
 ORDER BY s.created_at DESC,s.id DESC LIMIT $8::integer
 `
 
@@ -384,41 +353,12 @@ WHERE d.account_id=s.owner_id AND (
 FROM trader_sync_subscriptions s
 LEFT JOIN trader_sync_target_notes n ON n.owner_id=s.owner_id AND n.wallet=s.wallet
 LEFT JOIN telegram_bindings b ON b.account_id=s.owner_id
-LEFT JOIN LATERAL (SELECT jsonb_build_object('State',CASE WHEN s.desired_state='enabled' AND EXISTS(SELECT 1 FROM trader_sync_baseline_attempts ba JOIN trader_sync_collector_epochs ep ON ep.id=ba.collector_epoch
-WHERE ba.owner_id=s.owner_id AND ba.subscription_id=s.id AND ba.activation_generation=s.activation_generation AND ep.ended_at IS NOT NULL
-AND (ba.state='pending' OR EXISTS(SELECT 1 FROM trader_sync_monitor_intervals i WHERE i.baseline_attempt_id=ba.id AND i.ended_at IS NULL))) THEN 'interrupted' ELSE s.observation_state END,'Reason',CASE WHEN s.desired_state='enabled' AND EXISTS(SELECT 1 FROM trader_sync_baseline_attempts ba JOIN trader_sync_collector_epochs ep ON ep.id=ba.collector_epoch
-WHERE ba.owner_id=s.owner_id AND ba.subscription_id=s.id AND ba.activation_generation=s.activation_generation AND ep.ended_at IS NOT NULL
-AND (ba.state='pending' OR EXISTS(SELECT 1 FROM trader_sync_monitor_intervals i WHERE i.baseline_attempt_id=ba.id AND i.ended_at IS NULL))) THEN 'collector_interrupted'
- WHEN s.observation_state='pending_baseline' THEN COALESCE((SELECT ba.reason FROM trader_sync_baseline_attempts ba WHERE ba.owner_id=s.owner_id AND ba.subscription_id=s.id AND ba.activation_generation=s.activation_generation AND ba.state='failed' ORDER BY ba.created_at DESC,ba.id DESC LIMIT 1),s.reason) ELSE s.reason END,
-'LastReliableAt',(SELECT i.last_reliable_at FROM trader_sync_monitor_intervals i WHERE i.owner_id=s.owner_id AND i.subscription_id=s.id AND i.activation_generation=s.activation_generation AND i.last_reliable_at IS NOT NULL ORDER BY i.collector_epoch DESC,i.effective_at DESC,i.id DESC LIMIT 1),
-'InterruptionCount',(SELECT count(DISTINCT rr.epoch_id) FROM (SELECT DISTINCT ep.id AS epoch_id,ir.id,ir.recorded_at,ep.ended_at,ep.reason,ba.activation_generation
-FROM trader_sync_baseline_attempts ba
-JOIN trader_sync_collector_epochs ep ON ep.id=ba.collector_epoch AND ep.ended_at IS NOT NULL
-JOIN trader_sync_interruptions ir ON ir.collector_epoch=ep.id
-WHERE ba.owner_id=s.owner_id AND ba.subscription_id=s.id AND (
- ba.state='pending' OR (ba.state='failed' AND ba.ended_at=ep.ended_at AND ba.reason=ep.reason)
- OR EXISTS(SELECT 1 FROM trader_sync_monitor_intervals i WHERE i.baseline_attempt_id=ba.id AND
- (i.ended_at IS NULL OR (i.ended_at=ep.ended_at AND i.reason=ep.reason))))) rr),
-'LatestInterruption',(SELECT jsonb_build_object('ID',rel.id::text,'Start',NULL,'End',recovered.effective_at,'RecoveredAt',recovered.effective_at,
-'Reason',rel.reason,'Uncertainty','actual_start_unknown;recorded_stop_boundary_available' ||
- CASE WHEN recovered.effective_at<rel.ended_at THEN ';clock_order_uncertain' ELSE '' END,'PossibleMissing',true) FROM (SELECT DISTINCT ep.id AS epoch_id,ir.id,ir.recorded_at,ep.ended_at,ep.reason,ba.activation_generation
-FROM trader_sync_baseline_attempts ba
-JOIN trader_sync_collector_epochs ep ON ep.id=ba.collector_epoch AND ep.ended_at IS NOT NULL
-JOIN trader_sync_interruptions ir ON ir.collector_epoch=ep.id
-WHERE ba.owner_id=s.owner_id AND ba.subscription_id=s.id AND (
- ba.state='pending' OR (ba.state='failed' AND ba.ended_at=ep.ended_at AND ba.reason=ep.reason)
- OR EXISTS(SELECT 1 FROM trader_sync_monitor_intervals i WHERE i.baseline_attempt_id=ba.id AND
- (i.ended_at IS NULL OR (i.ended_at=ep.ended_at AND i.reason=ep.reason))))) rel LEFT JOIN LATERAL(SELECT i.effective_at FROM trader_sync_monitor_intervals i
-JOIN trader_sync_baseline_attempts ba ON ba.id=i.baseline_attempt_id AND ba.state='succeeded'
-WHERE i.owner_id=s.owner_id AND i.subscription_id=s.id AND i.activation_generation=rel.activation_generation
-AND i.collector_epoch>rel.epoch_id ORDER BY i.collector_epoch,ba.created_at,ba.id LIMIT 1) recovered ON true ORDER BY rel.recorded_at DESC,rel.id DESC LIMIT 1))::jsonb AS observation_json) obs ON true
+JOIN trader_sync_subscription_observations obs ON obs.owner_id=s.owner_id AND obs.subscription_id=s.id
 WHERE s.owner_id=$1::uuid
 AND ($2::uuid IS NOT NULL OR (s.desired_state='cancelled')=$3::boolean)
 AND ($4::timestamptz IS NULL OR (s.created_at,s.id)<($4,$5::uuid))
 AND ($2::uuid IS NULL OR s.id=$2)
-AND ($6::text='' OR CASE WHEN s.desired_state='enabled' THEN (CASE WHEN s.desired_state='enabled' AND EXISTS(SELECT 1 FROM trader_sync_baseline_attempts ba JOIN trader_sync_collector_epochs ep ON ep.id=ba.collector_epoch
-WHERE ba.owner_id=s.owner_id AND ba.subscription_id=s.id AND ba.activation_generation=s.activation_generation AND ep.ended_at IS NOT NULL
-AND (ba.state='pending' OR EXISTS(SELECT 1 FROM trader_sync_monitor_intervals i WHERE i.baseline_attempt_id=ba.id AND i.ended_at IS NULL))) THEN 'interrupted' ELSE s.observation_state END) ELSE s.desired_state END=$6)
+AND ($6::text='' OR obs.status=$6)
 ORDER BY s.created_at DESC,s.id DESC LIMIT $7::integer
 `
 
@@ -509,20 +449,8 @@ WITH scope AS(SELECT id, owner_id, wallet, desired_state, observation_state, rea
  jsonb_build_object('ID',i.id,'EffectiveAt',i.effective_at,'EndedAt',COALESCE(i.ended_at,ep.ended_at),'Generation',i.activation_generation,'Epoch',i.collector_epoch)::jsonb AS interval_json,NULL::jsonb AS interruption_json
  FROM scope s JOIN trader_sync_monitor_intervals i ON i.owner_id=s.owner_id AND i.subscription_id=s.id JOIN trader_sync_collector_epochs ep ON ep.id=i.collector_epoch
  UNION ALL
- SELECT DISTINCT 'interruption/'||rel.id::text,'interruption'::text,rel.recorded_at,NULL::jsonb,jsonb_build_object('ID',rel.id::text,'Start',NULL,'End',recovered.effective_at,'RecoveredAt',recovered.effective_at,
-'Reason',rel.reason,'Uncertainty','actual_start_unknown;recorded_stop_boundary_available' ||
- CASE WHEN recovered.effective_at<rel.ended_at THEN ';clock_order_uncertain' ELSE '' END,'PossibleMissing',true)::jsonb
- FROM scope s JOIN LATERAL (SELECT DISTINCT ep.id AS epoch_id,ir.id,ir.recorded_at,ep.ended_at,ep.reason,ba.activation_generation
-FROM trader_sync_baseline_attempts ba
-JOIN trader_sync_collector_epochs ep ON ep.id=ba.collector_epoch AND ep.ended_at IS NOT NULL
-JOIN trader_sync_interruptions ir ON ir.collector_epoch=ep.id
-WHERE ba.owner_id=s.owner_id AND ba.subscription_id=s.id AND (
- ba.state='pending' OR (ba.state='failed' AND ba.ended_at=ep.ended_at AND ba.reason=ep.reason)
- OR EXISTS(SELECT 1 FROM trader_sync_monitor_intervals i WHERE i.baseline_attempt_id=ba.id AND
- (i.ended_at IS NULL OR (i.ended_at=ep.ended_at AND i.reason=ep.reason))))) rel ON true LEFT JOIN LATERAL(SELECT i.effective_at FROM trader_sync_monitor_intervals i
-JOIN trader_sync_baseline_attempts ba ON ba.id=i.baseline_attempt_id AND ba.state='succeeded'
-WHERE i.owner_id=s.owner_id AND i.subscription_id=s.id AND i.activation_generation=rel.activation_generation
-AND i.collector_epoch>rel.epoch_id ORDER BY i.collector_epoch,ba.created_at,ba.id LIMIT 1) recovered ON true
+ SELECT DISTINCT 'interruption/'||rel.id::text,'interruption'::text,rel.recorded_at,NULL::jsonb,rel.interruption_json
+ FROM scope s JOIN trader_sync_subscription_interruptions rel ON rel.owner_id=s.owner_id AND rel.subscription_id=s.id
  ) SELECT id, kind, sort_at, interval_json, interruption_json FROM entries
  WHERE ($1::timestamptz IS NULL OR (sort_at,id)<($1,$2::text))
  ORDER BY sort_at DESC,id DESC LIMIT $3::integer

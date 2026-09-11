@@ -196,7 +196,22 @@ func (s *Service) GetSubscriptionSummary(ctx context.Context, admin, id string) 
 	return p.Summaries[0], nil
 }
 func (s *Service) GetRuntimeStatus(ctx context.Context, admin string) (tm.RuntimeStatus, error) {
-	return s.reads.ReadRuntimeStatus(ctx, admin)
+	result, err := s.reads.ReadRuntimeStatus(ctx, admin)
+	if err != nil {
+		return tm.RuntimeStatus{}, err
+	}
+	epoch, queued, persisting, alive := s.deps.Collector.RawSnapshot()
+	available := alive && result.CollectorConnected && strconv.FormatUint(epoch, 10) == result.CollectorEpoch
+	flag := "0"
+	if available {
+		flag = "1"
+		scope := result.CollectorEpoch
+		result.Metrics = append(result.Metrics,
+			tm.RuntimeMetric{Name: "raw_queue_depth", Value: strconv.Itoa(queued), Unit: "raw_logs", Kind: "gauge", ServiceEpoch: &scope},
+			tm.RuntimeMetric{Name: "raw_persist_in_flight", Value: strconv.Itoa(persisting), Unit: "raw_logs", Kind: "gauge", ServiceEpoch: &scope})
+	}
+	result.Metrics = append(result.Metrics, tm.RuntimeMetric{Name: "raw_observation_available", Value: flag, Unit: "boolean", Kind: "gauge"})
+	return result, nil
 }
 func filterDigest(v any) string {
 	raw, _ := json.Marshal(v)

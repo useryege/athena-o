@@ -409,6 +409,26 @@ type TraderSyncSubscription struct {
 	TargetDisplay        []byte
 }
 
+type TraderSyncSubscriptionInterruption struct {
+	OwnerID              pgtype.UUID
+	SubscriptionID       pgtype.UUID
+	ActivationGeneration int64
+	EpochID              int64
+	ID                   int64
+	RecordedAt           pgtype.Timestamptz
+	EndedAt              pgtype.Timestamptz
+	Reason               string
+	AwaitingCleanup      pgtype.Bool
+	InterruptionJson     []byte
+}
+
+type TraderSyncSubscriptionObservation struct {
+	OwnerID         pgtype.UUID
+	SubscriptionID  pgtype.UUID
+	Status          string
+	ObservationJson []byte
+}
+
 type TraderSyncSummaryBatch struct {
 	ID                   int64
 	OwnerID              pgtype.UUID

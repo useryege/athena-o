@@ -429,7 +429,7 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 
 观察读取只使用持久区间事实。lastReliableAt 是当前 generation 最近合格 checkpoint，自动重连同代可保留旧 interval 的真实点，手动恢复新代不继承；缺点不等于故障。当前区间按因果 epoch 优先选择，墙钟回退不能选回旧区间。中断 start 未知则缺失；end/recoveredAt 仅来自同代后继首次成功 interval.effective_at，跨代手动恢复另列。提前暂停/取消/撤权的区间不被后来 epoch 关闭覆盖；单独准备失败只报告 reason。时钟无法排序时保留原值与 clock_order_uncertain，不制造时长。
 
-Session 在原匹配 nonce pong 记录单调时间，Collector 将原 10 秒 latest 合格结果与已持久过滤覆盖组合，按较早真实观察 UTC 保存 interval.last_reliable_at。整个持久化 pass 最多 5 秒，最多读取 100 个关系并轮转游标，忙 owner 不永久挡住后排。owner gate 后再次验证新鲜度、session/epoch/fence、wallet/filter、当前代及区间开放。普通写失败或提交连接丢失保留原确认点并报告，下一原健康周期再试，不单独结束健康观察；真实失权仍沿原 fatal 边界处理。
+Session 在实际 pong 接收回调捕获带单调部分的时间与 nonce，writer 匹配后发布原接收时间；writer 延迟出队不得重新计时。Collector 不用 coverage 发布之前收到的 pong 推进新覆盖。Session 的原匹配 nonce pong 证据保留该单调时间，Collector 将原 10 秒 latest 合格结果与已持久过滤覆盖组合，按较早真实观察 UTC 保存 interval.last_reliable_at。整个持久化 pass 最多 5 秒，最多读取 100 个关系并轮转游标，忙 owner 不永久挡住后排。owner gate 后再次验证新鲜度、session/epoch/fence、wallet/filter、当前代及区间开放。普通写失败或提交连接丢失保留原确认点并报告，下一原健康周期再试，不单独结束健康观察；真实失权仍沿原 fatal 边界处理。
 
 `internal/server/trader_sync_runtime.go` 接收已创建且已装权限 hook 的同 pool/traderStore，只构造一个 Collector、共享四槽 MetadataResolver、Projector、DirectoryRefresher 和 Service。Service.Run 一次性运行、取消并 join 三组件；AthenaServer 持有进程级取消、后台错误出口及 facade 注册，监听重启不重建业务后台。NewServer 返回初始化错误，后台 fatal 返回 CLI 并结束监听重启循环。关闭先 join 使用者，再由组合 owner 关闭自有 ethclient/HTTP transport，最后账户 store 关闭池；借用者不关闭池。
 
@@ -438,3 +438,7 @@ Session 在原匹配 nonce pong 记录单调时间，Collector 将原 10 秒 lat
 生产配置必需 ATHENA_TRADER_SYNC_HTTP_URL、ATHENA_TRADER_SYNC_WSS_URL、稳定 ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY 与 ATHENA_URL；缺少时启动明确失败，不自动改用另一供应商。可选 ATHENA_TRADER_SYNC_MAX_IN_FLIGHT_SOURCES 默认 100，是 source job 资源限制，不是业务目标配额或吞吐验收。专用 ATHENA_TRADER_SYNC_PROXY_URL 用于 TS HTTP/WSS、Gamma/Profile 和目录，未配置/空串直连，不继承 HTTP_PROXY 或 Token 配置；本地 WSL 默认仅由 dotenv 后的 Procfile helper 在真正 unset 时选 gateway:10809，部署不应用此默认。notification 只消费 siteURL 和现有发送配置，TS proxy 不接管 Telegram。
 
 当前验证使用隔离 PostgreSQL、回环 HTTP/WSS、真实 gRPC gateway/凭据及明确 synthetic source；真实供应商完整确认能力、100 目标吞吐与时效仍由 Task13 验收，不由上述组件测试外推。
+
+管理员 runtime 的 raw 阶段另提供 `raw_queue_depth` 与 `raw_persist_in_flight`，均为单位 `raw_logs` 的 gauge，后者为原单接收 goroutine 正在调用 Persist 的 0/1。Service 先完成管理员权限/DB读取，再合并同一 Collector 的短内存快照；只有活 Session 与 DB active_epoch 相同才返回两项数值，并附 serviceEpoch。未运行、关闭或 epoch 不匹配时省略两项，`raw_observation_available` 为单位 boolean、字符串值0/1的 gauge；不以缺证据冒充0。两个值各为瞬时观察，不声称跨 DB/队列的原子总量或丢失量，也不代替持久 confirmation/projection 积压。
+
+安全观察判定仅由权威 schema 的普通 view `trader_sync_subscription_interruptions`（相关 epoch 与同代恢复事实）和 `trader_sync_subscription_observations`（状态、可靠点、count/latest）定义。会员、管理员独立投影及状态筛选，history 共用这些事实；view 只暴露 owner/subscription 与安全观察列，不读取备注、目标展示、活动正文或发送 payload。它们不引入缓存/刷新任务，读取保持 owner/subscription 条件，不另造多份恢复规则。

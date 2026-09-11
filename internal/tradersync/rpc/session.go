@@ -50,13 +50,18 @@ type frame struct {
 	kind int
 	body []byte
 }
+type receivedPong struct {
+	nonce string
+	at    time.Time
+}
+
 type Session struct {
 	conn             *websocket.Conn
 	config           sessionConfig
 	done             chan struct{}
 	logs             chan tm.ReceivedLog
 	writes           chan frame
-	pong             chan string
+	pong             chan receivedPong
 	wg               sync.WaitGroup
 	once             sync.Once
 	mu               sync.Mutex
@@ -90,7 +95,7 @@ func dialSession(ctx context.Context, endpoint, proxyURL string, cfg sessionConf
 		}
 		return nil, err
 	}
-	s := &Session{conn: conn, config: cfg, done: make(chan struct{}), logs: make(chan tm.ReceivedLog, cfg.queue), writes: make(chan frame, 64), pong: make(chan string, 1), pending: make(map[uint64]*pendingRequest), high: make(map[common.Address]uint64)}
+	s := &Session{conn: conn, config: cfg, done: make(chan struct{}), logs: make(chan tm.ReceivedLog, cfg.queue), writes: make(chan frame, 64), pong: make(chan receivedPong, 1), pending: make(map[uint64]*pendingRequest), high: make(map[common.Address]uint64)}
 	conn.SetReadLimit(2 << 20)
 	conn.SetPingHandler(func(data string) error {
 		select {
@@ -102,7 +107,7 @@ func dialSession(ctx context.Context, endpoint, proxyURL string, cfg sessionConf
 	})
 	conn.SetPongHandler(func(data string) error {
 		select {
-		case s.pong <- data:
+		case s.pong <- receivedPong{nonce: data, at: time.Now()}:
 		default:
 		}
 		return nil
@@ -386,9 +391,9 @@ func (s *Session) writeLoop() {
 			timer = time.NewTimer(s.config.pong)
 			deadline = timer.C
 		case value := <-s.pong:
-			if nonce != "" && value == nonce {
+			if nonce != "" && value.nonce == nonce {
 				s.mu.Lock()
-				s.matchedPongAt = time.Now()
+				s.matchedPongAt = value.at
 				s.pongSequence++
 				s.mu.Unlock()
 				nonce = ""
@@ -416,4 +421,15 @@ func (s *Session) PongSnapshot() PongObservation {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return PongObservation{Session: s, At: s.matchedPongAt, Sequence: s.pongSequence, Alive: s.err == nil}
+}
+
+// RawQueueSnapshot reports only the current session's bounded receive queue.
+// It is an instantaneous gauge, not a count of unobserved or lost source logs.
+func (s *Session) RawQueueSnapshot() (depth int, alive bool) {
+	select {
+	case <-s.done:
+		return 0, false
+	default:
+		return len(s.logs), true
+	}
 }

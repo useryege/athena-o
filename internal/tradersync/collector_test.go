@@ -50,7 +50,7 @@ func TestCheckpointCombinesOnlyFreshCoveredObservations(t *testing.T) {
 		name string
 		p    liverpc.PongObservation
 		l, c time.Time
-	}{{"old pong", liverpc.PongObservation{Session: session, At: now.Add(-21 * time.Second), Sequence: 1, Alive: true}, latest, covered}, {"old latest", pong, now.Add(-16 * time.Second), covered}, {"new coverage", pong, latest, now}, {"closed", liverpc.PongObservation{Session: session, At: pong.At, Sequence: 1}, latest, covered}, {"no matched nonce", liverpc.PongObservation{Session: session, At: pong.At, Alive: true}, latest, covered}} {
+	}{{"old pong", liverpc.PongObservation{Session: session, At: now.Add(-21 * time.Second), Sequence: 1, Alive: true}, latest, covered}, {"old latest", pong, now.Add(-16 * time.Second), covered}, {"new coverage", pong, latest, now}, {"pong received before coverage but consumed after", pong, now, now.Add(-500 * time.Millisecond)}, {"closed", liverpc.PongObservation{Session: session, At: pong.At, Sequence: 1}, latest, covered}, {"no matched nonce", liverpc.PongObservation{Session: session, At: pong.At, Alive: true}, latest, covered}} {
 		t.Run(tc.name, func(t *testing.T) {
 			if _, e := combineCheckpoint(tc.p, tc.l, tc.c, now, 1, 2, 3, wallets); e == nil {
 				t.Fatal("ineligible health combination accepted")

@@ -34,17 +34,18 @@ type CollectorRPC interface {
 // Collector implements BaselineRegistrar. Task12 constructs it once, injects it
 // into SubscriptionService and owns Run's cancellation/join. The RPC is borrowed.
 type Collector struct {
-	store            *store.SQLStore
-	node             CollectorRPC
-	config           Config
-	running          atomic.Bool
-	mu               sync.Mutex
-	token, epoch     uint64
-	session          *liverpc.Session
-	coverage         []common.Address
-	coverageRevision uint64
-	coveredAt        time.Time
-	checkpointAfter  string
+	store              *store.SQLStore
+	node               CollectorRPC
+	config             Config
+	running            atomic.Bool
+	mu                 sync.Mutex
+	token, epoch       uint64
+	session            *liverpc.Session
+	coverage           []common.Address
+	coverageRevision   uint64
+	coveredAt          time.Time
+	checkpointAfter    string
+	rawPersistInFlight bool
 }
 
 func NewCollector(s *store.SQLStore, node CollectorRPC, config Config) (*Collector, error) {
@@ -201,6 +202,7 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 	c.coverageRevision = 0
 	c.coveredAt = time.Time{}
 	c.checkpointAfter = ""
+	c.rawPersistInFlight = false
 	c.mu.Unlock()
 	intake := NewIntake(c.store, token)
 	receivedErr := make(chan error, 1)
@@ -232,7 +234,13 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 					return
 				}
 				writeCtx, stop := context.WithTimeout(sessionCtx, 5*time.Second)
+				c.mu.Lock()
+				c.rawPersistInFlight = true
+				c.mu.Unlock()
 				err := intake.Persist(writeCtx, epoch, received)
+				c.mu.Lock()
+				c.rawPersistInFlight = false
+				c.mu.Unlock()
 				stop()
 				if err != nil {
 					if sessionCtx.Err() != nil {
@@ -585,4 +593,22 @@ func (c *Collector) persistHealthCheckpoints(ctx context.Context, token, epoch u
 		}
 	}
 	return nil
+}
+
+// RawSnapshot is local, epoch-scoped evidence; callers compare the durable epoch
+// after authorization. No memory lock is held across SQL or network requests.
+func (c *Collector) RawSnapshot() (epoch uint64, queued, persisting int, available bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.session == nil || c.epoch == 0 {
+		return 0, 0, 0, false
+	}
+	depth, alive := c.session.RawQueueSnapshot()
+	if !alive {
+		return 0, 0, 0, false
+	}
+	if c.rawPersistInFlight {
+		persisting = 1
+	}
+	return c.epoch, depth, persisting, true
 }

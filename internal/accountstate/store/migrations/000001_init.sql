@@ -858,7 +858,56 @@ CREATE TRIGGER system_notification_frozen_payload BEFORE UPDATE ON system_notifi
 CREATE TRIGGER account_notification_frozen_payload BEFORE UPDATE ON account_notification_deliveries FOR EACH ROW EXECUTE FUNCTION notification_guard_frozen_payload();
 CREATE TRIGGER binding_reply_frozen_payload BEFORE UPDATE ON telegram_binding_replies FOR EACH ROW EXECUTE FUNCTION notification_guard_frozen_payload();
 
+-- Safe common observation facts; no note, target display, activity or delivery payload.
+-- Ordinary views keep owner/subscription restrictions available to the planner.
+CREATE VIEW trader_sync_subscription_interruptions AS
+SELECT rel.owner_id,rel.subscription_id,rel.activation_generation,rel.epoch_id,
+ rel.id,rel.recorded_at,rel.ended_at,rel.reason,rel.awaiting_cleanup,
+ jsonb_build_object('ID',rel.id::text,'Start',NULL,'End',recovered.effective_at,'RecoveredAt',recovered.effective_at,
+ 'Reason',rel.reason,'Uncertainty','actual_start_unknown;recorded_stop_boundary_available' ||
+ CASE WHEN recovered.effective_at<rel.ended_at THEN ';clock_order_uncertain' ELSE '' END,'PossibleMissing',true)::jsonb AS interruption_json
+FROM (
+ SELECT DISTINCT ba.owner_id,ba.subscription_id,ba.activation_generation,ep.id AS epoch_id,
+ ir.id,ir.recorded_at,ep.ended_at,ep.reason,
+ (ba.state='pending' OR EXISTS(SELECT 1 FROM trader_sync_monitor_intervals i WHERE i.baseline_attempt_id=ba.id AND i.ended_at IS NULL)) AS awaiting_cleanup
+ FROM trader_sync_baseline_attempts ba
+ JOIN trader_sync_collector_epochs ep ON ep.id=ba.collector_epoch AND ep.ended_at IS NOT NULL
+ JOIN trader_sync_interruptions ir ON ir.collector_epoch=ep.id
+ WHERE ba.state='pending' OR (ba.state='failed' AND ba.ended_at=ep.ended_at AND ba.reason=ep.reason)
+ OR EXISTS(SELECT 1 FROM trader_sync_monitor_intervals i WHERE i.baseline_attempt_id=ba.id
+ AND (i.ended_at IS NULL OR (i.ended_at=ep.ended_at AND i.reason=ep.reason)))
+) rel
+LEFT JOIN LATERAL (
+ SELECT i.effective_at FROM trader_sync_monitor_intervals i
+ JOIN trader_sync_baseline_attempts ba ON ba.id=i.baseline_attempt_id AND ba.state='succeeded'
+ WHERE i.owner_id=rel.owner_id AND i.subscription_id=rel.subscription_id AND i.activation_generation=rel.activation_generation
+ AND i.collector_epoch>rel.epoch_id ORDER BY i.collector_epoch,ba.created_at,ba.id LIMIT 1
+) recovered ON true;
+
+CREATE VIEW trader_sync_subscription_observations AS
+SELECT s.owner_id,s.id AS subscription_id,
+ CASE WHEN s.desired_state='enabled' THEN state.observation_state ELSE s.desired_state END::text AS status,
+ jsonb_build_object('State',state.observation_state,
+ 'Reason',CASE WHEN logical.interrupted THEN 'collector_interrupted'
+ WHEN s.observation_state='pending_baseline' THEN COALESCE((SELECT ba.reason FROM trader_sync_baseline_attempts ba
+ WHERE ba.owner_id=s.owner_id AND ba.subscription_id=s.id AND ba.activation_generation=s.activation_generation AND ba.state='failed'
+ ORDER BY ba.created_at DESC,ba.id DESC LIMIT 1),s.reason) ELSE s.reason END,
+ 'LastReliableAt',(SELECT i.last_reliable_at FROM trader_sync_monitor_intervals i
+ WHERE i.owner_id=s.owner_id AND i.subscription_id=s.id AND i.activation_generation=s.activation_generation AND i.last_reliable_at IS NOT NULL
+ ORDER BY i.collector_epoch DESC,i.effective_at DESC,i.id DESC LIMIT 1),
+ 'InterruptionCount',(SELECT count(DISTINCT rel.epoch_id) FROM trader_sync_subscription_interruptions rel WHERE rel.owner_id=s.owner_id AND rel.subscription_id=s.id),
+ 'LatestInterruption',(SELECT rel.interruption_json FROM trader_sync_subscription_interruptions rel
+ WHERE rel.owner_id=s.owner_id AND rel.subscription_id=s.id ORDER BY rel.recorded_at DESC,rel.id DESC LIMIT 1))::jsonb AS observation_json
+FROM trader_sync_subscriptions s
+CROSS JOIN LATERAL (SELECT s.desired_state='enabled' AND EXISTS(
+ SELECT 1 FROM trader_sync_subscription_interruptions rel
+ WHERE rel.owner_id=s.owner_id AND rel.subscription_id=s.id AND rel.activation_generation=s.activation_generation AND rel.awaiting_cleanup
+) AS interrupted) logical
+CROSS JOIN LATERAL (SELECT CASE WHEN logical.interrupted THEN 'interrupted' ELSE s.observation_state END AS observation_state) state;
+
 -- +goose Down
+DROP VIEW trader_sync_subscription_observations;
+DROP VIEW trader_sync_subscription_interruptions;
 DROP TABLE trader_sync_summary_heads;
 DROP TABLE trader_sync_summary_part_items;
 DROP TABLE trader_sync_summary_parts;
