@@ -1027,14 +1027,14 @@ return result;
 
 **Files**
 - 新增：`ui/src/app/member/pages/trader-sync/add.tsx`、`add.test.tsx`、`confirmation-card.tsx`、`pnl-chart.tsx`、`pnl-chart.test.tsx`。
-- 修改：同目录`state.ts/state.test.ts`；`ui/src/app/member/routes.tsx`、`app.tsx`、`pages/notifications.tsx`；新增`ui/src/app/member/pages/notifications.test.tsx`。修改真实Shell回归文件`ui/src/app/app.test.tsx`（不是member/app.test.tsx）。
+- 修改：同目录`state.ts/state.test.ts`；`ui/src/app/member/routes.tsx`、`app.tsx`、`pages/notifications.tsx`；新增`ui/src/app/member/pages/notifications.test.tsx`。修改真实Shell回归文件`ui/src/app/app.test.tsx`（不是member/app.test.tsx）。局部样式修改`ui/src/app/styles/member-features.css`，只涉及添加/确认/PnL区域。
 **Interfaces**
 - 消费：任务14 service/models/precision/state；现有memberNotifications与5分钟expiresAt。
 - 产出：`TraderSyncAddPage({ownerId}:{ownerId:string})`；`ConfirmationCard({target,note,onNoteChange}:{target:ResolvedTarget;note:string;onNoteChange:(value:string)=>void})`；`PnLChart({view}:{view:PnLView})`。
 - state新增`AddDraft{ownerId,input,note:string;noteEdited:boolean;wallet?:string;target?:ResolvedTarget;createRequest?:CreateRequest;returnPath:string;scrollY:number}`；`readAddDraft(ownerId:string):AddDraft|undefined`、`saveAddDraft(draft:AddDraft):void`。内存仅一owner，clearTraderSyncState统一删除；不使用notification-storage、localStorage/sessionStorage或URL存草稿/token。
 - AppRoutes的六类页面均将`props.access.user.accountId`作为ownerId；新增局部`traderSyncRoute(element)`仅RW放行，未授权Navigate `/account/access`。本任务先挂实际完成的`/trader-sync/add`，其余路径随对应任务挂载。
 
-- [ ] **步骤1：写添加与草稿红灯。**fake service返回恰好六区间，1Y默认、YTD amount unavailable但curve可用；断言切换不再次Resolve。相同owner返回保留输入/备注，新owner不可读取，20 emoji成功、21禁用；输入变化废弃旧target，另一钱包不沿用草稿。
+- [x] **步骤1：写添加与草稿红灯。**fake service返回恰好六区间，1Y默认、YTD amount unavailable但curve可用；断言切换不再次Resolve。相同owner返回保留输入/备注，新owner不可读取，20 emoji成功、21禁用；输入变化废弃旧target，另一钱包不沿用草稿。
 
 ```ts
 test('draft clearing fences a pending read', () => {
@@ -1047,7 +1047,7 @@ test('draft clearing fences a pending read', () => {
 });
 ```
 
-- [ ] **步骤2：运行添加/state测试确认目标失败，然后实现页面状态。**使用`input/resolving/review/creating/error`判别联合；输入改变立即取消旧Resolve并废弃token。真实身份失败无确认按钮，辅助unavailable给原因；当前重复给GetSubscription入口，配额满给管理入口。noteEdited=false时Create不传note，否则传`{value:note}`。
+- [x] **步骤2：运行添加/state测试确认目标失败，然后实现页面状态。**使用`input/resolving/review/creating/error`判别联合；输入改变立即取消旧Resolve并废弃token。真实身份失败无确认按钮，辅助unavailable给原因；当前重复给GetSubscription入口，配额满给管理入口。noteEdited=false时Create不传note，否则传`{value:note}`。
 
 ```ts
 const request: CreateRequest = {
@@ -1060,16 +1060,16 @@ saveAddDraft({...draft, target, createRequest: request});
 ```
 
 Create成功记录新subscription ID供主页侧栏定位；目标在原筛选外时保留筛选。token到期禁止新确认，已发送但结果未知使用原request恢复；重新Resolve得到新token才新建requestId。基线成功前不显示Monitoring。
-- [ ] **步骤3：实现六区间P/L与精确确认卡。**数字/曲线各自evidence；缺图显示原因而非零线；SVG只用经过有限归一化的图形坐标，标题和tooltip取原字符串。提供当前区间/起止/单位及文字摘要，按钮用aria-pressed；不只靠hover。钱包完整换行与复制，低频提醒放确认前，无额外复选框。
-- [ ] **步骤4：衔接Notifications返回并测试过期。**Add按钮在内存保存draft后导航`/notifications`，location.state仅放固定`{returnTo:'/trader-sync/add'}`，不带token/备注；Notifications校验精确允许路径且readAddDraft当前owner存在才显示Return to Trader Sync。返回不改expiresAt。解绑/重绑已有交互文案加入许可边界和不补历史，不增加第二次确认，不复制3秒状态机。
-- [ ] **步骤5：挂载共同清理。**member app的endSession、身份变化分支以及Trader Sync从RW失权分支调用clearTraderSyncState；请求继续使用模块scope abort。非法READ按任务6解析为NONE；六个深链都须RW路由保护，导航稍后任务17加入。
-- [ ] **步骤6：运行添加/图表/Notifications/state及`app.test.tsx`相关测试、lint；提交 `feat(trader-sync-ui): add target review and binding return flow`。**测试覆盖失败保留草稿、token过期、同payload结果重取、身份换钱包、Confirm重复点击阻止。
+- [x] **步骤3：实现六区间P/L与精确确认卡。**数字/曲线各自evidence；缺图显示原因而非零线；SVG只用经过有限归一化的图形坐标，标题和tooltip取原字符串。提供当前区间/起止/单位及文字摘要，按钮用aria-pressed；不只靠hover。钱包完整换行与复制，低频提醒放确认前，无额外复选框。
+- [x] **步骤4：衔接Notifications返回并测试过期。**Add按钮在内存保存draft后导航`/notifications`，location.state仅放固定`{returnTo:'/trader-sync/add'}`，不带token/备注；Notifications校验精确允许路径且readAddDraft当前owner存在才显示Return to Trader Sync。返回不改expiresAt。解绑/重绑已有交互文案加入许可边界和不补历史，不增加第二次确认，不复制3秒状态机。
+- [x] **步骤5：挂载共同清理。**member app的endSession、身份变化分支以及Trader Sync从RW失权分支调用clearTraderSyncState；请求继续使用模块scope abort。非法READ按任务6解析为NONE；六个深链都须RW路由保护，导航稍后任务17加入。
+- [x] **步骤6：运行添加/图表/Notifications/state及`app.test.tsx`相关测试、lint；提交 `feat(trader-sync-ui): add target review and binding return flow`。**测试覆盖失败保留草稿、token过期、同payload结果重取、身份换钱包、Confirm重复点击阻止。
 
 ## 任务16：订阅列表、详情与生命周期
 
 **Files**
 - 新增：`ui/src/app/member/pages/trader-sync/subscriptions.tsx`、`subscription-detail.tsx`、`subscription-state.tsx`、`observation-history.tsx`、`subscriptions.test.tsx`、`subscription-detail.test.tsx`。
-- 修改：`ui/src/app/member/routes.tsx`、`app.tsx`。
+- 修改：`ui/src/app/member/routes.tsx`、`app.tsx`；同目录`pages/trader-sync/state.ts/state.test.ts`及`ui/src/app/styles/member-features.css`的订阅局部样式。
 **Interfaces**
 - 公开订阅状态沿真实wire：healthy显示Monitoring，interrupted显示Monitoring interrupted；其余四态不变。页面动作/过滤使用wire值，不能把显示语义monitoring/error当作协议枚举。
 - 消费：任务14 list/get/change/note/history service、任务15 RW路由与state清理。

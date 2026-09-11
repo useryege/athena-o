@@ -1,0 +1,43 @@
+{
+  "verified_on": "2026-09-11",
+  "source_snapshot_on": "2026-09-10",
+  "method": "Re-read saved official HTML and bundles; all complete snapshot hashes match the original repository evidence. No live API probe or new snapshot fetch. Offsets use Python Unicode characters, zero based.",
+  "original_evidence": "trader-sync-profile-evidence-2026-09-10.json",
+  "sources": [
+    {
+      "source_url": "https://polymarket.com/_next/static/immutable/chunks/1mllih59hudvw.js",
+      "original_snapshot_sha256": "5e7dc0018e26dc234608ae590650f8024221e32a95acaf168b70a0618f9469d3",
+      "needle": "prefix:`${ex<0?\"-\":\"\"}$`",
+      "needle_character_offset": 44512,
+      "excerpt_start_character_offset": 44472,
+      "excerpt": "x)(y.AnimatedNumber,{value:Math.abs(ex),prefix:`${ex<0?\"-\":\"\"}$`,className:\"text-3xl font-semibold pointer-events-none\"}),r&&!l&&(0,t.jsx)(i.Button,{variant:\"ghost\",size:\"iconSm\",onClick:()=>x(!0),children:(0,t.jsx)(K.IconUpload4Outline18,{size:16})})]}),(0,t.jsx)(J.PolymarketLogoFull,{className:\"shrink h-7 w-auto min-w-[48px] max-w-[90px] md:max-w-[100px] lg:max-w-[110px] opacity-60 text-pk-content-secondary [&_path"
+    },
+    {
+      "source_url": "https://polymarket.com/_next/static/immutable/chunks/10ony1moi9kgu.js",
+      "original_snapshot_sha256": "05141dc6b30006fd867e6176f1726714d232f10b178c99b90c41b34271a9d54f",
+      "needle": "title:eP(\"profile.positionsValue\")",
+      "needle_character_offset": 30481,
+      "excerpt_start_character_offset": 30441,
+      "excerpt": "]!==ey||Y[26]!==ea||Y[27]!==eP?(u=ey??[{title:eP(\"profile.positionsValue\"),text:(0,eM.formatCurrencySmart)(ec),isLoading:el},{title:eP(\"profile.biggestWin\"),text:\"number\"==typeof ea?.largestWin&&ea.largestWin>0?(0,eM.formatCurrencySmart)(ea.largestWin):\"—\",isLoading:el||eS},{title:eP(\"profile.predictions\"),text:es?es.toLocaleString(\"en-US\"):\"0\",isLoading:el}],Y[21]=el,Y[22]=eS,Y[23]=es,Y[24]=ec,Y[25]=ey,Y[26]=ea,Y[27"
+    },
+    {
+      "source_url": "https://polymarket.com/@GCR",
+      "original_snapshot_sha256": "b98b350b9d05f57961af93aad7c93901af4b82fcae9396bac2d4755d217c68e3",
+      "needle": "Positions Value",
+      "needle_character_offset": 73660,
+      "excerpt_start_character_offset": 73500,
+      "excerpt": "lass=\"flex flex-col\"><p class=\"text-lg font-medium text-pk-content-primary\">$0.00</p><p class=\"text-xs font-medium text-pk-content-secondary whitespace-nowrap\">Positions Value</p></div><div class=\"w-px h-8 bg-pk-border self-center\"></div><div class=\"flex flex-col\"><p class=\"text-lg font-medium text-pk-content-primary\">"
+    }
+  ],
+  "findings": {
+    "pnl": "Public prediction Profile renderer prefixes $ to the title value.",
+    "position_value": "Saved Profile SSR renders $0.00 before Positions Value.",
+    "largest_win": "Inference: same formatCurrencySmart as Positions Value; ISO currency code and formatter implementation were not established. Supplier suppresses known zero, which ATHENA must not copy.",
+    "not_established": [
+      "ISO currency code",
+      "USD/pUSD/USDC identity or conversion",
+      "exact roundPnlToCents semantics",
+      "all six live intervals available"
+    ]
+  }
+}

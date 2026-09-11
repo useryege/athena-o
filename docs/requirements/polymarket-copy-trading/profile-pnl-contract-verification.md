@@ -106,3 +106,14 @@ YTD调用JavaScript本地年份/本地日期构造，**不是UTC年初，也没�
 - 上游网页/数据字段或消费链发生不能解释的变化。
 
 保留每项的source URL、抓取时间、T、时区、实际interval/fidelity、原始点与可用性。收益区间失败不能改变目标钱包身份或将真实0收益改成缺失；同样不能把资料不可用误报为0。以上是在现有“允许辅助资料unavailable”要求内保护证据准确性的适配边界，不引入额外收益计算口径。
+
+## 2026-09-11 补充：金额展示符号与币种边界
+
+添加页接线时确认 PnLView、positionValue 和 largestWin 没有币种字段。重新读取 2026-09-10 已取得的官方 Profile HTML 及两份 bundle，完整 SHA256 均与原证据相同；本次没有重新访问数据 API。定位片段、字符偏移及来源见[展示符号证据](evidence/trader-sync-profile-display-unit-2026-09-11.json)。
+
+- 公开预测市场 Profile 的 P/L 金额组件明确使用 `$` 前缀；不采用同 bundle 的其他产品图表或 token 转账分支作为证据。
+- Profile SSR 的 Positions Value 显示 `$0.00`。
+- Biggest Win 与 Positions Value 使用同一个 `formatCurrencySmart`。据此推断同用 `$` 展示；未取得该 formatter 的定义或非零 SSR 示例。供应商将 largestWin=0 显示为横线的逻辑不符合 ATHENA 的已知零值要求，不能复制。
+- 当前[官方持仓价值接口说明](https://docs.polymarket.com/api-reference/core/get-total-value-of-a-users-positions)仅定义 value 为 number，没有币种字段或单位说明。新 v2 钱包接口的鉴权、路径和响应与现有来源不同，不能用来替现有字段补币种或据此迁移来源。
+
+因此 UI 对这三类金额及 P/L 图轴使用供应商展示符号 `$`，说明“$ follows Polymarket’s display; currency code is not provided.”；Predictions 为计数。该符号不声明 ISO USD，也不表示链上 pUSD、USDC 或兑换关系。金额仍使用可用的精确字符串，已知零值显示零；不可用项保持原因，不通过加符号、重新计算标题金额或自行舍入来补齐。此结论是所保存网页构建的展示证据，不能扩展成永久 API 币种保证。
