@@ -5599,3 +5599,41 @@
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+.trader-sync-subscription-identity {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+}
+.trader-sync-subscription-identity > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.trader-sync-subscription-wallet {
+    overflow-wrap: anywhere;
+    margin-block: 8px;
+}
+.trader-sync-subscription-asof {
+    color: var(--athena-muted);
+    font-size: 12px;
+}
+.trader-sync-subscription-controls > div + div {
+    margin-top: 16px;
+}
+.trader-sync-observation-history {
+    padding-left: 24px;
+    overflow-wrap: anywhere;
+}
+.trader-sync-observation-history > li {
+    padding-block: 16px;
+    border-bottom: 1px solid var(--athena-border);
+}
+.trader-sync-observation-history p {
+    margin-block: 6px;
+}
+.trader-sync-subscription-row {
+    display: grid;
+    gap: 12px;
+    overflow-wrap: anywhere;
+}

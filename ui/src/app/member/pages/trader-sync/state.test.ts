@@ -1,3 +1,5 @@
+import type {HistoryPage, SubscriptionPage} from '../../trader-sync-models';
+import {blankCursorSession, saveHistorySession, readHistorySession, saveSubscriptionSession, readSubscriptionSession} from './state';
 import {captureTraderSyncScope, clearTraderSyncState, readAddDraft, saveAddDraft, saveNewSubscriptionFocus, readNewSubscriptionFocus} from './state';
 afterEach(clearTraderSyncState);
 test('captures owner and generation; clearing invalidates same-owner relogin and different owners permanently', () => {
@@ -56,4 +58,23 @@ test('only one owner draft is retained', () => {
     saveAddDraft({ownerId: 'B', input: 'two', note: '', noteEdited: false, returnPath: '/trader-sync', scrollY: 0});
     expect(readAddDraft('A')).toBeUndefined();
     expect(readAddDraft('B')?.input).toBe('two');
+});
+
+test('list and history return sessions are owner isolated and invalid scopes cannot restore cleared pages', () => {
+    const scope = captureTraderSyncScope('A');
+    const cursor = blankCursorSession<HistoryPage>();
+    cursor.cursors.push('opaque');
+    cursor.index = 1;
+    cursor.scrollY = 130;
+    saveHistorySession('A', 'sub', scope, cursor);
+    const list = {view: 'cancelled' as const, current: blankCursorSession<SubscriptionPage>(), cancelled: blankCursorSession<SubscriptionPage>()};
+    saveSubscriptionSession('A', scope, list);
+    expect(readHistorySession('A', 'sub')).toBe(cursor);
+    expect(readSubscriptionSession('A')).toBe(list);
+    expect(readHistorySession('B', 'sub')).toBeUndefined();
+    clearTraderSyncState();
+    saveHistorySession('A', 'sub', scope, cursor);
+    saveSubscriptionSession('A', scope, list);
+    expect(readHistorySession('A', 'sub')).toBeUndefined();
+    expect(readSubscriptionSession('A')).toBeUndefined();
 });

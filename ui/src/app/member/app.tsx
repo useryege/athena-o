@@ -54,6 +54,8 @@ import {
     HelpPage,
     NotificationsPage,
     TraderSyncAddPage,
+    TraderSyncSubscriptionsPage,
+    TraderSyncSubscriptionPage,
     MarketRadarHotPage,
     MarketRadarMoversPage,
     MarketRadarRealtimePage,
@@ -297,6 +299,9 @@ const navTrail = (items: NavItem[], targetKey: string): NavItem[] => {
 };
 
 const breadcrumbItems = (pathname: string) => {
+    if (pathname === '/trader-sync/subscriptions' || pathname.startsWith('/trader-sync/subscriptions/')) {
+        return [{title: 'Markets'}, {title: 'Trader Sync'}, {title: pathname === '/trader-sync/subscriptions' ? 'Subscriptions' : 'Subscription'}];
+    }
     const targetKey = selectedKey(pathname);
     const section = navSections.find(candidate => navTrail(candidate.children, targetKey).length > 0);
     const trail = section ? navTrail(section.children, targetKey) : [];
@@ -314,6 +319,8 @@ const breadcrumbItems = (pathname: string) => {
 };
 
 const routeTitle = (pathname: string) => {
+    if (pathname === '/trader-sync/subscriptions') return 'Subscriptions';
+    if (pathname.startsWith('/trader-sync/subscriptions/')) return 'Subscription';
     if (/^\/worm-trading\/combinations\/[^/]+\/execute\/?$/.test(pathname)) {
         return 'Execution Preview';
     }
@@ -465,6 +472,18 @@ const AppRoutes = (props: {
                 <Route path='/world-cup-corners' element={moduleRoute(AccountDataModule.WorldCupCorners, <WorldCupCornersPage />)} />
                 <Route path='/managed-oo/proposals' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOOProposalsPage />)} />
                 <Route path='/managed-oo/disputes' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOODisputesPage />)} />
+                <Route
+                    path='/trader-sync/subscriptions'
+                    element={traderSyncRoute(
+                        <TraderSyncSubscriptionsPage key={JSON.stringify([props.access.user.accountId, props.access.user.iss])} ownerId={props.access.user.accountId} />
+                    )}
+                />
+                <Route
+                    path='/trader-sync/subscriptions/:subscriptionId'
+                    element={traderSyncRoute(
+                        <TraderSyncSubscriptionPage key={JSON.stringify([props.access.user.accountId, props.access.user.iss])} ownerId={props.access.user.accountId} />
+                    )}
+                />
                 <Route
                     path='/trader-sync/add'
                     element={traderSyncRoute(

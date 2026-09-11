@@ -29,6 +29,9 @@ export const captureTraderSyncScope = (ownerId: string): ReadScope => {
 /** Sole module cleanup boundary; future drafts/page caches must be cleared here too. */
 export const clearTraderSyncState = (): void => {
     generation++;
+    subscriptionSessions.clear();
+    historySessions.clear();
+    subscriptionEdits.clear();
     addDraft = undefined;
     newSubscriptionFocus = undefined;
     const listeners = Array.from(invalidations.values());
@@ -58,3 +61,42 @@ export const saveNewSubscriptionFocus = (ownerId: string, subscriptionId: string
     newSubscriptionFocus = {ownerId, subscriptionId};
 };
 export const readNewSubscriptionFocus = (ownerId: string): string | undefined => (newSubscriptionFocus?.ownerId === ownerId ? newSubscriptionFocus.subscriptionId : undefined);
+
+export interface CursorSession<T> {
+    index: number;
+    cursors: Array<string | undefined>;
+    pages: Record<number, T>;
+    scrollY: number;
+}
+export interface SubscriptionListSession {
+    view: 'current' | 'cancelled';
+    current: CursorSession<import('../../trader-sync-models').SubscriptionPage>;
+    cancelled: CursorSession<import('../../trader-sync-models').SubscriptionPage>;
+}
+export const blankCursorSession = <T>(): CursorSession<T> => ({index: 0, cursors: [undefined], pages: {}, scrollY: 0});
+const subscriptionSessions = new Map<string, SubscriptionListSession>();
+const historySessions = new Map<string, CursorSession<import('../../trader-sync-models').HistoryPage>>();
+export const readSubscriptionSession = (ownerId: string) => subscriptionSessions.get(ownerId);
+export const saveSubscriptionSession = (ownerId: string, scope: ReadScope, value: SubscriptionListSession): void => {
+    if (scope.isCurrent() && scope.key === captureTraderSyncScope(ownerId).key) subscriptionSessions.set(ownerId, value);
+};
+export const readHistorySession = (ownerId: string, id: string) => historySessions.get(JSON.stringify([ownerId, id]));
+export const saveHistorySession = (ownerId: string, id: string, scope: ReadScope, value: CursorSession<import('../../trader-sync-models').HistoryPage>): void => {
+    if (scope.isCurrent() && scope.key === captureTraderSyncScope(ownerId).key) historySessions.set(JSON.stringify([ownerId, id]), value);
+};
+
+export type SubscriptionIntent =
+    | {action: 'pause' | 'resume' | 'cancel'; payload: import('../../trader-sync-service').ChangeRequest}
+    | {action: 'note'; payload: import('../../trader-sync-service').NoteRequest};
+export interface SubscriptionEdit {
+    intent?: SubscriptionIntent;
+    note?: string;
+    noteRevision?: string;
+    serverNote?: string;
+    needsRefresh?: 'note' | 'change';
+}
+const subscriptionEdits = new Map<string, SubscriptionEdit>();
+export const readSubscriptionEdit = (ownerId: string, id: string): SubscriptionEdit => subscriptionEdits.get(JSON.stringify([ownerId, id])) || {};
+export const saveSubscriptionEdit = (ownerId: string, id: string, scope: ReadScope, value: SubscriptionEdit): void => {
+    if (scope.isCurrent() && scope.key === captureTraderSyncScope(ownerId).key) subscriptionEdits.set(JSON.stringify([ownerId, id]), value);
+};

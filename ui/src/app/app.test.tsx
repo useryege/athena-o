@@ -168,7 +168,7 @@ describe('Trader Sync real Shell cleanup', () => {
     let tree: renderer.ReactTestRenderer;
     const member = (accountId = 'owner-A', iss = 'athena', level = 'read_write', revision = 1) =>
         parseUserInfo({loggedIn: true, accountId, username: accountId, iss, access: {loginEnabled: true, revision, moduleAccess: [{module: 'trader_sync', dataAccess: level}]}});
-    const mountMember = async (level = 'read_write') => {
+    const mountMember = async (level = 'read_write', path = '/trader-sync/add') => {
         ensureMemberBusinessServices();
         jest.spyOn(services.authService, 'bootstrap').mockResolvedValue({
             settings: authSettings,
@@ -176,7 +176,7 @@ describe('Trader Sync real Shell cleanup', () => {
         });
         jest.spyOn(services.memberNotifications, 'getTelegramSettings').mockResolvedValue({botAvailable: true, botUsername: 'bot'});
         jest.spyOn(services.users, 'get').mockResolvedValue(member());
-        window.history.replaceState(null, '', '/trader-sync/add');
+        window.history.replaceState(null, '', path);
         await act(async () => {
             tree = renderer.create(<App />);
         });
@@ -249,6 +249,26 @@ describe('Trader Sync real Shell cleanup', () => {
         await mountMember(level);
         expect(window.location.pathname).toBe('/account/access');
         expect(containsText(tree.toJSON(), 'Wallet address or Polymarket profile URL')).toBe(false);
+    });
+    test.each(['/trader-sync/subscriptions', '/trader-sync/subscriptions/sub-id'])('subscription deep link %s denies missing grant without a business request', async path => {
+        ensureMemberBusinessServices();
+        const list = jest.spyOn(services.traderSync, 'listSubscriptions');
+        const detail = jest.spyOn(services.traderSync, 'getSubscription');
+        const history = jest.spyOn(services.traderSync, 'listSubscriptionHistory');
+        await mountMember('none', path);
+        expect(window.location.pathname).toBe('/account/access');
+        expect(list).not.toHaveBeenCalled();
+        expect(detail).not.toHaveBeenCalled();
+        expect(history).not.toHaveBeenCalled();
+    });
+    test('subscription list has a real Shell title and breadcrumb', async () => {
+        const scroll = jest.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+        ensureMemberBusinessServices();
+        jest.spyOn(services.traderSync, 'listSubscriptions').mockResolvedValue({subscriptions: [], page: {}, quota: {used: 0, limit: 10}, asOf: '2026-09-11T00:00:00Z'});
+        await mountMember('read_write', '/trader-sync/subscriptions');
+        expect(document.title).toBe('Subscriptions · Athena');
+        expect(scroll).toHaveBeenCalledWith({top: 0, behavior: 'instant'});
+        expect(containsText(tree.toJSON(), 'Trader Sync')).toBe(true);
     });
     test('RW Add route renders the actual independent page', async () => {
         await mountMember();
