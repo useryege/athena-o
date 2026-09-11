@@ -1,6 +1,6 @@
 # Trader Sync / Activity Alerts 后端设计规格
 
-> 日期：2026-09-10。状态：已确认待实现；用户已整体确认完整书面规格。
+> 日期：2026-09-10。状态：已确认，实施进行中；用户已整体确认完整书面规格，分项进度见联合实现计划。
 >
 > 后端设计已整体确认并形成[实现计划](../plans/2026-09-10-trader-sync-activity-alerts.md)，尚未执行。用户随后要求先补 UI；[UI spec](2026-09-10-trader-sync-activity-alerts-ui-design.md)已整体确认，第 4 节的 UI 读取契约补充同时获确认；已有业务及后端架构决定继续有效。实现计划已扩展为21项前后端联合任务，尚未执行。
 
@@ -136,7 +136,7 @@ module1 腿的 legacy 无值或读取失败时，已持久目录和 Gamma 可提
 
 目录每页最多 100、支持 cursor，没有任意 PositionId 直接查询契约；不得在热路径无界扫完整目录。默认后台每 10 分钟开始一轮、有上轮则继续其游标不重叠启动，最多每秒一页，外部失败退避；查询和缓存指标独立统计。现有持仓和生命周期只作可选交叉核验，不能要求钱包仍有持仓或每次 TRADE 都带 SPLIT。
 
-目录用专属刷新行锁串行一个最多 5 秒的 HTTP 页请求，同事务保存本页映射、cursor 和下一页时刻；失败保留 cursor 并持久记录至少 1 秒后的重试时刻。该锁不涉及账户或钱包 gate，不能将网络持锁模式扩展到用户操作。
+目录采用两事务持久准入。第一事务在专属刷新行锁下，仅对已到期页写入准入 UUID 和数据库当前时刻加 6 秒的预约并提交；第二事务重锁并核对同 token/cursor，才调用一次 HTTP。本地单调 5 秒截止从准入 SQL 前起算，慢提交和重锁等待也占用它，不能重新计时；准入提交未知或已过截止不发请求。第二事务将映射、cursor、清 token 与下一页时刻原子提交，正常结算按 HTTP 返回后的数据库时刻加 1 秒（末页同时遵守 10 分钟轮次）恢复节奏。后段回滚仍保留已提交的 6 秒预约；未知提交重读实际状态，不重放旧响应。调度以数据库时差转本地单调等待并再次核验。这覆盖正常调度/数据库时钟与有界 HTTP 取消下的跨实例节流，不声称任意进程暂停或时钟跳跃下的物理发包证明。该锁不涉及账户或钱包 gate，不新增长期 session 锁；HTTP 前故障也可能保守占用预约。
 
 请求已经发出后父上下文取消，也要以有界清理保存节流状态再释放行锁，避免另一实例立即重试同页；取消不是“没有发过请求”的证明。清理失败须报告，不能静默吞掉。
 
@@ -221,8 +221,9 @@ WSS ACK、ping/pong、节点头新鲜只证明观察健康，不能证明服务�
 | source_records / source_candidates | 不变 raw、定位、首次接收、确认/版本证据、状态；候选绑定原 subscription/generation/attempt，唯一关系防重新归属。 |
 | activities | owner、subscription、generation、interval、source、成交事实、备注与形成时间；每订阅源记录唯一，无自动 TTL。 |
 | market_metadata / combo_leg_index | 来源键、精确映射与核验时间、可用性；保留已见关闭市场。与成交事实分离。 |
-| directory_refresh | 当前 cursor、轮次开始/完成时间、下一页时刻；同事务推进映射与游标，失败保留游标并节流。 |
-| summary_batches / items / parts | owner、binding revision、最老成员时间、真实首条起点或缺失、不可变成员/内容与 part 序号；activity 只属一个外发形态。 |
+| directory_refresh | 当前 cursor、轮次开始/完成时间、下一页时刻及可缺 admission UUID；先持久准入，再原子结算映射与游标，后段回滚仍保留共享预约。 |
+| summary_batches / items / parts | owner、binding revision、最老成员/冻结时间、真实首条起点或缺失、恢复基点、预算/本地等待证据、不可变成员/内容与 part 序号；activity 只属一个外发形态，同批跨部分保留完整多对多关系。 |
+| summary_heads | owner唯一的未解决首条及其批次、部分、当前attempt/许可关联；保护首条顺序，实际发送仍用account delivery，恢复必须核验旧sender停止与真实起点证据。 |
 | account_deliveries / delivery_attempts | 业务来源与资格、永久 eligibility_revoked_at/原因、payload digest、当前状态及 next_attempt_at；每次独立 attempt、sender incarnation、许可/起点/结果时间、provider message ID 和原因。 |
 | bot_updates / offsets / reply_outbox | Bot/update 唯一，消费结果、绑定事务、持久回复与消费进度同库原子。 |
 
@@ -255,7 +256,7 @@ stateDiagram-v2
 
 attempt 是一次发送事实，delivery 可经多个明确失败的 attempt 完成有限重试。总尝试最多 5 次，退避 1/2/4/8 秒；429 至少等 Retry-After，下一次仍重新授权。只有明确证明本次未成功的暂时错误可重试；本地未发出请求、明确 Telegram 拒绝与可能已接收分别分类。禁止 HTTP client、SDK 或代理隐藏重试。
 
-许可事务提交结果不确定时不盲发，先读取持久 attempt；不能恢复确认则不再发。明确成功后写库失败只补记同一 attempt 的 sent/message ID，不重新调用 Telegram。结果以 `(delivery_id,attempt_id,status=sending)` CAS 更新；sent/failed/unknown/cancelled 终态不被迟到回调复活。
+许可事务提交结果不确定时不盲发，先读取持久 attempt；不能恢复确认则不再发。摘要读回许可成功也不能证明原物理 session 仍持账户锁：连接失效时先结束原授权预算 guard 的事务收尾，继续发送须重新取得账户 gate 并核对同一 head/permit/发送实例，不能只凭非空连接对象、再次授权或重计 attempt。恢复等待可取消，无法安全恢复则不发并保留原因；故障造成的成员时间空隙和锁等待如实计入，不声称期间持续持锁。明确成功后写库失败只补记同一 attempt 的 sent/message ID，不重新调用 Telegram。结果以 `(delivery_id,attempt_id,status=sending)` CAS 更新；sent/failed/unknown/cancelled 终态不被迟到回调复活。
 
 超时、断流、取消或无法解析结果且可能已接收时 unknown，永不自动重发。缺少 started_at 与结果未知是两件事：即使起点补记失败，明确成功回执仍记 sent；started_at 继续缺失。已知结果在内存中可有限重试持久化，结果证据随进程丢失则 unknown。
 
@@ -344,4 +345,11 @@ Bot update 的绑定修改、消费进度与回复 outbox 在同一事务；upda
 
 相关长期文档已同步本轮业务边界、所选架构与证据；既有 accountaccess、Notification、运行设计继续描述当前已实现行为，不把此方案提前标为已运行。没有待用户选择的技术事实；协议升级、资料不可用和未完成运行测试均有明确处理或验收条件。
 
-用户已整体确认后端与 UI 两份书面规格，读取/分页补充也已确认；现已按 writing-plans 形成[21项前后端联合实现任务与验收计划](../plans/2026-09-10-trader-sync-activity-alerts.md)。当前未开始业务实现或运行验收。
+用户已整体确认后端与 UI 两份书面规格，读取/分页补充也已确认；现已按 writing-plans 形成[21项前后端联合实现任务与验收计划](../plans/2026-09-10-trader-sync-activity-alerts.md)，正在按该计划逐项实现和验证。各任务完成状态以计划为准；部分模块通过验证不代表全路径运行验收已经完成。
+
+
+## 实施接续：进程生命周期与外部代理
+
+Trader Sync后台与athena-server进程同生命周期；HTTP/gRPC平滑重启保留同一套采集、投影及目录实例，进程退出才取消并等待后台、再释放共享pool与所拥有的client。组件返回的真实fatal必须传回CLI，不能被普通重启循环吞掉。目录故障及刷新积压独立报告；DB暂时失败或提交结果未知先重新锁定并读取持久状态，未取得状态锁或读回失败不发页，不能单凭目录故障结束健康Collector的观察epoch。发页后回滚或提交未知的跨实例节流由目录共享协议保证，本地退避或退出runtime不能替代；错误时不使用未确认提交的next安排下一轮。单纯父级取消可正常退出，与持久化或收尾错误合并的取消仍保留原因。
+
+外部HTTP/WSS、Gamma/Profile及目录使用显式可选ATHENA_TRADER_SYNC_PROXY_URL；空串直连，本地WSL未设置时沿用仓库gateway:10809默认策略，其他未配置环境直连。不隐式继承机器全局代理或Token专用字段；不改变单供应商与手动切换决定。

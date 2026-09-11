@@ -699,8 +699,8 @@ func ClassifyActivity(windowCount int64) string {
 
 **Files**
 - 新增：`internal/tradersync/summary.go`、`internal/tradersync/types/summary.go`、`internal/tradersync/store/summaries.go`、`internal/tradersync/store/queries/summaries.sql`、`internal/notification/store/summary_heads.go`、`internal/notification/summary_source.go`。
-- 修改：`internal/tradersync/render.go`、`internal/accountstate/txgate/gate.go`、`internal/notification/store/attempts.go`、`internal/notification/dispatcher.go`、权威`internal/accountstate/store/migrations/000001_init.sql`。
-- 测试：`internal/tradersync/render_test.go`、`internal/tradersync/summary_test.go`、`internal/tradersync/store/summaries_integration_test.go`、`internal/notification/summary_source_integration_test.go`、`internal/accountstate/txgate/session_integration_test.go`。
+- 修改：`internal/accountstate/txgate/gate.go`、`internal/notification/store/attempts.go`、`internal/notification/source.go`、`internal/notification/worker.go`、`internal/notification/budget.go`、权威`internal/accountstate/store/migrations/000001_init.sql`。
+- 测试：`internal/tradersync/summary_test.go`、`internal/tradersync/store/summaries_integration_test.go`、`internal/notification/summary_source_integration_test.go`、`internal/notification/summary_dispatcher_integration_test.go`、`internal/accountstate/txgate/session_integration_test.go`。
 - 真实消费者接续：`internal/tradersync/activity/`纯摘要渲染、`internal/notification/delivery/payload.go`及摘要part窄事务入队、`notification/store/queries/delivery_attempts.sql`的summary关联资格、account ready查询排除首条抢领；同步同次permit发送核心、budget非阻塞准入与service/recovery的摘要head接续及对应测试/生成物。notification/store不得反向import tradersync/store或根包。
 **Interfaces**
 - 消费：任务4 `WorkSource`、任务2 `Permit`/Sender实际started回调、任务10memberships。
@@ -710,7 +710,7 @@ func ClassifyActivity(windowCount int64) string {
 - 产出：`(*SummarySource).Ready(ctx context.Context,now time.Time) ([]delivery.Candidate,error)`；`Dispatch(ctx context.Context,c delivery.Candidate,onStarted func(time.Time)) error`，实现WorkSource；摘要首条ready给出未来notBefore/deadline，后续部分普通许可。
 - 摘要part入队采用独立`EnqueueSummaryPartTx`窄事务入口及稳定batch/part幂等身份，保持activity_id=NULL、source=trader_sync、WorkKind=account；在最终许可SQL以实际part/batch/冻结成员核验资格，不拿首个ActivityID冒充整部分。RenderedPart.PayloadDigest使用最终分页plain载荷经现有delivery.EncodePayload后的原bytes摘要；实际发送只解码已提交Permit.Payload，不另传正文。
 
-- [ ] **步骤1：写首条时间窗口及完整分条红灯。**
+- [x] **步骤1：写首条时间窗口及完整分条红灯。**
 
 ```go
 func TestSummaryWindowHasBothBounds(t *testing.T) {
@@ -725,7 +725,7 @@ func TestSummaryWindowHasBothBounds(t *testing.T) {
 
 render测试构造20市场、多备注快照、跨条Combo、emoji和HTML特殊字符；解析后每部分≤4096字符且所有输入activity/market/Outcome/方向/链接可追溯，不以截断丢成员。运行 `go test ./internal/tradersync -run 'TestSummaryWindow|TestRender' -count=1`。
 
-- [ ] **步骤2：实现窗口和冻结schema。**新增`trader_sync_summary_batches`、`trader_sync_summary_parts`、`trader_sync_summary_part_items`；batch保存owner/binding_revision/oldest/first_started_at/恢复基点，part保存不可变text/digest/index/total及delivery_id，member固定batch唯一。group key含wallet/note_snapshot/market/Outcome/side。默认纯文本Telegram正文（不设parse_mode），同时以Unicode code point和UTF-16 code unit保守计数≤4096来分完整展示行，链接以完整URL显示；超长单行拆成有明确延续标识的多行，不能只取前4096字符。
+- [x] **步骤2：实现窗口和冻结schema。**新增`trader_sync_summary_batches`、`trader_sync_summary_parts`、`trader_sync_summary_part_items`；batch保存owner/binding_revision/oldest/first_started_at/恢复基点，part保存不可变text/digest/index/total及delivery_id，member固定batch唯一。group key含wallet/note_snapshot/market/Outcome/side。默认纯文本Telegram正文（不设parse_mode），同时以Unicode code point和UTF-16 code unit保守计数≤4096来分完整展示行，链接以完整URL显示；超长单行拆成有明确延续标识的多行，不能只取前4096字符。
 
 ```go
 func SummaryWindow(oldest time.Time,previousStart *time.Time) (time.Time,time.Time) {
@@ -739,7 +739,7 @@ func SummaryWindow(oldest time.Time,previousStart *time.Time) (time.Time,time.Ti
 
 先确定所有parts再写最终n/m，若页码增加使边界变化重新切分至稳定；部分与activity多对多，不把跨部分activity只关联首条。冻结同事务令summary membership由waiting进入frozen；撤权先于冻结则cancelled_before_freeze、不建空批次。活动/摘要站内链接分别固定为member `/trader-sync/activities/{id}`、`/trader-sync/summaries/{id}`，保留部署base，不能用旧占位路径。稳定SQL后 `make sqlc-local`。
 
-- [ ] **步骤3：实现冻结至实际started的短session gate。**worker/chat/Bot槽在锁前准备；取专用连接的session advisory lock，BeginTx核验资格、冻结此刻全部同revision待汇总成员、写parts与首条许可、Commit，紧接进入一次Sender。RoundTrip入口started握手后补记起点再释放gate，结果等HTTP完成另开短CAS。RecordStarted只更新attempt/start事实，不再次取得account gate；否则会与持有者自锁。获取槽后锁等待超出槽有效性时释放并重新排队，未取得有效许可不能发。
+- [x] **步骤3：实现冻结至实际started的短session gate。**worker/chat/Bot槽在锁前准备；取专用连接的session advisory lock，BeginTx核验资格、冻结此刻全部同revision待汇总成员、写parts与首条许可、Commit，紧接进入一次Sender。RoundTrip入口started握手后补记起点再释放gate，结果等HTTP完成另开短CAS。RecordStarted只更新attempt/start事实，不再次取得account gate；否则会与持有者自锁。获取槽后锁等待超出槽有效性时释放并重新排队，未取得有效许可不能发。
 
 ```sql
 -- AcquireAccountSession使用固定连接，键与WithAccountTx完全相同。
@@ -750,14 +750,16 @@ SELECT pg_advisory_unlock(hashtextextended('athena:account:' || $1::text,0));
 
 若本地校验未进HTTP，发送结果返回且无started，释放gate并按明确失败处理；若started写库失败，短deadline后关闭/释放连接并记录缺失，在进程内用已观测monotonic起点维持间隔。不能持锁重试至HTTP回执。重启必须确认旧sender停止；起点无证据时采用恢复时刻为下一批保守基点并标异常，不伪造first_started_at。
 
-- [ ] **步骤4：写冻结竞态与混合部分结果集成测试。**用真实两连接：首条冻结完成后阻塞HTTP入口，同时发起新activity投影；断言其无法获得recorded_at，直至started已记录且gate释放；HTTP响应仍阻塞时允许新活动/撤权完成。注入started持久失败仍明确ACK成功，断言sent且started缺失；成功/unknown部分不重发，临时失败只重试该部分≤5次，整批只有all sent成功。
-- [ ] **步骤5：验证调度在旧批未完时保留下批首条预算。**可控clock运行第10/11条、紧贴60秒成员、多个owner、Bot回复/系统消息竞争及同owner12条集中；检查起点间隔、最老成员deadline、公平性、所有部分完整度和失约计数。对本地渲染/锁/调度造成miss保留失败样本，不改recorded_at或cohort制造通过。执行本任务单元、真实DB与`-race`测试，提交 `feat(trader-sync): deliver complete summaries with durable timing boundaries`。
+- [x] **步骤4：写冻结竞态与混合部分结果集成测试。**用真实两连接：首条冻结完成后阻塞HTTP入口，同时发起新activity投影；断言其无法获得recorded_at，直至started已记录且gate释放；HTTP响应仍阻塞时允许新活动/撤权完成。注入started持久失败仍明确ACK成功，断言sent且started缺失；成功/unknown部分不重发，临时失败只重试该部分≤5次，整批只有all sent成功。
+- [x] **步骤5：验证调度在旧批未完时保留下批首条预算。**可控clock运行第10/11条、紧贴60秒成员、多个owner、Bot回复/系统消息竞争及同owner12条集中；检查起点间隔、最老成员deadline、公平性、所有部分完整度和失约计数。对本地渲染/锁/调度造成miss保留失败样本，不改recorded_at或cohort制造通过。执行本任务单元、真实DB与`-race`测试，提交 `feat(trader-sync): deliver complete summaries with durable timing boundaries`。
+
+本项验证记录：真实组合同时保留monotonic与UTC起点。当前环境曾出现约3.8秒墙钟前移，首发后1秒形成的最紧样本发生失约并保留；独立首发后5秒实际形成样本在相同60秒阈值下达标，本地暂停负样本验证真实失约计数。该结果不证明任意时钟跳跃下所有紧窗达标，不替代任务13全路径时效与容量验收。
 
 ## 任务12：公共API、隐私查询、配置与进程组合
 
 **Files**
 - 新增：`pkg/apis/application/v1alpha1/trader_sync_types.go`、`pkg/apis/application/v1alpha1/trader_sync_protomessage.go`、`internal/server/tradersync/tradersync.proto`、`internal/server/tradersync/tradersync.go`、`internal/tradersync/service.go`、`internal/tradersync/pagination.go`、`internal/tradersync/store/reads.go`、`internal/tradersync/store/queries/reads.sql`。
-- 修改：`internal/server/athena-server.go`、`internal/server/authz.go`、`cmd/athena-server/commands/athena-server.go`、`cmd/athena-notification/commands/athena_notification.go`、`internal/notification/server.go`、`internal/tradersync/config.go`、`hack/local-runtime.sh`、`docker-compose.prod.yml`；只有实际生成契约发现问题才调整`hack/generate-proto.sh`的精确schema处理。
+- 修改：`internal/server/athena-server.go`、`internal/server/authz.go`、`cmd/athena-server/commands/athena-server.go`、`cmd/athena-notification/commands/athena_notification.go`、`internal/notification/server.go`、`internal/tradersync/config.go`、`hack/local-runtime.sh`、`Procfile`及必要的本地启动helper、`docker-compose.prod.yml`；只有实际生成契约发现问题才调整`hack/generate-proto.sh`的精确schema处理。
 - 生成：`pkg/apis/application/v1alpha1/generated.proto`、`pkg/apis/application/v1alpha1/generated.pb.go`、`pkg/apis/application/v1alpha1/generated.protomessage.pb.go`、`pkg/apis/application/v1alpha1/zz_generated.deepcopy.go`、`pkg/apiclient/tradersync/tradersync.pb.go`、`pkg/apiclient/tradersync/tradersync.pb.gw.go`、`assets/swagger.json`。
 - 测试：`internal/server/tradersync/tradersync_test.go`、`internal/server/tradersync/contract_test.go`、`internal/server/authz_test.go`、`internal/tradersync/pagination_test.go`、`internal/tradersync/service_test.go`、`internal/tradersync/store/reads_integration_test.go`。
 **Interfaces**
@@ -883,9 +885,11 @@ input:=tsmodel.CreateInput{Token:req.ConfirmationToken,RequestID:req.RequestId,N
 
 protogen使用GOPATH的仓库路径：执行前确认脚本实际解析到本次隔离工作区，必要时为命令设置本任务专用GOPATH并建立对应symlink；不得让生成器写到另一个用户checkout。Swagger的全局int64处理不应改变普通string金额/ID；用真实JSON测试确认casing。
 
-- [ ] **步骤4：组合现有两进程并注册完整生命周期。**AthenaServiceSet字段、newAthenaServiceSet构造、gRPC registration、gateway registration及Run/Close全部接入；只启动一个Collector/Projector/目录任务；每个Run由Service.Run使用errgroup与同一取消context管理，Close取消并等待退出，不能重复Run开启多个实例。账户store持有pool，TS和notification adapter借用；server关闭时先停后台再关pool，notification进程另有自己的pool。复用任务6已经在NewServer中完成的权限hook注入，不延迟到newAthenaServiceSet，也不覆盖已安装hook。通知进程注册account/system/reply/summary源，共用唯一dispatcher/poller，启动前确认旧sender停止，不能自动从过期lease判定安全接管。
+- [ ] **步骤4：组合现有两进程并注册完整生命周期。**AthenaServiceSet字段、newAthenaServiceSet构造、gRPC registration、gateway registration及Run/Close全部接入；只启动一个Collector/Projector/目录任务；每个Run由Service.Run使用errgroup与同一取消context管理，Close取消并等待退出，不能重复Run开启多个实例。账户store持有pool，TS和notification adapter借用；server关闭时先停后台再关pool，notification进程另有自己的pool。复用任务6已经在NewServer中完成的权限hook注入，不延迟到newAthenaServiceSet，也不覆盖已安装hook。通知进程注册account/system/reply/summary源，共用唯一dispatcher/poller，启动前确认旧sender停止，不能自动从过期lease判定安全接管。TS后台只随API进程启动/退出，不因HTTP/gRPC graceful restart重建；后台fatal通过Run错误出口结束CLI重启循环，先cancel/join再关pool/client。目录刷新故障独立报告阶段、HTTP是否已发、提交是否已确认及收尾错误；可恢复的DB/提交未知通过重新锁定并读取持久状态裁定，不按目录错误类别终止健康Collector。未拿到目录状态锁或读回失败不发页，错误时不按未确认提交的next等待整轮；取消合并真实错误仍保留原因。须补足发页后事务回滚丢失节流的跨实例接续边界，并用真实双实例故障测试证明；本地退避或退出进程不能替代共享发页约束。允许同步目录Run/store协议及实际初始化/CLI消费者和相关生命周期测试。
 
-配置显式`ATHENA_TRADER_SYNC_HTTP_URL`、`ATHENA_TRADER_SYNC_WSS_URL`、`ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY`及spec默认节奏，来源地址/version registry由核验值初始化；读取现有代理配置语义。HMAC key由部署配置提供，不每次重启随机生成导致全部cursor失效。端点缺失明确报告不可监控，不用未配置的dRPC自动兜底，不新增独立库/服务端口；沿用5秒发送专属timeout，Bot30秒poll不被全局5秒timeout截断。
+目录协议接续：现有refresh行新增nullable admission_id UUID。第一短TX仅在到期时写token及DB now+6秒并明确提交，第二TX重锁核验同token/cursor并跨一次HTTP保存映射/游标；HTTP原5秒截止从准入UPDATE前单调时点起算，覆盖慢提交/重锁等待，超期或准入提交未知绝不fetch。正常结算清token并恢复完成后+1秒/末页10分钟原公式，后段回滚保留第一TX预约；旧事务不得换连接补写旧响应。错误后重读确认状态，调度按DB now差值转本地单调等待。以真实双实例+回环覆盖post-send upsert回滚、provider失败后结算失败、两阶段COMMIT未知、第二TX锁等待超期、断连接/旧响应、取消收尾和DB时差；目录错误不单独关闭健康Collector。此项修正Task8单TX请求后回滚会丢节流的已知缺口；正常调度/DB时钟及ctx取消边界下保证共享节流，不宣称任意暂停/时钟跳跃下的物理发包证明。所需schema/query与本项读取SQL形成稳定输入批次后统一生成，不手改sqlc产物。
+
+配置显式`ATHENA_TRADER_SYNC_HTTP_URL`、`ATHENA_TRADER_SYNC_WSS_URL`、`ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY`及spec默认节奏，来源地址/version registry由核验值初始化；可选`ATHENA_TRADER_SYNC_PROXY_URL`统一TS外部HTTP/WSS、Gamma/Profile/目录的显式代理，空串直连，本地WSL未设置时沿用gateway:10809默认策略，非WSL/部署未配置直连，不隐式借Token字段或系统代理。本地默认在Goreman合并.env与继承环境之后判定，已设置空串必须保留，不能在dotenv前export默认值而遮盖.env；实际transport显式设置代理，不靠脚本unset全局代理。专用TS键不接管Telegram，不改变Token现有加载顺序。HMAC key由部署配置提供，不每次重启随机生成导致全部cursor失效。端点缺失明确报告不可监控，不用未配置的dRPC自动兜底，不新增独立库/服务端口；沿用5秒发送专属timeout，Bot30秒poll不被全局5秒timeout截断。
 
 ```go
 // NewServer中accountStateStore创建后立即安装；它不启动Collector。
