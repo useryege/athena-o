@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {Link, useParams} from 'react-router-dom';
+import {Link, useParams, useLocation} from 'react-router-dom';
 import {AppPage, Section} from '../../../components';
 import {useVisibleQuery} from '../../../shared/use-visible-query';
 import {memberServices as services} from '../../services';
@@ -47,13 +47,17 @@ const ActivityDetail = ({ownerId, activityId}: {ownerId: string; activityId: str
     const item = scope.isCurrent() && !isDetailNotFound(query.error) ? query.data : undefined;
     const controller = useDetailSession(ownerId, `activity/${activityId}`, !!item);
     const progress = item?.summaryProgress;
+    // Source belongs to this history entry; resource sessions retain only pages and scroll.
+    const navigationState: unknown = useLocation().state;
+    const summarySource = navigationState && typeof navigationState === 'object' ? (navigationState as {traderSyncSummaryBatchId?: unknown}).traderSyncSummaryBatchId : undefined;
+    const returnPath = typeof summarySource === 'string' && /^[1-9]\d*$/.test(summarySource) ? `/trader-sync/summaries/${summarySource}` : undefined;
     return (
         <AppPage
             title='Activity'
             subtitle='The published trade, its original evidence and notification results.'
             extra={
-                <Link to={controller.session.returnPath || '/trader-sync'} onClick={controller.remember}>
-                    {controller.session.returnPath ? 'Back to summary batch' : 'Back to Trader Sync'}
+                <Link to={returnPath || '/trader-sync'} onClick={controller.remember}>
+                    {returnPath ? 'Back to summary batch' : 'Back to Trader Sync'}
                 </Link>
             }>
             <div className='trader-sync-detail trader-sync-home'>

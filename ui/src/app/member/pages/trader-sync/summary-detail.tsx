@@ -300,15 +300,7 @@ const SummaryDetail = ({ownerId, batchId}: {ownerId: string; batchId: string}) =
                             )}
                             <DetailReadError error={activities.error} reload={activities.reload} lastUpdated={activities.page?.page.asOf} label='Batch activities' />
                             {activities.page ? (
-                                <ActivityFeed
-                                    activities={activities.page.activities}
-                                    onOpen={controller.remember}
-                                    onOpenActivity={activityId => {
-                                        const resource = `activity/${activityId}`;
-                                        const saved = readDetailSession(ownerId, resource) || blankDetailSession();
-                                        saveDetailSession(ownerId, resource, scope, {...saved, returnPath: `/trader-sync/summaries/${batchId}`});
-                                    }}
-                                />
+                                <ActivityFeed activities={activities.page.activities} onOpen={controller.remember} summaryBatchId={batchId} />
                             ) : activities.loading ? (
                                 <p role='status'>Loading activities…</p>
                             ) : null}

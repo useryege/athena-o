@@ -1,5 +1,5 @@
 import renderer, {act} from 'react-test-renderer';
-import {MemoryRouter, Route, Routes} from 'react-router-dom';
+import {MemoryRouter, Route, Routes, Link} from 'react-router-dom';
 import {deliveryLabel, NotificationResult} from './notification-result';
 import {TradeFacts} from './trade-facts';
 import {ComboConditions} from './combo-conditions';
@@ -206,10 +206,9 @@ test('long Combo preserves every leg including unavailable metadata and verified
     tree.root.findAllByType('a')[0].props.onClick({stopPropagation});
     expect(stopPropagation).toHaveBeenCalledTimes(1);
 });
-test('activity open callback identifies only the opened activity and preserves the shared save callback', async () => {
+test('activity links carry summary navigation state while subscription links only save their resource session', async () => {
     const {ActivityFeed} = await import('./activity-feed');
     const onOpen = jest.fn();
-    const onOpenActivity = jest.fn();
     const Feed = ActivityFeed as React.ComponentType<any>;
     await render(
         <Feed
@@ -218,16 +217,17 @@ test('activity open callback identifies only the opened activity and preserves t
                 {...activity, id: '11'}
             ]}
             onOpen={onOpen}
-            onOpenActivity={onOpenActivity}
+            summaryBatchId='7'
         />
     );
-    const links = tree.root.findAllByType('a');
-    links.find(link => link.props.href === '/trader-sync/activities/11')!.props.onClick({defaultPrevented: true});
-    expect(onOpenActivity).toHaveBeenCalledWith('11');
-    expect(onOpen).toHaveBeenCalledTimes(1);
-    onOpenActivity.mockClear();
-    links.find(link => link.props.href.includes('/subscriptions/'))!.props.onClick({defaultPrevented: true});
-    expect(onOpenActivity).not.toHaveBeenCalled();
+    const activityLink = tree.root.findAllByType(Link).find(link => link.props.to === '/trader-sync/activities/11')!;
+    expect(activityLink.props.state).toEqual({traderSyncSummaryBatchId: '7'});
+    const subscriptionLink = tree.root.findAllByType(Link).find(link => String(link.props.to).includes('/subscriptions/'))!;
+    expect(subscriptionLink.props.state).toBeUndefined();
+    act(() => {
+        activityLink.props.onClick!({} as any);
+        subscriptionLink.props.onClick!({} as any);
+    });
     expect(onOpen).toHaveBeenCalledTimes(2);
 });
 test('not-found after a prior success hides the trade and uses the same unavailable message', async () => {
@@ -302,4 +302,29 @@ test('selected metadata stays stable until selection clears while finality evide
     (selection as any).isCollapsed = true;
     act(() => document.dispatchEvent(new Event('selectionchange')));
     expect(text()).toContain('Changed selected title');
+});
+
+test.each([
+    [{traderSyncSummaryBatchId: '7'}, '/trader-sync/summaries/7'],
+    [{traderSyncSummaryBatchId: 'https://external.example'}, '/trader-sync'],
+    [{traderSyncSummaryBatchId: '7?ownerId=other'}, '/trader-sync'],
+    [{traderSyncSummaryBatchId: '../7'}, '/trader-sync'],
+    [{traderSyncSummaryBatchId: '0'}, '/trader-sync'],
+    [{traderSyncSummaryBatchId: 7}, '/trader-sync'],
+    [{ownerId: 'other', returnPath: 'https://external.example'}, '/trader-sync'],
+    [null, '/trader-sync']
+])('activity navigation accepts only a positive summary ID in current location state: %j', async (state, destination) => {
+    jest.spyOn(services.traderSync, 'getActivity').mockResolvedValue(activity);
+    await act(async () => {
+        tree = renderer.create(
+            <MemoryRouter initialEntries={[{pathname: '/trader-sync/activities/12', state}]} future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                <Routes>
+                    <Route path='/trader-sync/activities/:activityId' element={<TraderSyncActivityPage ownerId='A' />} />
+                </Routes>
+            </MemoryRouter>
+        );
+    });
+    const back = tree.root.findAllByType('a').find(link => /^Back to /.test(String(link.props.children)))!;
+    expect(back.props.href).toBe(destination);
+    expect(services.traderSync.getActivity).toHaveBeenCalledWith('12');
 });

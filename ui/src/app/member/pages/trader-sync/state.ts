@@ -124,7 +124,6 @@ export interface DetailCursorSession<T> {
 }
 export interface DetailSession {
     scrollY: number;
-    returnPath?: string;
     parts: DetailCursorSession<import('../../trader-sync-models').PartPage>;
     activities: DetailCursorSession<import('../../trader-sync-models').ActivityPage>;
 }

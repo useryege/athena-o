@@ -84,7 +84,7 @@ const Notification = ({activity}: {activity: Activity}) => {
         </>
     );
 };
-const ActivityRow = React.memo(({activity, onOpen, onOpenActivity}: {activity: Activity; onOpen: () => void; onOpenActivity?: (activityId: string) => void}) => {
+const ActivityRow = React.memo(({activity, onOpen, summaryBatchId}: {activity: Activity; onOpen: () => void; summaryBatchId?: string}) => {
     const row = React.useRef<HTMLElement>(null);
     const latest = React.useRef(activity.metadata);
     latest.current = activity.metadata;
@@ -133,20 +133,18 @@ const ActivityRow = React.memo(({activity, onOpen, onOpenActivity}: {activity: A
                 {activity.finalityAnomaly && <p className='trader-sync-anomaly'>Finality anomaly</p>}
                 <Link
                     to={`/trader-sync/activities/${activity.id}`}
-                    onClick={() => {
-                        onOpen();
-                        onOpenActivity?.(activity.id);
-                    }}>
+                    state={summaryBatchId && /^[1-9]\d*$/.test(summaryBatchId) ? {traderSyncSummaryBatchId: summaryBatchId} : undefined}
+                    onClick={onOpen}>
                     View activity
                 </Link>
             </div>
         </article>
     );
 });
-export const ActivityFeed = ({activities, onOpen, onOpenActivity}: {activities: Activity[]; onOpen: () => void; onOpenActivity?: (activityId: string) => void}) => (
+export const ActivityFeed = ({activities, onOpen, summaryBatchId}: {activities: Activity[]; onOpen: () => void; summaryBatchId?: string}) => (
     <div className='trader-sync-feed'>
         {activities.map(activity => (
-            <ActivityRow key={activity.id} activity={activity} onOpen={onOpen} onOpenActivity={onOpenActivity} />
+            <ActivityRow key={activity.id} activity={activity} onOpen={onOpen} summaryBatchId={summaryBatchId} />
         ))}
     </div>
 );

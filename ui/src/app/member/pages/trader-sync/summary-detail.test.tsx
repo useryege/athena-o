@@ -1,5 +1,5 @@
 import renderer, {act} from 'react-test-renderer';
-import {MemoryRouter, Route, Routes} from 'react-router-dom';
+import {MemoryRouter, Route, Routes, createMemoryRouter, RouterProvider} from 'react-router-dom';
 import {TraderSyncSummaryPage} from './summary-detail';
 import {CursorNavigation} from './cursor-navigation';
 import {clearTraderSyncState, readDetailSession} from './state';
@@ -221,7 +221,7 @@ test('failed first member reads show an error without pretending to load forever
     expect(text()).not.toContain('No activities.');
 });
 
-test('summary-to-activity round trip writes only the opened activity return context and restores both cursors', async () => {
+test('summary-to-activity round trip restores both independent cursor pages', async () => {
     const {TraderSyncActivityPage} = await import('./activity-detail');
     jest.mocked(services.traderSync.listActivities).mockResolvedValue({
         ...activityPage(),
@@ -243,6 +243,8 @@ test('summary-to-activity round trip writes only the opened activity return cont
     });
     jest.mocked(services.traderSync.listSummaryParts).mockResolvedValue(partPage('2', undefined));
     await click('Summary part pages', 'Next');
+    jest.mocked(services.traderSync.listActivities).mockResolvedValue(activityPage('11', 'second-refresh', undefined));
+    await click('Summary activity pages', 'Next');
     const event = () => ({button: 0, defaultPrevented: false, preventDefault: jest.fn(), metaKey: false, altKey: false, ctrlKey: false, shiftKey: false});
     await act(async () =>
         tree.root
@@ -251,7 +253,7 @@ test('summary-to-activity round trip writes only the opened activity return cont
             .props.onClick(event())
     );
     expect(text()).toContain('Trade facts');
-    expect(readDetailSession('A', 'activity/11')?.returnPath).toBe('/trader-sync/summaries/7');
+    expect(tree.root.findAllByType('a').find(link => link.props.children === 'Back to summary batch')?.props.href).toBe('/trader-sync/summaries/7');
     expect(readDetailSession('A', 'activity/12')).toBeUndefined();
     await act(async () =>
         tree.root
@@ -260,16 +262,108 @@ test('summary-to-activity round trip writes only the opened activity return cont
             .props.onClick(event())
     );
     expect(tree.root.findAll(n => n.props['data-part-id']).map(n => n.props['data-part-id'])).toEqual(['2']);
-    expect(services.traderSync.listActivities).toHaveBeenLastCalledWith({summaryBatchId: '7', pageSize: 50, refreshCursor: 'activity-refresh'});
+    expect(readDetailSession('A', 'summary/7')?.parts.index).toBe(1);
+    expect(readDetailSession('A', 'summary/7')?.activities.index).toBe(1);
+    expect(services.traderSync.listActivities).toHaveBeenLastCalledWith({summaryBatchId: '7', pageSize: 50, refreshCursor: 'second-refresh'});
 });
 
 test('an invalid part cursor can restart its lane without discarding the activity snapshot', async () => {
-    await mount(); jest.mocked(services.traderSync.listSummaryParts).mockRejectedValue({response: {body: {code: 3, message: 'invalid cursor'}}});
+    await mount();
+    jest.mocked(services.traderSync.listSummaryParts).mockRejectedValue({response: {body: {code: 3, message: 'invalid cursor'}}});
     await click('Summary part pages', 'Next');
-    const recover = tree.root.findAllByType('button').find(button => button.props.children === 'Return to first part page'); expect(recover).toBeDefined();
+    const recover = tree.root.findAllByType('button').find(button => button.props.children === 'Return to first part page');
+    expect(recover).toBeDefined();
     jest.mocked(services.traderSync.listSummaryParts).mockResolvedValue(partPage());
     await act(async () => recover!.props.onClick());
     expect(services.traderSync.listSummaryParts).toHaveBeenLastCalledWith('7', {pageSize: 50, cursor: undefined, activityId: undefined});
     expect(readDetailSession('A', 'summary/7')?.activities.pages[0].page.refreshCursor).toBe('activity-refresh');
     expect(tree.root.findAll(n => n.props['data-part-id']).map(n => n.props['data-part-id'])).toEqual(['1']);
+});
+
+test('a later home visit to the same activity returns home while history keeps its original summary source', async () => {
+    const {TraderSyncActivityPage} = await import('./activity-detail');
+    const {TraderSyncHomePage} = await import('./home');
+    const {readActivitySession} = await import('./state');
+    jest.spyOn(services.traderSync, 'getActivity').mockResolvedValue({...activity, id: '11'});
+    jest.spyOn(services.traderSync, 'listSubscriptions').mockResolvedValue({subscriptions: [], page: {}, quota: {used: 0, limit: 10}, asOf: activity.recordedAt});
+    jest.spyOn(services.memberNotifications, 'getTelegramSettings').mockResolvedValue({} as any);
+    jest.mocked(services.traderSync.listActivities).mockImplementation(input => Promise.resolve(input?.summaryBatchId ? activityPage('11') : activityPage('11', 'home-refresh')));
+    const router = createMemoryRouter(
+        [
+            {path: '/trader-sync/summaries/:batchId', element: <TraderSyncSummaryPage ownerId='A' />},
+            {path: '/trader-sync/activities/:activityId', element: <TraderSyncActivityPage ownerId='A' />},
+            {path: '/trader-sync', element: <TraderSyncHomePage ownerId='A' />}
+        ],
+        {initialEntries: ['/trader-sync/summaries/7'], future: {v7_relativeSplatPath: true}}
+    );
+    await act(async () => {
+        tree = renderer.create(<RouterProvider router={router} future={{v7_startTransition: true}} />);
+    });
+    const follow = async (label: string) =>
+        act(async () =>
+            tree.root
+                .findAllByType('a')
+                .find(link => link.props.children === label)!
+                .props.onClick({button: 0, defaultPrevented: false, preventDefault: jest.fn()})
+        );
+    await follow('View activity');
+    const originalSummaryEntry = router.state.location.key;
+    expect(tree.root.findAllByType('a').find(link => link.props.children === 'Back to summary batch')?.props.href).toBe('/trader-sync/summaries/7');
+    await follow('Back to summary batch');
+    await follow('Back to Trader Sync');
+    // Set the filter through the real Home controls; no manual cache clearing.
+    const dates = tree.root.findAllByType('input').filter(input => input.props.type === 'date');
+    act(() => dates[0].props.onChange({target: {value: '2026-09-10'}}));
+    await act(async () => tree.root.findByType('form').props.onSubmit({preventDefault: jest.fn()}));
+    Object.defineProperty(window, 'scrollY', {configurable: true, value: 640});
+    act(() => window.dispatchEvent(new Event('scroll')));
+    await follow('View activity');
+    expect(tree.root.findAllByType('a').find(link => link.props.children === 'Back to Trader Sync')?.props.href).toBe('/trader-sync');
+    expect(tree.root.findAllByType('a').some(link => link.props.children === 'Back to summary batch')).toBe(false);
+    await follow('Back to Trader Sync');
+    expect(readActivitySession('A')?.query.from).toBe('2026-09-09T16:00:00.000Z');
+    expect(readActivitySession('A')?.scrollY).toBe(640);
+    expect(jest.mocked(services.traderSync.listActivities).mock.calls.at(-1)![0]?.refreshCursor).toBe('home-refresh');
+    // Back to the Home-origin activity retains Home, then to the prior Summary-origin entry retains Summary.
+    await act(async () => router.navigate(-1));
+    expect(tree.root.findAllByType('a').some(link => link.props.children === 'Back to Trader Sync')).toBe(true);
+    await act(async () => router.navigate(-3));
+    expect(router.state.location.key).toBe(originalSummaryEntry);
+    expect(tree.root.findAllByType('a').find(link => link.props.children === 'Back to summary batch')?.props.href).toBe('/trader-sync/summaries/7');
+    Object.defineProperty(window, 'scrollY', {configurable: true, value: 0});
+});
+
+test('direct entry has no stale source and a different summary supplies only its current history entry', async () => {
+    const {TraderSyncActivityPage} = await import('./activity-detail');
+    jest.spyOn(services.traderSync, 'getActivity').mockResolvedValue({...activity, id: '11'});
+    jest.mocked(services.traderSync.listActivities).mockResolvedValue(activityPage('11'));
+    const router = createMemoryRouter(
+        [
+            {path: '/trader-sync/summaries/:batchId', element: <TraderSyncSummaryPage ownerId='A' />},
+            {path: '/trader-sync/activities/:activityId', element: <TraderSyncActivityPage ownerId='A' />}
+        ],
+        {initialEntries: ['/trader-sync/summaries/7'], future: {v7_relativeSplatPath: true}}
+    );
+    await act(async () => {
+        tree = renderer.create(<RouterProvider router={router} future={{v7_startTransition: true}} />);
+    });
+    const open = async () =>
+        act(async () =>
+            tree.root
+                .findAllByType('a')
+                .find(link => link.props.children === 'View activity')!
+                .props.onClick({button: 0, defaultPrevented: false, preventDefault: jest.fn()})
+        );
+    await open();
+    await act(async () => router.navigate('/trader-sync/activities/11'));
+    expect(tree.root.findAllByType('a').find(link => link.props.children === 'Back to Trader Sync')?.props.href).toBe('/trader-sync');
+    await act(async () => router.navigate('/trader-sync/summaries/8'));
+    await open();
+    expect(tree.root.findAllByType('a').find(link => link.props.children === 'Back to summary batch')?.props.href).toBe('/trader-sync/summaries/8');
+    const summary8Entry = router.state.location.key;
+    await act(async () => router.navigate(-3));
+    expect(tree.root.findAllByType('a').find(link => link.props.children === 'Back to summary batch')?.props.href).toBe('/trader-sync/summaries/7');
+    await act(async () => router.navigate(3));
+    expect(router.state.location.key).toBe(summary8Entry);
+    expect(tree.root.findAllByType('a').find(link => link.props.children === 'Back to summary batch')?.props.href).toBe('/trader-sync/summaries/8');
 });
