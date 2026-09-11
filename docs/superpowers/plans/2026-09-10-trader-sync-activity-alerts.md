@@ -992,7 +992,7 @@ RPC spy同时拒绝eth_sendTransaction/eth_sendRawTransaction，交易/签名接
 - 产出state：`captureTraderSyncScope(ownerId:string):ReadScope`、`clearTraderSyncState():void`；后者递增generation并清理所有本模块内存草稿/分页缓存。后续任务在此文件扩展同一清理入口，App不为每种缓存另写一套撤权hook。
 - 精度：`formatRaw(raw:string,decimals:number):string`、`formatFillPrice(numerator:string,denominator:string,places?:number):{text:string;approximate:boolean}|undefined`；默认6位小数，微小非零不能变成0，必要时改用精确比值文本。
 
-- [ ] **步骤1：让Jest发现新测试并写数值红灯。**将testMatch收敛为`['<rootDir>/src/app/**/*.test.ts','<rootDir>/src/app/**/*.test.tsx']`，覆盖原有范围及新文件；不移动既有测试。
+- [x] **步骤1：让Jest发现新测试并写数值红灯。**将testMatch收敛为`['<rootDir>/src/app/**/*.test.ts','<rootDir>/src/app/**/*.test.tsx']`，覆盖原有范围及新文件；不移动既有测试。
 
 ```ts
 test('raw amounts remain exact above JS integer precision', () => {
@@ -1003,8 +1003,8 @@ test('raw amounts remain exact above JS integer precision', () => {
 });
 ```
 
-- [ ] **步骤2：运行红灯与发现检查。**`yarn --cwd ui test --listTests --runInBand`确认新test.ts被发现，再运行`yarn --cwd ui test --runInBand --watch=false --runTestsByPath src/app/member/pages/trader-sync/precision.test.ts`，失败必须是缺少目标实现。
-- [ ] **步骤3：实现精度与严格DTO映射。**formatRaw用BigInt与十进制字符串位置，不浮点除法；ratio以BigInt商/余数判断是否精确，分母<=0返回undefined。字段缺失保持缺失；必要ID/枚举非法返回协议错误，不能静默补空资源。Public DTO统一camelCase，不添加无消费者历史snake_case响应兼容。服务请求query仍使用proto snake_case。
+- [x] **步骤2：运行红灯与发现检查。**`yarn --cwd ui test --listTests --runInBand`确认新test.ts被发现，再运行`yarn --cwd ui test --runInBand --watch=false --runTestsByPath src/app/member/pages/trader-sync/precision.test.ts`，失败必须是缺少目标实现。
+- [x] **步骤3：实现精度与严格DTO映射。**formatRaw用BigInt与十进制字符串位置，不浮点除法；ratio以BigInt商/余数判断是否精确，分母<=0返回undefined。字段缺失保持缺失；必要ID/枚举非法返回协议错误，不能静默补空资源。Public DTO统一camelCase，不添加无消费者历史snake_case响应兼容。服务请求query仍使用proto snake_case。
 
 ```ts
 const readScope = {module: AccountDataModule.TraderSync, mode: 'read'} as const;
@@ -1017,15 +1017,17 @@ return result;
 ```
 
 `normalizeActivity(value:unknown):Activity`及各顶层响应`normalizeResolvedTarget/Subscription/SubscriptionPage/HistoryPage/ActivityPage/SummaryBatch/PartPage/TargetNote`在models定义；嵌套字段用同一Evidence与string校验器。六period按1D/1W/1M/1Y/YTD/ALL固定输出，不依赖Go map遍历顺序。service测试使用任务12真实JSON fixture验证长ID、revision、零/缺失、note省略/空串及正确scope，捕获request.abort是否调用。所有分页把client pageSize/cursor转换为`{'page.page_size':input.pageSize,'page.cursor':input.cursor}`，刷新另用顶层refresh_cursor，不发送undefined query值。
-- [ ] **步骤4：写读取竞争红灯。**react-test-renderer挂载调用useVisibleQuery的最小Probe组件；fake timers+deferred Promise验证：5秒期间首请求未完不重入，hidden停止，visible立即刷新，失败保留旧data且stale，clearTraderSyncState后旧Promise完成不能发布。deferred在测试内用`new Promise<T>(resolve=>...)`保存resolve，不用真实sleep。
-- [ ] **步骤5：实现单飞读取与generation清理。**每轮只保留一个request；finally在generation匹配时释放slot。首次loading与后续刷新分开，不因刷新卸载已成功子树。visibilitychange/focus使用同一reload去重；cleanup abort并移除监听。发布前必须检查组件mounted、当前请求generation与scope.isCurrent，晚错误也不能覆盖新状态。member scope始终提供subscribeInvalidation；clearTraderSyncState同步清空Map、递增generation并通知仍挂载的hook中止请求/清除data/error，订阅时scope已失效也立即通知。仅有isCurrent不能替代主动清屏；真实App的三个清理边界由任务15步骤5接入。
-- [ ] **步骤6：运行新service/precision/state/hook测试、`yarn --cwd ui lint`；提交 `feat(trader-sync-ui): add typed reads and precise display primitives`。**检查改Jest匹配后发现数量增加而原测试仍被发现。此任务不挂空页面或新导航。
+- [x] **步骤4：写读取竞争红灯。**react-test-renderer挂载调用useVisibleQuery的最小Probe组件；fake timers+deferred Promise验证：5秒期间首请求未完不重入，hidden停止，visible立即刷新，失败保留旧data且stale，clearTraderSyncState后旧Promise完成不能发布。deferred在测试内用`new Promise<T>(resolve=>...)`保存resolve，不用真实sleep。
+- [x] **步骤5：实现单飞读取与generation清理。**每轮只保留一个request；finally在generation匹配时释放slot。首次loading与后续刷新分开，不因刷新卸载已成功子树。visibilitychange/focus使用同一reload去重；cleanup abort并移除监听。发布前必须检查组件mounted、当前请求generation与scope.isCurrent，晚错误也不能覆盖新状态。member scope始终提供subscribeInvalidation；clearTraderSyncState同步清空Map、递增generation并通知仍挂载的hook中止请求/清除data/error，订阅时scope已失效也立即通知。仅有isCurrent不能替代主动清屏；真实App的三个清理边界由任务15步骤5接入。
+- [x] **步骤6：运行新service/precision/state/hook测试、`yarn --cwd ui lint`；提交 `feat(trader-sync-ui): add typed reads and precise display primitives`。**检查改Jest匹配后发现数量增加而原测试仍被发现。此任务不挂空页面或新导航。
+
+本项已实现并通过独立审阅（7c937df2）：124项定向测试通过，末次仅测试回调修正后14项hook测试通过；生产lint与额外测试类型检查通过，测试发现11→15且旧11项文件保留。真实Shell清理和页面接入由后续任务完成，不将基础hook测试视作浏览器验收。
 
 ## 任务15：独立添加页与 Telegram 返回草稿
 
 **Files**
 - 新增：`ui/src/app/member/pages/trader-sync/add.tsx`、`add.test.tsx`、`confirmation-card.tsx`、`pnl-chart.tsx`、`pnl-chart.test.tsx`。
-- 修改：同目录`state.ts/state.test.ts`；`ui/src/app/member/routes.tsx`、`app.tsx`、`pages/notifications.tsx`；新增`ui/src/app/member/pages/notifications.test.tsx`。
+- 修改：同目录`state.ts/state.test.ts`；`ui/src/app/member/routes.tsx`、`app.tsx`、`pages/notifications.tsx`；新增`ui/src/app/member/pages/notifications.test.tsx`。修改真实Shell回归文件`ui/src/app/app.test.tsx`（不是member/app.test.tsx）。
 **Interfaces**
 - 消费：任务14 service/models/precision/state；现有memberNotifications与5分钟expiresAt。
 - 产出：`TraderSyncAddPage({ownerId}:{ownerId:string})`；`ConfirmationCard({target,note,onNoteChange}:{target:ResolvedTarget;note:string;onNoteChange:(value:string)=>void})`；`PnLChart({view}:{view:PnLView})`。
@@ -1069,6 +1071,7 @@ Create成功记录新subscription ID供主页侧栏定位；目标在原筛选�
 - 新增：`ui/src/app/member/pages/trader-sync/subscriptions.tsx`、`subscription-detail.tsx`、`subscription-state.tsx`、`observation-history.tsx`、`subscriptions.test.tsx`、`subscription-detail.test.tsx`。
 - 修改：`ui/src/app/member/routes.tsx`、`app.tsx`。
 **Interfaces**
+- 公开订阅状态沿真实wire：healthy显示Monitoring，interrupted显示Monitoring interrupted；其余四态不变。页面动作/过滤使用wire值，不能把显示语义monitoring/error当作协议枚举。
 - 消费：任务14 list/get/change/note/history service、任务15 RW路由与state清理。
 - 产出：`TraderSyncSubscriptionsPage({ownerId})`、`TraderSyncSubscriptionPage({ownerId})`，props均`{ownerId:string}`；详情用useParams取subscriptionId。`allowedSubscriptionActions(status:Subscription['status']):Array<'pause'|'resume'|'cancel'>`放subscription-state.tsx供列表/详情共用。
 - `ObservationHistory({ownerId,subscriptionId}:{ownerId:string;subscriptionId:string})`独立分页；只展示时间线事实，不触发历史采集。
@@ -1077,8 +1080,8 @@ Create成功记录新subscription ID供主页侧栏定位；目标在原筛选�
 
 ```ts
 test.each([
-    ['pending_baseline',['cancel']], ['monitoring',['pause','cancel']],
-    ['error',['pause','cancel']], ['paused',['resume','cancel']],
+    ['pending_baseline',['cancel']], ['healthy',['pause','cancel']],
+    ['interrupted',['pause','cancel']], ['paused',['resume','cancel']],
     ['permission_disabled',['resume','cancel']], ['cancelled',[]]
 ])('actions for %s', (status, expected) => {
     expect(allowedSubscriptionActions(status as Subscription['status'])).toEqual(expected);
@@ -1092,10 +1095,10 @@ renderer测试当前/取消列表、完整钱包、取消一次确认、paused�
 ```ts
 const change: ChangeRequest = {expectedRevision: subscription.revision, requestId: crypto.randomUUID()};
 const next = await services.traderSync.pauseSubscription(subscription.id, change);
-// next为服务端事实；不自行将状态改成monitoring/paused。
+// next为服务端事实；不自行将状态改成healthy/paused。
 ```
 
-未知响应保留同change供重试；Aborted丢弃旧动作、读最新并提示重新选择，不能新revision自动重放。error自动恢复不调用resume。
+未知响应保留同change供重试；Aborted丢弃旧动作、读最新并提示重新选择，不能新revision自动重放。interrupted自动恢复不调用resume。
 - [ ] **步骤4：实现备注保存/冲突。**expectedRevision取noteRevision。空串可保存；冲突保留本地值与服务器最新备注，用户再次保存才用新noteRevision。取消目标仍改owner-wallet保留备注，说明当前/未来同钱包会沿用，旧活动快照不变。重新订阅跳Add并预填钱包，仍走完整确认。
 - [ ] **步骤5：实现中断时间线并测试51条。**每页显示interval或interruption、已知起止/恢复、reason及possibleMissing；未知显示原因，不能生成遗漏数量。上一页恢复缓存游标，更多记录可访问。添加两条记录同sortAt稳定ID排序测试，自动恢复后原中断仍存在。
 - [ ] **步骤6：运行订阅页面/state及service测试、lint；提交 `feat(trader-sync-ui): manage subscriptions and observation history`。**注册两个真实路由和lazy exports，验证无grant深链不调用service，不导入管理员页面。

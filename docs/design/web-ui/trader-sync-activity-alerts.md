@@ -54,9 +54,9 @@ Resolve 补充 owner 保存备注及 revision、现有未取消订阅和配额�
 
 ### 订阅与历史
 
-Current 包含 pending_baseline、monitoring、paused、error、permission_disabled，均占 10 个名额；Cancelled 不占，不能恢复，重订阅新 ID。主页 All 活动包含取消历史，侧栏目标按 subscription_id 筛选，不合并同钱包各次订阅。
+Current 包含 pending_baseline、healthy、paused、interrupted、permission_disabled，均占 10 个名额；Cancelled 不占，不能恢复，重订阅新 ID。主页 All 活动包含取消历史，侧栏目标按 subscription_id 筛选，不合并同钱包各次订阅。
 
-monitoring/error 可以暂停；paused/permission_disabled 可以手动恢复；所有未取消状态可取消，所有详情可编辑 owner-wallet 备注。写操作按 revision，冲突读取最新值并保留本地备注草稿，不自动重放旧意图。暂停/取消明确旧队列仍可能送达；取消一次确认含身份、不可恢复、释放名额和保留历史。
+healthy/interrupted 可以暂停；paused/permission_disabled 可以手动恢复；所有未取消状态可取消，所有详情可编辑 owner-wallet 备注。写操作按 revision，冲突读取最新值并保留本地备注草稿，不自动重放旧意图。暂停/取消明确旧队列仍可能送达；取消一次确认含身份、不可恢复、释放名额和保留历史。
 
 观察时间线分页读取成功区间与中断，保留原因/未知边界/可能遗漏，不推测遗漏数量。自动恢复不删除中断，手动恢复新基线。当前备注和活动备注快照分开，编辑不追溯历史。
 

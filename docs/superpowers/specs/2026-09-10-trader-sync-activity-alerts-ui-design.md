@@ -81,16 +81,16 @@ Resolve 返回的配额/重复提示只作快照，Create 在事务中最终判�
 
 ## 5. 订阅管理与观察历史
 
-完整列表默认 Current，另有 Cancelled。Current 包含 pending_baseline、monitoring、paused、error、permission_disabled，全都占名额；Cancelled 默认隐藏，不占名额。列表展示当前备注、身份、状态、生效/最近可靠观察、旧通知概要并进入详情。取消历史使用游标，不要求所有历史一次加载。
+完整列表默认 Current，另有 Cancelled。Current 包含 pending_baseline、healthy、paused、interrupted、permission_disabled，全都占名额；Cancelled 默认隐藏，不占名额。列表展示当前备注、身份、状态、生效/最近可靠观察、旧通知概要并进入详情。取消历史使用游标，不要求所有历史一次加载。
 
 详情从上到下为身份及完整钱包、当前状态与原因、备注、可用操作、观察历史、活动和旧通知入口。状态及操作如下：
 
 | 后端状态 | 英文展示 | 允许操作（当前有 grant） |
 | --- | --- | --- |
 | pending_baseline | Preparing monitoring | 编辑备注、取消 |
-| monitoring | Monitoring | 编辑备注、暂停、取消 |
+| healthy | Monitoring | 编辑备注、暂停、取消 |
 | paused | Paused | 编辑备注、恢复、取消 |
-| error | Monitoring interrupted | 编辑备注、暂停、取消；依赖恢复由后台自动建立新观察边界 |
+| interrupted | Monitoring interrupted | 编辑备注、暂停、取消；依赖恢复由后台自动建立新观察边界 |
 | permission_disabled | Disabled by access change | 编辑备注、手动恢复、取消；重新授予权限不自动恢复 |
 | cancelled | Cancelled | 编辑钱包保留备注、查看历史、进入添加页重新订阅；不能恢复原订阅 |
 
