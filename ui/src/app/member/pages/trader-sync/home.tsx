@@ -34,6 +34,7 @@ const Home = ({ownerId}: {ownerId: string}) => {
         return {query: {pageSize: 50, subscriptionId}, previous: [], scrollY: 0};
     });
     const sessionRef = React.useRef(session);
+    const pendingScroll = React.useRef<{session: ActivitySession; scopeKey: string}>();
     const mounted = React.useRef(true);
     const busy = React.useRef(false);
     const [reading, setReading] = React.useState(false);
@@ -54,7 +55,7 @@ const Home = ({ownerId}: {ownerId: string}) => {
         [ownerId, scope]
     );
     const rememberScroll = React.useCallback(() => {
-        if (scope.isCurrent()) {
+        if (scope.isCurrent() && !pendingScroll.current) {
             sessionRef.current = {...sessionRef.current, scrollY: window.scrollY};
             saveActivitySession(ownerId, sessionRef.current, scope);
         }
@@ -63,6 +64,7 @@ const Home = ({ownerId}: {ownerId: string}) => {
         mounted.current = true;
         if (sessionRef.current.scrollY > 0) window.scrollTo({top: sessionRef.current.scrollY, behavior: 'instant'});
         const unsubscribe = scope.subscribeInvalidation?.(() => {
+            pendingScroll.current = undefined;
             operation.current = undefined;
             queuedAction.current = undefined;
             window.clearTimeout(queuedTimer.current);
@@ -76,11 +78,21 @@ const Home = ({ownerId}: {ownerId: string}) => {
         return () => {
             rememberScroll();
             mounted.current = false;
+            pendingScroll.current = undefined;
             window.clearTimeout(queuedTimer.current);
             unsubscribe?.();
             window.removeEventListener('scroll', rememberScroll);
         };
     }, [scope, rememberScroll]);
+    React.useLayoutEffect(() => {
+        const restore = pendingScroll.current;
+        if (!restore) return;
+        pendingScroll.current = undefined;
+        // Query and page-stack references identify this navigation; a normal
+        // fixed-page refresh preserves both even when its metadata is replaced.
+        if (mounted.current && scope.isCurrent() && restore.scopeKey === scope.key && session.query === restore.session.query && session.previous === restore.session.previous)
+            window.scrollTo({top: restore.session.scrollY, behavior: 'instant'});
+    }, [session, scope]);
     const activityRead = useVisibleQuery(
         () => {
             const base = sessionRef.current;
@@ -170,8 +182,9 @@ const Home = ({ownerId}: {ownerId: string}) => {
         }
         const previous = sessionRef.current.previous.at(-1);
         if (previous) {
-            save({query: previous.query, current: previous.page, previous: sessionRef.current.previous.slice(0, -1), scrollY: previous.scrollY});
-            window.scrollTo({top: previous.scrollY, behavior: 'instant'});
+            const restored: ActivitySession = {query: previous.query, current: previous.page, previous: sessionRef.current.previous.slice(0, -1), scrollY: previous.scrollY};
+            pendingScroll.current = {session: restored, scopeKey: scope.key};
+            save(restored);
             activityRead.reload();
         }
     };

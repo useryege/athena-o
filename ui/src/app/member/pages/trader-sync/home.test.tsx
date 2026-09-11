@@ -290,3 +290,66 @@ test('changing page size requests a new snapshot without either cursor and clear
     expect(list.mock.calls.at(-1)![0]).toMatchObject({pageSize: 100, cursor: undefined, refreshCursor: undefined});
     expect(readActivitySession('A')?.previous).toHaveLength(0);
 });
+
+// Renderer verifies commit/call order only. The clamp models a browser's short-page
+// scroll limit; actual layout and pixel restoration remain Task20 browser coverage.
+test('Previous commits the saved long page before restoring its bottom position and does not repeat on refresh', async () => {
+    const {readActivitySession} = await import('./state');
+    const longIds = Array.from({length: 50}, (_value, index) => String(100 - index));
+    const longPage = page(longIds);
+    const list = jest.spyOn(services.traderSync, 'listActivities').mockResolvedValue(longPage);
+    await mount();
+    Object.defineProperty(window, 'scrollY', {configurable: true, value: 2400});
+    const scrolls: Array<{top: number; committedIds: string[]}> = [];
+    jest.mocked(window.scrollTo).mockImplementation((options: ScrollToOptions | number) => {
+        const top = typeof options === 'number' ? options : options.top || 0;
+        const committedIds = tree.root.findAll(node => node.props['data-activity-id']).map(node => node.props['data-activity-id']);
+        scrolls.push({top, committedIds});
+        Object.defineProperty(window, 'scrollY', {configurable: true, value: Math.min(top, committedIds.length === 1 ? 100 : 3000)});
+        window.dispatchEvent(new Event('scroll'));
+    });
+    try {
+        list.mockResolvedValue(page(['50'], 'short-tail-refresh'));
+        await act(async () => button('Next')!.props.onClick());
+        expect(tree.root.findAll(node => node.props['data-activity-id'])).toHaveLength(1);
+        scrolls.length = 0;
+        list.mockResolvedValue(longPage);
+        await act(async () => {
+            button('Previous')!.props.onClick();
+            // A pending scroll event still belongs to the short page until commit.
+            Object.defineProperty(window, 'scrollY', {configurable: true, value: 100});
+            window.dispatchEvent(new Event('scroll'));
+        });
+        expect(scrolls).toEqual([{top: 2400, committedIds: longIds}]);
+        expect(readActivitySession('A')?.scrollY).toBe(2400);
+        Object.defineProperty(window, 'scrollY', {configurable: true, value: 1200});
+        act(() => window.dispatchEvent(new Event('scroll')));
+        await act(async () => jest.advanceTimersByTime(5000));
+        expect(scrolls).toHaveLength(1);
+        expect(readActivitySession('A')?.scrollY).toBe(1200);
+    } finally {
+        Object.defineProperty(window, 'scrollY', {configurable: true, value: 0});
+    }
+});
+
+test('invalidating the owner before the Previous commit discards its pending scroll restoration', async () => {
+    const {readActivitySession} = await import('./state');
+    const list = jest.spyOn(services.traderSync, 'listActivities').mockResolvedValue(page());
+    await mount();
+    Object.defineProperty(window, 'scrollY', {configurable: true, value: 2400});
+    try {
+        list.mockResolvedValue(page(['10'], 'short-tail-refresh'));
+        await act(async () => button('Next')!.props.onClick());
+        jest.mocked(window.scrollTo).mockClear();
+        list.mockResolvedValue(page());
+        await act(async () => {
+            button('Previous')!.props.onClick();
+            clearTraderSyncState();
+        });
+        expect(window.scrollTo).not.toHaveBeenCalled();
+        expect(readActivitySession('A')).toBeUndefined();
+        expect(tree.root.findAll(node => node.props['data-activity-id'])).toHaveLength(0);
+    } finally {
+        Object.defineProperty(window, 'scrollY', {configurable: true, value: 0});
+    }
+});
