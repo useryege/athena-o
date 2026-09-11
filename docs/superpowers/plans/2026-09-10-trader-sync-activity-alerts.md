@@ -1177,15 +1177,16 @@ const complete = BigInt(batch.partCounts.total) > 0n &&
 
 **Files**
 - 新增：`ui/src/app/admin/trader-sync-models.ts`、`trader-sync-service.ts`、`trader-sync-service.test.ts`；`ui/src/app/admin/pages/trader-sync/subscriptions.tsx`、`subscription-detail.tsx`、`subscriptions.test.tsx`；`ui/src/app/admin/pages/service-status.test.tsx`。
+- 新增：`ui/src/app/admin/read-scope.ts`、`read-scope.test.tsx`、`app.test.tsx`，承接独立管理员身份失效与真实Shell回归。
 - 修改：`ui/src/app/admin/services.ts`、`routes.tsx`、`app.tsx`、`pages/service-status.tsx`；`ui/src/app/shared/services/requests.ts`及其test。
 - 恢复字段消费者：`ui/src/app/admin/notification-service.ts`及相关测试；接Task13既有runtime的可缺recovery对象，精确string/缺值和Recovering状态，不新建API。
 **Interfaces**
 - 消费：任务12三个admin RPC；任务14中立shared useVisibleQuery，不导入任何member models/service/页面。
 - admin models按任务12独立定义`SubscriptionSummary`、`RuntimeMetric`、`RuntimeStatus`及Counts/Page；无note、activity、payload或delivery明细字段。
 - 产出：`AdminTraderSyncService.listSubscriptionSummaries(input:{pageSize?:number;cursor?:string;accountId?:string;state?:string;wallet?:string;includeCancelled?:boolean}):AbortablePromise<{summaries:SubscriptionSummary[];page:{nextCursor?:string};asOf:string}>`、`getSubscriptionSummary(id:string):AbortablePromise<SubscriptionSummary>`、`getRuntimeStatus():AbortablePromise<RuntimeStatus>`；注册为adminServices.adminTraderSync。
-- 产出页面：`TraderSyncAdminSubscriptionsPage()`、`TraderSyncAdminSubscriptionPage()`，管理员身份由既有AdminShell保护；内部读取`useAuthorization().user.accountId`作scope key，isAdmin变化/卸载使旧结果失效。
+- 产出页面：`TraderSyncAdminSubscriptionsPage()`、`TraderSyncAdminSubscriptionPage()`，管理员身份由既有AdminShell保护；内部读取`useAuthorization()`的accountId、iss与isAdmin，使用独立admin generation及失效订阅；普通页面卸载取消自身读取，Shell退出/失权/身份变化/卸载结束会话并清屏。权限复查失败在Shell显示明确错误与受控重试，仅最新成功的管理员身份恢复合法session。
 
-- [ ] **步骤1：写安全DTO/请求scope红灯。**将`'admin-trader-sync'`加入AuthorizationRequestFeature；service读统一该feature+read。用带额外私有字段的输入fixture验证规范化结果只选安全字段（接口本身也由任务12证明不返回）；新增GET路径、wallet/include_cancelled/page_size query和abort测试。
+- [x] **步骤1：写安全DTO/请求scope红灯。**将`'admin-trader-sync'`加入AuthorizationRequestFeature；service读统一该feature+read。用带额外私有字段的输入fixture验证规范化结果只选安全字段（接口本身也由任务12证明不返回）；新增GET路径、wallet/include_cancelled/page_size query和abort测试。
 
 ```ts
 const scope = {feature: 'admin-trader-sync', mode: 'read'} as const;
@@ -1197,20 +1198,22 @@ const req = requests.get('/admin/trader-sync/subscriptions', scope).query({
 ```
 
 `normalizeSummaryPage(value:unknown)`、`normalizeSubscriptionSummary(value:unknown)`、`normalizeRuntimeStatus(value:unknown)`由admin models定义，返回上述安全类型。
-- [ ] **步骤2：实现只读列表/详情和导航。**System→Trader Sync，Current默认，可包含Cancelled，账户/规范钱包/状态过滤后重建cursor。完整钱包、用户身份、生命周期、健康/中断计数与Associated deliveries；说明跨行不可相加，无查看活动/消息和订阅写按钮。注册两条实际lazy路由，详情链接Service Status。
-- [ ] **步骤3：写Service Status可见/单飞红灯。**现有页面setInterval无visibility判断，useAsyncData不保证单飞。使用fake timers令一次list未完成，10秒不能并发；hidden不能启动新轮，恢复visible立即一次；一个runtime失败保留另一来源旧数据并分别标更新时间，不重置计数为0。
-- [ ] **步骤4：接入三个读取与运行区域。**替换该页无条件定时器，以shared useVisibleQuery为serviceStatus.list、adminNotifications.getRuntimeStatus、adminTraderSync.getRuntimeStatus分别维护10秒单飞和错误；手动Refresh调用同一reload去重。既有服务/Notification内容保留，新增Trader Sync Section并互链订阅概要。asOf/单位/windowStart/windowEnd/serviceEpoch按kind显示，未知资料显示不可用，不能把不同单位加总。
+- [x] **步骤2：实现只读列表/详情和导航。**System→Trader Sync，Current默认，可包含Cancelled，账户/规范钱包/状态过滤后重建cursor。完整钱包、用户身份、生命周期、健康/中断计数与Associated deliveries；说明跨行不可相加，无查看活动/消息和订阅写按钮。注册两条实际lazy路由，详情链接Service Status。
+- [x] **步骤3：写Service Status可见/单飞红灯。**现有页面setInterval无visibility判断，useAsyncData不保证单飞。使用fake timers令一次list未完成，10秒不能并发；hidden不能启动新轮，恢复visible立即一次；一个runtime失败保留另一来源旧数据并分别标更新时间，不重置计数为0。
+- [x] **步骤4：接入三个读取与运行区域。**替换该页无条件定时器，以shared useVisibleQuery为serviceStatus.list、adminNotifications.getRuntimeStatus、adminTraderSync.getRuntimeStatus分别维护10秒单飞和错误；手动Refresh调用同一reload去重。既有服务/Notification内容保留，新增Trader Sync Section并互链订阅概要。asOf/单位/windowStart/windowEnd/serviceEpoch按kind显示，未知资料显示不可用，不能把不同单位加总。
 公开kind只取gauge/window/epoch；epoch必须有serviceEpoch。Projector累计项的serviceEpoch为计数实例的稳定opaque string，同实例跨Collector重连不变，新实例/计数重置才改变；不能按Collector连接序号解析或跨不同指标生产者合并累计值。
 发送进程正在初始化或等待恢复预算时显示 Recovering，单列原因、该进程报告的剩余/已用等待及更新时间；fatal/stopped优先，恢复未完成不显示Running。recovery对象可缺，remainingMillis/elapsedMillis为十进制string，未知剩余保持Unavailable，合法0保留；浏览器不重新推算或解除恢复预算，也不把恢复等待归为Telegram网络耗时。raw队列与持久化中数量只在raw_observation_available可观测时展示，不可观测时不填0；按原10秒单飞读取更新，不另加计时或逐条请求。
 
-- [ ] **步骤5：运行admin service/页面/Service Status/requests及shared hook测试、lint、build；提交 `feat(trader-sync-ui): add private-safe admin monitoring views`。**源码静态检查admin新目录没有member imports；验证后台请求不使用member scope或任意accountId伪装owner。
+- [x] **步骤5：运行admin service/页面/Service Status/requests及shared hook测试、lint、build；提交 `feat(trader-sync-ui): add private-safe admin monitoring views`。**源码静态检查admin新目录没有member imports；验证后台请求不使用member scope或任意accountId伪装owner。
+
+本项已实现并通过独立修复复审（e2f1db6a、c14d73f6）。原范围62项测试、lint与构建通过；最后权限复查失败修复覆盖30项相关测试及lint，旧构建不冒充修复后版本。管理员安全概要、三来源独立可见读取、恢复状态与身份清理均已接入；真实浏览器与部署前缀验收由任务20执行。路由先行RED的历史偏差、预期jsdom导航输出和大chunk提示保留在审查记录，未改写成无警告或完整TDD证明。
 
 ## 任务20：前后端浏览器验收与证据
 
 **Files**
 - 新增：`ui/playwright.config.ts`、`ui/e2e/trader-sync.spec.ts`、`ui/e2e/trader-sync-live.spec.ts`、`ui/e2e/trader-sync-fixtures.ts`、`internal/tradersync/acceptance/ui_harness_integration_test.go`。
 - 测试接线：`internal/server/trader_sync_ui_harness.go` 仅以 `integration && uiharness` 编译，窄适配真实鉴权、gateway 和静态 handler；StartUI 及直接消费者同 tag。签名、cookie、logout 复用已有公开入口，不增加生产控制或绕过认证入口。
-- 修改：`internal/tradersync/acceptance/fixtures_test.go`扩展测试专用HTTP网关/静态资源；`docs/testing/trader-sync-activity-alerts-acceptance.md`补UI结果，原始trace/截图放`.superpowers/trader-sync-acceptance/`。
+- 修改：`internal/tradersync/acceptance/fixtures_test.go`扩展测试专用HTTP网关/静态资源；`docs/testing/trader-sync-activity-alerts-acceptance.md`补UI结果，原始trace/截图放`.superpowers/trader-sync-acceptance/`；每次调用用`--output`指定独立运行/前缀/project/轮次子目录，避免Playwright清理输出时覆盖先前证据。
 **Interfaces**
 - 消费：任务13真实隔离DB/Service/Dispatcher/loopback来源，任务15–19实际页面；当前仓库有Playwright依赖但没有配置/spec，必须本任务新增。
 - harness新增测试方法`(*harness).StartUI(t *testing.T,distDir string) UIHarnessInfo`，`UIHarnessInfo{BaseURL,PathPrefix,MemberAState,MemberBState,AdminState string}`。测试使用真实网关、权限store、handler及数据库，以测试签名器颁发仅隔离环境可用的会话，导出Playwright storageState文件；不得增加生产绕过认证路由。测试控制入口仅test进程localhost，提供push source/断流/修改grant/丢一次响应的确定性屏障，不能出现在正式server构建。
