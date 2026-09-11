@@ -1,6 +1,9 @@
 import {Alert, Spin, Tag} from 'antd';
-import * as React from 'react';
-import {AppPage, KeyValueGrid, ResourceTable, Section, StatusTag, useAsyncData} from '../../components';
+import {Link} from 'react-router-dom';
+import {useVisibleQuery, type AbortablePromise} from '../../shared/use-visible-query';
+import {useAdminReadScope} from '../read-scope';
+import type {RuntimeMetric} from '../trader-sync-models';
+import {AppPage, KeyValueGrid, ResourceTable, Section, StatusTag} from '../../components';
 import {formatBeijingDateTime, formatBeijingUnixSeconds} from '../../shared/format';
 import {adminServices as services} from '../services';
 import type {ServiceHealthStatus, ServiceStatus} from '../../shared/services/service-status-service';
@@ -24,26 +27,41 @@ const statusTag = (status: ServiceHealthStatus) => (
 
 const runtimeStatusTag = (status: string) => {
     const value = status.toLowerCase() || 'unknown';
-    return <Tag color={value === 'running' ? 'green' : value === 'degraded' ? 'orange' : 'red'}>{value}</Tag>;
+    return <Tag color={value === 'running' ? 'green' : value === 'degraded' || value === 'recovering' ? 'orange' : 'red'}>{value}</Tag>;
 };
 
+const receivedAt = <T,>(request: AbortablePromise<T>) =>
+    Object.assign(
+        request.then(value => ({value, receivedAt: Date.now()})),
+        {abort: () => request.abort?.()}
+    );
+const metricScope = (metric: RuntimeMetric) =>
+    metric.kind === 'window'
+        ? `Window: ${formatBeijingDateTime(metric.windowStart) || 'Unavailable'} – ${formatBeijingDateTime(metric.windowEnd) || 'Unavailable'} (UTC+8)`
+        : metric.kind === 'epoch'
+          ? `Service epoch: ${metric.serviceEpoch || 'Unavailable'}`
+          : `Current gauge${metric.serviceEpoch ? ` · Service epoch: ${metric.serviceEpoch}` : ''}`;
+
 export const ServiceStatusPage = () => {
-    const data = useAsyncData(() => services.serviceStatus.list(), []);
-    const notificationRuntime = useAsyncData(() => services.adminNotifications.getRuntimeStatus(), []);
+    const data = useVisibleQuery(() => services.serviceStatus.list(), useAdminReadScope('service-status'), 10000);
+    const notificationRuntime = useVisibleQuery(() => receivedAt(services.adminNotifications.getRuntimeStatus()), useAdminReadScope('notification-runtime'), 10000);
+    const traderRuntime = useVisibleQuery(() => services.adminTraderSync.getRuntimeStatus(), useAdminReadScope('trader-sync-runtime'), 10000);
     const reloadAll = () => {
         data.reload();
         notificationRuntime.reload();
+        traderRuntime.reload();
     };
-    const reloadRef = React.useRef(reloadAll);
-    reloadRef.current = reloadAll;
-
-    React.useEffect(() => {
-        const timer = window.setInterval(() => reloadRef.current(), 10000);
-        return () => window.clearInterval(timer);
-    }, []);
 
     const checkedAt = formatBeijingUnixSeconds(data.data?.checkedAt) || 'Not checked';
-    const runtime = notificationRuntime.data;
+    const runtime = notificationRuntime.data?.value;
+    const recovery = runtime?.recovery;
+    const notificationStatus =
+        runtime && ['failed', 'stopped'].includes(runtime.status)
+            ? runtime.status
+            : recovery && ['initializing', 'waiting'].includes(recovery.state)
+              ? 'recovering'
+              : runtime?.status || 'unknown';
+    const trader = traderRuntime.data;
     const botUsername = (runtime?.botUsername || '').replace(/^@+/, '');
     const botIdentity = runtime?.botAvailable
         ? [botUsername ? `@${botUsername}` : 'Telegram bot', runtime.botId ? `ID ${runtime.botId}` : ''].filter(Boolean).join(' · ')
@@ -52,10 +70,12 @@ export const ServiceStatusPage = () => {
         <AppPage
             title='Service Status'
             subtitle={`gRPC health of Athena services · Last checked ${checkedAt}`}
-            loading={data.loading || notificationRuntime.loading}
+            loading={data.loading || notificationRuntime.loading || traderRuntime.loading}
             error={data.error}
             onRefresh={reloadAll}>
             <Section title='Services'>
+                {data.stale && <Alert type='warning' title='Stale service health — showing the last successful read' />}
+                <p>Last checked: {checkedAt} (UTC+8)</p>
                 <ResourceTable<ServiceStatus>
                     rowKey='name'
                     items={data.data?.items || []}
@@ -75,15 +95,35 @@ export const ServiceStatusPage = () => {
                             <Spin size='small' />
                         </span>
                     ) : runtime ? (
-                        runtimeStatusTag(runtime.status)
+                        runtimeStatusTag(notificationStatus)
                     ) : null
                 }>
                 {notificationRuntime.error && <Alert type='error' showIcon={true} title='Notification runtime unavailable' description={notificationRuntime.error.message} />}
+                {notificationRuntime.stale && <Alert type='warning' title='Stale notification runtime — showing the last successful read' />}
+                <p>Last received: {notificationRuntime.data ? formatBeijingDateTime(new Date(notificationRuntime.data.receivedAt).toISOString()) : 'Unavailable'} (UTC+8)</p>
+                {recovery && (
+                    <KeyValueGrid
+                        items={[
+                            {label: 'Recovery', value: recovery.state || 'Unavailable'},
+                            {label: 'Recovery reason', value: recovery.reason || 'Unavailable'},
+                            {label: 'Recovery started', value: formatBeijingDateTime(recovery.startedAt) || 'Unavailable'},
+                            {label: 'Recovery remaining', value: recovery.remainingMillis === undefined ? 'Unavailable' : `${recovery.remainingMillis} ms`},
+                            {label: 'Recovery elapsed', value: recovery.elapsedMillis === undefined ? 'Unavailable' : `${recovery.elapsedMillis} ms`},
+                            {label: 'Recovery clock', value: recovery.clockSource || 'Unavailable'}
+                        ]}
+                    />
+                )}
+                {recovery && (
+                    <p>
+                        Recovery timing is reported by the notification process at the last read. Remaining time includes any active sending barrier or Retry-After wait; this page
+                        does not count it down.
+                    </p>
+                )}
                 {runtime && (
                     <KeyValueGrid
                         columns={3}
                         items={[
-                            {label: 'Runtime', value: runtimeStatusTag(runtime.status)},
+                            {label: 'Runtime', value: runtimeStatusTag(notificationStatus)},
                             {label: 'Started', value: <StatusTag value={runtime.started ? 'Yes' : 'No'} positive={runtime.started} negative={!runtime.started} />},
                             {
                                 label: 'Bot available',
@@ -109,6 +149,57 @@ export const ServiceStatusPage = () => {
                             {label: 'Unreachable bindings', value: runtime.unreachableBindingCount}
                         ]}
                     />
+                )}
+            </Section>
+            <Section title='Trader Sync' extra={<Link to='/trader-sync/subscriptions'>Subscription summaries</Link>}>
+                {traderRuntime.error && <Alert type='error' showIcon={true} title='Trader Sync runtime unavailable' description={traderRuntime.error.message} />}
+                {traderRuntime.stale && <Alert type='warning' title='Stale Trader Sync runtime — showing the last successful read' />}
+                <p>As of: {formatBeijingDateTime(trader?.asOf) || 'Unavailable'} (UTC+8)</p>
+                {trader && (
+                    <>
+                        <KeyValueGrid
+                            items={[
+                                {label: 'Collector', value: trader.collectorConnected === undefined ? 'Unavailable' : trader.collectorConnected ? 'Connected' : 'Disconnected'},
+                                {label: 'Collector epoch', value: trader.collectorEpoch || 'Unavailable'},
+                                {label: 'Filter revision', value: trader.filterRevision || 'Unavailable'},
+                                {
+                                    label: 'Raw observation',
+                                    value: trader.metrics.find(metric => metric.name === 'raw_observation_available')?.value === '1' ? 'Available' : 'Not observable'
+                                },
+                                {label: 'Raw queue depth (raw logs)', value: trader.metrics.find(metric => metric.name === 'raw_queue_depth')?.value ?? 'Not observable'},
+                                {
+                                    label: 'Raw persist in flight (raw logs)',
+                                    value: trader.metrics.find(metric => metric.name === 'raw_persist_in_flight')?.value ?? 'Not observable'
+                                }
+                            ]}
+                        />
+                        <p>
+                            Each metric has its own unit and scope. Window counts cover only the stated interval; epoch counts belong to the named service instance. Do not add
+                            metrics across units, windows or service instances.
+                        </p>
+                        <ResourceTable<RuntimeMetric>
+                            rowKey={metric => [metric.name, metric.kind, metric.serviceEpoch, metric.windowStart, metric.windowEnd].join(':')}
+                            items={trader.metrics}
+                            label='Trader Sync runtime metrics'
+                            columns={[
+                                {title: 'Metric', render: metric => <span className='break-value'>{metric.name}</span>},
+                                {title: 'Value', render: metric => metric.value ?? 'Not observable'},
+                                {title: 'Unit', render: metric => <span className='break-value'>{metric.unit || 'Unavailable'}</span>},
+                                {title: 'Scope', render: metric => metricScope(metric)}
+                            ]}
+                            compactRender={metric => (
+                                <KeyValueGrid
+                                    columns={1}
+                                    items={[
+                                        {label: 'Metric', value: metric.name},
+                                        {label: 'Value', value: metric.value ?? 'Not observable'},
+                                        {label: 'Unit', value: metric.unit || 'Unavailable'},
+                                        {label: 'Scope', value: metricScope(metric)}
+                                    ]}
+                                />
+                            )}
+                        />
+                    </>
                 )}
             </Section>
         </AppPage>

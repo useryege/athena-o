@@ -1,0 +1,1 @@
+{"started":true,"status":"failed","poller_active":true,"recovery":{"state":"failed","reason":"retry_after_read_failed","startedAt":"2026-09-11T05:13:40.893282919Z","elapsedMillis":"0","clockSource":"sender_monotonic"}}

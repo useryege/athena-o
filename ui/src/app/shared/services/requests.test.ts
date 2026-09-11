@@ -52,3 +52,19 @@ test('owner switch aborts registered Trader Sync requests; completed requests ar
     expect(completedAbort).not.toHaveBeenCalled();
     requests.endAuthorizationSession();
 });
+test('admin Trader Sync feature abort is isolated from other admin reads', () => {
+    jest.isolateModules(() => {
+        const adminRequests = require('./requests').default;
+        adminRequests.configureAuthorizationRealm('admin');
+        adminRequests.beginAuthorizationSession('administrator');
+        const pending = adminRequests.get('/admin/trader-sync/subscriptions', {feature: 'admin-trader-sync', mode: 'read'});
+        const other = adminRequests.get('/admin/notification-runtime/status', {feature: 'admin-notifications', mode: 'read'});
+        const abort = jest.spyOn(pending, 'abort'),
+            otherAbort = jest.spyOn(other, 'abort');
+        adminRequests.abortAuthorizationFeatureRequests('admin-trader-sync', 'read');
+        expect(abort).toHaveBeenCalledTimes(1);
+        expect(otherAbort).not.toHaveBeenCalled();
+        adminRequests.endAuthorizationSession();
+        expect(otherAbort).toHaveBeenCalledTimes(1);
+    });
+});

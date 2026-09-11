@@ -39,3 +39,24 @@ test('runtime counts distinguish unknown and sending from failed and pending', a
         accountPendingCount: 0
     });
 });
+
+test.each([
+    ['01-not-entered', 'stopped', undefined, undefined, undefined],
+    ['02-initializing', 'recovering', 'initializing', undefined, '0'],
+    ['03-first-completed', 'running', 'completed', '0', '0'],
+    ['04-waiting', 'recovering', 'waiting', '55000', '5000'],
+    ['05-cancelled', 'degraded', 'cancelled', '55000', '5000'],
+    ['06-fatal', 'failed', 'cancelled', '55000', '5000'],
+    ['07-stopped', 'stopped', 'cancelled', '55000', '5000'],
+    ['08-recovery-failed', 'failed', 'failed', undefined, '0']
+])('runtime preserves frozen gateway recovery %s without starting a browser budget', async (name, status, state, remainingMillis, elapsedMillis) => {
+    const body = require(`./__fixtures__/trader-sync/notification-${name}.json`);
+    jest.spyOn(requests, 'get').mockReturnValue(responseRequest(body) as any);
+    const result = await new AdminNotificationService().getRuntimeStatus();
+    expect(result.status).toBe(status);
+    expect((result as any).recovery?.state).toBe(state);
+    expect((result as any).recovery?.remainingMillis).toBe(remainingMillis);
+    expect((result as any).recovery?.elapsedMillis).toBe(elapsedMillis);
+    expect(result.pollerActive).toBe(body.poller_active === true);
+    if (state === undefined) expect((result as any).recovery).toBeUndefined();
+});

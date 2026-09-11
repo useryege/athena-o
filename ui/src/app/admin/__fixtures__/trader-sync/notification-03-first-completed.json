@@ -1,0 +1,1 @@
+{"started":true,"status":"running","poller_active":true,"recovery":{"state":"completed","reason":"first_start_empty_history","startedAt":"2026-09-11T05:13:35.893282919Z","remainingMillis":"0","elapsedMillis":"0","clockSource":"sender_monotonic"}}

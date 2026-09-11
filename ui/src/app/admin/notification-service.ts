@@ -50,7 +50,17 @@ export interface SendTestNotificationResult {
     errorMessage: string;
 }
 
+export interface NotificationRecovery {
+    state: string;
+    reason: string;
+    startedAt?: string;
+    remainingMillis?: string;
+    elapsedMillis?: string;
+    clockSource: string;
+}
+
 export interface SystemNotificationRuntimeStatus {
+    recovery?: NotificationRecovery;
     started: boolean;
     status: string;
     botAvailable: boolean;
@@ -106,6 +116,17 @@ const normalizeDelivery = (item: any = {}): NotificationDelivery => ({
 });
 
 const normalizeRuntimeStatus = (item: any = {}): SystemNotificationRuntimeStatus => ({
+    recovery:
+        item.recovery && typeof item.recovery === 'object'
+            ? {
+                  state: readString(item.recovery, 'state'),
+                  reason: readString(item.recovery, 'reason'),
+                  startedAt: typeof item.recovery.startedAt === 'string' ? item.recovery.startedAt : undefined,
+                  remainingMillis: typeof item.recovery.remainingMillis === 'string' ? item.recovery.remainingMillis : undefined,
+                  elapsedMillis: typeof item.recovery.elapsedMillis === 'string' ? item.recovery.elapsedMillis : undefined,
+                  clockSource: readString(item.recovery, 'clockSource')
+              }
+            : undefined,
     started: readBoolean(item, 'started'),
     status: readString(item, 'status'),
     botAvailable: readBoolean(item, 'botAvailable', 'bot_available'),

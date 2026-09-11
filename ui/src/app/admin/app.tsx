@@ -18,7 +18,8 @@ import {
     PieChartOutlined,
     QuestionCircleOutlined,
     SunOutlined,
-    TeamOutlined
+    TeamOutlined,
+    RadarChartOutlined
 } from '@ant-design/icons';
 import {App as AntApp, Breadcrumb, Button, Dropdown, Layout, Menu, Result, Space, Spin, Tag, Tooltip} from 'antd';
 import type {MenuProps} from 'antd';
@@ -46,9 +47,12 @@ import {
     ProfitSharingAdminRoundsPage,
     ServiceStatusPage,
     SystemNotificationDetailPage,
-    SystemNotificationsPage
+    SystemNotificationsPage,
+    TraderSyncAdminSubscriptionsPage,
+    TraderSyncAdminSubscriptionPage
 } from './routes';
 import {adminServices as services, configureAdminSessionServices, ensureAdminBusinessServices} from './services';
+import {beginAdminReadSession, endAdminReadSession} from './read-scope';
 
 configureAdminSessionServices();
 services.viewPreferences.init();
@@ -63,6 +67,7 @@ const adminSections: MenuProps['items'] = [
         key: 'system',
         label: 'System',
         children: [
+            {key: '/trader-sync/subscriptions', label: 'Trader Sync', icon: <RadarChartOutlined />},
             {key: '/service-status', label: 'Service Status', icon: <HeartOutlined />},
             {key: '/etherscan-gateways', label: 'Etherscan Gateways', icon: <ApiOutlined />},
             {key: '/notifications', label: 'Notifications', icon: <BellOutlined />}
@@ -73,6 +78,7 @@ const adminSections: MenuProps['items'] = [
 const routeMetadata = [
     {path: '/accounts', section: 'Account Admin', label: 'Accounts'},
     {path: '/profit-sharing', section: 'Governance', label: 'Profit Sharing'},
+    {path: '/trader-sync/subscriptions', section: 'System', label: 'Trader Sync'},
     {path: '/service-status', section: 'System', label: 'Service Status'},
     {path: '/etherscan-gateways', section: 'System', label: 'Etherscan Gateways'},
     {path: '/notifications', section: 'System', label: 'Notifications'},
@@ -160,6 +166,8 @@ const AdminRoutes = (props: {
                 <Route path='/accounts' element={<AdminAccountsPage />} />
                 <Route path='/profit-sharing' element={<ProfitSharingAdminRoundsPage />} />
                 <Route path='/profit-sharing/:slug' element={<ProfitSharingAdminRoundPage />} />
+                <Route path='/trader-sync/subscriptions' element={<TraderSyncAdminSubscriptionsPage />} />
+                <Route path='/trader-sync/subscriptions/:id' element={<TraderSyncAdminSubscriptionPage />} />
                 <Route path='/service-status' element={<ServiceStatusPage />} />
                 <Route path='/etherscan-gateways' element={<EtherscanGatewaysPage />} />
                 <Route path='/notifications' element={<SystemNotificationsPage />} />
@@ -174,12 +182,29 @@ const AdminRoutes = (props: {
     );
 };
 
+const clearAdminSession = () => {
+    endAdminReadSession();
+    requests.invalidatePendingRequestErrors();
+    requests.endAuthorizationSession();
+    clearAsyncDataCache();
+};
+
 const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences; settings: AppBootstrap['settings']}) => {
     const navigate = useNavigate();
     const location = useLocation();
     const ant = AntApp.useApp();
     const narrowShell = useNarrowShell();
     const [user, setUser] = React.useState(props.initialUser);
+    const currentUser = React.useRef(user);
+    currentUser.current = user;
+    const refreshSequence = React.useRef(0);
+    React.useLayoutEffect(() => {
+        beginAdminReadSession(props.initialUser);
+        return () => {
+            refreshSequence.current++;
+            clearAdminSession();
+        };
+    }, []);
     const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = React.useState(props.preferences.hideSidebar);
     const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
     const [accountMenuOpen, setAccountMenuOpen] = React.useState(false);
@@ -204,17 +229,22 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
     );
 
     const refresh = React.useCallback(async () => {
+        const sequence = ++refreshSequence.current;
         const latest = await services.users.get();
+        if (sequence !== refreshSequence.current) return;
         if (!latest.loggedIn) {
+            clearAdminSession();
+            setUser(latest);
             window.location.replace(adminLoginPath(location.pathname, location.search, location.hash));
             return;
         }
         if (!latest.administrator) {
+            clearAdminSession();
             setUser(latest);
-            requests.endAuthorizationSession();
-            clearAsyncDataCache();
             return;
         }
+        if (latest.accountId !== currentUser.current.accountId || latest.iss !== currentUser.current.iss) clearAdminSession();
+        beginAdminReadSession(latest);
         setUser(latest);
         const sessionGeneration = requests.beginAuthorizationSession(latest.accountId);
         setAsyncDataCacheSession('admin', latest.accountId, sessionGeneration);
@@ -226,13 +256,14 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
         const subscription = requests.onError.subscribe(error => {
             const details = requestErrorDetails(error);
             if (isAccountMaintenanceError(error) || details.status === 401) {
-                requests.endAuthorizationSession();
-                clearAsyncDataCache();
+                refreshSequence.current++;
+                clearAdminSession();
                 window.location.replace(adminLoginPath(location.pathname, location.search, location.hash, isAccountMaintenanceError(error)));
                 return;
             }
             if (details.status === 403 && details.reason === 'ACCOUNT_ADMIN_REQUIRED') {
-                void refresh();
+                clearAdminSession();
+                void refresh().catch(() => undefined);
             }
         });
         return () => subscription.unsubscribe();
@@ -271,8 +302,8 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
         setLoggingOut(true);
         try {
             await services.users.logout();
-            requests.endAuthorizationSession();
-            clearAsyncDataCache();
+            refreshSequence.current++;
+            clearAdminSession();
             window.location.replace(deploymentPath('admin/login'));
         } catch (error) {
             notifications.error('Logout failed', requestErrorMessage(error));
@@ -280,6 +311,7 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
         }
     };
 
+    if (!user.loggedIn) return null;
     if (!user.administrator) {
         return <AdminForbiddenPage />;
     }
