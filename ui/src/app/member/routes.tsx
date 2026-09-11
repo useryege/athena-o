@@ -32,3 +32,5 @@ export const TraderSyncAddPage = React.lazy(() => import('./pages/trader-sync/ad
 
 export const TraderSyncSubscriptionsPage = React.lazy(() => import('./pages/trader-sync/subscriptions').then(module => ({default: module.TraderSyncSubscriptionsPage})));
 export const TraderSyncSubscriptionPage = React.lazy(() => import('./pages/trader-sync/subscription-detail').then(module => ({default: module.TraderSyncSubscriptionPage})));
+
+export const TraderSyncHomePage = React.lazy(() => import('./pages/trader-sync/home').then(module => ({default: module.TraderSyncHomePage})));

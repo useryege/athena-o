@@ -1,6 +1,15 @@
-import {captureTraderSyncScope, clearTraderSyncState, readAddDraft, saveAddDraft, saveNewSubscriptionFocus, readNewSubscriptionFocus} from './member/pages/trader-sync/state';
+import {
+    captureTraderSyncScope,
+    clearTraderSyncState,
+    readAddDraft,
+    saveAddDraft,
+    saveNewSubscriptionFocus,
+    readNewSubscriptionFocus,
+    readActivitySession
+} from './member/pages/trader-sync/state';
 import renderer, {act} from 'react-test-renderer';
-import {Button, Input} from 'antd';
+import {RouterProvider} from 'react-router-dom';
+import {Button, Input, Menu} from 'antd';
 import {MemberApp as App, loadAppBootstrapWithRetry} from './member/app';
 import {parseUserInfo, AppBootstrap, AppBootstrapSessionStatus, AuthSettings} from './shared/models';
 import {ensureMemberBusinessServices, memberServices as services} from './member/services';
@@ -269,6 +278,77 @@ describe('Trader Sync real Shell cleanup', () => {
         expect(document.title).toBe('Subscriptions · Athena');
         expect(scroll).toHaveBeenCalledWith({top: 0, behavior: 'instant'});
         expect(containsText(tree.toJSON(), 'Trader Sync')).toBe(true);
+    });
+    test.each(['none', 'read'])('home entry excludes %s and rejects the home deep link', async level => {
+        await mountMember(level, '/trader-sync');
+        expect(window.location.pathname).toBe('/account/access');
+        expect(tree.root.findAllByType(Menu).some(menu => JSON.stringify(menu.props.items).includes('"key":"/trader-sync"'))).toBe(false);
+    });
+    test('RW home has its actual page, navigation and title', async () => {
+        ensureMemberBusinessServices();
+        jest.spyOn(services.traderSync, 'listSubscriptions').mockResolvedValue({subscriptions: [], page: {}, quota: {used: 0, limit: 10}, asOf: '2026-09-11T00:00:00Z'});
+        jest.spyOn(services.traderSync, 'listActivities').mockResolvedValue({activities: [], page: {snapshot: 'opaque', refreshCursor: 'signed', hasNewer: false}});
+        await mountMember('read_write', '/trader-sync');
+        expect(document.title).toBe('Trader Sync · Athena');
+        expect(containsText(tree.toJSON(), 'Activity Alerts')).toBe(true);
+        expect(tree.root.findAllByType(Menu).some(menu => JSON.stringify(menu.props.items).includes('"key":"/trader-sync"'))).toBe(true);
+    });
+    test('home loses RW, clears its saved page and ignores the pending activity response', async () => {
+        ensureMemberBusinessServices();
+        jest.spyOn(services.traderSync, 'listSubscriptions').mockResolvedValue({subscriptions: [], page: {}, quota: {used: 0, limit: 10}, asOf: '2026-09-11T00:00:00Z'});
+        const {normalizeActivity} = await import('./member/trader-sync-models');
+        const fixture = await import('./member/testdata/trader-sync/05.json');
+        const page = {
+            activities: [{...normalizeActivity(fixture.activity), noteSnapshot: 'private-home-note'}],
+            page: {snapshot: 'opaque', refreshCursor: 'signed', hasNewer: false}
+        };
+        const list = jest.spyOn(services.traderSync, 'listActivities').mockResolvedValue(page);
+        await mountMember('read_write', '/trader-sync');
+        expect(containsText(tree.toJSON(), 'private-home-note')).toBe(true);
+        let finish!: (value: typeof page) => void;
+        list.mockImplementation(
+            () =>
+                new Promise(resolve => {
+                    finish = resolve;
+                })
+        );
+        jest.mocked(services.users.get).mockResolvedValue(member('owner-A', 'athena', 'none', 2));
+        await act(async () => window.dispatchEvent(new Event('focus')));
+        expect(window.location.pathname).toBe('/account/access');
+        expect(readActivitySession('owner-A')).toBeUndefined();
+        await act(async () => finish(page));
+        expect(readActivitySession('owner-A')).toBeUndefined();
+        expect(containsText(tree.toJSON(), 'private-home-note')).toBe(false);
+    });
+    test('home restores its page after a real subscription detail route round trip', async () => {
+        ensureMemberBusinessServices();
+        jest.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+        const {normalizeSubscription} = await import('./member/trader-sync-models');
+        const fixture = await import('./member/testdata/trader-sync/01.json');
+        const subscription = normalizeSubscription(fixture.subscription);
+        jest.spyOn(services.traderSync, 'listSubscriptions').mockResolvedValue({
+            subscriptions: [subscription],
+            page: {},
+            quota: {used: 1, limit: 10},
+            asOf: subscription.updatedAt
+        });
+        jest.spyOn(services.traderSync, 'getSubscription').mockResolvedValue(subscription);
+        jest.spyOn(services.traderSync, 'listSubscriptionHistory').mockResolvedValue({entries: [], page: {}, asOf: subscription.updatedAt});
+        const list = jest
+            .spyOn(services.traderSync, 'listActivities')
+            .mockResolvedValue({activities: [], page: {snapshot: 'opaque', refreshCursor: 'signed-return', hasNewer: false}});
+        await mountMember('read_write', '/trader-sync');
+        Object.defineProperty(window, 'scrollY', {configurable: true, value: 240});
+        await act(async () => {
+            await tree.root.findByType(RouterProvider).props.router.navigate(`/trader-sync/subscriptions/${subscription.id}`);
+        });
+        expect(document.title).toBe('Subscription · Athena');
+        await act(async () => {
+            await tree.root.findByType(RouterProvider).props.router.navigate('/trader-sync');
+        });
+        expect(list.mock.calls.at(-1)![0]?.refreshCursor).toBe('signed-return');
+        expect(window.scrollTo).toHaveBeenLastCalledWith({top: 240, behavior: 'instant'});
+        Object.defineProperty(window, 'scrollY', {configurable: true, value: 0});
     });
     test('RW Add route renders the actual independent page', async () => {
         await mountMember();

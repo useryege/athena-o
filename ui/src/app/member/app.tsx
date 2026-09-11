@@ -53,6 +53,7 @@ import {
     AccountSecurityPage,
     HelpPage,
     NotificationsPage,
+    TraderSyncHomePage,
     TraderSyncAddPage,
     TraderSyncSubscriptionsPage,
     TraderSyncSubscriptionPage,
@@ -116,6 +117,7 @@ const canAccessItem = (authorization: AccessState, item: NavItem) => {
     if (item.availability === 'profit-sharing' && !authorization.user.access.profitSharingEnabled) {
         return false;
     }
+    if (item.module === AccountDataModule.TraderSync) return authorization.moduleAccess[item.module] === AccountDataAccess.ReadWrite;
     return item.module === undefined || authorization.moduleAccess[item.module] >= AccountDataAccess.Read;
 };
 
@@ -204,6 +206,7 @@ const navSections: NavSection[] = [
         label: 'Markets',
         children: [
             marketRadarNavItem,
+            {key: '/trader-sync', label: 'Trader Sync', path: '/trader-sync', icon: <SwapOutlined />, module: AccountDataModule.TraderSync},
             sportsNavItem,
             managedOONavItem,
             wormTradingNavItem,
@@ -299,9 +302,7 @@ const navTrail = (items: NavItem[], targetKey: string): NavItem[] => {
 };
 
 const breadcrumbItems = (pathname: string) => {
-    if (pathname === '/trader-sync/subscriptions' || pathname.startsWith('/trader-sync/subscriptions/')) {
-        return [{title: 'Markets'}, {title: 'Trader Sync'}, {title: pathname === '/trader-sync/subscriptions' ? 'Subscriptions' : 'Subscription'}];
-    }
+    if (pathname.startsWith('/trader-sync/')) return [{title: 'Markets'}, {title: 'Trader Sync'}, {title: routeTitle(pathname) || 'Trader Sync'}];
     const targetKey = selectedKey(pathname);
     const section = navSections.find(candidate => navTrail(candidate.children, targetKey).length > 0);
     const trail = section ? navTrail(section.children, targetKey) : [];
@@ -319,6 +320,9 @@ const breadcrumbItems = (pathname: string) => {
 };
 
 const routeTitle = (pathname: string) => {
+    if (pathname === '/trader-sync/add') return 'Add trader';
+    if (pathname.startsWith('/trader-sync/activities/')) return 'Activity';
+    if (pathname.startsWith('/trader-sync/summaries/')) return 'Summary batch';
     if (pathname === '/trader-sync/subscriptions') return 'Subscriptions';
     if (pathname.startsWith('/trader-sync/subscriptions/')) return 'Subscription';
     if (/^\/worm-trading\/combinations\/[^/]+\/execute\/?$/.test(pathname)) {
@@ -345,6 +349,7 @@ const loadAccessState = (user: UserInfo): AccessState => ({
 const isPendingAccess = (access: AccessState) => accountStatusForAccess(access.user.access, access.isAdmin) === AccountStatus.Pending;
 
 const moduleLandingPaths: Partial<Record<AccountDataModule, string>> = {
+    [AccountDataModule.TraderSync]: '/trader-sync',
     [AccountDataModule.MarketRadar]: '/market-radar',
     [AccountDataModule.SportsLive]: '/sports-live',
     [AccountDataModule.SportsHistory]: '/sports-history',
@@ -357,7 +362,12 @@ const moduleLandingPaths: Partial<Record<AccountDataModule, string>> = {
 const firstAuthorizedBusinessPath = (access: AccessState): string | undefined => {
     for (const definition of accountDataModules) {
         const path = moduleLandingPaths[definition.module];
-        if (path && access.moduleAccess[definition.module] >= AccountDataAccess.Read) {
+        if (
+            path &&
+            (definition.module === AccountDataModule.TraderSync
+                ? access.moduleAccess[definition.module] === AccountDataAccess.ReadWrite
+                : access.moduleAccess[definition.module] >= AccountDataAccess.Read)
+        ) {
             return path;
         }
     }
@@ -442,7 +452,7 @@ const AppRoutes = (props: {
     const moduleRoute = (module: AccountDataModule, element: React.ReactElement) =>
         props.access.moduleAccess[module] >= AccountDataAccess.Read ? element : <Navigate replace={true} to='/account/access' />;
     const traderSyncRoute = (element: React.ReactElement) =>
-        props.access.moduleAccess[AccountDataModule.TraderSync] >= AccountDataAccess.ReadWrite ? element : <Navigate replace={true} to='/account/access' />;
+        props.access.moduleAccess[AccountDataModule.TraderSync] === AccountDataAccess.ReadWrite ? element : <Navigate replace={true} to='/account/access' />;
     const profitSharingRoute = (element: React.ReactElement) => (props.access.user.access.profitSharingEnabled ? element : <Navigate replace={true} to='/account/access' />);
     const accountCenterProps = {
         showMemberSecurity: props.access.user.access.apiKeyEnabled,
@@ -472,6 +482,12 @@ const AppRoutes = (props: {
                 <Route path='/world-cup-corners' element={moduleRoute(AccountDataModule.WorldCupCorners, <WorldCupCornersPage />)} />
                 <Route path='/managed-oo/proposals' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOOProposalsPage />)} />
                 <Route path='/managed-oo/disputes' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOODisputesPage />)} />
+                <Route
+                    path='/trader-sync'
+                    element={traderSyncRoute(
+                        <TraderSyncHomePage key={JSON.stringify([props.access.user.accountId, props.access.user.iss])} ownerId={props.access.user.accountId} />
+                    )}
+                />
                 <Route
                     path='/trader-sync/subscriptions'
                     element={traderSyncRoute(

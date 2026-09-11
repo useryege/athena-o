@@ -29,6 +29,7 @@ export const captureTraderSyncScope = (ownerId: string): ReadScope => {
 /** Sole module cleanup boundary; future drafts/page caches must be cleared here too. */
 export const clearTraderSyncState = (): void => {
     generation++;
+    activitySessions.clear();
     subscriptionSessions.clear();
     historySessions.clear();
     subscriptionEdits.clear();
@@ -99,4 +100,16 @@ const subscriptionEdits = new Map<string, SubscriptionEdit>();
 export const readSubscriptionEdit = (ownerId: string, id: string): SubscriptionEdit => subscriptionEdits.get(JSON.stringify([ownerId, id])) || {};
 export const saveSubscriptionEdit = (ownerId: string, id: string, scope: ReadScope, value: SubscriptionEdit): void => {
     if (scope.isCurrent() && scope.key === captureTraderSyncScope(ownerId).key) subscriptionEdits.set(JSON.stringify([ownerId, id]), value);
+};
+
+const activitySessions = new Map<string, import('./activity-session').ActivitySession>();
+export const readActivitySession = (ownerId: string) => activitySessions.get(ownerId);
+/** Async consumers pass their original scope so cleanup cannot be undone by a late save. */
+export const saveActivitySession = (ownerId: string, value: import('./activity-session').ActivitySession, scope: ReadScope = captureTraderSyncScope(ownerId)): void => {
+    if (scope.isCurrent() && scope.key === captureTraderSyncScope(ownerId).key) activitySessions.set(ownerId, value);
+};
+export const consumeNewSubscriptionFocus = (ownerId: string, subscriptionId: string): boolean => {
+    if (readNewSubscriptionFocus(ownerId) !== subscriptionId) return false;
+    newSubscriptionFocus = undefined;
+    return true;
 };
