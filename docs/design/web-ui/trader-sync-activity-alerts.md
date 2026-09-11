@@ -96,6 +96,10 @@ Combo YES 为所有腿条件满足，NO 为整体合取的补集，不逐腿取�
 
 所有概要携带 as_of。订阅活动数为该订阅全生命周期；Associated deliveries 为关联的 distinct 逻辑投递（普通消息/摘要部分），不是 attempt。一部分涉及多个订阅会在各行各计一次，行间不可相加；全局单独 distinct delivery 聚合。积压标明单位，当前 gauge、时间窗口和 service_epoch 累计分别说明，不混用。
 
+运行指标的 kind 只取 gauge/window/epoch；epoch 项必须携带 serviceEpoch。Projector 累计项的 serviceEpoch 标识该计数实例的生命周期，同实例跨 Collector 重连保持稳定，新实例或计数重置时改变。它是 opaque string，不当作 Collector 连接序号解析，也不跨不同指标生产者合并累计值。
+
+发送进程正在初始化或等待恢复预算时显示 Recovering，单列原因、该进程报告的剩余/已用等待及更新时间；fatal/stopped优先，恢复未完成不显示Running。recovery对象可缺，remainingMillis/elapsedMillis为十进制string，未知剩余保持Unavailable，合法0保留；浏览器不重新推算或解除恢复预算，也不把恢复等待归为Telegram网络耗时。raw队列与持久化中数量只在raw_observation_available可观测时展示，不可观测时不填0；按原10秒单飞读取更新，不另加计时或逐条请求。
+
 ## 组件与源码落点
 
 | 预计位置或现有入口 | 职责 |

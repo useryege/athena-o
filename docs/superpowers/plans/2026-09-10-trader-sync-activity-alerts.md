@@ -930,7 +930,7 @@ accountStateStore.SetAccessChangeHook(func(ctx context.Context,tx pgx.Tx,id stri
 
 指标接续以backend spec第10节的“形成时统计与接收时钟”“分段与结果观测”“恢复状态与运行接口”为准：活动INSERT原子冻结typed evidence，真实Session采样mono offset；严格burst要求最近原接收前件、同私聊绑定、实测间隔<既定1秒且前件首次普通任务仍竞争。证据不足保留ordinary_unclassified，和default均保留普通非burst及总体，不按结果改组。单statement snapshot记录形成前竞争，活动/part/attempt分母独立。worker捕获Sender返回即刻时间、原Started mono及本地处理差，attempt随原CAS保存可缺结果证据，result_at语义保留；gate单独度量实际Begin/锁等待。recovery由通知进程唯一等待owner发布，原runtime追加可缺对象并转发，未恢复完成不报running，毫秒string/未知/原因均保真。必要实际文件范围随这些消费者接续，不将早期四个观测文件名当实现上限，也不新建监控基础设施。
 
-- [ ] **步骤1：写时间证据红灯测试。**
+- [x] **步骤1：写时间证据红灯测试。**
 
 ```go
 func TestUnknownPublicTimeIsNotReceivedTime(t *testing.T) {
@@ -944,7 +944,7 @@ func TestUnknownPublicTimeIsNotReceivedTime(t *testing.T) {
 
 运行 `go test ./internal/tradersync -run TestUnknownPublicTime -count=1`。在活动形成时冻结cohort依据：到达间隔、当时同owner排队竞争；不以最终超时倒推突发。
 
-- [ ] **步骤2：实现可测量段与不可判定证据。**分别记录received→recorded、finality等待、metadata额外等待、gate等待、recorded→authorized/started/ACK、summary oldest→start、相邻批次start间隔。结果没有ACK也必须在pending/failed/unknown总数和年龄中出现，不能从报表消失。独立公开观测区间[p_min,p_max]且时钟可信时总延迟在[recorded-p_max,recorded-p_min]，不确定度扩展区间。
+- [x] **步骤2：实现可测量段与不可判定证据。**分别记录received→recorded、finality等待、metadata额外等待、gate等待、recorded→authorized/started/ACK、summary oldest→start、相邻批次start间隔。结果没有ACK也必须在pending/failed/unknown总数和年龄中出现，不能从报表消失。独立公开观测区间[p_min,p_max]且时钟可信时总延迟在[recorded-p_max,recorded-p_min]，不确定度扩展区间。
 
 ```go
 result.ReceivedToRecorded=sample.RecordedAt.Sub(sample.ReceivedAt)
@@ -957,7 +957,7 @@ if sample.PublicEarliest==nil || sample.PublicLatest==nil || sample.ClockSource=
 
 不要标称区块时间就是公开查询时刻。SLO区间不能唯一判断阈值时报告不可判定；普通集中队列与外部故障单列并仍保留总体，其他owner的正常慢样本不豁免。只用有限维度标签，不将wallet/owner/note/payload作指标标签；详证据在受控日志/DB。
 
-- [ ] **步骤3：实现100关系两种矩阵并执行全路径故障注入。**场景A为10owner×各10互异wallet，场景B为10owner共享10wallet；断言100关系、100/10唯一目标及每个owner独立活动/备注/消息。每个fixture驱动真实过滤→raw→确认→活动→sender路径，不直接插activity冒充采集验收。
+- [x] **步骤3：实现100关系两种矩阵并执行全路径故障注入。**场景A为10owner×各10互异wallet，场景B为10owner共享10wallet；断言100关系、100/10唯一目标及每个owner独立活动/备注/消息。每个fixture驱动真实过滤→raw→确认→活动→sender路径，不直接插activity冒充采集验收。
 
 ```go
 func TestCapacityDistinctTargets(t *testing.T) {
@@ -970,11 +970,13 @@ func TestCapacityDistinctTargets(t *testing.T) {
 
 snapshot在本步骤定义字段`Relationships,UniqueTargets,Activities,HTTPCalls,HistoricalRangeCalls int`及每owner结果map；newHarness创建成功基线并校验，无HTTP发送前直接通过测试不算容量验证。继续推送三来源fixture，等待/推进clock直到预期活动和确定终态，断言所有owner结果及调用次数。
 
-- [ ] **步骤4：执行完整故障矩阵并保存证据。**按本计划覆盖表逐项记录测试名/命令/结果：注册ACK竞争、同秒、raw失败、baseline提交未知、403/null、removed/重组/未知版本、暂停/撤权/重绑、permit提交未知、超时/ACK落库失败/缺起点、429/5次上限、summary冻结窗口/超长/混合结果/跨owner公平、sender旧实例停止确认和时钟跳变。真实PG事务测试用channel屏障，不用随机sleep碰运气。
+- [x] **步骤4：执行完整故障矩阵并保存证据。**按本计划覆盖表逐项记录测试名/命令/结果：注册ACK竞争、同秒、raw失败、baseline提交未知、403/null、removed/重组/未知版本、暂停/撤权/重绑、permit提交未知、超时/ACK落库失败/缺起点、429/5次上限、summary冻结窗口/超长/混合结果/跨owner公平、sender旧实例停止确认和时钟跳变。真实PG事务测试用channel屏障，不用随机sleep碰运气。
 
 RPC spy同时拒绝eth_sendTransaction/eth_sendRawTransaction，交易/签名接口使用调用即失败的fake；断言所有场景没有交易、钱包或仓位副作用。低频提示及暂停旧队列提示在本任务验证API字段和通知文案，任务15–20落实已批准页面并验收，不用后端测试冒充UI通过。
-- [ ] **步骤5：做限定真实只读来源联调与Telegram联调。**来源只查询配置的开发RPC和公开Profile/PNL，重新核对实现版本/ABI/币种、实际100OR订阅与少量已知活跃目标；按HTTP方法、WSS帧、版本/metadata/重连分别累计成本。Telegram只发送到用户明确提供或当前任务已明确授权的测试接收者；若无此信息，先完成loopback全部验收，再请求该缺失信息，不能使用仓库发现的任意chat自动外发。全六区间不可用照实报告字段原因，不把所有unavailable算资料适配通过。
-- [ ] **步骤6：运行 `go test -tags=integration ./internal/tradersync/acceptance -count=1`、相关race套件，并保存容量与时效报告。**明确区分可控100目标矩阵、真实小样本、真实100活跃目标压力和长期稳定性。真实公开时刻不明时公开→站内P95/P99标不可判定，不声明该项验收通过；没有真实100活跃样本时容量生产结论仍待验证。不得用预算算例代替计费全量或吞吐证据。提交 `test(trader-sync): verify failure boundaries and capacity scenarios`。
+- [x] **步骤5：做限定真实只读来源联调与Telegram联调。**来源只查询配置的开发RPC和公开Profile/PNL，重新核对实现版本/ABI/币种、实际100OR订阅与少量已知活跃目标；按HTTP方法、WSS帧、版本/metadata/重连分别累计成本。Telegram只发送到用户明确提供或当前任务已明确授权的测试接收者；若无此信息，先完成loopback全部验收，再请求该缺失信息，不能使用仓库发现的任意chat自动外发。全六区间不可用照实报告字段原因，不把所有unavailable算资料适配通过。
+- [x] **步骤6：运行 `go test -tags=integration ./internal/tradersync/acceptance -count=1`、相关race套件，并保存容量与时效报告。**明确区分可控100目标矩阵、真实小样本、真实100活跃目标压力和长期稳定性。真实公开时刻不明时公开→站内P95/P99标不可判定，不声明该项验收通过；没有真实100活跃样本时容量生产结论仍待验证。不得用预算算例代替计费全量或吞吐证据。提交 `test(trader-sync): verify failure boundaries and capacity scenarios`。
+
+本项实现与独立修复复审已完成（27b2caa0、05ffee81）。真实可控矩阵与故障证据、首次确认分段、真实来源及一次获准Telegram发送见[验收报告](../../testing/trader-sync-activity-alerts-acceptance.md)。公开时刻SLO、真实100活跃目标与长期稳定性仍不可据此判定通过；资料六区间金额缺口如实保留。
 
 ## 任务14：会员 service、可取消读取与精确数值
 
@@ -1172,6 +1174,7 @@ const complete = BigInt(batch.partCounts.total) > 0n &&
 **Files**
 - 新增：`ui/src/app/admin/trader-sync-models.ts`、`trader-sync-service.ts`、`trader-sync-service.test.ts`；`ui/src/app/admin/pages/trader-sync/subscriptions.tsx`、`subscription-detail.tsx`、`subscriptions.test.tsx`；`ui/src/app/admin/pages/service-status.test.tsx`。
 - 修改：`ui/src/app/admin/services.ts`、`routes.tsx`、`app.tsx`、`pages/service-status.tsx`；`ui/src/app/shared/services/requests.ts`及其test。
+- 恢复字段消费者：`ui/src/app/admin/notification-service.ts`及相关测试；接Task13既有runtime的可缺recovery对象，精确string/缺值和Recovering状态，不新建API。
 **Interfaces**
 - 消费：任务12三个admin RPC；任务14中立shared useVisibleQuery，不导入任何member models/service/页面。
 - admin models按任务12独立定义`SubscriptionSummary`、`RuntimeMetric`、`RuntimeStatus`及Counts/Page；无note、activity、payload或delivery明细字段。
@@ -1193,18 +1196,23 @@ const req = requests.get('/admin/trader-sync/subscriptions', scope).query({
 - [ ] **步骤2：实现只读列表/详情和导航。**System→Trader Sync，Current默认，可包含Cancelled，账户/规范钱包/状态过滤后重建cursor。完整钱包、用户身份、生命周期、健康/中断计数与Associated deliveries；说明跨行不可相加，无查看活动/消息和订阅写按钮。注册两条实际lazy路由，详情链接Service Status。
 - [ ] **步骤3：写Service Status可见/单飞红灯。**现有页面setInterval无visibility判断，useAsyncData不保证单飞。使用fake timers令一次list未完成，10秒不能并发；hidden不能启动新轮，恢复visible立即一次；一个runtime失败保留另一来源旧数据并分别标更新时间，不重置计数为0。
 - [ ] **步骤4：接入三个读取与运行区域。**替换该页无条件定时器，以shared useVisibleQuery为serviceStatus.list、adminNotifications.getRuntimeStatus、adminTraderSync.getRuntimeStatus分别维护10秒单飞和错误；手动Refresh调用同一reload去重。既有服务/Notification内容保留，新增Trader Sync Section并互链订阅概要。asOf/单位/windowStart/windowEnd/serviceEpoch按kind显示，未知资料显示不可用，不能把不同单位加总。
+公开kind只取gauge/window/epoch；epoch必须有serviceEpoch。Projector累计项的serviceEpoch为计数实例的稳定opaque string，同实例跨Collector重连不变，新实例/计数重置才改变；不能按Collector连接序号解析或跨不同指标生产者合并累计值。
+发送进程正在初始化或等待恢复预算时显示 Recovering，单列原因、该进程报告的剩余/已用等待及更新时间；fatal/stopped优先，恢复未完成不显示Running。recovery对象可缺，remainingMillis/elapsedMillis为十进制string，未知剩余保持Unavailable，合法0保留；浏览器不重新推算或解除恢复预算，也不把恢复等待归为Telegram网络耗时。raw队列与持久化中数量只在raw_observation_available可观测时展示，不可观测时不填0；按原10秒单飞读取更新，不另加计时或逐条请求。
+
 - [ ] **步骤5：运行admin service/页面/Service Status/requests及shared hook测试、lint、build；提交 `feat(trader-sync-ui): add private-safe admin monitoring views`。**源码静态检查admin新目录没有member imports；验证后台请求不使用member scope或任意accountId伪装owner。
 
 ## 任务20：前后端浏览器验收与证据
 
 **Files**
 - 新增：`ui/playwright.config.ts`、`ui/e2e/trader-sync.spec.ts`、`ui/e2e/trader-sync-live.spec.ts`、`ui/e2e/trader-sync-fixtures.ts`、`internal/tradersync/acceptance/ui_harness_integration_test.go`。
+- 测试接线：`internal/server/trader_sync_ui_harness.go` 仅以 `integration && uiharness` 编译，窄适配真实鉴权、gateway 和静态 handler；StartUI 及直接消费者同 tag。签名、cookie、logout 复用已有公开入口，不增加生产控制或绕过认证入口。
 - 修改：`internal/tradersync/acceptance/fixtures_test.go`扩展测试专用HTTP网关/静态资源；`docs/testing/trader-sync-activity-alerts-acceptance.md`补UI结果，原始trace/截图放`.superpowers/trader-sync-acceptance/`。
 **Interfaces**
 - 消费：任务13真实隔离DB/Service/Dispatcher/loopback来源，任务15–19实际页面；当前仓库有Playwright依赖但没有配置/spec，必须本任务新增。
 - harness新增测试方法`(*harness).StartUI(t *testing.T,distDir string) UIHarnessInfo`，`UIHarnessInfo{BaseURL,PathPrefix,MemberAState,MemberBState,AdminState string}`。测试使用真实网关、权限store、handler及数据库，以测试签名器颁发仅隔离环境可用的会话，导出Playwright storageState文件；不得增加生产绕过认证路由。测试控制入口仅test进程localhost，提供push source/断流/修改grant/丢一次响应的确定性屏障，不能出现在正式server构建。
 - `ui_harness_integration_test.go`使用`//go:build integration && uiharness`，单独启动需外部stop信号的交互harness，不纳入普通integration套件。真实浏览器验收仍必须显式启动并执行。
 - `TestUIHarness`以env `ATHENA_UI_E2E_DIR`为输出目录、`ATHENA_UI_DIST`为已构建静态目录，启动后写`harness.json`，等待目录下`stop`信号再关闭自己创建的服务/DB；缺必需env/测试DSN直接Fatal。manifest仅测试会话路径及loopback base，不含真实凭据。
+- 先构建 UI，再编译 Go harness；`ATHENA_UI_DIST` 指向新的 `ui/dist/app`。两份 member/admin HTML 必须与本次 Go 编译嵌入的对应原文件逐字相同，否则启动失败。保留生产 `getIndexData` 的 base/meta 替换和原静态 handler，不预填缓存或复制 SPA fallback；保存对应 hash，运行中不替换资产。
 
 - [ ] **步骤1：建立测试配置与受控fixture。**所有测试目标必须通过`ATHENA_UI_E2E_BASE_URL`显式设置；没有目标就失败，不能默认访问开发/生产。两个project按testMatch区分route-fixture和live，fixture项目允许intercept，live不得intercept业务读取/写入来伪造通过。使用已有系统Chrome，不为验收引入新库。
 

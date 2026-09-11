@@ -160,7 +160,11 @@ Combo 永远是一笔活动。组合 YES 表示所有腿条件满足；组合 NO
 
 Service Status 增加连接状态与新鲜度、目标/关系数量、接收/确认/投影积压、元数据缺失、待发与结果数量及最近异常概要。沿用该页 10 秒可见轮询；与订阅概要互相链接。运行数据有 `as_of`，各积压明确单位；不能把 raw record、candidate、activity、delivery 混成一个总数。
 
+发送进程正在初始化或等待恢复预算时显示 Recovering，单列原因、该进程报告的剩余/已用等待及更新时间；fatal/stopped优先，恢复未完成不显示Running。recovery对象可缺，remainingMillis/elapsedMillis为十进制string，未知剩余保持Unavailable，合法0保留；浏览器不重新推算或解除恢复预算，也不把恢复等待归为Telegram网络耗时。raw队列与持久化中数量只在raw_observation_available可观测时展示，不可观测时不填0；按原10秒单飞读取更新，不另加计时或逐条请求。
+
 管理员活动数按单个订阅全生命周期。投递数按关联的 distinct 逻辑 delivery（普通消息或摘要部分），不是 attempts；一部分关联多个订阅时在各订阅各计一次，明确标“Associated deliveries”，不得跨行求和当全局总数。全局数量单独按 distinct delivery 聚合。当前 gauge 与窗口计数区分，窗口项返回 window_start/window_end，进程累计项说明 service_epoch；不显示来源不明的“累计”。
+
+公开 kind 只取 gauge/window/epoch。Projector 的 epoch 项必须有 serviceEpoch，表示该计数实例的生命周期；同实例跨 Collector 重连不变，新实例或计数重置时改变。serviceEpoch 是 opaque string，不能当作 Collector 连接序号，也不跨指标生产者合并累计值。
 
 ## 9. 刷新、权限和异常交互
 
