@@ -758,10 +758,13 @@ SELECT pg_advisory_unlock(hashtextextended('athena:account:' || $1::text,0));
 ## 任务12：公共API、隐私查询、配置与进程组合
 
 **Files**
-- 新增：`pkg/apis/application/v1alpha1/trader_sync_types.go`、`pkg/apis/application/v1alpha1/trader_sync_protomessage.go`、`internal/server/tradersync/tradersync.proto`、`internal/server/tradersync/tradersync.go`、`internal/tradersync/service.go`、`internal/tradersync/pagination.go`、`internal/tradersync/store/reads.go`、`internal/tradersync/store/queries/reads.sql`。
+- 新增：`pkg/apis/application/v1alpha1/trader_sync_types.go`、`pkg/apis/application/v1alpha1/trader_sync_protomessage.go`、`internal/server/tradersync/tradersync.proto`、`internal/server/tradersync/tradersync.go`、`internal/tradersync/service.go`、`internal/tradersync/pagination.go`、`internal/tradersync/types/reads.go`、`internal/tradersync/store/reads.go`、`internal/tradersync/store/queries/reads.sql`。
+- 新增组合：`internal/server/trader_sync_runtime.go`及定向`trader_sync_runtime_test.go`；在server同包集中构造唯一后台及自有来源client/transport，复用已创建pool/traderStore；AthenaServer保留进程cancel/join/致命出口。
 - 修改：`internal/server/athena-server.go`、`internal/server/authz.go`、`cmd/athena-server/commands/athena-server.go`、`cmd/athena-notification/commands/athena_notification.go`、`internal/notification/server.go`、`internal/tradersync/config.go`、`hack/local-runtime.sh`、`Procfile`及必要的本地启动helper、`docker-compose.prod.yml`；只有实际生成契约发现问题才调整`hack/generate-proto.sh`的精确schema处理。
 - 生成：`pkg/apis/application/v1alpha1/generated.proto`、`pkg/apis/application/v1alpha1/generated.pb.go`、`pkg/apis/application/v1alpha1/generated.protomessage.pb.go`、`pkg/apis/application/v1alpha1/zz_generated.deepcopy.go`、`pkg/apiclient/tradersync/tradersync.pb.go`、`pkg/apiclient/tradersync/tradersync.pb.gw.go`、`assets/swagger.json`。
-- 测试：`internal/server/tradersync/tradersync_test.go`、`internal/server/tradersync/contract_test.go`、`internal/server/authz_test.go`、`internal/tradersync/pagination_test.go`、`internal/tradersync/service_test.go`、`internal/tradersync/store/reads_integration_test.go`。
+- 测试：`internal/server/tradersync/tradersync_test.go`、`internal/server/tradersync/contract_test.go`、`internal/server/authz_test.go`、`internal/tradersync/pagination_test.go`、`internal/tradersync/service_test.go`、`internal/tradersync/store/reads_integration_test.go`、`internal/server/trader_sync_activity_pagination_integration_test.go`。
+- 订阅错误码真实消费者：`internal/tradersync/subscriptions.go`及对应测试；坏确认token按本项既定FailedPrecondition契约映射，保留当前grant/幂等优先顺序。
+- 观察健康真实消费者接续：`internal/tradersync/collector.go`、`internal/tradersync/rpc/session.go`及对应Session/Collector/真实PG回归，monitor_interval权威schema及相关store查询/生成消费者；只复用原健康检查，不新增轮询。
 **Interfaces**
 - 消费：任务5Resolve、任务6SubscriptionService、任务9Collector.Run、任务10Projector.Run、任务8DirectoryRefresher.Run与任务11SummarySource。
 - 产出业务组合：`NewService(cfg Config,deps Dependencies) (*Service,error)`、`(*Service).Run(ctx context.Context) error`、`Close() error`。Dependencies明确含`Pool *pgxpool.Pool`、`Resolver *TargetResolver`、`Subscriptions *SubscriptionService`、`Collector *Collector`、`Projector *Projector`、`Directory *DirectoryRefresher`；各组件由同一composition root组装，不在业务方法内创建新pool。
@@ -794,6 +797,8 @@ application DTO契约如下；每个struct按表中顺序分配连续字段号�
 | TraderSyncSubscriptionSummary | subscriptionId、accountId/username/email、wallet、status、生命周期时间、安全observation、activityCount、associatedDeliveryCounts（六态distinct逻辑delivery）、asOf；无note、消息或活动正文。 |
 | TraderSyncRuntimeMetric / RuntimeStatus | Metric含name、value字符串、unit、kind=gauge/window/epoch、可缺windowStart/windowEnd/serviceEpoch；RuntimeStatus含collector连接/epoch/filter概要、metrics、asOf。raw/确认/投影积压、metadata缺失、队列/结果/时钟异常分别标明单位；不含逐条事件或payload。 |
 
+订阅pausedAt/cancelledAt/permissionDisabledAt为可缺时间，仅当前对应desired_state且真实ended_at存在时输出，表示当前记录保存的对应停止操作时刻；恢复后省略，不从updated_at或其他interval拼出旧生命周期事件。会员与管理员概要采用同一事实边界。
+
 Resolve的usageNotice固定说明“优先选择低频交易者；高频监控不纳入性能保障”；活动notificationMode表达形成时资格，Subscription.bindingStatus只表达当前绑定。暂停/取消queueNotice明确“已排队通知仍会继续发送，可能稍后收到”。任务15–19提供英文等义展示；后端通过不代替页面验收。
 
 | RPC / 权限 | 请求消息字段 | 响应消息字段 / HTTP |
@@ -817,7 +822,7 @@ Resolve的usageNotice固定说明“优先选择低频交易者；高频监控�
 
 管理员列表的account_id是已批准概要过滤，仍绑定当前管理员身份的游标；“无account_id”约束针对会员请求。API facade内只用`session.AccountID(ctx)`，不能使用任意请求字段作为会员owner。
 
-- [ ] **步骤1：写真实gateway表示与授权登记红灯测试。**Create请求分别`{"confirmationToken":"x","requestId":"a"}`、`{"confirmationToken":"x","requestId":"b","note":{"value":""}}`，断言传给业务的Note分别nil/指针空串。positionId=`90071992547409931234567890`经过实际gateway JSON往返保持字符串，available真0与unavailable nil不同。所有16个RPC都登记对应鉴权，未知方法拒绝。savedNote缺失/空串、latestAttempt可缺、sent+startedAt缺失、notification三模式和summary三阶段须经过真实gateway往返。
+- [x] **步骤1：写真实gateway表示与授权登记红灯测试。**Create请求分别`{"confirmationToken":"x","requestId":"a"}`、`{"confirmationToken":"x","requestId":"b","note":{"value":""}}`，断言传给业务的Note分别nil/指针空串。positionId=`90071992547409931234567890`经过实际gateway JSON往返保持字符串，available真0与unavailable nil不同。所有16个RPC都登记对应鉴权，未知方法拒绝。savedNote缺失/空串、latestAttempt可缺、sent+startedAt缺失、notification三模式和summary三阶段须经过真实gateway往返。
 
 ```proto
 message TraderSyncNoteInput { string value = 1; }
@@ -830,7 +835,7 @@ message CreateSubscriptionRequest {
 
 note wrapper保留存在性，不能用GetNote().GetValue()丢失nil；现有gogofast链未经验证不改用proto3 optional。运行新handler/contract测试确认方法尚未实现导致红灯。
 
-- [ ] **步骤2：实现会员和管理员分开的SQL读取与游标。**会员读在account gate事务内验证当前grant，再查owner数据；跨owner和不存在均NotFound。管理员只选择账户身份、wallet、状态/生命周期、健康/中断及活动/结果数量，不选note/活动正文/payload/逐条delivery。分页0→50、1–100合法、负值或>100拒绝，cursor绑定身份、筛选及方向。
+- [x] **步骤2：实现会员和管理员分开的SQL读取与游标。**会员读在account gate事务内验证当前grant，再查owner数据；跨owner和不存在均NotFound。管理员只选择账户身份、wallet、状态/生命周期、健康/中断及活动/结果数量，不选note/活动正文/payload/逐条delivery。分页0→50、1–100合法、负值或>100拒绝，cursor绑定身份、筛选及方向。
 
 ```sql
 -- member查详情必须有owner条件；管理员另写聚合投影。
@@ -873,9 +878,11 @@ func TestActivityCursorBindsOwnerAndPageSize(t *testing.T) {
 
 `reads_integration_test.go`使用任务1隔离DB和两连接屏障：先取第一页/下一页/空页，新增更大ID但更早recorded_at/settled_at，再refresh，断言原成员不变、has_newer符合原过滤、点击最新可见；回滚插入不制造新活动。覆写page_size、kind、batch、owner、过滤和签名均拒绝。准备51条观察记录和101个parts验证完整分页，单活动关联第1/101部分不得丢第二处；unbound后绑定历史仍in_app_only，sent缺started仍sent。
 
-管理员SQL先以subscription_id+delivery_id去重再聚合状态，普通由activity关联，摘要由part_items关联；重试不增数量，同part跨两个订阅各计一次，全局只计一次。缺started_at不从sent排除。history/parts按页读、attempts只用LATERAL读取最新一条及count，不对每行单发SQL；所有数组/计数使用专门查询。运行metric明确unit/kind，window必须含起止、epoch必须含serviceEpoch；以handler JSON断言管理员响应不存在noteSnapshot、metadata、payload或逐条delivery。
+管理员SQL先以subscription_id+delivery_id去重再聚合状态，普通由activity关联，摘要由part_items关联；重试不增数量，同part跨两个订阅各计一次，全局只计一次。缺started_at不从sent排除。history/parts按页读、attempts只用LATERAL读取最新一条及count，不对每行单发SQL；所有数组/计数使用专门查询。运行metric明确unit/kind，window必须含起止、epoch必须含serviceEpoch；以handler JSON断言管理员响应不存在noteSnapshot、metadata、payload或逐条delivery。 raw阶段由实际Session队列raw_queue_depth及Persist调用中的raw_persist_in_flight两个gauge（raw_logs）表达；只有活session/epoch与DB当前epoch一致才返回值，其他情况省略，并以raw_observation_available布尔gauge表明可观测性，不把confirmation积压改名或缺值填0。复杂观察/中断归属与同代恢复提取为权威schema的安全普通view，独立member/admin/history外层投影共用，不物化缓存。
 
-- [ ] **步骤3：编写DTO/proto源并生成。**确认卡用具体String/Decimal/Bool/Time/Curve wrapper，统一availability/reasonCode/source/queriedAt；列表/详情包含有界观察/投递概要，history/parts走分页；授权/提交/结果时间各自保留缺失。新增非生成ProtoMessage声明遵循现有notification_protomessage.go build tag。输入稳定后 `make protogen`、`make clientgen`；检查go-to-protobuf、gogofast、gateway、Swagger和deepcopy真实diff，再写handler映射。以response fixtures固定camelCase和uint64为JSON字符串；当前generator若不能保真，先修源/生成配置，不让前端Number补救。
+观察读取补充：monitor_interval新增nullable last_reliable_at，实际Collector复用原匹配pong/latest/已持久ACK过滤覆盖记录当前代合格健康检查点，保存较早实际观察的原UTC，网络不持账户锁、owner→fence复核；每原健康周期持久化pass最多5秒且轮转不饿死，不新轮询。普通checkpoint写失败/提交未知保留旧点并报告，不单独关闭健康epoch；真实失权/网络或raw失败边界保持。中断只归属实际受epoch关闭影响的对象，start物理起始未知则缺失，end/recoveredAt只取同代因果后继首个成功interval.effective_at；跨代手动恢复另列，不从epoch开始/结束制造恢复。无真实epoch中断的准备失败仅reason，不扩history kind或计数。覆盖quiet健康、晚加入、暂停/代次、旧session晚回调、提交未知和钟差；与读取/目录SQL形成稳定批次生成。
+
+- [x] **步骤3：编写DTO/proto源并生成。**确认卡用具体String/Decimal/Bool/Time/Curve wrapper，统一availability/reasonCode/source/queriedAt；列表/详情包含有界观察/投递概要，history/parts走分页；授权/提交/结果时间各自保留缺失。新增非生成ProtoMessage声明遵循现有notification_protomessage.go build tag。输入稳定后 `make protogen`、`make clientgen`；检查go-to-protobuf、gogofast、gateway、Swagger和deepcopy真实diff，再写handler映射。以response fixtures固定camelCase和uint64为JSON字符串；当前generator若不能保真，先修源/生成配置，不让前端Number补救。
 
 ```go
 note:=(*string)(nil)
@@ -885,7 +892,7 @@ input:=tsmodel.CreateInput{Token:req.ConfirmationToken,RequestID:req.RequestId,N
 
 protogen使用GOPATH的仓库路径：执行前确认脚本实际解析到本次隔离工作区，必要时为命令设置本任务专用GOPATH并建立对应symlink；不得让生成器写到另一个用户checkout。Swagger的全局int64处理不应改变普通string金额/ID；用真实JSON测试确认casing。
 
-- [ ] **步骤4：组合现有两进程并注册完整生命周期。**AthenaServiceSet字段、newAthenaServiceSet构造、gRPC registration、gateway registration及Run/Close全部接入；只启动一个Collector/Projector/目录任务；每个Run由Service.Run使用errgroup与同一取消context管理，Close取消并等待退出，不能重复Run开启多个实例。账户store持有pool，TS和notification adapter借用；server关闭时先停后台再关pool，notification进程另有自己的pool。复用任务6已经在NewServer中完成的权限hook注入，不延迟到newAthenaServiceSet，也不覆盖已安装hook。通知进程注册account/system/reply/summary源，共用唯一dispatcher/poller，启动前确认旧sender停止，不能自动从过期lease判定安全接管。TS后台只随API进程启动/退出，不因HTTP/gRPC graceful restart重建；后台fatal通过Run错误出口结束CLI重启循环，先cancel/join再关pool/client。目录刷新故障独立报告阶段、HTTP是否已发、提交是否已确认及收尾错误；可恢复的DB/提交未知通过重新锁定并读取持久状态裁定，不按目录错误类别终止健康Collector。未拿到目录状态锁或读回失败不发页，错误时不按未确认提交的next等待整轮；取消合并真实错误仍保留原因。须补足发页后事务回滚丢失节流的跨实例接续边界，并用真实双实例故障测试证明；本地退避或退出进程不能替代共享发页约束。允许同步目录Run/store协议及实际初始化/CLI消费者和相关生命周期测试。
+- [x] **步骤4：组合现有两进程并注册完整生命周期。**AthenaServiceSet字段、newAthenaServiceSet构造、gRPC registration、gateway registration及Run/Close全部接入；只启动一个Collector/Projector/目录任务；每个Run由Service.Run使用errgroup与同一取消context管理，Close取消并等待退出，不能重复Run开启多个实例。账户store持有pool，TS和notification adapter借用；server关闭时先停后台再关pool，notification进程另有自己的pool。复用任务6已经在NewServer中完成的权限hook注入，不延迟到newAthenaServiceSet，也不覆盖已安装hook。通知进程注册account/system/reply/summary源，共用唯一dispatcher/poller，启动前确认旧sender停止，不能自动从过期lease判定安全接管。TS后台只随API进程启动/退出，不因HTTP/gRPC graceful restart重建；后台fatal通过Run错误出口结束CLI重启循环，先cancel/join再关pool/client。目录刷新故障独立报告阶段、HTTP是否已发、提交是否已确认及收尾错误；可恢复的DB/提交未知通过重新锁定并读取持久状态裁定，不按目录错误类别终止健康Collector。未拿到目录状态锁或读回失败不发页，错误时不按未确认提交的next等待整轮；取消合并真实错误仍保留原因。须补足发页后事务回滚丢失节流的跨实例接续边界，并用真实双实例故障测试证明；本地退避或退出进程不能替代共享发页约束。允许同步目录Run/store协议及实际初始化/CLI消费者和相关生命周期测试。
 
 目录协议接续：现有refresh行新增nullable admission_id UUID。第一短TX仅在到期时写token及DB now+6秒并明确提交，第二TX重锁核验同token/cursor并跨一次HTTP保存映射/游标；HTTP原5秒截止从准入UPDATE前单调时点起算，覆盖慢提交/重锁等待，超期或准入提交未知绝不fetch。正常结算清token并恢复完成后+1秒/末页10分钟原公式，后段回滚保留第一TX预约；旧事务不得换连接补写旧响应。错误后重读确认状态，调度按DB now差值转本地单调等待。以真实双实例+回环覆盖post-send upsert回滚、provider失败后结算失败、两阶段COMMIT未知、第二TX锁等待超期、断连接/旧响应、取消收尾和DB时差；目录错误不单独关闭健康Collector。此项修正Task8单TX请求后回滚会丢节流的已知缺口；正常调度/DB时钟及ctx取消边界下保证共享节流，不宣称任意暂停/时钟跳跃下的物理发包证明。所需schema/query与本项读取SQL形成稳定输入批次后统一生成，不手改sqlc产物。
 
@@ -905,17 +912,23 @@ accountStateStore.SetAccessChangeHook(func(ctx context.Context,tx pgx.Tx,id stri
 
 此hook是任务6交付的真实实现示例，任务12复用，不在两个构造点各装一份。Source URL/config验证与Run生命周期的fake启动测试必须证明缺依赖报错、重复启动拒绝、关闭网页不停止后台、关闭进程才停止后台。
 
-- [ ] **步骤5：运行 `go test ./internal/server/... ./internal/tradersync/... ./pkg/apis/application/v1alpha1 ./pkg/apiclient/tradersync ./pkg/apiclient/account` 与新reads集成测试。**检查普通登录/API Key、禁用凭据、NONE/管理员不能读member、三个admin方法只概要、别人的cursor/token/id均拒绝。生成后编译两个cmd包；提交 `feat(trader-sync): expose authorized APIs and wire service lifecycle`。
+- [x] **步骤5：运行 `go test ./internal/server/... ./internal/tradersync/... ./pkg/apis/application/v1alpha1 ./pkg/apiclient/tradersync ./pkg/apiclient/account` 与新reads集成测试。**检查普通登录/API Key、禁用凭据、NONE/管理员不能读member、三个admin方法只概要、别人的cursor/token/id均拒绝。生成后编译两个cmd包；提交 `feat(trader-sync): expose authorized APIs and wire service lifecycle`。
+
+本项实现与独立复审已完成（64d1ec61、823658f0）。实际签名活动游标已通过真实gateway/Service/隔离PG组合；本轮覆盖首/空页refresh及refresh后next、to范围之外排除，未单独验证第二页refresh与恰好等于to边界，不能外推报告覆盖。真实来源全链/容量、checkpoint服务端提交成功但ACK丢失继续由任务13承接，UI由后续页面任务验收。
 
 ## 任务13：指标、故障矩阵与首期容量验收
 
 **Files**
 - 新增：`internal/tradersync/metrics.go`、`internal/tradersync/metrics_test.go`、`internal/tradersync/acceptance/acceptance_integration_test.go`、`internal/tradersync/acceptance/fixtures_test.go`、`internal/tradersync/acceptance/capacity_test.go`。
 - 修改：`internal/tradersync/projector.go`、`internal/tradersync/collector.go`、`internal/notification/dispatcher.go`、`internal/notification/store/attempts.go`，在现有日志/指标机制上增加观测，不新建监控基础设施。
+- 指标真实消费者接续：按需要追加`internal/tradersync/store/activities.go`及其queries/types、权威accountstate初始schema/sqlc，Session/ReceivedLog/intake的同Session mono字段，notification worker/attempts结果SQL与transport原始Started采样，txgate窄timing、summary实际等待接点；不以无意义Dispatcher hunk代替真实消费者。
+- 恢复状态接续：`internal/notification/recovery.go`、`service.go`、`notification.proto`，`internal/server/notification/notification.proto`及facade/全部实际生成消费者；Task19接现有admin notification-service/Service Status。
 - 新增验收报告：`docs/testing/trader-sync-activity-alerts-acceptance.md`；原始临时执行产物放`.superpowers/trader-sync-acceptance/`，长期报告只引用保留的可复现数据摘要。
 **Interfaces**
 - 产出：`TimingSample{PublicEarliest,PublicLatest *time.Time; ReceivedAt,RecordedAt time.Time; AuthorizedAt,StartedAt,AckAt *time.Time; Cohort,Outcome,ClockSource string; ClockUncertainty time.Duration}`；`EvaluateTiming(sample TimingSample) TimingResult`；`TimingResult{PublicAssessable bool; Lower,Upper,ReceivedToRecorded time.Duration; Reason string}`。
 - 验收fixture定义在`fixtures_test.go`：`newHarness(t *testing.T,owners,targets int) *harness`、`(*harness).Close()`、`Push(log types.Log)`、`Advance(d time.Duration)`、`Stats() snapshot`。该目录三个测试文件全部加integration build tag，普通go test不会连接数据库。harness持有任务1真实隔离DB、loopback HTTP/WSS/Telegram、实际Service与Dispatcher、可控clock；snapshot含活动/HTTP调用/终态/预算/扫描调用计数。test helper只在测试包，业务不加入故障开关。
+
+指标接续以backend spec第10节的“形成时统计与接收时钟”“分段与结果观测”“恢复状态与运行接口”为准：活动INSERT原子冻结typed evidence，真实Session采样mono offset；严格burst要求最近原接收前件、同私聊绑定、实测间隔<既定1秒且前件首次普通任务仍竞争。证据不足保留ordinary_unclassified，和default均保留普通非burst及总体，不按结果改组。单statement snapshot记录形成前竞争，活动/part/attempt分母独立。worker捕获Sender返回即刻时间、原Started mono及本地处理差，attempt随原CAS保存可缺结果证据，result_at语义保留；gate单独度量实际Begin/锁等待。recovery由通知进程唯一等待owner发布，原runtime追加可缺对象并转发，未恢复完成不报running，毫秒string/未知/原因均保真。必要实际文件范围随这些消费者接续，不将早期四个观测文件名当实现上限，也不新建监控基础设施。
 
 - [ ] **步骤1：写时间证据红灯测试。**
 
@@ -1114,7 +1127,7 @@ const latestQuery: ActivityQuery = {...session.query, cursor: undefined, refresh
 
 - [ ] **步骤3：实现同屏布局和三类读取。**活动一个页级ListActivities、侧栏一个Current ListSubscriptions（最多10）、当前绑定一个getTelegramSettings，5秒各自单飞。侧栏仅筛选/状态，管理入口进入列表/详情；All活动包含取消历史，点目标按subscriptionId。主区包含日期、结算时间标签、金额/份额、资料状态和通知概要；初始、无订阅、无活动、筛选空、失败保留分开。
 - [ ] **步骤4：实现稳定行和响应式。**列表key=activity.id、未变化字段不重挂载；状态更新只更新相应区域。复制/选择期间若该行metadata变化，暂存该行新展示资料，在selectionchange折叠后应用，其他行和通知徽标继续更新。目标栏在900附近转折叠，收起仍显示所选/配额/异常；390无页面级横溢出。CSS仅本模块class，复用theme变量，不影响其他页。
-- [ ] **步骤5：注册导航与入口并写权限回归。**member Markets添加Trader Sync，routeMetadata/moduleLandingPaths加入实际主页；canAccessItem对该模块只接受RW，六个深链沿用traderSyncRoute。更新app.test.tsx校验NONE/非法READ不显示入口，带RW刷新/详情返回/失权跳转不泄露旧数据。添加成功聚焦新目标，但原filter不同不自动改变。
+- [ ] **步骤5：注册导航与入口并写权限回归。**member Markets添加Trader Sync，沿现有breadcrumbItems/routeTitle/moduleLandingPaths接入实际主页及深链标题；canAccessItem对该模块只接受RW，六个深链沿用traderSyncRoute。更新app.test.tsx校验NONE/非法READ不显示入口，带RW刷新/详情返回/失权跳转不泄露旧数据。添加成功聚焦新目标，但原filter不同不自动改变。
 - [ ] **步骤6：运行home/session/app/hook及precision测试、lint、build；提交 `feat(trader-sync-ui): add stable cross-target activity feed`。**轮询隐藏/恢复与选中文本由任务20浏览器再次验证真实DOM；不把renderer当浏览器证据。
 
 ## 任务18：独立成交与摘要详情
