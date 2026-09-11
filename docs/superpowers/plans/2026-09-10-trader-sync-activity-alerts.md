@@ -1111,9 +1111,9 @@ const next = await services.traderSync.pauseSubscription(subscription.id, change
 **Interfaces**
 - 消费：任务14 ActivityPage/ActivityQuery及useVisibleQuery，任务16状态展示和管理路由。
 - 产出：`TraderSyncHomePage({ownerId}:{ownerId:string})`；`CursorNavigation({canPrevious,nextCursor,onPrevious,onNext}:{canPrevious:boolean;nextCursor?:string;onPrevious:()=>void;onNext:()=>void})`。
-- 产出：`ActivitySession{query:ActivityQuery;current?:ActivityPage;previous:Array<{query:ActivityQuery;page:ActivityPage;scrollY:number}>;scrollY:number}`；`applyActivityRefresh(current:ActivityPage,incoming:ActivityPage):ActivityPage`只接纳相同成员及snapshot，非法成员改变抛协议错误、保留旧页；`readActivitySession(ownerId:string):ActivitySession|undefined`、`saveActivitySession(ownerId:string,value:ActivitySession):void`，state统一清理。
+- 产出：`ActivitySession{query:ActivityQuery;current?:ActivityPage;previous:Array<{query:ActivityQuery;page:ActivityPage;scrollY:number}>;scrollY:number}`；`applyActivityRefresh(current:ActivityPage,incoming:ActivityPage):ActivityPage`只接纳相同成员及snapshot，非法成员改变抛协议错误、保留旧页；`readActivitySession(ownerId:string):ActivitySession|undefined`、`saveActivitySession(ownerId:string,value:ActivitySession,scope?:ReadScope):void`，异步/卸载写入传原捕获scope，state统一清理。
 
-- [ ] **步骤1：写刷新与分页红灯。**用服务层fixture构造current=[12,11]、snapshot12，refresh同成员但通知结果变化且hasNewer=true，断言成员和顺序不变；服务误返13导致协议错误；点击新活动发不带cursor/refreshCursor请求；空页refresh仍空但显示提示。日期筛选转换UTC+8为UTC `[from,to)`，历史页继续使用原snapshot。
+- [x] **步骤1：写刷新与分页红灯。**用服务层fixture构造current=[12,11]、snapshot12，refresh同成员但通知结果变化且hasNewer=true，断言成员和顺序不变；服务误返13导致协议错误；点击新活动发不带cursor/refreshCursor请求；空页refresh仍空但显示提示。日期筛选转换UTC+8为UTC `[from,to)`，历史页继续使用原snapshot。
 
 ```ts
 // home.test.tsx中的page服务spy：下一次刷新必须引用当前页refreshCursor。
@@ -1122,7 +1122,7 @@ expect(listActivities.mock.calls[listActivities.mock.calls.length - 1][0].cursor
 // 点击New activity available后断言两种cursor均未携带，而subscriptionId/from/to保留。
 ```
 
-- [ ] **步骤2：运行home/session红灯，再实现ActivitySession。**首次按query读取；Next压栈并用nextCursor、Previous恢复上页及其refreshCursor；切filter/pageSize重建session；详情返回用session恢复位置。新活动按钮删除两个cursor，成功后清页栈并将焦点移到列表标题，失败仍保留当前页。
+- [x] **步骤2：运行home/session红灯，再实现ActivitySession。**首次按query读取；Next压栈并用nextCursor、Previous恢复上页及其refreshCursor，在恢复页DOM提交后还原滚动位置，等待期间不回写旧短页位置；切filter/pageSize重建session；详情返回用session恢复位置。新活动按钮删除两个cursor，成功后清页栈并将焦点移到列表标题，失败仍保留当前页。
 
 ```ts
 const refreshQuery: ActivityQuery = {...session.query, cursor: undefined, refreshCursor: session.current?.page.refreshCursor};
@@ -1130,16 +1130,16 @@ const latestQuery: ActivityQuery = {...session.query, cursor: undefined, refresh
 // 原页没有current时用latestQuery；禁止同时传两个cursor。
 ```
 
-- [ ] **步骤3：实现同屏布局和三类读取。**活动一个页级ListActivities、侧栏一个Current ListSubscriptions（最多10）、当前绑定一个getTelegramSettings，5秒各自单飞。侧栏仅筛选/状态，管理入口进入列表/详情；All活动包含取消历史，点目标按subscriptionId。主区包含日期、结算时间标签、金额/份额、资料状态和通知概要；初始、无订阅、无活动、筛选空、失败保留分开。
-- [ ] **步骤4：实现稳定行和响应式。**列表key=activity.id、未变化字段不重挂载；状态更新只更新相应区域。复制/选择期间若该行metadata变化，暂存该行新展示资料，在selectionchange折叠后应用，其他行和通知徽标继续更新。目标栏在900附近转折叠，收起仍显示所选/配额/异常；390无页面级横溢出。CSS仅本模块class，复用theme变量，不影响其他页。
-- [ ] **步骤5：注册导航与入口并写权限回归。**member Markets添加Trader Sync，沿现有breadcrumbItems/routeTitle/moduleLandingPaths接入实际主页及深链标题；canAccessItem对该模块只接受RW，六个深链沿用traderSyncRoute。更新app.test.tsx校验NONE/非法READ不显示入口，带RW刷新/详情返回/失权跳转不泄露旧数据。添加成功聚焦新目标，但原filter不同不自动改变。
-- [ ] **步骤6：运行home/session/app/hook及precision测试、lint、build；提交 `feat(trader-sync-ui): add stable cross-target activity feed`。**轮询隐藏/恢复与选中文本由任务20浏览器再次验证真实DOM；不把renderer当浏览器证据。
+- [x] **步骤3：实现同屏布局和三类读取。**活动一个页级ListActivities、侧栏一个Current ListSubscriptions（最多10）、当前绑定一个getTelegramSettings，5秒各自单飞。侧栏仅筛选/状态，管理入口进入列表/详情；All活动包含取消历史，点目标按subscriptionId。主区包含日期、结算时间标签、金额/份额、资料状态和通知概要；初始、无订阅、无活动、筛选空、失败保留分开。
+- [x] **步骤4：实现稳定行和响应式。**列表key=activity.id、未变化字段不重挂载；状态更新只更新相应区域。复制/选择期间若该行metadata变化，暂存该行新展示资料，在selectionchange折叠后应用，其他行和通知徽标继续更新。目标栏在900附近转折叠，收起仍显示所选/配额/异常；390无页面级横溢出。CSS仅本模块class，复用theme变量，不影响其他页。
+- [x] **步骤5：注册导航与入口并写权限回归。**member Markets添加Trader Sync，沿现有breadcrumbItems/routeTitle/moduleLandingPaths接入实际主页及深链标题；canAccessItem对该模块只接受RW，六个深链沿用traderSyncRoute。更新app.test.tsx校验NONE/非法READ不显示入口，带RW刷新/详情返回/失权跳转不泄露旧数据。添加成功聚焦新目标，但原filter不同不自动改变。
+- [x] **步骤6：运行home/session/app/hook及precision测试、lint、build；提交 `feat(trader-sync-ui): add stable cross-target activity feed`。**轮询隐藏/恢复与选中文本由任务20浏览器再次验证真实DOM；不把renderer当浏览器证据。
 
 ## 任务18：独立成交与摘要详情
 
 **Files**
 - 新增：`ui/src/app/member/pages/trader-sync/activity-detail.tsx`、`summary-detail.tsx`、`trade-facts.tsx`、`combo-conditions.tsx`、`notification-result.tsx`、`activity-detail.test.tsx`、`summary-detail.test.tsx`。
-- 修改：`ui/src/app/member/app.tsx`、`routes.tsx`；同目录`trader-sync.css`。
+- 修改：`ui/src/app/member/app.tsx`、`routes.tsx`及`ui/src/app/app.test.tsx`；同目录`trader-sync.css`、`state.ts/state.test.ts`承接独立详情返回会话与统一清理。
 **Interfaces**
 - 消费：任务14 getActivity/getSummaryBatch/listSummaryParts/listActivities，任务17CursorNavigation及返回会话。
 - 产出：`TraderSyncActivityPage({ownerId})`、`TraderSyncSummaryPage({ownerId})`，props均`{ownerId:string}`；`TradeFacts({activity}:{activity:Activity})`、`ComboConditions({metadata}:{metadata:Activity['metadata']})`、`deliveryLabel(delivery:Delivery):string`。
@@ -1259,6 +1259,8 @@ test('desktop and mobile keep the document within the viewport', async ({page}) 
 - [ ] **步骤6：处理发现并保存证据。**失败按systematic-debugging定位；只修导致批准行为不满足的问题，重跑受影响场景。执行`yarn --cwd ui test:e2e --project=ui-fixtures`及live，保留运行命令、提交、场景数量、截图/trace和实际失败；无障碍按AA计算新增文本对比度并人工/自动键盘核验，未测不能写通过。写stop并等待harness退出，只清理本任务创建资源；提交 `test(trader-sync): verify complete member and admin browser flows`。
 
 ## 任务21：运行文档、相关回归和执行交付
+
+执行分工：本项子代理交付文档、相关回归与本地提交；控制器完成限定任务审查后组织唯一全分支审查，再执行一次完成通知并记录整计划完成。步骤3和5属于最终收尾，不要求在全分支审查开始前已经完成，也不授权子代理提前外发。
 
 **Files**
 - 同步：`docs/requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md`、`docs/design/trading/trader-sync-activity-alerts.md`、`docs/design/web-ui/trader-sync-activity-alerts.md`、`docs/design/web-ui/member-application-shell.md`、`docs/design/web-ui/administrator-application-shell.md`、`docs/design/identity-access/account-access-control.md`、`docs/design/notifications/account-telegram-notifications.md`、`docs/design/notifications/system-notification-operations.md`、`docs/design/development-runtime/local-runtime-orchestration.md`、`docs/testing/trader-sync-activity-alerts-acceptance.md`、`PRODUCT.md`。
