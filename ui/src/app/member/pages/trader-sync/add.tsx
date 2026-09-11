@@ -1,3 +1,4 @@
+import './trader-sync.css';
 import * as React from 'react';
 import {Alert, Button, Input, Space, Typography} from 'antd';
 import {useNavigate} from 'react-router-dom';
@@ -173,13 +174,15 @@ const AddFlow = ({ownerId}: {ownerId: string}) => {
             <AppPage
                 title='Add trader'
                 subtitle='Review a Polymarket trader before starting Activity Alerts.'
-                extra={<Button onClick={() => navigate('/trader-sync')}>Back to Trader Sync</Button>}>
+                extra={<Button onClick={() => navigate('/trader-sync')}>Back to Trader Sync</Button>}
+            >
                 <Section title='Find trader'>
                     <form
                         onSubmit={event => {
                             event.preventDefault();
                             void resolve();
-                        }}>
+                        }}
+                    >
                         <label htmlFor='trader-sync-input'>Wallet address or Polymarket profile URL</label>
                         <Input
                             id='trader-sync-input'
@@ -234,7 +237,8 @@ const AddFlow = ({ownerId}: {ownerId: string}) => {
                                 onClick={() => {
                                     update({...draftRef.current, scrollY: window.scrollY});
                                     navigate('/notifications', {state: {returnTo: '/trader-sync/add'}});
-                                }}>
+                                }}
+                            >
                                 Open Notifications
                             </Button>
                             <Typography.Paragraph>
@@ -278,7 +282,8 @@ const AddFlow = ({ownerId}: {ownerId: string}) => {
                                         type='primary'
                                         loading={creating}
                                         disabled={creating || (!recovering && expired) || Array.from(draft.note).length > 20 || !scope.isCurrent()}
-                                        onClick={() => void create()}>
+                                        onClick={() => void create()}
+                                    >
                                         {recovering && !creating ? 'Recover subscription result' : 'Confirm subscription'}
                                     </Button>
                                 </>

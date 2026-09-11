@@ -213,3 +213,30 @@
 .trader-sync-detail a {
     text-underline-offset: 3px;
 }
+
+/* Trader Sync text roles use the same accessible palette as its activity views. */
+.trader-sync-add .ant-typography-secondary,
+.trader-sync-add .ant-input::placeholder {
+    color: var(--athena-muted);
+    opacity: 1;
+}
+.trader-sync-add .ant-typography-danger,
+.trader-sync-subscription-controls .ant-btn-dangerous:not(:disabled) {
+    color: var(--athena-red);
+}
+.trader-sync-add .ant-btn-primary:not(:disabled),
+.trader-sync-view.ant-btn-primary:not(:disabled) {
+    color: #fff;
+    background: var(--athena-primary);
+    border-color: var(--athena-primary);
+}
+.trader-sync-cancel-modal .ant-btn-primary.ant-btn-dangerous:not(:disabled) {
+    color: #fff;
+    background: var(--athena-red);
+    border-color: var(--athena-red);
+}
+html[data-theme='dark'] .trader-sync-add .ant-btn-primary:not(:disabled),
+html[data-theme='dark'] .trader-sync-view.ant-btn-primary:not(:disabled),
+html[data-theme='dark'] .trader-sync-cancel-modal .ant-btn-primary.ant-btn-dangerous:not(:disabled) {
+    color: var(--athena-bg);
+}

@@ -1,3 +1,4 @@
+import './trader-sync.css';
 import * as React from 'react';
 import {Alert, Button, Checkbox, Input, Select, Space} from 'antd';
 import {Link} from 'react-router-dom';
@@ -19,7 +20,12 @@ export const summaryLifecycle = (item: SubscriptionSummary) => [
     ...(item.status === 'cancelled' ? [{label: 'Cancelled', value: summaryTime(item.cancelledAt)}] : []),
     ...(item.status === 'permission_disabled' ? [{label: 'Permission disabled', value: summaryTime(item.permissionDisabledAt)}] : [])
 ];
-const status = (item: SubscriptionSummary) => <StatusTag value={summaryStatus(item.status)} positive={item.status === 'healthy'} negative={item.status === 'interrupted'} />;
+export const SummaryStatus = ({state}: {state: string}) => (
+    <span className='trader-sync-admin-status'>
+        <StatusTag value={summaryStatus(state)} positive={state === 'healthy'} negative={state === 'interrupted'} />
+    </span>
+);
+const status = (item: SubscriptionSummary) => <SummaryStatus state={item.status} />;
 const identity = (item: SubscriptionSummary) => (
     <div className='break-value'>
         <div>{item.username || 'Unavailable'}</div>
@@ -88,7 +94,8 @@ export const TraderSyncAdminSubscriptionsPage = () => {
                         <Button htmlType='submit'>Apply filters</Button>
                     </Space>
                 </form>
-            }>
+            }
+        >
             {data.stale && <Alert type='warning' title='Stale summaries — showing the last successful read' />}
             <Section title={filters.includeCancelled ? 'Current and cancelled subscriptions' : 'Current subscriptions'}>
                 <p>As of: {summaryTime(data.data?.asOf)} (UTC+8)</p>
@@ -159,7 +166,8 @@ export const TraderSyncAdminSubscriptionsPage = () => {
                         onClick={() => {
                             const next = data.data?.page.nextCursor;
                             if (next) setCursors(current => [...current, next]);
-                        }}>
+                        }}
+                    >
                         Next
                     </Button>
                 </Space>

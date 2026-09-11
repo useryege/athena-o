@@ -101,3 +101,36 @@ Projector 累计指标为 kind=epoch，serviceEpoch 是本对象稳定 UUID；�
 用户明确授权固定三行纯文本、本人私聊 8815996650、一次且不重试；Bot 为 @test_bot_athena_bot（8945962939，此 ID 不是收件者）。实际 util Telegram + NewTelegramSender 五秒调用一次，1 个 HTTP 请求/1 次连接，HTTP200，messageID=4。Started 为 2026-09-11T04:57:39.307927395Z，返回为 04:57:40.031407655Z，原 Started mono 到返回 0.723480265 秒。准确授权/正文、原请求响应及 SHA 见[固定发送证据](evidence/trader-sync-telegram-send.json)。
 
 这是直接 Sender 公网传输；没有 worker/PG，故 Outcome.Timing 两字段为 null，本次时间由探针在真实 Started 和 Send 返回旁路采样。结果只证明 Telegram 成功响应与本地返回，不证明用户设备送达、实际来源到消息的端到端 SLO或全实网持久链。未执行第二次发送或消费 updates。
+
+## Task20：真实产品浏览器验收
+
+2026-09-11；基点 `1f68ecfe57048d6d80acd2ee4982a05fcabaed51`。使用现有系统 Chrome / Playwright，通过双 tag 隔离入口加载实际 member/admin 构建、真实 bootstrap/realm/cookie/gateway、权限控制器、Trader Sync、Notification、PostgreSQL 和本地 HTTP/WSS/Telegram。没有启动正式交易模块，没有新增公网 Telegram 发送或消费公网 updates。
+
+|部署|受控页面 fixture|真实链 live|原始运行目录（`.superpowers/trader-sync-acceptance/` 下）|
+|---|---:|---:|---|
+|根路径|33 PASS|10 PASS|`task20-root-fixtures-final5`、`task20-root-live-final4`|
+|`/athena`|33 PASS|10 PASS|`task20-athena-fixtures-final`、`task20-athena-live-final`|
+
+fixture33项中包含循环矩阵，不能把每张截图计作独立测试。Home、Add、Subscriptions、Subscription、Activity、Summary、管理员列表/详情/Service Status 均实际检查1440/1280/900/390宽度、两主题及文档无横向溢出。主题用实际 `html[data-theme]`、color-scheme和shell背景确认。触屏Combo、Tab弹窗循环、Escape焦点返回、原始数字复制、20 emoji备注、选择文字后实际五秒轮询保持选区、长50行→1行尾页→Previous的实际scrollY，以及摘要两套分页/返回来源均有浏览器断言。视觉抽查覆盖会员Activity既有截图和修后390深色Add、390浅色管理员列表；这不是每张截图的人工逐像素审查。
+
+live通过三个独立cookie上下文实际完成同钱包A/B独立订阅和备注、Resolve/Create、来源形成activity、暂停/恢复、编辑备注/确认取消、绑定Bot update与草稿往返、撤权清正文/开放弹窗/旧读屏障、重新授权不自动恢复、空页及51条历史页的新活动提示。跨owner资源ID/batch为404；签名游标在错误owner上下文为400，正文固定 `invalid cursor or cursor context`；同owner同上下文尾页正常读取。管理员不能调用会员读取接口，也没有备注和活动正文入口。
+
+创建响应故障发生在真实服务已提交之后：HTTP200正文只发送`{`，保留原Content-Length后断开。最终浏览器记录首次200头、`ERR_CONTENT_LENGTH_MISMATCH`、手动恢复的第二次200；同requestId重取原数据库ID，订阅数不增加。服务端确认token过期由隔离数据库控制过期；绑定离开期间草稿到期由浏览器Date固定到原服务端expiresAt之后验证，均不声称物理等待五分钟。Notification启动恢复屏障按实际runtime达到running后继续，未压缩其60秒安全时间。
+
+普通failed/unknown/sent与摘要结果走真实Dispatcher/SDK/本地HTTP；sent缺started来自永久真实API样本的fixture展示。101 parts按实际pageSize50分页为50+50+1；mixed终态没有变回成功，all-sent用独立batch。51条订阅历史、101 Combo、极小金额及超大ID/金额为明确合成派生；原录制ABI/Task12、13 API原件不修改，不冒充实链事件或公网时效。
+
+管理员概要由只读SQL独立计数校验；运行时6个delivery gauge与去重delivery ID的只读SQL一致，两次真实API中10个累计metric的serviceEpoch保持相同。SQL、两次API及比较值保存在`task20-root-final-admin-sql/audit.json`和`task20-athena-admin-sql/audit.json`。进程epoch不是数据库计时窗口，window展示使用明确合成样本，没有宣称SQL证明进程累计值或真实window/SLO。
+
+浏览器验收发现并修复两类产品问题：订阅取消Modal立即卸载导致Escape后焦点不回触发按钮，改为保留关闭生命周期并仍在scope失效时移除；新增辅助文字、placeholder、选中按钮、危险按钮和管理员新状态标签的对比度不足，使用现有主题token及Trader Sync局部选择器修正。原始RED保留在`task20-root-live-r7`、`task20-root-fixtures-r10`、`task20-aa-stable-red`、`task20-aa-add-modal-red`、`task20-root-fixtures-final2`；最终两前缀通过同一产品构建。
+
+AA证据包含新增页面的实际文字/placeholder、前景、祖先背景合成、未舍入ratio及阈值；普通文字4.5、大字3，取消了早期0.01容差。示例：Add辅助文字浅/深5.4254/6.9683，Current选中4.5261/6.2145，Monitoring浅色标签15.9990。相同token颜色角色复用，未声称全站无障碍认证。disabled控件单列`exempt`，加载过渡等待真实记录/动画结束；旧Services SERVING、既有Notification Yes/Active低对比样本仍保留为`outOfScope`，没有用disabled规则豁免或全局修改StatusTag。
+
+可复现入口：先`yarn --cwd ui build`，再设置`ATHENA_TEST_PG_ADMIN_DSN`、`ATHENA_UI_DIST=$PWD/ui/dist/app`、独立`ATHENA_UI_E2E_DIR`及空或`/athena`的`ATHENA_UI_E2E_PATH_PREFIX`，执行：
+
+~~~sh
+go test -v -tags=integration,uiharness ./internal/tradersync/acceptance -run '^TestUIHarness$' -count=1 -timeout=30m
+~~~
+
+读取该目录`harness.json`，显式设置其中BaseURL为`ATHENA_UI_E2E_BASE_URL`、manifest绝对路径为`ATHENA_UI_E2E_MANIFEST`、PathPrefix为`ATHENA_UI_E2E_PATH_PREFIX`，分别执行`yarn --cwd ui test:e2e --project=ui-fixtures --output=<本轮独立绝对目录>`和`--project=live`。live十项顺序组成一次新库场景；重跑整套应新建harness。禁止运行期间重build资产；两份输入HTML必须与Go embed逐字相同。结束写入目录下`stop`并等待go test退出。没有显式目标时Playwright立即失败；普通integration构建不包含交互式TestUIHarness。
+
+已验收产品build6.88秒、相关169项UI测试、产品/e2e TypeScript、adapter资产/base/meta测试均通过；未重复Task13完整容量或Task21全套race。11份本任务manifest对应随机库均已消失、HTTP/control端点均关闭，记录的10个UI_READY PID均不再存在；专用PG容器归整计划控制器处理。原始失败、每轮run/input SHA、截图/trace、清理核对位于上述scratch目录，详细索引见Task20报告。早期历史命令元数据与输入SHA覆盖不完整，未回填冒充事前记录；最终静态资产和提交文件另有完整hash清单。全部服务停止后，用补全未跟踪CSS输入的清单再build一次（4.20秒），219个dist资产路径/原字节SHA与浏览器已验收产物完全一致；见task20-dist-equivalence.json，历史输入清单未回填。

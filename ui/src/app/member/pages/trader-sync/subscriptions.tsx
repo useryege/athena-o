@@ -1,3 +1,4 @@
+import './trader-sync.css';
 import * as React from 'react';
 import {Alert, Button, Space} from 'antd';
 import {Link} from 'react-router-dom';
@@ -81,8 +82,11 @@ const Subscriptions = ({ownerId}: {ownerId: string}) => {
                 {(['current', 'cancelled'] as const).map(view => (
                     <Button
                         key={view}
+                        className='trader-sync-view'
+                        aria-pressed={session.view === view}
                         type={session.view === view ? 'primary' : 'default'}
-                        onClick={() => update({...session, [session.view]: {...current, scrollY: window.scrollY}, view})}>
+                        onClick={() => update({...session, [session.view]: {...current, scrollY: window.scrollY}, view})}
+                    >
                         {view === 'current' ? 'Current' : 'Cancelled'}
                     </Button>
                 ))}
@@ -133,7 +137,8 @@ const Subscriptions = ({ownerId}: {ownerId: string}) => {
                             ...session,
                             [session.view]: {...current, index: current.index + 1, cursors: [...current.cursors.slice(0, current.index + 1), page?.page.nextCursor], scrollY: 0}
                         })
-                    }>
+                    }
+                >
                     Next
                 </Button>
                 <Button onClick={() => update({...session, [session.view]: blankCursorSession<SubscriptionPage>()})}>Latest subscriptions</Button>

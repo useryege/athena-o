@@ -107,6 +107,7 @@ type harness struct {
 	codeFault                                    bool
 	sendFault                                    string
 	sendHold                                     <-chan struct{}
+	telegramUpdates                              chan []any
 	chainHTTP, wsHTTP, profileHTTP, telegramHTTP *httptest.Server
 	eth                                          *ethclient.Client
 	transport                                    *http.Transport
@@ -169,7 +170,7 @@ func newHarness(t *testing.T, owners, targets int) *harness {
 	t.Helper()
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
 	ctx, cancel := context.WithCancel(context.Background())
-	h := &harness{t: t, db: db, ctx: ctx, cancel: cancel, headers: map[common.Hash]*et.Header{}, numbers: map[uint64]*et.Header{}, receipts: map[common.Hash]*et.Receipt{}, code: map[common.Address]string{}, costs: map[string]int{}, subs: map[string]tm.SubscriptionDetails{}}
+	h := &harness{t: t, db: db, ctx: ctx, cancel: cancel, headers: map[common.Hash]*et.Header{}, numbers: map[uint64]*et.Header{}, receipts: map[common.Hash]*et.Receipt{}, code: map[common.Address]string{}, costs: map[string]int{}, subs: map[string]tm.SubscriptionDetails{}, telegramUpdates: make(chan []any, 10)}
 	t.Cleanup(h.Close)
 	raw, e := os.ReadFile("../testdata/source_records.json")
 	if e != nil {
@@ -587,14 +588,20 @@ func (h *harness) serveTelegram(w http.ResponseWriter, r *http.Request) {
 			return
 		case <-r.Context().Done():
 			return
+		case updates := <-h.telegramUpdates:
+			result = updates
 		case <-time.After(100 * time.Millisecond):
+			result = []any{}
 		}
-		result = []any{}
 	case "sendMessage":
 		r.ParseMultipartForm(2 << 20)
 		chat, _ := strconv.ParseInt(r.FormValue("chat_id"), 10, 64)
 		if r.FormValue("parse_mode") != "" {
-			h.t.Error("ordinary/summary request was not explicit plain")
+			var bindingReply bool
+			err := h.db.Pool.QueryRow(r.Context(), `SELECT EXISTS(SELECT 1 FROM telegram_binding_replies WHERE telegram_chat_id=$1 AND body=$2)`, chat, r.FormValue("text")).Scan(&bindingReply)
+			if err != nil || !bindingReply || r.FormValue("parse_mode") != "HTML" {
+				h.t.Errorf("non-plain send is not a persisted HTML binding reply: %v", err)
+			}
 		}
 		h.mu.Lock()
 		h.events = append(h.events, sendEvent{Chat: chat, Text: r.FormValue("text"), At: time.Now()})
@@ -610,6 +617,11 @@ func (h *harness) serveTelegram(w http.ResponseWriter, r *http.Request) {
 			case <-h.ctx.Done():
 				return
 			}
+		}
+		if fault == "failed" {
+			w.WriteHeader(400)
+			io.WriteString(w, `{"ok":false,"error_code":400,"description":"controlled permanent failure"}`)
+			return
 		}
 		if fault == "429" {
 			w.WriteHeader(429)

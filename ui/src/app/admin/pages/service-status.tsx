@@ -1,3 +1,4 @@
+import './trader-sync/trader-sync.css';
 import {Alert, Spin, Tag} from 'antd';
 import {Link} from 'react-router-dom';
 import {useVisibleQuery, type AbortablePromise} from '../../shared/use-visible-query';
@@ -27,7 +28,11 @@ const statusTag = (status: ServiceHealthStatus) => (
 
 const runtimeStatusTag = (status: string) => {
     const value = status.toLowerCase() || 'unknown';
-    return <Tag color={value === 'running' ? 'green' : value === 'degraded' || value === 'recovering' ? 'orange' : 'red'}>{value}</Tag>;
+    return (
+        <Tag className='trader-sync-runtime-status' color={value === 'running' ? 'green' : value === 'degraded' || value === 'recovering' ? 'orange' : 'red'}>
+            {value}
+        </Tag>
+    );
 };
 
 const receivedAt = <T,>(request: AbortablePromise<T>) =>
@@ -72,7 +77,8 @@ export const ServiceStatusPage = () => {
             subtitle={`gRPC health of Athena services · Last checked ${checkedAt}`}
             loading={data.loading || notificationRuntime.loading || traderRuntime.loading}
             error={data.error}
-            onRefresh={reloadAll}>
+            onRefresh={reloadAll}
+        >
             <Section title='Services'>
                 {data.stale && <Alert type='warning' title='Stale service health — showing the last successful read' />}
                 <p>Last checked: {checkedAt} (UTC+8)</p>
@@ -97,7 +103,8 @@ export const ServiceStatusPage = () => {
                     ) : runtime ? (
                         runtimeStatusTag(notificationStatus)
                     ) : null
-                }>
+                }
+            >
                 {notificationRuntime.error && <Alert type='error' showIcon={true} title='Notification runtime unavailable' description={notificationRuntime.error.message} />}
                 {notificationRuntime.stale && <Alert type='warning' title='Stale notification runtime — showing the last successful read' />}
                 <p>Last received: {notificationRuntime.data ? formatBeijingDateTime(new Date(notificationRuntime.data.receivedAt).toISOString()) : 'Unavailable'} (UTC+8)</p>

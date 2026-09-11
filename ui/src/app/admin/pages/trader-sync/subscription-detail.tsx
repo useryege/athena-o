@@ -1,10 +1,10 @@
 import {Alert, Space} from 'antd';
 import {Link, useParams} from 'react-router-dom';
-import {AppPage, KeyValueGrid, Section, StatusTag} from '../../../components';
+import {AppPage, KeyValueGrid, Section} from '../../../components';
 import {useVisibleQuery} from '../../../shared/use-visible-query';
 import {useAdminReadScope} from '../../read-scope';
 import {adminServices as services} from '../../services';
-import {deliveryCounts, summaryLifecycle, summaryStatus, summaryTime} from './subscriptions';
+import {deliveryCounts, summaryLifecycle, summaryStatus, summaryTime, SummaryStatus} from './subscriptions';
 
 export const TraderSyncAdminSubscriptionPage = () => {
     const {id = ''} = useParams();
@@ -23,7 +23,8 @@ export const TraderSyncAdminSubscriptionPage = () => {
                     <Link to='/trader-sync/subscriptions'>Subscriptions</Link>
                     <Link to='/service-status'>Service Status</Link>
                 </Space>
-            }>
+            }
+        >
             {data.stale && <Alert type='warning' title='Stale summary — showing the last successful read' />}
             {item && (
                 <>
@@ -37,7 +38,7 @@ export const TraderSyncAdminSubscriptionPage = () => {
                                 {label: 'Wallet', value: item.wallet},
                                 {
                                     label: 'Status',
-                                    value: <StatusTag value={summaryStatus(item.status)} positive={item.status === 'healthy'} negative={item.status === 'interrupted'} />
+                                    value: <SummaryStatus state={item.status} />
                                 },
                                 ...summaryLifecycle(item),
                                 {label: 'As of', value: summaryTime(item.asOf)},

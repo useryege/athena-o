@@ -1,3 +1,4 @@
+import './trader-sync.css';
 import * as React from 'react';
 import {Alert, Button, Input, Modal, Space, Typography} from 'antd';
 import {useNavigate} from 'react-router-dom';
@@ -251,7 +252,8 @@ export const SubscriptionControls = ({
                         onClick={() => {
                             if (!locked)
                                 void run({action: 'note', payload: {requestId: crypto.randomUUID(), expectedRevision: edit.noteRevision ?? subscription.noteRevision, note}});
-                        }}>
+                        }}
+                    >
                         Save note
                     </Button>
                 </div>
@@ -269,7 +271,8 @@ export const SubscriptionControls = ({
                             if (!scope.isCurrent()) return;
                             saveAddDraft({ownerId, input: subscription.wallet, note: '', noteEdited: false, returnPath: '/trader-sync', scrollY: 0});
                             navigate('/trader-sync/add');
-                        }}>
+                        }}
+                    >
                         Subscribe again
                     </Button>
                 )}
@@ -286,9 +289,10 @@ export const SubscriptionControls = ({
             </Space>
             <p>Already queued notifications may still arrive later. Resume prepares a new monitoring baseline; interruptions recover automatically without a manual resume.</p>
             {message && <Alert type='info' title={message} />}
-            {confirm && (
+            {scope.isCurrent() && (
                 <Modal
-                    open={true}
+                    open={confirm}
+                    rootClassName='trader-sync-cancel-modal'
                     title='Cancel subscription?'
                     okText='Confirm cancellation'
                     okButtonProps={{danger: true}}
@@ -296,7 +300,8 @@ export const SubscriptionControls = ({
                     onCancel={() => {
                         if (!busy) setConfirm(false);
                     }}
-                    onOk={() => start('cancel')}>
+                    onOk={() => start('cancel')}
+                >
                     <SubscriptionIdentity wallet={subscription.wallet} note={subscription.note} display={subscription.targetDisplay} />
                     <p>
                         This cannot be restored. Cancellation releases one subscription slot. History and the wallet note are retained. Already queued notifications continue and
