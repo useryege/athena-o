@@ -1,6 +1,6 @@
 # Trader Sync / Activity Alerts UI 设计规格
 
-> 日期：2026-09-10。状态：已确认待实现；用户已整体确认完整书面规格。
+> 日期：2026-09-10。状态：完整书面规格已确认，联合实现正在逐项执行；批准记录不等同验收完成。
 >
 > 本文补充已整体确认的[后端 spec](2026-09-10-trader-sync-activity-alerts-design.md)，同步[长期 UI 设计](../../design/web-ui/trader-sync-activity-alerts.md)与[业务需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)。[前后端联合实现计划](../plans/2026-09-10-trader-sync-activity-alerts.md)共21项任务，已获实施授权，正在独立工作区逐项执行。
 

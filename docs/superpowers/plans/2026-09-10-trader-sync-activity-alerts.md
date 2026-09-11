@@ -1069,14 +1069,14 @@ Create成功记录新subscription ID供主页侧栏定位；目标在原筛选�
 
 **Files**
 - 新增：`ui/src/app/member/pages/trader-sync/subscriptions.tsx`、`subscription-detail.tsx`、`subscription-state.tsx`、`observation-history.tsx`、`subscriptions.test.tsx`、`subscription-detail.test.tsx`。
-- 修改：`ui/src/app/member/routes.tsx`、`app.tsx`；同目录`pages/trader-sync/state.ts/state.test.ts`及`ui/src/app/styles/member-features.css`的订阅局部样式。
+- 修改：`ui/src/app/member/routes.tsx`、`app.tsx`；同目录`pages/trader-sync/state.ts/state.test.ts`及`ui/src/app/styles/member-features.css`的订阅局部样式；`ui/src/app/app.test.tsx`验证实际RW深链和标题。
 **Interfaces**
 - 公开订阅状态沿真实wire：healthy显示Monitoring，interrupted显示Monitoring interrupted；其余四态不变。页面动作/过滤使用wire值，不能把显示语义monitoring/error当作协议枚举。
 - 消费：任务14 list/get/change/note/history service、任务15 RW路由与state清理。
 - 产出：`TraderSyncSubscriptionsPage({ownerId})`、`TraderSyncSubscriptionPage({ownerId})`，props均`{ownerId:string}`；详情用useParams取subscriptionId。`allowedSubscriptionActions(status:Subscription['status']):Array<'pause'|'resume'|'cancel'>`放subscription-state.tsx供列表/详情共用。
 - `ObservationHistory({ownerId,subscriptionId}:{ownerId:string;subscriptionId:string})`独立分页；只展示时间线事实，不触发历史采集。
 
-- [ ] **步骤1：写六态动作矩阵与取消红灯。**
+- [x] **步骤1：写六态动作矩阵与取消红灯。**
 
 ```ts
 test.each([
@@ -1089,8 +1089,8 @@ test.each([
 ```
 
 renderer测试当前/取消列表、完整钱包、取消一次确认、paused恢复响应仍Preparing、取消后无resume且有重新订阅入口；运行新tests确认失败。
-- [ ] **步骤2：实现列表/详情与页级读取。**Current默认，Cancelled独立cursor；ResourceTable传items/columns/compactRender，不传虚构total。详情5秒useVisibleQuery只更新状态概要；历史由ListSubscriptionHistory独立分页，不随概要刷新重新取全史。
-- [ ] **步骤3：实现直接暂停/恢复与一次取消确认。**同资源一个mutation slot，每次意图生成requestId并保存直到确定结果；按钮依据矩阵，服务端仍终判。取消弹窗含完整身份、不可恢复、释放名额、旧队列继续与历史保留；确认成功以响应覆盖revision。
+- [x] **步骤2：实现列表/详情与页级读取。**Current默认，Cancelled独立cursor；ResourceTable传items/columns/compactRender，不传虚构total。详情5秒useVisibleQuery只更新状态概要；历史由ListSubscriptionHistory独立分页，不随概要刷新重新取全史。
+- [x] **步骤3：实现直接暂停/恢复与一次取消确认。**同资源一个mutation slot，每次意图生成requestId并保存直到确定结果；按钮依据矩阵，服务端仍终判。取消弹窗含完整身份、不可恢复、释放名额、旧队列继续与历史保留；确认成功采用服务端事实，完整响应与当前已知状态按生命周期revision和独立noteRevision协调；较早响应不回退较新版本，同revision仍允许正常观察概要刷新。
 
 ```ts
 const change: ChangeRequest = {expectedRevision: subscription.revision, requestId: crypto.randomUUID()};
@@ -1099,9 +1099,9 @@ const next = await services.traderSync.pauseSubscription(subscription.id, change
 ```
 
 未知响应保留同change供重试；Aborted丢弃旧动作、读最新并提示重新选择，不能新revision自动重放。interrupted自动恢复不调用resume。
-- [ ] **步骤4：实现备注保存/冲突。**expectedRevision取noteRevision。空串可保存；冲突保留本地值与服务器最新备注，用户再次保存才用新noteRevision。取消目标仍改owner-wallet保留备注，说明当前/未来同钱包会沿用，旧活动快照不变。重新订阅跳Add并预填钱包，仍走完整确认。
-- [ ] **步骤5：实现中断时间线并测试51条。**每页显示interval或interruption、已知起止/恢复、reason及possibleMissing；未知显示原因，不能生成遗漏数量。上一页恢复缓存游标，更多记录可访问。添加两条记录同sortAt稳定ID排序测试，自动恢复后原中断仍存在。
-- [ ] **步骤6：运行订阅页面/state及service测试、lint；提交 `feat(trader-sync-ui): manage subscriptions and observation history`。**注册两个真实路由和lazy exports，验证无grant深链不调用service，不导入管理员页面。
+- [x] **步骤4：实现备注保存/冲突。**expectedRevision取noteRevision。空串可保存；冲突保留本地值与服务器最新备注，用户再次保存才用新noteRevision。取消目标仍改owner-wallet保留备注，说明当前/未来同钱包会沿用，旧活动快照不变。重新订阅跳Add并预填钱包，仍走完整确认。
+- [x] **步骤5：实现中断时间线并测试51条。**每页显示interval或interruption、已知起止/恢复、reason及possibleMissing；未知显示原因，不能生成遗漏数量。上一页恢复缓存游标，更多记录可访问。添加两条记录同sortAt稳定ID排序测试，自动恢复后原中断仍存在。
+- [x] **步骤6：运行订阅页面/state及service测试、lint；提交 `feat(trader-sync-ui): manage subscriptions and observation history`。**注册两个真实路由和lazy exports，验证无grant深链不调用service，不导入管理员页面。
 
 ## 任务17：活动主页、目标侧栏与稳定刷新
 

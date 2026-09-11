@@ -1,6 +1,6 @@
 # Trader Sync：Activity Alerts 界面与交互设计
 
-> 设计状态：已确认待实现；用户已整体确认完整书面 UI spec。
+> 设计状态：已确认，正在按联合计划实施；实际进度与验证范围见文末。
 >
 > 关联：[业务需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)、[后端设计](../trading/trader-sync-activity-alerts.md)、[完整 UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)。后端设计此前已整体确认；本轮补充页面与读取契约，不重开已确认业务决定。
 
@@ -56,7 +56,7 @@ Resolve 补充 owner 保存备注及 revision、现有未取消订阅和配额�
 
 Current 包含 pending_baseline、healthy、paused、interrupted、permission_disabled，均占 10 个名额；Cancelled 不占，不能恢复，重订阅新 ID。主页 All 活动包含取消历史，侧栏目标按 subscription_id 筛选，不合并同钱包各次订阅。
 
-healthy/interrupted 可以暂停；paused/permission_disabled 可以手动恢复；所有未取消状态可取消，所有详情可编辑 owner-wallet 备注。写操作按 revision，冲突读取最新值并保留本地备注草稿，不自动重放旧意图。暂停/取消明确旧队列仍可能送达；取消一次确认含身份、不可恢复、释放名额和保留历史。
+healthy/interrupted 可以暂停；paused/permission_disabled 可以手动恢复；所有未取消状态可取消，所有详情可编辑 owner-wallet 备注。生命周期写操作使用 revision，备注使用独立 noteRevision；较早响应不得覆盖已读到的较新状态或备注，正常观察概要仍可刷新。冲突读取最新值并保留本地备注草稿，不自动重放旧意图。暂停/取消明确旧队列仍可能送达；取消一次确认含身份、不可恢复、释放名额和保留历史。
 
 观察时间线分页读取成功区间与中断，保留原因/未知边界/可能遗漏，不推测遗漏数量。自动恢复不删除中断，手动恢复新基线。当前备注和活动备注快照分开，编辑不追溯历史。
 
@@ -121,4 +121,4 @@ Combo YES 为所有腿条件满足，NO 为整体合取的补集，不逐腿取�
 
 当前仅验证合成数据线框的桌面/手机、主题与交互；没有业务 API、真实 Telegram 或完整可访问性验收。临时浏览器内容在 `.superpowers/`，不是长期依赖；被选结构与流程已写入文档。
 
-本书面 UI spec 已整体确认，[21项前后端联合实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)正在独立工作区逐项实施。共享权限矩阵及管理员授权行已实现十模块；Trader Sync 选择器仅提供 No access / Read & write，解析、编辑、克隆和提交对非法 READ 统一关闭为 NONE。会员壳按相同模块矩阵处理 RW→NONE 的请求中止、缓存清理和晚响应隔离，当前没有新增 Trader Sync 空路由或导航。Trader Sync 目标页面尚未实现；既有应用壳/Notifications 文档随对应源码同步，具体进度与验证见计划。
+本书面 UI spec 已整体确认，[21项前后端联合实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)正在独立工作区逐项实施。共享权限矩阵及管理员授权行已实现十模块；Trader Sync 选择器仅提供 No access / Read & write，解析、编辑、克隆和提交对非法 READ 统一关闭为 NONE。会员类型化 service、可取消读取与精度基础，以及独立添加页、确认卡和 Notifications 返回草稿已通过对应任务审查。会员壳在退出、身份或 issuer 变化及 RW→NONE 时清空 Trader Sync 内存状态并隔离晚响应。订阅列表、详情、生命周期操作、独立备注版本与观察历史已通过任务审查；延迟响应保留已知较新事实，固定队列提示使用英文并保留用户 Unicode 备注。活动主页、活动和摘要详情、管理员概要及 Service Status 衔接仍由后续任务实施。真实浏览器、移动、键盘及完整前后端验收尚未完成，组件测试不替代这些结论。
