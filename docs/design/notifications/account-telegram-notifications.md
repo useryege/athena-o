@@ -1,6 +1,6 @@
 # 账户 Telegram 通知
 
-> 设计状态：已实现；Trader Sync 摘要及产品授权扩展见文末。
+> 设计状态：已实现
 
 ## 范围
 
@@ -22,7 +22,7 @@
 | 持久模型与查询 | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql), [internal/notification/store/queries/telegram_bindings.sql](../../../internal/notification/store/queries/telegram_bindings.sql), [internal/notification/store/queries/account_notifications.sql](../../../internal/notification/store/queries/account_notifications.sql) | 绑定、尝试、消费位置、版本及账户投递表 |
 | 事务存储入口 | [internal/notification/store/bot_updates.go](../../../internal/notification/store/bot_updates.go)、[internal/notification/store/telegram_bindings.go](../../../internal/notification/store/telegram_bindings.go), [internal/notification/store/account_notifications.go](../../../internal/notification/store/account_notifications.go) | `ApplyBotUpdate`、`EnqueueAccountNotification`, `Authorize`、`RecordStarted`、`RecordOutcome` |
 | 进程装配与内部鉴权 | [cmd/athena-notification/commands/athena_notification.go](../../../cmd/athena-notification/commands/athena_notification.go), [internal/notification/server.go](../../../internal/notification/server.go), [internal/notification/apiclient/internal_auth.go](../../../internal/notification/apiclient/internal_auth.go) | 单一 Telegram 客户端, `InternalAuthTokenEnv`, gRPC 拦截器 |
-| 会员界面 | [ui/src/app/member/pages/notifications.tsx](../../../ui/src/app/member/pages/notifications.tsx), [ui/src/app/member/notification-service.ts](../../../ui/src/app/member/notification-service.ts), [ui/src/app/member/notification-storage.ts](../../../ui/src/app/member/notification-storage.ts) | `NotificationsPage`, `MemberNotificationService`, 单标签页绑定指引 |
+| 会员界面 | [ui/src/app/member/pages/notifications.tsx](../../../ui/src/app/member/pages/notifications.tsx), [ui/src/app/member/notification-service.ts](../../../ui/src/app/member/notification-service.ts), [ui/src/app/member/notification-storage.ts](../../../ui/src/app/member/notification-storage.ts) | `NotificationsPage`, `MemberNotificationService`, 单标签页绑定指引与 Trader Sync Add 内存草稿返回 |
 | 持久发送许可及结果 | [attempts.go](../../../internal/notification/store/attempts.go)、[delivery/types.go](../../../internal/notification/delivery/types.go)、[delivery_attempts.sql](../../../internal/notification/store/queries/delivery_attempts.sql) | `Permit`、`Outcome`、`Authorize`、`RecordStarted`、`RecordOutcome` |
 | HTTP 调用证据 | [send_transport.go](../../../util/telegram/send_transport.go) | `WithSendStarted`、`SendError`、`sendTransport` |
 
@@ -47,16 +47,17 @@ flowchart LR
 
 ## 运行流程
 
-1. 进程根据 Bot token 创建一个 Telegram 客户端，映射 `test`/`prod` 系统 chat ID，校验内部 Bearer，同步 Bot 资料，确认没有 webhook，加载持久 `next_update_id`，再启动 poller 与 worker。
+1. Notification CLI 先打开自己的 `athena` pool；显式 `--recover-stopped-sender` 分支在构造 Telegram client 前执行并只恢复库内证据。正常启动先以独占 session 登记新 sender，`NewServer` 在 `Start` 前借原 pool 配置 SummarySource；随后创建一个 Telegram client、映射 `test`/`prod` 系统 chat ID、同步 Bot 资料、确认没有 webhook，完成恢复屏障后启动 poller 与 worker。
 2. `GET /api/v1/notification-bindings/telegram` 注入当前账户 UUID，返回安全绑定投影、当前绑定尝试和 Bot 名称/可用性；浏览器不接收 Telegram 数字 user ID 或私聊 chat ID。
 3. 创建绑定尝试生成 32 字节加密随机数，编码为无 padding 的 43 字符 Base64URL token，仅保存 SHA-256 digest。新尝试替换该账户旧尝试，有效期十分钟；响应只返回一次 `https://t.me/<bot>?start=<token>` 与 `/start <token>`。
 4. 会员页面把尝试 ID、深链接与备用命令保存在当前标签页 `sessionStorage`。可见时每三秒单飞读取状态；恢复焦点/可见时立即读取。成功、失败、本地过期、尝试 ID 不符、取消、解绑、会话结束和账户变化均清理缓存。
+   从 Trader Sync Add 进入时，navigation state 只携带精确 `/trader-sync/add` 返回地址；当前 owner 的备注/token/request 仍只在 Trader Sync 内存草稿中。换账户、退出或 Trader Sync 从 `READ_WRITE` 降权会清除草稿。解绑/重绑页面明确说明未获许可的旧 Trader Sync 通知会取消，已经获许可的单条可能完成或成为 unknown，历史不会补发。
 5. Poller 将每个 update 交给 `ApplyBotUpdate`。事务先插入 `telegram_consumed_updates`，重复 update ID 直接跳过。只接受非 Bot 用户的私聊 token，且 user ID 必须等于 chat ID；先取账户 gate，再取 Telegram 身份 advisory lock，锁定并复核尝试、身份唯一性，分配新 revision，终止旧绑定未许可投递及成功绑定回复，替换绑定并删除尝试。解析不记录 token 或更新正文。
 6. 重绑在新 token 成功消费前保持原绑定有效。取消只删除尝试。解绑在同一账户 gate 内删除绑定和尝试，取消 pending 投递，并给 sending 投递写永久资格墓碑；已有许可仍可完成或成为 unknown。
 7. 消费记录、绑定/版本及尝试变化、`telegram_binding_replies` 回复和持久 offset 在同一个 `pgx.Tx` 提交。失败全回滚；提交确认丢失只重放这个数据库事务，幂等记录防止重复增 revision 或回复。成功后重启从持久 offset 继续；空成功轮询仍更新 `last_poll_at`。Poller 不调用 `SendMessage`。
 8. `my_chat_member` 的离开/封禁更新将对应绑定标为 unreachable，取消 pending 并撤销 sending 的后续尝试资格。之后的 `member` 更新恢复同一绑定可达性，但不复活已取消投递或资格墓碑。
 9. `SendAccountNotification` 规范化账户 UUID、内容、来源、严重程度和幂等键，计算 payload digest，在账户 gate 内入队。相同 `(account_id, source, idempotency_key)` 返回原投递；不同 payload 冲突。绑定不存在或不可达时不插入投递；只有 connected 绑定产生 pending 并返回 `QUEUED` 与 ID。
-10. 账户、系统和 reply 三个 `WorkSource` 统一进入 `Dispatcher`；候选读取不使用会被单 owner 占满的全局前 N 条，未来 `NotBefore` 仍可见。按 owner 公平轮转并优先即将到期任务，默认跨 chat 并发 12，同一物理 chat 只有一个执行中尝试。共享 Bot 20 次/秒、私聊至少一秒、群组 20 次/分钟；以真实 HTTP 起点回调推进运行内 monotonic 时钟窗口，持久 UTC started 独立保存。先预留容量再等待账户 gate，取得 gate 后检查一秒有效槽及共享预算资格；过期或后来收到 Retry-After 收紧而失效的预留均不生成 attempt，释放后重新调度。`Authorize` 短事务再次核验私聊身份、chat/revision、connected、pending、永久资格墓碑、重试时间与五次上限，插入 attempt 并将投递改为 sending，提交后才调用 Telegram。
+10. account、system、reply 候选与 Trader Sync `summary_head` 协调统一进入 `Dispatcher`；`summary_head` 只负责未解决批次首条，冻结后的真实 parts 仍使用 account WorkRef 和同一许可/结果路径。候选读取不使用会被单 owner 占满的全局前 N 条，未来 `NotBefore` 仍可见。按 owner 公平轮转并优先即将到期任务，默认跨 chat 并发 12，同一物理 chat 只有一个执行中尝试。共享 Bot 20 次/秒、私聊至少一秒、群组 20 次/分钟；以真实 HTTP 起点推进运行内 monotonic 窗口。先预留容量再等待账户 gate；失效预留不生成 attempt。`Authorize` 短事务再次核验私聊身份、chat/revision、connected、pending、永久资格墓碑、重试时间与五次上限，提交 attempt/sending 后才调用 Telegram。
 11. HTTP `RoundTrip` 入口通过容量为一的 channel 握手记录实际 started 时间；回调不等待数据库或 HTTP 响应。结果通过独立事务按投递 ID、attempt UUID、sending 状态 CAS 写入。
 
 ## 状态与数据
@@ -103,7 +104,7 @@ flowchart LR
 
 管理员运行入口报告进程生命周期、Bot 可用性/ID/名称、poller 状态、最近轮询/更新时间、账户 pending/retry/failed/sending/unknown 独立计数与不可达绑定数。gRPC health 在资料同步、webhook 检查、poller 与 worker 启动后才为 SERVING。诊断日志使用内部更新/投递/attempt ID；轮询失败、结果写库失败和绑定更新错误为 warning。
 
-持久发送许可、共享调度、单 sender 登记和显式恢复入口已经实现。运行 RPC 暂未增加独立 reply 队列计数。Trader Sync 产品 grant 撤销钩子及摘要首条源已接入共享账户资格和调度；后续 API/runtime composition 仍需注入摘要 siteURL。
+持久发送许可、共享调度、单 sender 登记和显式恢复入口已经实现。运行 RPC 暂未增加独立 reply 队列计数。Trader Sync grant 撤销钩子、摘要首条源与生产组合已接入共享账户资格和调度；CLI 从 `ATHENA_URL` 注入 siteURL，`NewServer` 在 Start 前用自身 pool 配置 summaries。
 
 ## 单 sender 与恢复操作
 
@@ -147,7 +148,7 @@ athena-notification --recover-stopped-sender=<incarnation-UUID>
 
 Started 事实通过固定连接在一秒内补记后释放 gate，不等 HTTP 回执；RecordStarted 本身不再请求账户 gate，结果仍在原账户短事务里 CAS。已 sent/unknown 且起点丢失的 head 也纳入明确停止恢复，不能只恢复当前 sending，不能因 NULL 起点跨进程重发。运行内保留真实观察的 monotonic 基点；恢复缺证据时只记录 recovery_basis_at 和原因，不伪造 first_started_at。预算等待的起止、时长和外部 Retry-After/本地协调原因及 gate 等待保留在 batch，完整总体延迟与动态 f<t<s 的 miss 不被抹去。
 
-`SQLStore.BorrowPool()` 仅返回借用引用；启动前 `Service.ConfigureSummaries(pool,siteURL)` 要求原池并注册实际 WorkSource。Service.Stop 和摘要协调者负责 cancel/join/释放所持 session，trader-store 适配器不 Close。唯一 pool owner 仍是 [通知 CLI](../../../cmd/athena-notification/commands/athena_notification.go) 的 `defer utilio.Close(store)`；Task12 将通过现有 ServerOpts/CLI 启动注入上述配置，不另建池。完整冻结、Unicode/UTF-16 分条与成员关系见 [Trader Sync 设计](../trading/trader-sync-activity-alerts.md#摘要首条的短-gate)。
+`SQLStore.BorrowPool()` 仅返回借用引用；启动前 `Service.ConfigureSummaries(pool,siteURL)` 要求原池并注册实际 WorkSource。Service.Stop 和摘要协调者负责 cancel/join/释放所持 session，trader-store 适配器不 Close。唯一 pool owner 是[通知 CLI](../../../cmd/athena-notification/commands/athena_notification.go) 的 `defer utilio.Close(store)`；现有 `ServerOpts`/CLI 已完成注入，不另建池。完整冻结、Unicode/UTF-16 分条与成员关系见 [Trader Sync 设计](../trading/trader-sync-activity-alerts.md#摘要首条的短-gate)。
 
 
 ## Trader Sync 生产组合

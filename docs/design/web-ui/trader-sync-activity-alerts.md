@@ -1,6 +1,6 @@
 # Trader Sync：Activity Alerts 界面与交互设计
 
-> 设计状态：已确认，正在按联合计划实施；实际进度与验证范围见文末。
+> 设计状态：已实现；外部时效、真实持续活跃容量及证据限制见文末。
 >
 > 关联：[业务需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)、[后端设计](../trading/trader-sync-activity-alerts.md)、[完整 UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)。后端设计此前已整体确认；本轮补充页面与读取契约，不重开已确认业务决定。
 
@@ -8,9 +8,9 @@
 
 会员通过 Trader Sync 订阅人工挑选的低频目标，阅读逐条成交，管理备注和生命周期，理解监控与 Telegram 结果。桌面优先、手机完整可用。管理员只读订阅概要和运行状态。页面不执行交易，不提供重发、历史补查、收益持续刷新或逐订阅通知开关。
 
-当前没有 Trader Sync 业务页面。现有 [member app](../../../ui/src/app/member/app.tsx)、[member routes](../../../ui/src/app/member/routes.tsx)、[member services](../../../ui/src/app/member/services.ts)分别注册导航、懒加载和类型化 service；[admin app](../../../ui/src/app/admin/app.tsx)及其 routes/services 为独立边界。新页面沿用[会员应用壳](member-application-shell.md)、[管理员应用壳](administrator-application-shell.md)和[共享样式](../../../ui/src/app/styles/shared.css)，不是整站改版。
+会员六类页面已由 [member app](../../../ui/src/app/member/app.tsx)、[member routes](../../../ui/src/app/member/routes.tsx)、[member service](../../../ui/src/app/member/trader-sync-service.ts)和[`pages/trader-sync/`](../../../ui/src/app/member/pages/trader-sync)注册；管理员列表/详情由 [admin app](../../../ui/src/app/admin/app.tsx)、[admin routes](../../../ui/src/app/admin/routes.tsx)、[admin service](../../../ui/src/app/admin/trader-sync-service.ts)和独立 [read scope](../../../ui/src/app/admin/read-scope.ts)组合。页面沿用[会员应用壳](member-application-shell.md)、[管理员应用壳](administrator-application-shell.md)和[共享样式](../../../ui/src/app/styles/shared.css)。
 
-[Notifications](../../../ui/src/app/member/pages/notifications.tsx)已有 Telegram 自助绑定与可见页 3 秒轮询；[Service Status](../../../ui/src/app/admin/pages/service-status.tsx)已有管理员运行入口和 10 秒轮询。新设计复用两者，不重复实现绑定状态机或新建运维首页。
+[Notifications](../../../ui/src/app/member/pages/notifications.tsx)保留 Telegram 自助绑定与可见页 3 秒轮询，并接收 Add 页纯 `returnTo` 的内存草稿往返；[Service Status](../../../ui/src/app/admin/pages/service-status.tsx)以三个独立 10 秒可见 single-flight 展示 Services、Notification Runtime 与 Trader Sync。没有复制绑定状态机或新建运维首页。
 
 ## 关键决定
 
@@ -102,11 +102,11 @@ Combo YES 为所有腿条件满足，NO 为整体合取的补集，不逐腿取�
 
 ## 组件与源码落点
 
-| 预计位置或现有入口 | 职责 |
+| 实际源码位置 | 职责 |
 | --- | --- |
-| 新增 `ui/src/app/member/pages/trader-sync/` | 六类页面与模块专属组件/hooks；页面负责流程，不解析链协议。 |
-| 新增 `ui/src/app/member/trader-sync-service.ts` | 类型化会员读取/写入、精确字段及错误映射。 |
-| 新增 `ui/src/app/admin/pages/trader-sync/`、`ui/src/app/admin/trader-sync-service.ts` | 安全概要及运行 DTO，与会员 service 隔离。 |
+| `ui/src/app/member/pages/trader-sync/` | 六类页面与模块专属组件/hooks；页面负责流程，不解析链协议。 |
+| `ui/src/app/member/trader-sync-service.ts` | 类型化会员读取/写入、精确字段及错误映射。 |
+| `ui/src/app/admin/pages/trader-sync/`、`ui/src/app/admin/trader-sync-service.ts`、`ui/src/app/admin/read-scope.ts` | 安全概要、运行 DTO 和身份失效 fence，与会员 service/state 隔离。 |
 | member/admin app、routes、services | 入口、懒加载、权限及组合；路径与现有同层 service 习惯一致。 |
 | [ResourceTable](../../../ui/src/app/components/resource-table.tsx) | 复用表格与 compactRender，省略 total/数字分页，外置游标控制器。 |
 | [format](../../../ui/src/app/shared/format.ts)、[login-navigation](../../../ui/src/app/shared/login-navigation.ts) | UTC+8 明示、站内返回与部署前缀。 |
@@ -117,8 +117,12 @@ Combo YES 为所有腿条件满足，NO 为整体合取的补集，不逐腿取�
 
 ## 验证与维护
 
-实现验收覆盖 1440/1280、900 附近、390，键盘/触屏、焦点、AA 对比度和长内容；添加的六区间/缺失/过期/幂等，六态和观察历史，Combo/精度/所有消息结果，多部分与会员/admin 隔离，刷新/游标/晚响应撤权，Telegram 登录返回和子路径。完整矩阵见 UI spec 第 12 节。
+实现验收覆盖 1440/1280、900 附近、390，键盘/触屏、焦点、AA 对比度和长内容；包括六区间/缺失/过期/幂等、六态和观察历史、Combo/精度/全部消息结果、多部分与会员/admin 隔离、刷新/游标/失权清理、Telegram 登录返回和部署子路径。完整矩阵见 UI spec 第 12 节，实际结果见[验收记录](../../testing/trader-sync-activity-alerts-acceptance.md#task20真实产品浏览器验收)。
 
-设计阶段仅验证合成数据线框的桌面/手机、主题与交互；线框不包含业务 API、真实 Telegram 或完整可访问性验收。临时浏览器内容在 `.superpowers/`，不是长期依赖；被选结构与流程已写入文档。实现阶段的后端证据和限制见[验收记录](../../testing/trader-sync-activity-alerts-acceptance.md)，前端进度如下。
+受控 fixture 与 live 浏览器证据严格分开：fixture 验证产品 DOM、路由、主题和派生长数据；live 使用真实认证/权限/gateway/service/随机 PostgreSQL 和 loopback 协议端。撤权时浏览器旧读记录为 `ERR_ABORTED`，不能表述为成功晚响应进入客户端后被丢弃；不可取消成功晚回调由组件测试证明。真实 window 指标仍是 synthetic，旧 Services 三标签低对比为范围外记录。完整边界见[验收记录](../../testing/trader-sync-activity-alerts-acceptance.md)。
 
-本书面 UI spec 已整体确认，[21项前后端联合实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)正在独立工作区逐项实施。共享权限矩阵及管理员授权行已实现十模块；Trader Sync 选择器仅提供 No access / Read & write，解析、编辑、克隆和提交对非法 READ 统一关闭为 NONE。会员类型化 service、可取消读取与精度基础，以及独立添加页、确认卡和 Notifications 返回草稿已通过对应任务审查。会员壳在退出、身份或 issuer 变化及 RW→NONE 时清空 Trader Sync 内存状态并隔离晚响应。订阅列表、详情、生命周期操作、独立备注版本与观察历史已通过任务审查；延迟响应保留已知较新事实，固定队列提示使用英文并保留用户 Unicode 备注。活动主页与目标侧栏已通过任务审查；可见时分别单飞轮询，活动刷新保留快照和有序成员，新活动由用户点击载入，分页和详情返回保留会话。Previous 在恢复页 DOM 提交后还原滚动位置，选中文本期间延后该行资料替换。活动和摘要详情已通过任务审查，成交原量、费用、Combo 整体逻辑和通知证据分别展示；摘要的分条与活动保持独立分页。详情资源会话保存分页与滚动，返回来源随当前导航/历史条目变化，避免再次从主页打开活动时回到旧摘要。管理员安全概要、列表与详情，以及 Service Status 的三来源独立可见刷新已通过任务审查。管理员身份按 accountId、iss 与会话代次隔离；权限复查失败显示明确错误及重试入口，只有最新复查确认仍是管理员后才恢复读取。真实产品浏览器验收已通过任务20审查与限定修复复审：根路径和 `/athena` 各33项受控界面场景、10项真实接口流程；修正备注持久化及颜色证据后，各补跑10项真实流程与5项受影响页面矩阵。四种宽度、深浅主题、键盘、触屏、精确复制及滚动返回有独立浏览器证据；不可取消晚回调、隐藏停止和完整单飞等组件边界另列验证，不混称真实网络观测。最终相关回归、长期文档同步及全分支审查仍在任务21进行，公网时效与真实持续活跃容量未由本地验收推出。
+当前代码已实现十模块、严格 `READ_WRITE` Trader Sync grant、会员六路由、Notifications 草稿往返、5 秒可见刷新、稳定游标/返回位置、UTC+8、管理员安全概要和 Service Status 三来源。管理员身份按 accountId、iss 与 generation 隔离；`ACCOUNT_ADMIN_REQUIRED` 复查失败有明确错误和单飞重试，只有最新复查确认仍为管理员才重启读取。
+
+根路径与 `/athena` 各完成 33 项受控界面场景和 10 项真实接口流程；备注补证又分别完成 10 项 live，颜色证据修正又分别完成 5 项受影响页面矩阵。A/B 备注实际 PATCH/重读持久，原活动 `noteSnapshot` 不变。四种宽度、深浅主题、键盘、触屏、精确复制和滚动返回均有浏览器证据；隐藏停止、完整 single-flight 和不可取消晚回调仍按组件层证据表述。
+
+这些结果不证明 100 个真实持续活跃目标、公网公开时刻 P95/P99、真实来源到 Telegram 的端到端 SLO、供应商静默漏推完整性或每个旧页面的全站无障碍。有限 Profile 实网读取的六区间金额仍为 unavailable；这些缺口不改写为需求放宽。

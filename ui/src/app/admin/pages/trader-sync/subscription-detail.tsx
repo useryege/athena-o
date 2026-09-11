@@ -23,8 +23,7 @@ export const TraderSyncAdminSubscriptionPage = () => {
                     <Link to='/trader-sync/subscriptions'>Subscriptions</Link>
                     <Link to='/service-status'>Service Status</Link>
                 </Space>
-            }
-        >
+            }>
             {data.stale && <Alert type='warning' title='Stale summary — showing the last successful read' />}
             {item && (
                 <>

@@ -252,8 +252,7 @@ export const SubscriptionControls = ({
                         onClick={() => {
                             if (!locked)
                                 void run({action: 'note', payload: {requestId: crypto.randomUUID(), expectedRevision: edit.noteRevision ?? subscription.noteRevision, note}});
-                        }}
-                    >
+                        }}>
                         Save note
                     </Button>
                 </div>
@@ -271,8 +270,7 @@ export const SubscriptionControls = ({
                             if (!scope.isCurrent()) return;
                             saveAddDraft({ownerId, input: subscription.wallet, note: '', noteEdited: false, returnPath: '/trader-sync', scrollY: 0});
                             navigate('/trader-sync/add');
-                        }}
-                    >
+                        }}>
                         Subscribe again
                     </Button>
                 )}
@@ -300,8 +298,7 @@ export const SubscriptionControls = ({
                     onCancel={() => {
                         if (!busy) setConfirm(false);
                     }}
-                    onOk={() => start('cancel')}
-                >
+                    onOk={() => start('cancel')}>
                     <SubscriptionIdentity wallet={subscription.wallet} note={subscription.note} display={subscription.targetDisplay} />
                     <p>
                         This cannot be restored. Cancellation releases one subscription slot. History and the wallet note are retained. Already queued notifications continue and

@@ -22,7 +22,7 @@
     "startedUTC": "2026-09-11T04:57:39.307987489Z",
     "status": 200
   },
-  "requestBody": "--d7b3edfffd9a71b6cce43079d423de4155a67203d9641757346a61ce5875\nContent-Disposition: form-data; name=\"chat_id\"\n\n8815996650\n--d7b3edfffd9a71b6cce43079d423de4155a67203d9641757346a61ce5875\nContent-Disposition: form-data; name=\"text\"\n\nATHENA Trader Sync 联调测试\n这是一条经明确授权发送的测试通知。\n仅验证纯文本发送与本地 ACK，不触发交易。\n--d7b3edfffd9a71b6cce43079d423de4155a67203d9641757346a61ce5875--\n",
+  "requestBody": "--d7b3edfffd9a71b6cce43079d423de4155a67203d9641757346a61ce5875\r\nContent-Disposition: form-data; name=\"chat_id\"\r\n\r\n8815996650\r\n--d7b3edfffd9a71b6cce43079d423de4155a67203d9641757346a61ce5875\r\nContent-Disposition: form-data; name=\"text\"\r\n\r\nATHENA Trader Sync 联调测试\n这是一条经明确授权发送的测试通知。\n仅验证纯文本发送与本地 ACK，不触发交易。\r\n--d7b3edfffd9a71b6cce43079d423de4155a67203d9641757346a61ce5875--\r\n",
   "response": {
     "ok": true,
     "result": {

@@ -121,6 +121,13 @@ func (recoveryProfile) SyncProfile(context.Context) (*utiltelegram.BotIdentity, 
 func TestRecoverSenderLossStopsPollerAndSignalsFatal(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
 	store := notificationstore.NewSQLStore(db.Pool)
+	otherDB := pgtest.New(t, migrations.FS, migrations.Dir)
+	otherStore := notificationstore.NewSQLStore(otherDB.Pool)
+	otherSession, err := otherStore.AcquireSender(context.Background(), uuid.New())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer otherSession.Close()
 	probe := &pollingProbe{requests: make(chan utiltelegram.PollUpdatesRequest, 4), updates: make(chan []utiltelegram.Update)}
 	server, err := NewServer(ServerOpts{SiteURL: "https://athena.test", Store: store, Sender: NewTelegramSender(probe, nil), ProfileSyncer: recoveryProfile{}, Poller: NewTelegramPoller(store, probe), InternalAuthToken: strings.Repeat("a", 32)})
 	if err != nil {
@@ -130,7 +137,7 @@ func TestRecoverSenderLossStopsPollerAndSignalsFatal(t *testing.T) {
 		t.Fatal(err)
 	}
 	nextPoll(t, probe)
-	if _, err = db.Pool.Exec(context.Background(), `SELECT pg_terminate_backend(pid) FROM pg_locks WHERE locktype='advisory' AND objid=1096042561`); err != nil {
+	if _, err = db.Pool.Exec(context.Background(), `SELECT pg_terminate_backend(pid) FROM pg_locks WHERE locktype='advisory' AND database=(SELECT oid FROM pg_database WHERE datname=current_database()) AND objid=1096042561`); err != nil {
 		t.Fatal(err)
 	}
 	select {
@@ -155,6 +162,9 @@ func TestRecoverSenderLossStopsPollerAndSignalsFatal(t *testing.T) {
 	}
 	if server.service.poller.Status().Active {
 		t.Fatal("poller survived lease loss")
+	}
+	if err = otherSession.Check(context.Background()); err != nil {
+		t.Fatalf("terminating this database sender also killed another database sender: %v", err)
 	}
 }
 

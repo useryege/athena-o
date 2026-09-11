@@ -288,7 +288,7 @@ func TestSummarySourceGateActualStartAndDynamicCooldown(t *testing.T) {
 				clock.advance(120 * time.Second)
 				for {
 					var waiting bool
-					if e = db.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pg_locks WHERE locktype='advisory' AND NOT granted)`).Scan(&waiting); e != nil {
+					if e = db.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pg_locks WHERE locktype='advisory' AND NOT granted AND database=(SELECT oid FROM pg_database WHERE datname=current_database()))`).Scan(&waiting); e != nil {
 						t.Fatal(e)
 					}
 					if waiting {

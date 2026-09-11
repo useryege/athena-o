@@ -809,7 +809,7 @@ func TestWorkerPersistsSenderReturnBeforeLocalStartBookkeeping(t *testing.T) {
 	// A blocked lock request proves the worker selected start before HTTP completed.
 	for {
 		var blocked bool
-		if e = db.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pg_locks WHERE locktype='advisory' AND objid=135713 AND NOT granted)`).Scan(&blocked); e != nil {
+		if e = db.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pg_locks WHERE locktype='advisory' AND database=(SELECT oid FROM pg_database WHERE datname=current_database()) AND objid=135713 AND NOT granted)`).Scan(&blocked); e != nil {
 			t.Fatal(e)
 		}
 		if blocked {

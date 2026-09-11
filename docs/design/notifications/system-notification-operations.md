@@ -1,6 +1,6 @@
 # 系统通知运营
 
-> 设计状态：已实现；Trader Sync 摘要首条源另行接入。
+> 设计状态：已实现
 
 ## 范围
 
@@ -33,14 +33,14 @@ Market Radar、Sports Live、Managed OO、Worm Markets 自行决定告警条件�
 
 ## 运行流程
 
-1. 进程校验内部 Bearer、数据库、Bot token、test/prod chat ID 及 Telegram 客户端，同步 Bot 资料，检查长轮询兼容性，启动 poller 与 worker 后才报告 SERVING。
+1. Notification CLI 打开自己的 `athena` pool并校验内部 Bearer；`NewServer` 在 `Start` 前借原 pool 配置 Trader Sync summaries。`Start` 先取得 sender session/恢复屏障，再同步 Bot 资料、检查长轮询兼容性，启动 poller 与 worker 后才报告 SERVING。异常旧 sender 必须先由操作员确认停止并用恢复命令处理。
 2. 四个现有生产者仅在各自通知功能开启时创建鉴权客户端，调用 `SendSystemNotification` 提交来源、严重程度、标题/正文/链接、逻辑 chat 和 Topic 标签。
 3. 服务校验请求和渲染后的 Telegram 长度。`EnsureSystemNotificationTopic` 先读取持久 `(telegram_chat,label)`；不存在时取得 PostgreSQL advisory lock，调用 Telegram 创建 Topic，再保存 message-thread ID。
 4. 接受请求后插入引用 Topic 的 pending 投递并返回 ID。消息发送只在 worker 内进行；Topic 创建仍可能在入队前调用 Telegram。
-5. 账户、系统和 reply 使用三个统一 `WorkSource`；候选保留未来 NotBefore，不用全局前 N 条遮蔽其他 owner。调度按 owner 公平轮转并优先即将到期任务，跨 chat 默认并发 12，同 chat 串行。Bot 20 次/秒、私聊至少一秒和群组 20 次/分钟都以实际 started 推进。
+5. account、system、reply 候选与 Trader Sync `summary_head` 协调共同进入统一调度；summary head 只守护未解决批次首条，冻结 parts 仍复用 account delivery/permit/result。候选保留未来 NotBefore，不用全局前 N 条遮蔽其他 owner。调度按 owner 公平轮转并优先即将到期任务，跨 chat 默认并发 12，同 chat 串行。Bot 20 次/秒、私聊至少一秒和群组 20 次/分钟都以实际 started 推进。
 6. `Authorize` 锁定系统投递及持久路由，计算所有正文/路由输入的 digest；pending、到期且少于五次才插入 attempt 和改为 sending。许可前解析配置的数字群组 ID，将实际 chat/group 固定写入 attempt，并使用同一物理 chat 和持久 Topic thread ID 发送转义后的 HTML。实际 RoundTrip 起点通过非阻塞握手保存，结果另开事务以 attempt/status CAS 落库。
 7. `GET /api/v1/admin/system-notification-deliveries` 分页筛选系统记录；详情只接受正数 ID。测试入口始终向配置测试 chat 与提交 Topic 标签入队 `admin-ui` 来源的信息通知。
-8. `/admin/notifications` 提供列表、筛选、移动端紧凑卡片、详情和单飞测试弹窗。Service Status 在进入、手动刷新及每十秒读取 `/api/v1/admin/notification-runtime/status`。
+8. `/admin/notifications` 提供列表、筛选、移动端紧凑卡片、详情和单飞测试弹窗。Service Status 对 Services、Notification Runtime 与 Trader Sync 分别执行 10 秒可见 single-flight；Notification 读取 `/api/v1/admin/notification-runtime/status`，展示 sending/unknown 及 recovery，Trader Sync 使用独立 `/api/v1/admin/trader-sync/status`。某一来源失败不阻塞其他来源。
 
 ## 状态与数据
 
@@ -70,7 +70,7 @@ Market Radar、Sports Live、Managed OO、Worm Markets 自行决定告警条件�
 - 系统操作不接受或推断普通账户 UUID，不调用 AccountNotificationService。
 - 会员与 API Key 不能读取系统记录、详情、运行状态或入队测试。
 - 入队前逻辑 chat 与 Topic 必须解析为持久正数 thread ID。
-- 三类消息共用一个调度器、Bot 预算和物理 chat 预算；系统逻辑路由映射到同一物理群组时也共享串行及窗口。reply 有独立 outbox，不在 poller 内直发，不写入系统通知记录。
+- account、system、reply 与 summary-head 协调共用一个 Dispatcher、Bot 预算和物理 chat 预算；冻结摘要 parts 仍是 account WorkRef。系统逻辑路由映射到同一物理群组时也共享串行及窗口。reply 有独立 outbox，不在 poller 内直发，不写入系统通知记录。
 - Provider 错误不修改 Notification 数据库中的生产者告警状态；来源侧接受边界由各服务自行负责。
 - 当前模型不含旧通用 topic/delivery 表和 Notifications 账户模块，也不增加历史兼容路径。
 - 只有已提交许可才可发送；结果更新绑定当前 attempt 与 sending，sent/failed/unknown/cancelled 不可复活。
@@ -85,7 +85,7 @@ Market Radar、Sports Live、Managed OO、Worm Markets 自行决定告警条件�
 
 Topic 创建在 Notification 请求之间串行，但 Telegram 创建与数据库插入跨外部事务边界。创建后插入/提交失败会留下未持久化映射；之后请求可能重新创建 Topic。消息许可流程不改变这一独立 Topic 风险。
 
-## 可观测性与后续范围
+## 可观测性与证据边界
 
 gRPC health 报告生命周期就绪。共享运行 RPC 报告 Bot 可用性/ID/名称、poller 状态、最近成功轮询/处理时间、系统/账户 pending/retry/failed/sending/unknown 数量和不可达绑定数；公开投影仅供管理员 Service Status。
 
@@ -93,7 +93,7 @@ gRPC health 报告生命周期就绪。共享运行 RPC 报告 Bot 可用性/ID/
 
 共享调度、显式停止恢复和历史预算重建已实现，操作步骤及安全边界见[单 sender 与恢复操作](account-telegram-notifications.md#单-sender-与恢复操作)。命令 `--recover-stopped-sender=<UUID>` 是操作员对对应登记进程已退出的明确确认，持独占锁恢复后退出，不发送 Telegram。不能因 incarnation 不同、lease 失效或端口释放而接管仍可能存活的 sender。
 
-调度对未来 Deadline 保留同 chat 的“HTTP 最长五秒 + 一秒间隔”槽，同时预留 worker 和即将到期的 Bot 信用；取得账户 gate 后已过期或被后来 Retry-After 收紧作废的槽回到调度，不消耗 attempt。许可已提交但 HTTP 尚未开始时同样等待新冷却，保留原 attempt；可取消准入等待不持账户 gate，五秒 HTTP 超时在准入后起算。本地预算延迟与外部耗时分开，仍保留总体时延。数据库运行错误或失锁取消新授权、停止 poller 并令 health 失败，命令以错误退出；不会保留一个表面健康但静默停发的进程。重启窗口恢复覆盖历史 retry attempt、缺起点的已知结果、非首次启动的完整60秒 monotonic恢复屏障，以及不按UTC过滤的未解除长 Retry-After，历史实际 chat/group 不从当前环境变量反推。摘要首条源仍由 Trader Sync 后续任务提供。
+调度对未来 Deadline 保留同 chat 的“HTTP 最长五秒 + 一秒间隔”槽，同时预留 worker 和即将到期的 Bot 信用；取得账户 gate 后已过期或被后来 Retry-After 收紧作废的槽回到调度，不消耗 attempt。许可已提交但 HTTP 尚未开始时同样等待新冷却，保留原 attempt；可取消准入等待不持账户 gate，五秒 HTTP 超时在准入后起算。本地预算延迟与外部耗时分开，仍保留总体时延。数据库运行错误或失锁取消新授权、停止 poller 并令 health 失败，命令以错误退出；不会保留一个表面健康但静默停发的进程。重启窗口恢复覆盖历史 retry attempt、缺起点的已知结果、非首次启动的完整60秒 monotonic恢复屏障，以及不按UTC过滤的未解除长 Retry-After，历史实际 chat/group 不从当前环境变量反推。摘要首条源与生产 `ConfigureSummaries` 已接入，仍不把本地 fixture 或源码接线写成公网摘要时效证明。
 
 
 ## 维护检查

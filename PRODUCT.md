@@ -10,7 +10,7 @@ web
 
 ATHENA 有独立的普通会员与管理员应用。会员使用被授予权限的业务模块；管理员管理账户授权及各模块允许的运行概要。两种身份的页面、会话和业务数据边界分别维护。
 
-本轮设计对象是 Trader Sync 的 Activity Alerts。用户人工选择低频 Polymarket 交易者，希望及时看到目标正在交易的市场、Outcome、方向和公开事实，再自行判断是否前往市场操作。管理员在本功能中只查看安全概要，不查看用户私有备注、完整活动或逐条消息。
+Trader Sync 的第一阶段能力是 Activity Alerts。用户人工选择低频 Polymarket 交易者，及时查看目标正在交易的市场、Outcome、方向和公开事实，再自行判断是否前往市场操作。管理员在本功能中只查看安全概要，不查看用户私有备注、完整活动或逐条消息。
 
 ## Product Purpose
 
@@ -34,7 +34,8 @@ Trader Sync 第一阶段提供目标确认、独立订阅、实时成交活动�
 - 每条合格成交形成独立持久活动；用户级滚动 60 秒内前 10 条逐条提醒，第 11 条起按已确认规则汇总。消息未知结果不自动重发，摘要分条分别显示结果。
 - 暂停/取消保留旧通知队列；撤权、解绑或重绑终止未取得发送许可的旧资格。重新获权后用户逐个恢复订阅。
 - 显示结算时间、监控健康、资料缺失和通知结果，不把“无新活动”“监控失效”“投递未知”混为同一状态。
-- 当前后端与 UI 完整书面设计均已整体确认，21项前后端联合实现计划正在独立工作区逐项实施，进度与验证见计划。资料查询、页面与运行结果须以实际实现和验收证据为准。
+- 后端、会员与管理员页面、Notifications 返回态和 Service Status 集成已经实现。受控浏览器覆盖根路径与 `/athena`、桌面/手机、深浅主题、权限撤销、owner 隔离及关键管理流程；资料查询与运行结论以实际[验收记录](docs/testing/trader-sync-activity-alerts-acceptance.md)为准。
+- 现有证据不等于生产 SLO：协议样本包含 11 条 recorded 与 1 条明确 synthetic，100 个真正活跃实网目标、公开时刻 P95/P99、供应商静默漏推完整性和长期稳定仍需外部环境验证。
 
 ## Brand Commitments
 
@@ -47,7 +48,8 @@ Trader Sync 第一阶段提供目标确认、独立订阅、实时成交活动�
 - [已确认后端 spec](docs/superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)
 - [已整体确认 UI spec](docs/superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)
 - [长期 UI 设计](docs/design/web-ui/trader-sync-activity-alerts.md)
-- [前后端联合实现计划与执行进度](docs/superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)
+- [前后端联合实现计划](docs/superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)
+- [最终验收记录](docs/testing/trader-sync-activity-alerts-acceptance.md)
 - [会员应用壳](docs/design/web-ui/member-application-shell.md)、[管理员应用壳](docs/design/web-ui/administrator-application-shell.md)
 - [共享样式实现](ui/src/app/styles/shared.css)、[会员入口](ui/src/app/member/app.tsx)、[管理员入口](ui/src/app/admin/app.tsx)
 

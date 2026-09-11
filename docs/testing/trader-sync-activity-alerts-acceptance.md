@@ -1,6 +1,6 @@
 # Trader Sync 指标、故障与容量验收
 
-2026-09-11；实现基点 3b0272924732046df977c9a2486b83d72e5151c8。本页记录限定证据，不是生产 SLO、公开时间或 UI 验收声明。
+2026-09-11；当前实现、受控验收与最终相关回归已同步。本页记录限定证据，不是生产 SLO 或公开时间声明。
 
 ## 可重复执行的组件链
 
@@ -142,3 +142,15 @@ go test -v -tags=integration,uiharness ./internal/tradersync/acceptance -run '^T
 删除full-page矩阵中重复覆盖同名contrast JSON的第二块后，两个前缀各5个受影响页面通过四宽度×两主题，分别10份颜色文件、范围内失败0。真实链因共享前序seed各运行完整10项并通过；e2e TypeScript通过。原33项完整fixture和未改产品/单元结果仍保留，本轮未重跑无关矩阵或build，219个静态资产事前SHA一致。精确命令、预先306输入SHA、起止/exit与清理在`task20-fix1-run-index.json`、`task20-fix1-cleanup.json`，新建的两个随机库/四个监听/PID均已退出清理。
 
 告警单列：原Playwright颜色环境冲突仍在历史日志；本轮显式移除NO_COLOR后未再出现。原build的大chunk警告未通过本轮拆包处理，格式化仍提示既有jsxBracketSameLine deprecated；两份新launcher的60秒recovery warning是预期安全屏障，按runtime达到running验证，未缩短或忽略。撤权旧读的浏览器证据为ERR_ABORTED，成功不可取消晚回调的拒绝属于前序组件测试层，不能混称同一次浏览器观测。
+
+## Task21：长期文档与最终相关回归
+
+2026-09-11 以 `597ce71b1adf59defd895167337ea95245bef7ed` 为提交前基点，对 account/access、notification、Trader Sync、server、API client、CLI 与 UI 执行相关回归。Go 单元入口通过；API/CLI 入口均完成编译检查。UI 29 suites / 346 tests 通过，保留 5 条既有 jsdom navigation `console.error`；最终 lint 通过。Vite build 通过并保留 821.27 kB chunk 警告。
+
+第一次完整并行 integration 在 `TestActualConfirmationFailureKeepsWSSAndClosedEpochCandidate/403` 形成 activity 后留下 Pending delivery、0 attempt、0 HTTP 并超时。该子用例隔离运行五次通过只说明并行相关，未被当作原因证明。随后诊断运行取得 notification 首个致命错误：`FATAL: terminating connection due to administrator command (SQLSTATE 57P01)`；同一秒 `TestRecoverSenderLossStopsPollerAndSignalsFatal` 用未限定数据库的 `pg_locks` 查询终止同 key sender。PostgreSQL 锁目录可见同集群其他测试数据库，因此包并行时该测试误杀了 acceptance 的专用 sender session。根因不是恢复屏障、业务 SLO、worker 等待预算或 sender timeout。
+
+回归测试先增加第二个随机数据库和同 key sender，原查询确定性 RED：本库真实失锁按预期 fatal，另库 session 也收到 57P01。修复只给该终止查询及另外两条测试用 advisory-lock 观察谓词增加 `current_database()` OID 条件；不改生产 sender、许可或超时语义。定向 GREEN 保留本库失锁 fatal，同时另库 `Check` 健康。随后原 acceptance 内容不变的完整 integration 在 230.496 秒内通过，notification/tradersync race 在 19.193 秒内通过。
+
+Task20 留下的 14 条 Prettier 报错只涉及 6 个页面的 `className` 闭合换行；定点格式化后 lint 与 build 通过。当前 219 项生产构建资产与 Task20 已验收清单比较：213 项逐字节相同，6 项变化全部是对应页面的 `.js.map`；实际 JS/CSS/HTML/font/manifest 均相同。因此沿用 Task20 浏览器执行证据，没有为 source map 或纯格式变化重跑浏览器。346 项 UI 单元发生在格式化前；纯格式 diff、最终 lint 和相同执行资产共同限定该复用依据。
+
+永久 Telegram JSON 的 `requestBody` 已恢复实际 UTF-8 原字节：447 bytes，SHA-256 `fe9c52598c326dfe1179400dacc18cd4d9a0f04332acbaa1a0d97c0b033b827c`，精确保留外层 CRLF 与正文内 LF。没有再次发送、消费 update 或访问真实 Bot。最终命令、输入清单、原始日志、失败到修复顺序和资产比较将保留在本地未提交目录 `.superpowers/trader-sync-acceptance/task21-final/`；该目录是执行证据，不是产品运行依赖。

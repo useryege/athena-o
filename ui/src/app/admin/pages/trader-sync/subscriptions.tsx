@@ -94,8 +94,7 @@ export const TraderSyncAdminSubscriptionsPage = () => {
                         <Button htmlType='submit'>Apply filters</Button>
                     </Space>
                 </form>
-            }
-        >
+            }>
             {data.stale && <Alert type='warning' title='Stale summaries — showing the last successful read' />}
             <Section title={filters.includeCancelled ? 'Current and cancelled subscriptions' : 'Current subscriptions'}>
                 <p>As of: {summaryTime(data.data?.asOf)} (UTC+8)</p>
@@ -166,8 +165,7 @@ export const TraderSyncAdminSubscriptionsPage = () => {
                         onClick={() => {
                             const next = data.data?.page.nextCursor;
                             if (next) setCursors(current => [...current, next]);
-                        }}
-                    >
+                        }}>
                         Next
                     </Button>
                 </Space>
