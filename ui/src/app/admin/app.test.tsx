@@ -1,5 +1,6 @@
 import * as React from 'react';
 import renderer, {act} from 'react-test-renderer';
+import {Button} from 'antd';
 import {AuthorizationCtx, useAuthorization, type AuthorizationState} from '../shared/context';
 import {parseUserInfo, AppBootstrapSessionStatus} from '../shared/models';
 import {useVisibleQuery} from '../shared/use-visible-query';
@@ -162,5 +163,57 @@ test('real Shell refresh discovering lost administrator role replaces summaries 
     jest.mocked(services.users.get).mockResolvedValue({...mockUser(), administrator: false});
     await act(async () => mockAuth.refresh());
     expect(text()).toContain('Administrator access required');
+    expect(text()).not.toContain('cached administrator summary');
+});
+
+
+test('role recheck failure is visible and retry stays single flight before fresh authorized data returns', async () => {
+    const oldRead = late();
+    mockLoad = jest.fn().mockResolvedValueOnce('cached administrator summary').mockReturnValueOnce(oldRead.promise).mockResolvedValue('fresh authorized summary');
+    await mount();
+    await act(async () => window.dispatchEvent(new Event('focus')));
+    jest.mocked(services.users.get).mockRejectedValue(new Error('role lookup offline'));
+    await act(async () => {
+        (requests.get('/recheck-failure') as any).emit('error', {status: 403, response: {body: {reason: 'ACCOUNT_ADMIN_REQUIRED'}}});
+    });
+    expect(text()).toContain('role lookup offline');
+    expect(tree.root.findAllByProps({role: 'alert'}).length).toBeGreaterThan(0);
+    expect(text()).not.toContain('cached administrator summary');
+    await act(async () => oldRead.resolve('late invalidated summary'));
+    expect(text()).not.toContain('late invalidated summary');
+    let resolve!: (value: any) => void;
+    jest.mocked(services.users.get).mockReturnValue(new Promise<any>(done => resolve = done));
+    const retry = tree.root.findAllByType(Button).find(button => button.props.children === 'Retry access check')!;
+    await act(async () => {retry.props.onClick(); retry.props.onClick();});
+    expect(services.users.get).toHaveBeenCalledTimes(2);
+    expect(text()).toContain('Checking administrator access');
+    expect(tree.root.findAllByType(Button).find(button => button.props.children === 'Retry access check')!.props.disabled).toBe(true);
+    expect(text()).not.toContain('fresh authorized summary');
+    await act(async () => resolve({...mockUser(), iss: 'verified-issuer'}));
+    expect(text()).toContain('fresh authorized summary');
+    expect(text()).not.toContain('role lookup offline');
+    expect(mockAuth.user.iss).toBe('verified-issuer');
+});
+
+test('retry after a role recheck failure cannot reopen an account that is no longer an administrator', async () => {
+    await mount();
+    jest.mocked(services.users.get).mockRejectedValue(new Error('role lookup offline'));
+    await act(async () => {(requests.get('/recheck-denied') as any).emit('error', {status: 403, response: {body: {reason: 'ACCOUNT_ADMIN_REQUIRED'}}});});
+    expect(text()).toContain('role lookup offline');
+    jest.mocked(services.users.get).mockResolvedValue({...mockUser(), administrator: false});
+    await act(async () => tree.root.findAllByType(Button).find(button => button.props.children === 'Retry access check')!.props.onClick());
+    expect(text()).toContain('Administrator access required');
+    expect(text()).not.toContain('cached administrator summary');
+});
+
+test('a pending role recheck retry cannot reopen data after a newer known 401', async () => {
+    await mount();
+    jest.mocked(services.users.get).mockRejectedValue(new Error('role lookup offline'));
+    await act(async () => {(requests.get('/recheck-late') as any).emit('error', {status: 403, response: {body: {reason: 'ACCOUNT_ADMIN_REQUIRED'}}});});
+    expect(text()).toContain('role lookup offline');
+    let resolve!: (value: any) => void;
+    jest.mocked(services.users.get).mockReturnValue(new Promise<any>(done => resolve = done));
+    await act(async () => tree.root.findAllByType(Button).find(button => button.props.children === 'Retry access check')!.props.onClick());
+    await act(async () => {(requests.get('/recheck-newer-401') as any).emit('error', {status: 401}); resolve(mockUser());});
     expect(text()).not.toContain('cached administrator summary');
 });

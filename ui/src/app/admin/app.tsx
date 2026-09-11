@@ -198,6 +198,8 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
     const currentUser = React.useRef(user);
     currentUser.current = user;
     const refreshSequence = React.useRef(0);
+    const roleCheckFlight = React.useRef(false);
+    const [roleCheck, setRoleCheck] = React.useState<{pending: boolean; error?: string}>();
     React.useLayoutEffect(() => {
         beginAdminReadSession(props.initialUser);
         return () => {
@@ -252,6 +254,26 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
         services.viewPreferences.syncServerTheme(localThemeMode(latest.preferences.theme));
     }, [location.hash, location.pathname, location.search]);
 
+    const recheckAdminAccess = React.useCallback(() => {
+        if (roleCheckFlight.current) return;
+        roleCheckFlight.current = true;
+        setRoleCheck({pending: true});
+        // refresh owns this sequence; a newer 401 or Shell unmount invalidates both handlers.
+        const sequence = refreshSequence.current + 1;
+        void refresh()
+            .then(
+                () => {
+                    if (sequence === refreshSequence.current) setRoleCheck(undefined);
+                },
+                error => {
+                    if (sequence === refreshSequence.current) setRoleCheck({pending: false, error: requestErrorMessage(error)});
+                }
+            )
+            .finally(() => {
+                if (sequence === refreshSequence.current) roleCheckFlight.current = false;
+            });
+    }, [refresh]);
+
     React.useEffect(() => {
         const subscription = requests.onError.subscribe(error => {
             const details = requestErrorDetails(error);
@@ -263,11 +285,11 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
             }
             if (details.status === 403 && details.reason === 'ACCOUNT_ADMIN_REQUIRED') {
                 clearAdminSession();
-                void refresh().catch(() => undefined);
+                recheckAdminAccess();
             }
         });
         return () => subscription.unsubscribe();
-    }, [location.hash, location.pathname, location.search, refresh]);
+    }, [location.hash, location.pathname, location.search, recheckAdminAccess]);
 
     React.useEffect(() => {
         const info = routeInfo(location.pathname);
@@ -491,14 +513,32 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
                             </div>
                         </Layout.Header>
                         <Layout.Content className='athena-shell__content' id='athena-main' tabIndex={-1}>
-                            <AdminRoutes
-                                preferences={props.preferences}
-                                settings={props.settings}
-                                themeChanging={themeChanging}
-                                onThemeChange={changeTheme}
-                                loggingOut={loggingOut}
-                                onLogout={() => void logout()}
-                            />
+                            {roleCheck ? (
+                                <section aria-label='Administrator access check' aria-busy={roleCheck.pending}>
+                                    <div role={roleCheck.pending ? 'status' : 'alert'}>
+                                        <Result
+                                            status='warning'
+                                            icon={roleCheck.pending ? <Spin /> : undefined}
+                                            title={roleCheck.pending ? 'Checking administrator access' : 'Could not verify administrator access'}
+                                            subTitle={roleCheck.pending ? 'Administrator data is unavailable while your access is checked.' : roleCheck.error}
+                                            extra={
+                                                <Button disabled={roleCheck.pending} loading={roleCheck.pending} onClick={recheckAdminAccess}>
+                                                    Retry access check
+                                                </Button>
+                                            }
+                                        />
+                                    </div>
+                                </section>
+                            ) : (
+                                <AdminRoutes
+                                    preferences={props.preferences}
+                                    settings={props.settings}
+                                    themeChanging={themeChanging}
+                                    onThemeChange={changeTheme}
+                                    loggingOut={loggingOut}
+                                    onLogout={() => void logout()}
+                                />
+                            )}
                         </Layout.Content>
                     </Layout>
                 </Layout>
