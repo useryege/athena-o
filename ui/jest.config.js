@@ -3,11 +3,7 @@ module.exports = {
   testEnvironment: '<rootDir>/jest-environment.cjs',
   reporters: ['default', 'jest-junit'],
   collectCoverage: true,
-  testMatch: [
-    '<rootDir>/src/app/**/*.test.tsx',
-    '<rootDir>/src/app/mobile/**/*.test.tsx',
-    '<rootDir>/src/app/shared/**/*.test.ts'
-  ],
+  testMatch: ['<rootDir>/src/app/**/*.test.ts', '<rootDir>/src/app/**/*.test.tsx'],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
       isolatedModules: true,

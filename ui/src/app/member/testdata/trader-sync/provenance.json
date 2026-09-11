@@ -1,0 +1,69 @@
+{
+  "sourceCommit": "64d1ec61bb87dc7332aa27a20286eb391b9988b4",
+  "contractVerifiedAt": "5a6c023a3e1536d340547a29aa92146c1e736367",
+  "sourceTest": "internal/server/trader_sync_gateway_integration_test.go",
+  "sourceLog": "final-gateway-boundaries.log",
+  "scope": "Real authenticated HTTP gateway / gRPC / facade / isolated store; synthetic chain facts and loopback Profile. No live chain, PnL amount or Telegram delivery claim. Original response bytes copied unchanged. Synthetic variants are explicitly identified in tests.",
+  "files": [
+    {
+      "local": "01.json",
+      "file": "01-member-_api_v1_trader-sync_subscriptions_eb203cff-d621-4f64-bc4a-d138940446bf.json",
+      "sha256": "4b8ed62887e72530bfb4327ced1566c5b2f1ed1eef5f2b86318fb3eaed26aefd"
+    },
+    {
+      "local": "03.json",
+      "file": "03-member-_api_v1_trader-sync_subscriptions_page.page_size_1.json",
+      "sha256": "27d7b0b810a8ea471a9f5da97685255f6089d11ea0ecd1fb098dd76a87d38d70"
+    },
+    {
+      "local": "05.json",
+      "file": "05-member-_api_v1_trader-sync_activities_1.json",
+      "sha256": "ef69acca049751fb292126411514bbb1d7dd494fd16259e6de8034b26956cc2b"
+    },
+    {
+      "local": "06.json",
+      "file": "06-member-_api_v1_trader-sync_activities_2.json",
+      "sha256": "5e6875717b603d3bdce5e86c17adcdf13b03b9cdc4577f383e823d2a87d2c9af"
+    },
+    {
+      "local": "07.json",
+      "file": "07-member-_api_v1_trader-sync_activities_11.json",
+      "sha256": "36826aef5903e41982cb476067b2263bd3a6b431da65aa047ea852d70bb3f3c5"
+    },
+    {
+      "local": "09.json",
+      "file": "09-member-_api_v1_trader-sync_summaries_1.json",
+      "sha256": "ff3a9bf521190043ef05424b0150ccd5dbd7a525f9e593ee655db911f54552a5"
+    },
+    {
+      "local": "10.json",
+      "file": "10-member-_api_v1_trader-sync_summaries_1_parts_page.page_size_1.json",
+      "sha256": "b744687fda05b176f265f38583cc8b493fa5e309d584a48fd74f65255539bda2"
+    },
+    {
+      "local": "12.json",
+      "file": "12-member-_api_v1_trader-sync_subscriptions_eb203cff-d621-4f64-bc4a-d138940446bf_history_page.page_size_1.json",
+      "sha256": "9f491864033e5185b141fc7a0e44cd0cbd450d02e6b530ff7f22ae6bdcafeda3"
+    },
+    {
+      "local": "15.json",
+      "file": "15-member-_api_v1_trader-sync_activities_page.page_size_1.json",
+      "sha256": "def4bd446d5a2e83170ab7d29e701d34c542bec3a8de75a71ae5a7fab91320bf"
+    },
+    {
+      "local": "17.json",
+      "file": "17-member-_api_v1_trader-sync_activities_1.json",
+      "sha256": "ca631c0cb1fcd81dd5c483f5a412770d8b68afafe484c9f7208c5e91833abe43"
+    },
+    {
+      "local": "create-real-confirmation.json",
+      "file": "create-real-confirmation.json",
+      "sha256": "a86bce8348868fc61e6571386a0cd91f11dc5ac50141aa4d9660645824575496"
+    },
+    {
+      "local": "resolve-saved-note-existing.json",
+      "file": "resolve-saved-note-existing.json",
+      "sha256": "fc185f1d9764e3af3344c55b0f36abf3e9e4172b4367300eabd765d786ddd7e5"
+    }
+  ]
+}

@@ -15,9 +15,11 @@ import type {SelfAccountServices} from '../session/services';
 import {MemberNotificationService} from './notification-service';
 import {MemberProfitSharingService} from './profit-sharing-service';
 import {MemberSecurityService} from './security-service';
+import {MemberTraderSyncService} from './trader-sync-service';
 
 export interface MemberServices extends SelfAccountServices {
     memberSecurity: MemberSecurityService;
+    traderSync: MemberTraderSyncService;
     wallet: WalletService;
     wormTrading: WormTradingService;
     marketRadar: MarketRadarService;
@@ -49,6 +51,7 @@ export const ensureMemberBusinessServices = () => {
         version: new VersionService(),
         accounts: new SelfAccountService(),
         memberSecurity: new MemberSecurityService(),
+        traderSync: new MemberTraderSyncService(),
         wallet: new WalletService(),
         wormTrading: new WormTradingService(),
         marketRadar: new MarketRadarService(),
