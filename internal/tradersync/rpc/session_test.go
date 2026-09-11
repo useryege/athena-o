@@ -522,3 +522,45 @@ func TestSessionQueuedPongRetainsReceiveTimeBeforeNewCoverage(t *testing.T) {
 		}
 	}
 }
+
+func TestSessionRetainsOriginalMonotonicReceipt(t *testing.T) {
+	url := serveSession(t, func(c *websocket.Conn) {
+		if chainHandshake(c) != nil {
+			return
+		}
+		for i := 0; i < 2; i++ {
+			_ = c.WriteJSON(map[string]any{"method": "eth_subscription", "params": map[string]any{"subscription": "s", "result": logFixture()}})
+		}
+		for {
+			if _, e := readRequest(c); e != nil {
+				return
+			}
+		}
+	})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	s, e := DialSession(ctx, url, "")
+	if e != nil {
+		t.Fatal(e)
+	}
+	t.Cleanup(func() { _ = s.Close() })
+	var previous int64
+	for i := 0; i < 2; i++ {
+		select {
+		case received := <-s.Logs():
+			data, _ := json.Marshal(received)
+			var evidence struct {
+				Elapsed *int64 `json:"receivedElapsedNs"`
+			}
+			if e = json.Unmarshal(data, &evidence); e != nil {
+				t.Fatal(e)
+			}
+			if evidence.Elapsed == nil || *evidence.Elapsed < previous || received.ReceivedAt.IsZero() {
+				t.Fatalf("missing/nonmonotonic original receipt evidence: %s", data)
+			}
+			previous = *evidence.Elapsed
+		case <-ctx.Done():
+			t.Fatal(ctx.Err())
+		}
+	}
+}

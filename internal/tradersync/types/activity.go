@@ -16,6 +16,7 @@ type Activity struct {
 	Generation                                         uint64
 }
 type Projection struct {
+	Timing       *ProjectionTiming
 	Candidate    Candidate
 	Trade        Trade
 	Confirmation CanonicalEvidence

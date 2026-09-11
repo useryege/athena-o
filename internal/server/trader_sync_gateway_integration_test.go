@@ -316,6 +316,9 @@ func TestTraderSyncGatewayRealCredentialsAndOwnerPrivacy(t *testing.T) {
 	}
 	get("member", "/api/v1/admin/trader-sync/subscriptions", 403)
 	resolved := post("/api/v1/trader-sync/targets:resolve", fmt.Sprintf(`{"input":%q}`, profileWallet), 200)
+	if !strings.Contains(string(resolved), `"usageNotice":"优先选择低频交易者；高频监控不纳入性能保障"`) {
+		t.Fatal("missing approved usage notice", string(resolved))
+	}
 	var resolvedBody struct {
 		Target struct {
 			ConfirmationToken string `json:"confirmationToken"`
@@ -452,6 +455,10 @@ func TestTraderSyncGatewayRealCredentialsAndOwnerPrivacy(t *testing.T) {
 	paused := post(base+"/"+subscription+":pause", pauseBody, 200)
 	if !strings.Contains(string(paused), `"revision":"9007199254740994"`) || !strings.Contains(string(paused), `"pausedAt"`) {
 		t.Fatal("pause lost exact revision or real end", string(paused))
+	}
+	pausedDetail := get("member", base+"/"+subscription, 200)
+	if !strings.Contains(string(pausedDetail), `"queueNotice":"已排队通知仍会继续发送，可能稍后收到"`) {
+		t.Fatal("missing approved old queue notice", string(pausedDetail))
 	}
 	replayed := post(base+"/"+subscription+":pause", pauseBody, 200)
 	if !strings.Contains(string(replayed), `"revision":"9007199254740994"`) {

@@ -88,6 +88,9 @@ type Querier interface {
 	ReadCommittedOwnerSnapshot(ctx context.Context, ownerID pgtype.UUID) (int64, error)
 	ReadConfirmation(ctx context.Context, arg ReadConfirmationParams) ([]byte, error)
 	ReadConfirmationDisplay(ctx context.Context, arg ReadConfirmationDisplayParams) (ReadConfirmationDisplayRow, error)
+	// One statement snapshot, before current activity insertion. Original arrival
+	// predecessor selection deliberately precedes activity/route eligibility joins.
+	ReadFormationSnapshot(ctx context.Context, arg ReadFormationSnapshotParams) (ReadFormationSnapshotRow, error)
 	ReadOwnerActivities(ctx context.Context, arg ReadOwnerActivitiesParams) ([]ReadOwnerActivitiesRow, error)
 	ReadOwnerActivitySnapshot(ctx context.Context, ownerID pgtype.UUID) (int64, error)
 	ReadSubscriptionFacts(ctx context.Context, arg ReadSubscriptionFactsParams) ([]ReadSubscriptionFactsRow, error)
@@ -97,6 +100,9 @@ type Querier interface {
 	ReadSummaryPartCounts(ctx context.Context, arg ReadSummaryPartCountsParams) ([]byte, error)
 	ReadSummaryPartFacts(ctx context.Context, arg ReadSummaryPartFactsParams) ([]ReadSummaryPartFactsRow, error)
 	ReadSummaryTargetCounts(ctx context.Context, arg ReadSummaryTargetCountsParams) ([]ReadSummaryTargetCountsRow, error)
+	// Only finite aggregate names/values leave this query. Private formation evidence
+	// and owner identities never become runtime labels or response objects.
+	ReadTimingRollups(ctx context.Context) ([]ReadTimingRollupsRow, error)
 	ReadTraderSyncRuntime(ctx context.Context) (ReadTraderSyncRuntimeRow, error)
 	RecordCollectorInterruption(ctx context.Context, id int64) error
 	ReleaseCollectorOwnership(ctx context.Context, fencingToken int64) (int64, error)

@@ -424,6 +424,13 @@ func (s *SQLStore) ReadRuntimeStatus(ctx context.Context, admin string) (result 
 		}{{"pending", counts.Pending}, {"sending", counts.Sending}, {"sent", counts.Sent}, {"failed", counts.Failed}, {"unknown", counts.Unknown}, {"cancelled", counts.Cancelled}} {
 			metric("delivery_"+v.name, v.n, "deliveries")
 		}
+		timing, e := queries.ReadTimingRollups(ctx)
+		if e != nil {
+			return e
+		}
+		for _, m := range timing {
+			result.Metrics = append(result.Metrics, tm.RuntimeMetric{Name: m.Name, Value: m.Value, Unit: m.Unit, Kind: "gauge"})
+		}
 		return nil
 	})
 	if err != nil {

@@ -172,7 +172,7 @@ func (q *Queries) SummaryPartResults(ctx context.Context, arg SummaryPartResults
 }
 
 const waitingSummaryActivities = `-- name: WaitingSummaryActivities :many
-SELECT a.id, a.owner_id, a.subscription_id, a.source_record_id, a.interval_id, a.activation_generation, a.trade_json, a.metadata_key, a.target_display_snapshot, a.note_snapshot, a.notification_mode, a.notification_reason, a.settled_at, a.received_at, a.recorded_at, md.metadata_json FROM trader_sync_alert_memberships m
+SELECT a.id, a.owner_id, a.subscription_id, a.source_record_id, a.interval_id, a.activation_generation, a.trade_json, a.metadata_key, a.target_display_snapshot, a.note_snapshot, a.notification_mode, a.notification_reason, a.formation_evidence, a.settled_at, a.received_at, a.recorded_at, md.metadata_json FROM trader_sync_alert_memberships m
 JOIN trader_sync_activities a ON a.id=m.activity_id AND a.owner_id=m.owner_id
 JOIN trader_sync_market_metadata md ON md.cache_key=a.metadata_key
 JOIN telegram_bindings b ON b.account_id=m.owner_id AND b.revision=m.binding_revision AND b.telegram_chat_id=m.chat_id AND b.telegram_user_id=m.chat_id AND b.status='connected'
@@ -199,6 +199,7 @@ type WaitingSummaryActivitiesRow struct {
 	NoteSnapshot          string
 	NotificationMode      string
 	NotificationReason    string
+	FormationEvidence     []byte
 	SettledAt             pgtype.Timestamptz
 	ReceivedAt            pgtype.Timestamptz
 	RecordedAt            pgtype.Timestamptz
@@ -227,6 +228,7 @@ func (q *Queries) WaitingSummaryActivities(ctx context.Context, arg WaitingSumma
 			&i.NoteSnapshot,
 			&i.NotificationMode,
 			&i.NotificationReason,
+			&i.FormationEvidence,
 			&i.SettledAt,
 			&i.ReceivedAt,
 			&i.RecordedAt,

@@ -56,6 +56,7 @@ type receivedPong struct {
 }
 
 type Session struct {
+	receiptOrigin    time.Time
 	conn             *websocket.Conn
 	config           sessionConfig
 	done             chan struct{}
@@ -95,7 +96,7 @@ func dialSession(ctx context.Context, endpoint, proxyURL string, cfg sessionConf
 		}
 		return nil, err
 	}
-	s := &Session{conn: conn, config: cfg, done: make(chan struct{}), logs: make(chan tm.ReceivedLog, cfg.queue), writes: make(chan frame, 64), pong: make(chan receivedPong, 1), pending: make(map[uint64]*pendingRequest), high: make(map[common.Address]uint64)}
+	s := &Session{receiptOrigin: time.Now(), conn: conn, config: cfg, done: make(chan struct{}), logs: make(chan tm.ReceivedLog, cfg.queue), writes: make(chan frame, 64), pong: make(chan receivedPong, 1), pending: make(map[uint64]*pendingRequest), high: make(map[common.Address]uint64)}
 	conn.SetReadLimit(2 << 20)
 	conn.SetPingHandler(func(data string) error {
 		select {
@@ -309,7 +310,10 @@ func (s *Session) readLoop() {
 			s.fail(err)
 			return
 		}
-		received.ReceivedAt = time.Now().UTC()
+		sampled := time.Now()
+		received.ReceivedAt = sampled.UTC()
+		elapsed := sampled.Sub(s.receiptOrigin).Nanoseconds()
+		received.ReceivedElapsedNS = &elapsed
 		if received.Raw.BlockNumber > math.MaxInt64 {
 			s.fail(errors.New("observed block exceeds persistent bigint"))
 			return

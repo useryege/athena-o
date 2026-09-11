@@ -335,3 +335,27 @@ func TestProjectorBoundedSourcesFairFailuresAndCancellationJoin(t *testing.T) {
 		t.Fatal("workers survived Run")
 	}
 }
+
+func TestProjectorMetricsObserveFailedConfirmationWithoutInventingProjection(t *testing.T) {
+	s, n, v, m := projectorFixture(t)
+	n.failure = true
+	close(n.release)
+	close(m.release)
+	p, e := NewProjector(s, n, v, m, ProjectorConfig{})
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = p.process(context.Background(), s.source); e != nil {
+		t.Fatal(e)
+	}
+	values := map[string]string{}
+	for _, metric := range p.MetricsSnapshot() {
+		values[metric.Name] = metric.Value
+	}
+	if values["projector_confirmation_round_count"] != "1" || values["projector_version_round_count"] != "1" || values["projector_candidate_transaction_count"] != "0" {
+		t.Fatalf("actual failed branch observation missing: %v", values)
+	}
+	if s.projects != 0 {
+		t.Fatal("failed confirmation formed activity")
+	}
+}

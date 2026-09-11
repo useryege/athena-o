@@ -137,6 +137,13 @@ func (s *SummarySource) Dispatch(ctx context.Context, c delivery.Candidate, onSt
 	if work.batchID == 0 && !o.monotonic.IsZero() && o.monotonic.Add(time.Minute).After(clock.Now()) {
 		return ErrDispatchDeferred
 	}
+	var phases []txgate.Timing
+	var freezeElapsed, permitElapsed, renderElapsed *int64
+	dispatchBegan := time.Now()
+	ctx = txgate.WithTiming(ctx, func(v txgate.Timing) { phases = append(phases, v) })
+	defer func() {
+		log.WithFields(log.Fields{"head_id": c.Ref.ID, "gate_phases": phases, "freeze_elapsed_ns": freezeElapsed, "render_elapsed_ns": renderElapsed, "permit_transaction_ns": permitElapsed, "dispatch_elapsed_ns": time.Since(dispatchBegan).Nanoseconds()}).Debug("summary dispatch timing")
+	}()
 	begun := clock.Now()
 	gate, e := txgate.AcquireAccountSession(ctx, s.pool, c.OwnerID)
 	if e != nil {
@@ -144,6 +151,7 @@ func (s *SummarySource) Dispatch(ctx context.Context, c delivery.Candidate, onSt
 	}
 	a := &summaryAttempt{source: s, gate: gate, clock: clock, budget: budget, batchID: work.batchID, gateWait: clock.Now().Sub(begun)}
 	defer a.releaseGate()
+	transactionBegan := time.Now()
 	tx, e := s.beginTx(ctx, gate.Conn)
 	if e != nil {
 		return e
@@ -157,7 +165,11 @@ func (s *SummarySource) Dispatch(ctx context.Context, c delivery.Candidate, onSt
 		}
 	}()
 	if work.batchID == 0 {
+		freezeBegan := time.Now()
 		batch, e := s.trader.FreezeSummaryTx(ctx, tx, c.OwnerID, work.revision, c.ChatID)
+		measured := time.Since(freezeBegan).Nanoseconds()
+		freezeElapsed = &measured
+		renderElapsed = batch.RenderElapsedNS
 		if e != nil {
 			if errors.Is(e, ns.ErrSummaryNotReady) {
 				return ErrDispatchDeferred
@@ -210,6 +222,8 @@ func (s *SummarySource) Dispatch(ctx context.Context, c delivery.Candidate, onSt
 			return fmt.Errorf("summary permit commit unconfirmed: %w (readback: %v)", e, confirmed)
 		}
 	}
+	measured := time.Since(transactionBegan).Nanoseconds()
+	permitElapsed = &measured
 	committed = true
 	if finish != nil {
 		finish(true)

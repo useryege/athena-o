@@ -21,8 +21,9 @@ type Eligibility struct {
 
 // ReceivedLog records read-loop observation before any persistence queue wait.
 type ReceivedLog struct {
-	Raw        ethtypes.Log
-	ReceivedAt time.Time
-	Sequence   uint64
+	Raw               ethtypes.Log
+	ReceivedAt        time.Time
+	Sequence          uint64
+	ReceivedElapsedNS *int64 `json:"receivedElapsedNs,omitempty"`
 }
 type WalletObservation struct{ High, Sequence uint64 }

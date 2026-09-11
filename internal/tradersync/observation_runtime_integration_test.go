@@ -4,18 +4,25 @@ package tradersync
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gorilla/websocket"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/useryege/athena/internal/accountcredentials"
 	ac "github.com/useryege/athena/internal/accountstate/store"
 	"github.com/useryege/athena/internal/accountstate/store/migrations"
 	"github.com/useryege/athena/internal/accountstate/txgate"
 	"github.com/useryege/athena/internal/testutil/pgtest"
 	"github.com/useryege/athena/internal/tradersync/store"
+	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -250,4 +257,188 @@ func TestCheckpointWriteFailureAndCommitConnectionLossPreserveHealthyEpoch(t *te
 		}
 		return point.After(original)
 	})
+}
+
+// Drop only PostgreSQL's actual COMMIT CommandComplete, after the backend has
+// committed. This differs from terminating a connection inside a deferred trigger,
+// which rolls the transaction back. No production fault hook or DB reset is used.
+type checkpointCommitEvidence struct {
+	Frame string
+	At    time.Time
+}
+type checkpointWireConn struct {
+	net.Conn
+	pending          []byte
+	checkpoint, drop atomic.Bool
+	checkpointAt     atomic.Pointer[time.Time]
+	observed         chan checkpointCommitEvidence
+}
+
+func checkpointTime(at *time.Time) time.Time {
+	if at == nil {
+		return time.Time{}
+	}
+	return *at
+}
+
+func (c *checkpointWireConn) Read(out []byte) (int, error) {
+	if len(c.pending) == 0 {
+		header := make([]byte, 5)
+		if _, e := io.ReadFull(c.Conn, header); e != nil {
+			return 0, e
+		}
+		size := int(binary.BigEndian.Uint32(header[1:]))
+		if size < 4 || size > 32<<20 {
+			return 0, fmt.Errorf("invalid PostgreSQL frame length %d", size)
+		}
+		payload := make([]byte, size-4)
+		if _, e := io.ReadFull(c.Conn, payload); e != nil {
+			return 0, e
+		}
+		if header[0] == 'C' && string(payload) == "COMMIT\x00" && c.drop.CompareAndSwap(true, false) {
+			select {
+			case c.observed <- checkpointCommitEvidence{Frame: string(payload), At: checkpointTime(c.checkpointAt.Load())}:
+			default:
+			}
+			c.Conn.Close()
+			return 0, io.EOF
+		}
+		c.pending = append(header, payload...)
+	}
+	n := copy(out, c.pending)
+	c.pending = c.pending[n:]
+	return n, nil
+}
+
+type checkpointCommitTracer struct{ armed atomic.Bool }
+
+func (t *checkpointCommitTracer) TraceQueryStart(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryStartData) context.Context {
+	c, ok := conn.PgConn().Conn().(*checkpointWireConn)
+	if !ok {
+		return ctx
+	}
+	if strings.Contains(data.SQL, "SET last_reliable_at") {
+		c.checkpoint.Store(true)
+		if at, ok := data.Args[0].(pgtype.Timestamptz); ok && at.Valid {
+			c.checkpointAt.Store(&at.Time)
+		}
+	}
+	if strings.EqualFold(strings.TrimSpace(data.SQL), "commit") && c.checkpoint.Swap(false) && t.armed.CompareAndSwap(true, false) {
+		c.drop.Store(true)
+	}
+	if strings.EqualFold(strings.TrimSpace(data.SQL), "rollback") {
+		c.checkpoint.Store(false)
+	}
+	return ctx
+}
+func (*checkpointCommitTracer) TraceQueryEnd(context.Context, *pgx.Conn, pgx.TraceQueryEndData) {}
+func TestCheckpointServerCommittedButAcknowledgementLost(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	owner, e := ac.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if _, e = db.Pool.Exec(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display)VALUES($1,$2,'enabled','pending_baseline','{}')`, owner.ID, common.HexToAddress("0x91").Bytes()); e != nil {
+		t.Fatal(e)
+	}
+	tracer := &checkpointCommitTracer{}
+	observed := make(chan checkpointCommitEvidence, 1)
+	config, e := pgxpool.ParseConfig(db.DSN)
+	if e != nil {
+		t.Fatal(e)
+	}
+	config.ConnConfig.Tracer = tracer
+	config.ConnConfig.DialFunc = func(ctx context.Context, network, address string) (net.Conn, error) {
+		c, e := (&net.Dialer{}).DialContext(ctx, network, address)
+		if e != nil {
+			return nil, e
+		}
+		return &checkpointWireConn{Conn: c, observed: observed}, nil
+	}
+	pool, e := pgxpool.NewWithConfig(ctx, config)
+	if e != nil {
+		t.Fatal(e)
+	}
+	t.Cleanup(pool.Close)
+	wss := quietObservationWSS(t)
+	reported := make(chan error, 10)
+	collector, e := NewCollector(store.NewSQLStore(pool), &collectorNode{}, Config{WebSocketURL: "ws" + strings.TrimPrefix(wss.URL, "http"), OnError: func(e error) {
+		select {
+		case reported <- e:
+		default:
+		}
+	}})
+	if e != nil {
+		t.Fatal(e)
+	}
+	done := make(chan error, 1)
+	go func() { done <- collector.Run(ctx) }()
+	defer func() {
+		cancel()
+		select {
+		case e := <-done:
+			if e != nil {
+				t.Error(e)
+			}
+		case <-time.After(6 * time.Second):
+			t.Error("collector did not join")
+		}
+	}()
+	var epoch int64
+	awaitObservation(t, 5*time.Second, func() bool {
+		var healthy int
+		e := db.Pool.QueryRow(ctx, `SELECT count(*) FROM trader_sync_subscriptions WHERE observation_state='healthy'`).Scan(&healthy)
+		return e == nil && healthy == 1
+	})
+	if e = db.Pool.QueryRow(ctx, `SELECT active_epoch FROM trader_sync_collector_control WHERE singleton`).Scan(&epoch); e != nil {
+		t.Fatal(e)
+	}
+	// The first latest tick can precede the first nonce-matched pong. Wait for
+	// one real eligible checkpoint before selecting the following transaction.
+	var original time.Time
+	awaitObservation(t, 24*time.Second, func() bool {
+		var at *time.Time
+		e := db.Pool.QueryRow(ctx, `SELECT max(last_reliable_at) FROM trader_sync_monitor_intervals`).Scan(&at)
+		if e != nil {
+			t.Fatal(e)
+		}
+		if at == nil {
+			return false
+		}
+		original = *at
+		return true
+	})
+	tracer.armed.Store(true)
+	var intercepted checkpointCommitEvidence
+	select {
+	case intercepted = <-observed:
+		t.Logf("suppressed actual PostgreSQL CommandComplete payload=%q observed_at=%s", intercepted.Frame, intercepted.At.Format(time.RFC3339Nano))
+	case <-time.After(13 * time.Second):
+		t.Fatal("actual checkpoint COMMIT response not intercepted")
+	}
+	select {
+	case e = <-reported:
+		if !strings.Contains(e.Error(), "checkpoint persistence") {
+			t.Fatal(e)
+		}
+		t.Logf("actual client commit result: %v", e)
+	case <-time.After(3 * time.Second):
+		t.Fatal("unknown commit was not reported")
+	}
+	var point *time.Time
+	var current int64
+	var intervals int
+	if e = db.Pool.QueryRow(ctx, `SELECT max(last_reliable_at),count(*) FROM trader_sync_monitor_intervals`).Scan(&point, &intervals); e != nil || point == nil || !point.After(original) || !point.Equal(intercepted.At.Truncate(time.Microsecond)) || intervals != 1 {
+		t.Fatal("server commit not durable", point, intervals, e)
+	}
+	if e = db.Pool.QueryRow(ctx, `SELECT active_epoch FROM trader_sync_collector_control WHERE singleton`).Scan(&current); e != nil || current != epoch {
+		t.Fatal("commit ACK loss closed healthy epoch", current, epoch, e)
+	}
+	var ended bool
+	if e = db.Pool.QueryRow(ctx, `SELECT ended_at IS NOT NULL FROM trader_sync_collector_epochs WHERE id=$1`, epoch).Scan(&ended); e != nil || ended {
+		t.Fatal("healthy epoch ended", ended, e)
+	}
+	t.Logf("independent connection confirms committed checkpoint=%s epoch=%d intervals=%d", point.Format(time.RFC3339Nano), epoch, intervals)
 }

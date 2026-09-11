@@ -42,7 +42,7 @@ func (q *Queries) HasSenderHistory(ctx context.Context) (pgtype.Bool, error) {
 }
 
 const listBudgetEvidence = `-- name: ListBudgetEvidence :many
-SELECT a.id, a.work_kind, a.work_id, a.owner_id, a.sender_incarnation, a.telegram_chat_id, a.telegram_group, a.payload_digest, a.authorized_at, a.started_at, a.result_at, a.message_id, a.outcome, a.outcome_code, a.retry_after, a.retry_after_released_at FROM notification_delivery_attempts a
+SELECT a.id, a.work_kind, a.work_id, a.owner_id, a.sender_incarnation, a.telegram_chat_id, a.telegram_group, a.payload_digest, a.authorized_at, a.started_at, a.result_at, a.sender_returned_at, a.sender_elapsed_ns, a.message_id, a.outcome, a.outcome_code, a.retry_after, a.retry_after_released_at FROM notification_delivery_attempts a
 WHERE started_at >= $1 OR result_at >= $1 OR result_at + retry_after >= $1 OR result_at IS NULL
 ORDER BY COALESCE(started_at,result_at,authorized_at)
 `
@@ -68,6 +68,8 @@ func (q *Queries) ListBudgetEvidence(ctx context.Context, startedAt pgtype.Times
 			&i.AuthorizedAt,
 			&i.StartedAt,
 			&i.ResultAt,
+			&i.SenderReturnedAt,
+			&i.SenderElapsedNs,
 			&i.MessageID,
 			&i.Outcome,
 			&i.OutcomeCode,
@@ -85,7 +87,7 @@ func (q *Queries) ListBudgetEvidence(ctx context.Context, startedAt pgtype.Times
 }
 
 const listSenderRecoveryAttempts = `-- name: ListSenderRecoveryAttempts :many
-SELECT a.id, a.work_kind, a.work_id, a.owner_id, a.sender_incarnation, a.telegram_chat_id, a.telegram_group, a.payload_digest, a.authorized_at, a.started_at, a.result_at, a.message_id, a.outcome, a.outcome_code, a.retry_after, a.retry_after_released_at FROM notification_delivery_attempts a WHERE sender_incarnation=$1 AND (
+SELECT a.id, a.work_kind, a.work_id, a.owner_id, a.sender_incarnation, a.telegram_chat_id, a.telegram_group, a.payload_digest, a.authorized_at, a.started_at, a.result_at, a.sender_returned_at, a.sender_elapsed_ns, a.message_id, a.outcome, a.outcome_code, a.retry_after, a.retry_after_released_at FROM notification_delivery_attempts a WHERE sender_incarnation=$1 AND (
  EXISTS (SELECT 1 FROM account_notification_deliveries d WHERE a.work_kind='account' AND d.id=a.work_id AND d.current_attempt_id=a.id AND d.status='sending') OR
  EXISTS (SELECT 1 FROM system_notification_deliveries d WHERE a.work_kind='system' AND d.id=a.work_id AND d.current_attempt_id=a.id AND d.status='sending') OR
  EXISTS (SELECT 1 FROM telegram_binding_replies d WHERE a.work_kind='reply' AND d.id=a.work_id AND d.current_attempt_id=a.id AND d.status='sending'))
@@ -113,6 +115,8 @@ func (q *Queries) ListSenderRecoveryAttempts(ctx context.Context, senderIncarnat
 			&i.AuthorizedAt,
 			&i.StartedAt,
 			&i.ResultAt,
+			&i.SenderReturnedAt,
+			&i.SenderElapsedNs,
 			&i.MessageID,
 			&i.Outcome,
 			&i.OutcomeCode,

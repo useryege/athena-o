@@ -14,6 +14,7 @@ type SummaryPart struct {
 	DeliveryID int64
 }
 type SummaryBatch struct {
+	RenderElapsedNS    *int64 // This invocation only; not a persisted freeze/commit timestamp.
 	ID                 int64
 	OwnerID            string
 	BindingRevision    uint64

@@ -60,6 +60,7 @@ type Service struct {
 	senderSession     *notificationstore.SenderSession
 	runtimeErrors     chan error
 	runtimeFailed     atomic.Bool
+	recovery          recoveryProgress
 	onFatal           func(error)
 	workerConfig      WorkerConfig
 	workerCancel      context.CancelFunc
@@ -185,16 +186,21 @@ func (s *Service) GetNotificationRuntimeStatus(ctx context.Context, _ *apiclient
 	if s.poller != nil {
 		pollerStatus = s.poller.Status()
 	}
+	recovery := s.recovery.snapshot()
 	statusText := "stopped"
 	if s.runtimeFailed.Load() {
 		statusText = "failed"
-	} else if started && pollerStatus.Active {
+	} else if started && (recovery == nil || recovery.State == "initializing" || recovery.State == "waiting") {
+		statusText = "recovering"
+	} else if started && recovery.State == "failed" {
+		statusText = "failed"
+	} else if started && recovery.State == "completed" && pollerStatus.Active {
 		statusText = "running"
 	} else if started {
 		statusText = "degraded"
 	}
 	response := &apiclient.NotificationRuntimeStatus{
-		Started: started, Status: statusText, PollerActive: pollerStatus.Active,
+		Recovery: recovery, Started: started, Status: statusText, PollerActive: pollerStatus.Active,
 		SystemPendingCount: systemCounts.Pending, SystemRetryCount: systemCounts.Retry,
 		SystemFailedCount: systemCounts.Failed, AccountPendingCount: accountCounts.Pending,
 		AccountRetryCount: accountCounts.Retry, AccountFailedCount: accountCounts.Failed,

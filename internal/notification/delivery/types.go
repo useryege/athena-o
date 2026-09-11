@@ -21,7 +21,15 @@ type Permit struct {
 	PayloadDigest     []byte
 	AuthorizedAt      time.Time
 }
+
+// ResultTiming is captured once by the worker at Sender return and reused by
+// every result CAS. A missing monotonic segment stays missing after recovery.
+type ResultTiming struct {
+	SenderReturnedAt *time.Time
+	SenderElapsedNS  *int64
+}
 type Outcome struct {
+	Timing     ResultTiming
 	Kind       string
 	MessageID  string
 	RetryAfter time.Duration

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/google/uuid"
@@ -94,6 +95,13 @@ func (s *SQLStore) Authorize(ctx context.Context, candidate delivery.Candidate, 
 		}
 		owner = uuidString(id)
 	}
+	var phases []txgate.Timing
+	ctx = txgate.WithTiming(ctx, func(v txgate.Timing) { phases = append(phases, v) })
+	began := time.Now()
+	var transactionErr error
+	defer func() {
+		log.WithFields(log.Fields{"work_kind": candidate.Ref.Kind, "work_id": candidate.Ref.ID, "gate_phases": phases, "authorization_transaction_ns": time.Since(began).Nanoseconds(), "transaction_completed_at": time.Now().UTC(), "error": transactionErr}).Debug("notification authorization timing")
+	}()
 	var p delivery.Permit
 	run := func(tx pgx.Tx) error {
 		var e error
@@ -114,6 +122,7 @@ func (s *SQLStore) Authorize(ctx context.Context, candidate delivery.Candidate, 
 			}
 		}
 	}
+	transactionErr = err
 	if err != nil {
 		return delivery.Permit{}, err
 	}
@@ -216,7 +225,7 @@ func (s *SQLStore) RecordStarted(ctx context.Context, p delivery.Permit, at time
 }
 
 func sameOutcome(r q.NotificationDeliveryAttempt, o delivery.Outcome) bool {
-	return r.ResultAt.Valid && r.Outcome.String == o.Kind && r.MessageID.String == o.MessageID && r.OutcomeCode.String == o.Code && r.RetryAfter.Microseconds == o.RetryAfter.Microseconds()
+	return sameResultTiming(r, o.Timing) && r.ResultAt.Valid && r.Outcome.String == o.Kind && r.MessageID.String == o.MessageID && r.OutcomeCode.String == o.Code && r.RetryAfter.Microseconds == o.RetryAfter.Microseconds()
 }
 
 // RecordOutcome is the only delivery result transition. Retries repeat this CAS, never the send.
@@ -224,7 +233,7 @@ func (s *SQLStore) RecordOutcome(ctx context.Context, p delivery.Permit, o deliv
 	if err := s.transactional(); err != nil {
 		return err
 	}
-	if at.IsZero() || o.RetryAfter < 0 {
+	if at.IsZero() || o.RetryAfter < 0 || (o.Timing.SenderReturnedAt != nil && o.Timing.SenderReturnedAt.IsZero()) || (o.Timing.SenderElapsedNS != nil && (*o.Timing.SenderElapsedNS < 0 || o.Timing.SenderReturnedAt == nil)) {
 		return fmt.Errorf("invalid notification outcome timestamp or retry delay")
 	}
 	switch o.Kind {
@@ -284,7 +293,7 @@ func (s *SQLStore) RecordOutcome(ctx context.Context, p delivery.Permit, o deliv
 		if r.ResultAt.Valid {
 			return nil
 		}
-		rows, err = queries.RecordDeliveryAttemptOutcome(ctx, q.RecordDeliveryAttemptOutcomeParams{ID: r.ID, Outcome: textValue(o.Kind), ResultAt: timestamptzValue(at), MessageID: nullableText(o.MessageID), OutcomeCode: nullableText(o.Code), RetryAfter: intervalValue(o.RetryAfter)})
+		rows, err = queries.RecordDeliveryAttemptOutcome(ctx, q.RecordDeliveryAttemptOutcomeParams{ID: r.ID, Outcome: textValue(o.Kind), ResultAt: timestamptzValue(at), MessageID: nullableText(o.MessageID), OutcomeCode: nullableText(o.Code), RetryAfter: intervalValue(o.RetryAfter), SenderReturnedAt: resultReturnedTime(o.Timing), SenderElapsedNs: resultElapsed(o.Timing)})
 		if err != nil {
 			return err
 		}
@@ -311,4 +320,26 @@ func optionalUUID(owner string) pgtype.UUID {
 	}
 	id, _ := uuidValue(owner)
 	return id
+}
+
+func resultReturnedTime(t delivery.ResultTiming) pgtype.Timestamptz {
+	if t.SenderReturnedAt == nil {
+		return pgtype.Timestamptz{}
+	}
+	return timestamptzValue(*t.SenderReturnedAt)
+}
+func resultElapsed(t delivery.ResultTiming) pgtype.Int8 {
+	if t.SenderElapsedNS == nil {
+		return pgtype.Int8{}
+	}
+	return pgtype.Int8{Int64: *t.SenderElapsedNS, Valid: true}
+}
+func sameResultTiming(r q.NotificationDeliveryAttempt, t delivery.ResultTiming) bool {
+	if r.SenderReturnedAt.Valid != (t.SenderReturnedAt != nil) || r.SenderElapsedNs.Valid != (t.SenderElapsedNS != nil) {
+		return false
+	}
+	if t.SenderReturnedAt != nil && !r.SenderReturnedAt.Time.Equal(t.SenderReturnedAt.UTC().Truncate(time.Microsecond)) {
+		return false
+	}
+	return t.SenderElapsedNS == nil || r.SenderElapsedNs.Int64 == *t.SenderElapsedNS
 }

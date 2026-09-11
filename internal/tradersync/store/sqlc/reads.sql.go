@@ -92,7 +92,7 @@ func (q *Queries) MemberSummaryBatchExists(ctx context.Context, arg MemberSummar
 }
 
 const readActivityFacts = `-- name: ReadActivityFacts :many
-SELECT a.id, a.owner_id, a.subscription_id, a.source_record_id, a.interval_id, a.activation_generation, a.trade_json, a.metadata_key, a.target_display_snapshot, a.note_snapshot, a.notification_mode, a.notification_reason, a.settled_at, a.received_at, a.recorded_at,md.metadata_json,r.chain_id,r.exchange_address,r.transaction_hash,r.block_hash,r.block_number,r.log_index,
+SELECT a.id, a.owner_id, a.subscription_id, a.source_record_id, a.interval_id, a.activation_generation, a.trade_json, a.metadata_key, a.target_display_snapshot, a.note_snapshot, a.notification_mode, a.notification_reason, a.formation_evidence, a.settled_at, a.received_at, a.recorded_at,md.metadata_json,r.chain_id,r.exchange_address,r.transaction_hash,r.block_hash,r.block_number,r.log_index,
  fa.reason AS anomaly_reason,fa.detected_at AS anomaly_detected_at,fa.published_block_hash,fa.conflicting_block_hash,
  CASE WHEN d.id IS NULL THEN NULL ELSE jsonb_build_object(
  'ID',d.id,'Status',d.status,'Reason',COALESCE(d.error_message,d.eligibility_revoked_reason,''),
@@ -156,6 +156,7 @@ type ReadActivityFactsRow struct {
 	NoteSnapshot          string
 	NotificationMode      string
 	NotificationReason    string
+	FormationEvidence     []byte
 	SettledAt             pgtype.Timestamptz
 	ReceivedAt            pgtype.Timestamptz
 	RecordedAt            pgtype.Timestamptz
@@ -209,6 +210,7 @@ func (q *Queries) ReadActivityFacts(ctx context.Context, arg ReadActivityFactsPa
 			&i.NoteSnapshot,
 			&i.NotificationMode,
 			&i.NotificationReason,
+			&i.FormationEvidence,
 			&i.SettledAt,
 			&i.ReceivedAt,
 			&i.RecordedAt,

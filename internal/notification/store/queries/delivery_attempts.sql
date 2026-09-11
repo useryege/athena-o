@@ -52,7 +52,7 @@ UPDATE notification_delivery_attempts SET started_at = COALESCE(started_at,$2) W
 
 -- name: RecordDeliveryAttemptOutcome :execrows
 UPDATE notification_delivery_attempts SET outcome = $2, result_at = $3, message_id = $4,
-  outcome_code = $5, retry_after = $6 WHERE id = $1 AND result_at IS NULL;
+  outcome_code = $5, retry_after = $6, sender_returned_at = $7, sender_elapsed_ns = $8 WHERE id = $1 AND result_at IS NULL;
 
 -- name: RecordAccountDeliveryOutcome :execrows
 UPDATE account_notification_deliveries SET status = sqlc.arg('status'), provider_message_id = sqlc.arg('provider_message_id'),

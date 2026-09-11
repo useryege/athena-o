@@ -100,10 +100,12 @@ func (s *SQLStore) FreezeSummaryTx(ctx context.Context, tx pgx.Tx, owner string,
 	if e != nil {
 		return out, e
 	}
+	renderBegan := time.Now()
 	rendered, e := activity.RenderSummary(items, strconv.FormatInt(batch.ID, 10), s.activitySiteURL)
 	if e != nil {
 		return out, e
 	}
+	renderElapsed := time.Since(renderBegan).Nanoseconds()
 	if len(rendered) > math.MaxInt32 {
 		return out, fmt.Errorf("too many summary parts")
 	}
@@ -116,7 +118,7 @@ func (s *SQLStore) FreezeSummaryTx(ctx context.Context, tx pgx.Tx, owner string,
 			return out, ns.ErrSummaryNotReady
 		}
 	}
-	out = tm.SummaryBatch{ID: batch.ID, OwnerID: owner, BindingRevision: revision, ChatID: chat, OldestAt: oldest, FrozenAt: batch.FrozenAt.Time}
+	out = tm.SummaryBatch{RenderElapsedNS: &renderElapsed, ID: batch.ID, OwnerID: owner, BindingRevision: revision, ChatID: chat, OldestAt: oldest, FrozenAt: batch.FrozenAt.Time}
 	for _, part := range rendered {
 		payload, e := delivery.EncodePayload(delivery.Payload{Format: "plain", Text: part.Text})
 		if e != nil {

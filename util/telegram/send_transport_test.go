@@ -185,3 +185,30 @@ func TestSendAdmissionCancellationClosesBodyAndPreTransportFailureReleases(t *te
 		}
 	}
 }
+
+// The real HTTP start must retain process-monotonic evidence; serialization alone strips it.
+func TestSendStartedRetainsMonotonicEvidence(t *testing.T) {
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		_, _ = io.Copy(io.Discard, r.Body)
+		_, _ = io.WriteString(w, `{"ok":true,"result":{"message_id":1,"date":1,"chat":{"id":123,"type":"private"}}}`)
+	}))
+	t.Cleanup(server.Close)
+	client, err := NewClient(Config{BotToken: "test", BaseURL: server.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+	starts := make(chan time.Time, 1)
+	_, err = client.SendMessage(WithSendStarted(context.Background(), func(at time.Time) { starts <- at }), SendMessageRequest{ChatID: "123", Text: "clock evidence"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calls.Load() != 1 || len(starts) != 1 {
+		t.Fatalf("HTTP=%d starts=%d", calls.Load(), len(starts))
+	}
+	at := <-starts
+	if at.IsZero() || at == at.Round(0) {
+		t.Fatal("actual Started discarded monotonic clock evidence")
+	}
+}

@@ -556,7 +556,7 @@ func TestActivityWindowEndpointsAndBackwardTimeSnapshot(t *testing.T) {
 		next := activitySource(t, db.Pool, owner.ID, in.Candidate.SubscriptionID, in.Candidate.AttemptID, in.Trade.Wallet, in.Confirmation.SettledAt, i+2)
 		var id int64
 		e = txgate.WithAccountTx(ctx, db.Pool, owner.ID, func(tx pgx.Tx) error {
-			return tx.QueryRow(ctx, `INSERT INTO trader_sync_activities(owner_id,subscription_id,source_record_id,interval_id,activation_generation,trade_json,metadata_key,target_display_snapshot,note_snapshot,notification_mode,notification_reason,settled_at,received_at,recorded_at)SELECT owner_id,subscription_id,$2,interval_id,activation_generation,trade_json,metadata_key,target_display_snapshot,note_snapshot,notification_mode,notification_reason,settled_at,received_at,$3 FROM trader_sync_activities WHERE id=$1 RETURNING id`, base, next.Candidate.SourceID, stamp).Scan(&id)
+			return tx.QueryRow(ctx, `INSERT INTO trader_sync_activities(owner_id,subscription_id,source_record_id,interval_id,activation_generation,trade_json,metadata_key,target_display_snapshot,note_snapshot,notification_mode,notification_reason,settled_at,received_at,recorded_at,formation_evidence)SELECT owner_id,subscription_id,$2,interval_id,activation_generation,trade_json,metadata_key,target_display_snapshot,note_snapshot,notification_mode,notification_reason,settled_at,received_at,$3,'{"rule":"fixture_only","cohort":"ordinary_unclassified","reason":"synthetic_window_fixture"}'::jsonb FROM trader_sync_activities WHERE id=$1 RETURNING id`, base, next.Candidate.SourceID, stamp).Scan(&id)
 		})
 		if e != nil {
 			t.Fatal(e)
@@ -899,4 +899,193 @@ func TestOnlyConfirmedDifferentBlockChallengesPublishedTransaction(t *testing.T)
 	if e = db.Pool.QueryRow(ctx, `SELECT conflicting_block_hash FROM trader_sync_finality_anomalies`).Scan(&hash); e != nil || common.BytesToHash(hash) != later.Confirmation.BlockHash {
 		t.Fatal("confirmed source did not register anomaly independently of later owner eligibility", common.BytesToHash(hash), e)
 	}
+}
+
+func TestActivityFreezesFormationEvidenceBeforeSend(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	owner, err := ac.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := NewSQLStore(db.Pool)
+	if err = s.ConfigureActivities("https://athena.test"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID); err != nil {
+		t.Fatal(err)
+	}
+	in := activityFixture(t, db.Pool, owner.ID, 901)
+	id, created, err := s.Project(ctx, in)
+	if err != nil || !created {
+		t.Fatal(id, created, err)
+	}
+	var raw []byte
+	if err = db.Pool.QueryRow(ctx, `SELECT COALESCE(to_jsonb(a)->'formation_evidence','null'::jsonb) FROM trader_sync_activities a WHERE id=$1`, id).Scan(&raw); err != nil {
+		t.Fatal(err)
+	}
+	var got struct {
+		Rule, Cohort, Reason string
+		Gate                 []struct {
+			Phase     string
+			ElapsedNS int64
+		}
+	}
+	if err = json.Unmarshal(raw, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Rule != "arrival_and_owner_queue_v1" || got.Cohort != "ordinary_default" || got.Reason != "first_observed_in_epoch" {
+		t.Fatalf("formation evidence missing or incorrect: %s", raw)
+	}
+	var gate struct {
+		Phases []struct {
+			Phase     string
+			ElapsedNS int64
+		} `json:"gate"`
+	}
+	if err = json.Unmarshal(raw, &gate); err != nil {
+		t.Fatal(err)
+	}
+	if len(gate.Phases) != 2 || gate.Phases[0].Phase != "begin" || gate.Phases[1].Phase != "advisory" {
+		t.Fatalf("real Project gate timing missing: %s", raw)
+	}
+}
+
+func TestFormationSnapshotKeepsNearestUnformedArrivalAndImmutableCohort(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	// Exact bigint evidence must survive the generated query and typed JSON freeze.
+	if _, e := db.Pool.Exec(ctx, `SELECT setval(pg_get_serial_sequence('trader_sync_source_records','id'),9007199254740993,false)`); e != nil {
+		t.Fatal(e)
+	}
+	owner, e := ac.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
+	if e != nil {
+		t.Fatal(e)
+	}
+	s := NewSQLStore(db.Pool)
+	if e = s.ConfigureActivities("https://athena.test"); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID); e != nil {
+		t.Fatal(e)
+	}
+	first := activityFixture(t, db.Pool, owner.ID, 910)
+	second := activitySource(t, db.Pool, owner.ID, first.Candidate.SubscriptionID, first.Candidate.AttemptID, first.Trade.Wallet, first.Confirmation.SettledAt, 911)
+	third := activitySource(t, db.Pool, owner.ID, first.Candidate.SubscriptionID, first.Candidate.AttemptID, first.Trade.Wallet, first.Confirmation.SettledAt, 912)
+	var epoch int64
+	if e = db.Pool.QueryRow(ctx, `SELECT collector_epoch FROM trader_sync_source_records WHERE id=$1`, first.Candidate.SourceID).Scan(&epoch); e != nil {
+		t.Fatal(e)
+	}
+	for i, in := range []tm.Projection{first, second, third} {
+		if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_source_records SET collector_epoch=$2,read_sequence=$3,received_elapsed_ns=$4,confirmation_state='confirmed' WHERE id=$1`, in.Candidate.SourceID, epoch, i+1, int64(i)*100000000); e != nil {
+			t.Fatal(e)
+		}
+	}
+	read := func(id int64) (tm.FormationEvidence, []byte) {
+		t.Helper()
+		var data []byte
+		if e = db.Pool.QueryRow(ctx, `SELECT formation_evidence FROM trader_sync_activities WHERE id=$1`, id).Scan(&data); e != nil {
+			t.Fatal(e)
+		}
+		var out tm.FormationEvidence
+		if e = json.Unmarshal(data, &out); e != nil {
+			t.Fatal(e)
+		}
+		return out, data
+	}
+	project := func(in tm.Projection) int64 {
+		t.Helper()
+		id, created, e := s.Project(ctx, in)
+		if e != nil || !created {
+			t.Fatal(id, created, e)
+		}
+		return id
+	}
+	id1 := project(first)
+	f1, _ := read(id1)
+	if f1.Cohort != "ordinary_default" || f1.Previous != nil {
+		t.Fatal(f1)
+	}
+	id3 := project(third)
+	f3, before := read(id3)
+	if f3.Cohort != "ordinary_unclassified" || f3.Previous == nil || f3.Previous.SourceID != second.Candidate.SourceID || f3.Previous.Formed {
+		t.Fatalf("skipped real unformed predecessor: %+v", f3)
+	}
+	if f3.Queue.OrdinaryPending != 1 {
+		t.Fatal(f3.Queue)
+	}
+	id2 := project(second)
+	f2, _ := read(id2)
+	if f2.Cohort != "ordinary_burst" || f2.Previous.SourceID != first.Candidate.SourceID || f2.ArrivalIntervalNS == nil || *f2.ArrivalIntervalNS != 100000000 || f2.Queue.OrdinaryPending != 2 {
+		t.Fatalf("wrong same-snapshot evidence: previous source=%d want=%d; %+v", f2.Previous.SourceID, first.Candidate.SourceID, f2)
+	}
+	again, created, e := s.Project(ctx, third)
+	if e != nil || created || again != id3 {
+		t.Fatal(again, created, e)
+	}
+	_, after := read(id3)
+	if !bytes.Equal(before, after) {
+		t.Fatal("reclassified prior unclassified activity after predecessor formed")
+	}
+	if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_activities SET formation_evidence=formation_evidence || '{"cohort":"ordinary_burst"}'::jsonb WHERE id=$1`, id3); e == nil {
+		t.Fatal("formation evidence remained mutable")
+	}
+}
+
+func TestTimingRuntimeIncludesUnacknowledgedActivitiesAndAllOutcomes(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	accounts := ac.NewSQLStore(db.Pool)
+	owner, e := accounts.EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
+	if e != nil {
+		t.Fatal(e)
+	}
+	admin, e := accounts.EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleAdministrator)
+	if e != nil {
+		t.Fatal(e)
+	}
+	s := NewSQLStore(db.Pool)
+	if e = s.ConfigureActivities("https://athena.test"); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID); e != nil {
+		t.Fatal(e)
+	}
+	first := activityFixture(t, db.Pool, owner.ID, 1001)
+	for i, state := range []string{"pending", "failed", "unknown", "cancelled"} {
+		in := first
+		if i > 0 {
+			in = activitySource(t, db.Pool, owner.ID, first.Candidate.SubscriptionID, first.Candidate.AttemptID, first.Trade.Wallet, first.Confirmation.SettledAt, 1001+i)
+		}
+		id, created, e := s.Project(ctx, in)
+		if e != nil || !created {
+			t.Fatal(e)
+		}
+		if _, e = db.Pool.Exec(ctx, `UPDATE account_notification_deliveries SET status=$2 WHERE activity_id=$1`, id, state); e != nil {
+			t.Fatal(e)
+		}
+	}
+	snapshot, e := s.ReadRuntimeStatus(ctx, admin.ID)
+	if e != nil {
+		t.Fatal(e)
+	}
+	values := map[string]string{}
+	for _, m := range snapshot.Metrics {
+		values[m.Name] = m.Value
+	}
+	for name, want := range map[string]string{"timing_activity_all_total": "4", "timing_activity_ordinary_all_total": "4", "timing_activity_ordinary_nonburst_total": "4", "timing_activity_ordinary_default_no_ack": "4", "timing_logical_pending": "1", "timing_logical_failed": "1", "timing_logical_unknown": "1", "timing_logical_cancelled": "1", "timing_http_started_total": "0"} {
+		if values[name] != want {
+			t.Errorf("%s=%q want %q", name, values[name], want)
+		}
+	}
+	for _, state := range []string{"pending", "failed", "unknown", "cancelled"} {
+		name := "timing_logical_" + state + "_oldest_age_utc_seconds"
+		if values[name] == "" {
+			t.Errorf("missing retained state age: %s", name)
+		}
+	}
+	if values["timing_gate_advisory_p95_monotonic_seconds"] == "" {
+		t.Error("missing actual formation advisory aggregate")
+	}
+
 }

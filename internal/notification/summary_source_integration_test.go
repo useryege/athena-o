@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/accountcredentials"
 	ac "github.com/useryege/athena/internal/accountstate/store"
 	"github.com/useryege/athena/internal/accountstate/store/migrations"
@@ -25,6 +26,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"runtime"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -72,6 +74,34 @@ func TestSummarySourceGateActualStartAndDynamicCooldown(t *testing.T) {
 	for _, tc := range []struct{ dynamic, cancel, revoke bool }{{false, false, false}, {true, false, false}, {true, false, true}, {true, true, true}} {
 		dynamic := tc.dynamic
 		t.Run(fmt.Sprint("dynamic=", dynamic, "/cancel=", tc.cancel, "/revoke=", tc.revoke), func(t *testing.T) {
+			hook := &summaryTimingLogHook{}
+			oldHooks := log.StandardLogger().ReplaceHooks(make(log.LevelHooks))
+			log.AddHook(hook)
+			defer log.StandardLogger().ReplaceHooks(oldHooks)
+			level := log.GetLevel()
+			log.SetLevel(log.DebugLevel)
+			defer log.SetLevel(level)
+			defer func() {
+				if t.Failed() {
+					return
+				}
+				hook.mu.Lock()
+				defer hook.mu.Unlock()
+				for _, fields := range hook.records {
+					phases, ok := fields["gate_phases"].([]txgate.Timing)
+					if !ok || len(phases) < 2 || phases[0].Phase != "begin" || phases[1].Phase != "advisory" {
+						t.Errorf("summary phase evidence missing: %v", fields)
+					}
+					if fields["freeze_elapsed_ns"] == nil || fields["render_elapsed_ns"] == nil || fields["permit_transaction_ns"] == nil {
+						t.Errorf("summary freeze/render/TX evidence missing: %v", fields)
+					}
+					if dynamic && !tc.cancel && len(phases) < 4 {
+						t.Error("dynamic reentry phase evidence missing")
+					}
+					return
+				}
+				t.Error("summary dispatch phase observation absent")
+			}()
 			db := pgtest.New(t, migrations.FS, migrations.Dir)
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
@@ -757,4 +787,20 @@ func TestSummaryLostCommitConnectionReacquiresSamePermit(t *testing.T) {
 			}
 		})
 	}
+}
+
+type summaryTimingLogHook struct {
+	mu      sync.Mutex
+	records []log.Fields
+}
+
+func (h *summaryTimingLogHook) Levels() []log.Level { return log.AllLevels }
+func (h *summaryTimingLogHook) Fire(e *log.Entry) error {
+	if e.Message != "summary dispatch timing" {
+		return nil
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.records = append(h.records, e.Dup().Data)
+	return nil
 }

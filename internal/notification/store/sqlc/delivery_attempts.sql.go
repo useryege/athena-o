@@ -53,7 +53,7 @@ func (q *Queries) AuthorizeSystemDelivery(ctx context.Context, arg AuthorizeSyst
 
 const createDeliveryAttempt = `-- name: CreateDeliveryAttempt :one
 INSERT INTO notification_delivery_attempts(id, work_kind, work_id, owner_id, sender_incarnation, payload_digest, telegram_chat_id, telegram_group)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id, work_kind, work_id, owner_id, sender_incarnation, telegram_chat_id, telegram_group, payload_digest, authorized_at, started_at, result_at, message_id, outcome, outcome_code, retry_after, retry_after_released_at
+VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id, work_kind, work_id, owner_id, sender_incarnation, telegram_chat_id, telegram_group, payload_digest, authorized_at, started_at, result_at, sender_returned_at, sender_elapsed_ns, message_id, outcome, outcome_code, retry_after, retry_after_released_at
 `
 
 type CreateDeliveryAttemptParams struct {
@@ -91,6 +91,8 @@ func (q *Queries) CreateDeliveryAttempt(ctx context.Context, arg CreateDeliveryA
 		&i.AuthorizedAt,
 		&i.StartedAt,
 		&i.ResultAt,
+		&i.SenderReturnedAt,
+		&i.SenderElapsedNs,
 		&i.MessageID,
 		&i.Outcome,
 		&i.OutcomeCode,
@@ -203,7 +205,7 @@ func (q *Queries) GetAccountDeliveryOwner(ctx context.Context, id int64) (pgtype
 }
 
 const getDeliveryAttempt = `-- name: GetDeliveryAttempt :one
-SELECT id, work_kind, work_id, owner_id, sender_incarnation, telegram_chat_id, telegram_group, payload_digest, authorized_at, started_at, result_at, message_id, outcome, outcome_code, retry_after, retry_after_released_at FROM notification_delivery_attempts WHERE id = $1
+SELECT id, work_kind, work_id, owner_id, sender_incarnation, telegram_chat_id, telegram_group, payload_digest, authorized_at, started_at, result_at, sender_returned_at, sender_elapsed_ns, message_id, outcome, outcome_code, retry_after, retry_after_released_at FROM notification_delivery_attempts WHERE id = $1
 `
 
 func (q *Queries) GetDeliveryAttempt(ctx context.Context, id pgtype.UUID) (NotificationDeliveryAttempt, error) {
@@ -221,6 +223,8 @@ func (q *Queries) GetDeliveryAttempt(ctx context.Context, id pgtype.UUID) (Notif
 		&i.AuthorizedAt,
 		&i.StartedAt,
 		&i.ResultAt,
+		&i.SenderReturnedAt,
+		&i.SenderElapsedNs,
 		&i.MessageID,
 		&i.Outcome,
 		&i.OutcomeCode,
@@ -231,7 +235,7 @@ func (q *Queries) GetDeliveryAttempt(ctx context.Context, id pgtype.UUID) (Notif
 }
 
 const getDeliveryAttemptForUpdate = `-- name: GetDeliveryAttemptForUpdate :one
-SELECT id, work_kind, work_id, owner_id, sender_incarnation, telegram_chat_id, telegram_group, payload_digest, authorized_at, started_at, result_at, message_id, outcome, outcome_code, retry_after, retry_after_released_at FROM notification_delivery_attempts WHERE id = $1 FOR UPDATE
+SELECT id, work_kind, work_id, owner_id, sender_incarnation, telegram_chat_id, telegram_group, payload_digest, authorized_at, started_at, result_at, sender_returned_at, sender_elapsed_ns, message_id, outcome, outcome_code, retry_after, retry_after_released_at FROM notification_delivery_attempts WHERE id = $1 FOR UPDATE
 `
 
 func (q *Queries) GetDeliveryAttemptForUpdate(ctx context.Context, id pgtype.UUID) (NotificationDeliveryAttempt, error) {
@@ -249,6 +253,8 @@ func (q *Queries) GetDeliveryAttemptForUpdate(ctx context.Context, id pgtype.UUI
 		&i.AuthorizedAt,
 		&i.StartedAt,
 		&i.ResultAt,
+		&i.SenderReturnedAt,
+		&i.SenderElapsedNs,
 		&i.MessageID,
 		&i.Outcome,
 		&i.OutcomeCode,
@@ -356,16 +362,18 @@ func (q *Queries) RecordAccountDeliveryOutcome(ctx context.Context, arg RecordAc
 
 const recordDeliveryAttemptOutcome = `-- name: RecordDeliveryAttemptOutcome :execrows
 UPDATE notification_delivery_attempts SET outcome = $2, result_at = $3, message_id = $4,
-  outcome_code = $5, retry_after = $6 WHERE id = $1 AND result_at IS NULL
+  outcome_code = $5, retry_after = $6, sender_returned_at = $7, sender_elapsed_ns = $8 WHERE id = $1 AND result_at IS NULL
 `
 
 type RecordDeliveryAttemptOutcomeParams struct {
-	ID          pgtype.UUID
-	Outcome     pgtype.Text
-	ResultAt    pgtype.Timestamptz
-	MessageID   pgtype.Text
-	OutcomeCode pgtype.Text
-	RetryAfter  pgtype.Interval
+	ID               pgtype.UUID
+	Outcome          pgtype.Text
+	ResultAt         pgtype.Timestamptz
+	MessageID        pgtype.Text
+	OutcomeCode      pgtype.Text
+	RetryAfter       pgtype.Interval
+	SenderReturnedAt pgtype.Timestamptz
+	SenderElapsedNs  pgtype.Int8
 }
 
 func (q *Queries) RecordDeliveryAttemptOutcome(ctx context.Context, arg RecordDeliveryAttemptOutcomeParams) (int64, error) {
@@ -376,6 +384,8 @@ func (q *Queries) RecordDeliveryAttemptOutcome(ctx context.Context, arg RecordDe
 		arg.MessageID,
 		arg.OutcomeCode,
 		arg.RetryAfter,
+		arg.SenderReturnedAt,
+		arg.SenderElapsedNs,
 	)
 	if err != nil {
 		return 0, err

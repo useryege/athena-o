@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "v1.0.0-1193-gfa82da23-dirty"
+    "version": "v1.0.0-1196-g3b027292-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -4330,6 +4330,30 @@
         }
       }
     },
+    "notificationNotificationRecoveryStatus": {
+      "description": "Recovery is observed by the sender process. Missing remaining evidence is not zero.",
+      "type": "object",
+      "properties": {
+        "clock_source": {
+          "type": "string"
+        },
+        "elapsed_millis": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "remaining_millis": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        }
+      }
+    },
     "notificationNotificationRuntimeStatus": {
       "type": "object",
       "properties": {
@@ -4371,6 +4395,9 @@
         },
         "poller_active": {
           "type": "boolean"
+        },
+        "recovery": {
+          "$ref": "#/definitions/notificationNotificationRecoveryStatus"
         },
         "started": {
           "type": "boolean"

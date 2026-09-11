@@ -211,6 +211,9 @@ func (s *Service) GetRuntimeStatus(ctx context.Context, admin string) (tm.Runtim
 			tm.RuntimeMetric{Name: "raw_persist_in_flight", Value: strconv.Itoa(persisting), Unit: "raw_logs", Kind: "gauge", ServiceEpoch: &scope})
 	}
 	result.Metrics = append(result.Metrics, tm.RuntimeMetric{Name: "raw_observation_available", Value: flag, Unit: "boolean", Kind: "gauge"})
+	if s.deps.Projector != nil {
+		result.Metrics = append(result.Metrics, s.deps.Projector.MetricsSnapshot()...)
+	}
 	return result, nil
 }
 func filterDigest(v any) string {

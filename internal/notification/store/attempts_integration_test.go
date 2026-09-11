@@ -6,12 +6,15 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/accountstate/store/migrations"
 	"github.com/useryege/athena/internal/notification/delivery"
 	"github.com/useryege/athena/internal/testutil/pgtest"
 	utiltelegram "github.com/useryege/athena/util/telegram"
+	"sync"
 	"testing"
 	"time"
 )
@@ -381,4 +384,58 @@ func testPermitCandidate(ref delivery.WorkRef) delivery.Candidate {
 		c.Group = true
 	}
 	return c
+}
+
+func TestAuthorizeReportsPoolAndAdvisorySeparately(t *testing.T) {
+	s, ref := attemptFixture(t, "account")
+	hook := &timingLogHook{}
+	old := log.StandardLogger().ReplaceHooks(make(log.LevelHooks))
+	log.AddHook(hook)
+	defer log.StandardLogger().ReplaceHooks(old)
+	level := log.GetLevel()
+	log.SetLevel(log.DebugLevel)
+	defer log.SetLevel(level)
+	if _, e := s.Authorize(context.Background(), testPermitCandidate(ref), uuid.New(), nil); e != nil {
+		t.Fatal(e)
+	}
+	for _, entry := range hook.AllEntries() {
+		if entry.Message == "notification authorization timing" {
+			raw, e := json.Marshal(entry.Data["gate_phases"])
+			if e != nil {
+				t.Fatal(e)
+			}
+			var phases []struct{ Phase string }
+			if e = json.Unmarshal(raw, &phases); e != nil {
+				t.Fatal(e)
+			}
+			if len(phases) != 2 || phases[0].Phase != "begin" || phases[1].Phase != "advisory" {
+				t.Fatalf("gate phases: %s", raw)
+			}
+			if entry.Data["authorization_transaction_ns"] == nil {
+				t.Fatal("missing transaction duration")
+			}
+			return
+		}
+	}
+	t.Fatal("real Authorize emitted no distinct phase evidence")
+}
+
+type timingLogHook struct {
+	mu      sync.Mutex
+	entries []*log.Entry
+}
+
+func (h *timingLogHook) Levels() []log.Level { return log.AllLevels }
+func (h *timingLogHook) Fire(e *log.Entry) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	copy := e.Dup()
+	copy.Message = e.Message
+	h.entries = append(h.entries, copy)
+	return nil
+}
+func (h *timingLogHook) AllEntries() []*log.Entry {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return append([]*log.Entry(nil), h.entries...)
 }

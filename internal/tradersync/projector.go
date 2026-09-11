@@ -36,6 +36,7 @@ type Projector struct {
 	metadata ProjectionMetadata
 	config   ProjectorConfig
 	running  atomic.Bool
+	metrics  projectorMetrics
 }
 
 func NewProjector(store ProjectionStore, node CanonicalRPC, version ProjectionVersion, metadata ProjectionMetadata, config ProjectorConfig) (*Projector, error) {
@@ -122,37 +123,47 @@ func (p *Projector) Run(ctx context.Context) error {
 }
 
 func (p *Projector) process(ctx context.Context, source tm.ProjectionSource) error {
+	roundBegan := time.Now()
+	p.metrics.inFlight(1)
+	defer func() { p.metrics.inFlight(-1); p.metrics.observe("source_round", roundBegan) }()
 	jobCtx, cancel := context.WithCancel(ctx)
 	var workers sync.WaitGroup
 	defer func() { cancel(); workers.Wait() }()
 	// All spawned work is owned by this one bounded source slot, including late metadata.
 	type versionResult struct {
-		trade tm.Trade
-		err   error
+		trade   tm.Trade
+		err     error
+		elapsed time.Duration
 	}
 	versions := make(chan versionResult, 1)
 	type confirmationResult struct {
 		evidence tm.CanonicalEvidence
 		at       time.Time
+		elapsed  time.Duration
 	}
 	confirmations := make(chan confirmationResult, 1)
 	workers.Add(2)
 	go func() {
 		defer workers.Done()
+		began := time.Now()
+		defer p.metrics.observe("version_round", began)
 		version, e := p.version.Verify(jobCtx, source.Raw)
 		var trade tm.Trade
 		if e == nil {
 			trade, e = DecodeOwnTrade(source.Raw, version)
 		}
-		versions <- versionResult{trade, e}
+		versions <- versionResult{trade, e, time.Since(began)}
 	}()
 	go func() {
 		defer workers.Done()
+		began := time.Now()
+		defer p.metrics.observe("confirmation_round", began)
 		e, _ := ConfirmReceived(jobCtx, p.node, source.Raw)
-		confirmations <- confirmationResult{e, time.Now()}
+		confirmations <- confirmationResult{e, time.Now(), time.Since(began)}
 	}()
 	var trade tm.Trade
 	var confirmation confirmationResult
+	var versionElapsed time.Duration
 	versionReady, confirmationReady := false, false
 	var latest tm.TradeMetadata
 	var latestMu sync.Mutex
@@ -166,6 +177,7 @@ func (p *Projector) process(ctx context.Context, source tm.ProjectionSource) err
 			return ctx.Err()
 		case v := <-versions:
 			versionReady = true
+			versionElapsed = v.elapsed
 			if v.err != nil {
 				cancel()
 				return p.store.SaveProjectionEvidence(ctx, source.ID, tm.CanonicalEvidence{Status: "unverified", BlockHash: source.Raw.BlockHash, CheckedAt: time.Now().UTC(), Reason: "source_version_or_decode_unverified"}, nil)
@@ -206,6 +218,7 @@ func (p *Projector) process(ctx context.Context, source tm.ProjectionSource) err
 	defer timer.Stop()
 	var final tm.TradeMetadata
 	finished := false
+	extraWaitBegan := time.Now()
 	select {
 	case <-ctx.Done():
 		cancel()
@@ -217,11 +230,17 @@ func (p *Projector) process(ctx context.Context, source tm.ProjectionSource) err
 		latestMu.Unlock()
 	case <-timer.C:
 	}
+	extraWait := time.Since(extraWaitBegan)
+	p.metrics.observe("metadata_extra_wait", extraWaitBegan)
 	latestMu.Lock()
 	snapshot := activity.CloneMetadata(latest)
 	latestMu.Unlock()
+	timing := tm.ProjectionTiming{ConfirmationRoundNS: confirmation.elapsed.Nanoseconds(), VersionRoundNS: versionElapsed.Nanoseconds(), ConfirmationCompletedAt: confirmation.at.UTC(), MetadataExtraWaitNS: extraWait.Nanoseconds()}
 	for _, candidate := range source.Candidates {
-		if _, _, e := p.store.Project(ctx, tm.Projection{Candidate: candidate, Trade: trade, Confirmation: confirmation.evidence, Metadata: snapshot}); e != nil {
+		began := time.Now()
+		_, _, e := p.store.Project(ctx, tm.Projection{Candidate: candidate, Trade: trade, Confirmation: confirmation.evidence, Metadata: snapshot, Timing: &timing})
+		p.metrics.observe("candidate_transaction", began)
+		if e != nil {
 			cancel()
 			return e
 		}
@@ -240,3 +259,5 @@ func (p *Projector) process(ctx context.Context, source tm.ProjectionSource) err
 	}
 	return p.store.CompleteProjectionMetadata(ctx, source.ID, completeMetadata(final, trade.SourceVersion == ComboExchangeVersion))
 }
+
+func (p *Projector) MetricsSnapshot() []tm.RuntimeMetric { return p.metrics.snapshot() }

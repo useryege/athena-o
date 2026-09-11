@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/internal/notification/delivery"
 	notificationstore "github.com/useryege/athena/internal/notification/store"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -107,8 +109,22 @@ func (r *retryBudget) run(ctx context.Context) error {
 
 // recoverStartupBudget is called after acquiring the singleton session. firstStart is proven
 // there only when both instance registrations and all attempt history were empty.
-func recoverStartupBudget(ctx context.Context, store *notificationstore.SQLStore, budget *Budget, clock Clock, firstStart bool) (*retryBudget, error) {
-	r := &retryBudget{store: store, budget: budget, clock: clock, pending: make(map[uuid.UUID]time.Time), wake: make(chan struct{}, 1)}
+func recoverStartupBudget(ctx context.Context, store *notificationstore.SQLStore, budget *Budget, clock Clock, firstStart bool, progress *recoveryProgress) (r *retryBudget, err error) {
+	progress.ensureStarted(clock)
+	failureReason := "retry_after_read_failed"
+	completionReason := "first_start_empty_history"
+	defer func() {
+		if err != nil {
+			if ctx.Err() != nil {
+				progress.finish("cancelled", "cancelled")
+			} else {
+				progress.finish("failed", failureReason)
+			}
+		} else {
+			progress.finish("completed", completionReason)
+		}
+	}()
+	r = &retryBudget{store: store, budget: budget, clock: clock, pending: make(map[uuid.UUID]time.Time), wake: make(chan struct{}, 1)}
 	evidence, err := store.UnreleasedRetryAfters(ctx)
 	if err != nil {
 		return nil, err
@@ -122,6 +138,19 @@ func recoverStartupBudget(ctx context.Context, store *notificationstore.SQLStore
 		wait = max(wait, item.Wait)
 	}
 	until := clock.Now().Add(wait)
+	if !firstStart {
+		completionReason = "non_first_start_barrier"
+	}
+	if len(evidence) > 0 {
+		completionReason = "persistent_retry_after"
+		if !firstStart {
+			completionReason = "barrier_and_persistent_retry_after"
+		}
+	}
+	if wait > 0 {
+		progress.waiting(until, completionReason)
+	}
+	failureReason = "recovery_wait_failed"
 	budget.Tighten(until)
 	if wait > 0 {
 		began := clock.Now()
@@ -137,8 +166,86 @@ func recoverStartupBudget(ctx context.Context, store *notificationstore.SQLStore
 		case <-clock.After(until.Sub(clock.Now())):
 		}
 	}
+	failureReason = "retry_after_release_failed"
 	if err = r.releaseElapsed(ctx); err != nil {
 		return nil, err
 	}
 	return r, nil
+}
+
+// recoveryProgress is owned by the existing recovery wait, not an API timer.
+type recoveryProgress struct {
+	mu                  sync.Mutex
+	clock               Clock
+	began, until, ended time.Time
+	state, reason       string
+}
+
+func (p *recoveryProgress) begin(clock Clock) {
+	if p == nil {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.clock = clock
+	p.began = clock.Now()
+	p.until = time.Time{}
+	p.ended = time.Time{}
+	p.state = "initializing"
+	p.reason = "initializing"
+}
+func (p *recoveryProgress) ensureStarted(clock Clock) {
+	if p == nil {
+		return
+	}
+	p.mu.Lock()
+	empty := p.state == ""
+	p.mu.Unlock()
+	if empty {
+		p.begin(clock)
+	}
+}
+func (p *recoveryProgress) waiting(until time.Time, reason string) {
+	if p == nil {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.until = until
+	p.state = "waiting"
+	p.reason = reason
+}
+func (p *recoveryProgress) finish(state, reason string) {
+	if p == nil {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.clock == nil {
+		return
+	}
+	p.ended = p.clock.Now()
+	p.state = state
+	p.reason = reason
+}
+func (p *recoveryProgress) snapshot() *apiclient.NotificationRecoveryStatus {
+	if p == nil {
+		return nil
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.state == "" {
+		return nil
+	}
+	now := p.ended
+	if now.IsZero() {
+		now = p.clock.Now()
+	}
+	out := &apiclient.NotificationRecoveryStatus{State: p.state, Reason: p.reason, StartedAt: p.began.UTC().Format(time.RFC3339Nano), ElapsedMillis: strconv.FormatInt(now.Sub(p.began).Milliseconds(), 10), ClockSource: "sender_monotonic"}
+	if p.state == "completed" {
+		out.RemainingMillis = "0"
+	} else if !p.until.IsZero() {
+		out.RemainingMillis = strconv.FormatInt(max(0, p.until.Sub(now).Milliseconds()), 10)
+	}
+	return out
 }

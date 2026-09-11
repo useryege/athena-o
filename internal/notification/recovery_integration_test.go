@@ -317,7 +317,7 @@ func TestRecoveryBarrierPreservesUnreleasedRetryAfterAcrossUTCJump(t *testing.T)
 	done := make(chan error, 1)
 	barrierCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	go func() { _, err := recoverStartupBudget(barrierCtx, s, b, clock, false); done <- err }()
+	go func() { _, err := recoverStartupBudget(barrierCtx, s, b, clock, false, nil); done <- err }()
 	waitClockTimer(t, clock)
 	clock.advance(60 * time.Second)
 	waitClockTimer(t, clock)
@@ -340,7 +340,7 @@ func TestRecoveryBarrierPreservesUnreleasedRetryAfterAcrossUTCJump(t *testing.T)
 		t.Fatalf("monotonic completion not recorded: %v %v", released, err)
 	}
 	// Released historical retry evidence no longer causes another 120-second cooldown.
-	go func() { _, err := recoverStartupBudget(barrierCtx, s, b, clock, false); done <- err }()
+	go func() { _, err := recoverStartupBudget(barrierCtx, s, b, clock, false, nil); done <- err }()
 	waitClockTimer(t, clock)
 	clock.advance(60 * time.Second)
 	select {
@@ -357,12 +357,12 @@ func TestRecoveryBarrierFirstStartAndCancellation(t *testing.T) {
 	s := notificationstore.NewSQLStore(db.Pool)
 	clock := &manualDispatchClock{now: time.Now()}
 	b := NewBudget(20, time.Second, 20, time.Minute)
-	if _, err := recoverStartupBudget(context.Background(), s, b, clock, true); err != nil {
+	if _, err := recoverStartupBudget(context.Background(), s, b, clock, true, nil); err != nil {
 		t.Fatal(err)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
-	go func() { _, err := recoverStartupBudget(ctx, s, b, clock, false); done <- err }()
+	go func() { _, err := recoverStartupBudget(ctx, s, b, clock, false, nil); done <- err }()
 	waitClockTimer(t, clock)
 	cancel()
 	select {
@@ -426,5 +426,18 @@ func TestRetryBudgetReleasesOnlyAfterMonotonicWait(t *testing.T) {
 	defer session.Close()
 	if session.FirstStart() {
 		t.Fatal("attempt history incorrectly got first-start exemption")
+	}
+}
+
+func TestRuntimeCannotReportReadyBeforeRecoveryCompleted(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	s := NewService(notificationstore.NewSQLStore(db.Pool), nil, nil, nil)
+	s.started = true
+	got, e := s.GetNotificationRuntimeStatus(context.Background(), nil)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if got.Status != "recovering" {
+		t.Fatalf("started without completed recovery reported %q", got.Status)
 	}
 }

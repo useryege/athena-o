@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/accountstate/txgate"
 	"github.com/useryege/athena/internal/notification/delivery"
 	ns "github.com/useryege/athena/internal/notification/store"
@@ -18,6 +19,7 @@ import (
 	q "github.com/useryege/athena/internal/tradersync/store/sqlc"
 	tm "github.com/useryege/athena/internal/tradersync/types"
 	"net/url"
+	"time"
 )
 
 // ConfigureActivities is startup-only. Read-only stores need no activity config.
@@ -49,6 +51,14 @@ func (s *SQLStore) Project(ctx context.Context, in tm.Projection) (activityID in
 	if e != nil {
 		return 0, false, e
 	}
+	var phases []tm.GatePhase
+	ctx = txgate.WithTiming(ctx, func(v txgate.Timing) {
+		phases = append(phases, tm.GatePhase{Kind: v.Kind, Phase: v.Phase, ElapsedNS: v.Duration.Nanoseconds(), Succeeded: v.Succeeded})
+	})
+	began := time.Now()
+	defer func() {
+		log.WithFields(log.Fields{"source_id": c.SourceID, "activity_id": activityID, "created": created, "gate_phases": phases, "candidate_transaction_ns": time.Since(began).Nanoseconds(), "transaction_completed_at": time.Now().UTC(), "error": err}).Debug("trader sync candidate transaction timing")
+	}()
 	err = txgate.WithAccountTx(ctx, s.pool, c.OwnerID, func(tx pgx.Tx) error {
 		queries := q.New(tx)
 		prior, e := queries.GetProjectedActivity(ctx, q.GetProjectedActivityParams{OwnerID: owner, SubscriptionID: sub, SourceRecordID: c.SourceID})
@@ -121,15 +131,23 @@ func (s *SQLStore) Project(ctx context.Context, in tm.Projection) (activityID in
 		if anomalous {
 			return finish("finality_anomaly")
 		}
-		now, e := queries.ActivityDatabaseTime(ctx)
+		snapshot, e := queries.ReadFormationSnapshot(ctx, q.ReadFormationSnapshotParams{SourceID: c.SourceID, OwnerID: owner, SubscriptionID: sub})
 		if e != nil {
 			return e
 		}
-		count, e := queries.CountActivityWindow(ctx, q.CountActivityWindowParams{OwnerID: owner, Column2: now})
-		if e != nil {
+		now := snapshot.ObservedAt
+		formation := tm.FormationEvidence{ObservedAt: now.Time, Processing: in.Timing, Gate: append([]tm.GatePhase(nil), phases...)}
+		if e = json.Unmarshal(snapshot.CurrentEvidence, &formation.Current); e != nil {
 			return e
 		}
-		mode, reason := activity.Classify(count+1), ""
+		// Preserve bigint and elapsed-ns JSON integers; never round-trip via interface{}.
+		if e = json.Unmarshal(snapshot.PreviousEvidence, &formation.Previous); e != nil {
+			return e
+		}
+		if e = json.Unmarshal(snapshot.QueueEvidence, &formation.Queue); e != nil {
+			return e
+		}
+		mode, reason := activity.Classify(snapshot.WindowCount+1), ""
 		binding, e := nq.New(tx).GetTelegramBindingForShare(ctx, owner)
 		if e != nil && !errors.Is(e, pgx.ErrNoRows) {
 			return e
@@ -138,6 +156,11 @@ func (s *SQLStore) Project(ctx context.Context, in tm.Projection) (activityID in
 		if !bound {
 			mode = "in_app_only"
 			reason = "unbound_at_formation"
+		}
+		formation = activity.ClassifyFormation(mode, formation)
+		formationJSON, e := json.Marshal(formation)
+		if e != nil {
+			return e
 		}
 		note := ""
 		n, e := queries.GetTargetNote(ctx, q.GetTargetNoteParams{OwnerID: owner, Wallet: row.Wallet})
@@ -166,7 +189,7 @@ func (s *SQLStore) Project(ctx context.Context, in tm.Projection) (activityID in
 		if e = json.Unmarshal(row.TargetDisplay, &display); e != nil {
 			return e
 		}
-		saved, e := queries.InsertActivity(ctx, q.InsertActivityParams{OwnerID: owner, SubscriptionID: sub, SourceRecordID: c.SourceID, IntervalID: row.IntervalID, ActivationGeneration: int64(c.Generation), TradeJson: trade, MetadataKey: key, TargetDisplaySnapshot: row.TargetDisplay, NoteSnapshot: note, NotificationMode: mode, NotificationReason: reason, SettledAt: pgtype.Timestamptz{Time: in.Confirmation.SettledAt, Valid: true}, ReceivedAt: row.ReceivedAt, RecordedAt: now})
+		saved, e := queries.InsertActivity(ctx, q.InsertActivityParams{OwnerID: owner, SubscriptionID: sub, SourceRecordID: c.SourceID, IntervalID: row.IntervalID, ActivationGeneration: int64(c.Generation), TradeJson: trade, MetadataKey: key, TargetDisplaySnapshot: row.TargetDisplay, NoteSnapshot: note, NotificationMode: mode, NotificationReason: reason, SettledAt: pgtype.Timestamptz{Time: in.Confirmation.SettledAt, Valid: true}, ReceivedAt: row.ReceivedAt, RecordedAt: now, FormationEvidence: formationJSON})
 		if e != nil {
 			return e
 		}

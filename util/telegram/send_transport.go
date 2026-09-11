@@ -98,7 +98,7 @@ func (t *sendTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	observation.once.Do(func() {
 		observation.started = true
 		if observation.callback != nil {
-			observation.callback(time.Now().UTC())
+			observation.callback(time.Now())
 		}
 	})
 	if observation.releaseAdmission != nil {

@@ -25,23 +25,24 @@ func (q *Queries) InsertSourceCandidates(ctx context.Context, id int64) error {
 }
 
 const insertSourceRecord = `-- name: InsertSourceRecord :one
-INSERT INTO trader_sync_source_records(chain_id,exchange_address,wallet,block_hash,transaction_hash,log_index,block_number,raw_json,collector_epoch,read_sequence,received_at,removed)
-VALUES(137,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-ON CONFLICT(chain_id,exchange_address,block_hash,transaction_hash,log_index) DO NOTHING RETURNING id, chain_id, exchange_address, wallet, block_hash, transaction_hash, log_index, block_number, raw_json, collector_epoch, read_sequence, received_at, removed, confirmation_state, confirmation_reason, checked_at, settled_at, source_version, trade_json, metadata_complete
+INSERT INTO trader_sync_source_records(chain_id,exchange_address,wallet,block_hash,transaction_hash,log_index,block_number,raw_json,collector_epoch,read_sequence,received_at,removed,received_elapsed_ns)
+VALUES(137,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+ON CONFLICT(chain_id,exchange_address,block_hash,transaction_hash,log_index) DO NOTHING RETURNING id, chain_id, exchange_address, wallet, block_hash, transaction_hash, log_index, block_number, raw_json, collector_epoch, read_sequence, received_elapsed_ns, received_at, removed, confirmation_state, confirmation_reason, checked_at, settled_at, source_version, trade_json, metadata_complete
 `
 
 type InsertSourceRecordParams struct {
-	ExchangeAddress []byte
-	Wallet          []byte
-	BlockHash       []byte
-	TransactionHash []byte
-	LogIndex        int64
-	BlockNumber     int64
-	RawJson         []byte
-	CollectorEpoch  int64
-	ReadSequence    int64
-	ReceivedAt      pgtype.Timestamptz
-	Removed         bool
+	ExchangeAddress   []byte
+	Wallet            []byte
+	BlockHash         []byte
+	TransactionHash   []byte
+	LogIndex          int64
+	BlockNumber       int64
+	RawJson           []byte
+	CollectorEpoch    int64
+	ReadSequence      int64
+	ReceivedAt        pgtype.Timestamptz
+	Removed           bool
+	ReceivedElapsedNs pgtype.Int8
 }
 
 func (q *Queries) InsertSourceRecord(ctx context.Context, arg InsertSourceRecordParams) (TraderSyncSourceRecord, error) {
@@ -57,6 +58,7 @@ func (q *Queries) InsertSourceRecord(ctx context.Context, arg InsertSourceRecord
 		arg.ReadSequence,
 		arg.ReceivedAt,
 		arg.Removed,
+		arg.ReceivedElapsedNs,
 	)
 	var i TraderSyncSourceRecord
 	err := row.Scan(
@@ -71,6 +73,7 @@ func (q *Queries) InsertSourceRecord(ctx context.Context, arg InsertSourceRecord
 		&i.RawJson,
 		&i.CollectorEpoch,
 		&i.ReadSequence,
+		&i.ReceivedElapsedNs,
 		&i.ReceivedAt,
 		&i.Removed,
 		&i.ConfirmationState,

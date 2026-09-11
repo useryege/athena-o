@@ -23,8 +23,8 @@ SELECT * FROM trader_sync_activities WHERE owner_id=$1 AND subscription_id=$2 AN
 SELECT count(*)::bigint FROM trader_sync_activities WHERE owner_id=$1 AND recorded_at>$2::timestamptz-interval '60 seconds' AND recorded_at<=$2;
 
 -- name: InsertActivity :one
-INSERT INTO trader_sync_activities(owner_id,subscription_id,source_record_id,interval_id,activation_generation,trade_json,metadata_key,target_display_snapshot,note_snapshot,notification_mode,notification_reason,settled_at,received_at,recorded_at)
-VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *;
+INSERT INTO trader_sync_activities(owner_id,subscription_id,source_record_id,interval_id,activation_generation,trade_json,metadata_key,target_display_snapshot,note_snapshot,notification_mode,notification_reason,settled_at,received_at,recorded_at,formation_evidence)
+VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *;
 
 -- name: InsertAlertMembership :exec
 INSERT INTO trader_sync_alert_memberships(activity_id,owner_id,binding_revision,chat_id,form,state,created_at)VALUES($1,$2,$3,$4,$5,$6,$7);
@@ -74,3 +74,47 @@ WHERE source_record_id=$1 AND disposition='pending';
 
 -- name: HasPublishedSource :one
 SELECT EXISTS(SELECT 1 FROM trader_sync_activities WHERE source_record_id=$1)::boolean;
+
+
+-- name: ReadFormationSnapshot :one
+-- One statement snapshot, before current activity insertion. Original arrival
+-- predecessor selection deliberately precedes activity/route eligibility joins.
+WITH current_arrival AS (
+ SELECT r.*,c.owner_id,c.subscription_id,c.baseline_attempt_id,c.activation_generation
+ FROM trader_sync_source_records r JOIN trader_sync_source_candidates c ON c.source_record_id=r.id
+ WHERE r.id=sqlc.arg(source_id) AND c.owner_id=sqlc.arg(owner_id) AND c.subscription_id=sqlc.arg(subscription_id)
+), observed AS MATERIALIZED (SELECT clock_timestamp() AS at), previous_arrival AS (
+ SELECT r.*,c.subscription_id,c.baseline_attempt_id,c.activation_generation
+ FROM current_arrival cur JOIN trader_sync_source_candidates c ON c.owner_id=cur.owner_id
+ JOIN trader_sync_source_records r ON r.id=c.source_record_id
+ WHERE r.collector_epoch=cur.collector_epoch AND r.read_sequence<cur.read_sequence
+ ORDER BY r.read_sequence DESC,r.id DESC,c.subscription_id LIMIT 1
+)
+SELECT o.at::timestamptz AS observed_at,
+ (SELECT count(*) FROM trader_sync_activities a WHERE a.owner_id=cur.owner_id AND a.recorded_at>o.at-interval '60 seconds' AND a.recorded_at<=o.at)::bigint AS window_count,
+ jsonb_build_object('sourceId',cur.id,'subscriptionId',cur.subscription_id,'attemptId',cur.baseline_attempt_id,'generation',cur.activation_generation,
+  'epoch',cur.collector_epoch,'sequence',cur.read_sequence,'receivedAt',cur.received_at,'elapsedNs',cur.received_elapsed_ns,
+  'confirmation',cur.confirmation_state,'removed',cur.removed,'chatId',b.telegram_chat_id,'bindingRevision',b.revision) AS current_evidence,
+ (CASE WHEN prev.id IS NULL THEN 'null'::jsonb ELSE jsonb_build_object(
+  'sourceId',prev.id,'subscriptionId',prev.subscription_id,'attemptId',prev.baseline_attempt_id,'generation',prev.activation_generation,
+  'epoch',prev.collector_epoch,'sequence',prev.read_sequence,'receivedAt',prev.received_at,'elapsedNs',prev.received_elapsed_ns,
+  'confirmation',prev.confirmation_state,'removed',prev.removed,'formed',pa.id IS NOT NULL,'mode',COALESCE(pa.notification_mode,''),
+  'chatId',pd.telegram_chat_id,'bindingRevision',pd.binding_revision,'deliveryStatus',COALESCE(pd.status,''),'deliveryAttempts',COALESCE(pd.attempts,0),
+  'deliveryEligible',COALESCE(pd.eligibility_revoked_at IS NULL AND b.status='connected' AND b.telegram_user_id=b.telegram_chat_id AND pd.telegram_chat_id=b.telegram_chat_id AND pd.binding_revision=b.revision,false),
+  'everStarted',EXISTS(SELECT 1 FROM notification_delivery_attempts a WHERE a.work_kind='account' AND a.work_id=pd.id AND a.started_at IS NOT NULL)
+ ) END)::jsonb AS previous_evidence,
+ jsonb_build_object(
+  'ordinaryPending',(SELECT count(*) FROM account_notification_deliveries d WHERE d.account_id=cur.owner_id AND d.activity_id IS NOT NULL AND d.status='pending'),
+  'ordinarySending',(SELECT count(*) FROM account_notification_deliveries d WHERE d.account_id=cur.owner_id AND d.activity_id IS NOT NULL AND d.status='sending'),
+  'summaryWaiting',(SELECT count(*) FROM trader_sync_alert_memberships m WHERE m.owner_id=cur.owner_id AND m.form='summary' AND m.state='waiting' AND m.batch_id IS NULL),
+  'partPending',(SELECT count(*) FROM trader_sync_summary_parts p JOIN account_notification_deliveries d ON d.id=p.delivery_id WHERE p.owner_id=cur.owner_id AND d.status='pending'),
+  'partSending',(SELECT count(*) FROM trader_sync_summary_parts p JOIN account_notification_deliveries d ON d.id=p.delivery_id WHERE p.owner_id=cur.owner_id AND d.status='sending'),
+  'replyPending',(SELECT count(*) FROM telegram_binding_replies r WHERE r.account_id=cur.owner_id AND r.status='pending'),
+  'replySending',(SELECT count(*) FROM telegram_binding_replies r WHERE r.account_id=cur.owner_id AND r.status='sending'),
+  'policy','committed_owner_statuses_all_routes_including_revoked; predecessor_eligibility_and_route_separate'
+ ) AS queue_evidence
+FROM current_arrival cur CROSS JOIN observed o
+LEFT JOIN telegram_bindings b ON b.account_id=cur.owner_id
+LEFT JOIN previous_arrival prev ON true
+LEFT JOIN trader_sync_activities pa ON pa.owner_id=cur.owner_id AND pa.subscription_id=prev.subscription_id AND pa.source_record_id=prev.id
+LEFT JOIN account_notification_deliveries pd ON pd.account_id=cur.owner_id AND pd.activity_id=pa.id;

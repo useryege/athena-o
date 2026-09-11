@@ -155,3 +155,12 @@ Started 事实通过固定连接在一秒内补记后释放 gate，不等 HTTP �
 原 notification CLI 通过 ATHENA_URL 提供 ServerOpts.SiteURL；NewServer 在 Start 前从原 SQLStore.BorrowPool 取得同物理池并调用 ConfigureSummaries。启动后 account/system/reply/summary 共用现有 dispatcher、poller 和发送预算。Service.Stop 取消并 join 所有工作及补记后，CLI 的 store 唯一关闭池；摘要适配器无独立 Run/Close。缺 siteURL 或物理池明确返回构造错误。`--recover-stopped-sender` 分支仍先于 Telegram 客户端/summary 组合，不需 Trader Sync RPC/WSS/HMAC 配置，不发送消息；停止证明规则不变。
 
 ATHENA_TRADER_SYNC_PROXY_URL 只属于 API 内来源客户端；即使 notification 继承该环境，也不用于 Telegram。sendMessage 专属 5 秒截止与现有 30 秒长轮询保持分离。
+
+
+## 实际结果时间与恢复进度
+
+HTTP Started 保留原 time.Now 的 monotonic 部分，只有持久/序列化时转 UTC。worker 在 Sender.Send 返回即刻捕获 sender_returned_at 与可证明的 Started→返回 sender_elapsed_ns，再随原 outcome CAS 一次保存；result_at 继续表示 worker 处理结果时刻。结果补记重试复用同一时间、permit 和 attempt，不再次调用 Sender。没有真实起点则耗时 NULL；明确成功但落库未知仅记录受控 observed_outcome/result_persisted=false 警告，DB 仍保持未知证据，不能因此重发。返回上界包含真实 Sender 解析工作，不能称纯网络或服务端 ACK 时间。
+
+原恢复 owner 发布 recovery：initializing、waiting、completed、cancelled、failed。Start 在启动 worker 前同步清除旧 completed 快照；历史读取前开始计时，首次空历史也有 completed 证据。原内部/公开 runtime 透传 state/reason/startedAt/remainingMillis/elapsedMillis/clockSource，毫秒为 string；未知剩余省略，合法零为 "0"，来源为 sender_monotonic。fatal/stopped 优先，尚未完成恢复为 recovering，不能因 poller 活跃就显示 running。API 不创建另一个恢复计时器、不解除预算。恢复暂停与许可后动态预算等待是本地延迟，保留总体；HTTP 五秒截止仍在预算准入之后起算。
+
+txgate 的可选观察仅赋本地变量，区分 Begin/pool 与 advisory，调用层锁外输出。普通 Authorize 与摘要初始及重新取得短 gate 都复用这一入口，不改变任何许可、撤权、锁序或首条握手协议。

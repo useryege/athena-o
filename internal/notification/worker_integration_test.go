@@ -4,6 +4,7 @@ package notification
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
@@ -751,4 +752,118 @@ func TestWorkerSendsFrozenPlainBytesAndAttemptDigest(t *testing.T) {
 	if calls.Load() != 1 {
 		t.Fatal(calls.Load())
 	}
+}
+
+// Real Sender/transport plus a database start-write barrier demonstrates that
+// local evidence bookkeeping must not be attributed to Telegram ACK latency.
+func TestWorkerPersistsSenderReturnBeforeLocalStartBookkeeping(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if _, e := db.Pool.Exec(ctx, `INSERT INTO system_notification_topics(telegram_chat,label,message_thread_id)VALUES('test','timing',1)`); e != nil {
+		t.Fatal(e)
+	}
+	var id int64
+	if e := db.Pool.QueryRow(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label,payload,payload_digest)VALUES('test','info','timing','telegram','pending','test','timing',convert_to('{"format":"html","text":"timing","messageThreadId":0}','UTF8'),sha256(convert_to('{"format":"html","text":"timing","messageThreadId":0}','UTF8'))) RETURNING id`).Scan(&id); e != nil {
+		t.Fatal(e)
+	}
+	held, e := db.Pool.Begin(ctx)
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer held.Rollback(context.Background())
+	if _, e = held.Exec(ctx, `SELECT pg_advisory_xact_lock(135713)`); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = db.Pool.Exec(ctx, `CREATE FUNCTION delay_start_evidence() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_advisory_xact_lock(135713); RETURN NEW; END $$; CREATE TRIGGER delay_start BEFORE UPDATE OF started_at ON notification_delivery_attempts FOR EACH ROW EXECUTE FUNCTION delay_start_evidence()`); e != nil {
+		t.Fatal(e)
+	}
+	var calls atomic.Int32
+	sendResponse := make(chan struct{})
+	responseCtx, stopResponse := context.WithCancel(ctx)
+	defer stopResponse()
+	httpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		_, _ = io.Copy(io.Discard, r.Body)
+		select {
+		case <-sendResponse:
+		case <-responseCtx.Done():
+			return
+		}
+		_, _ = io.WriteString(w, `{"ok":true,"result":{"message_id":17}}`)
+	}))
+	t.Cleanup(httpServer.Close)
+	client, e := utiltelegram.NewClient(utiltelegram.Config{BotToken: "test", BaseURL: httpServer.URL})
+	if e != nil {
+		t.Fatal(e)
+	}
+	returned := make(chan time.Time, 1)
+	sender := &returnObservedSender{Sender: NewTelegramSender(client, map[string]string{"test": "-123"}), returned: returned}
+	st := notificationstore.NewSQLStore(db.Pool)
+	svc := NewService(st, sender, nil, nil)
+	done := make(chan error, 1)
+	go func() {
+		_, e := svc.sendPermittedNotification(ctx, delivery.Candidate{Ref: delivery.WorkRef{Kind: "system", ID: id}, ChatID: -123, Group: true}, nil)
+		done <- e
+	}()
+	// A blocked lock request proves the worker selected start before HTTP completed.
+	for {
+		var blocked bool
+		if e = db.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pg_locks WHERE locktype='advisory' AND objid=135713 AND NOT granted)`).Scan(&blocked); e != nil {
+			t.Fatal(e)
+		}
+		if blocked {
+			break
+		}
+		runtime.Gosched()
+	}
+	close(sendResponse)
+	var actualReturn time.Time
+	select {
+	case actualReturn = <-returned:
+	case <-ctx.Done():
+		t.Fatal(ctx.Err())
+	}
+	released := time.Now()
+	if e = held.Commit(ctx); e != nil {
+		t.Fatal(e)
+	}
+	select {
+	case e = <-done:
+		if e != nil {
+			t.Fatal(e)
+		}
+	case <-ctx.Done():
+		t.Fatal(ctx.Err())
+	}
+	var raw []byte
+	if e = db.Pool.QueryRow(ctx, `SELECT to_jsonb(a) FROM notification_delivery_attempts a WHERE work_kind='system' AND work_id=$1`, id).Scan(&raw); e != nil {
+		t.Fatal(e)
+	}
+	var got struct {
+		Returned *time.Time `json:"sender_returned_at"`
+		Elapsed  *int64     `json:"sender_elapsed_ns"`
+		Result   time.Time  `json:"result_at"`
+		Outcome  string     `json:"outcome"`
+	}
+	if e = json.Unmarshal(raw, &got); e != nil {
+		t.Fatal(e)
+	}
+	if got.Returned == nil || got.Elapsed == nil {
+		t.Fatalf("missing actual sender timing: %s", raw)
+	}
+	if got.Returned.After(released) || got.Returned.Before(actualReturn.UTC().Add(-time.Millisecond)) || got.Result.Before(released) || *got.Elapsed < 0 || got.Outcome != "sent" || calls.Load() != 1 {
+		t.Fatalf("wrong ACK/local distinction: %+v actual=%v released=%v calls=%d", got, actualReturn, released, calls.Load())
+	}
+}
+
+type returnObservedSender struct {
+	Sender
+	returned chan time.Time
+}
+
+func (s *returnObservedSender) Send(ctx context.Context, r SendRequest, start func(time.Time)) delivery.Outcome {
+	o := s.Sender.Send(ctx, r, start)
+	s.returned <- time.Now()
+	return o
 }

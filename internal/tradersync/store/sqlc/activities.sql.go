@@ -101,7 +101,7 @@ func (q *Queries) FinishProjectionCandidate(ctx context.Context, arg FinishProje
 }
 
 const getProjectedActivity = `-- name: GetProjectedActivity :one
-SELECT id, owner_id, subscription_id, source_record_id, interval_id, activation_generation, trade_json, metadata_key, target_display_snapshot, note_snapshot, notification_mode, notification_reason, settled_at, received_at, recorded_at FROM trader_sync_activities WHERE owner_id=$1 AND subscription_id=$2 AND source_record_id=$3
+SELECT id, owner_id, subscription_id, source_record_id, interval_id, activation_generation, trade_json, metadata_key, target_display_snapshot, note_snapshot, notification_mode, notification_reason, formation_evidence, settled_at, received_at, recorded_at FROM trader_sync_activities WHERE owner_id=$1 AND subscription_id=$2 AND source_record_id=$3
 `
 
 type GetProjectedActivityParams struct {
@@ -126,6 +126,7 @@ func (q *Queries) GetProjectedActivity(ctx context.Context, arg GetProjectedActi
 		&i.NoteSnapshot,
 		&i.NotificationMode,
 		&i.NotificationReason,
+		&i.FormationEvidence,
 		&i.SettledAt,
 		&i.ReceivedAt,
 		&i.RecordedAt,
@@ -193,7 +194,7 @@ func (q *Queries) GetProjectionEligibility(ctx context.Context, arg GetProjectio
 }
 
 const getProjectionSource = `-- name: GetProjectionSource :one
-SELECT id, chain_id, exchange_address, wallet, block_hash, transaction_hash, log_index, block_number, raw_json, collector_epoch, read_sequence, received_at, removed, confirmation_state, confirmation_reason, checked_at, settled_at, source_version, trade_json, metadata_complete FROM trader_sync_source_records WHERE id=$1 FOR SHARE
+SELECT id, chain_id, exchange_address, wallet, block_hash, transaction_hash, log_index, block_number, raw_json, collector_epoch, read_sequence, received_elapsed_ns, received_at, removed, confirmation_state, confirmation_reason, checked_at, settled_at, source_version, trade_json, metadata_complete FROM trader_sync_source_records WHERE id=$1 FOR SHARE
 `
 
 func (q *Queries) GetProjectionSource(ctx context.Context, id int64) (TraderSyncSourceRecord, error) {
@@ -211,6 +212,7 @@ func (q *Queries) GetProjectionSource(ctx context.Context, id int64) (TraderSync
 		&i.RawJson,
 		&i.CollectorEpoch,
 		&i.ReadSequence,
+		&i.ReceivedElapsedNs,
 		&i.ReceivedAt,
 		&i.Removed,
 		&i.ConfirmationState,
@@ -252,8 +254,8 @@ func (q *Queries) HasPublishedSource(ctx context.Context, sourceRecordID int64) 
 }
 
 const insertActivity = `-- name: InsertActivity :one
-INSERT INTO trader_sync_activities(owner_id,subscription_id,source_record_id,interval_id,activation_generation,trade_json,metadata_key,target_display_snapshot,note_snapshot,notification_mode,notification_reason,settled_at,received_at,recorded_at)
-VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id, owner_id, subscription_id, source_record_id, interval_id, activation_generation, trade_json, metadata_key, target_display_snapshot, note_snapshot, notification_mode, notification_reason, settled_at, received_at, recorded_at
+INSERT INTO trader_sync_activities(owner_id,subscription_id,source_record_id,interval_id,activation_generation,trade_json,metadata_key,target_display_snapshot,note_snapshot,notification_mode,notification_reason,settled_at,received_at,recorded_at,formation_evidence)
+VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id, owner_id, subscription_id, source_record_id, interval_id, activation_generation, trade_json, metadata_key, target_display_snapshot, note_snapshot, notification_mode, notification_reason, formation_evidence, settled_at, received_at, recorded_at
 `
 
 type InsertActivityParams struct {
@@ -271,6 +273,7 @@ type InsertActivityParams struct {
 	SettledAt             pgtype.Timestamptz
 	ReceivedAt            pgtype.Timestamptz
 	RecordedAt            pgtype.Timestamptz
+	FormationEvidence     []byte
 }
 
 func (q *Queries) InsertActivity(ctx context.Context, arg InsertActivityParams) (TraderSyncActivity, error) {
@@ -289,6 +292,7 @@ func (q *Queries) InsertActivity(ctx context.Context, arg InsertActivityParams) 
 		arg.SettledAt,
 		arg.ReceivedAt,
 		arg.RecordedAt,
+		arg.FormationEvidence,
 	)
 	var i TraderSyncActivity
 	err := row.Scan(
@@ -304,6 +308,7 @@ func (q *Queries) InsertActivity(ctx context.Context, arg InsertActivityParams) 
 		&i.NoteSnapshot,
 		&i.NotificationMode,
 		&i.NotificationReason,
+		&i.FormationEvidence,
 		&i.SettledAt,
 		&i.ReceivedAt,
 		&i.RecordedAt,
@@ -404,7 +409,7 @@ func (q *Queries) ProjectionCandidates(ctx context.Context, sourceRecordID int64
 }
 
 const projectionSources = `-- name: ProjectionSources :many
-SELECT r.id, r.chain_id, r.exchange_address, r.wallet, r.block_hash, r.transaction_hash, r.log_index, r.block_number, r.raw_json, r.collector_epoch, r.read_sequence, r.received_at, r.removed, r.confirmation_state, r.confirmation_reason, r.checked_at, r.settled_at, r.source_version, r.trade_json, r.metadata_complete FROM trader_sync_source_records r WHERE
+SELECT r.id, r.chain_id, r.exchange_address, r.wallet, r.block_hash, r.transaction_hash, r.log_index, r.block_number, r.raw_json, r.collector_epoch, r.read_sequence, r.received_elapsed_ns, r.received_at, r.removed, r.confirmation_state, r.confirmation_reason, r.checked_at, r.settled_at, r.source_version, r.trade_json, r.metadata_complete FROM trader_sync_source_records r WHERE
  EXISTS(SELECT 1 FROM trader_sync_source_candidates c WHERE c.source_record_id=r.id AND c.disposition='pending')
  OR (NOT r.metadata_complete AND r.confirmation_state<>'invalid' AND NOT EXISTS(SELECT 1 FROM trader_sync_finality_anomalies f WHERE f.chain_id=r.chain_id AND f.transaction_hash=r.transaction_hash) AND EXISTS(SELECT 1 FROM trader_sync_activities a WHERE a.source_record_id=r.id))
  OR (r.removed AND EXISTS(SELECT 1 FROM trader_sync_activities a WHERE a.source_record_id=r.id) AND NOT EXISTS(SELECT 1 FROM trader_sync_finality_anomalies f WHERE f.chain_id=r.chain_id AND f.transaction_hash=r.transaction_hash))
@@ -432,6 +437,7 @@ func (q *Queries) ProjectionSources(ctx context.Context, limit int32) ([]TraderS
 			&i.RawJson,
 			&i.CollectorEpoch,
 			&i.ReadSequence,
+			&i.ReceivedElapsedNs,
 			&i.ReceivedAt,
 			&i.Removed,
 			&i.ConfirmationState,
@@ -452,8 +458,79 @@ func (q *Queries) ProjectionSources(ctx context.Context, limit int32) ([]TraderS
 	return items, nil
 }
 
+const readFormationSnapshot = `-- name: ReadFormationSnapshot :one
+WITH current_arrival AS (
+ SELECT r.id, r.chain_id, r.exchange_address, r.wallet, r.block_hash, r.transaction_hash, r.log_index, r.block_number, r.raw_json, r.collector_epoch, r.read_sequence, r.received_elapsed_ns, r.received_at, r.removed, r.confirmation_state, r.confirmation_reason, r.checked_at, r.settled_at, r.source_version, r.trade_json, r.metadata_complete,c.owner_id,c.subscription_id,c.baseline_attempt_id,c.activation_generation
+ FROM trader_sync_source_records r JOIN trader_sync_source_candidates c ON c.source_record_id=r.id
+ WHERE r.id=$1 AND c.owner_id=$2 AND c.subscription_id=$3
+), observed AS MATERIALIZED (SELECT clock_timestamp() AS at), previous_arrival AS (
+ SELECT r.id, r.chain_id, r.exchange_address, r.wallet, r.block_hash, r.transaction_hash, r.log_index, r.block_number, r.raw_json, r.collector_epoch, r.read_sequence, r.received_elapsed_ns, r.received_at, r.removed, r.confirmation_state, r.confirmation_reason, r.checked_at, r.settled_at, r.source_version, r.trade_json, r.metadata_complete,c.subscription_id,c.baseline_attempt_id,c.activation_generation
+ FROM current_arrival cur JOIN trader_sync_source_candidates c ON c.owner_id=cur.owner_id
+ JOIN trader_sync_source_records r ON r.id=c.source_record_id
+ WHERE r.collector_epoch=cur.collector_epoch AND r.read_sequence<cur.read_sequence
+ ORDER BY r.read_sequence DESC,r.id DESC,c.subscription_id LIMIT 1
+)
+SELECT o.at::timestamptz AS observed_at,
+ (SELECT count(*) FROM trader_sync_activities a WHERE a.owner_id=cur.owner_id AND a.recorded_at>o.at-interval '60 seconds' AND a.recorded_at<=o.at)::bigint AS window_count,
+ jsonb_build_object('sourceId',cur.id,'subscriptionId',cur.subscription_id,'attemptId',cur.baseline_attempt_id,'generation',cur.activation_generation,
+  'epoch',cur.collector_epoch,'sequence',cur.read_sequence,'receivedAt',cur.received_at,'elapsedNs',cur.received_elapsed_ns,
+  'confirmation',cur.confirmation_state,'removed',cur.removed,'chatId',b.telegram_chat_id,'bindingRevision',b.revision) AS current_evidence,
+ (CASE WHEN prev.id IS NULL THEN 'null'::jsonb ELSE jsonb_build_object(
+  'sourceId',prev.id,'subscriptionId',prev.subscription_id,'attemptId',prev.baseline_attempt_id,'generation',prev.activation_generation,
+  'epoch',prev.collector_epoch,'sequence',prev.read_sequence,'receivedAt',prev.received_at,'elapsedNs',prev.received_elapsed_ns,
+  'confirmation',prev.confirmation_state,'removed',prev.removed,'formed',pa.id IS NOT NULL,'mode',COALESCE(pa.notification_mode,''),
+  'chatId',pd.telegram_chat_id,'bindingRevision',pd.binding_revision,'deliveryStatus',COALESCE(pd.status,''),'deliveryAttempts',COALESCE(pd.attempts,0),
+  'deliveryEligible',COALESCE(pd.eligibility_revoked_at IS NULL AND b.status='connected' AND b.telegram_user_id=b.telegram_chat_id AND pd.telegram_chat_id=b.telegram_chat_id AND pd.binding_revision=b.revision,false),
+  'everStarted',EXISTS(SELECT 1 FROM notification_delivery_attempts a WHERE a.work_kind='account' AND a.work_id=pd.id AND a.started_at IS NOT NULL)
+ ) END)::jsonb AS previous_evidence,
+ jsonb_build_object(
+  'ordinaryPending',(SELECT count(*) FROM account_notification_deliveries d WHERE d.account_id=cur.owner_id AND d.activity_id IS NOT NULL AND d.status='pending'),
+  'ordinarySending',(SELECT count(*) FROM account_notification_deliveries d WHERE d.account_id=cur.owner_id AND d.activity_id IS NOT NULL AND d.status='sending'),
+  'summaryWaiting',(SELECT count(*) FROM trader_sync_alert_memberships m WHERE m.owner_id=cur.owner_id AND m.form='summary' AND m.state='waiting' AND m.batch_id IS NULL),
+  'partPending',(SELECT count(*) FROM trader_sync_summary_parts p JOIN account_notification_deliveries d ON d.id=p.delivery_id WHERE p.owner_id=cur.owner_id AND d.status='pending'),
+  'partSending',(SELECT count(*) FROM trader_sync_summary_parts p JOIN account_notification_deliveries d ON d.id=p.delivery_id WHERE p.owner_id=cur.owner_id AND d.status='sending'),
+  'replyPending',(SELECT count(*) FROM telegram_binding_replies r WHERE r.account_id=cur.owner_id AND r.status='pending'),
+  'replySending',(SELECT count(*) FROM telegram_binding_replies r WHERE r.account_id=cur.owner_id AND r.status='sending'),
+  'policy','committed_owner_statuses_all_routes_including_revoked; predecessor_eligibility_and_route_separate'
+ ) AS queue_evidence
+FROM current_arrival cur CROSS JOIN observed o
+LEFT JOIN telegram_bindings b ON b.account_id=cur.owner_id
+LEFT JOIN previous_arrival prev ON true
+LEFT JOIN trader_sync_activities pa ON pa.owner_id=cur.owner_id AND pa.subscription_id=prev.subscription_id AND pa.source_record_id=prev.id
+LEFT JOIN account_notification_deliveries pd ON pd.account_id=cur.owner_id AND pd.activity_id=pa.id
+`
+
+type ReadFormationSnapshotParams struct {
+	SourceID       int64
+	OwnerID        pgtype.UUID
+	SubscriptionID pgtype.UUID
+}
+
+type ReadFormationSnapshotRow struct {
+	ObservedAt       pgtype.Timestamptz
+	WindowCount      int64
+	CurrentEvidence  []byte
+	PreviousEvidence []byte
+	QueueEvidence    []byte
+}
+
+// One statement snapshot, before current activity insertion. Original arrival
+// predecessor selection deliberately precedes activity/route eligibility joins.
+func (q *Queries) ReadFormationSnapshot(ctx context.Context, arg ReadFormationSnapshotParams) (ReadFormationSnapshotRow, error) {
+	row := q.db.QueryRow(ctx, readFormationSnapshot, arg.SourceID, arg.OwnerID, arg.SubscriptionID)
+	var i ReadFormationSnapshotRow
+	err := row.Scan(
+		&i.ObservedAt,
+		&i.WindowCount,
+		&i.CurrentEvidence,
+		&i.PreviousEvidence,
+		&i.QueueEvidence,
+	)
+	return i, err
+}
+
 const readOwnerActivities = `-- name: ReadOwnerActivities :many
-SELECT a.id, a.owner_id, a.subscription_id, a.source_record_id, a.interval_id, a.activation_generation, a.trade_json, a.metadata_key, a.target_display_snapshot, a.note_snapshot, a.notification_mode, a.notification_reason, a.settled_at, a.received_at, a.recorded_at,m.metadata_json FROM trader_sync_activities a JOIN trader_sync_market_metadata m ON m.cache_key=a.metadata_key WHERE a.owner_id=$1 AND a.id<=$2 ORDER BY a.id DESC LIMIT $3
+SELECT a.id, a.owner_id, a.subscription_id, a.source_record_id, a.interval_id, a.activation_generation, a.trade_json, a.metadata_key, a.target_display_snapshot, a.note_snapshot, a.notification_mode, a.notification_reason, a.formation_evidence, a.settled_at, a.received_at, a.recorded_at,m.metadata_json FROM trader_sync_activities a JOIN trader_sync_market_metadata m ON m.cache_key=a.metadata_key WHERE a.owner_id=$1 AND a.id<=$2 ORDER BY a.id DESC LIMIT $3
 `
 
 type ReadOwnerActivitiesParams struct {
@@ -475,6 +552,7 @@ type ReadOwnerActivitiesRow struct {
 	NoteSnapshot          string
 	NotificationMode      string
 	NotificationReason    string
+	FormationEvidence     []byte
 	SettledAt             pgtype.Timestamptz
 	ReceivedAt            pgtype.Timestamptz
 	RecordedAt            pgtype.Timestamptz
@@ -503,6 +581,7 @@ func (q *Queries) ReadOwnerActivities(ctx context.Context, arg ReadOwnerActiviti
 			&i.NoteSnapshot,
 			&i.NotificationMode,
 			&i.NotificationReason,
+			&i.FormationEvidence,
 			&i.SettledAt,
 			&i.ReceivedAt,
 			&i.RecordedAt,

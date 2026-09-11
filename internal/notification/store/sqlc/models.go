@@ -108,6 +108,8 @@ type NotificationDeliveryAttempt struct {
 	AuthorizedAt         pgtype.Timestamptz
 	StartedAt            pgtype.Timestamptz
 	ResultAt             pgtype.Timestamptz
+	SenderReturnedAt     pgtype.Timestamptz
+	SenderElapsedNs      pgtype.Int8
 	MessageID            pgtype.Text
 	Outcome              pgtype.Text
 	OutcomeCode          pgtype.Text
@@ -236,6 +238,7 @@ type TraderSyncActivity struct {
 	NoteSnapshot          string
 	NotificationMode      string
 	NotificationReason    string
+	FormationEvidence     []byte
 	SettledAt             pgtype.Timestamptz
 	ReceivedAt            pgtype.Timestamptz
 	RecordedAt            pgtype.Timestamptz
@@ -382,6 +385,7 @@ type TraderSyncSourceRecord struct {
 	RawJson            []byte
 	CollectorEpoch     int64
 	ReadSequence       int64
+	ReceivedElapsedNs  pgtype.Int8
 	ReceivedAt         pgtype.Timestamptz
 	Removed            bool
 	ConfirmationState  string

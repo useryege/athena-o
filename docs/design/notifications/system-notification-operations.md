@@ -105,3 +105,6 @@ gRPC health 报告生命周期就绪。共享运行 RPC 报告 Bot 可用性/ID/
 - 系统记录与运营代码不进入会员 bundle 或 API。
 - 配置注入、凭据轮换、health、运行字段与安全日志同步维护。
 - 源码链接和[设计索引](../README.md)保持正确。
+
+
+运行 RPC 已追加可缺 recovery 快照，初始化/恢复等待不会报 running；未知剩余与合法零按原 notification 进程证据透传。attempt 的 sender_returned_at/sender_elapsed_ns 与原 result_at 分别保留 Sender 返回和本地结果处理时间，所有来源复用同一 CAS；详见[实际结果时间与恢复进度](account-telegram-notifications.md#实际结果时间与恢复进度)。

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -28,6 +29,9 @@ func (s *Service) startWorkerLocked(ctx context.Context) {
 	if s.workerConfig.Disabled {
 		return
 	}
+	// Publish the new entry before releasing Start's lifecycle lock. A restart
+	// cannot expose its previous completed recovery while this worker is scheduled.
+	s.recovery.begin(wallClock{})
 	s.workerWG.Add(2)
 	go func() {
 		defer s.workerWG.Done()
@@ -70,12 +74,18 @@ func (s *Service) failRuntime(err error) {
 func (s *Service) runWorker(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	s.recovery.ensureStarted(wallClock{})
 	budget := NewBudget(20, time.Second, 20, time.Minute)
 	if err := restoreBudget(ctx, s.store, budget, time.Now()); err != nil {
+		if ctx.Err() != nil {
+			s.recovery.finish("cancelled", "cancelled")
+		} else {
+			s.recovery.finish("failed", "attempt_history_read_failed")
+		}
 		return err
 	}
 	firstStart := s.senderSession == nil || s.senderSession.FirstStart()
-	retries, err := recoverStartupBudget(ctx, s.store, budget, wallClock{}, firstStart)
+	retries, err := recoverStartupBudget(ctx, s.store, budget, wallClock{}, firstStart, &s.recovery)
 	if err != nil {
 		return err
 	}
@@ -122,7 +132,11 @@ func (s *Service) executePermit(ctx context.Context, permit delivery.Permit, onS
 	}
 	request := SendRequest{TelegramChatID: permit.ChatID, MessageThreadID: payload.MessageThreadID, Text: payload.Text, Format: payload.Format}
 	started := make(chan time.Time, 1)
-	result := make(chan delivery.Outcome, 1)
+	type senderResult struct {
+		outcome delivery.Outcome
+		timing  delivery.ResultTiming
+	}
+	result := make(chan senderResult, 1)
 	// The transport starts its HTTP timeout after cancellable local budget admission.
 	sendCtx, cancel := context.WithCancel(ctx)
 	if summary != nil {
@@ -132,7 +146,9 @@ func (s *Service) executePermit(ctx context.Context, permit delivery.Permit, onS
 	}
 	defer cancel()
 	go func() {
-		result <- s.sender.Send(sendCtx, request, func(at time.Time) {
+		var originalStart atomic.Pointer[time.Time]
+		outcome := s.sender.Send(sendCtx, request, func(at time.Time) {
+			originalStart.CompareAndSwap(nil, &at)
 			if onStarted != nil {
 				onStarted(at)
 			}
@@ -141,6 +157,15 @@ func (s *Service) executePermit(ctx context.Context, permit delivery.Permit, onS
 			default:
 			}
 		})
+		returned := time.Now()
+		timing := delivery.ResultTiming{SenderReturnedAt: &returned}
+		if at := originalStart.Load(); at != nil && *at != at.Round(0) {
+			elapsed := returned.Sub(*at).Nanoseconds()
+			if elapsed >= 0 {
+				timing.SenderElapsedNS = &elapsed
+			}
+		}
+		result <- senderResult{outcome: outcome, timing: timing}
 	}()
 	var outcome delivery.Outcome
 	var startedAt time.Time
@@ -158,7 +183,9 @@ func (s *Service) executePermit(ctx context.Context, permit delivery.Permit, onS
 			if err != nil {
 				log.WithError(err).WithField("attempt_id", permit.AttemptID).Warn("failed to record notification HTTP start")
 			}
-		case outcome = <-result:
+		case receipt := <-result:
+			outcome = receipt.outcome
+			outcome.Timing = receipt.timing
 			// Both channels may be ready; preserve the start even when the result wins the select.
 			if startedAt.IsZero() {
 				select {
@@ -198,7 +225,7 @@ received:
 			break
 		}
 	}
-	log.WithError(err).WithField("attempt_id", permit.AttemptID).Warn("notification result remains unconfirmed; send will not be repeated")
+	log.WithError(err).WithField("attempt_id", permit.AttemptID).WithField("observed_outcome", outcome.Kind).WithField("sender_returned_at", outcome.Timing.SenderReturnedAt).WithField("result_persisted", false).Warn("notification result remains unconfirmed; send will not be repeated")
 	return outcome, nil
 }
 

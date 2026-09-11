@@ -85,7 +85,7 @@ func (s *Server) GetNotificationRuntimeStatus(ctx context.Context, _ *notificati
 		return nil, err
 	}
 	return &notificationpkg.NotificationRuntimeStatus{
-		Started: response.GetStarted(), Status: response.GetStatus(),
+		Recovery: publicRecovery(response.GetRecovery()), Started: response.GetStarted(), Status: response.GetStatus(),
 		BotAvailable: response.GetBotAvailable(), BotId: response.GetBotId(),
 		BotUsername: response.GetBotUsername(), PollerActive: response.GetPollerActive(),
 		LastPollAt: response.GetLastPollAt(), LastUpdateAt: response.GetLastUpdateAt(),
@@ -217,4 +217,11 @@ func deliveryStatusString(value notificationapiclient.NotificationDeliveryStatus
 	default:
 		return ""
 	}
+}
+
+func publicRecovery(in *notificationapiclient.NotificationRecoveryStatus) *notificationpkg.NotificationRecoveryStatus {
+	if in == nil {
+		return nil
+	}
+	return &notificationpkg.NotificationRecoveryStatus{State: in.State, Reason: in.Reason, StartedAt: in.StartedAt, RemainingMillis: in.RemainingMillis, ElapsedMillis: in.ElapsedMillis, ClockSource: in.ClockSource}
 }

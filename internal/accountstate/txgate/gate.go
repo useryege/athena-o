@@ -32,11 +32,16 @@ func AcquireAccountSession(ctx context.Context, pool *pgxpool.Pool, owner string
 	if e != nil {
 		return nil, e
 	}
+	began := time.Now()
 	c, e := pool.Acquire(ctx)
+	observeTiming(ctx, "session", "begin", began, e)
 	if e != nil {
 		return nil, e
 	}
-	if _, e = c.Exec(ctx, "SELECT pg_advisory_lock(hashtextextended('athena:account:' || $1::text,0))", canonical); e != nil {
+	began = time.Now()
+	_, e = c.Exec(ctx, "SELECT pg_advisory_lock(hashtextextended('athena:account:' || $1::text,0))", canonical)
+	observeTiming(ctx, "session", "advisory", began, e)
+	if e != nil {
 		discardAccountConnection(c)
 		return nil, fmt.Errorf("acquire account session: %w", e)
 	}
@@ -74,7 +79,9 @@ func WithAccountTx(ctx context.Context, pool Beginner, accountID string, fn func
 	if err != nil {
 		return err
 	}
+	began := time.Now()
 	tx, err := pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
+	observeTiming(ctx, "transaction", "begin", began, err)
 	if err != nil {
 		return fmt.Errorf("begin account transaction: %w", err)
 	}
@@ -84,7 +91,10 @@ func WithAccountTx(ctx context.Context, pool Beginner, accountID string, fn func
 			_ = tx.Rollback(context.Background())
 		}
 	}()
-	if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended('athena:account:' || $1::text, 0))", canonicalAccountID); err != nil {
+	began = time.Now()
+	_, err = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended('athena:account:' || $1::text, 0))", canonicalAccountID)
+	observeTiming(ctx, "transaction", "advisory", began, err)
+	if err != nil {
 		return fmt.Errorf("lock account %q: %w", canonicalAccountID, err)
 	}
 	if err := fn(tx); err != nil {
@@ -127,4 +137,29 @@ func canonicalAccountID(value string) (string, error) {
 		return "", fmt.Errorf("account ID %q is not a non-zero UUID", value)
 	}
 	return parsed.String(), nil
+}
+
+// Timing reports one acquisition phase. Observers must only assign local values;
+// they must not perform SQL, logging, blocking sends, or acquire other locks.
+type Timing struct {
+	Kind, Phase string
+	Duration    time.Duration
+	Succeeded   bool
+}
+type timingKey struct{}
+
+func WithTiming(ctx context.Context, observe func(Timing)) context.Context {
+	if observe == nil {
+		return ctx
+	}
+	if prior, ok := ctx.Value(timingKey{}).(func(Timing)); ok {
+		next := observe
+		observe = func(v Timing) { prior(v); next(v) }
+	}
+	return context.WithValue(ctx, timingKey{}, observe)
+}
+func observeTiming(ctx context.Context, kind, phase string, began time.Time, err error) {
+	if observe, ok := ctx.Value(timingKey{}).(func(Timing)); ok {
+		observe(Timing{Kind: kind, Phase: phase, Duration: time.Since(began), Succeeded: err == nil})
+	}
 }

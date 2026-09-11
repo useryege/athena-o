@@ -442,3 +442,16 @@ Session 在实际 pong 接收回调捕获带单调部分的时间与 nonce，wri
 管理员 runtime 的 raw 阶段另提供 `raw_queue_depth` 与 `raw_persist_in_flight`，均为单位 `raw_logs` 的 gauge，后者为原单接收 goroutine 正在调用 Persist 的 0/1。Service 先完成管理员权限/DB读取，再合并同一 Collector 的短内存快照；只有活 Session 与 DB active_epoch 相同才返回两项数值，并附 serviceEpoch。未运行、关闭或 epoch 不匹配时省略两项，`raw_observation_available` 为单位 boolean、字符串值0/1的 gauge；不以缺证据冒充0。两个值各为瞬时观察，不声称跨 DB/队列的原子总量或丢失量，也不代替持久 confirmation/projection 积压。
 
 安全观察判定仅由权威 schema 的普通 view `trader_sync_subscription_interruptions`（相关 epoch 与同代恢复事实）和 `trader_sync_subscription_observations`（状态、可靠点、count/latest）定义。会员、管理员独立投影及状态筛选，history 共用这些事实；view 只暴露 owner/subscription 与安全观察列，不读取备注、目标展示、活动正文或发送 payload。它们不引入缓存/刷新任务，读取保持 owner/subscription 条件，不另造多份恢复规则。
+
+
+## 形成证据与时效观测
+
+原 Session read-loop 同一次采样保存 received UTC、同会话 monotonic elapsed ns 和原 read sequence。source 首次持久后重复/removed 不重写这些证据。Project 持 owner gate，在插入之前用同一 SQL snapshot 保存 typed formation_evidence：当前来源、同 epoch 最近的真实到达前件、原候选身份及已提交 owner 竞争。先选最近前件再判断其形成资格；并发下最近前件未形成时为 ordinary_unclassified，不能跳过它寻找更早已形成活动。
+
+arrival_and_owner_queue_v1 只有同私聊绑定、同 Session mono 间隔小于 1 秒、前件已确认且首次普通投递仍竞争时才分 ordinary_burst。ordinary_default 与 ordinary_unclassified 均保留非 burst 及普通总体，全部 cohort 在活动 INSERT 时冻结，不据后续慢结果重新分类。队列只代表该 SQL 已提交 snapshot，不包含尚未落库 raw、未提交事务或 dispatcher 内存。规则是保守分组，不证明延迟原因，也不提供 SLO 豁免。
+
+Projector 的确认/版本/额外资料等待记录实际本轮 monotonic 耗时，失败轮次也计入有限 process counter。形成记录包含本轮 processing 与账户 Begin/pool、advisory 两段 gate 事实；候选事务结束及普通/摘要许可、冻结、渲染耗时在锁外受控 debug 日志中记录。recorded_at 是事务中的 DB 打点，不能称 COMMIT 完成时间；本轮确认完成时间也不是跨重试首次确认时刻。
+
+管理员原 runtime 的有限 metrics 同时统计 activity、去重 logical delivery/summary part、全部 HTTP attempt。无授权、未冻结、无 ACK 和失败/未知/取消样本仍在总数、状态及年龄中。一个摘要 part 的多个成员不能乘成多个 HTTP。名称中的 utc 表示持久时间差，monotonic 表示实际同进程采样；缺失量不填零，负 UTC 顺序另计 clock anomaly，不把 block time 或 received time 当公开时刻。普通全部及非 burst 的 P95/P99 与 cohort 分项并存。确认/版本形成百分位按活动加权，process round counter 按实际核验轮次计，两者分母不同。
+
+独立公开区间缺失时公开→站内 P95/P99 不可判定。Sender 已解析成功响应的本地返回上界为 ACK 证据，不是 Telegram 服务端或用户设备送达时间。非首次 sender 恢复等待单列为本地恢复进度，仍保留总体排队时延。测试构造、故障与来源限制见[指标与容量验收](../../testing/trader-sync-activity-alerts-acceptance.md)。
