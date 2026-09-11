@@ -2,7 +2,7 @@
 
 本目录属于 [`docs/requirements/`](../README.md)，记录 Token 业务目标、已确认决定、仍在讨论的边界和支撑调研。`需求状态` 描述业务决定的确定程度；细分状态继续说明其中已经确认、尚待细化或仅供选择的内容。
 
-Token 当前先完成后端，再重新设计前端；旧业务 UI 已移除，保留禁用 Token 父菜单、独立 Wallets 和后端 API，见[前端范围](token.md#已明确的实施顺序与前端范围)。后续开发遵循 [Superpowers 工作流](../../developer-guide/superpowers-development.md)，长期架构决定同步到 [`docs/design/`](../../design/README.md)。
+Token 采用“设计后端 → 设计前端 → 实现后端 → 实现前端”的顺序，在后端编码前完成前端设计并对齐前后端方案。旧业务 UI 已移除，保留禁用 Token 父菜单、独立 Wallets 和后端 API，见[实施顺序与前端范围](token.md#已明确的实施顺序与前端范围)。后续开发遵循 [Superpowers 工作流](../../developer-guide/superpowers-development.md)，长期架构决定同步到 [`docs/design/`](../../design/README.md)。
 
 ## 目标设计
 
