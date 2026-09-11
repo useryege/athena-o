@@ -27,3 +27,5 @@ export const NotificationsPage = React.lazy(() => import('./pages/notifications'
 export const ProfitSharingRoundsPage = React.lazy(() => import('./pages/profit-sharing').then(module => ({default: module.ProfitSharingRoundsPage})));
 export const ProfitSharingRoundPage = React.lazy(() => import('./pages/profit-sharing').then(module => ({default: module.ProfitSharingRoundPage})));
 export const HelpPage = React.lazy(() => import('../shared/pages/help').then(module => ({default: module.HelpPage})));
+
+export const TraderSyncAddPage = React.lazy(() => import('./pages/trader-sync/add').then(module => ({default: module.TraderSyncAddPage})));

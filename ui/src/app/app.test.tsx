@@ -1,9 +1,9 @@
-import * as React from 'react';
+import {captureTraderSyncScope, clearTraderSyncState, readAddDraft, saveAddDraft, saveNewSubscriptionFocus, readNewSubscriptionFocus} from './member/pages/trader-sync/state';
 import renderer, {act} from 'react-test-renderer';
-import {Button} from 'antd';
+import {Button, Input} from 'antd';
 import {MemberApp as App, loadAppBootstrapWithRetry} from './member/app';
-import {AccountDataAccess, AppBootstrap, AppBootstrapSessionStatus, AuthSettings} from './shared/models';
-import {memberServices as services} from './member/services';
+import {parseUserInfo, AppBootstrap, AppBootstrapSessionStatus, AuthSettings} from './shared/models';
+import {ensureMemberBusinessServices, memberServices as services} from './member/services';
 
 const authSettings: AuthSettings = {
     url: '',
@@ -35,14 +35,13 @@ const authenticatedBootstrap: AppBootstrap = {
     settings: authSettings,
     session: {
         status: AppBootstrapSessionStatus.Authenticated,
-        userInfo: {
+        userInfo: parseUserInfo({
             loggedIn: true,
             username: 'admin',
             iss: 'athena',
             administrator: true,
-            dataAccess: AccountDataAccess.ReadWrite,
-            authorizationRevision: 0
-        }
+            accountId: 'admin-account'
+        })
     }
 };
 const anonymousBootstrap: AppBootstrap = {settings: authSettings, session: {status: AppBootstrapSessionStatus.Anonymous}};
@@ -83,7 +82,7 @@ afterEach(() => {
     jest.restoreAllMocks();
 });
 
-const containsText = (node: renderer.ReactTestRendererJSON | renderer.ReactTestRendererJSON[] | string | null, text: string): boolean => {
+const containsText = (node: renderer.ReactTestRendererJSON | (renderer.ReactTestRendererJSON | string)[] | string | null, text: string): boolean => {
     if (!node) {
         return false;
     }
@@ -97,10 +96,7 @@ const containsText = (node: renderer.ReactTestRendererJSON | renderer.ReactTestR
 };
 
 test('loadAppBootstrapWithRetry retries transient bootstrap failures', async () => {
-    const load = jest
-        .fn<Promise<AppBootstrap>, []>()
-        .mockRejectedValueOnce(new Error('backend is not ready'))
-        .mockResolvedValue(authenticatedBootstrap);
+    const load = jest.fn<Promise<AppBootstrap>, []>().mockRejectedValueOnce(new Error('backend is not ready')).mockResolvedValue(authenticatedBootstrap);
     const sleep = jest.fn<Promise<void>, [number]>(() => Promise.resolve());
 
     await expect(loadAppBootstrapWithRetry(load, [500], sleep)).resolves.toEqual(authenticatedBootstrap);
@@ -165,4 +161,97 @@ test('Bootstrap redirects logged-out protected routes to login', async () => {
     const buttons = methods.findAllByType(Button);
     expect(buttons).toHaveLength(2);
     expect(buttons.every(button => typeof button.props.onClick === 'function' && !button.props.disabled)).toBe(true);
+});
+
+// Real MemberApp/Shell/router; transport is replaced, identity lifecycle is not.
+describe('Trader Sync real Shell cleanup', () => {
+    let tree: renderer.ReactTestRenderer;
+    const member = (accountId = 'owner-A', iss = 'athena', level = 'read_write', revision = 1) =>
+        parseUserInfo({loggedIn: true, accountId, username: accountId, iss, access: {loginEnabled: true, revision, moduleAccess: [{module: 'trader_sync', dataAccess: level}]}});
+    const mountMember = async (level = 'read_write') => {
+        ensureMemberBusinessServices();
+        jest.spyOn(services.authService, 'bootstrap').mockResolvedValue({
+            settings: authSettings,
+            session: {status: AppBootstrapSessionStatus.Authenticated, userInfo: member('owner-A', 'athena', level)}
+        });
+        jest.spyOn(services.memberNotifications, 'getTelegramSettings').mockResolvedValue({botAvailable: true, botUsername: 'bot'});
+        jest.spyOn(services.users, 'get').mockResolvedValue(member());
+        window.history.replaceState(null, '', '/trader-sync/add');
+        await act(async () => {
+            tree = renderer.create(<App />);
+        });
+        await act(async () => {
+            await Promise.resolve();
+        });
+    };
+    const seed = () => {
+        const scope = captureTraderSyncScope('owner-A');
+        saveAddDraft({ownerId: 'owner-A', input: 'private-wallet', note: 'private-note', noteEdited: true, returnPath: '/trader-sync', scrollY: 0});
+        saveNewSubscriptionFocus('owner-A', 'new-subscription');
+        return scope;
+    };
+    beforeEach(() => {
+        Object.defineProperty(document, 'visibilityState', {configurable: true, value: 'visible'});
+    });
+    afterEach(() => {
+        if (tree) act(() => tree.unmount());
+        clearTraderSyncState();
+        sessionStorage.clear();
+    });
+    test.each([
+        ['owner-B', 'athena'],
+        ['owner-A', 'new-issuer']
+    ])('identity refresh %s/%s clears before publishing replacement', async (owner, issuer) => {
+        await mountMember();
+        const scope = seed();
+        const seen: boolean[] = [];
+        const unsubscribe = scope.subscribeInvalidation!(() => seen.push(readAddDraft('owner-A') === undefined));
+        jest.mocked(services.users.get).mockResolvedValue(member(owner, issuer));
+        await act(async () => {
+            window.dispatchEvent(new Event('focus'));
+        });
+        expect(scope.isCurrent()).toBe(false);
+        expect(seen).toEqual([true]);
+        expect(readNewSubscriptionFocus('owner-A')).toBeUndefined();
+        const resolveButton = tree.root.findAllByType(Button).find(item => item.props.children === 'Resolve trader');
+        expect(resolveButton).toBeDefined();
+        const addressInput = tree.root.findAllByType(Input).find(item => item.props.id === 'trader-sync-input')!;
+        await act(async () => {
+            addressInput.props.onChange({target: {value: 'new input'}});
+        });
+        expect(tree.root.findAllByType(Button).find(item => item.props.children === 'Resolve trader')!.props.disabled).toBe(false);
+        unsubscribe();
+    });
+    test('RW loss clears scope and redirects protected Add route', async () => {
+        await mountMember();
+        const scope = seed();
+        jest.mocked(services.users.get).mockResolvedValue(member('owner-A', 'athena', 'none', 2));
+        await act(async () => {
+            window.dispatchEvent(new Event('focus'));
+        });
+        expect(scope.isCurrent()).toBe(false);
+        expect(readAddDraft('owner-A')).toBeUndefined();
+        expect(window.location.pathname).toBe('/account/access');
+    });
+    test('endSession after logged-out refresh clears same-owner memory', async () => {
+        await mountMember();
+        const scope = seed();
+        jest.mocked(services.users.get).mockResolvedValue({...member(), loggedIn: false});
+        await act(async () => {
+            window.dispatchEvent(new Event('focus'));
+        });
+        expect(scope.isCurrent()).toBe(false);
+        expect(readAddDraft('owner-A')).toBeUndefined();
+        expect(readNewSubscriptionFocus('owner-A')).toBeUndefined();
+        expect(window.location.pathname).toBe('/login');
+    });
+    test.each(['none', 'read'])('initial %s grant cannot enter Add', async level => {
+        await mountMember(level);
+        expect(window.location.pathname).toBe('/account/access');
+        expect(containsText(tree.toJSON(), 'Wallet address or Polymarket profile URL')).toBe(false);
+    });
+    test('RW Add route renders the actual independent page', async () => {
+        await mountMember();
+        expect(containsText(tree.toJSON(), 'Wallet address or Polymarket profile URL')).toBe(true);
+    });
 });

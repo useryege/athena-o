@@ -2,7 +2,9 @@ import {CheckCircleOutlined, CopyOutlined, DeleteOutlined, DisconnectOutlined, L
 import {Alert, Button, QRCode, Space, Spin, Steps, Tag, Typography} from 'antd';
 import * as React from 'react';
 import {AppPage, Section} from '../../components';
-import {Context} from '../../shared/context';
+import {useLocation, useNavigate} from 'react-router-dom';
+import {readAddDraft, captureTraderSyncScope} from './trader-sync/state';
+import {Context, useAuthorization} from '../../shared/context';
 import {formatBeijingDateTime} from '../../shared/format';
 import {requestErrorMessage} from '../../shared/services/requests';
 import {clearTelegramBindingInstructions, readTelegramBindingInstructions, storeTelegramBindingInstructions} from '../notification-storage';
@@ -60,6 +62,13 @@ const bindingFailureMessage = (reason: string) => {
 
 export const NotificationsPage = () => {
     const ctx = React.useContext(Context);
+    const {user} = useAuthorization();
+    const location = useLocation();
+    const navigate = useNavigate();
+    const scope = React.useMemo(() => captureTraderSyncScope(user.accountId), [user.accountId]);
+    const [, refreshDraft] = React.useReducer(value => value + 1, 0);
+    React.useLayoutEffect(() => scope.subscribeInvalidation!(refreshDraft), [scope]);
+    const canReturn = location.state?.returnTo === '/trader-sync/add' && Boolean(readAddDraft(user.accountId));
     const [settings, setSettings] = React.useState<TelegramNotificationSettings>();
     const [instructions, setInstructions] = React.useState<StoredTelegramInstructions | undefined>(readTelegramBindingInstructions);
     const [loading, setLoading] = React.useState(true);
@@ -296,7 +305,8 @@ export const NotificationsPage = () => {
         confirmRef.current?.destroy();
         const handle = ctx.modal.confirm({
             title: 'Disconnect Telegram?',
-            content: 'Athena will stop sending account notifications to this Telegram account and cancel any setup in progress.',
+            content:
+                'Athena will stop sending notifications to this Telegram account and cancel setup. Old Trader Sync notifications without send permission are cancelled; a notification already authorized may still arrive. History is not backfilled after reconnecting.',
             okText: 'Disconnect',
             okButtonProps: {danger: true},
             onOk: async () => {
@@ -386,6 +396,16 @@ export const NotificationsPage = () => {
     return (
         <AppPage
             title='Notifications'
+            extra={
+                canReturn ? (
+                    <Button
+                        onClick={() => {
+                            if (readAddDraft(user.accountId)) navigate('/trader-sync/add');
+                        }}>
+                        Return to Trader Sync
+                    </Button>
+                ) : undefined
+            }
             subtitle='Choose where Athena sends account notifications. Telegram is the only channel currently available.'
             loading={loading && !settings}
             error={!settings ? error : undefined}
@@ -406,7 +426,11 @@ export const NotificationsPage = () => {
                                     </span>
                                 </div>
                                 <Typography.Paragraph type='secondary'>
-                                    Receive Athena account notifications in a private chat with {botUsername ? `@${botUsername}` : 'Athena Bot'}.
+                                    Receive Athena notifications in a private chat with {botUsername ? `@${botUsername}` : 'Athena Bot'}.
+                                </Typography.Paragraph>
+                                <Typography.Paragraph type='secondary'>
+                                    Disconnecting or reconnecting cancels old Trader Sync notifications that have not received send permission. A notification already authorized
+                                    may still arrive. History is not backfilled for a new binding.
                                 </Typography.Paragraph>
                                 {binding && (
                                     <dl className='telegram-connection-details'>

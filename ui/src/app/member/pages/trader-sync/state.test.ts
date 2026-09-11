@@ -1,4 +1,4 @@
-import {captureTraderSyncScope, clearTraderSyncState} from './state';
+import {captureTraderSyncScope, clearTraderSyncState, readAddDraft, saveAddDraft, saveNewSubscriptionFocus, readNewSubscriptionFocus} from './state';
 afterEach(clearTraderSyncState);
 test('captures owner and generation; clearing invalidates same-owner relogin and different owners permanently', () => {
     const a = captureTraderSyncScope('owner-A'),
@@ -36,4 +36,24 @@ test('subscription after invalidation is notified immediately and cannot become 
     unsubscribe();
     expect(old.isCurrent()).toBe(false);
     expect(captureTraderSyncScope('A').isCurrent()).toBe(true);
+});
+
+test('draft clearing fences a pending read and clears new subscription focus', () => {
+    const scope = captureTraderSyncScope('owner-a');
+    saveAddDraft({ownerId: 'owner-a', input: '0xabc', note: 'desk', noteEdited: true, returnPath: '/trader-sync', scrollY: 120});
+    saveNewSubscriptionFocus('owner-a', 'subscription-id');
+    expect(readAddDraft('owner-a')?.note).toBe('desk');
+    expect(readNewSubscriptionFocus('owner-a')).toBe('subscription-id');
+    expect(readAddDraft('owner-b')).toBeUndefined();
+    expect(readNewSubscriptionFocus('owner-b')).toBeUndefined();
+    clearTraderSyncState();
+    expect(readAddDraft('owner-a')).toBeUndefined();
+    expect(readNewSubscriptionFocus('owner-a')).toBeUndefined();
+    expect(scope.isCurrent()).toBe(false);
+});
+test('only one owner draft is retained', () => {
+    saveAddDraft({ownerId: 'A', input: 'one', note: '', noteEdited: false, returnPath: '/trader-sync', scrollY: 0});
+    saveAddDraft({ownerId: 'B', input: 'two', note: '', noteEdited: false, returnPath: '/trader-sync', scrollY: 0});
+    expect(readAddDraft('A')).toBeUndefined();
+    expect(readAddDraft('B')?.input).toBe('two');
 });

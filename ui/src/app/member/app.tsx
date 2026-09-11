@@ -45,6 +45,7 @@ import {BrandMark, clearAsyncDataCache, setAsyncDataCacheSession} from '../compo
 import {AccountAvatar, accountTierLabel} from '../shared/account-presentation';
 import {accountThemeLabel, localThemeMode, serverThemeMode} from '../shared/theme';
 import {configureMemberSessionServices, ensureMemberBusinessServices, memberServices as services} from './services';
+import {clearTraderSyncState} from './pages/trader-sync/state';
 import {clearTelegramBindingInstructions} from './notification-storage';
 import {loadAppBootstrapWithRetry, SessionBootstrap} from '../session/bootstrap';
 import {
@@ -52,6 +53,7 @@ import {
     AccountSecurityPage,
     HelpPage,
     NotificationsPage,
+    TraderSyncAddPage,
     MarketRadarHotPage,
     MarketRadarMoversPage,
     MarketRadarRealtimePage,
@@ -432,6 +434,8 @@ const AppRoutes = (props: {
     const pending = isPendingAccess(props.access);
     const moduleRoute = (module: AccountDataModule, element: React.ReactElement) =>
         props.access.moduleAccess[module] >= AccountDataAccess.Read ? element : <Navigate replace={true} to='/account/access' />;
+    const traderSyncRoute = (element: React.ReactElement) =>
+        props.access.moduleAccess[AccountDataModule.TraderSync] >= AccountDataAccess.ReadWrite ? element : <Navigate replace={true} to='/account/access' />;
     const profitSharingRoute = (element: React.ReactElement) => (props.access.user.access.profitSharingEnabled ? element : <Navigate replace={true} to='/account/access' />);
     const accountCenterProps = {
         showMemberSecurity: props.access.user.access.apiKeyEnabled,
@@ -461,6 +465,12 @@ const AppRoutes = (props: {
                 <Route path='/world-cup-corners' element={moduleRoute(AccountDataModule.WorldCupCorners, <WorldCupCornersPage />)} />
                 <Route path='/managed-oo/proposals' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOOProposalsPage />)} />
                 <Route path='/managed-oo/disputes' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOODisputesPage />)} />
+                <Route
+                    path='/trader-sync/add'
+                    element={traderSyncRoute(
+                        <TraderSyncAddPage key={JSON.stringify([props.access.user.accountId, props.access.user.iss])} ownerId={props.access.user.accountId} />
+                    )}
+                />
                 <Route path='/notifications' element={<NotificationsPage />} />
                 <Route path='/account/profile' element={<AccountCenterPage section='profile' {...accountCenterProps} />} />
                 <Route path='/account/appearance' element={<AccountCenterPage section='appearance' {...accountCenterProps} />} />
@@ -505,6 +515,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
     const access = session.status === 'authenticated' ? session.access : null;
 
     const endSession = React.useCallback((status: 'anonymous' | 'maintenance' = 'anonymous') => {
+        clearTraderSyncState();
         accessGenerationRef.current += 1;
         accessRefreshAllowedRef.current = false;
         accessRef.current = null;
@@ -563,6 +574,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                     const priorAccess = previous as AccessState;
                     const identityChanged = priorAccess.user.accountId !== next.user.accountId || priorAccess.user.iss !== next.user.iss || priorAccess.isAdmin !== next.isAdmin;
                     if (identityChanged) {
+                        clearTraderSyncState();
                         requests.invalidatePendingRequestErrors();
                         requests.abortAuthorizationRequests();
                         clearAsyncDataCache();
@@ -1276,6 +1288,9 @@ const AppEntry = () => {
 // Apply the same module lifecycle to every grant, including modules whose pages
 // have not yet been registered. Cache invalidation fences in-flight responses.
 export const revokeLostModuleAccess = (previous: ModuleAccessLevels, next: ModuleAccessLevels) => {
+    if (previous[AccountDataModule.TraderSync] >= AccountDataAccess.ReadWrite && next[AccountDataModule.TraderSync] < AccountDataAccess.ReadWrite) {
+        clearTraderSyncState();
+    }
     accountDataModules.forEach(definition => {
         const prior = previous[definition.module];
         const current = next[definition.module];
