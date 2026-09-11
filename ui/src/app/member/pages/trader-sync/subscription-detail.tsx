@@ -7,7 +7,7 @@ import {useVisibleQuery} from '../../../shared/use-visible-query';
 import {memberServices as services} from '../../services';
 import type {Subscription} from '../../trader-sync-models';
 import {captureTraderSyncScope, readHistorySession} from './state';
-import {SubscriptionControls, SubscriptionIdentity, subscriptionStatusLabel, subscriptionTime} from './subscription-state';
+import {SubscriptionControls, SubscriptionIdentity, subscriptionStatusLabel, subscriptionTime, subscriptionQueueNotice} from './subscription-state';
 import {ObservationHistory} from './observation-history';
 export const TraderSyncSubscriptionPage = ({ownerId}: {ownerId: string}) => {
     const {subscriptionId = ''} = useParams();
@@ -17,14 +17,13 @@ const SubscriptionDetail = ({ownerId, subscriptionId}: {ownerId: string; subscri
     const scope = React.useMemo(() => captureTraderSyncScope(ownerId), [ownerId]);
     const [subscription, setSubscription] = React.useState<Subscription>();
     const latest = React.useRef<Subscription>();
-    const mutationVersion = React.useRef(0);
     const query = useVisibleQuery(
         () => {
-            const version = mutationVersion.current;
+            const basedOn = latest.current;
             const request = services.traderSync.getSubscription(subscriptionId);
             return Object.assign(
                 request.then(
-                    value => (version === mutationVersion.current ? value : latest.current || value),
+                    value => ({value, basedOn}),
                     error => {
                         throw Object.assign(new Error(requestErrorMessage(error)), {code: requestErrorDetails(error).code});
                     }
@@ -35,14 +34,25 @@ const SubscriptionDetail = ({ownerId, subscriptionId}: {ownerId: string; subscri
         {...scope, key: JSON.stringify([scope.key, 'subscription', subscriptionId])},
         5000
     );
-    const update = (value: Subscription) => {
-        if (!scope.isCurrent()) return;
-        mutationVersion.current++;
-        latest.current = value;
-        setSubscription(value);
+    // Every full snapshot enters here. Revisions are independent; at equal lifecycle
+    // revision, only a request based on the current snapshot may replace observation facts.
+    const update = (value: Subscription, basedOn: Subscription | undefined): Subscription => {
+        if (!scope.isCurrent()) return value;
+        const current = latest.current;
+        let next = value;
+        if (current) {
+            const incomingRevision = BigInt(value.revision);
+            const currentRevision = BigInt(current.revision);
+            const lifecycle = incomingRevision > currentRevision || (incomingRevision === currentRevision && basedOn === current) ? value : current;
+            const note = BigInt(value.noteRevision) > BigInt(current.noteRevision) ? value : current;
+            next = {...lifecycle, note: note.note, noteRevision: note.noteRevision};
+        }
+        latest.current = next;
+        setSubscription(next);
+        return next;
     };
     React.useEffect(() => {
-        if (query.data) update(query.data);
+        if (query.data) update(query.data.value, query.data.basedOn);
     }, [query.data]);
     React.useLayoutEffect(() => {
         const unsubscribe = scope.subscribeInvalidation?.(() => {
@@ -103,7 +113,7 @@ const SubscriptionDetail = ({ownerId, subscriptionId}: {ownerId: string; subscri
                     </Section>
                     <ObservationHistory ownerId={ownerId} subscriptionId={subscriptionId} />
                     <Section title='Activities and old notifications'>
-                        <p>{item.queueNotice}</p>
+                        <p>{subscriptionQueueNotice(item.queueNotice)}</p>
                         <p>
                             Queued {item.queueCounts.pending}; sending {item.queueCounts.sending}; sent {item.queueCounts.sent}; failed {item.queueCounts.failed}; unknown{' '}
                             {item.queueCounts.unknown}; cancelled {item.queueCounts.cancelled}

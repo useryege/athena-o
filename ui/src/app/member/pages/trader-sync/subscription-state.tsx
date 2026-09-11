@@ -30,6 +30,7 @@ export const subscriptionStatusLabel = (status: Subscription['status']) =>
         permission_disabled: 'Disabled by access change',
         cancelled: 'Cancelled'
     })[status];
+export const subscriptionQueueNotice = (notice: string) => (notice ? 'Already queued notifications continue and may arrive later.' : undefined);
 export const subscriptionTime = (value?: string) =>
     value && Number.isFinite(Date.parse(value))
         ? `${new Intl.DateTimeFormat('en-GB', {timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false}).format(new Date(value))} UTC+8`
@@ -86,7 +87,7 @@ export const SubscriptionControls = ({
     ownerId: string;
     scope: ReadScope;
     subscription: Subscription;
-    onUpdated: (next: Subscription) => void;
+    onUpdated: (next: Subscription, basedOn: Subscription | undefined) => Subscription;
     editNote?: boolean;
 }) => {
     const navigate = useNavigate();
@@ -129,11 +130,12 @@ export const SubscriptionControls = ({
     }, [scope.key, subscription.id]);
     const current = () => mounted.current && scope.isCurrent();
     const fetchLatest = async () => {
+        const basedOn = subscriptionRef.current;
         const request = services.traderSync.getSubscription(subscription.id);
         requestRef.current = request;
-        const latest = await request;
+        const result = await request;
         if (!current()) return;
-        onUpdated(latest);
+        const latest = onUpdated(result, basedOn);
         update({...editRef.current, needsRefresh: undefined, ...(editRef.current.needsRefresh === 'note' ? {noteRevision: latest.noteRevision, serverNote: latest.note} : {})});
     };
     const refreshLatest = async () => {
@@ -160,6 +162,7 @@ export const SubscriptionControls = ({
         setMessage('');
         update({...editRef.current, intent});
         let dispatched = false;
+        const basedOn = subscriptionRef.current;
         try {
             const request =
                 intent.action === 'note'
@@ -177,13 +180,11 @@ export const SubscriptionControls = ({
                 const note = result as import('../../trader-sync-models').TargetNote;
                 update({});
                 const currentSubscription = subscriptionRef.current;
-                onUpdated(
-                    BigInt(note.revision) >= BigInt(currentSubscription.noteRevision) ? {...currentSubscription, note: note.note, noteRevision: note.revision} : currentSubscription
-                );
+                onUpdated({...currentSubscription, note: note.note, noteRevision: note.revision}, currentSubscription);
                 setMessage('Note saved. Historical activity snapshots are unchanged.');
             } else {
                 update({...editRef.current, intent: undefined});
-                onUpdated(result as Subscription);
+                onUpdated(result as Subscription, basedOn);
                 setMessage('Subscription updated. Already queued notifications may still arrive later.');
             }
             setConfirm(false);

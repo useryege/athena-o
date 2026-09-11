@@ -7,7 +7,7 @@ import {useVisibleQuery} from '../../../shared/use-visible-query';
 import {memberServices as services} from '../../services';
 import type {Subscription, SubscriptionPage} from '../../trader-sync-models';
 import {blankCursorSession, captureTraderSyncScope, readSubscriptionSession, saveSubscriptionSession, SubscriptionListSession} from './state';
-import {SubscriptionIdentity, subscriptionStatusLabel, subscriptionTime} from './subscription-state';
+import {SubscriptionIdentity, subscriptionStatusLabel, subscriptionTime, subscriptionQueueNotice} from './subscription-state';
 export const TraderSyncSubscriptionsPage = ({ownerId}: {ownerId: string}) => <Subscriptions key={ownerId} ownerId={ownerId} />;
 const Subscriptions = ({ownerId}: {ownerId: string}) => {
     const scope = React.useMemo(() => captureTraderSyncScope(ownerId), [ownerId]);
@@ -71,7 +71,7 @@ const Subscriptions = ({ownerId}: {ownerId: string}) => {
                 Queued {item.queueCounts.pending}; sending {item.queueCounts.sending}; sent {item.queueCounts.sent}; failed {item.queueCounts.failed}; unknown{' '}
                 {item.queueCounts.unknown}; cancelled {item.queueCounts.cancelled}
             </p>
-            <p>{item.queueNotice}</p>
+            <p>{subscriptionQueueNotice(item.queueNotice)}</p>
         </>
     );
     const details = (item: Subscription) => <Link to={`/trader-sync/subscriptions/${item.id}`}>View subscription</Link>;

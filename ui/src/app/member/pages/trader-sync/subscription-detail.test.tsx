@@ -240,3 +240,114 @@ test('missing subscription renders an explicit NotFound fact with no history req
     expect(content()).not.toContain('[object Object]');
     expect(services.traderSync.listSubscriptionHistory).not.toHaveBeenCalled();
 });
+
+test.each([
+    ['12', 'cancelled', '11', '19', 'pending_baseline', '20', 'newest note', 'Subscribe again'],
+    ['11', 'healthy', '11', '19', 'pending_baseline', '20', 'newest note', 'Pause'],
+    ['10', 'paused', '11', '19', 'pending_baseline', '20', 'newest note', 'Cancel subscription'],
+    ['12', 'cancelled', '11', '21', 'pending_baseline', '21', 'late newer note', 'Subscribe again']
+])(
+    'a delayed lifecycle snapshot reconciles lifecycle %s/%s and independent note revision',
+    async (pollRevision, pollStatus, resultRevision, resultNoteRevision, resultStatus, expectedNoteRevision, expectedNote, expectedAction) => {
+        jest.useFakeTimers();
+        const initial = {...sub(), revision: '10', noteRevision: '18'};
+        jest.mocked(services.traderSync.getSubscription).mockResolvedValue(initial);
+        let resolve!: (value: Subscription) => void;
+        jest.spyOn(services.traderSync, 'resumeSubscription').mockReturnValue(
+            new Promise(done => {
+                resolve = done;
+            })
+        );
+        const save = jest.spyOn(services.traderSync, 'updateTargetNote').mockResolvedValue({wallet: sub().wallet, note: 'saved', revision: '22'});
+        await mount();
+        await act(async () => button('Resume').props.onClick());
+        jest.mocked(services.traderSync.getSubscription).mockResolvedValue({
+            ...initial,
+            revision: pollRevision,
+            status: pollStatus as Subscription['status'],
+            note: 'newest note',
+            noteRevision: '20',
+            observation: {...initial.observation, reason: 'newer observation'}
+        });
+        await act(async () => jest.advanceTimersByTime(5000));
+        expect(note().props.value).toBe('newest note');
+        await act(async () =>
+            resolve({
+                ...initial,
+                revision: resultRevision,
+                status: resultStatus as Subscription['status'],
+                note: 'late newer note',
+                noteRevision: resultNoteRevision,
+                observation: {...initial.observation, reason: 'older observation'}
+            })
+        );
+        expect(button(expectedAction)).toBeDefined();
+        expect(note().props.value).toBe(expectedNote);
+        if (BigInt(pollRevision) >= BigInt(resultRevision)) {
+            expect(content()).toContain('newer observation');
+            expect(content()).not.toContain('older observation');
+        }
+        await act(async () => note().props.onChange({target: {value: 'saved'}}));
+        await act(async () => button('Save note').props.onClick());
+        expect(save.mock.calls[0][1].expectedRevision).toBe(expectedNoteRevision);
+    }
+);
+test('successive polls still update monitoring observations at the same lifecycle revision', async () => {
+    jest.useFakeTimers();
+    jest.mocked(services.traderSync.getSubscription).mockResolvedValue({...sub(), status: 'healthy'});
+    await mount();
+    jest.mocked(services.traderSync.getSubscription).mockResolvedValue({
+        ...sub(),
+        status: 'interrupted',
+        observation: {...sub().observation, state: 'interrupted', reason: 'connection lost'}
+    });
+    await act(async () => jest.advanceTimersByTime(5000));
+    expect(content()).toContain('connection lost');
+    jest.mocked(services.traderSync.getSubscription).mockResolvedValue({
+        ...sub(),
+        status: 'healthy',
+        observation: {...sub().observation, state: 'healthy', reason: 'new baseline effective'}
+    });
+    await act(async () => jest.advanceTimersByTime(5000));
+    expect(content()).toContain('new baseline effective');
+    expect(content()).not.toContain('connection lost');
+});
+
+test.each(['paused', 'cancelled'] as const)('detail translates the fixed %s queue notice while preserving user Unicode notes', async status => {
+    // Exact system payload from internal/tradersync/store/reads.go; remaining fields use the recorded gateway fixture.
+    const queueNotice = '已排队通知仍会继续发送，可能稍后收到';
+    jest.mocked(services.traderSync.getSubscription).mockResolvedValue({...sub(), status, queueNotice, note: '我的备注'});
+    await mount();
+    expect(content()).not.toContain(queueNotice);
+    expect(content()).toContain('Already queued notifications continue and may arrive later.');
+    expect(note().props.value).toBe('我的备注');
+});
+
+test('an earlier summary read cannot undo a completed note write or replace its observation order', async () => {
+    jest.useFakeTimers();
+    const initial = {...sub(), observation: {...sub().observation, reason: 'known observation'}};
+    jest.mocked(services.traderSync.getSubscription).mockResolvedValue(initial);
+    await mount();
+    let resolve!: (value: Subscription) => void;
+    jest.mocked(services.traderSync.getSubscription).mockReturnValueOnce(
+        new Promise(done => {
+            resolve = done;
+        })
+    );
+    await act(async () => jest.advanceTimersByTime(5000));
+    jest.spyOn(services.traderSync, 'updateTargetNote').mockResolvedValue({wallet: sub().wallet, note: 'saved note', revision: '18'});
+    await act(async () => note().props.onChange({target: {value: 'saved note'}}));
+    await act(async () => button('Save note').props.onClick());
+    await act(async () => resolve({...initial, observation: {...initial.observation, reason: 'superseded read'}}));
+    expect(note().props.value).toBe('saved note');
+    expect(content()).toContain('known observation');
+    expect(content()).not.toContain('superseded read');
+    jest.mocked(services.traderSync.getSubscription).mockResolvedValue({
+        ...initial,
+        note: 'saved note',
+        noteRevision: '18',
+        observation: {...initial.observation, reason: 'next fresh observation'}
+    });
+    await act(async () => jest.advanceTimersByTime(5000));
+    expect(content()).toContain('next fresh observation');
+});

@@ -93,3 +93,25 @@ test('failed background list refresh retains exact page facts with gateway reaso
     expect(text).not.toContain('resource-table-compact__loading');
     jest.useRealTimers();
 });
+
+test.each(['paused', 'cancelled'] as const)('list translates the fixed %s queue notice without stripping user notes', async status => {
+    // Exact system payload from internal/tradersync/store/reads.go; remaining fields use the recorded gateway fixture.
+    const queueNotice = '已排队通知仍会继续发送，可能稍后收到';
+    jest.spyOn(services.traderSync, 'listSubscriptions').mockResolvedValue({
+        subscriptions: [{...sub, status, queueNotice, note: '我的备注'}],
+        page: {},
+        quota: {used: 1, limit: 10},
+        asOf: sub.updatedAt
+    });
+    await act(async () => {
+        tree = renderer.create(
+            <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}}>
+                <TraderSyncSubscriptionsPage ownerId='A' />
+            </MemoryRouter>
+        );
+    });
+    const text = JSON.stringify(tree.toJSON());
+    expect(text).not.toContain(queueNotice);
+    expect(text).toContain('Already queued notifications continue and may arrive later.');
+    expect(text).toContain('我的备注');
+});
