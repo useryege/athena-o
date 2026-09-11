@@ -10,7 +10,7 @@
 
 **Spec:** [已整体确认的后端 spec](../specs/2026-09-10-trader-sync-activity-alerts-design.md)、[已整体确认的 UI spec](../specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)、[长期后端设计](../../design/trading/trader-sync-activity-alerts.md)、[长期 UI 设计](../../design/web-ui/trader-sync-activity-alerts.md)、[业务需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)。两份 spec 已获用户整体确认，UI 读取补充已纳入本计划；执行者同时阅读，不按旧后端范围遗漏页面。
 
-**状态：**用户已确认后端与 UI 整份设计，并授权按子代理逐项实施。执行工作区为 `.worktrees/trader-sync-activity-alerts/`，分支为 `codex/trader-sync-activity-alerts`；任务完成情况以下方复选项和实际验证为准。代码块是实现指导与测试起点，未勾选步骤不代表已经交付。
+**状态：**21项计划的本地实现、运行文档、必要本地验收与最终审查已完成；完成通知已发送一次。执行工作树为 `.worktrees/trader-sync-activity-alerts/`，分支为 `codex/trader-sync-activity-alerts`。真实持续100活跃容量、公开时刻SLO和其他实网证据边界仍按验收记录保留未证明，不代表生产达标。
 
 ## Global Constraints
 
@@ -1277,8 +1277,8 @@ test('desktop and mobile keep the document within the viewport', async ({page}) 
 - 消费：任务1–20实现、生成记录和验收证据。
 - 产出：可复现运行/恢复说明与真实完成状态；不新增公共接口。
 
-- [ ] **步骤1：更新当前实现说明和运行命令。**去掉Notification独立DSN/数据库归属；说明同库两个pool、单实例启动/停止顺序、确认旧sender已停止后恢复、Chainstack/dRPC手动切换、新实时边界和未补遗漏。清理旧1.1秒全局串行发送、旧三态/泛化自动重试描述，给出unknown、永久资格失效、摘要首条缺失和资料unavailable的排查入口。同步六类会员页、管理员概要/Service Status、Notifications草稿往返、UTC+8、游标与可见刷新、失权清理的实际文件/入口。保留Telegram绑定权限与系统通知原有功能。
-- [ ] **步骤2：完成受影响链的最终回归。**复用各任务已完成且源码未再变化的生成记录，不无条件重跑生成器。当前HEAD执行以下相关套件；若某项在最后改动后已执行且证据完整可引用，不重复为计数运行。
+- [x] **步骤1：更新当前实现说明和运行命令。**去掉Notification独立DSN/数据库归属；说明同库两个pool、单实例启动/停止顺序、确认旧sender已停止后恢复、Chainstack/dRPC手动切换、新实时边界和未补遗漏。清理旧1.1秒全局串行发送、旧三态/泛化自动重试描述，给出unknown、永久资格失效、摘要首条缺失和资料unavailable的排查入口。同步六类会员页、管理员概要/Service Status、Notifications草稿往返、UTC+8、游标与可见刷新、失权清理的实际文件/入口。保留Telegram绑定权限与系统通知原有功能。
+- [x] **步骤2：完成受影响链的最终回归。**复用各任务已完成且源码未再变化的生成记录，不无条件重跑生成器。当前HEAD执行以下相关套件；若某项在最后改动后已执行且证据完整可引用，不重复为计数运行。
 
 ```bash
 go test ./internal/accountaccess ./internal/accountstate/... ./internal/migration ./internal/notification/... ./internal/tradersync/... ./internal/server/... ./util/telegram ./util/polymarket
@@ -1294,9 +1294,9 @@ git diff --check
 
 不要盲跑`go test ./...`：仓库存在真实网络/交易相关e2e，超出此功能验证范围。新增测试不能默认连接真实Bot或交易端点。遇到失败按systematic-debugging定位，不能用Skip、放宽断言或改业务SLO消除失败。
 
-- [ ] **步骤3：按Superpowers进行实现代码审阅并修复实际问题。**与批准spec和任务覆盖表核对；检查权限绕过、锁序、未知结果重发、摘要成员丢失、metadata阻塞成交和生成消费者错配。修复之后只重跑受影响验证；报告遗留的真实环境/性能证据缺口，未执行的必要验收不能写成通过或把整份计划标完成。
-- [ ] **步骤4：提交最终文档和验证修正，给出分支/提交与验收证据。**局部提交不默认授权推送、合并或部署；按finishing-a-development-branch进行交付。完整实施与必要验收尚未完成时停在真实状态，不发完成邮件。
-- [ ] **步骤5：仅在用户确认的整份计划已完整实施且必需验证完成后，从仓库根执行一次完成通知。**这是执行阶段的仓库规则，本轮只写计划不运行。
+- [x] **步骤3：按Superpowers进行实现代码审阅并修复实际问题。**与批准spec和任务覆盖表核对；检查权限绕过、锁序、未知结果重发、摘要成员丢失、metadata阻塞成交和生成消费者错配。修复之后只重跑受影响验证；报告遗留的真实环境/性能证据缺口，未执行的必要验收不能写成通过或把整份计划标完成。
+- [x] **步骤4：提交最终文档和验证修正，给出分支/提交与验收证据。**局部提交不默认授权推送、合并或部署；按finishing-a-development-branch进行交付。完整实施与必要验收尚未完成时停在真实状态，不发完成邮件。
+- [x] **步骤5：仅在用户确认的整份计划已完整实施且必需验证完成后，从仓库根执行一次完成通知。**由控制器在实现、必要验证与最终审查全部完成后执行并记录实际结果。
 
 ```bash
 make notify-task-complete \
@@ -1305,6 +1305,8 @@ make notify-task-complete \
 ```
 
 等待命令完成；内置重试后仍失败则报告安全的错误概要，不声称邮件已发送。主题/正文按实际已完成范围修正，不能掩盖缺失验收。
+
+本项代码、长期文档、相关回归、限定任务审查和唯一全分支审查已完成；最终统一修复提交为 `83f54c57`，限定复审确认 I1/I2/M1/M2 全部解决且没有新 Critical/Important/Minor。M3–M8 为非阻塞的测试完善与既有告警，明细及实网未证明边界见验收记录。完成通知已按默认 `.env` 执行一次，SMTP在第1次尝试接受，命令exit0；本地分支和工作树保留。
 
 ## 规格覆盖与计划自检
 

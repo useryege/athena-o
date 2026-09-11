@@ -166,3 +166,17 @@ Retry-After 的本地单调等待期满后，只有数据库确认 `retry_after_
 Task13 单次真实 Telegram 发送探针源码已从原 SDD 路径原样持久复制为 [`evidence/trader-sync-telegram-send.go.txt`](evidence/trader-sync-telegram-send.go.txt)，两份均为 3609 bytes，SHA-256 `d838bb0981a837ab508b6fbc212bdd6a4b12cacb4a721de2e6cb8e191875ce25`。原 JSON 新增 `sourceArchive` 路径映射；原 `sourceSHA256`、`rawSHA256` 与请求正文哈希均未修改，也没有重新执行探针。
 
 外部边界仍按原审查保留：真实 100 个持续活跃目标、公开时刻 P95/P99、长期 provider/进程稳定、Profile 六区间公开金额一致性、缺失的 Combo SELL maker 实录与设备送达均未由本地修复转为通过。Task21 步骤3/5与整计划完成状态由控制器在限定复审后裁定，本段不提前标完成或发送完成通知。
+
+## 最终本地交付与审查结论
+
+2026-09-11，最终业务修复提交 `83f54c57461c43a1d2e4af06dada36d271b3f30f`。唯一全分支审查范围为 `1e8d1698..4ac5ad1b`；发现的 Combo 未知腿数、当前 attempt 因果读取，以及建议同次处理的 Retry-After 迟落库解除、页一 Latest 刷新，均在一次统一修复中解决。限定复审逐项确认 I1/I2/M1/M2 为 ADDRESSED，修复差异没有新增 Critical、Important 或 Minor；批准范围内的本地实现和必需验证已完成。
+
+本次重新执行相关 Go 单元、真实 PostgreSQL 集成、无 integration tag 的 race、订阅页与可见读取 hook 的27项测试、lint/build，均通过。Task21此前29 suites/346项UI测试与Task20根路径和`/athena`浏览器矩阵保留原运行基点；本次没有重新运行完整Jest或Playwright，不把旧浏览器结果改称修复后新运行。未受影响链路沿用已有验证与生成证据；本次SQL源批次只执行一次sqlc生成。
+
+最终审查M3–M8作为非阻塞事项保留：跨进程迁移测试失败路径的完整子进程回收、Bot拒绝断言精度、缺HTTP started的显示断言、同步load抛错专用覆盖、既有/预期日志分类及821.27kB构建chunk告警。它们不等于已修复，也不通过静音输出或提高阈值消除。
+
+本地交付不构成真实100持续活跃容量、公开时刻P95/P99、完整实网来源到Telegram链路、长期稳定、Profile六区间官网金额、缺失Combo SELL maker实录或设备送达的达标声明；上述“真实来源与未完成的实网证明”边界继续有效。
+
+本地完整执行记录的固定保留位置为 `.superpowers/trader-sync-acceptance/sdd-final/`：包含全分支审查、限定修复复审、完整裁定、原始账本、逐文件SHA索引和SDD压缩包。Task20浏览器与Task21原始回归目录继续保留。历史错误相对链接由归档映射解释，原始报告不改写；这属于当前工作树的本地证据保存。
+
+完成通知：2026-09-11 从本工作树根目录使用主检出默认 `.env` 配置执行一次 `make notify-task-complete`，SMTP在第1次尝试接受，命令exit0（终态UTC `2026-09-11T13:06:11.807222+00:00`）。正文明确保留实网SLO和100持续活跃容量未证明边界；结果原件保存于最终执行归档。专用测试PostgreSQL容器已按固定ID核验并停止，本地工作树及验收证据保留。
