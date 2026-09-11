@@ -220,11 +220,6 @@ for (const [route, title, scenario] of [
                     expect.soft(colors.filter(x => !x.exempt && !x.outOfScope && x.ratio < x.required)).toEqual([]);
                 }
                 expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-                if (width === 1440) {
-                    const colors = await contrastRows(page);
-                    fs.writeFileSync(info.outputPath(`contrast-${theme}.json`), JSON.stringify(colors, null, 2));
-                    expect.soft(colors.filter(x => !x.exempt && !x.outOfScope && x.ratio < x.required)).toEqual([]);
-                }
                 results.push({
                     width,
                     theme,

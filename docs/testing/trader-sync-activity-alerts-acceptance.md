@@ -113,7 +113,7 @@ Projector 累计指标为 kind=epoch，serviceEpoch 是本对象稳定 UUID；�
 
 fixture33项中包含循环矩阵，不能把每张截图计作独立测试。Home、Add、Subscriptions、Subscription、Activity、Summary、管理员列表/详情/Service Status 均实际检查1440/1280/900/390宽度、两主题及文档无横向溢出。主题用实际 `html[data-theme]`、color-scheme和shell背景确认。触屏Combo、Tab弹窗循环、Escape焦点返回、原始数字复制、20 emoji备注、选择文字后实际五秒轮询保持选区、长50行→1行尾页→Previous的实际scrollY，以及摘要两套分页/返回来源均有浏览器断言。视觉抽查覆盖会员Activity既有截图和修后390深色Add、390浅色管理员列表；这不是每张截图的人工逐像素审查。
 
-live通过三个独立cookie上下文实际完成同钱包A/B独立订阅和备注、Resolve/Create、来源形成activity、暂停/恢复、编辑备注/确认取消、绑定Bot update与草稿往返、撤权清正文/开放弹窗/旧读屏障、重新授权不自动恢复、空页及51条历史页的新活动提示。跨owner资源ID/batch为404；签名游标在错误owner上下文为400，正文固定 `invalid cursor or cursor context`；同owner同上下文尾页正常读取。管理员不能调用会员读取接口，也没有备注和活动正文入口。
+live通过三个独立cookie上下文实际完成同钱包A/B独立订阅和备注、Resolve/Create、来源形成activity、暂停/恢复、编辑备注/确认取消、绑定Bot update与草稿往返、撤权清正文/开放弹窗/旧读屏障、重新授权不自动恢复、空页及51条历史页的新活动提示。跨owner资源ID/batch为404；签名游标在错误owner上下文为400，正文固定 `invalid cursor or cursor context`；同owner同上下文尾页正常读取。管理员不能调用会员读取接口，也没有备注和活动正文入口。 旧读屏障的实际浏览器证据是撤权清屏并记录`net::ERR_ABORTED`，释放服务端已形成的响应后页面仍为空；不能称成功晚响应已进入客户端再被丢弃。不可取消晚回调的失效检查由前序组件级测试提供另层证据。
 
 创建响应故障发生在真实服务已提交之后：HTTP200正文只发送`{`，保留原Content-Length后断开。最终浏览器记录首次200头、`ERR_CONTENT_LENGTH_MISMATCH`、手动恢复的第二次200；同requestId重取原数据库ID，订阅数不增加。服务端确认token过期由隔离数据库控制过期；绑定离开期间草稿到期由浏览器Date固定到原服务端expiresAt之后验证，均不声称物理等待五分钟。Notification启动恢复屏障按实际runtime达到running后继续，未压缩其60秒安全时间。
 
@@ -134,3 +134,11 @@ go test -v -tags=integration,uiharness ./internal/tradersync/acceptance -run '^T
 读取该目录`harness.json`，显式设置其中BaseURL为`ATHENA_UI_E2E_BASE_URL`、manifest绝对路径为`ATHENA_UI_E2E_MANIFEST`、PathPrefix为`ATHENA_UI_E2E_PATH_PREFIX`，分别执行`yarn --cwd ui test:e2e --project=ui-fixtures --output=<本轮独立绝对目录>`和`--project=live`。live十项顺序组成一次新库场景；重跑整套应新建harness。禁止运行期间重build资产；两份输入HTML必须与Go embed逐字相同。结束写入目录下`stop`并等待go test退出。没有显式目标时Playwright立即失败；普通integration构建不包含交互式TestUIHarness。
 
 已验收产品build6.88秒、相关169项UI测试、产品/e2e TypeScript、adapter资产/base/meta测试均通过；未重复Task13完整容量或Task21全套race。11份本任务manifest对应随机库均已消失、HTTP/control端点均关闭，记录的10个UI_READY PID均不再存在；专用PG容器归整计划控制器处理。原始失败、每轮run/input SHA、截图/trace、清理核对位于上述scratch目录，详细索引见Task20报告。早期历史命令元数据与输入SHA覆盖不完整，未回填冒充事前记录；最终静态资产和提交文件另有完整hash清单。全部服务停止后，用补全未跟踪CSS输入的清单再build一次（4.20秒），219个dist资产路径/原字节SHA与浏览器已验收产物完全一致；见task20-dist-equivalence.json，历史输入清单未回填。
+
+### Task20 fix1：备注持久值与单次颜色证据
+
+独立审查发现原备注断言只检查输入框草稿，不能证明保存；现于A/B创建后分别真实GET核不同备注，B编辑等待PATCH200及返回新值，再独立GET核B新值/A原值，并比较A的1条和B的15条既有活动`id + noteSnapshot`保持原值，页面reload再次确认B新备注。两个前缀原API证据分别位于`task20-fix1-{root,athena}-live/playwright/`下`initial-owner-notes.json`和`note-write-owner-isolation.json`，不以管理员“不包含备注”代替保存验证。
+
+删除full-page矩阵中重复覆盖同名contrast JSON的第二块后，两个前缀各5个受影响页面通过四宽度×两主题，分别10份颜色文件、范围内失败0。真实链因共享前序seed各运行完整10项并通过；e2e TypeScript通过。原33项完整fixture和未改产品/单元结果仍保留，本轮未重跑无关矩阵或build，219个静态资产事前SHA一致。精确命令、预先306输入SHA、起止/exit与清理在`task20-fix1-run-index.json`、`task20-fix1-cleanup.json`，新建的两个随机库/四个监听/PID均已退出清理。
+
+告警单列：原Playwright颜色环境冲突仍在历史日志；本轮显式移除NO_COLOR后未再出现。原build的大chunk警告未通过本轮拆包处理，格式化仍提示既有jsxBracketSameLine deprecated；两份新launcher的60秒recovery warning是预期安全屏障，按runtime达到running验证，未缩短或忽略。撤权旧读的浏览器证据为ERR_ABORTED，成功不可取消晚回调的拒绝属于前序组件测试层，不能混称同一次浏览器观测。

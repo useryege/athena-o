@@ -76,6 +76,18 @@ test('real add, independent same-wallet notes, source activity, lifecycle and ow
             await expect(page.getByRole('heading', {name: 'Trader Sync', exact: true, level: 1})).toBeVisible();
         }
         expect(ids[0]).not.toBe(ids[1]);
+        const initialNotes = [];
+        for (const [context, id, note] of [
+            [a, ids[0], '😀'.repeat(20)],
+            [b, ids[1], 'member B private']
+        ] as const) {
+            const response = await context.request.get(path('/api/v1/trader-sync/subscriptions/' + id), {headers: {'X-Athena-Application-Realm': 'member'}});
+            expect(response.status()).toBe(200);
+            const body = await response.json();
+            expect(body.subscription.note).toBe(note);
+            initialNotes.push({status: response.status(), body});
+        }
+        await persist(info, 'initial-owner-notes.json', {body: JSON.stringify(initialNotes, null, 2), contentType: 'application/json'});
         const page = a.pages()[0];
         await page.goto(path('/trader-sync/subscriptions/' + ids[0]));
         await expect(page.getByText('Monitoring', {exact: true}).first()).toBeVisible({timeout: 20000});
@@ -263,14 +275,56 @@ test('loopback Telegram produces failed, unknown, ordinary and summary results t
 });
 test('real note edit, keyboard cancellation and safe administrator summaries', async ({browser, request}, info) => {
     const context = await realContext(browser, {storageState: manifest.MemberBState});
+    const a = await realContext(browser, {storageState: manifest.MemberAState});
     const admin = await realContext(browser, {storageState: manifest.AdminState});
     try {
         const rows = await (await request.get(manifest.ControlURL + '/sql')).json();
         const subscription = rows.find((x: any) => x.accountId === manifest.Owners[1]);
+        const otherSubscription = rows.find((x: any) => x.accountId === manifest.Owners[0] && x.wallet === subscription.wallet);
+        expect(otherSubscription).toBeTruthy();
+        const memberHeaders = {'X-Athena-Application-Realm': 'member'};
+        const readOwner = async (ownerContext: typeof context, id: string) => {
+            const subscriptionResponse = await ownerContext.request.get(path('/api/v1/trader-sync/subscriptions/' + id), {headers: memberHeaders});
+            const activitiesResponse = await ownerContext.request.get(path('/api/v1/trader-sync/activities'), {headers: memberHeaders, params: {subscription_id: id}});
+            expect(subscriptionResponse.status()).toBe(200);
+            expect(activitiesResponse.status()).toBe(200);
+            return {subscription: (await subscriptionResponse.json()).subscription, activities: (await activitiesResponse.json()).activities};
+        };
+        const before = {a: await readOwner(a, otherSubscription.id), b: await readOwner(context, subscription.id)};
+        expect(before.a.subscription.note).toBe('😀'.repeat(20));
+        expect(before.b.subscription.note).toBe('member B private');
+        for (const [owner, expectedNote] of [
+            [before.a, '😀'.repeat(20)],
+            [before.b, 'member B private']
+        ] as const) {
+            expect(owner.activities.length).toBeGreaterThan(0);
+            expect(owner.activities.every((activity: any) => activity.noteSnapshot === expectedNote)).toBe(true);
+        }
         const page = await context.newPage();
         await page.goto(path('/trader-sync/subscriptions/' + subscription.id));
         await page.getByLabel('Private wallet note').fill('updated B note');
+        const saved = page.waitForResponse(
+            response =>
+                response.request().method() === 'PATCH' &&
+                new URL(response.url()).pathname.startsWith(path('/api/v1/trader-sync/targets/')) &&
+                new URL(response.url()).pathname.endsWith('/note')
+        );
         await page.getByRole('button', {name: 'Save note', exact: true}).click();
+        const savedResponse = await saved;
+        expect(savedResponse.status()).toBe(200);
+        const savedBody = await savedResponse.json();
+        expect(savedBody.note.note).toBe('updated B note');
+        const after = {a: await readOwner(a, otherSubscription.id), b: await readOwner(context, subscription.id)};
+        expect(after.b.subscription.note).toBe('updated B note');
+        expect(after.a.subscription.note).toBe(before.a.subscription.note);
+        const snapshots = (owner: typeof before.a) => owner.activities.map((activity: any) => ({id: activity.id, noteSnapshot: activity.noteSnapshot}));
+        expect(snapshots(after.a)).toEqual(snapshots(before.a));
+        expect(snapshots(after.b)).toEqual(snapshots(before.b));
+        await persist(info, 'note-write-owner-isolation.json', {
+            body: JSON.stringify({before, patch: {status: savedResponse.status(), body: savedBody}, after}, null, 2),
+            contentType: 'application/json'
+        });
+        await page.reload();
         await expect(page.getByLabel('Private wallet note')).toHaveValue('updated B note');
         const trigger = page.getByRole('button', {name: 'Cancel subscription', exact: true});
         await trigger.focus();
@@ -303,6 +357,7 @@ test('real note edit, keyboard cancellation and safe administrator summaries', a
         await ap.screenshot({path: info.outputPath('real-admin-summary.png'), fullPage: true});
     } finally {
         await context.close();
+        await a.close();
         await admin.close();
     }
 });
