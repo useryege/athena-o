@@ -23,6 +23,7 @@ import (
 	sportshistoryapiclient "github.com/useryege/athena/internal/sportshistory/apiclient"
 	sportsliveapiclient "github.com/useryege/athena/internal/sportslive/apiclient"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
+	"github.com/useryege/athena/internal/tradersync"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	wormtradingapiclient "github.com/useryege/athena/internal/wormtrading/apiclient"
@@ -182,7 +183,13 @@ func NewCommand() *cobra.Command {
 			}
 			defer utilio.Close(tokenAPIClientset)
 
+			traderSyncConfig, err := tradersync.LoadConfigFromEnv()
+			if err != nil {
+				return err
+			}
+			traderSyncConfig.OnError = func(err error) { log.WithError(err).Warn("Trader Sync background processing") }
 			athenaOpts := server.AthenaServerOpts{
+				TraderSyncConfig:                  traderSyncConfig,
 				ContentTypes:                      contentTypesList,
 				ListenPort:                        listenPort,
 				ListenHost:                        listenHost,
@@ -219,7 +226,10 @@ func NewCommand() *cobra.Command {
 			stats.RegisterHeapDumper("memprofile")
 
 			// Initialize the Athena server
-			athena := server.NewServer(ctx, athenaOpts)
+			athena, err := server.NewServer(ctx, athenaOpts)
+			if err != nil {
+				return err
+			}
 			defer utilio.Close(athena)
 			athena.Init(ctx)
 
@@ -227,18 +237,26 @@ func NewCommand() *cobra.Command {
 				var closer func()
 				serverCtx, cancel := context.WithCancel(ctx)
 				lns, err := athena.Listen()
-				errors.CheckError(err)
+				if err != nil {
+					cancel()
+					return err
+				}
 				if otlpAddress != "" {
 					closer, err = traceutil.InitTracer(serverCtx, "athena-server", otlpAddress, otlpInsecure, otlpHeaders, otlpAttrs)
 					if err != nil {
-						log.Fatalf("failed to initialize tracing: %v", err)
+						cancel()
+						_ = lns.Close()
+						return fmt.Errorf("failed to initialize tracing: %w", err)
 					}
 				}
-				athena.Run(serverCtx, lns)
+				runErr := athena.Run(serverCtx, lns)
 				if closer != nil {
 					closer()
 				}
 				cancel()
+				if runErr != nil {
+					return runErr
+				}
 				if athena.TerminateRequested() {
 					break
 				}

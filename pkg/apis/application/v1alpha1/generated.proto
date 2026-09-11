@@ -1212,6 +1212,504 @@ message TokenWalletTransactionCount {
   optional int64 transactionCount = 2;
 }
 
+message TraderSyncActivity {
+  optional string id = 1;
+
+  optional string subscription_id = 2;
+
+  optional string source_record_id = 3;
+
+  optional string wallet = 4;
+
+  optional string side = 5;
+
+  optional string position_id = 6;
+
+  optional string collateral_raw = 7;
+
+  optional string shares_raw = 8;
+
+  optional string fee_raw = 9;
+
+  optional string collateral_symbol = 10;
+
+  optional int32 collateral_decimals = 11;
+
+  optional int32 shares_decimals = 12;
+
+  optional string price_numerator = 13;
+
+  optional string price_denominator = 14;
+
+  optional TraderSyncFieldEvidence price_evidence = 15;
+
+  optional string source_version = 16;
+
+  optional string settled_at = 17;
+
+  optional string received_at = 18;
+
+  optional string recorded_at = 19;
+
+  optional TraderSyncFieldEvidence public_time_evidence = 20;
+
+  optional TraderSyncTradeMetadata metadata = 21;
+
+  optional string note_snapshot = 22;
+
+  optional string notification_mode = 23;
+
+  optional string notification_reason = 24;
+
+  optional TraderSyncDelivery delivery = 25;
+
+  optional TraderSyncSummaryProgress summary_progress = 26;
+
+  optional TraderSyncTargetDisplay target_display_snapshot = 27;
+
+  optional TraderSyncFinalityAnomaly finality_anomaly = 28;
+
+  optional TraderSyncSourceLocation source_location = 29;
+}
+
+message TraderSyncAttempt {
+  optional string index = 1;
+
+  optional string authorized_at = 2;
+
+  optional string started_at = 3;
+
+  optional string result_at = 4;
+
+  optional string status = 5;
+
+  optional string reason = 6;
+}
+
+message TraderSyncBoolField {
+  optional TraderSyncFieldEvidence evidence = 1;
+
+  optional bool value = 2;
+}
+
+message TraderSyncComboLeg {
+  optional string position_id = 1;
+
+  optional TraderSyncMarketRef market = 2;
+}
+
+message TraderSyncCurve {
+  optional TraderSyncFieldEvidence evidence = 1;
+
+  repeated TraderSyncCurvePoint points = 2;
+}
+
+message TraderSyncCurvePoint {
+  optional string t = 1;
+
+  optional string p = 2;
+}
+
+message TraderSyncDecimalField {
+  optional TraderSyncFieldEvidence evidence = 1;
+
+  optional string value = 2;
+}
+
+message TraderSyncDelivery {
+  optional string id = 1;
+
+  optional string status = 2;
+
+  optional string reason = 3;
+
+  optional string authorized_at = 4;
+
+  optional string started_at = 5;
+
+  optional string result_at = 6;
+
+  optional string message_id = 7;
+
+  optional string attempt_count = 8;
+
+  optional TraderSyncAttempt latest_attempt = 9;
+}
+
+message TraderSyncExistingSubscription {
+  optional string id = 1;
+
+  optional string status = 2;
+
+  optional uint64 revision = 3;
+}
+
+message TraderSyncFieldEvidence {
+  optional string availability = 1;
+
+  optional string reason_code = 2;
+
+  optional string source = 3;
+
+  optional string queried_at = 4;
+}
+
+message TraderSyncFinalityAnomaly {
+  optional string reason = 1;
+
+  optional string detected_at = 2;
+
+  optional string published_block_hash = 3;
+
+  optional string conflicting_block_hash = 4;
+}
+
+message TraderSyncHistoryEntry {
+  optional string id = 1;
+
+  optional string kind = 2;
+
+  optional string sort_at = 3;
+
+  optional TraderSyncInterval interval = 4;
+
+  optional TraderSyncInterruption interruption = 5;
+}
+
+message TraderSyncInterruption {
+  optional string start = 1;
+
+  optional string end = 2;
+
+  optional string recovered_at = 3;
+
+  optional string reason = 4;
+
+  optional string uncertainty = 5;
+
+  optional bool possible_missing = 6;
+}
+
+message TraderSyncInterval {
+  optional string effective_at = 1;
+
+  optional string ended_at = 2;
+
+  optional uint64 generation = 3;
+
+  optional uint64 epoch = 4;
+}
+
+message TraderSyncMarketRef {
+  optional TraderSyncFieldEvidence evidence = 1;
+
+  optional string id = 2;
+
+  optional string title = 3;
+
+  optional string url = 4;
+
+  optional string condition_id = 5;
+
+  optional string position_id = 6;
+
+  optional string outcome = 7;
+}
+
+message TraderSyncObservation {
+  optional string state = 1;
+
+  optional string reason = 2;
+
+  optional string last_reliable_at = 3;
+
+  optional TraderSyncInterruption latest_interruption = 4;
+
+  optional string interruption_count = 5;
+}
+
+message TraderSyncPnLView {
+  optional string period = 1;
+
+  optional TraderSyncDecimalField amount = 2;
+
+  optional TraderSyncCurve curve = 3;
+
+  optional string interval = 4;
+
+  optional string fidelity = 5;
+
+  optional TraderSyncTimeField reference_time = 6;
+
+  optional TraderSyncStringField timezone = 7;
+}
+
+message TraderSyncQuota {
+  optional int32 used = 1;
+
+  optional int32 limit = 2;
+}
+
+message TraderSyncResolvedTarget {
+  optional string wallet = 1;
+
+  optional string canonical_profile_url = 2;
+
+  optional TraderSyncStringField avatar = 3;
+
+  optional TraderSyncStringField display_name = 4;
+
+  optional TraderSyncBoolField verified = 5;
+
+  optional TraderSyncTimeField joined_at = 6;
+
+  optional TraderSyncDecimalField position_value = 7;
+
+  optional TraderSyncDecimalField largest_win = 8;
+
+  optional TraderSyncDecimalField predictions = 9;
+
+  repeated TraderSyncPnLView pn_l = 10;
+
+  optional string default_period = 11;
+
+  optional string confirmation_token = 12;
+
+  optional string expires_at = 13;
+
+  optional string usage_notice = 14;
+
+  optional TraderSyncTargetNote saved_note = 15;
+
+  optional TraderSyncExistingSubscription existing_subscription = 16;
+
+  optional TraderSyncQuota quota = 17;
+}
+
+message TraderSyncRuntimeMetric {
+  optional string name = 1;
+
+  optional string value = 2;
+
+  optional string unit = 3;
+
+  optional string kind = 4;
+
+  optional string window_start = 5;
+
+  optional string window_end = 6;
+
+  optional string service_epoch = 7;
+}
+
+message TraderSyncRuntimeStatus {
+  optional bool collector_connected = 1;
+
+  optional string collector_epoch = 2;
+
+  optional string filter_revision = 3;
+
+  repeated TraderSyncRuntimeMetric metrics = 4;
+
+  optional string as_of = 5;
+}
+
+message TraderSyncSourceLocation {
+  optional string chain_id = 1;
+
+  optional string exchange_address = 2;
+
+  optional string transaction_hash = 3;
+
+  optional string block_hash = 4;
+
+  optional string block_number = 5;
+
+  optional string log_index = 6;
+}
+
+message TraderSyncStatusCounts {
+  optional string total = 1;
+
+  optional string pending = 2;
+
+  optional string sending = 3;
+
+  optional string sent = 4;
+
+  optional string failed = 5;
+
+  optional string unknown = 6;
+
+  optional string cancelled = 7;
+}
+
+message TraderSyncStringField {
+  optional TraderSyncFieldEvidence evidence = 1;
+
+  optional string value = 2;
+}
+
+message TraderSyncSubscription {
+  optional string id = 1;
+
+  optional string wallet = 2;
+
+  optional string status = 3;
+
+  optional uint64 revision = 4;
+
+  optional uint64 generation = 5;
+
+  optional string note = 6;
+
+  optional uint64 note_revision = 7;
+
+  optional string created_at = 8;
+
+  optional string updated_at = 9;
+
+  optional string paused_at = 10;
+
+  optional string cancelled_at = 11;
+
+  optional string permission_disabled_at = 12;
+
+  optional TraderSyncInterval current_interval = 13;
+
+  optional TraderSyncObservation observation = 14;
+
+  optional string binding_status = 15;
+
+  optional string queue_notice = 16;
+
+  optional TraderSyncStatusCounts queue_counts = 17;
+
+  optional TraderSyncTargetDisplay target_display = 18;
+}
+
+message TraderSyncSubscriptionSummary {
+  optional string subscription_id = 1;
+
+  optional string account_id = 2;
+
+  optional string username = 3;
+
+  optional string email = 4;
+
+  optional string wallet = 5;
+
+  optional string status = 6;
+
+  optional string created_at = 7;
+
+  optional string updated_at = 8;
+
+  optional string paused_at = 9;
+
+  optional string cancelled_at = 10;
+
+  optional string permission_disabled_at = 11;
+
+  optional TraderSyncObservation observation = 12;
+
+  optional string activity_count = 13;
+
+  optional TraderSyncStatusCounts associated_delivery_counts = 14;
+
+  optional string as_of = 15;
+}
+
+message TraderSyncSummaryBatch {
+  optional string id = 1;
+
+  optional string oldest_at = 2;
+
+  optional string settled_from = 3;
+
+  optional string settled_to = 4;
+
+  optional string recorded_from = 5;
+
+  optional string recorded_to = 6;
+
+  optional string first_started_at = 7;
+
+  optional string activity_count = 8;
+
+  repeated TraderSyncTargetCount target_counts = 9;
+
+  optional TraderSyncStatusCounts part_counts = 10;
+
+  optional string as_of = 11;
+}
+
+message TraderSyncSummaryPart {
+  optional string id = 1;
+
+  optional int32 index = 2;
+
+  optional int32 total = 3;
+
+  optional TraderSyncDelivery delivery = 4;
+
+  optional string associated_activity_count = 5;
+}
+
+message TraderSyncSummaryProgress {
+  optional string phase = 1;
+
+  optional string reason = 2;
+
+  optional string batch_id = 3;
+
+  optional TraderSyncStatusCounts related_part_counts = 4;
+
+  optional TraderSyncStatusCounts batch_part_counts = 5;
+
+  optional string oldest_at = 6;
+
+  optional string first_started_at = 7;
+}
+
+message TraderSyncTargetCount {
+  optional string wallet = 1;
+
+  optional string count = 2;
+}
+
+message TraderSyncTargetDisplay {
+  optional TraderSyncStringField display_name = 1;
+
+  optional TraderSyncStringField avatar = 2;
+
+  optional TraderSyncStringField profile_url = 3;
+}
+
+message TraderSyncTargetNote {
+  optional string wallet = 1;
+
+  optional string note = 2;
+
+  optional uint64 revision = 3;
+}
+
+message TraderSyncTimeField {
+  optional TraderSyncFieldEvidence evidence = 1;
+
+  optional string value = 2;
+}
+
+message TraderSyncTradeMetadata {
+  optional TraderSyncMarketRef market = 1;
+
+  optional TraderSyncFieldEvidence legs_evidence = 2;
+
+  repeated TraderSyncComboLeg legs = 3;
+
+  optional string relationship = 4;
+}
+
 message WalletItem {
   optional int64 id = 1;
 

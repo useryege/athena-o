@@ -59,6 +59,7 @@ import (
 	serversportshistory "github.com/useryege/athena/internal/server/sportshistory"
 	serversportslive "github.com/useryege/athena/internal/server/sportslive"
 	servertokenapi "github.com/useryege/athena/internal/server/tokenapi"
+	servertradersync "github.com/useryege/athena/internal/server/tradersync"
 	"github.com/useryege/athena/internal/server/version"
 	serverwallet "github.com/useryege/athena/internal/server/wallet"
 	"github.com/useryege/athena/internal/server/walletavatarhttp"
@@ -69,6 +70,7 @@ import (
 	sportshistoryapiclient "github.com/useryege/athena/internal/sportshistory/apiclient"
 	sportsliveapiclient "github.com/useryege/athena/internal/sportslive/apiclient"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
+	ts "github.com/useryege/athena/internal/tradersync"
 	tradersyncstore "github.com/useryege/athena/internal/tradersync/store"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	"github.com/useryege/athena/internal/walletsecret"
@@ -78,9 +80,9 @@ import (
 	appbootstrappkg "github.com/useryege/athena/pkg/apiclient/appbootstrap"
 	servicestatuspkg "github.com/useryege/athena/pkg/apiclient/servicestatus"
 	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
+	tspkg "github.com/useryege/athena/pkg/apiclient/tradersync"
 	"github.com/useryege/athena/ui"
 	"github.com/useryege/athena/util/assets"
-	errorsutil "github.com/useryege/athena/util/errors"
 	grpc_util "github.com/useryege/athena/util/grpc"
 	"github.com/useryege/athena/util/healthz"
 	httputil "github.com/useryege/athena/util/http"
@@ -186,10 +188,16 @@ type AthenaServer struct {
 	memberIndexData  indexDataCache
 	adminIndexData   indexDataCache
 	staticAssets     http.FileSystem
+	staticRoot       *os.Root
 	// apiFactory         api.Factory
 	// secretInformer    cache.SharedIndexInformer
 	// configMapInformer cache.SharedIndexInformer
-	serviceSet *AthenaServiceSet
+	serviceSet        *AthenaServiceSet
+	traderSyncRuntime *traderSyncRuntime
+	processCancel     context.CancelFunc
+	processWorkers    gosync.WaitGroup
+	traderSyncDone    chan struct{}
+	traderSyncErr     error
 	// extensionManager   *extension.Manager
 	Shutdown           func()
 	terminateRequested atomic.Bool
@@ -197,14 +205,15 @@ type AthenaServer struct {
 }
 
 type AthenaServerOpts struct {
-	DisableAuth     bool
-	ContentTypes    []string
-	EnableGZip      bool
-	StaticAssetsDir string
-	ListenPort      int
-	ListenHost      string
-	BaseHRef        string
-	RootPath        string
+	TraderSyncConfig ts.Config
+	DisableAuth      bool
+	ContentTypes     []string
+	EnableGZip       bool
+	StaticAssetsDir  string
+	ListenPort       int
+	ListenHost       string
+	BaseHRef         string
+	RootPath         string
 	// DynamicClientset        dynamic.Interface
 	// KubeControllerClientset client.Client
 	// AppClientset            appclientset.Interface
@@ -236,19 +245,42 @@ type AthenaServerOpts struct {
 }
 
 // NewServer returns a new instance of the Athena API server
-func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
+func NewServer(ctx context.Context, opts AthenaServerOpts) (*AthenaServer, error) {
+	if err := opts.TraderSyncConfig.Validate(); err != nil {
+		return nil, err
+	}
+	ctx, processCancel := context.WithCancel(ctx)
+	initialized := false
+	defer func() {
+		if !initialized {
+			processCancel()
+		}
+	}()
 	if opts.DisableAuth && !isLoopbackListenHost(opts.ListenHost) {
-		errorsutil.CheckError(fmt.Errorf("disabled authentication is allowed only on a loopback listen address"))
+		return nil, fmt.Errorf("disabled authentication is allowed only on a loopback listen address")
 	}
 	settingsMgr, err := settings_util.NewSettingsManagerFromEnv(ctx)
-	errorsutil.CheckError(err)
+	if err != nil {
+		return nil, err
+	}
 	settings, err := settingsMgr.GetSettings()
-	errorsutil.CheckError(err)
+	if err != nil {
+		return nil, err
+	}
 	accountStateStore, err := accountstatestore.NewSQLStoreSource()(ctx)
-	errorsutil.CheckError(err)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if !initialized {
+			_ = accountStateStore.Close()
+		}
+	}()
 	traderSyncStore := tradersyncstore.NewSQLStore(accountStateStore.Pool())
 	accountStateStore.SetAccessChangeHook(traderSyncStore.ApplyAccessChangeTx)
-	errorsutil.CheckError(accountStateStore.RequireAccessChangeHook())
+	if initErr := accountStateStore.RequireAccessChangeHook(); initErr != nil {
+		return nil, initErr
+	}
 	developmentAccountIDs := make(map[accountcredentials.ApplicationRealm]string, 2)
 	if opts.DisableAuth {
 		developmentIdentities := []struct {
@@ -261,48 +293,42 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		for _, identity := range developmentIdentities {
 			developmentAccount, ensureErr := accountStateStore.EnsureDevelopmentAccount(ctx, identity.role)
 			if ensureErr != nil {
-				_ = accountStateStore.Close()
-				errorsutil.CheckError(ensureErr)
+				return nil, ensureErr
 			}
 			if actualRealm := developmentAccount.ApplicationRealm(); actualRealm != identity.realm {
-				_ = accountStateStore.Close()
-				errorsutil.CheckError(fmt.Errorf("development %s identity resolved to application realm %q", identity.role, actualRealm))
+
+				return nil, fmt.Errorf("development %s identity resolved to application realm %q", identity.role, actualRealm)
 			}
 			developmentAccountIDs[identity.realm] = developmentAccount.ID
 		}
 	}
 	jwtSigningKey, err := accountcredentials.LoadJWTSigningKey()
 	if err != nil {
-		_ = accountStateStore.Close()
-		errorsutil.CheckError(err)
+		return nil, err
 	}
 	jwtCodec, err := accountcredentials.NewJWTCodec(jwtSigningKey)
 	if err != nil {
-		_ = accountStateStore.Close()
-		errorsutil.CheckError(err)
+		return nil, err
 	}
 	credentialMgr, err := accountcredentials.NewCredentialManager(ctx, accountStateStore, jwtCodec)
 	if err != nil {
-		_ = accountStateStore.Close()
-		errorsutil.CheckError(err)
+		return nil, err
 	}
 	if !opts.DisableAuth {
 		for _, configuredAccount := range credentialMgr.List() {
 			if configuredAccount.IdentityProvider == accountcredentials.IdentityProviderDevelopment {
-				_ = accountStateStore.Close()
-				errorsutil.CheckError(fmt.Errorf("development identity exists while authentication is enabled; reset account state before using external authentication"))
+
+				return nil, fmt.Errorf("development identity exists while authentication is enabled; reset account state before using external authentication")
 			}
 		}
 	}
 	accessController, err := accountaccess.NewController(ctx, accountStateStore)
 	if err != nil {
-		_ = accountStateStore.Close()
-		errorsutil.CheckError(err)
+		return nil, err
 	}
 	accountCenter, err := accountcenter.NewManager(accountStateStore)
 	if err != nil {
-		_ = accountStateStore.Close()
-		errorsutil.CheckError(err)
+		return nil, err
 	}
 
 	userStateStorage := util_session.NewUserStateStorage(opts.RedisClient)
@@ -315,15 +341,23 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	walletSecretPublicOrigin := ""
 	if !opts.DisableAuth {
 		googleOIDCConfig, err := googleoidc.LoadConfigFromEnv(opts.BaseHRef)
-		errorsutil.CheckError(err)
+		if initErr := err; initErr != nil {
+			return nil, initErr
+		}
 		walletSecretSecureCookie = googleOIDCConfig.SecureCookie()
 		walletSecretPublicOrigin = googleOIDCConfig.PublicOrigin()
 		externalAuth, err := newExternalAuthBackend(credentialMgr, sessionMgr, settings.UserSessionDuration)
-		errorsutil.CheckError(err)
+		if initErr := err; initErr != nil {
+			return nil, initErr
+		}
 		registrationStore, err := authregistration.NewStore(opts.RedisClient)
-		errorsutil.CheckError(err)
+		if initErr := err; initErr != nil {
+			return nil, initErr
+		}
 		registrationHandler, err = authregistration.NewHandler(registrationStore, externalAuth, opts.BaseHRef, googleOIDCConfig.SecureCookie())
-		errorsutil.CheckError(err)
+		if initErr := err; initErr != nil {
+			return nil, initErr
+		}
 		googleOIDCHandler, err = googleoidc.NewHandler(
 			googleOIDCConfig,
 			opts.RedisClient,
@@ -331,27 +365,44 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 			registrationHandler,
 			opts.BaseHRef,
 		)
-		errorsutil.CheckError(err)
+		if initErr := err; initErr != nil {
+			return nil, initErr
+		}
 		phantomAuthHandler, err = phantomauth.NewHandler(opts.RedisClient, externalAuth, registrationHandler, googleOIDCConfig.PublicOrigin(), opts.BaseHRef)
-		errorsutil.CheckError(err)
+		if initErr := err; initErr != nil {
+			return nil, initErr
+		}
 	}
 	walletSecretMgr, err := walletsecret.NewManager(opts.RedisClient, opts.BaseHRef, walletSecretSecureCookie)
-	errorsutil.CheckError(err)
+	if err != nil {
+		return nil, err
+	}
 	wormCredentialMgr, err := walletsecret.NewWormCredentialManager(opts.RedisClient, opts.BaseHRef, walletSecretSecureCookie)
-	errorsutil.CheckError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	// static assets
 	staticFS, err := fs.Sub(ui.Embedded, "dist/app")
-	errorsutil.CheckError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	root, err := os.OpenRoot(opts.StaticAssetsDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Warnf("Static assets directory %q does not exist, using only embedded assets", opts.StaticAssetsDir)
 		} else {
-			errorsutil.CheckError(err)
+			if initErr := err; initErr != nil {
+				return nil, initErr
+			}
 		}
 	} else {
+		defer func() {
+			if !initialized {
+				_ = root.Close()
+			}
+		}()
 		staticFS = utilio.NewComposableFS(staticFS, root.FS())
 	}
 
@@ -362,6 +413,8 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 	}
 
 	a := &AthenaServer{
+		processCancel:            processCancel,
+		staticRoot:               root,
 		AthenaServerOpts:         opts,
 		log:                      logger,
 		settings:                 settings,
@@ -384,38 +437,61 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) *AthenaServer {
 		stopCh:                   make(chan os.Signal, 1),
 	}
 	if googleOIDCHandler != nil {
-		errorsutil.CheckError(googleOIDCHandler.EnableWalletSecretReauthentication(opts.RedisClient, a.authenticateWalletSecretHTTP, credentialMgr, walletSecretMgr))
-		errorsutil.CheckError(googleOIDCHandler.EnableWormCredentialReauthentication(opts.RedisClient, a.authenticateWormConnectionHTTP, credentialMgr, wormCredentialMgr))
+		if initErr := googleOIDCHandler.EnableWalletSecretReauthentication(opts.RedisClient, a.authenticateWalletSecretHTTP, credentialMgr, walletSecretMgr); initErr != nil {
+			return nil, initErr
+		}
+		if initErr := googleOIDCHandler.EnableWormCredentialReauthentication(opts.RedisClient, a.authenticateWormConnectionHTTP, credentialMgr, wormCredentialMgr); initErr != nil {
+			return nil, initErr
+		}
 	}
 	if phantomAuthHandler != nil {
-		errorsutil.CheckError(phantomAuthHandler.EnableWalletSecretReauthentication(opts.RedisClient, a.authenticateWalletSecretHTTP, credentialMgr, walletSecretMgr))
-		errorsutil.CheckError(phantomAuthHandler.EnableWormCredentialReauthentication(opts.RedisClient, a.authenticateWormConnectionHTTP, credentialMgr, wormCredentialMgr))
+		if initErr := phantomAuthHandler.EnableWalletSecretReauthentication(opts.RedisClient, a.authenticateWalletSecretHTTP, credentialMgr, walletSecretMgr); initErr != nil {
+			return nil, initErr
+		}
+		if initErr := phantomAuthHandler.EnableWormCredentialReauthentication(opts.RedisClient, a.authenticateWormConnectionHTTP, credentialMgr, wormCredentialMgr); initErr != nil {
+			return nil, initErr
+		}
 	}
-	errorsutil.CheckError(a.enableWormExecutionAuthorization())
-	errorsutil.CheckError(a.enableWormPositionCashOutAuthorization())
-	errorsutil.CheckError(a.enableWormPositionCashOutBatchAuthorization())
+	if initErr := a.enableWormExecutionAuthorization(); initErr != nil {
+		return nil, initErr
+	}
+	if initErr := a.enableWormPositionCashOutAuthorization(); initErr != nil {
+		return nil, initErr
+	}
+	if initErr := a.enableWormPositionCashOutBatchAuthorization(); initErr != nil {
+		return nil, initErr
+	}
 	walletSecretHTTP, err := newWalletSecretHTTPHandler(a)
 	if err != nil {
-		_ = accountStateStore.Close()
-		errorsutil.CheckError(err)
+		return nil, err
 	}
 	a.walletSecretHTTP = walletSecretHTTP
 	accountAvatarHTTP, err := newAccountAvatarHandler(ctx, a)
 	if err != nil {
-		_ = accountStateStore.Close()
-		errorsutil.CheckError(err)
+		return nil, err
 	}
 	a.accountAvatarHTTP = accountAvatarHTTP
-	go accountAvatarHTTP.RunGarbageCollector(ctx, 0, 0)
+
 	walletAvatarHTTP, err := newWalletAvatarHandler(ctx, a)
 	if err != nil {
-		_ = accountStateStore.Close()
-		errorsutil.CheckError(err)
+		return nil, err
 	}
 	a.walletAvatarHTTP = walletAvatarHTTP
-	go walletAvatarHTTP.RunGarbageCollector(ctx, 0, 0)
 
-	return a
+	runtime, err := newTraderSyncRuntime(ctx, opts.TraderSyncConfig, accountStateStore.Pool(), traderSyncStore)
+	if err != nil {
+		return nil, err
+	}
+	a.traderSyncRuntime = runtime
+	a.processWorkers.Add(2)
+	go func() { defer a.processWorkers.Done(); accountAvatarHTTP.RunGarbageCollector(ctx, 0, 0) }()
+	go func() { defer a.processWorkers.Done(); walletAvatarHTTP.RunGarbageCollector(ctx, 0, 0) }()
+	if !opts.DisableAuth {
+		a.userStateStorage.Init(ctx)
+	}
+	a.startProcessServices(ctx)
+	initialized = true
+	return a, nil
 
 }
 
@@ -432,10 +508,25 @@ func isLoopbackListenHost(host string) bool {
 // intentionally separate from Run shutdown because Run may be invoked again
 // during an in-process graceful restart.
 func (server *AthenaServer) Close() error {
-	if server == nil || server.accountStateStore == nil {
+	if server == nil {
 		return nil
 	}
-	return server.accountStateStore.Close()
+	if server.processCancel != nil {
+		server.processCancel()
+	}
+	var result error
+	if server.traderSyncRuntime != nil {
+		result = server.traderSyncRuntime.Close()
+	}
+	server.processWorkers.Wait()
+	if server.staticRoot != nil {
+		result = errors.Join(result, server.staticRoot.Close())
+		server.staticRoot = nil
+	}
+	if server.accountStateStore != nil {
+		result = errors.Join(result, server.accountStateStore.Close())
+	}
+	return result
 }
 
 func (server *AthenaServer) healthCheck(r *http.Request) error {
@@ -564,6 +655,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	appbootstrappkg.RegisterAppBootstrapServiceServer(grpcS, server.serviceSet.AppBootstrapService)
 	accountpkg.RegisterAccountServiceServer(grpcS, server.serviceSet.AccountService)
 	notificationpkg.RegisterNotificationServiceServer(grpcS, server.serviceSet.NotificationService)
+	tspkg.RegisterTraderSyncServiceServer(grpcS, server.serviceSet.TraderSyncService)
 	walletpkg.RegisterWalletServiceServer(grpcS, server.serviceSet.WalletService)
 	marketradarpkg.RegisterMarketRadarServiceServer(grpcS, server.serviceSet.MarketRadarService)
 	sportslivepkg.RegisterSportsLiveServiceServer(grpcS, server.serviceSet.SportsLiveService)
@@ -587,6 +679,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 }
 
 type AthenaServiceSet struct {
+	TraderSyncService      *servertradersync.Server
 	HealthService          *health.Server
 	SessionService         *session.Server
 	AppBootstrapService    *serverappbootstrap.Server
@@ -653,6 +746,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	healthService := health.NewServer()
 
 	return &AthenaServiceSet{
+		TraderSyncService:      servertradersync.New(server.traderSyncRuntime.service),
 		HealthService:          healthService,
 		SessionService:         sessionService,
 		AppBootstrapService:    appBootstrapService,
@@ -1038,6 +1132,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 
 	mustRegisterGWHandler(ctx, versionpkg.RegisterVersionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, notificationpkg.RegisterNotificationServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, tspkg.RegisterTraderSyncServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, walletpkg.RegisterWalletServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, marketradarpkg.RegisterMarketRadarServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, sportslivepkg.RegisterSportsLiveServiceHandler, gwmux, conn)
@@ -1110,19 +1205,23 @@ type Listeners struct {
 }
 
 func (l *Listeners) Close() error {
+	if l == nil {
+		return nil
+	}
+	var result error
 	if l.Main != nil {
-		if err := l.Main.Close(); err != nil {
-			return err
+		if err := l.Main.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+			result = errors.Join(result, err)
 		}
 		l.Main = nil
 	}
 	if l.GatewayConn != nil {
-		if err := l.GatewayConn.Close(); err != nil {
-			return err
+		if err := l.GatewayConn.Close(); err != nil && !errors.Is(err, grpc.ErrClientConnClosing) {
+			result = errors.Join(result, err)
 		}
 		l.GatewayConn = nil
 	}
-	return nil
+	return result
 }
 
 // GracefulRestartSignal implements a signal to be used for a graceful restart trigger.
@@ -1140,19 +1239,23 @@ func (g GracefulRestartSignal) Signal() {}
 // We use k8s.io/code-generator/cmd/go-to-protobuf to generate the .proto files from the API types.
 // k8s.io/ go-to-protobuf uses protoc-gen-gogo, which comes from gogo/protobuf (a fork of
 // golang/protobuf).
-func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
+func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) (runErr error) {
+	defer func() { runErr = errors.Join(runErr, listeners.Close()) }()
 	defer func() {
 		if r := recover(); r != nil {
 			log.WithField("trace", string(debug.Stack())).Error("Recovered from panic: ", r)
 			server.terminateRequested.Store(true)
+			runErr = fmt.Errorf("API server panic: %v", r)
 			server.Shutdown()
 		}
 	}()
 
-	if !server.DisableAuth {
-		server.userStateStorage.Init(ctx)
+	select {
+	case <-server.traderSyncDone:
+		server.terminateRequested.Store(true)
+		return server.traderSyncErr
+	default:
 	}
-
 	// Prepare all services for the athena server
 	svcSet := newAthenaServiceSet(server)
 
@@ -1243,11 +1346,16 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) {
 			server.terminateRequested.Store(true)
 		}
 		server.Shutdown()
+	case <-server.traderSyncDone:
+		server.terminateRequested.Store(true)
+		runErr = server.traderSyncErr
+		server.Shutdown()
 	case <-ctx.Done():
 		log.Infof("API Server: %s", ctx.Err())
 		server.terminateRequested.Store(true)
 		server.Shutdown()
 	}
+	return runErr
 }
 
 // TerminateRequested returns whether a shutdown was initiated by a signal or context cancel

@@ -997,3 +997,93 @@ func (waitForConfirmationFailureVersion) Verify(ctx context.Context, _ ethtypes.
 	<-ctx.Done()
 	return "", ctx.Err()
 }
+
+func TestCollectorQuietHealthyPersistsIntervalCheckpoint(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	owner, e := accountstore.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
+	if e != nil {
+		t.Fatal(e)
+	}
+	wallet := common.HexToAddress("0x1111111111111111111111111111111111111111")
+	if _, e = db.Pool.Exec(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display)VALUES($1,$2,'enabled','pending_baseline','{}')`, owner.ID, wallet.Bytes()); e != nil {
+		t.Fatal(e)
+	}
+	up := websocket.Upgrader{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, e := up.Upgrade(w, r, nil)
+		if e != nil {
+			return
+		}
+		defer conn.Close()
+		for {
+			var req struct {
+				ID     uint64 `json:"id"`
+				Method string `json:"method"`
+			}
+			if e = conn.ReadJSON(&req); e != nil {
+				return
+			}
+			var result any
+			switch req.Method {
+			case "eth_chainId":
+				result = "0x89"
+			case "eth_subscribe":
+				result = fmt.Sprintf("sub-%d", req.ID)
+			case "eth_unsubscribe":
+				result = true
+			default:
+				t.Errorf("unexpected WSS method %s", req.Method)
+				return
+			}
+			if e = conn.WriteJSON(map[string]any{"jsonrpc": "2.0", "id": req.ID, "result": result}); e != nil {
+				return
+			}
+		}
+	}))
+	defer server.Close()
+	node := &collectorNode{}
+	collector, e := NewCollector(store.NewSQLStore(db.Pool), node, Config{WebSocketURL: "ws" + strings.TrimPrefix(server.URL, "http")})
+	if e != nil {
+		t.Fatal(e)
+	}
+	done := make(chan error, 1)
+	go func() { done <- collector.Run(ctx) }()
+	defer func() {
+		cancel()
+		select {
+		case e := <-done:
+			if e != nil {
+				t.Errorf("collector close: %v", e)
+			}
+		case <-time.After(6 * time.Second):
+			t.Error("collector did not join")
+		}
+	}()
+	deadline := time.NewTimer(24 * time.Second)
+	defer deadline.Stop()
+	tick := time.NewTicker(100 * time.Millisecond)
+	defer tick.Stop()
+	for {
+		select {
+		case <-deadline.C:
+			t.Fatal("quiet healthy collector never persisted a checkpoint")
+		case <-tick.C:
+			var count int
+			if e = db.Pool.QueryRow(ctx, `SELECT count(*) FROM trader_sync_monitor_intervals WHERE last_reliable_at IS NOT NULL`).Scan(&count); e != nil {
+				t.Fatal(e)
+			}
+			if count == 1 {
+				var raw int
+				if e = db.Pool.QueryRow(ctx, `SELECT count(*) FROM trader_sync_source_records`).Scan(&raw); e != nil || raw != 0 {
+					t.Fatal("checkpoint depended on trade", raw, e)
+				}
+				if node.latestCalls.Load() < 2 || node.finalityCalls.Load() != 0 {
+					t.Fatal("health/finality ownership", node.latestCalls.Load(), node.finalityCalls.Load())
+				}
+				return
+			}
+		}
+	}
+}

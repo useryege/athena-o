@@ -71,3 +71,25 @@ SELECT clock_timestamp()::timestamptz AS now;
 
 -- name: HasBaselineInterval :one
 SELECT EXISTS(SELECT 1 FROM trader_sync_monitor_intervals WHERE baseline_attempt_id=$1);
+
+-- name: ListCheckpointIntervals :many
+SELECT i.*,s.wallet FROM trader_sync_monitor_intervals i
+JOIN trader_sync_subscriptions s ON s.owner_id=i.owner_id AND s.id=i.subscription_id
+JOIN trader_sync_collector_epochs ep ON ep.id=i.collector_epoch
+WHERE i.collector_epoch=sqlc.arg(epoch)::bigint AND i.ended_at IS NULL AND ep.ended_at IS NULL
+AND s.desired_state='enabled' AND s.activation_generation=i.activation_generation
+AND (sqlc.narg(after_id)::uuid IS NULL OR i.id>sqlc.narg(after_id))
+ORDER BY i.id LIMIT sqlc.arg(row_limit)::integer;
+
+-- name: GetCheckpointInterval :one
+SELECT i.*,s.wallet,s.desired_state,s.activation_generation AS current_generation,ep.ended_at AS epoch_ended_at
+FROM trader_sync_monitor_intervals i
+JOIN trader_sync_subscriptions s ON s.owner_id=i.owner_id AND s.id=i.subscription_id
+JOIN trader_sync_collector_epochs ep ON ep.id=i.collector_epoch
+WHERE i.owner_id=$1 AND i.id=$2 FOR UPDATE OF i;
+
+-- name: SaveIntervalCheckpoint :execrows
+UPDATE trader_sync_monitor_intervals SET last_reliable_at=sqlc.arg(observed_at)::timestamptz
+WHERE owner_id=sqlc.arg(owner_id)::uuid AND id=sqlc.arg(id)::uuid
+AND collector_epoch=sqlc.arg(epoch)::bigint AND activation_generation=sqlc.arg(generation)::bigint
+AND ended_at IS NULL;

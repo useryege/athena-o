@@ -1,0 +1,208 @@
+syntax = "proto3";
+package tradersync;
+import "github.com/useryege/athena/pkg/apis/application/v1alpha1/generated.proto";
+import "google/api/annotations.proto";
+import "gogoproto/gogo.proto";
+option go_package = "github.com/useryege/athena/pkg/apiclient/tradersync";
+
+message TraderSyncNoteInput { string value = 1 [(gogoproto.jsontag) = "value,omitempty"]; }
+message PageInput { int32 page_size = 1 [(gogoproto.jsontag) = "pageSize"]; string cursor = 2 [(gogoproto.jsontag) = "cursor,omitempty"]; }
+message PageInfo { string next_cursor = 1 [(gogoproto.jsontag) = "nextCursor,omitempty"]; }
+message ActivityPageInfo { string next_cursor = 1 [(gogoproto.jsontag) = "nextCursor,omitempty"]; string refresh_cursor = 2 [(gogoproto.jsontag) = "refreshCursor,omitempty"]; string snapshot = 3 [(gogoproto.jsontag) = "snapshot,omitempty"]; string as_of = 4 [(gogoproto.jsontag) = "asOf,omitempty"]; bool has_newer = 5 [(gogoproto.jsontag) = "hasNewer"]; }
+
+message ResolveTargetRequest {
+  string input = 1 [(gogoproto.jsontag) = "input,omitempty"];
+}
+message ResolveTargetResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncResolvedTarget target = 1 [(gogoproto.jsontag) = "target,omitempty"];
+}
+
+message CreateSubscriptionRequest {
+  string confirmation_token = 1 [(gogoproto.jsontag) = "confirmationToken,omitempty"];
+  string request_id = 2 [(gogoproto.jsontag) = "requestId,omitempty"];
+  TraderSyncNoteInput note = 3 [(gogoproto.jsontag) = "note,omitempty"];
+}
+message CreateSubscriptionResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncSubscription subscription = 1 [(gogoproto.jsontag) = "subscription,omitempty"];
+}
+
+message ListSubscriptionsRequest {
+  PageInput page = 1 [(gogoproto.jsontag) = "page,omitempty"];
+  string view = 2 [(gogoproto.jsontag) = "view,omitempty"];
+  string state = 3 [(gogoproto.jsontag) = "state,omitempty"];
+}
+message ListSubscriptionsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncSubscription subscriptions = 1 [(gogoproto.jsontag) = "subscriptions,omitempty"];
+  PageInfo page = 2 [(gogoproto.jsontag) = "page,omitempty"];
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncQuota quota = 3 [(gogoproto.jsontag) = "quota,omitempty"];
+  string as_of = 4 [(gogoproto.jsontag) = "asOf,omitempty"];
+}
+
+message GetSubscriptionRequest {
+  string subscription_id = 1 [(gogoproto.jsontag) = "subscriptionId,omitempty"];
+}
+message GetSubscriptionResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncSubscription subscription = 1 [(gogoproto.jsontag) = "subscription,omitempty"];
+}
+
+message PauseSubscriptionRequest {
+  string subscription_id = 1 [(gogoproto.jsontag) = "subscriptionId,omitempty"];
+  uint64 expected_revision = 2 [(gogoproto.jsontag) = "expectedRevision,string"];
+  string request_id = 3 [(gogoproto.jsontag) = "requestId,omitempty"];
+}
+message PauseSubscriptionResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncSubscription subscription = 1 [(gogoproto.jsontag) = "subscription,omitempty"];
+}
+
+message ResumeSubscriptionRequest {
+  string subscription_id = 1 [(gogoproto.jsontag) = "subscriptionId,omitempty"];
+  uint64 expected_revision = 2 [(gogoproto.jsontag) = "expectedRevision,string"];
+  string request_id = 3 [(gogoproto.jsontag) = "requestId,omitempty"];
+}
+message ResumeSubscriptionResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncSubscription subscription = 1 [(gogoproto.jsontag) = "subscription,omitempty"];
+}
+
+message CancelSubscriptionRequest {
+  string subscription_id = 1 [(gogoproto.jsontag) = "subscriptionId,omitempty"];
+  uint64 expected_revision = 2 [(gogoproto.jsontag) = "expectedRevision,string"];
+  string request_id = 3 [(gogoproto.jsontag) = "requestId,omitempty"];
+}
+message CancelSubscriptionResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncSubscription subscription = 1 [(gogoproto.jsontag) = "subscription,omitempty"];
+}
+
+message UpdateTargetNoteRequest {
+  string wallet = 1 [(gogoproto.jsontag) = "wallet,omitempty"];
+  string note = 2 [(gogoproto.jsontag) = "note,omitempty"];
+  uint64 expected_revision = 3 [(gogoproto.jsontag) = "expectedRevision,string"];
+  string request_id = 4 [(gogoproto.jsontag) = "requestId,omitempty"];
+}
+message UpdateTargetNoteResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncTargetNote note = 1 [(gogoproto.jsontag) = "note,omitempty"];
+}
+
+message ListActivitiesRequest {
+  PageInput page = 1 [(gogoproto.jsontag) = "page,omitempty"];
+  string subscription_id = 2 [(gogoproto.jsontag) = "subscriptionId,omitempty"];
+  string from = 3 [(gogoproto.jsontag) = "from,omitempty"];
+  string to = 4 [(gogoproto.jsontag) = "to,omitempty"];
+  string summary_batch_id = 5 [(gogoproto.jsontag) = "summaryBatchId,omitempty"];
+  string refresh_cursor = 6 [(gogoproto.jsontag) = "refreshCursor,omitempty"];
+}
+message ListActivitiesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncActivity activities = 1 [(gogoproto.jsontag) = "activities,omitempty"];
+  ActivityPageInfo page = 2 [(gogoproto.jsontag) = "page,omitempty"];
+}
+
+message GetActivityRequest {
+  string activity_id = 1 [(gogoproto.jsontag) = "activityId,omitempty"];
+}
+message GetActivityResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncActivity activity = 1 [(gogoproto.jsontag) = "activity,omitempty"];
+}
+
+message ListSubscriptionHistoryRequest {
+  string subscription_id = 1 [(gogoproto.jsontag) = "subscriptionId,omitempty"];
+  PageInput page = 2 [(gogoproto.jsontag) = "page,omitempty"];
+}
+message ListSubscriptionHistoryResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncHistoryEntry entries = 1 [(gogoproto.jsontag) = "entries,omitempty"];
+  PageInfo page = 2 [(gogoproto.jsontag) = "page,omitempty"];
+  string as_of = 3 [(gogoproto.jsontag) = "asOf,omitempty"];
+}
+
+message GetSummaryBatchRequest {
+  string batch_id = 1 [(gogoproto.jsontag) = "batchId,omitempty"];
+}
+message GetSummaryBatchResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncSummaryBatch batch = 1 [(gogoproto.jsontag) = "batch,omitempty"];
+}
+
+message ListSummaryPartsRequest {
+  string batch_id = 1 [(gogoproto.jsontag) = "batchId,omitempty"];
+  string activity_id = 2 [(gogoproto.jsontag) = "activityId,omitempty"];
+  PageInput page = 3 [(gogoproto.jsontag) = "page,omitempty"];
+}
+message ListSummaryPartsResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncSummaryPart parts = 1 [(gogoproto.jsontag) = "parts,omitempty"];
+  PageInfo page = 2 [(gogoproto.jsontag) = "page,omitempty"];
+  string as_of = 3 [(gogoproto.jsontag) = "asOf,omitempty"];
+}
+
+message ListSubscriptionSummariesRequest {
+  PageInput page = 1 [(gogoproto.jsontag) = "page,omitempty"];
+  string account_id = 2 [(gogoproto.jsontag) = "accountId,omitempty"];
+  string state = 3 [(gogoproto.jsontag) = "state,omitempty"];
+  string wallet = 4 [(gogoproto.jsontag) = "wallet,omitempty"];
+  bool include_cancelled = 5 [(gogoproto.jsontag) = "includeCancelled"];
+}
+message ListSubscriptionSummariesResponse {
+  repeated github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncSubscriptionSummary summaries = 1 [(gogoproto.jsontag) = "summaries,omitempty"];
+  PageInfo page = 2 [(gogoproto.jsontag) = "page,omitempty"];
+  string as_of = 3 [(gogoproto.jsontag) = "asOf,omitempty"];
+}
+
+message GetSubscriptionSummaryRequest {
+  string subscription_id = 1 [(gogoproto.jsontag) = "subscriptionId,omitempty"];
+}
+message GetSubscriptionSummaryResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncSubscriptionSummary summary = 1 [(gogoproto.jsontag) = "summary,omitempty"];
+}
+
+message GetTraderSyncRuntimeStatusRequest {
+}
+message GetTraderSyncRuntimeStatusResponse {
+  github.com.useryege.athena.pkg.apis.application.v1alpha1.TraderSyncRuntimeStatus status = 1 [(gogoproto.jsontag) = "status,omitempty"];
+}
+
+service TraderSyncService {
+  rpc ResolveTarget(ResolveTargetRequest) returns (ResolveTargetResponse) {
+    option (google.api.http) = {post: "/api/v1/trader-sync/targets:resolve" body: "*"};
+  }
+  rpc CreateSubscription(CreateSubscriptionRequest) returns (CreateSubscriptionResponse) {
+    option (google.api.http) = {post: "/api/v1/trader-sync/subscriptions" body: "*"};
+  }
+  rpc ListSubscriptions(ListSubscriptionsRequest) returns (ListSubscriptionsResponse) {
+    option (google.api.http) = {get: "/api/v1/trader-sync/subscriptions"};
+  }
+  rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse) {
+    option (google.api.http) = {get: "/api/v1/trader-sync/subscriptions/{subscription_id}"};
+  }
+  rpc PauseSubscription(PauseSubscriptionRequest) returns (PauseSubscriptionResponse) {
+    option (google.api.http) = {post: "/api/v1/trader-sync/subscriptions/{subscription_id}:pause" body: "*"};
+  }
+  rpc ResumeSubscription(ResumeSubscriptionRequest) returns (ResumeSubscriptionResponse) {
+    option (google.api.http) = {post: "/api/v1/trader-sync/subscriptions/{subscription_id}:resume" body: "*"};
+  }
+  rpc CancelSubscription(CancelSubscriptionRequest) returns (CancelSubscriptionResponse) {
+    option (google.api.http) = {post: "/api/v1/trader-sync/subscriptions/{subscription_id}:cancel" body: "*"};
+  }
+  rpc UpdateTargetNote(UpdateTargetNoteRequest) returns (UpdateTargetNoteResponse) {
+    option (google.api.http) = {patch: "/api/v1/trader-sync/targets/{wallet}/note" body: "*"};
+  }
+  rpc ListActivities(ListActivitiesRequest) returns (ListActivitiesResponse) {
+    option (google.api.http) = {get: "/api/v1/trader-sync/activities"};
+  }
+  rpc GetActivity(GetActivityRequest) returns (GetActivityResponse) {
+    option (google.api.http) = {get: "/api/v1/trader-sync/activities/{activity_id}"};
+  }
+  rpc ListSubscriptionHistory(ListSubscriptionHistoryRequest) returns (ListSubscriptionHistoryResponse) {
+    option (google.api.http) = {get: "/api/v1/trader-sync/subscriptions/{subscription_id}/history"};
+  }
+  rpc GetSummaryBatch(GetSummaryBatchRequest) returns (GetSummaryBatchResponse) {
+    option (google.api.http) = {get: "/api/v1/trader-sync/summaries/{batch_id}"};
+  }
+  rpc ListSummaryParts(ListSummaryPartsRequest) returns (ListSummaryPartsResponse) {
+    option (google.api.http) = {get: "/api/v1/trader-sync/summaries/{batch_id}/parts"};
+  }
+  rpc ListSubscriptionSummaries(ListSubscriptionSummariesRequest) returns (ListSubscriptionSummariesResponse) {
+    option (google.api.http) = {get: "/api/v1/admin/trader-sync/subscriptions"};
+  }
+  rpc GetSubscriptionSummary(GetSubscriptionSummaryRequest) returns (GetSubscriptionSummaryResponse) {
+    option (google.api.http) = {get: "/api/v1/admin/trader-sync/subscriptions/{subscription_id}"};
+  }
+  rpc GetTraderSyncRuntimeStatus(GetTraderSyncRuntimeStatusRequest) returns (GetTraderSyncRuntimeStatusResponse) {
+    option (google.api.http) = {get: "/api/v1/admin/trader-sync/status"};
+  }
+}

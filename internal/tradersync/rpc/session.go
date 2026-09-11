@@ -62,6 +62,8 @@ type Session struct {
 	mu               sync.Mutex
 	err              error
 	nextID, sequence uint64
+	matchedPongAt    time.Time
+	pongSequence     uint64
 	pending          map[uint64]*pendingRequest
 	high             map[common.Address]uint64
 }
@@ -385,6 +387,10 @@ func (s *Session) writeLoop() {
 			deadline = timer.C
 		case value := <-s.pong:
 			if nonce != "" && value == nonce {
+				s.mu.Lock()
+				s.matchedPongAt = time.Now()
+				s.pongSequence++
+				s.mu.Unlock()
 				nonce = ""
 				if timer != nil {
 					timer.Stop()
@@ -396,4 +402,18 @@ func (s *Session) writeLoop() {
 			return
 		}
 	}
+}
+
+// PongObservation belongs to exactly one Session; At retains its monotonic clock.
+type PongObservation struct {
+	Session  *Session
+	At       time.Time
+	Sequence uint64
+	Alive    bool
+}
+
+func (s *Session) PongSnapshot() PongObservation {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return PongObservation{Session: s, At: s.matchedPongAt, Sequence: s.pongSequence, Alive: s.err == nil}
 }

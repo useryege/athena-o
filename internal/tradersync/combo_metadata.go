@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum"
 	ethabi "github.com/ethereum/go-ethereum/accounts/abi"
@@ -238,6 +239,9 @@ func (r *DirectoryRefresher) Run(ctx context.Context) error {
 			r.onError(err)
 		}
 		if ctx.Err() != nil {
+			if !directoryCancellationOnly(err) {
+				return errors.Join(ctx.Err(), err)
+			}
 			return ctx.Err()
 		}
 		wait := time.Until(next)
@@ -252,4 +256,24 @@ func (r *DirectoryRefresher) Run(ctx context.Context) error {
 		case <-timer.C:
 		}
 	}
+}
+
+// Cancellation is normal only when every leaf is a cancellation. errors.Is alone
+// would hide a joined persistence/cleanup failure during process shutdown.
+func directoryCancellationOnly(err error) bool {
+	if err == nil || err == context.Canceled || err == context.DeadlineExceeded {
+		return true
+	}
+	if multi, ok := err.(interface{ Unwrap() []error }); ok {
+		for _, part := range multi.Unwrap() {
+			if !directoryCancellationOnly(part) {
+				return false
+			}
+		}
+		return true
+	}
+	if one, ok := err.(interface{ Unwrap() error }); ok {
+		return directoryCancellationOnly(one.Unwrap())
+	}
+	return false
 }

@@ -299,6 +299,7 @@ type TraderSyncComboLegIndex struct {
 }
 
 type TraderSyncDirectoryRefresh struct {
+	AdmissionID      pgtype.UUID
 	Name             string
 	Cursor           string
 	VisitedCursors   []string
@@ -332,6 +333,7 @@ type TraderSyncMarketMetadatum struct {
 }
 
 type TraderSyncMonitorInterval struct {
+	LastReliableAt       pgtype.Timestamptz
 	ID                   pgtype.UUID
 	OwnerID              pgtype.UUID
 	SubscriptionID       pgtype.UUID

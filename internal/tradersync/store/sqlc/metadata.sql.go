@@ -11,36 +11,77 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const admitComboPage = `-- name: AdmitComboPage :one
+UPDATE trader_sync_directory_refresh SET admission_id=$1::uuid,next_page_at=clock_timestamp()+interval '6 seconds'
+WHERE name='combo_markets' AND cursor=$2::text
+RETURNING next_page_at,clock_timestamp()::timestamptz AS database_now
+`
+
+type AdmitComboPageParams struct {
+	AdmissionID    pgtype.UUID
+	ExpectedCursor string
+}
+
+type AdmitComboPageRow struct {
+	NextPageAt  pgtype.Timestamptz
+	DatabaseNow pgtype.Timestamptz
+}
+
+func (q *Queries) AdmitComboPage(ctx context.Context, arg AdmitComboPageParams) (AdmitComboPageRow, error) {
+	row := q.db.QueryRow(ctx, admitComboPage, arg.AdmissionID, arg.ExpectedCursor)
+	var i AdmitComboPageRow
+	err := row.Scan(&i.NextPageAt, &i.DatabaseNow)
+	return i, err
+}
+
 const advanceComboPage = `-- name: AdvanceComboPage :one
-UPDATE trader_sync_directory_refresh SET cursor=$1,
+UPDATE trader_sync_directory_refresh SET cursor=$1,admission_id=NULL,
  visited_cursors=array_append(visited_cursors,cursor),
  round_completed_at=CASE WHEN $1::text='' THEN clock_timestamp() ELSE round_completed_at END,
  next_page_at=CASE WHEN $1::text='' THEN greatest(round_started_at+interval '10 minutes',clock_timestamp()+interval '1 second') ELSE clock_timestamp()+interval '1 second' END
-WHERE name='combo_markets' AND cursor=$2 RETURNING next_page_at
+WHERE name='combo_markets' AND cursor=$2 AND admission_id=$3::uuid
+RETURNING next_page_at,clock_timestamp()::timestamptz AS database_now
 `
 
 type AdvanceComboPageParams struct {
 	NextCursor     string
 	ExpectedCursor string
+	AdmissionID    pgtype.UUID
 }
 
-func (q *Queries) AdvanceComboPage(ctx context.Context, arg AdvanceComboPageParams) (pgtype.Timestamptz, error) {
-	row := q.db.QueryRow(ctx, advanceComboPage, arg.NextCursor, arg.ExpectedCursor)
-	var next_page_at pgtype.Timestamptz
-	err := row.Scan(&next_page_at)
-	return next_page_at, err
+type AdvanceComboPageRow struct {
+	NextPageAt  pgtype.Timestamptz
+	DatabaseNow pgtype.Timestamptz
+}
+
+func (q *Queries) AdvanceComboPage(ctx context.Context, arg AdvanceComboPageParams) (AdvanceComboPageRow, error) {
+	row := q.db.QueryRow(ctx, advanceComboPage, arg.NextCursor, arg.ExpectedCursor, arg.AdmissionID)
+	var i AdvanceComboPageRow
+	err := row.Scan(&i.NextPageAt, &i.DatabaseNow)
+	return i, err
 }
 
 const delayComboPage = `-- name: DelayComboPage :one
-UPDATE trader_sync_directory_refresh SET next_page_at=clock_timestamp()+interval '1 second'
-WHERE name='combo_markets' RETURNING next_page_at
+UPDATE trader_sync_directory_refresh SET next_page_at=clock_timestamp()+interval '1 second',admission_id=NULL
+WHERE name='combo_markets' AND admission_id=$1::uuid AND cursor=$2::text
+RETURNING next_page_at,clock_timestamp()::timestamptz AS database_now
 `
 
-func (q *Queries) DelayComboPage(ctx context.Context) (pgtype.Timestamptz, error) {
-	row := q.db.QueryRow(ctx, delayComboPage)
-	var next_page_at pgtype.Timestamptz
-	err := row.Scan(&next_page_at)
-	return next_page_at, err
+type DelayComboPageParams struct {
+	AdmissionID    pgtype.UUID
+	ExpectedCursor string
+}
+
+type DelayComboPageRow struct {
+	NextPageAt  pgtype.Timestamptz
+	DatabaseNow pgtype.Timestamptz
+}
+
+func (q *Queries) DelayComboPage(ctx context.Context, arg DelayComboPageParams) (DelayComboPageRow, error) {
+	row := q.db.QueryRow(ctx, delayComboPage, arg.AdmissionID, arg.ExpectedCursor)
+	var i DelayComboPageRow
+	err := row.Scan(&i.NextPageAt, &i.DatabaseNow)
+	return i, err
 }
 
 const ensureComboDirectory = `-- name: EnsureComboDirectory :exec
@@ -64,23 +105,25 @@ func (q *Queries) GetTradeMetadata(ctx context.Context, cacheKey string) ([]byte
 }
 
 const lockComboDirectory = `-- name: LockComboDirectory :one
-SELECT name, cursor, visited_cursors, round_started_at, round_completed_at, next_page_at,clock_timestamp() AS database_now FROM trader_sync_directory_refresh WHERE name='combo_markets' FOR UPDATE
+SELECT admission_id, name, cursor, visited_cursors, round_started_at, round_completed_at, next_page_at,clock_timestamp()::timestamptz AS database_now FROM trader_sync_directory_refresh WHERE name='combo_markets' FOR UPDATE
 `
 
 type LockComboDirectoryRow struct {
+	AdmissionID      pgtype.UUID
 	Name             string
 	Cursor           string
 	VisitedCursors   []string
 	RoundStartedAt   pgtype.Timestamptz
 	RoundCompletedAt pgtype.Timestamptz
 	NextPageAt       pgtype.Timestamptz
-	DatabaseNow      interface{}
+	DatabaseNow      pgtype.Timestamptz
 }
 
 func (q *Queries) LockComboDirectory(ctx context.Context) (LockComboDirectoryRow, error) {
 	row := q.db.QueryRow(ctx, lockComboDirectory)
 	var i LockComboDirectoryRow
 	err := row.Scan(
+		&i.AdmissionID,
 		&i.Name,
 		&i.Cursor,
 		&i.VisitedCursors,

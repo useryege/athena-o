@@ -358,3 +358,23 @@ drained:
 	}
 	snapshot.Legs[0].PositionID = "caller mutation"
 }
+
+type directoryCancellationResult struct {
+	cancel context.CancelFunc
+	result error
+}
+
+func (d directoryCancellationResult) RefreshComboPage(context.Context, func(context.Context, string, int) (pm.ComboMarketPage, error)) (time.Time, error) {
+	d.cancel()
+	return time.Time{}, d.result
+}
+func TestDirectoryCancellationRetainsRealCleanupFailure(t *testing.T) {
+	cleanup := errors.New("directory rollback acknowledgement lost")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	result := &tm.DirectoryError{Phase: "commit_pacing", HTTPAttempted: true, Err: context.Canceled, CleanupErr: cleanup}
+	err := NewDirectoryRefresher(directoryCancellationResult{cancel, result}, failingDirectoryClient{}, nil).Run(ctx)
+	if !errors.Is(err, context.Canceled) || !errors.Is(err, cleanup) {
+		t.Fatal("shutdown discarded directory cleanup error", err)
+	}
+}

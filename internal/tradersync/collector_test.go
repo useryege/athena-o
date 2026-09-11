@@ -3,7 +3,9 @@ package tradersync
 import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	liverpc "github.com/useryege/athena/internal/tradersync/rpc"
 	"testing"
+	"time"
 )
 
 func TestCollectorFiltersOnlyActualWalletTopicAndDeduplicates(t *testing.T) {
@@ -30,5 +32,29 @@ func TestCollectorFiltersOnlyActualWalletTopicAndDeduplicates(t *testing.T) {
 		} else if len(filter.Addresses) != 1 || filter.Addresses[0] != sourceVersions[ComboExchangeVersion].deployment.address {
 			t.Fatal(filter.Addresses)
 		}
+	}
+}
+
+func TestCheckpointCombinesOnlyFreshCoveredObservations(t *testing.T) {
+	now := time.Now()
+	session := &liverpc.Session{}
+	pong := liverpc.PongObservation{Session: session, At: now.Add(-time.Second), Sequence: 1, Alive: true}
+	latest := now.Add(-2 * time.Second)
+	covered := now.Add(-3 * time.Second)
+	wallets := []common.Address{common.HexToAddress("0x123")}
+	got, e := combineCheckpoint(pong, latest, covered, now, 1, 2, 3, wallets)
+	if e != nil || !got.At.Equal(latest) || got.Token != 1 || got.Epoch != 2 || got.FilterRevision != 3 {
+		t.Fatalf("valid health combination missing: %+v %v", got, e)
+	}
+	for _, tc := range []struct {
+		name string
+		p    liverpc.PongObservation
+		l, c time.Time
+	}{{"old pong", liverpc.PongObservation{Session: session, At: now.Add(-21 * time.Second), Sequence: 1, Alive: true}, latest, covered}, {"old latest", pong, now.Add(-16 * time.Second), covered}, {"new coverage", pong, latest, now}, {"closed", liverpc.PongObservation{Session: session, At: pong.At, Sequence: 1}, latest, covered}, {"no matched nonce", liverpc.PongObservation{Session: session, At: pong.At, Alive: true}, latest, covered}} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, e := combineCheckpoint(tc.p, tc.l, tc.c, now, 1, 2, 3, wallets); e == nil {
+				t.Fatal("ineligible health combination accepted")
+			}
+		})
 	}
 }

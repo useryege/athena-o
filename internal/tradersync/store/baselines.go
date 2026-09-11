@@ -359,3 +359,80 @@ func (s *SQLStore) abandonUnboundBaseline(ctx context.Context, token uint64, id 
 		return err
 	})
 }
+
+var ErrCheckpointStale = errors.New("observation_checkpoint_stale")
+var ErrObservationClock = errors.New("clock_order_uncertain")
+
+func (s *SQLStore) CheckpointIntervals(ctx context.Context, epoch uint64, after string, limit int32) ([]tm.CheckpointInterval, error) {
+	id, e := readUUID(after)
+	if e != nil {
+		return nil, e
+	}
+	if limit < 1 || limit > 100 {
+		return nil, errors.New("checkpoint batch limit must be 1..100")
+	}
+	rows, e := q.New(s.pool).ListCheckpointIntervals(ctx, q.ListCheckpointIntervalsParams{Epoch: int64(epoch), AfterID: id, RowLimit: limit})
+	if e != nil {
+		return nil, e
+	}
+	out := make([]tm.CheckpointInterval, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, tm.CheckpointInterval{ID: readID(r.ID), OwnerID: readID(r.OwnerID), SubscriptionID: readID(r.SubscriptionID), Wallet: common.BytesToAddress(r.Wallet), Generation: uint64(r.ActivationGeneration), Epoch: uint64(r.CollectorEpoch), FilterRevision: uint64(r.FilterRevision), EffectiveAt: r.EffectiveAt.Time, LastReliableAt: subscriptionTime(r.LastReliableAt)})
+	}
+	return out, nil
+}
+func (s *SQLStore) SaveObservationCheckpoint(ctx context.Context, target tm.CheckpointInterval, evidence tm.ObservationCheckpoint, alive func() bool) error {
+	valid := func() bool {
+		return alive != nil && alive() && !evidence.At.IsZero() && time.Now().Before(evidence.ExpiresAt) && !evidence.At.Before(evidence.CoveredAt)
+	}
+	if !valid() {
+		return ErrCheckpointStale
+	}
+	owner, e := readUUID(target.OwnerID)
+	if e != nil {
+		return e
+	}
+	id, e := readUUID(target.ID)
+	if e != nil {
+		return e
+	}
+	return txgate.WithAccountTx(ctx, s.pool, target.OwnerID, func(tx pgx.Tx) error {
+		if !valid() {
+			return ErrCheckpointStale
+		}
+		queries := q.New(tx)
+		if e := checkCollectorFence(ctx, queries, evidence.Token, evidence.Epoch); e != nil {
+			return e
+		}
+		r, e := queries.GetCheckpointInterval(ctx, q.GetCheckpointIntervalParams{OwnerID: owner, ID: id})
+		if e != nil {
+			return e
+		}
+		covered := false
+		for _, wallet := range evidence.Wallets {
+			if wallet == common.BytesToAddress(r.Wallet) {
+				covered = true
+				break
+			}
+		}
+		if !valid() || !covered || r.DesiredState != "enabled" || r.EndedAt.Valid || r.EpochEndedAt.Valid || uint64(r.CollectorEpoch) != evidence.Epoch || r.CurrentGeneration != r.ActivationGeneration || uint64(r.ActivationGeneration) != target.Generation || readID(r.SubscriptionID) != target.SubscriptionID || uint64(r.FilterRevision) > evidence.FilterRevision || evidence.At.Before(r.EffectiveAt.Time) {
+			return ErrCheckpointStale
+		}
+		// The database stores UTC only. A regressing UTC cannot be repaired by
+		// inventing a newer point or by calling GREATEST and claiming advancement.
+		if r.LastReliableAt.Valid && evidence.At.Before(r.LastReliableAt.Time) {
+			return ErrObservationClock
+		}
+		if evidence.At.UTC().After(time.Now().UTC()) {
+			return ErrObservationClock
+		}
+		n, e := queries.SaveIntervalCheckpoint(ctx, q.SaveIntervalCheckpointParams{ObservedAt: pgtype.Timestamptz{Time: evidence.At.UTC(), Valid: true}, OwnerID: owner, ID: id, Epoch: int64(evidence.Epoch), Generation: int64(target.Generation)})
+		if e != nil {
+			return e
+		}
+		if n != 1 {
+			return ErrCheckpointStale
+		}
+		return nil
+	})
+}

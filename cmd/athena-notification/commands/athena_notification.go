@@ -91,6 +91,7 @@ func NewCommand() *cobra.Command {
 
 			server, err := notification.NewServer(notification.ServerOpts{
 				Store:             store,
+				SiteURL:           env.StringFromEnv("ATHENA_URL", ""),
 				Sender:            sender,
 				ProfileSyncer:     notification.NewTelegramProfileSyncer(telegramClient, profileConfig),
 				Poller:            notification.NewTelegramPoller(store, telegramClient),
@@ -104,7 +105,9 @@ func NewCommand() *cobra.Command {
 
 			lc := &net.ListenConfig{}
 			listener, err := lc.Listen(ctx, "tcp", fmt.Sprintf("%s:%d", listenHost, listenPort))
-			errors.CheckError(err)
+			if err != nil {
+				return err
+			}
 
 			defer listener.Close()
 			if err := server.Start(ctx); err != nil {

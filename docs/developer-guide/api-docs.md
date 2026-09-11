@@ -73,3 +73,21 @@ Only Athena token version 3 is accepted. Rotating `ATHENA_JWT_SECRET` or deletin
 Key invalidates it. Disabling account login blocks it while login remains disabled.
 Turning off API Key access pauses existing keys without deleting them; re-enabling access
 restores undeleted, unexpired keys.
+
+## Trader Sync
+
+The generated Trader Sync contract is in
+[`tradersync.proto`](../../internal/server/tradersync/tradersync.proto); its 13
+member methods use `/api/v1/trader-sync`, and its three administrator summary
+methods use `/api/v1/admin/trader-sync`. Member login and enabled API Key callers
+need current Trader Sync access. Administrator summaries never expose member
+notes, activity metadata, frozen payloads, or individual deliveries.
+
+IDs, raw amounts, position IDs, and JSON revisions remain strings. Use nested
+GET pagination keys `page.page_size` and `page.cursor`; page size defaults to 50
+and is limited to 1–100. Opaque signed cursors are scoped to the principal,
+filters, list kind, and page size. Activity `refreshCursor` refreshes the existing
+page; a new initial request obtains the newest snapshot. Missing optional times
+and evidence values remain absent, and a sent delivery may legitimately have no
+recorded `startedAt`. `CreateSubscription.note` is an optional wrapper: omit it
+to retain an existing note; `{ "value": "" }` explicitly clears it.

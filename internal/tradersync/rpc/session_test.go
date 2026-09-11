@@ -410,3 +410,43 @@ func TestSessionExhaustedSentACKsCloseAndFreshSessionRecovers(t *testing.T) {
 		t.Fatal("fresh control request did not recover or took stale ACK", id, err)
 	}
 }
+
+func TestSessionQuietMatchedPongPublishesHealthEvidence(t *testing.T) {
+	url := serveSession(t, func(c *websocket.Conn) {
+		if chainHandshake(c) != nil {
+			return
+		}
+		for {
+			if _, e := readRequest(c); e != nil {
+				return
+			}
+		}
+	})
+	s, e := dialSession(context.Background(), url, "", sessionConfig{8, 15 * time.Millisecond, 20 * time.Millisecond, time.Second})
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer s.Close()
+	deadline := time.NewTimer(time.Second)
+	defer deadline.Stop()
+	tick := time.NewTicker(time.Millisecond)
+	defer tick.Stop()
+	for {
+		select {
+		case <-deadline.C:
+			t.Fatal("quiet matching pong did not publish health evidence")
+		case <-tick.C:
+			p := s.PongSnapshot()
+			if p.Sequence > 0 {
+				if p.Session != s || !p.Alive || p.At.IsZero() || p.At.After(time.Now()) {
+					t.Fatal("invalid pong identity/time", p)
+				}
+				s.Close()
+				if s.PongSnapshot().Alive {
+					t.Fatal("closed session health remained live")
+				}
+				return
+			}
+		}
+	}
+}

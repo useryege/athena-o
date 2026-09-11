@@ -572,6 +572,7 @@ $$;
 -- +goose StatementEnd
 CREATE TRIGGER trader_sync_attempt_terminal BEFORE UPDATE ON trader_sync_baseline_attempts FOR EACH ROW EXECUTE FUNCTION trader_sync_guard_attempt_terminal();
 CREATE TABLE trader_sync_monitor_intervals (
+ last_reliable_at TIMESTAMPTZ,
  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
  owner_id UUID NOT NULL,
  subscription_id UUID NOT NULL,
@@ -604,6 +605,7 @@ CREATE TABLE trader_sync_combo_leg_index (
  PRIMARY KEY(position_id,market_id)
 );
 CREATE TABLE trader_sync_directory_refresh (
+ admission_id UUID,
  name TEXT PRIMARY KEY CHECK(name='combo_markets'),
  cursor TEXT NOT NULL DEFAULT '',
  visited_cursors TEXT[] NOT NULL DEFAULT '{}',

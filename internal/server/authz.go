@@ -45,6 +45,10 @@ var publicGRPCMethods = map[string]bool{
 }
 
 var administratorGRPCMethods = map[string]bool{
+	"/tradersync.TraderSyncService/ListSubscriptionSummaries":  true,
+	"/tradersync.TraderSyncService/GetSubscriptionSummary":     true,
+	"/tradersync.TraderSyncService/GetTraderSyncRuntimeStatus": true,
+
 	"/account.AccountService/ListAccounts":        true,
 	"/account.AccountService/UpdateAccountAccess": true,
 	"/account.AccountService/UpdateAccountTier":   true,
@@ -123,6 +127,20 @@ func moduleWrite(module accountaccess.Module) grpcModuleRule {
 // moduleGRPCRules is the explicit product-module authorization boundary for
 // every public business RPC. Methods missing from every boundary fail closed.
 var moduleGRPCRules = map[string]grpcModuleRule{
+	"/tradersync.TraderSyncService/ResolveTarget":           moduleRead(accountaccess.ModuleTraderSync),
+	"/tradersync.TraderSyncService/ListSubscriptions":       moduleRead(accountaccess.ModuleTraderSync),
+	"/tradersync.TraderSyncService/GetSubscription":         moduleRead(accountaccess.ModuleTraderSync),
+	"/tradersync.TraderSyncService/ListActivities":          moduleRead(accountaccess.ModuleTraderSync),
+	"/tradersync.TraderSyncService/GetActivity":             moduleRead(accountaccess.ModuleTraderSync),
+	"/tradersync.TraderSyncService/ListSubscriptionHistory": moduleRead(accountaccess.ModuleTraderSync),
+	"/tradersync.TraderSyncService/GetSummaryBatch":         moduleRead(accountaccess.ModuleTraderSync),
+	"/tradersync.TraderSyncService/ListSummaryParts":        moduleRead(accountaccess.ModuleTraderSync),
+	"/tradersync.TraderSyncService/CreateSubscription":      moduleWrite(accountaccess.ModuleTraderSync),
+	"/tradersync.TraderSyncService/PauseSubscription":       moduleWrite(accountaccess.ModuleTraderSync),
+	"/tradersync.TraderSyncService/ResumeSubscription":      moduleWrite(accountaccess.ModuleTraderSync),
+	"/tradersync.TraderSyncService/CancelSubscription":      moduleWrite(accountaccess.ModuleTraderSync),
+	"/tradersync.TraderSyncService/UpdateTargetNote":        moduleWrite(accountaccess.ModuleTraderSync),
+
 	"/wallet.WalletService/GetWalletStatus":          moduleRead(accountaccess.ModuleWallet),
 	"/wallet.WalletService/ListWallets":              moduleRead(accountaccess.ModuleWallet),
 	"/wallet.WalletService/GetWallet":                moduleRead(accountaccess.ModuleWallet),

@@ -121,6 +121,74 @@ func (*TokenWalletNormalTransaction) ProtoMessage() {}
 
 func (*TokenWalletTransactionCount) ProtoMessage() {}
 
+func (*TraderSyncActivity) ProtoMessage() {}
+
+func (*TraderSyncAttempt) ProtoMessage() {}
+
+func (*TraderSyncBoolField) ProtoMessage() {}
+
+func (*TraderSyncComboLeg) ProtoMessage() {}
+
+func (*TraderSyncCurve) ProtoMessage() {}
+
+func (*TraderSyncCurvePoint) ProtoMessage() {}
+
+func (*TraderSyncDecimalField) ProtoMessage() {}
+
+func (*TraderSyncDelivery) ProtoMessage() {}
+
+func (*TraderSyncExistingSubscription) ProtoMessage() {}
+
+func (*TraderSyncFieldEvidence) ProtoMessage() {}
+
+func (*TraderSyncFinalityAnomaly) ProtoMessage() {}
+
+func (*TraderSyncHistoryEntry) ProtoMessage() {}
+
+func (*TraderSyncInterruption) ProtoMessage() {}
+
+func (*TraderSyncInterval) ProtoMessage() {}
+
+func (*TraderSyncMarketRef) ProtoMessage() {}
+
+func (*TraderSyncObservation) ProtoMessage() {}
+
+func (*TraderSyncPnLView) ProtoMessage() {}
+
+func (*TraderSyncQuota) ProtoMessage() {}
+
+func (*TraderSyncResolvedTarget) ProtoMessage() {}
+
+func (*TraderSyncRuntimeMetric) ProtoMessage() {}
+
+func (*TraderSyncRuntimeStatus) ProtoMessage() {}
+
+func (*TraderSyncSourceLocation) ProtoMessage() {}
+
+func (*TraderSyncStatusCounts) ProtoMessage() {}
+
+func (*TraderSyncStringField) ProtoMessage() {}
+
+func (*TraderSyncSubscription) ProtoMessage() {}
+
+func (*TraderSyncSubscriptionSummary) ProtoMessage() {}
+
+func (*TraderSyncSummaryBatch) ProtoMessage() {}
+
+func (*TraderSyncSummaryPart) ProtoMessage() {}
+
+func (*TraderSyncSummaryProgress) ProtoMessage() {}
+
+func (*TraderSyncTargetCount) ProtoMessage() {}
+
+func (*TraderSyncTargetDisplay) ProtoMessage() {}
+
+func (*TraderSyncTargetNote) ProtoMessage() {}
+
+func (*TraderSyncTimeField) ProtoMessage() {}
+
+func (*TraderSyncTradeMetadata) ProtoMessage() {}
+
 func (*WalletItem) ProtoMessage() {}
 
 func (*WalletStatus) ProtoMessage() {}

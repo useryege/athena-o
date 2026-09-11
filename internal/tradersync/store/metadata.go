@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/useryege/athena/internal/tradersync/activity"
 	q "github.com/useryege/athena/internal/tradersync/store/sqlc"
 	tm "github.com/useryege/athena/internal/tradersync/types"
@@ -80,22 +82,38 @@ func (s *SQLStore) LookupComboPosition(ctx context.Context, position string) ([]
 	return result, nil
 }
 
-// RefreshComboPage serializes only the directory state row, never an account or
-// wallet gate. The request has a five-second deadline and its mappings/cursor
-// commit together. Provider failures preserve the cursor but commit page pacing.
+// RefreshComboPage reserves a shared six-second recovery window before HTTP.
+// The second transaction retains the directory row lock and the original five-
+// second budget. Returned times are local monotonic wakeups computed from a
+// confirmed database delta, not assumptions about synchronized wall clocks.
 func (s *SQLStore) RefreshComboPage(ctx context.Context, fetch func(context.Context, string, int) (pm.ComboMarketPage, error)) (next time.Time, resultErr error) {
-	tx, e := s.pool.BeginTx(ctx, pgx.TxOptions{})
+	if fetch == nil {
+		return time.Time{}, &tm.DirectoryError{Phase: "configuration", CommitKnown: true, Err: errors.New("directory fetch required")}
+	}
+	phase := "begin_admission"
+	sent, commitKnown := false, true
+	var tx pgx.Tx
+	defer func() {
+		var cleanup error
+		if tx != nil {
+			closeCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second)
+			cleanup = tx.Rollback(closeCtx)
+			cancel()
+			if errors.Is(cleanup, pgx.ErrTxClosed) {
+				cleanup = nil
+			}
+		}
+		if resultErr != nil || cleanup != nil {
+			resultErr = &tm.DirectoryError{Phase: phase, HTTPAttempted: sent, CommitKnown: commitKnown, Err: resultErr, CleanupErr: cleanup}
+		}
+	}()
+	var e error
+	tx, e = s.beginDirectoryTx(ctx)
 	if e != nil {
 		return time.Time{}, e
 	}
-	defer func() {
-		rollbackCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second)
-		defer cancel()
-		if err := tx.Rollback(rollbackCtx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
-			resultErr = errors.Join(resultErr, fmt.Errorf("rollback directory transaction: %w", err))
-		}
-	}()
 	queries := q.New(tx)
+	phase = "lock_admission"
 	if e = queries.EnsureComboDirectory(ctx); e != nil {
 		return time.Time{}, e
 	}
@@ -103,61 +121,115 @@ func (s *SQLStore) RefreshComboPage(ctx context.Context, fetch func(context.Cont
 	if e != nil {
 		return time.Time{}, e
 	}
-	now, ok := state.DatabaseNow.(time.Time)
-	if !ok {
-		return time.Time{}, fmt.Errorf("database clock unavailable")
-	}
-	if state.NextPageAt.Time.After(now) {
-		return state.NextPageAt.Time, tx.Commit(ctx)
+	if state.NextPageAt.Time.After(state.DatabaseNow.Time) {
+		next = directoryWakeup(state.NextPageAt.Time, state.DatabaseNow.Time)
+		// This transaction did not mutate state or consume an admission.
+		e = tx.Rollback(ctx)
+		tx = nil
+		return next, e
 	}
 	if e = queries.StartComboRound(ctx); e != nil {
 		return time.Time{}, e
 	}
-	// Re-read under the same row lock after resetting a new round's visited list.
 	state, e = queries.LockComboDirectory(ctx)
 	if e != nil {
 		return time.Time{}, e
 	}
-	callCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	page, pageErr := fetch(callCtx, state.Cursor, 100)
-	cancel()
-	pageErr = errors.Join(pageErr, ctx.Err())
-	// A sent request consumes a page slot even if its parent is cancelled.
-	// Finish this page under the existing directory lock, with no new HTTP.
-	// Detaching also prevents cancellation between validation and commit from
-	// rolling back already-earned pacing. The owner may stop after this bound.
-	ctx, cleanupCancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	token := pgtype.UUID{Bytes: uuid.New(), Valid: true}
+	// Establish this deadline BEFORE the admission SQL's database timestamp.
+	// Neither a slow commit acknowledgement nor a second lock wait resets it.
+	deadlineCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	phase = "reserve_admission"
+	if _, e = queries.AdmitComboPage(deadlineCtx, q.AdmitComboPageParams{AdmissionID: token, ExpectedCursor: state.Cursor}); e != nil {
+		return time.Time{}, e
+	}
+	phase = "commit_admission"
+	commitKnown = false
+	if e = tx.Commit(deadlineCtx); e != nil {
+		return time.Time{}, e
+	}
+	commitKnown = true
+	tx = nil
+	if e = deadlineCtx.Err(); e != nil {
+		return time.Time{}, e
+	}
+	phase = "begin_page"
+	tx, e = s.beginDirectoryTx(deadlineCtx)
+	if e != nil {
+		return time.Time{}, e
+	}
+	queries = q.New(tx)
+	phase = "lock_page"
+	current, e := queries.LockComboDirectory(deadlineCtx)
+	if e != nil {
+		return time.Time{}, e
+	}
+	if current.AdmissionID != token || current.Cursor != state.Cursor {
+		return time.Time{}, errors.New("directory admission superseded")
+	}
+	if e = deadlineCtx.Err(); e != nil {
+		return time.Time{}, e
+	}
+	phase = "fetch"
+	sent = true
+	page, pageErr := fetch(deadlineCtx, state.Cursor, 100)
+	pageErr = errors.Join(pageErr, deadlineCtx.Err())
+	// Only the already-attempted page is allowed bounded detached settlement.
+	// A failure leaves TX1's reservation; no new connection replays old results.
+	cleanupCtx, cleanupCancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 	defer cleanupCancel()
 	if pageErr == nil {
 		pageErr = validateComboPage(page, state.Cursor, state.VisitedCursors)
 	}
 	if pageErr != nil {
-		at, e := queries.DelayComboPage(ctx)
+		phase = "persist_pacing"
+		at, e := queries.DelayComboPage(cleanupCtx, q.DelayComboPageParams{AdmissionID: token, ExpectedCursor: state.Cursor})
 		if e != nil {
-			return time.Time{}, errors.Join(pageErr, fmt.Errorf("persist directory pacing: %w", e))
+			return time.Time{}, errors.Join(pageErr, e)
 		}
-		if e = tx.Commit(ctx); e != nil {
-			return time.Time{}, errors.Join(pageErr, fmt.Errorf("commit directory pacing: %w", e))
+		phase = "commit_pacing"
+		commitKnown = false
+		if e = tx.Commit(cleanupCtx); e != nil {
+			return time.Time{}, errors.Join(pageErr, e)
 		}
-		return at.Time, pageErr
+		commitKnown = true
+		tx = nil
+		return directoryWakeup(at.NextPageAt.Time, at.DatabaseNow.Time), pageErr
 	}
+	phase = "persist_mapping"
 	for _, market := range page.Markets {
 		ids, e := json.Marshal(market.PositionIDs)
 		if e != nil {
 			return time.Time{}, e
 		}
 		for _, position := range market.PositionIDs {
-			if e = queries.UpsertComboPosition(ctx, q.UpsertComboPositionParams{PositionID: position, MarketID: market.ID, ConditionID: market.ConditionID, PositionIds: ids}); e != nil {
+			if e = queries.UpsertComboPosition(cleanupCtx, q.UpsertComboPositionParams{PositionID: position, MarketID: market.ID, ConditionID: market.ConditionID, PositionIds: ids}); e != nil {
 				return time.Time{}, e
 			}
 		}
 	}
-	at, e := queries.AdvanceComboPage(ctx, q.AdvanceComboPageParams{NextCursor: page.NextCursor, ExpectedCursor: state.Cursor})
+	phase = "advance_page"
+	at, e := queries.AdvanceComboPage(cleanupCtx, q.AdvanceComboPageParams{NextCursor: page.NextCursor, ExpectedCursor: state.Cursor, AdmissionID: token})
 	if e != nil {
 		return time.Time{}, e
 	}
-	return at.Time, tx.Commit(ctx)
+	phase = "commit_page"
+	commitKnown = false
+	if e = tx.Commit(cleanupCtx); e != nil {
+		return time.Time{}, e
+	}
+	commitKnown = true
+	tx = nil
+	return directoryWakeup(at.NextPageAt.Time, at.DatabaseNow.Time), nil
 }
+func (s *SQLStore) beginDirectoryTx(ctx context.Context) (pgx.Tx, error) {
+	if s.directoryTransactions != nil {
+		return s.directoryTransactions.BeginTx(ctx, pgx.TxOptions{})
+	}
+	return s.pool.BeginTx(ctx, pgx.TxOptions{})
+}
+func directoryWakeup(next, now time.Time) time.Time { return time.Now().Add(next.Sub(now)) }
 func validateComboPage(page pm.ComboMarketPage, cursor string, visited []string) error {
 	if page.Markets == nil || len(page.Markets) > 100 {
 		return fmt.Errorf("incomplete or oversized directory page")

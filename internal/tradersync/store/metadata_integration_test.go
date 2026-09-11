@@ -272,7 +272,7 @@ func TestMetadataDirectoryCancellationReportsPacingCleanupFailure(t *testing.T) 
 	ctx := context.Background()
 	_, err := db.Pool.Exec(ctx, `INSERT INTO trader_sync_directory_refresh(name,cursor,round_started_at,next_page_at) VALUES('combo_markets','resume',clock_timestamp(),clock_timestamp()-interval '1 second');
  CREATE FUNCTION reject_directory_pacing() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'injected pacing storage failure'; END $$;
- CREATE TRIGGER reject_pacing BEFORE UPDATE OF next_page_at ON trader_sync_directory_refresh FOR EACH ROW EXECUTE FUNCTION reject_directory_pacing();`)
+ CREATE TRIGGER reject_pacing BEFORE UPDATE OF next_page_at ON trader_sync_directory_refresh FOR EACH ROW WHEN (OLD.admission_id IS NOT NULL AND NEW.admission_id IS NULL) EXECUTE FUNCTION reject_directory_pacing();`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,7 +283,7 @@ func TestMetadataDirectoryCancellationReportsPacingCleanupFailure(t *testing.T) 
 		return pm.ComboMarketPage{}, parent.Err()
 	})
 	var storageErr *pgconn.PgError
-	if !errors.Is(err, context.Canceled) || !errors.As(err, &storageErr) || !strings.Contains(err.Error(), "persist directory pacing") {
+	if !errors.Is(err, context.Canceled) || !errors.As(err, &storageErr) || !strings.Contains(err.Error(), "directory persist_pacing") {
 		t.Fatalf("cleanup failure or original cancellation hidden: %v", err)
 	}
 }

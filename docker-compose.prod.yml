@@ -274,6 +274,8 @@ services:
     expose:
       - "8108"
 
+  # ATHENA_URL from env_file is consumed by the summary source before Start.
+  # Its pool is owned by this process; TS proxy never configures Telegram.
   athena-notification:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
@@ -498,6 +500,11 @@ services:
     secrets:
       - google-oidc-client-secret
     environment:
+      # env_file supplies required ATHENA_TRADER_SYNC_HTTP_URL,
+      # ATHENA_TRADER_SYNC_WSS_URL, ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY and ATHENA_URL.
+      # Optional ATHENA_TRADER_SYNC_PROXY_URL (unset/empty = direct) and
+      # ATHENA_TRADER_SYNC_MAX_IN_FLIGHT_SOURCES remain env_file values; do not
+      # override them with interpolation defaults that shadow an alternate file.
       ATHENA_BINARY_NAME: athena-server
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_SERVER_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=athena sslmode=disable

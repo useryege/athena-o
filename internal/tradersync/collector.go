@@ -34,13 +34,17 @@ type CollectorRPC interface {
 // Collector implements BaselineRegistrar. Task12 constructs it once, injects it
 // into SubscriptionService and owns Run's cancellation/join. The RPC is borrowed.
 type Collector struct {
-	store        *store.SQLStore
-	node         CollectorRPC
-	config       Config
-	running      atomic.Bool
-	mu           sync.Mutex
-	token, epoch uint64
-	session      *liverpc.Session
+	store            *store.SQLStore
+	node             CollectorRPC
+	config           Config
+	running          atomic.Bool
+	mu               sync.Mutex
+	token, epoch     uint64
+	session          *liverpc.Session
+	coverage         []common.Address
+	coverageRevision uint64
+	coveredAt        time.Time
+	checkpointAfter  string
 }
 
 func NewCollector(s *store.SQLStore, node CollectorRPC, config Config) (*Collector, error) {
@@ -193,6 +197,10 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 	c.mu.Lock()
 	c.epoch = epoch
 	c.session = session
+	c.coverage = nil
+	c.coverageRevision = 0
+	c.coveredAt = time.Time{}
+	c.checkpointAfter = ""
 	c.mu.Unlock()
 	intake := NewIntake(c.store, token)
 	receivedErr := make(chan error, 1)
@@ -258,6 +266,7 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 						_, err = ComputeBaseline(now, 0, head)
 					}
 				}
+				validatedAt := time.Now()
 				stop()
 				if err != nil {
 					if sessionCtx.Err() == nil {
@@ -267,7 +276,14 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 					}
 					return
 				}
-
+				if err = c.persistHealthCheckpoints(sessionCtx, token, epoch, session, validatedAt); err != nil {
+					if sessionCtx.Err() == nil {
+						healthErr <- fmt.Errorf("%w: observation ownership: %w", errCollectorBoundary, err)
+						cancel()
+						session.Close()
+					}
+					return
+				}
 			}
 		}
 	}()
@@ -378,6 +394,14 @@ func (c *Collector) reconcile(ctx context.Context, token, epoch uint64, session 
 			if err = c.store.AckFilters(ctx, token, epoch, next); err != nil {
 				return err
 			}
+			acknowledgedAt := time.Now()
+			c.mu.Lock()
+			if c.session == session && c.epoch == epoch {
+				c.coverage = append([]common.Address(nil), targets...)
+				c.coverageRevision = next
+				c.coveredAt = acknowledgedAt
+			}
+			c.mu.Unlock()
 			old := *filters
 			*filters = installed
 			*active = targets
@@ -477,4 +501,88 @@ func liveFilters(wallets []common.Address) []ethereum.FilterQuery {
 		result = append(result, ethereum.FilterQuery{Addresses: []common.Address{sourceVersions[ComboExchangeVersion].deployment.address}, Topics: [][]common.Hash{{orderFilledEvents[ComboExchangeVersion].ID}, nil, topics}})
 	}
 	return result
+}
+
+func combineCheckpoint(p liverpc.PongObservation, latest, covered, now time.Time, token, epoch, revision uint64, wallets []common.Address) (tm.ObservationCheckpoint, error) {
+	if p.Session == nil || !p.Alive || p.Sequence == 0 || p.At.IsZero() || latest.IsZero() || covered.IsZero() || token == 0 || epoch == 0 || revision == 0 {
+		return tm.ObservationCheckpoint{}, store.ErrCheckpointStale
+	}
+	at := latest
+	if p.At.Before(latest) {
+		at = p.At
+	}
+	expiry := latest.Add(15 * time.Second)
+	if pongExpiry := p.At.Add(20 * time.Second); pongExpiry.Before(expiry) {
+		expiry = pongExpiry
+	}
+	if !now.Before(expiry) || at.Before(covered) {
+		return tm.ObservationCheckpoint{}, store.ErrCheckpointStale
+	}
+	// Monotonic ordering chooses an actual observation, while backwards UTC is
+	// reported instead of swapped or clamped into an invented healthy timestamp.
+	other := p.At
+	if at.Equal(p.At) {
+		other = latest
+	}
+	if at.UTC().After(other.UTC()) || at.UTC().After(now.UTC()) {
+		return tm.ObservationCheckpoint{}, store.ErrObservationClock
+	}
+	return tm.ObservationCheckpoint{Token: token, Epoch: epoch, FilterRevision: revision, At: at, ExpiresAt: expiry, CoveredAt: covered, Wallets: append([]common.Address(nil), wallets...)}, nil
+}
+func (c *Collector) persistHealthCheckpoints(ctx context.Context, token, epoch uint64, session *liverpc.Session, latest time.Time) error {
+	c.mu.Lock()
+	if c.session != session || c.token != token || c.epoch != epoch {
+		c.mu.Unlock()
+		return store.ErrCollectorFenced
+	}
+	covered, revision, after := c.coveredAt, c.coverageRevision, c.checkpointAfter
+	wallets := append([]common.Address(nil), c.coverage...)
+	c.mu.Unlock()
+	evidence, err := combineCheckpoint(session.PongSnapshot(), latest, covered, time.Now(), token, epoch, revision, wallets)
+	if errors.Is(err, store.ErrCheckpointStale) {
+		return nil
+	}
+	if err != nil {
+		c.report(err)
+		return nil
+	}
+	passCtx, stop := context.WithTimeout(ctx, 5*time.Second)
+	defer stop()
+	rows, err := c.store.CheckpointIntervals(passCtx, epoch, after, 100)
+	if err == nil && len(rows) == 0 && after != "" {
+		rows, err = c.store.CheckpointIntervals(passCtx, epoch, "", 100)
+	}
+	if err != nil {
+		if ctx.Err() == nil {
+			c.report(fmt.Errorf("observation checkpoint selection: %w", err))
+		}
+		return nil
+	}
+	alive := func() bool {
+		c.mu.Lock()
+		same := c.session == session && c.token == token && c.epoch == epoch
+		c.mu.Unlock()
+		return same && session.PongSnapshot().Alive
+	}
+	for _, target := range rows {
+		// Advance before a potentially blocked owner. A busy first owner cannot
+		// consume every later health pass and starve the remaining relationships.
+		c.mu.Lock()
+		if c.session == session {
+			c.checkpointAfter = target.ID
+		}
+		c.mu.Unlock()
+		if err = c.store.SaveObservationCheckpoint(passCtx, target, evidence, alive); err != nil {
+			if errors.Is(err, store.ErrCollectorFenced) {
+				return err
+			}
+			if ctx.Err() == nil && !errors.Is(err, store.ErrCheckpointStale) {
+				c.report(fmt.Errorf("observation checkpoint persistence: %w", err))
+			}
+		}
+		if passCtx.Err() != nil {
+			break
+		}
+	}
+	return nil
 }

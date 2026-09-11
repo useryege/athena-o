@@ -281,6 +281,68 @@ func (q *Queries) GetBaselineSubscription(ctx context.Context, id pgtype.UUID) (
 	return i, err
 }
 
+const getCheckpointInterval = `-- name: GetCheckpointInterval :one
+SELECT i.last_reliable_at, i.id, i.owner_id, i.subscription_id, i.baseline_attempt_id, i.activation_generation, i.collector_epoch, i.filter_revision, i.expected_revision, i.registered_high, i.candidate_effective_at, i.state, i.effective_at, i.ended_at, i.reason,s.wallet,s.desired_state,s.activation_generation AS current_generation,ep.ended_at AS epoch_ended_at
+FROM trader_sync_monitor_intervals i
+JOIN trader_sync_subscriptions s ON s.owner_id=i.owner_id AND s.id=i.subscription_id
+JOIN trader_sync_collector_epochs ep ON ep.id=i.collector_epoch
+WHERE i.owner_id=$1 AND i.id=$2 FOR UPDATE OF i
+`
+
+type GetCheckpointIntervalParams struct {
+	OwnerID pgtype.UUID
+	ID      pgtype.UUID
+}
+
+type GetCheckpointIntervalRow struct {
+	LastReliableAt       pgtype.Timestamptz
+	ID                   pgtype.UUID
+	OwnerID              pgtype.UUID
+	SubscriptionID       pgtype.UUID
+	BaselineAttemptID    pgtype.UUID
+	ActivationGeneration int64
+	CollectorEpoch       int64
+	FilterRevision       int64
+	ExpectedRevision     int64
+	RegisteredHigh       int64
+	CandidateEffectiveAt pgtype.Timestamptz
+	State                string
+	EffectiveAt          pgtype.Timestamptz
+	EndedAt              pgtype.Timestamptz
+	Reason               string
+	Wallet               []byte
+	DesiredState         string
+	CurrentGeneration    int64
+	EpochEndedAt         pgtype.Timestamptz
+}
+
+func (q *Queries) GetCheckpointInterval(ctx context.Context, arg GetCheckpointIntervalParams) (GetCheckpointIntervalRow, error) {
+	row := q.db.QueryRow(ctx, getCheckpointInterval, arg.OwnerID, arg.ID)
+	var i GetCheckpointIntervalRow
+	err := row.Scan(
+		&i.LastReliableAt,
+		&i.ID,
+		&i.OwnerID,
+		&i.SubscriptionID,
+		&i.BaselineAttemptID,
+		&i.ActivationGeneration,
+		&i.CollectorEpoch,
+		&i.FilterRevision,
+		&i.ExpectedRevision,
+		&i.RegisteredHigh,
+		&i.CandidateEffectiveAt,
+		&i.State,
+		&i.EffectiveAt,
+		&i.EndedAt,
+		&i.Reason,
+		&i.Wallet,
+		&i.DesiredState,
+		&i.CurrentGeneration,
+		&i.EpochEndedAt,
+	)
+	return i, err
+}
+
 const getCollectorEpoch = `-- name: GetCollectorEpoch :one
 SELECT id, fencing_token, started_at, ended_at, reason, filter_revision, last_received_at, last_read_sequence FROM trader_sync_collector_epochs WHERE id=$1
 `
@@ -320,6 +382,78 @@ SELECT a.owner_id,a.subscription_id,a.id,a.activation_generation,a.collector_epo
 func (q *Queries) InsertBaselineInterval(ctx context.Context, id pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, insertBaselineInterval, id)
 	return err
+}
+
+const listCheckpointIntervals = `-- name: ListCheckpointIntervals :many
+SELECT i.last_reliable_at, i.id, i.owner_id, i.subscription_id, i.baseline_attempt_id, i.activation_generation, i.collector_epoch, i.filter_revision, i.expected_revision, i.registered_high, i.candidate_effective_at, i.state, i.effective_at, i.ended_at, i.reason,s.wallet FROM trader_sync_monitor_intervals i
+JOIN trader_sync_subscriptions s ON s.owner_id=i.owner_id AND s.id=i.subscription_id
+JOIN trader_sync_collector_epochs ep ON ep.id=i.collector_epoch
+WHERE i.collector_epoch=$1::bigint AND i.ended_at IS NULL AND ep.ended_at IS NULL
+AND s.desired_state='enabled' AND s.activation_generation=i.activation_generation
+AND ($2::uuid IS NULL OR i.id>$2)
+ORDER BY i.id LIMIT $3::integer
+`
+
+type ListCheckpointIntervalsParams struct {
+	Epoch    int64
+	AfterID  pgtype.UUID
+	RowLimit int32
+}
+
+type ListCheckpointIntervalsRow struct {
+	LastReliableAt       pgtype.Timestamptz
+	ID                   pgtype.UUID
+	OwnerID              pgtype.UUID
+	SubscriptionID       pgtype.UUID
+	BaselineAttemptID    pgtype.UUID
+	ActivationGeneration int64
+	CollectorEpoch       int64
+	FilterRevision       int64
+	ExpectedRevision     int64
+	RegisteredHigh       int64
+	CandidateEffectiveAt pgtype.Timestamptz
+	State                string
+	EffectiveAt          pgtype.Timestamptz
+	EndedAt              pgtype.Timestamptz
+	Reason               string
+	Wallet               []byte
+}
+
+func (q *Queries) ListCheckpointIntervals(ctx context.Context, arg ListCheckpointIntervalsParams) ([]ListCheckpointIntervalsRow, error) {
+	rows, err := q.db.Query(ctx, listCheckpointIntervals, arg.Epoch, arg.AfterID, arg.RowLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListCheckpointIntervalsRow
+	for rows.Next() {
+		var i ListCheckpointIntervalsRow
+		if err := rows.Scan(
+			&i.LastReliableAt,
+			&i.ID,
+			&i.OwnerID,
+			&i.SubscriptionID,
+			&i.BaselineAttemptID,
+			&i.ActivationGeneration,
+			&i.CollectorEpoch,
+			&i.FilterRevision,
+			&i.ExpectedRevision,
+			&i.RegisteredHigh,
+			&i.CandidateEffectiveAt,
+			&i.State,
+			&i.EffectiveAt,
+			&i.EndedAt,
+			&i.Reason,
+			&i.Wallet,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listClosedEpochOwners = `-- name: ListClosedEpochOwners :many
@@ -556,6 +690,35 @@ type SaveBaselineBoundaryParams struct {
 
 func (q *Queries) SaveBaselineBoundary(ctx context.Context, arg SaveBaselineBoundaryParams) (int64, error) {
 	result, err := q.db.Exec(ctx, saveBaselineBoundary, arg.ID, arg.FilterRevision, arg.CandidateEffectiveAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const saveIntervalCheckpoint = `-- name: SaveIntervalCheckpoint :execrows
+UPDATE trader_sync_monitor_intervals SET last_reliable_at=$1::timestamptz
+WHERE owner_id=$2::uuid AND id=$3::uuid
+AND collector_epoch=$4::bigint AND activation_generation=$5::bigint
+AND ended_at IS NULL
+`
+
+type SaveIntervalCheckpointParams struct {
+	ObservedAt pgtype.Timestamptz
+	OwnerID    pgtype.UUID
+	ID         pgtype.UUID
+	Epoch      int64
+	Generation int64
+}
+
+func (q *Queries) SaveIntervalCheckpoint(ctx context.Context, arg SaveIntervalCheckpointParams) (int64, error) {
+	result, err := q.db.Exec(ctx, saveIntervalCheckpoint,
+		arg.ObservedAt,
+		arg.OwnerID,
+		arg.ID,
+		arg.Epoch,
+		arg.Generation,
+	)
 	if err != nil {
 		return 0, err
 	}

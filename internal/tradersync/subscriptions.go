@@ -66,7 +66,7 @@ func (s *SubscriptionService) Create(ctx context.Context, ownerID string, in tm.
 		}
 		raw, e := base64.RawURLEncoding.DecodeString(in.Token)
 		if e != nil || len(raw) == 0 {
-			return status.Error(codes.InvalidArgument, "invalid confirmation token")
+			return status.Error(codes.FailedPrecondition, "invalid confirmation token")
 		}
 		digest = sha256.Sum256(raw)
 		identity, e = s.store.ReadConfirmationTx(ctx, tx, ownerID, digest[:])

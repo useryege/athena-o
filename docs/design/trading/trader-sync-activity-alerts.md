@@ -129,7 +129,7 @@ flowchart LR
 
 [`VersionVerifier`](../../../internal/tradersync/source_version.go)显式核验 ChainID、已知头及真实 ParentHash，比较候选/父块部署代码；Combo 还校验实际代理 hash、固定槽和实现代码，并读取仅候选 hash 的完整升级日志。未知版本、读取失败、空升级响应或同块升级均为 FailedPrecondition。仅成功代码证据按 chain/exchange/blockHash 缓存（最多 256 项），不会代替规范链重核；失败不缓存。私有 deployment helper 可供后续模块资料核验复用，但调用者须先建立同实例链 137、known 头/hash 与真实 ParentHash 的前置证据，模块不加入 Exchange 解码白名单。
 
-[`SourceRPC`](../../../internal/tradersync/source_rpc.go)借用不可变端点 ethclient，正面的链 137 验证仅在此实例缓存；重建端点必须新实例。它单独负责成功 finalized 头的 2 秒缓存、过期懒刷新及同在途并发合并，不启动独立 poller；ActivityProjector 的唯一 2 秒确认调度消费此入口，不再另设头缓存或独立 finalized 轮询；Collector 不调度 finalized。读取失败不把过期头当 fresh，每次真实 RPC 最多 5 秒；发起者取消会结束共享读取，其他等待者可独立取消，客户端由所有者关闭。当前已提供这些只读组件及独立 Collector；最终确认、版本解码和资料的后台消费由后续 ActivityProjector 统一组合。公开 API 与实际进程启动仍待接入，模块资料实现见市场补全章节。
+[`SourceRPC`](../../../internal/tradersync/source_rpc.go)借用不可变端点 ethclient，正面的链 137 验证仅在此实例缓存；重建端点必须新实例。它单独负责成功 finalized 头的 2 秒缓存、过期懒刷新及同在途并发合并，不启动独立 poller；ActivityProjector 的唯一 2 秒确认调度消费此入口，不再另设头缓存或独立 finalized 轮询；Collector 不调度 finalized。读取失败不把过期头当 fresh，每次真实 RPC 最多 5 秒；发起者取消会结束共享读取，其他等待者可独立取消，客户端由所有者关闭。当前由 athena-server 进程内唯一 Service 组合 Collector、ActivityProjector 与目录刷新，公开 API 已注册；模块资料实现见市场补全章节。
 
 ### 已实现的订阅与撤权边界
 
@@ -143,7 +143,7 @@ flowchart LR
 
 ### 已实现的共享接收与基线边界
 
-[`Collector`](../../../internal/tradersync/collector.go) 通过 `NewCollector(store, latestRPC, Config)` 构造，HTTP 依赖仅为 `HeaderByNumber`，其契约要求先核验端点为 Polygon 137；SourceRPC 在此入口复用已有 ChainID 成功缓存/并发合并，失败不缓存，错链不得继续读头；`rpc.DialHTTP` 创建有 5 秒请求上限的显式 HTTP 客户端，composition owner 负责关闭并构造借用该客户端的 SourceRPC。Collector 的 `Run` 只管理 WSS、latest 健康、基线和 raw 接收；唯一 10 秒 latest 健康 goroutine 独立于 account gate/ACK 等待，失败立即取消 reconcile 并关闭本地 WSS，停止时一并 join；同轮已登记且已有完整 ACK 覆盖的 pending 切片共享随后新读的一个头，各自重新核验 DB now/high。确认、解码、资料及其每 2 秒调度归后续 ActivityProjector。生产仍仅 athena-server 与 athena-notification 两进程。
+[`Collector`](../../../internal/tradersync/collector.go) 通过 `NewCollector(store, latestRPC, Config)` 构造，HTTP 依赖仅为 `HeaderByNumber`，其契约要求先核验端点为 Polygon 137；SourceRPC 在此入口复用已有 ChainID 成功缓存/并发合并，失败不缓存，错链不得继续读头；`rpc.DialHTTP` 创建有 5 秒请求上限的显式 HTTP 客户端，composition owner 负责关闭并构造借用该客户端的 SourceRPC。Collector 的 `Run` 只管理 WSS、latest 健康、基线和 raw 接收；唯一 10 秒 latest 健康 goroutine 独立于 account gate/ACK 等待，失败立即取消 reconcile 并关闭本地 WSS，停止时一并 join；同轮已登记且已有完整 ACK 覆盖的 pending 切片共享随后新读的一个头，各自重新核验 DB now/high。确认、解码、资料及其每 2 秒调度归同进程 ActivityProjector。生产仍仅 athena-server 与 athena-notification 两进程。
 
 [`Session`](../../../internal/tradersync/rpc/session.go) 每实例只有一条物理 WSS、一条 read loop 和串行写队列，绝不内部重连。read loop 在有界队列之前生成唯一 `types.ReceivedLog{Raw, ReceivedAt, Sequence}`，时间取实际解码接收时刻；钱包最高已观察高度和全会话接收序号在同一临界区更新。`RegisterTx` 在传入账户事务中取得钱包 gate，短时捕获相同 session/epoch 的快照，释放内存锁后写 pending attempt；所有 SQL 都在内存锁外。Collector 仅读已提交 pending/目标后安装过滤，调用方回滚不会发布过滤。已发出但超时的请求保留 ACK 身份；未决 ACK 达到 64 项后，后续请求以 `wss_pending_ack_capacity_exhausted` 关闭物理 Session，由 Collector 结束 epoch 并以新连接恢复，不淘汰旧请求后复用其 ID。该协议容量故障区别于单次明确的新目标订阅拒绝，后者仍保留旧过滤覆盖。
 
@@ -157,7 +157,7 @@ flowchart LR
 
 ### 已实现的目标确认边界
 
-`TargetResolver` 要求显式注入 `GrantCheck` 与 `ResolveContextTx`，缺少任一依赖即构造失败。外部身份和资料查询在账户 gate 外完成，资料请求并发最多 4；随后在同一个短账户事务中核验当前 grant、读取 owner 的备注/现有订阅/配额、使用数据库时钟生成 5 分钟期限并保存确认。SavedNote 的 nil 与空备注保留区别。当前集成测试显式提供授权或拒绝依赖，生产入口尚未注册，不存在临时放行路径。
+`TargetResolver` 要求显式注入 `GrantCheck` 与 `ResolveContextTx`，缺少任一依赖即构造失败。外部身份和资料查询在账户 gate 外完成，资料请求并发最多 4；随后在同一个短账户事务中核验当前 grant、读取 owner 的备注/现有订阅/配额、使用数据库时钟生成 5 分钟期限并保存确认。SavedNote 的 nil 与空备注保留区别。生产组合显式提供同库权限与 owner 上下文依赖，公开 facade 从真实凭据提取 owner，不接受请求指定会员身份。
 
 身份适配器只接受合法 0x 地址或 HTTPS 的 `polymarket.com` / `www.polymarket.com` 单段 `/@handle`。URL 禁止 userinfo、端口、额外路径和 query/fragment；每次读取限制 2 MiB、5 秒，最多 3 次受同样规则验证的跳转。固定版本 RSC SSR 必须有唯一 canonical 与明确钱包，并用 Gamma `GetPublicProfile` 交叉核验；不使用 PublicSearch。身份以 `ResolutionInput` 保留规范原始查询地址或原始受限 URL（包含重定向前入口），并随 `identity_json` 持久保存。摘要绑定原始来源到规范钱包 / canonical 的映射及适配器版本；头像、显示名与收益变化不会使身份失效。重验始终重新解析该来源，不能改查已解析钱包或 canonical URL；来源缺失、不可解析或映射变化均要求重新确认，不读取旧格式兼容路径。
 
@@ -272,7 +272,7 @@ Combo PositionId 先取得组合自身 YES/NO，再以高 31 字节 condition �
 - 暂停关闭当前区间并保留配额；取消关闭区间并释放配额。二者均保留旧活动与旧投递资格，不改变已有摘要成员。
 - 产品 grant 从开启变为 NONE 时，同一账户事务关闭全部未取消订阅区间、设置 `permission_disabled`、终止尚未取得发送许可的投递和待摘要成员，并给包括 sending 的全部旧 delivery 持久设置 eligibility_revoked_at/原因，永久禁止后续 attempt。既有许可的明确成功/未知照实保存，明确失败则取消，不因重新授权恢复重试资格。重新开通 grant 不恢复任何订阅；用户手动恢复或取消。
 - 故障记录当前 epoch 的中断，不设置 pending backfill。连接重新可用后取得新实时边界，仅对仍应监控的订阅自动恢复；故障期间已暂停/取消/撤权的订阅不恢复。
-- `athena-server` 每次启动或进程内 Run 重启均建立新的 Collector epoch；持久旧 source records、活动及投递可继续处理，旧中断区间不回补。Stop 停止接收并尽力记录中断，异常退出由下一次取得独占所有权后的持久换代记录不确定边界；不以心跳超时证明旧进程已经停止。
+- `athena-server` 每次进程启动建立新的 Collector epoch；HTTP/gRPC 平滑重启复用同一后台 Service，不重建 Collector；持久旧 source records、活动及投递可继续处理，旧中断区间不回补。Stop 停止接收并尽力记录中断，异常退出由下一次取得独占所有权后的持久换代记录不确定边界；不以心跳超时证明旧进程已经停止。
 
 ## 事务、并发与幂等
 
@@ -384,7 +384,7 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 | 关注点 | 源码位置 | 关键符号 | 动作 |
 | --- | --- | --- | --- |
 | 新业务域 | `internal/tradersync/`（预计新增） | Service、Collector、Projector、SubscriptionService | 新增。 |
-| 公共契约 | `internal/server/tradersync/`、`pkg/apis/application/v1alpha1/trader_sync_types.go`（预计新增） | 上述 member/admin RPC 与 DTO | 新增，生成 apiclient/gateway/Swagger。 |
+| 公共契约 | `internal/server/tradersync/`、`pkg/apis/application/v1alpha1/trader_sync_types.go` | 上述 member/admin RPC 与 DTO | 新增，生成 apiclient/gateway/Swagger。 |
 | API 服务组合 | [athena-server.go](../../../internal/server/athena-server.go)、[authz.go](../../../internal/server/authz.go) | newServiceSet、Run/Stop、RPC authorization maps | 注入业务服务与同库 store；进程重启不重复启动 worker。 |
 | 权限矩阵与原子撤权 | [access.go](../../../internal/accountaccess/access.go)、[controller.go](../../../internal/accountaccess/controller.go)、[account.go](../../../internal/server/account/account.go)、[accountstate store](../../../internal/accountstate/store/sql_store.go) | ModuleTraderSync、Validate、UpdateAccountAccess | 十模块矩阵、合法级别、按账户 gate、事务内停用。 |
 | 账户数据库 | [accountstate migrations](../../../internal/accountstate/store/migrations)、[sqlc.yaml](../../../sqlc.yaml) | 权威 schema、分模块查询生成 | 增加 Trader Sync 和账户通知实体；避免双迁移源。 |
@@ -414,8 +414,27 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 
 ### 摘要构造与资源归属
 
-通知 composition owner 通过 `(*notificationstore.SQLStore).BorrowPool() (*pgxpool.Pool,error)` 取得原物理池的借用引用，在启动前调用 `(*notification.Service).ConfigureSummaries(pool *pgxpool.Pool,siteURL string) error`。后者拒绝不同 pool，配置既有 trader-store 纯冻结适配器并将 SummarySource 注册到原 workSources。摘要适配器不关闭 pool、不自建轮询进程；Service.Stop 取消并 join shared dispatcher、全部 Sender 和结果补记，释放其 session 连接。整个 pool 仍由 notification CLI 的原 store 唯一关闭。Task12 负责把校验过的 siteURL 与此配置入口接入 ServerOpts/现有通知 CLI 的 startup；本任务没有另建进程或第二个连接池。
+通知 composition owner 通过 `(*notificationstore.SQLStore).BorrowPool() (*pgxpool.Pool,error)` 取得原物理池的借用引用，在启动前调用 `(*notification.Service).ConfigureSummaries(pool *pgxpool.Pool,siteURL string) error`。后者拒绝不同 pool，配置既有 trader-store 纯冻结适配器并将 SummarySource 注册到原 workSources。摘要适配器不关闭 pool、不自建轮询进程；Service.Stop 取消并 join shared dispatcher、全部 Sender 和结果补记，释放其 session 连接。整个 pool 仍由 notification CLI 的原 store 唯一关闭。通知 ServerOpts.SiteURL 已由原 CLI 的 ATHENA_URL 注入，NewServer 在 Start 前完成上述配置；显式 stopped-sender 恢复分支仍先于 Telegram 客户端构造且不依赖 Trader Sync 来源配置。
 
 摘要 delivery 以 `summary:<batch>:part:<index>` 幂等，source 保持 trader_sync、activity_id 为 NULL。最终许可查询通过真实 part→batch→冻结 membership 验证 owner、绑定 revision/chat、grant 及永久撤销标记；head 绑定也检验该 attempt 对应本批真实部分。不可用任意普通 delivery 或单一 ActivityID 代替。批次封存后不能追加部分或成员；同一个活动可关联同批多个部分，组合延续不丢关系。最终带 n/m 的 plain payload 由既有 delivery.EncodePayload 编码并计算原 bytes digest，重试只读 Permit.Payload；分页遇到页码位数变化会重新切分，完整 URL 不截断，无法装入单条的超长 URL 明确报错。
 
 摘要首条 COMMIT 结果未知时，有界读回只证明原 attempt/head 已提交，不证明原 PostgreSQL session 仍持 advisory lock。继续同一许可前，先完成授权预算 guard 的提交收尾、释放或丢弃原连接，再可取消地取得新账户 session 并核对同一存活实例/permit/head；禁止持预算读锁等账户。故障间隙允许出现 f<t<s，保持冻结和实际起点原值，重取锁成本不归为外部 Retry-After。
+
+
+## 公开读取与进程组合（Task12）
+
+`internal/server/tradersync` 注册 13 个会员 RPC 与 3 个管理员概要 RPC。会员普通登录和已启用 API Key 均需当前 Trader Sync grant；管理员不能借此读取会员正文。管理员查询独立投影账户、目标、状态及去重投递计数，不读取备注快照、市场资料、payload 或逐条投递。每次会员读取在 owner gate 内复核数据库 grant 和资源归属，别人的资源与不存在资源同为 NotFound；已授权读取释放事务后才响应网络。
+
+活动分页按提交后可见的 int64 ID 倒序，首次签名 snapshot 固定上界；refresh 保留原页上下界和成员，只刷新已存在资料/投递状态并按原过滤计算 hasNewer，空页不会偷偷长出记录。点击最新才取得新 snapshot。HMAC 游标绑定 owner、列表种类、规范过滤、页大小、方向与边界，页大小默认 50、范围 1–100。history 以时间/ID、summary parts 以 part_index 分页，不截断为前 50/100 条；单活动跨部分的关系完整保留。投递只返回最新 attempt 与总次数，sent 缺 startedAt 仍计 sent，不能由结果时间补造调用时间。所有 ID、原金额、position 保留十进制 string，uint64 revision 经实际 gateway 输出 JSON string。请求 note wrapper 缺失/null 与明确空值不混淆；请求分页字段为 page.page_size/page.cursor。
+
+观察读取只使用持久区间事实。lastReliableAt 是当前 generation 最近合格 checkpoint，自动重连同代可保留旧 interval 的真实点，手动恢复新代不继承；缺点不等于故障。当前区间按因果 epoch 优先选择，墙钟回退不能选回旧区间。中断 start 未知则缺失；end/recoveredAt 仅来自同代后继首次成功 interval.effective_at，跨代手动恢复另列。提前暂停/取消/撤权的区间不被后来 epoch 关闭覆盖；单独准备失败只报告 reason。时钟无法排序时保留原值与 clock_order_uncertain，不制造时长。
+
+Session 在原匹配 nonce pong 记录单调时间，Collector 将原 10 秒 latest 合格结果与已持久过滤覆盖组合，按较早真实观察 UTC 保存 interval.last_reliable_at。整个持久化 pass 最多 5 秒，最多读取 100 个关系并轮转游标，忙 owner 不永久挡住后排。owner gate 后再次验证新鲜度、session/epoch/fence、wallet/filter、当前代及区间开放。普通写失败或提交连接丢失保留原确认点并报告，下一原健康周期再试，不单独结束健康观察；真实失权仍沿原 fatal 边界处理。
+
+`internal/server/trader_sync_runtime.go` 接收已创建且已装权限 hook 的同 pool/traderStore，只构造一个 Collector、共享四槽 MetadataResolver、Projector、DirectoryRefresher 和 Service。Service.Run 一次性运行、取消并 join 三组件；AthenaServer 持有进程级取消、后台错误出口及 facade 注册，监听重启不重建业务后台。NewServer 返回初始化错误，后台 fatal 返回 CLI 并结束监听重启循环。关闭先 join 使用者，再由组合 owner 关闭自有 ethclient/HTTP transport，最后账户 store 关闭池；借用者不关闭池。
+
+目录使用独立状态行的两次事务。到期才在第一事务以 UUID token 与 DB now+6 秒预约提交准入；单调 5 秒截止在准入 SQL 前建立，慢 ACK 与第二次锁等待均消耗同一截止。未知准入提交或截止已过不调用 HTTP。第二事务重锁并核验 token/cursor，只发一页，映射/游标/清 token 原子提交；失败回滚保留第一事务预约。成功/确认的失败结算恢复完成后+1 秒节流，末页为 greatest(round_started_at+10min, now+1sec)。未确认提交不信任 next，重锁读回后决定。旧 token 不能覆盖后继者；上下文取消仅为已发页提供最多 5 秒结算及另 1 秒 rollback，真实清理错误保留到关闭结果。目录故障独立报告 phase/http_attempted/commit_known/cleanup，不当作观察 epoch 失败。该协议按正常调度、DB 时钟与取消截止运行，不声称任意进程暂停下数据库能证明物理发包时距。
+
+生产配置必需 ATHENA_TRADER_SYNC_HTTP_URL、ATHENA_TRADER_SYNC_WSS_URL、稳定 ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY 与 ATHENA_URL；缺少时启动明确失败，不自动改用另一供应商。可选 ATHENA_TRADER_SYNC_MAX_IN_FLIGHT_SOURCES 默认 100，是 source job 资源限制，不是业务目标配额或吞吐验收。专用 ATHENA_TRADER_SYNC_PROXY_URL 用于 TS HTTP/WSS、Gamma/Profile 和目录，未配置/空串直连，不继承 HTTP_PROXY 或 Token 配置；本地 WSL 默认仅由 dotenv 后的 Procfile helper 在真正 unset 时选 gateway:10809，部署不应用此默认。notification 只消费 siteURL 和现有发送配置，TS proxy 不接管 Telegram。
+
+当前验证使用隔离 PostgreSQL、回环 HTTP/WSS、真实 gRPC gateway/凭据及明确 synthetic source；真实供应商完整确认能力、100 目标吞吐与时效仍由 Task13 验收，不由上述组件测试外推。

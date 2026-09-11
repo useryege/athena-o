@@ -43,6 +43,8 @@ coverage_dirs=(
 	"/tmp/coverage/api-server"
 )
 
+# Trader Sync applies its local default in the Procfile API helper after dotenv.
+# Keep this existing Token-only policy before Goreman.
 configure_token_node_ws_proxy() {
 	unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY
 

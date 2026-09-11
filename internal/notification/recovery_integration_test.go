@@ -122,7 +122,7 @@ func TestRecoverSenderLossStopsPollerAndSignalsFatal(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
 	store := notificationstore.NewSQLStore(db.Pool)
 	probe := &pollingProbe{requests: make(chan utiltelegram.PollUpdatesRequest, 4), updates: make(chan []utiltelegram.Update)}
-	server, err := NewServer(ServerOpts{Store: store, Sender: NewTelegramSender(probe, nil), ProfileSyncer: recoveryProfile{}, Poller: NewTelegramPoller(store, probe), InternalAuthToken: strings.Repeat("a", 32)})
+	server, err := NewServer(ServerOpts{SiteURL: "https://athena.test", Store: store, Sender: NewTelegramSender(probe, nil), ProfileSyncer: recoveryProfile{}, Poller: NewTelegramPoller(store, probe), InternalAuthToken: strings.Repeat("a", 32)})
 	if err != nil {
 		t.Fatal(err)
 	}

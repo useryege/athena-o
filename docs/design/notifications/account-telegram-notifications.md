@@ -148,3 +148,10 @@ athena-notification --recover-stopped-sender=<incarnation-UUID>
 Started 事实通过固定连接在一秒内补记后释放 gate，不等 HTTP 回执；RecordStarted 本身不再请求账户 gate，结果仍在原账户短事务里 CAS。已 sent/unknown 且起点丢失的 head 也纳入明确停止恢复，不能只恢复当前 sending，不能因 NULL 起点跨进程重发。运行内保留真实观察的 monotonic 基点；恢复缺证据时只记录 recovery_basis_at 和原因，不伪造 first_started_at。预算等待的起止、时长和外部 Retry-After/本地协调原因及 gate 等待保留在 batch，完整总体延迟与动态 f<t<s 的 miss 不被抹去。
 
 `SQLStore.BorrowPool()` 仅返回借用引用；启动前 `Service.ConfigureSummaries(pool,siteURL)` 要求原池并注册实际 WorkSource。Service.Stop 和摘要协调者负责 cancel/join/释放所持 session，trader-store 适配器不 Close。唯一 pool owner 仍是 [通知 CLI](../../../cmd/athena-notification/commands/athena_notification.go) 的 `defer utilio.Close(store)`；Task12 将通过现有 ServerOpts/CLI 启动注入上述配置，不另建池。完整冻结、Unicode/UTF-16 分条与成员关系见 [Trader Sync 设计](../trading/trader-sync-activity-alerts.md#摘要首条的短-gate)。
+
+
+## Trader Sync 生产组合
+
+原 notification CLI 通过 ATHENA_URL 提供 ServerOpts.SiteURL；NewServer 在 Start 前从原 SQLStore.BorrowPool 取得同物理池并调用 ConfigureSummaries。启动后 account/system/reply/summary 共用现有 dispatcher、poller 和发送预算。Service.Stop 取消并 join 所有工作及补记后，CLI 的 store 唯一关闭池；摘要适配器无独立 Run/Close。缺 siteURL 或物理池明确返回构造错误。`--recover-stopped-sender` 分支仍先于 Telegram 客户端/summary 组合，不需 Trader Sync RPC/WSS/HMAC 配置，不发送消息；停止证明规则不变。
+
+ATHENA_TRADER_SYNC_PROXY_URL 只属于 API 内来源客户端；即使 notification 继承该环境，也不用于 Telegram。sendMessage 专属 5 秒截止与现有 30 秒长轮询保持分离。

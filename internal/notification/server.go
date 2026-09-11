@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"crypto/subtle"
+	"fmt"
 	"strings"
 
 	"github.com/useryege/athena/internal/notification/apiclient"
@@ -32,6 +33,7 @@ type ServerOpts struct {
 	Poller            *TelegramPoller
 	WorkerConfig      WorkerConfig
 	InternalAuthToken string
+	SiteURL           string
 }
 
 func NewServer(opts ServerOpts) (*Server, error) {
@@ -49,6 +51,16 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		),
 		healthService:         healthService,
 		internalAuthTokenHash: sha256.Sum256([]byte(token)),
+	}
+	if opts.Store == nil {
+		return nil, fmt.Errorf("notification store required")
+	}
+	pool, err := opts.Store.BorrowPool()
+	if err != nil {
+		return nil, err
+	}
+	if err = server.service.ConfigureSummaries(pool, opts.SiteURL); err != nil {
+		return nil, err
 	}
 	server.service.onFatal = func(error) { server.setHealthStatus(grpc_health_v1.HealthCheckResponse_NOT_SERVING) }
 	return server, nil

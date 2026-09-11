@@ -523,3 +523,29 @@ was performed as part of implementation validation.
 - [ ] Dependency ownership and failure isolation remain current.
 - [ ] UUID identity and immutable username remain database-driven with no per-user environment configuration.
 - [ ] The [design index](../README.md) contains the current summary.
+
+## Trader Sync process ownership and local environment
+
+The API command loads the required Trader Sync HTTP/WSS endpoints, stable
+cursor HMAC key, and site URL before constructing its process runtime. The same
+account pool and already-hooked Trader Sync store are passed into
+`internal/server/trader_sync_runtime.go`. One process-scoped Service runs the
+Collector, Projector, and DirectoryRefresher; listener restarts reuse it. Fatal
+background errors leave the CLI restart loop. Cancellation joins all borrowers
+before their owner closes the HTTP/RPC transport and account pool.
+
+The API Procfile entry invokes `hack/trader-sync-local.sh` after Goreman's dotenv
+load. It applies the WSL gateway:10809 default only when
+`ATHENA_TRADER_SYNC_PROXY_URL` is absent; an inherited or dotenv empty value
+means direct access. The existing pre-Goreman Token proxy behavior is unchanged.
+Trader Sync explicitly configures its HTTP and WSS transports, so a global proxy
+reintroduced by dotenv does not silently change its route. Production Compose
+uses the configured `env_file` and does not invoke the local WSL helper.
+
+Notification consumes the site URL before Start to configure SummarySource on
+its original physical pool. Its original CLI still owns the pool, and Stop joins
+the single dispatcher/poller and all send work first. Explicit stopped-sender
+recovery runs before this normal composition and remains independent of Trader
+Sync source endpoints. Metadata directory failures are independently observable
+and recover through persisted admission/cursor state; they do not terminate a
+healthy Collector solely because a directory transaction failed.
