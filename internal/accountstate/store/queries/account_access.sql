@@ -65,6 +65,7 @@ SET access_level = CASE module_access.module
   WHEN 'world_cup_corners' THEN sqlc.arg(world_cup_corners_access_level)::text
   WHEN 'token' THEN sqlc.arg(token_access_level)::text
   WHEN 'wallet' THEN sqlc.arg(wallet_access_level)::text
+  WHEN 'trader_sync' THEN sqlc.arg(trader_sync_access_level)::text
   ELSE module_access.access_level
 END
 WHERE module_access.account_id = sqlc.arg(account_id)::uuid

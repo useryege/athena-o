@@ -159,9 +159,10 @@ SET access_level = CASE module_access.module
   WHEN 'world_cup_corners' THEN $7::text
   WHEN 'token' THEN $8::text
   WHEN 'wallet' THEN $9::text
+  WHEN 'trader_sync' THEN $10::text
   ELSE module_access.access_level
 END
-WHERE module_access.account_id = $10::uuid
+WHERE module_access.account_id = $11::uuid
   AND EXISTS (
     SELECT 1
     FROM athena_account AS account
@@ -180,6 +181,7 @@ type ReplaceAccountModuleAccessParams struct {
 	WorldCupCornersAccessLevel string
 	TokenAccessLevel           string
 	WalletAccessLevel          string
+	TraderSyncAccessLevel      string
 	AccountID                  pgtype.UUID
 }
 
@@ -194,6 +196,7 @@ func (q *Queries) ReplaceAccountModuleAccess(ctx context.Context, arg ReplaceAcc
 		arg.WorldCupCornersAccessLevel,
 		arg.TokenAccessLevel,
 		arg.WalletAccessLevel,
+		arg.TraderSyncAccessLevel,
 		arg.AccountID,
 	)
 	if err != nil {

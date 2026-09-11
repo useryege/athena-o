@@ -1,0 +1,1 @@
+{"status":"stopped","poller_active":true,"recovery":{"state":"cancelled","reason":"cancelled","startedAt":"2026-09-11T05:13:35.893282919Z","remainingMillis":"55000","elapsedMillis":"5000","clockSource":"sender_monotonic"}}

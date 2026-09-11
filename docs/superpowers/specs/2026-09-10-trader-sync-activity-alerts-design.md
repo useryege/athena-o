@@ -1,6 +1,6 @@
 # Trader Sync / Activity Alerts 后端设计规格
 
-> 日期：2026-09-10。状态：已确认待实现；用户已整体确认完整书面规格。
+> 日期：2026-09-10。状态：已确认，实施进行中；用户已整体确认完整书面规格，分项进度见联合实现计划。
 >
 > 后端设计已整体确认并形成[实现计划](../plans/2026-09-10-trader-sync-activity-alerts.md)，尚未执行。用户随后要求先补 UI；[UI spec](2026-09-10-trader-sync-activity-alerts-ui-design.md)已整体确认，第 4 节的 UI 读取契约补充同时获确认；已有业务及后端架构决定继续有效。实现计划已扩展为21项前后端联合任务，尚未执行。
 
@@ -93,15 +93,17 @@ flowchart LR
 | ListSubscriptionSummaries / GetSubscriptionSummary | 独立管理员接口；用户身份、完整目标钱包、生命周期/健康、活动及结果数量。 |
 | GetTraderSyncRuntimeStatus | 管理员安全概要：连接、目标/关系数量、积压、缺失和异常统计。 |
 
+公共 JSON 的资源 ID、金额和 position 使用字符串；revision 等 uint64 在实际 gateway 中也用字符串，时间为 UTC RFC3339Nano。可缺值/时间/对象统一省略缺失 key，availability/evidence 显式保留；非 nil 空串、false、真 0 必须输出。Create 的 note:null 与未传均表示沿用，note.value 空串表示清空。分页规范 query 为 `page.page_size`、`page.cursor`，服务器沿用 runtime 对 protobuf JSONName 别名的接受。
+
 方法按仓库 gRPC 规范使用动词开头 PascalCase。member 请求没有 account_id，由服务端注入；所有查询和写入均包含 owner 条件，跨 owner 与不存在资源都返回 NotFound。管理员 DTO/SQL 从源头不选择私有备注、活动正文、消息正文和逐条投递，无管理用户订阅或重发入口。
 
-分页默认 50、最多 100，游标签名并绑定身份、过滤条件、方向及相应页边界。UI 补充将活动排序修订为 owner 内形成顺序 `id DESC`，其 bigint ID 在账户 gate 内由持久 sequence（CACHE 1、正向、NO CYCLE）分配，不预取或回拨；读取在同 gate 取得该 owner 已提交 max(id) 为 snapshot。recorded_at 继续记录真实时间，避免将可回退时钟当新活动水位。其他资源按相应稳定时间/ID，摘要部分按序号。
+分页默认 50、最多 100，游标签名并绑定身份、过滤条件、方向及相应页边界。资源 ID 跨 owner 或不存在返回 NotFound/HTTP404；游标签名或身份、过滤、种类、页大小等上下文不合法属于输入错误，统一 InvalidArgument/HTTP400，使用通用错误正文，不泄漏私有资源。该区分与 UI 错误处理契约一致；实现验收时纠正了计划将游标也统称 NotFound 的过宽表述。UI 补充将活动排序修订为 owner 内形成顺序 `id DESC`，其 bigint ID 在账户 gate 内由持久 sequence（CACHE 1、正向、NO CYCLE）分配，不预取或回拨；读取在同 gate 取得该 owner 已提交 max(id) 为 snapshot。recorded_at 继续记录真实时间，避免将可回退时钟当新活动水位。其他资源按相应稳定时间/ID，摘要部分按序号。
 
 写请求以 owner、操作、request_id 及 payload digest 幂等，重复键不同 payload 拒绝；读幂等结果前仍检查当前权限。已提交 Create 成功在权限检查后优先于 token 到期/消费判定返回，避免响应丢失后不能恢复结果。资源版本竞争返回 Aborted；配额满 ResourceExhausted，重复目标 AlreadyExists，输入 InvalidArgument，过期/失效确认 FailedPrecondition。只有成功事务保存成功幂等结果；失败不会占配额。
 
 确认卡包含头像、显示名、完整规范钱包、认证、加入时间、当前持仓价值、最大单笔盈利、Predictions，以及六个 P/L 区间和曲线，默认 1Y。每项使用 `availability`、`reason_code`、`source`、`queried_at` 与可选 value；未知不是 0。金额使用十进制字符串或整数原量加 decimals，position/token ID 以字符串传输，不经 JavaScript number。时间为带 UTC 语义的 timestamp；source/clock/precision 分开保存。
 
-Activity DTO 包含 source_record_id、钱包、BUY/SELL、原量/份额/费用及币种、结算时间、接收和形成时间、可用市场引用、资料缺失状态与备注快照。Combo 是单个活动，保留自身 Outcome、腿数组与逻辑关系。Delivery DTO 分别暴露 authorized_at、可缺失 started_at、结果时间、状态/原因；不把获许可或已提交显示为成功。
+Activity DTO 包含 source_record_id、钱包、BUY/SELL、原量/份额/费用及币种、结算时间、接收和形成时间、可用市场引用、资料缺失状态与备注快照。Combo 是单个活动，保留自身 Outcome、腿数组与逻辑关系。Delivery DTO 分别暴露 authorized_at、可缺失 started_at、结果时间、状态/原因；不把获许可或已提交显示为成功。原始证据通过sourceLocation返回原source的chainId、exchangeAddress、transactionHash、blockHash、blockNumber和logIndex，数值用十进制字符串，地址/哈希完整保留。priceEvidence和publicTimeEvidence复用字段证据；首次公开时间目前不可观测，不以结算/接收/核验时间代填。尚无许可或结果时相应投递时间、messageId可缺，已有attempt的许可时间保留。
 
 ### UI 设计补充的读取边界
 
@@ -130,9 +132,25 @@ Activity DTO 包含 source_record_id、钱包、BUY/SELL、原量/份额/费用�
 
 普通成交按精确 token/market 查询 Gamma，显式考虑 open/closed，按 token 下标匹配真实 Outcome。Combo 用当前 CombinatorialModule `getLegs(bytes31)` 取得腿：迁移 Binary 腿经 legacyConditionId/getLegacyPositionId 转旧 CTF token；其余已知腿使用公开 Combo markets 分页索引 PositionId→market ID，再精确查询 Gamma 核对 positionIds、condition 和 Outcome。该索引持久保存已见映射，包括之后关闭的市场；周期刷新仅补市场元数据，不读取历史成交。
 
+module1 腿的 legacy 无值或读取失败时，已持久目录和 Gamma 可提供独立精确资料证据，来源必须如实标注，不据此推断 native 身份或声称链上版本/映射成功。调用 legacy 前仍须核验 Binary 版本；Combinatorial 版本/getLegs 失败不允许靠目录猜整组腿。已取得的明确冲突保持可见，不通过切换资料路线覆盖。
+
 目录每页最多 100、支持 cursor，没有任意 PositionId 直接查询契约；不得在热路径无界扫完整目录。默认后台每 10 分钟开始一轮、有上轮则继续其游标不重叠启动，最多每秒一页，外部失败退避；查询和缓存指标独立统计。现有持仓和生命周期只作可选交叉核验，不能要求钱包仍有持仓或每次 TRADE 都带 SPLIT。
 
+目录采用两事务持久准入。第一事务在专属刷新行锁下，仅对已到期页写入准入 UUID 和数据库当前时刻加 6 秒的预约并提交；第二事务重锁并核对同 token/cursor，才调用一次 HTTP。本地单调 5 秒截止从准入 SQL 前起算，慢提交和重锁等待也占用它，不能重新计时；准入提交未知或已过截止不发请求。第二事务将映射、cursor、清 token 与下一页时刻原子提交，正常结算按 HTTP 返回后的数据库时刻加 1 秒（末页同时遵守 10 分钟轮次）恢复节奏。后段回滚仍保留已提交的 6 秒预约；未知提交重读实际状态，不重放旧响应。调度以数据库时差转本地单调等待并再次核验。这覆盖正常调度/数据库时钟与有界 HTTP 取消下的跨实例节流，不声称任意进程暂停或时钟跳跃下的物理发包证明。该锁不涉及账户或钱包 gate，不新增长期 session 锁；HTTP 前故障也可能保守占用预约。
+
+请求已经发出后父上下文取消，也要以有界清理保存节流状态再释放行锁，避免另一实例立即重试同页；取消不是“没有发过请求”的证明。清理失败须报告，不能静默吞掉。
+
+目录索引记录外部声明的待核验关系；只有精确 Gamma 对照通过后，才将资料及实际来源保存为 available。不能因为目录存在一个 PositionId 就直接把该市场判为已核验。
+
 元数据先与 finality 并行补全；最终确认可用后最多另等 2 秒。未取得资料则形成独立活动，保留 PositionId、已知腿、未知字段及原因。getLegs 整体失败时 legs 与腿数均 unavailable，不能用空数组或 0 代替；已知 N 条腿但 M 条缺资料时，N/M 才有明确值。异步补资料只更新可变显示资料，不改成交原始事实、备注或已冻结消息，不创建/重发通知。组合 YES 是所有腿的合取，NO 是整体合取的补集，不逐腿取反，也不把组合成交方向称为各腿分别成交。
+
+两秒是活动投影方在最终确认后的等待预算，不是 MetadataResolver 的总请求截止。解析器遵从调用方取消、单次 HTTP/RPC 最多 5 秒；后台补资料使用自身有界上下文，避免稳定超过两秒的资料请求永远无法补齐。
+
+解析器发布不可变进度快照：getLegs核验成功时先给出全部N个PositionID与逐腿缺省状态，再逐步补齐已核验资料。活动等待到点直接取当前快照，不等待网络退出；同一资料工作继续晚补，默认总截止30秒，运行退出时取消并等待结束，始终共享4并发预算。30秒为可配置资源上限，不承诺在其内取得完整资料。
+
+同一证据键下已有的非冲突partial，在暂时读取失败、取消或并发较差结果晚到时保留；明确身份/condition/position冲突仍须可见，不能用旧available覆盖。缓存及活动显示采用一致的保留规则，合并事务不跨网络；不同来源版本、PositionID或Combo known blockHash的证据不得混合。
+
+订阅成功创建时，在同一账户事务保存本次确认卡的少量公开展示值及原查询证据（名称、头像、已核验的Profile URL）；活动形成时复制公开展示快照。名称取确认卡的字段证据，不从名字推钱包或拼Profile链接。非空备注优先，其次可用名称，最后钱包识别；公开名称字段本身缺失仍明确不可用，完整钱包在确认、详情和通知另列。资料表示确认时状态，可能陈旧；暂停/恢复沿用，新订阅重新确认可取得新值。不复制P/L统计，不新增周期Profile查询，不更改历史快照/冻结消息或监控身份。
 
 ## 6. 采集、基线与最终确认
 
@@ -148,29 +166,45 @@ BUY 抵押币量为 makerAmountFilled、份额为 takerAmountFilled；SELL 相�
 
 ### 6.2 共享过滤和基线
 
-默认一条 WSS，普通 CTF/Neg Risk 合用一类 logs 过滤，Combos 独立一类，钱包 OR 每组最多 100。按全体 enabled 订阅目标去重，暂停/取消/撤权且无其他有效订阅时移出；已收到候选继续按原资格处理。目标变更先安装新过滤并取得 ACK，再卸载旧过滤，重复日志幂等；不重建已有目标的用户边界。添加新目标失败只使新目标等待/异常，不破坏已有有效过滤。
+默认一条 WSS，普通 CTF/Neg Risk 合用一类 logs 过滤，Combos 独立一类，钱包 OR 每组最多 100。按全体 enabled 订阅目标去重，暂停/取消/撤权且无其他有效订阅时移出；已收到候选继续按原资格处理。目标变更先安装新过滤并取得 ACK，再卸载旧过滤，重复日志幂等；不重建已有目标的用户边界。添加新目标失败只使新目标等待/异常，不破坏已有有效过滤。已发出但无ACK的请求保留身份；未决ACK达到64项后，后续控制请求以明确容量故障关闭物理会话，由Collector结束epoch并重连，不淘汰身份或永久原地失败。这与单次明确的新目标订阅拒绝区分。
 
 创建/手动恢复在 pending_baseline 事务内同时创建尚未确定边界的 baseline attempt，并在安装过滤前注册接收归属；自动恢复同样先注册新 attempt。注册与该钱包的 raw 持久化用同一钱包 intake gate 串行，保存注册前已观察的最高高度，避免共享过滤已有推送却尚无候选归属的空窗。全部相关过滤 ACK 后，读取新鲜 latest H，要求其高度不低于注册时已观察高度；选择 `effective_at=max(数据库当前时刻的下一整秒,H.timestamp+1秒)`。latest 调用须在 5 秒内完成，区块不落后数据库时钟超过 10 秒、不领先超过 2 秒，否则视为节点/时钟异常，不建立基线。
 
+read loop在入队前记录实际接收时刻、会话内单调序号和钱包观察高水位；注册在同一内存临界区取高水位及序号快照，持久绑定原epoch。注册截点之前已收到但尚在排队的日志，不归给后来注册的订阅。内存锁不跨SQL；Registrar只写入调用方事务，Collector看到已提交登记后才安装过滤，事务回滚不发布生效成员。
+
+WSS与HTTP端点分别核验Polygon 137；HTTP latest入口复用SourceRPC已有的链证明缓存和并发合并，失败不缓存，不能只依赖最终确认调用先发生。WSS日志在标准解码前验证必需定位字段存在且非null，避免缺失字段被当成合法零高度/索引；完整提供的零值仍按实际值处理。
+
 等待前为已注册 attempt 填写订阅 revision/generation、collector epoch、filter revision 与候选边界；若保存时边界已过去则重算将来边界。未定边界期间也保存 raw 及 attempt 归属，最终按成功边界裁定，不直接产生活动。到达边界后复核连接、权限、revision，成功原子把 attempt 转为 succeeded、生成有效区间。失败 attempt 永不成为后来基线的候选；服务重启对未提交成功的 attempt 明确失败并新建实时基线。
 
-成交资格使用 `settled_at>=effective_at`，区间终点排他。暂停/取消/撤权终点使用实际业务事务时间，不向后取整；区块只有秒精度，不伪造同块内逐成交亚秒时刻。用户修改与基线成功共用账户 gate，较新 revision 优先。生效边界建立后没有固定额外等待。
+创建epoch的提交结果未知时，在独立最多5秒的读回事务核验同token、准确active epoch及未结束状态，确认后才采用；无法确认则明确退出并保留启动/清理错误，不在同一所有权下无限重连。
+
+对尚未绑定epoch的遗留pending，取得采集所有权时在control锁下保存已提交ID快照，换代提交后再逐账户终结并重建；之后登记的新ID不受影响。已暂停、撤权或改变generation的意图优先，不因重建而恢复。首次启动前的未绑定登记也按此截点重新准备，不据此声称已有健康监控或发生了遗漏。
+
+成交资格使用 `settled_at>=effective_at`，区间终点排他。尚未生效即终止时，允许 `ended_at<effective_at`，该区间不覆盖任何成交，仍保留真实终点。暂停/取消/撤权终点使用实际业务事务时间，不向后取整；区块只有秒精度，不伪造同块内逐成交亚秒时刻。用户修改与基线成功共用账户 gate，较新 revision 优先。生效边界建立后没有固定额外等待。
 
 ### 6.3 接收和投影
 
-原始定位键为 `(chain_id,exchange_address,block_hash,transaction_hash,log_index)`，raw 第一次落库同时冻结候选订阅、generation 与 baseline/interval。重复返回只复用原事实，不能补建后来订阅的候选；同键后到的 removed=true 是状态证据，必须应用，不能被去重吞掉。原始接收失败不算可靠收到，要记录中断/可能遗漏，不借后续历史查询掩盖丢失。
+原始定位键为 `(chain_id,exchange_address,block_hash,transaction_hash,log_index)`，raw 第一次落库同时冻结候选订阅、generation 与 baseline/interval。重复返回只复用原事实，不能补建后来订阅的候选；同键后到的 removed=true 是状态证据，必须应用，不能被去重吞掉；即使最后一个目标订阅已暂停、取消或因权限停用，仍保存已经收到的既有source更新，原raw/时间/序号与候选不变。首次source及新候选仍受当前观察目标约束。原始接收失败不算可靠收到，要记录中断/可能遗漏，不借后续历史查询掩盖丢失。
 
-共享 finalized 每 2 秒查询；latest 健康每 10 秒查询，不常驻全链 newHeads。候选高度不高于新读 finalized 时，重新查询已知 tx receipt，核验成功状态、当前规范链定位以及已接收日志的地址/topics/data/index，再取已知 blockHash 区块时间。确认前缓存回执不够；必要时用近期高度头交叉核验。回执中其他日志不转为新活动。
+确认工作每 2 秒调度，共享 finalized 由同一 SourceRPC 实例持有：成功头缓存 2 秒，过期按需刷新，在途请求合并且等待可取消，刷新失败不冒用过期头。适配器不另起轮询，空闲时不主动拉 finalized；latest 健康仍每 10 秒查询，不常驻全链 newHeads。候选高度不高于新读 finalized 时，重新查询已知 tx receipt，核验成功状态、当前规范链定位以及已接收日志的地址/topics/data/index，再取已知 blockHash 区块时间。确认前缓存回执不够；必要时用近期高度头交叉核验。回执中其他日志不转为新活动。
+
+读取 finalized 前先核实当前连接的 chain ID 为 137；成功链证明只属于同一不可变端点实例，替换端点必须重建实例。每次真实 RPC 截止 5 秒；版本核验另从已知候选头取得真实 ParentHash。节点错链或读取失败返回 unverified 证据及底层错误，调用者保留候选并分别报告，不能用另一链的头将 Polygon 候选标为 invalid。取消只停止本轮工作。
+
+物理WSS结束独立传播取消，正在等待账户gate或ACK的注册/核对工作及时退出；持久结束epoch先于逐账户收尾，HTTP latest持续成功不能掩盖WSS故障。
 
 单次 finality 查询失败保留候选并重试，不以错误响应推进水位，也不单凭该错误丢弃仍健康的 WSS。采集可用性与确认/资料处理积压分别报告；只有真实失去观察能力或无法核准其健康时关闭观察 epoch，不能将所有处理延迟描述为发生了接收中断。
 
-removed 或明确规范链重定位使该 raw 候选无效；null/403/超时只是未能确认，不当作孤块。重新包含的交易只有再次真实接收的新日志才可形成新候选，不能从查询中补建。只有最终确认后才投影活动；若后续出现与已形成活动冲突的深度重组，保留原事实并标 finality 一致性异常，隔离同交易的新分叉候选，不再自动形成第二份活动或提醒。不能简单以 txHash+logIndex 跨分叉去重，因为区块级 logIndex 可能改变。
+removed 或明确规范链重定位使该 raw 候选无效；null/403/超时或回执必需字段缺失只是未能确认，不当作孤块。适配器须区分字段缺失与合法零值，不能将缺失 status 的默认零误作明确执行失败；完整回执中的明确失败仍为无效证据。重新包含的交易只有再次真实接收的新日志才可形成新候选，不能从查询中补建。只有最终确认后才投影活动；若后续出现与已形成活动冲突的深度重组，保留原事实并标 finality 一致性异常，隔离同交易的新分叉候选，不再自动形成第二份活动或提醒。异常证据必须是已发布的原source自身被撤销/明确失效，或同交易后来真实收到并确认了不同区块；尚未发布且无效的新分叉或同块错误日志不能推翻旧活动。不能简单以 txHash+logIndex 跨分叉去重，因为区块级 logIndex 可能改变。会员活动读取返回可缺的finalityAnomaly，保留原因、检测时刻、原发布块与可缺冲突块。仅收到removed且替代块未知时存NULL并明确未知，不填零hash或原hash；界面单列异常，不改原成交、备注、冻结载荷或已有通知结果。后续真实接收并确认同交易的不同区块时，可在同交易证据锁下仅补首次未知的冲突哈希；保留首次原因和检测时间，已有冲突哈希不覆盖，不恢复被隔离活动或生成新通知。
 
 活动插入以 `(subscription_id,source_record_id)` 唯一。每个 owner 在独立短事务里重查 grant、desired_state=enabled、相同 generation 和原基线成功/区间，插入活动、备注快照及当前绑定资格、普通或摘要归属。不因为 collector epoch 已关闭或当前 observation_state=interrupted 而拒绝原本合格的持久候选。用户暂停/取消/撤权或手动新 generation 则使旧未形成候选失去资格。
 
 ### 6.4 中断和恢复
 
 断线、Run 重启、写库失败或健康异常保存中断原因、最后可靠观察与可判断边界；未知时间显式缺失，不编造遗漏数量。恢复创建新 collector epoch 和新实时区间，同 generation 下旧成功区间的持久候选可继续。没有 range cursor、pending backfill 或短暂补漏模式。旧中断不标为已补齐。
+
+最近可靠观察明确为当前 generation 最近一次持久化的区间健康检查点，不是最近成交时间。每个 monitor_interval 保存可缺 last_reliable_at；原 Collector 组合匹配 pong、合格 latest 与已持久确认的过滤覆盖，以同进程单调时间选择两项实际观察中较早者并保存其原 UTC。证据须属于同一 session/epoch、覆盖该订阅且不早于实际生效；晚加入、已停止区间和新代不继承无归属的旧点。无成交时检查点仍可推进，首次无合格证据时保持缺失。写入沿账户到fence锁序，网络在锁外；复用原健康周期，每次有界公平持久化最多5秒，不新增健康轮询。普通检查点写失败或提交未知只报告并保留最后已确认点，不单独终止健康 epoch；真实失权、WSS/latest失效及 raw 持久失败仍按原边界处理。
+
+观察历史仅归属到确因该 epoch 关闭受到影响的区间或准备尝试，并按订阅/epoch去重。物理中断起始未知时 start 缺失，epoch.ended_at只是服务记录的停止边界，interruption.recorded_at用于时间线排序，两者不冒充故障发生时间。end/recoveredAt仅由同订阅同 generation 后继第一个真实成功区间的 effective_at 推导，始终保留 possibleMissing；新代手动恢复另列生效区间，不能改写旧中断为自动恢复。准备失败且没有真实 epoch 中断时仍为准备状态，仅展示明确原因，不新增中断计数。时钟顺序不可信时标明不确定，保留原时间，不交换或夹成零。
 
 Chainstack 对旧按高度查询有 Archive 限制，本轮已知 blockHash/tx receipt 路径可读，但不保证所有旧版本状态查询可用。无法取得规范链/版本证据的持久候选继续 unverified 并可见积压；不以 finalized 高度单独确认任意旧哈希。手动切换 dRPC 也建立新实时边界，不补故障段。
 
@@ -185,18 +219,23 @@ WSS ACK、ping/pong、节点头新鲜只证明观察健康，不能证明服务�
 | targets / target_notes | 规范钱包唯一；私有 note 单独以 owner-wallet 唯一，并保存 revision。 |
 | target_confirmations / request_results | token digest、owner、规范身份、到期与消费信息；操作幂等键及 payload digest、结果。 |
 | subscriptions | owner、target、desired/observation state、revision、generation、各生命周期时间；owner-target 非 cancelled 部分唯一索引。 |
-| baseline_attempts / monitor_intervals | 候选与成功边界、原 generation/epoch/filter、预期 revision；attempt 状态单向终结，不覆盖旧区间。 |
+| baseline_attempts / monitor_intervals | 候选与成功边界、原 generation/epoch/filter、预期 revision及interval可缺的健康检查点；attempt 状态单向终结，不覆盖旧区间。 |
 | collector_epochs / interruptions | 运行 incarnation/fencing token、过滤集合版本、可靠观察/中断/恢复及不确定性。 |
+| collector_control | 单一采集所有权控制行及单调fencing token；与每次持久写入在事务内串行校验。 |
 | source_records / source_candidates | 不变 raw、定位、首次接收、确认/版本证据、状态；候选绑定原 subscription/generation/attempt，唯一关系防重新归属。 |
 | activities | owner、subscription、generation、interval、source、成交事实、备注与形成时间；每订阅源记录唯一，无自动 TTL。 |
-| market_metadata / combo_leg_index | 来源键、精确映射与核验时间、可用性、刷新游标；保留已见关闭市场。与成交事实分离。 |
-| summary_batches / items / parts | owner、binding revision、最老成员时间、真实首条起点或缺失、不可变成员/内容与 part 序号；activity 只属一个外发形态。 |
+| market_metadata / combo_leg_index | 来源键、精确映射与核验时间、可用性；保留已见关闭市场。与成交事实分离。 |
+| directory_refresh | 当前 cursor、轮次开始/完成时间、下一页时刻及可缺 admission UUID；先持久准入，再原子结算映射与游标，后段回滚仍保留共享预约。 |
+| summary_batches / items / parts | owner、binding revision、最老成员/冻结时间、真实首条起点或缺失、恢复基点、预算/本地等待证据、不可变成员/内容与 part 序号；activity 只属一个外发形态，同批跨部分保留完整多对多关系。 |
+| summary_heads | owner唯一的未解决首条及其批次、部分、当前attempt/许可关联；保护首条顺序，实际发送仍用account delivery，恢复必须核验旧sender停止与真实起点证据。 |
 | account_deliveries / delivery_attempts | 业务来源与资格、永久 eligibility_revoked_at/原因、payload digest、当前状态及 next_attempt_at；每次独立 attempt、sender incarnation、许可/起点/结果时间、provider message ID 和原因。 |
 | bot_updates / offsets / reply_outbox | Bot/update 唯一，消费结果、绑定事务、持久回复与消费进度同库原子。 |
 
 以上为逻辑实体，表名统一用所属模块前缀；已有 Notification 实体直接调整，不平行创建两套有效表。涉及 owner 的组合引用通过复合唯一键/FK 或同事务一致性约束保证同 owner，不只靠 DTO 校验。活动历史、取消订阅、备注及投递审计不自动过期；短期 token 和结束的无业务事实任务可清理，不破坏去重或用户可见历史。
 
-账户 gate 使用统一命名空间和 account UUID 的 advisory lock。权限变更、订阅、活动形成、绑定、发送许可使用同一键；普通事务使用 transaction lock。基线注册采用 account gate→wallet intake gate，原始接收只取 intake gate、不反向取得账户 gate；投影只取账户 gate，避免锁序循环。绑定唯一 Telegram 身份锁在账户 gate 后取得，多账户操作必须统一排序。当前全局权限更新 mutex 改按账户串行，数据库 revision CAS 仍是并发依据。
+账户 gate 使用统一命名空间和 account UUID 的 advisory lock。权限变更、订阅、活动形成、绑定、发送许可使用同一键；普通事务使用 transaction lock。基线注册采用 account gate→wallet intake gate，原始接收只取 intake gate、不反向取得账户 gate；投影按账户 gate→链/交易证据锁→原 source 行锁的顺序协调，同交易的不同 owner 分叉不能并发双发布；证据写入不反向取得账户 gate，避免锁序循环。绑定唯一 Telegram 身份锁在账户 gate 后取得，多账户操作必须统一排序。当前全局权限更新 mutex 改按账户串行，数据库 revision CAS 仍是并发依据。
+
+Collector另持专属PG session advisory lock；每次持久写入在取得所需account/wallet gate后锁定控制行并核验当前token及epoch，与换代事务串行。失锁取消会话，后继实例取得所有权后增加token；换代及关闭epoch先独立提交，再逐账户收尾，不能持fence反向等待account。这里保护只读采集及数据库写入，不要求沿用Telegram发送者的外部停止确认操作。
 
 权限缓存只能快速拒绝，所有允许行为由数据库核验。`recorded_at` 在取得 gate 后取数据库真实时间，不用事务开始时的 NOW()；插入成功提交后才视为形成，记录到提交的耗时纳入延迟。先赋时间后提交使计时包含事务成本，不以提前启动事务的时间或人为延后赋时规避指标。
 
@@ -206,7 +245,7 @@ member 读取在同一数据库事务/gate 下核验 grant 并取得 owner 数�
 
 权限撤销在同一账户事务里更新 grant、关闭区间、设置 permission_disabled、取消无执行中许可的投递和未冻结摘要成员，同时给全部旧 Trader Sync delivery（包括 sending）保存永久的 eligibility_revoked_at/原因。该标记不撤销当前已授权 attempt，但永远阻止后续 attempt；重新授权不会清除。旧 attempt 此后明确成功/未知照实保存，明确失败则 cancelled，不因 grant 已重新开启而重试。解绑/重绑提高 binding revision，并终止旧 revision 的待发工作；不抹去已发送或未知结果。产品 grant 只控制 Trader Sync 来源，不给其他合法账户通知强加该权限。
 
-sender 准备 worker 与有效速率槽后，在短事务里复核当前资格和状态，提交 attempt 与 sending 即取得许可；随后释放 gate，执行一次显式 Telegram 调用。撤权只需等待该短事务，已有许可可完成，包括许可已提交而尚未调用的窗口。每 chat 最多一个执行中尝试；摘要每一部分独立许可。
+sender 准备 worker 与有效速率槽后，在短事务里复核当前资格和状态，提交 attempt 与 sending 即取得许可；随后释放 gate，执行一次显式 Telegram 调用。撤权只需等待该短事务，已有许可可完成，包括许可已提交而尚未调用的窗口。每 chat 最多一个执行中尝试；摘要每一部分独立许可。许可本身不豁免后续收到的动态限流：尚未开始 HTTP 时沿用同一 permit/attempt 在独立可取消的 pre-start 闸门等待，不能再次授权或计次。最后预算准入与预算收紧确定排序，真实 started 回调仍为常量时间；五秒 HTTP 超时从预算准入后开始，本地预算等待另记并保留总体时延。
 
 ```mermaid
 stateDiagram-v2
@@ -221,7 +260,7 @@ stateDiagram-v2
 
 attempt 是一次发送事实，delivery 可经多个明确失败的 attempt 完成有限重试。总尝试最多 5 次，退避 1/2/4/8 秒；429 至少等 Retry-After，下一次仍重新授权。只有明确证明本次未成功的暂时错误可重试；本地未发出请求、明确 Telegram 拒绝与可能已接收分别分类。禁止 HTTP client、SDK 或代理隐藏重试。
 
-许可事务提交结果不确定时不盲发，先读取持久 attempt；不能恢复确认则不再发。明确成功后写库失败只补记同一 attempt 的 sent/message ID，不重新调用 Telegram。结果以 `(delivery_id,attempt_id,status=sending)` CAS 更新；sent/failed/unknown/cancelled 终态不被迟到回调复活。
+许可事务提交结果不确定时不盲发，先读取持久 attempt；不能恢复确认则不再发。摘要读回许可成功也不能证明原物理 session 仍持账户锁：连接失效时先结束原授权预算 guard 的事务收尾，继续发送须重新取得账户 gate 并核对同一 head/permit/发送实例，不能只凭非空连接对象、再次授权或重计 attempt。恢复等待可取消，无法安全恢复则不发并保留原因；故障造成的成员时间空隙和锁等待如实计入，不声称期间持续持锁。明确成功后写库失败只补记同一 attempt 的 sent/message ID，不重新调用 Telegram。结果以 `(delivery_id,attempt_id,status=sending)` CAS 更新；sent/failed/unknown/cancelled 终态不被迟到回调复活。
 
 超时、断流、取消或无法解析结果且可能已接收时 unknown，永不自动重发。缺少 started_at 与结果未知是两件事：即使起点补记失败，明确成功回执仍记 sent；started_at 继续缺失。已知结果在内存中可有限重试持久化，结果证据随进程丢失则 unknown。
 
@@ -239,7 +278,9 @@ Bot update 的绑定修改、消费进度与回复 outbox 在同一事务；upda
 
 **首条特例：**先备好 worker、chat/Bot 槽及可预计算内容，用固定连接获取账户 session gate；冻结全部成员并提交首条许可后直接进入 provider。provider 在真实调用入口发 started 握手，协调路径补记该起点后即释放 gate，不等待 HTTP 回执。结果回调另开短事务/CAS。同一 gate 下后续活动才赋 recorded_at，消除“已经冻结但尚未开始”时遗漏到下一批的成员。
 
-若冻结 f、开始 s、新活动 t 满足 f<t<s，下一批同时要求 start≥s+60、start≤t+60 会无解；短 gate 是为消除此窗口。它不证明任意精度实时保证，本地 DB、渲染、调度延迟造成的 miss 如实计入，不改成外部故障，不人为拖延活动形成以制造余量。session lock 释放异常须关闭连接，不能带锁还池。
+若冻结 f、开始 s、新活动 t 满足 f<t<s，下一批同时要求 start≥s+60、start≤t+60 会无解；短 gate 是为消除此窗口。它在无新增预算等待的正常路径中消除该窗口，不证明任意精度实时保证。本地 DB、渲染、调度延迟造成的 miss 如实计入，不改成外部故障，不人为拖延活动形成以制造余量。session lock 释放异常须关闭连接，不能带锁还池。
+
+若许可提交后、实际 HTTP 前收到新的 Retry-After，必须释放短 gate 再等待；同一存活 Send 在预算恢复后重取同 owner gate，核对原冻结批次、permit/attempt/实例事实并做与预算收紧定序的非阻塞最终准入，再完成真实 started 握手。等待不重冻结、不重新授权、不变更原 payload/chat；owner 的持久未解决首条 head 阻止后批冻结抢先。崩溃后仍走明确停止恢复，不能凭 started 缺失重发。该动态等待可能出现 f<t<s；两个 60 秒数值不变，实际失约保留总体统计，并保存 f、最老待汇总活动、s、预算阻塞及本地/外部原因，不以重写时间或隐藏样本宣称达标。
 
 实际起点未能持久化时保留缺失；确认旧 sender 停止后，以恢复时刻作为下一批间隔的保守基点，标为异常恢复，不伪造历史起点。运行内使用 monotonic 时间维护至少 60 秒间隔，同时保存 UTC 时间；跨重启/进程比较保留时钟来源和偏差，不可信时相应时效不可判定。
 
@@ -269,13 +310,57 @@ Bot update 的绑定修改、消费进度与回复 outbox 在同一事务；upda
 
 技术默认值集中配置：HTTP/WSS 端点、chain ID/来源和解码器版本、finality=2s、latest=10s、RPC timeout=5s、基线头滞后≤10s/超前≤2s、过滤组≤100、资料并发=4、最终确认后补资料预算=2s，以及第 9 节通知预算。重连按 1/2/4/8/16/30 秒上限退避并加入抖动；每次恢复都重新建立边界。参数只影响健康和资源，不改变业务配额、保留事实或无回补决定。
 
-用户状态含明确生效时间、最近可靠观察、中断范围/不确定性、资料缺失、旧通知待发及结果。管理员仅有概要统计。指标包括 source 接收/确认/投影积压、filter/epoch、权限与绑定取消、gate 等待、finality/metadata 成本、队列年龄、普通 ACK 延迟、摘要首条延迟、每部分 ACK 与批次进度、unknown/failed/clock 异常。
+用户状态含明确生效时间、最近可靠观察、中断范围/不确定性、资料缺失、旧通知待发及结果。管理员仅有概要统计。指标包括 source 接收/确认/投影积压、filter/epoch、权限与绑定取消、gate 等待、finality/metadata 成本、队列年龄、普通 ACK 延迟、摘要首条延迟、每部分 ACK 与批次进度、unknown/failed/clock 异常。 raw接收阶段区分当前Session队列深度与正在Persist的一条记录，均为瞬时gauge；只有本地活session与数据库当前epoch一致才有可观测值，否则明确不可观测，不以0代未知或与已落库确认积压混同。
 
 时效目标保持：公开可查询→站内 P95≤15s/P99≤30s；平稳普通活动→Telegram 成功回执 P95≤5s；摘要 oldest→first actual start≤60s，批次 start 间隔≥60s。集中普通消息、异常和不完整结果另列且保留总体统计；未完成不能因没有 ACK 而从结果报表消失。Telegram 最终设备送达/阅读不是成功定义。
 
 公开可查询时刻默认未知，WSS received_at 不能代替它。直接可测的是 received→recorded、finality 等待、recorded→authorized/started/ACK；若真实公开时刻不晚于收到，则 received→recorded 只是该段总延迟的下界。没有额外证据，settled→received 不能拆成公开前延迟与采集延迟；区块/主机钟未校准时不提供伪精确上界。带独立公开观测区间的样本可报告上下界及来源，时间不可核准的真实 P95/P99 标为不可判定，不声明验收通过。
 
 容量算例为 100 不同目标×100 日志/日×30 天=300,000 推送；另计 1,296,000 finality、259,200 latest、最多各 300,000 已知区块头/回执，合计约 2,455,200 RU，占 Chainstack 3M 的 81.84%，dRPC 按每次20 CU 为49.104M/210M（23.38%）。版本核验、Combo 调用、重连/重复推送、订阅变更及其他开发服务另计；每目标100日志/日是算例而非低频定义或免费保证。缓存相同 block/tx 可降调用，但不能省去必要的确认后证据。
+
+### 形成时统计与接收时钟
+
+活动增加一个内部typed immutable evidence object，带规则标识`arrival_and_owner_queue_v1`，在原Project owner事务内随活动INSERT一次保存。包含cohort、当前/前件原接收身份和时间证据、形成时竞争snapshot及分类原因。沿现有活动全行不可变约束；重复Project读取既有事实，不重新分组。只给内部诊断/聚合，不把私密证据原件加入会员/admin DTO或指标label。
+
+在Session真实日志接收打点处一次time.Now()同时取得原UTC和相对该Session起点的monotonic elapsed（ns），原source持久新增可缺elapsed；同原collector_epoch/read_sequence关联。只有同Session/epoch的有效非负elapsed可比较，跨epoch、缺失或负顺序明确unknown，不能从UTC或测试Advance重构。真实production正常路径必须填入原采样；旧/构造fixture没有证据则保持nil，不做兼容回填。
+
+形成前件：当前owner原source_candidates关联source中，同collector_epoch且read_sequence小于当前source的最近一项，先找原到达前件，再判其形成/确认/路由状态；不得先过滤已形成activity以伪装真实最近到达。原source去重，Project重试、removed和重复推送不增加到达。保存前件source/subscription/attempt/generation、sequence/epoch/UTC/可缺mono和当前可判断状态。查询空只表明该owner在此epoch已持久归属中的first_observed_in_epoch，不表示之前市场无成交。
+
+在已持owner gate、当前activity/membership/delivery插入前，使用同一SQL statement snapshot取DB观察时刻、前件与当时已提交竞争：同owner普通pending/sending、未冻结summary成员、summary part pending/sending、归属owner reply分别计数并保留所用路由/资格边界。member和其part不能重复计作HTTP；未提交事务、尚未持久raw及Dispatcher内存不宣称包括在此snapshot。有限counts不是metrics私密labels。
+
+cohort与notification_mode分别保存：
+- `ordinary_burst`只在当前mode=ordinary且所有严格条件成立时赋值：真实最近前件已形成有效普通活动；前件与当前同一私聊chat和binding revision；同Session实测mono间隔0<=delta<1秒；前件ordinary delivery仍有资格且pending未开始attempt，或sending且为首attempt。前件失败重试、summary后续part、reply、其它owner/系统竞争不能单独触发burst。
+- `ordinary_unclassified`用于前件/时钟/资格证据不足（例如最近前件尚未形成）；`ordinary_default`用于证据可判断且上述条件不成立，或已明确first_observed_in_epoch。default只是未满足严格burst条件，不宣称已经证明低频、无队列或无外部故障。
+- mode=summary或in_app_only的cohort分别为`summary`、`in_app_only`。
+
+1秒来自既定私聊最小起点间隔，仅作可审计的密集到达分类界线，不是新业务高频阈值或新的性能豁免。严格规则会漏分并发乱序形成的一些真实突发，代价如实列明。`ordinary_default`和`ordinary_unclassified`都保留在非burst普通报告中；全部三个ordinary组始终保留ordinary总体，unknown另报覆盖率且不能用于排除慢样本。burst仍逐段计DB/gate/网络等原因，标签不证明最终延迟因果。任何后续结果/超时/调参都不能追改已形成cohort。
+
+### 分段与结果观测
+
+- TimingSample/EvaluateTiming按实现计划提供纯函数求值；公开时间区间须有独立来源/可信时钟，不以block/received替代。无ACK也保留总体、状态和年龄；负/不可比时间标异常，不钳零或换时间。
+- Projector在真实分支记录本轮确认/版本、真正额外metadata等待、候选处理/gate/事务收尾，首次/跨重试等待与本轮duration分别命名。CheckedAt是核验轮次时间，不能当首次完成；recorded_at仍是原事务中DB打点，不冒充COMMIT完成。
+
+首次 finality 限定为一个 Projector 计数/时钟实例对 source 连续可证的首次 ConfirmReceived 调用到首次 confirmed 返回，不声称并行进程全局最早。Service 不持 Projector 分布式单例锁，不能借 Collector 锁推断。typed source.finality_timing 保存调用前/返回后原 UTC 与同实例 mono；首次轮、首次起点至首次完成、首轮结束至首次完成分别有 source 分母/分位。当前 waiting 年龄只使用匹配有效实例时钟，完成历史不因后续版本/资料重试改写。
+
+启动已提交 max(source.id) 截点前的空证据保持 unavailable；跨实例未完成序列、失败截点及任何未确认持久的观测均不补造首次。丢失 confirmed 即使此前已有 waiting 起点，也使该实例后续未完成观测和年龄不可用；已完成历史保留。无无界source状态表或新leader。原结果先传递、metadata deadline使用原返回；观测在原worker最多五秒写库并join，独立于version取消，不为遥测再次RPC，实际数据库成本计入source_round和总体。
+
+Projector累计指标沿kind=epoch，非空serviceEpoch为真实对象生命周期内稳定UUID；同对象再次Run、快照、Collector重连不变，新对象归零换ID。in-flight为gauge。管理员SQL仅必要键/状态/时间和安全形成子项，不选择私密全行或raw；worker结果UTC等待与摘要UTC时段提供usable/clock_anomalies/missing分母，首批无前件、未冻结成员独立，不过滤后隐去异常。
+- txgate允许窄可选timing观察，分别度量BeginTx（含pool获取）和实际advisory acquisition；callback只赋值、不SQL/阻塞日志，调用层在锁外输出/持久所需形成事实。Project/Authorize总时间不能叫纯gate等待；普通/摘要真实入口均须覆盖，复用唯一gate逻辑，不改变锁序和隔离级别。
+- worker在Sender.Send返回后立即捕获带mono的时间，将Outcome+时间放内部envelope；保持Send接口不为遥测另发调用。真实Started回调保留原time.Now的mono，只有DB/序列化边界转UTC，仍constant-time。新增attempt可缺sender_returned_at及可缺Started→返回mono耗时，随原结果CAS/UUID读回持久；既有result_at保持worker处理结果/释放gate后的观察语义。二者差值是本地处理等待，不是Telegram网络。
+- sent的sender_returned是“Sender已解析明确成功结果”的本地ACK观察上界，非Telegram服务端时间或设备送达；其它Outcome只有结果观察，无成功ACK。无实际Started则mono耗时缺失，不用worker迟到接收时间补起点。
+- 同一Send在有限结果补记重试中复用同一冻结时间证据；不会产生新permit/attempt/HTTP，不按RecordOutcome调用次数计数。实际ACK已观察而最终CAS未确认时，受控日志记录observed、DB仍unconfirmed；崩溃后未持久事实仍可能未知，不承诺遥测exactly-once。恢复预算仍按原协议保守处理，不借新时间缩短安全等待。
+- 完整报表从activity/membership/delivery及全部attempt逐层关联，未授权/未冻结也可计入；区分activity、logical delivery/part、HTTP attempt三个分母。摘要同part跨多活动不可乘成多次HTTP；pending/failed/unknown/cancelled无ACK不得从报表消失。
+
+### 恢复状态与运行接口
+
+notification Service持有并发安全小快照，由实际recovery入口在读取预算之前发布initializing、进入唯一等待时发布waiting、结束发布completed/cancelled/failed；等待owner仍是原recoverStartupBudget，不新建计时器/轮询或由API解除预算。首次无历史的豁免也要有明确completed证据。
+
+既有内部NotificationRuntimeStatus与既有公开NotificationRuntimeStatus末尾追加可缺recovery对象，字段按顺序为state、reason、startedAt、remainingMillis、elapsedMillis、clockSource。state取initializing/waiting/completed/cancelled/failed；reason仅有限类别（初始化、非首次屏障、持久Retry-After或组合及明确失败阶段）；毫秒为十进制string，未知remaining省略/空表示缺失，不填0。startedAt是真实本地恢复入口UTC，elapsed/remaining由同一notification进程Clock的mono计算，clockSource为sender_monotonic；显示remaining可取非负，不改真实预算。
+
+fatal/stopped优先；已启动且尚未确认恢复completed时，顶层status不得是healthy running，initializing/waiting用recovering；poller健康独立呈现。public facade直接转发notification进程结果，不用API本地时间反推。等待结束不保证每条通知马上发送，其后排队和恢复耗时均保留总体。
+
+实现沿内部与公开proto、Service/recovery/facade、生成链和契约测试接续；管理员notification service与Service Status消费这些字段及缺失状态，不新建RPC。
+
 
 ## 11. 验证矩阵与证据边界
 
@@ -308,4 +393,11 @@ Bot update 的绑定修改、消费进度与回复 outbox 在同一事务；upda
 
 相关长期文档已同步本轮业务边界、所选架构与证据；既有 accountaccess、Notification、运行设计继续描述当前已实现行为，不把此方案提前标为已运行。没有待用户选择的技术事实；协议升级、资料不可用和未完成运行测试均有明确处理或验收条件。
 
-用户已整体确认后端与 UI 两份书面规格，读取/分页补充也已确认；现已按 writing-plans 形成[21项前后端联合实现任务与验收计划](../plans/2026-09-10-trader-sync-activity-alerts.md)。当前未开始业务实现或运行验收。
+用户已整体确认后端与 UI 两份书面规格，读取/分页补充也已确认；现已按 writing-plans 形成[21项前后端联合实现任务与验收计划](../plans/2026-09-10-trader-sync-activity-alerts.md)，正在按该计划逐项实现和验证。各任务完成状态以计划为准；部分模块通过验证不代表全路径运行验收已经完成。
+
+
+## 实施接续：进程生命周期与外部代理
+
+Trader Sync后台与athena-server进程同生命周期；HTTP/gRPC平滑重启保留同一套采集、投影及目录实例，进程退出才取消并等待后台、再释放共享pool与所拥有的client。组件返回的真实fatal必须传回CLI，不能被普通重启循环吞掉。目录故障及刷新积压独立报告；DB暂时失败或提交结果未知先重新锁定并读取持久状态，未取得状态锁或读回失败不发页，不能单凭目录故障结束健康Collector的观察epoch。发页后回滚或提交未知的跨实例节流由目录共享协议保证，本地退避或退出runtime不能替代；错误时不使用未确认提交的next安排下一轮。单纯父级取消可正常退出，与持久化或收尾错误合并的取消仍保留原因。
+
+外部HTTP/WSS、Gamma/Profile及目录使用显式可选ATHENA_TRADER_SYNC_PROXY_URL；空串直连，本地WSL未设置时沿用仓库gateway:10809默认策略，其他未配置环境直连。不隐式继承机器全局代理或Token专用字段；不改变单供应商与手动切换决定。

@@ -4,11 +4,11 @@ import (
 	"context"
 	stderrors "errors"
 	"fmt"
+	"github.com/google/uuid"
 	"net"
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 
@@ -41,13 +41,10 @@ const (
 
 func NewCommand() *cobra.Command {
 	var (
-		listenHost         string
-		listenPort         int
-		workerSendInterval time.Duration
-		workerPollInterval time.Duration
-		workerBatchSize    int
-		workerMaxAttempts  int
-		workerLockTimeout  time.Duration
+		listenHost           string
+		listenPort           int
+		workerConcurrency    int
+		recoverStoppedSender string
 
 		storeSrc func(context.Context) (*notificationstore.SQLStore, error)
 	)
@@ -76,6 +73,14 @@ func NewCommand() *cobra.Command {
 			errors.CheckError(err)
 			defer utilio.Close(store)
 
+			if recoverStoppedSender != "" {
+				id, err := uuid.Parse(recoverStoppedSender)
+				if err != nil {
+					return fmt.Errorf("invalid stopped sender incarnation: %w", err)
+				}
+				log.WithField("incarnation", id).Warn("operator explicitly confirms the registered sender process has exited; recovering without Telegram calls")
+				return store.ConfirmStoppedSender(ctx, id)
+			}
 			telegramClient, systemChatIDs, err := defaultTelegramClient()
 			if err != nil {
 				return err
@@ -86,17 +91,12 @@ func NewCommand() *cobra.Command {
 
 			server, err := notification.NewServer(notification.ServerOpts{
 				Store:             store,
+				SiteURL:           env.StringFromEnv("ATHENA_URL", ""),
 				Sender:            sender,
 				ProfileSyncer:     notification.NewTelegramProfileSyncer(telegramClient, profileConfig),
 				Poller:            notification.NewTelegramPoller(store, telegramClient),
 				InternalAuthToken: env.StringFromEnv(notificationapiclient.InternalAuthTokenEnv, ""),
-				WorkerConfig: notification.WorkerConfig{
-					SendInterval: workerSendInterval,
-					PollInterval: workerPollInterval,
-					BatchSize:    workerBatchSize,
-					MaxAttempts:  workerMaxAttempts,
-					LockTimeout:  workerLockTimeout,
-				},
+				WorkerConfig:      notification.WorkerConfig{Concurrency: workerConcurrency},
 			})
 			if err != nil {
 				return err
@@ -105,35 +105,37 @@ func NewCommand() *cobra.Command {
 
 			lc := &net.ListenConfig{}
 			listener, err := lc.Listen(ctx, "tcp", fmt.Sprintf("%s:%d", listenHost, listenPort))
-			errors.CheckError(err)
+			if err != nil {
+				return err
+			}
 
+			defer listener.Close()
 			if err := server.Start(ctx); err != nil {
 				return err
 			}
 
 			sigCh := make(chan os.Signal, 1)
 			signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-			wg := sync.WaitGroup{}
-			wg.Add(1)
-			go func() {
-				s := <-sigCh
-				log.Printf("got signal %v, attempting graceful shutdown", s)
-				notificationGRPC.GracefulStop()
-				if err := server.Stop(); err != nil {
-					log.Printf("failed to stop notification server cleanly: %v", err)
+			defer signal.Stop(sigCh)
+			served := make(chan error, 1)
+			go func() { served <- notificationGRPC.Serve(listener) }()
+			var runErr error
+			select {
+			case sig := <-sigCh:
+				log.Printf("got signal %v, attempting graceful shutdown", sig)
+			case runErr = <-server.Errors():
+			case runErr = <-served:
+				if stderrors.Is(runErr, grpc.ErrServerStopped) {
+					runErr = nil
 				}
-				wg.Done()
-			}()
-
-			log.Println("starting notification grpc server")
-			err = notificationGRPC.Serve(listener)
-			if err != nil && !stderrors.Is(err, grpc.ErrServerStopped) {
-				errors.CheckError(err)
+			case <-ctx.Done():
+				runErr = ctx.Err()
 			}
-
-			wg.Wait()
-			log.Println("clean shutdown")
-			return nil
+			notificationGRPC.Stop()
+			if err := server.Stop(); err != nil && runErr == nil {
+				runErr = err
+			}
+			return runErr
 		},
 		Example: templates.Examples(`
 			# Start the Athena Notification service
@@ -145,11 +147,8 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&cmdutil.LogLevel, "loglevel", env.StringFromEnv(common.EnvLogLevel, "info"), "Set the logging level. One of: debug|info|warn|error")
 	command.Flags().StringVar(&listenHost, "address", env.StringFromEnv("ATHENA_NOTIFICATION_LISTEN_ADDRESS", common.DefaultAddressNotification), "Listen on given address for incoming connections")
 	command.Flags().IntVar(&listenPort, "port", common.DefaultPortNotification, "Listen on given port for incoming connections")
-	command.Flags().DurationVar(&workerSendInterval, "worker-send-interval", env.ParseDurationFromEnv("ATHENA_NOTIFICATION_WORKER_SEND_INTERVAL", notification.DefaultWorkerConfig().SendInterval, time.Millisecond, time.Minute), "Delay between Telegram notification sends")
-	command.Flags().DurationVar(&workerPollInterval, "worker-poll-interval", env.ParseDurationFromEnv("ATHENA_NOTIFICATION_WORKER_POLL_INTERVAL", notification.DefaultWorkerConfig().PollInterval, time.Millisecond, time.Minute), "Delay between empty notification queue polls")
-	command.Flags().IntVar(&workerBatchSize, "worker-batch-size", env.ParseNumFromEnv("ATHENA_NOTIFICATION_WORKER_BATCH_SIZE", notification.DefaultWorkerConfig().BatchSize, 1, 100), "Maximum notification deliveries claimed per worker poll")
-	command.Flags().IntVar(&workerMaxAttempts, "worker-max-attempts", env.ParseNumFromEnv("ATHENA_NOTIFICATION_WORKER_MAX_ATTEMPTS", notification.DefaultWorkerConfig().MaxAttempts, 1, 100), "Maximum Telegram send attempts before a notification delivery fails")
-	command.Flags().DurationVar(&workerLockTimeout, "worker-lock-timeout", env.ParseDurationFromEnv("ATHENA_NOTIFICATION_WORKER_LOCK_TIMEOUT", notification.DefaultWorkerConfig().LockTimeout, time.Second, time.Hour), "Duration after which an in-flight notification delivery lock can be reclaimed")
+	command.Flags().IntVar(&workerConcurrency, "worker-concurrency", env.ParseNumFromEnv("ATHENA_NOTIFICATION_WORKER_CONCURRENCY", 12, 1, 12), "Maximum simultaneous Telegram chats")
+	command.Flags().StringVar(&recoverStoppedSender, "recover-stopped-sender", "", "Confirm the registered process for this incarnation UUID has exited, recover its attempts without sending, then exit")
 
 	storeSrc = notificationstore.NewSQLStoreSource()
 

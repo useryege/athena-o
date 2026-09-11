@@ -1,0 +1,18 @@
+package migration
+
+import "testing"
+
+func TestModulesHaveOneAthenaOwner(t *testing.T) {
+	count := 0
+	for _, module := range Modules() {
+		if module.Name == "notification" || module.Database == "notification" {
+			t.Fatalf("independent notification migration: %+v", module)
+		}
+		if module.Database == "athena" {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Fatalf("athena migration owners=%d", count)
+	}
+}

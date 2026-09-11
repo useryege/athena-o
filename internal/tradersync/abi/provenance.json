@@ -1,0 +1,102 @@
+{
+  "chainId": 137,
+  "officialRepository": "https://github.com/Polymarket/ctf-exchange-v2",
+  "officialCommit": "ccc0596074f4dfd62c944fbca4de252893b82b4b",
+  "implementations": [
+    {
+      "name": "core-exchange",
+      "address": "0xE111180000d2663C0091e4f400237545B87B996B",
+      "url": "https://sourcify.dev/server/v2/contract/137/0xE111180000d2663C0091e4f400237545B87B996B?fields=all",
+      "queriedAt": "2026-09-10T17:51:00.205369+00:00",
+      "originalResponseSHA256": "f0d5d3027a24fa9428d93fca056534c34e8befd4bb7094b58b609a8b760aad79",
+      "runtimeMatch": "match",
+      "runtimeKeccak256": "0xa08da89bbac2063dfa6a705e70314d218d40fb2b2a6405442297c241fcd58401",
+      "runtimeFile": "../testdata/runtime/core-exchange.hex",
+      "runtimeTextSHA256": "cd1bd9c3c2e180c8b9f7fd773462adfec175670d4ce0c54eb194bfe25c95981f"
+    },
+    {
+      "name": "neg-risk-exchange",
+      "address": "0xe2222d279d744050d28e00520010520000310F59",
+      "url": "https://sourcify.dev/server/v2/contract/137/0xe2222d279d744050d28e00520010520000310F59?fields=all",
+      "queriedAt": "2026-09-10T17:51:04.011459+00:00",
+      "originalResponseSHA256": "dd004660e51a47deef1e34a4eaf31685c72ebfde7d94075b959bee1bd34d0bcb",
+      "runtimeMatch": "match",
+      "runtimeKeccak256": "0x04b857d48dcc38b3d484239569dc96a7a6c39bbb90ed2461227fc6e50ed5787d",
+      "runtimeFile": "../testdata/runtime/neg-risk-exchange.hex",
+      "runtimeTextSHA256": "f36b8a7c9d24c130d7b58cc9e220a7d550ddf0eb5f3fcc33d9ff6770ad476401"
+    },
+    {
+      "name": "combo-implementation",
+      "address": "0x641b40ec414a076b9e79E703Fc7BF4EBEC248Bb7",
+      "url": "https://sourcify.dev/server/v2/contract/137/0x641b40ec414a076b9e79e703fc7bf4ebec248bb7?fields=all",
+      "queriedAt": "2026-09-10T17:51:10.433163+00:00",
+      "originalResponseSHA256": "1adb3bdad75ca95182280bba7dab93350acef07a99e599fa055d8da2b3d02350",
+      "runtimeMatch": "match",
+      "runtimeKeccak256": "0x42b8522e8b56d0587bc02e66a37e43614911580ded1c676a925f5373c7f2fcd6",
+      "runtimeFile": "../testdata/runtime/combo-implementation.hex",
+      "runtimeTextSHA256": "cc61baf02b171c1afadc71c79c0fd7422b67f2df5aac760f06edb416fd5e7b91"
+    }
+  ],
+  "minimalABIs": [
+    {
+      "file": "core_exchange.json",
+      "source": "core-exchange",
+      "sha256": "d9e7562bd815a8fe5fb4facb1f81b3d43a730ef1a8ed5bf93581efb3d09f402b",
+      "extraction": "Exact event entries from original fixed Sourcify ABI; no generator or ABI editing."
+    },
+    {
+      "file": "combos_exchange.json",
+      "source": "combo-implementation",
+      "sha256": "df5241ac92dd2e0845c3f7cb2d917b186ec97ee1b2ad3b39acd67bb7edbff4d4",
+      "extraction": "Exact event entries from original fixed Sourcify ABI; no generator or ABI editing."
+    },
+    {
+      "file": "proxy.json",
+      "source": "combo-implementation",
+      "sha256": "5fcac3c7858d5a2edfbe2f531db84c8449fe93feb627ca33db61ff5323f1f28f",
+      "extraction": "Exact event entries from original fixed Sourcify ABI; no generator or ABI editing."
+    }
+  ],
+  "proxy": {
+    "address": "0xe3333700cA9d93003F00f0F71f8515005F6c00Aa",
+    "runtimeBytes": 61,
+    "runtimeKeccak256": "0xaaa52c8cc8a0e3fd27ce756cc6b4e70c51423e9b597b11f32d3e49f8b1fc890d",
+    "runtimeFile": "../testdata/runtime/combo-proxy.hex",
+    "knownBlockHash": "0x1d64636dcdfa966bb1c6564f0ff3f4322bfc23150c2579f737eb36c9bb5028ad",
+    "knownBlockNumber": 93550754,
+    "implementationSlot": "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+    "implementation": "0x641b40ec414a076b9e79e703fc7bf4ebec248bb7"
+  },
+  "savedEvidence": [
+    {
+      "file": "evidence/UUPSUpgradeable.sol",
+      "sha256": "0fb6a86f49d57cd7d5a82ad8d4aa7b880511b4f790c1bbd5c8a0d95b49c5287f"
+    },
+    {
+      "file": "evidence/drpc-http-request.json",
+      "sha256": "087e5a7e7f293d66aa9df9ac7da8d0a840f4ed6ac52f63e1469a05a2ab396268"
+    },
+    {
+      "file": "evidence/drpc-http-response.txt",
+      "sha256": "53796ed617590f469a90472deddb90776af905f101d569dbe413c8e31a396a32"
+    },
+    {
+      "file": "evidence/drpc-slot-implementation-request.json",
+      "sha256": "871bd20d6466ee0e29104776599a53a194932c3df431110d25d8999c4d4ce4f1"
+    },
+    {
+      "file": "evidence/drpc-slot-implementation-response.json",
+      "sha256": "30c5355453bbab11e9ab7c8920bf13b1102ffaf9cd4b338080fc4b914032ae96"
+    },
+    {
+      "file": "evidence/proxy-disassembly.txt",
+      "sha256": "294b05debf451a9a7deec230f6b95d9204ee7368a2c676a4f7be234c581fb591"
+    }
+  ],
+  "limits": [
+    "Fixed deployment/source evidence, not live candidate finality or proof for every historical sample.",
+    "Sourcify runtimeMatch is provider evidence; no independent recompilation.",
+    "Proxy code came from one dRPC account endpoint; prior Chainstack HTTPS Cloudflare1010 and WSS Archive rejection are not no-upgrade evidence.",
+    "Runtime verification must separately read candidate and actual parent code/slots and complete exact-block upgrade logs; all unknowns fail closed."
+  ]
+}

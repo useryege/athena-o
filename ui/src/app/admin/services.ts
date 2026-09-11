@@ -6,11 +6,13 @@ import {UserService} from '../shared/services/user-service';
 import {VersionService} from '../shared/services/version-service';
 import {ViewPreferencesService} from '../shared/services/view-preferences-service';
 import type {SelfAccountServices} from '../session/services';
+import {AdminTraderSyncService} from './trader-sync-service';
 import {AdminAccountsService} from './accounts-service';
 import {AdminNotificationService} from './notification-service';
 import {AdminProfitSharingService} from './profit-sharing-service';
 
 export interface AdminServices extends SelfAccountServices {
+    adminTraderSync: AdminTraderSyncService;
     adminAccounts: AdminAccountsService;
     serviceStatus: ServiceStatusService;
     adminProfitSharing: AdminProfitSharingService;
@@ -37,6 +39,7 @@ export const ensureAdminBusinessServices = () => {
         version: new VersionService(),
         accounts: new SelfAccountService(),
         adminAccounts: new AdminAccountsService(),
+        adminTraderSync: new AdminTraderSyncService(),
         serviceStatus: new ServiceStatusService(),
         adminProfitSharing: new AdminProfitSharingService(),
         adminNotifications: new AdminNotificationService()

@@ -411,7 +411,7 @@ func (q *Queries) ListTelegramBindingsByIdentityForShare(ctx context.Context, ar
 }
 
 const lockTelegramBindingAccount = `-- name: LockTelegramBindingAccount :exec
-SELECT pg_advisory_xact_lock(hashtextextended($1::uuid::text, 0))
+SELECT pg_advisory_xact_lock(hashtextextended('athena:account:' || $1::uuid::text, 0))
 `
 
 func (q *Queries) LockTelegramBindingAccount(ctx context.Context, accountID pgtype.UUID) error {

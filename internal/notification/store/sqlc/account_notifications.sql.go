@@ -12,13 +12,16 @@ import (
 )
 
 const cancelPendingAccountNotificationDeliveries = `-- name: CancelPendingAccountNotificationDeliveries :execrows
-UPDATE account_notification_deliveries
-SET status = 'cancelled',
+WITH revoked_memberships AS (UPDATE trader_sync_alert_memberships AS m SET eligibility_revoked_at=COALESCE(eligibility_revoked_at,clock_timestamp()),reason=CASE WHEN eligibility_revoked_at IS NULL THEN 'binding_changed' ELSE reason END,state=CASE WHEN state='waiting' AND batch_id IS NULL THEN 'cancelled' ELSE state END WHERE m.owner_id=$1 RETURNING m.activity_id)
+UPDATE account_notification_deliveries AS d
+SET status = CASE WHEN status = 'pending' THEN 'cancelled' ELSE status END,
+    eligibility_revoked_at = COALESCE(eligibility_revoked_at, clock_timestamp()),
+    eligibility_revoked_reason = COALESCE(eligibility_revoked_reason, 'binding_changed'),
     error_message = 'telegram binding disconnected',
     locked_at = NULL,
     locked_by = NULL
 WHERE account_id = $1
-  AND status = 'pending'
+  AND status IN ('pending', 'sending')
 `
 
 func (q *Queries) CancelPendingAccountNotificationDeliveries(ctx context.Context, accountID pgtype.UUID) (int64, error) {
@@ -30,15 +33,18 @@ func (q *Queries) CancelPendingAccountNotificationDeliveries(ctx context.Context
 }
 
 const cancelPendingAccountNotificationDeliveriesForBinding = `-- name: CancelPendingAccountNotificationDeliveriesForBinding :execrows
-UPDATE account_notification_deliveries
-SET status = 'cancelled',
+WITH revoked_memberships AS (UPDATE trader_sync_alert_memberships AS m SET eligibility_revoked_at=COALESCE(eligibility_revoked_at,clock_timestamp()),reason=CASE WHEN eligibility_revoked_at IS NULL THEN 'binding_changed' ELSE reason END,state=CASE WHEN state='waiting' AND batch_id IS NULL THEN 'cancelled' ELSE state END WHERE m.owner_id=$1 AND m.chat_id=$2 AND m.binding_revision=$3 RETURNING m.activity_id)
+UPDATE account_notification_deliveries AS d
+SET status = CASE WHEN status = 'pending' THEN 'cancelled' ELSE status END,
+    eligibility_revoked_at = COALESCE(eligibility_revoked_at, clock_timestamp()),
+    eligibility_revoked_reason = COALESCE(eligibility_revoked_reason, 'binding_changed'),
     error_message = 'telegram recipient is unreachable',
     locked_at = NULL,
     locked_by = NULL
-WHERE account_id = $1
-  AND telegram_chat_id = $2
-  AND binding_revision = $3
-  AND status = 'pending'
+WHERE d.account_id = $1
+  AND d.telegram_chat_id = $2
+  AND d.binding_revision = $3
+  AND status IN ('pending', 'sending')
 `
 
 type CancelPendingAccountNotificationDeliveriesForBindingParams struct {
@@ -60,6 +66,8 @@ WITH ready AS (
   SELECT id
   FROM account_notification_deliveries
   WHERE status = 'pending'
+    AND eligibility_revoked_at IS NULL
+    AND attempts < 5
     AND next_attempt_at <= NOW()
     AND (locked_at IS NULL OR locked_at < NOW() - $3::interval)
     AND EXISTS (
@@ -76,9 +84,7 @@ WITH ready AS (
 )
 UPDATE account_notification_deliveries AS delivery
 SET locked_at = NOW(),
-    locked_by = $2,
-    attempts = delivery.attempts + 1,
-    last_attempt_at = NOW()
+    locked_by = $2
 FROM ready
 WHERE delivery.id = ready.id
 RETURNING delivery.id, delivery.account_id, delivery.source, delivery.severity,
@@ -144,11 +150,11 @@ func (q *Queries) ClaimPendingAccountNotificationDeliveries(ctx context.Context,
 const createAccountNotificationDelivery = `-- name: CreateAccountNotificationDelivery :one
 INSERT INTO account_notification_deliveries (
   account_id, idempotency_key, payload_digest, source, severity, title, body,
-  link, channel, status, telegram_chat_id, binding_revision
+  link, channel, status, telegram_chat_id, binding_revision, payload, request_digest, activity_id, created_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 ON CONFLICT (account_id, source, idempotency_key) DO NOTHING
-RETURNING id, account_id, idempotency_key, payload_digest, source, severity,
+RETURNING id, account_id, idempotency_key, payload_digest, request_digest, source, severity,
   COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status,
   telegram_chat_id, binding_revision, provider_message_id, error_message,
   created_at, sent_at
@@ -167,6 +173,10 @@ type CreateAccountNotificationDeliveryParams struct {
 	Status          string
 	TelegramChatID  int64
 	BindingRevision int64
+	Payload         []byte
+	RequestDigest   []byte
+	ActivityID      pgtype.Int8
+	CreatedAt       pgtype.Timestamptz
 }
 
 type CreateAccountNotificationDeliveryRow struct {
@@ -174,6 +184,7 @@ type CreateAccountNotificationDeliveryRow struct {
 	AccountID         pgtype.UUID
 	IdempotencyKey    string
 	PayloadDigest     []byte
+	RequestDigest     []byte
 	Source            string
 	Severity          string
 	Title             string
@@ -203,6 +214,10 @@ func (q *Queries) CreateAccountNotificationDelivery(ctx context.Context, arg Cre
 		arg.Status,
 		arg.TelegramChatID,
 		arg.BindingRevision,
+		arg.Payload,
+		arg.RequestDigest,
+		arg.ActivityID,
+		arg.CreatedAt,
 	)
 	var i CreateAccountNotificationDeliveryRow
 	err := row.Scan(
@@ -210,6 +225,7 @@ func (q *Queries) CreateAccountNotificationDelivery(ctx context.Context, arg Cre
 		&i.AccountID,
 		&i.IdempotencyKey,
 		&i.PayloadDigest,
+		&i.RequestDigest,
 		&i.Source,
 		&i.Severity,
 		&i.Title,
@@ -228,7 +244,7 @@ func (q *Queries) CreateAccountNotificationDelivery(ctx context.Context, arg Cre
 }
 
 const getAccountNotificationDeliveryByIdempotency = `-- name: GetAccountNotificationDeliveryByIdempotency :one
-SELECT id, account_id, idempotency_key, payload_digest, source, severity,
+SELECT id, account_id, idempotency_key, payload_digest, request_digest, source, severity,
   COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status,
   telegram_chat_id, binding_revision, provider_message_id, error_message,
   created_at, sent_at
@@ -249,6 +265,7 @@ type GetAccountNotificationDeliveryByIdempotencyRow struct {
 	AccountID         pgtype.UUID
 	IdempotencyKey    string
 	PayloadDigest     []byte
+	RequestDigest     []byte
 	Source            string
 	Severity          string
 	Title             string
@@ -272,6 +289,7 @@ func (q *Queries) GetAccountNotificationDeliveryByIdempotency(ctx context.Contex
 		&i.AccountID,
 		&i.IdempotencyKey,
 		&i.PayloadDigest,
+		&i.RequestDigest,
 		&i.Source,
 		&i.Severity,
 		&i.Title,
@@ -294,6 +312,8 @@ SELECT
   (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'pending') AS pending_count,
   (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'pending' AND attempts > 0) AS retry_count,
   (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'failed') AS failed_count,
+  (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'sending') AS sending_count,
+  (SELECT COUNT(*)::bigint FROM account_notification_deliveries WHERE status = 'unknown') AS unknown_count,
   (SELECT COUNT(*)::bigint FROM telegram_bindings WHERE status = 'unreachable') AS unreachable_binding_count
 `
 
@@ -301,6 +321,8 @@ type GetAccountNotificationRuntimeCountsRow struct {
 	PendingCount            int64
 	RetryCount              int64
 	FailedCount             int64
+	SendingCount            int64
+	UnknownCount            int64
 	UnreachableBindingCount int64
 }
 
@@ -311,130 +333,65 @@ func (q *Queries) GetAccountNotificationRuntimeCounts(ctx context.Context) (GetA
 		&i.PendingCount,
 		&i.RetryCount,
 		&i.FailedCount,
+		&i.SendingCount,
+		&i.UnknownCount,
 		&i.UnreachableBindingCount,
 	)
 	return i, err
 }
 
-const getPendingAccountNotificationDeliveryForUpdate = `-- name: GetPendingAccountNotificationDeliveryForUpdate :one
-SELECT id
-FROM account_notification_deliveries
-WHERE id = $1
-  AND account_id = $2
-  AND telegram_chat_id = $3
-  AND binding_revision = $4
-  AND status = 'pending'
-FOR UPDATE
+const listDispatchAccounts = `-- name: ListDispatchAccounts :many
+SELECT id, account_id, idempotency_key, payload_digest, source, severity, title, body, link, channel, status, telegram_chat_id, binding_revision, provider_message_id, error_message, created_at, sent_at, attempts, next_attempt_at, last_attempt_at, locked_at, locked_by, current_attempt_id, eligibility_revoked_at, eligibility_revoked_reason, payload, request_digest, activity_id FROM account_notification_deliveries
+WHERE status = 'pending' AND attempts < 5 AND eligibility_revoked_at IS NULL
+AND NOT EXISTS(SELECT 1 FROM trader_sync_summary_parts p JOIN trader_sync_summary_heads h ON h.current_batch_id=p.batch_id WHERE p.delivery_id=account_notification_deliveries.id)
+ORDER BY account_id, next_attempt_at, id
 `
 
-type GetPendingAccountNotificationDeliveryForUpdateParams struct {
-	ID              int64
-	AccountID       pgtype.UUID
-	TelegramChatID  int64
-	BindingRevision int64
-}
-
-func (q *Queries) GetPendingAccountNotificationDeliveryForUpdate(ctx context.Context, arg GetPendingAccountNotificationDeliveryForUpdateParams) (int64, error) {
-	row := q.db.QueryRow(ctx, getPendingAccountNotificationDeliveryForUpdate,
-		arg.ID,
-		arg.AccountID,
-		arg.TelegramChatID,
-		arg.BindingRevision,
-	)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
-}
-
-const markAccountNotificationDeliveryFailed = `-- name: MarkAccountNotificationDeliveryFailed :execrows
-UPDATE account_notification_deliveries
-SET status = 'failed',
-    error_message = $1,
-    locked_at = NULL,
-    locked_by = NULL
-WHERE id = $2
-  AND account_id = $3
-  AND telegram_chat_id = $4
-  AND binding_revision = $5
-  AND status = 'pending'
-`
-
-type MarkAccountNotificationDeliveryFailedParams struct {
-	ErrorMessage    pgtype.Text
-	ID              int64
-	AccountID       pgtype.UUID
-	TelegramChatID  int64
-	BindingRevision int64
-}
-
-func (q *Queries) MarkAccountNotificationDeliveryFailed(ctx context.Context, arg MarkAccountNotificationDeliveryFailedParams) (int64, error) {
-	result, err := q.db.Exec(ctx, markAccountNotificationDeliveryFailed,
-		arg.ErrorMessage,
-		arg.ID,
-		arg.AccountID,
-		arg.TelegramChatID,
-		arg.BindingRevision,
-	)
+func (q *Queries) ListDispatchAccounts(ctx context.Context) ([]AccountNotificationDelivery, error) {
+	rows, err := q.db.Query(ctx, listDispatchAccounts)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return result.RowsAffected(), nil
-}
-
-const markAccountNotificationDeliverySent = `-- name: MarkAccountNotificationDeliverySent :exec
-UPDATE account_notification_deliveries
-SET status = 'sent',
-    provider_message_id = $2,
-    error_message = NULL,
-    sent_at = NOW(),
-    locked_at = NULL,
-    locked_by = NULL
-WHERE id = $1
-`
-
-type MarkAccountNotificationDeliverySentParams struct {
-	ID                int64
-	ProviderMessageID pgtype.Text
-}
-
-func (q *Queries) MarkAccountNotificationDeliverySent(ctx context.Context, arg MarkAccountNotificationDeliverySentParams) error {
-	_, err := q.db.Exec(ctx, markAccountNotificationDeliverySent, arg.ID, arg.ProviderMessageID)
-	return err
-}
-
-const scheduleAccountNotificationDeliveryRetry = `-- name: ScheduleAccountNotificationDeliveryRetry :execrows
-UPDATE account_notification_deliveries
-SET error_message = $1,
-    next_attempt_at = $2,
-    locked_at = NULL,
-    locked_by = NULL
-WHERE id = $3
-  AND account_id = $4
-  AND telegram_chat_id = $5
-  AND binding_revision = $6
-  AND status = 'pending'
-`
-
-type ScheduleAccountNotificationDeliveryRetryParams struct {
-	ErrorMessage    pgtype.Text
-	NextAttemptAt   pgtype.Timestamptz
-	ID              int64
-	AccountID       pgtype.UUID
-	TelegramChatID  int64
-	BindingRevision int64
-}
-
-func (q *Queries) ScheduleAccountNotificationDeliveryRetry(ctx context.Context, arg ScheduleAccountNotificationDeliveryRetryParams) (int64, error) {
-	result, err := q.db.Exec(ctx, scheduleAccountNotificationDeliveryRetry,
-		arg.ErrorMessage,
-		arg.NextAttemptAt,
-		arg.ID,
-		arg.AccountID,
-		arg.TelegramChatID,
-		arg.BindingRevision,
-	)
-	if err != nil {
-		return 0, err
+	defer rows.Close()
+	var items []AccountNotificationDelivery
+	for rows.Next() {
+		var i AccountNotificationDelivery
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccountID,
+			&i.IdempotencyKey,
+			&i.PayloadDigest,
+			&i.Source,
+			&i.Severity,
+			&i.Title,
+			&i.Body,
+			&i.Link,
+			&i.Channel,
+			&i.Status,
+			&i.TelegramChatID,
+			&i.BindingRevision,
+			&i.ProviderMessageID,
+			&i.ErrorMessage,
+			&i.CreatedAt,
+			&i.SentAt,
+			&i.Attempts,
+			&i.NextAttemptAt,
+			&i.LastAttemptAt,
+			&i.LockedAt,
+			&i.LockedBy,
+			&i.CurrentAttemptID,
+			&i.EligibilityRevokedAt,
+			&i.EligibilityRevokedReason,
+			&i.Payload,
+			&i.RequestDigest,
+			&i.ActivityID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
-	return result.RowsAffected(), nil
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

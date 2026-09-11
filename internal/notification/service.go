@@ -8,9 +8,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/useryege/athena/internal/notification/delivery"
 	"html"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode/utf8"
 
@@ -49,16 +51,23 @@ type Service struct {
 	apiclient.UnimplementedAccountNotificationServiceServer
 	apiclient.UnimplementedNotificationRuntimeServiceServer
 
-	store         *notificationstore.SQLStore
-	sender        Sender
-	profileSyncer ProfileSyncer
-	poller        *TelegramPoller
-	workerConfig  WorkerConfig
-	workerCancel  context.CancelFunc
-	workerWG      sync.WaitGroup
-	startStopMu   sync.Mutex
-	started       bool
-	botIdentity   *utiltelegram.BotIdentity
+	store             *notificationstore.SQLStore
+	summarySource     *SummarySource
+	sender            Sender
+	profileSyncer     ProfileSyncer
+	poller            *TelegramPoller
+	senderIncarnation uuid.UUID
+	senderSession     *notificationstore.SenderSession
+	runtimeErrors     chan error
+	runtimeFailed     atomic.Bool
+	recovery          recoveryProgress
+	onFatal           func(error)
+	workerConfig      WorkerConfig
+	workerCancel      context.CancelFunc
+	workerWG          sync.WaitGroup
+	startStopMu       sync.Mutex
+	started           bool
+	botIdentity       *utiltelegram.BotIdentity
 }
 
 type ProfileSyncer interface {
@@ -72,7 +81,7 @@ func NewService(store *notificationstore.SQLStore, sender Sender, profileSyncer 
 func NewServiceWithWorkerConfig(store *notificationstore.SQLStore, sender Sender, profileSyncer ProfileSyncer, poller *TelegramPoller, workerConfig WorkerConfig) *Service {
 	return &Service{
 		store: store, sender: sender, profileSyncer: profileSyncer, poller: poller,
-		workerConfig: normalizeWorkerConfig(workerConfig),
+		workerConfig: normalizeWorkerConfig(workerConfig), senderIncarnation: uuid.New(), runtimeErrors: make(chan error, 1),
 	}
 }
 
@@ -94,19 +103,36 @@ func (s *Service) Start(ctx context.Context) error {
 	if s.poller == nil {
 		return status.Error(codes.FailedPrecondition, "telegram poller is required")
 	}
-	identity, err := s.profileSyncer.SyncProfile(ctx)
+	s.senderIncarnation = uuid.New()
+	session, err := s.store.AcquireSender(ctx, s.senderIncarnation)
+	if err != nil {
+		return err
+	}
+	s.senderSession = session
+	workerCtx, cancel := context.WithCancel(ctx)
+	s.workerCancel = cancel
+	s.runtimeFailed.Store(false)
+	defer func() {
+		if !s.started {
+			cancel()
+			_ = session.Finish(context.Background())
+			session.Close()
+			s.senderSession = nil
+		}
+	}()
+	identity, err := s.profileSyncer.SyncProfile(workerCtx)
 	if err != nil {
 		return status.Errorf(codes.Unavailable, "failed to sync notification telegram bot profile: %v", err)
 	}
 	if identity == nil || strings.TrimSpace(identity.Username) == "" {
 		return status.Error(codes.FailedPrecondition, "notification telegram bot username is required")
 	}
-	if err := s.poller.Start(ctx); err != nil {
+	if err := s.poller.Start(workerCtx); err != nil {
 		return status.Errorf(codes.Unavailable, "failed to start telegram poller: %v", err)
 	}
 	identityCopy := *identity
 	s.botIdentity = &identityCopy
-	s.startWorkerLocked(ctx)
+	s.startWorkerLocked(workerCtx)
 	s.started = true
 	return nil
 }
@@ -114,12 +140,29 @@ func (s *Service) Start(ctx context.Context) error {
 func (s *Service) Stop() error {
 	s.startStopMu.Lock()
 	defer s.startStopMu.Unlock()
-	s.stopWorkerLocked()
+	if s.workerCancel != nil {
+		s.workerCancel()
+	}
 	if s.poller != nil {
 		s.poller.Stop()
 	}
+	s.workerWG.Wait()
+	var err error
+	if s.senderSession != nil {
+		if !s.runtimeFailed.Load() {
+			stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			err = s.senderSession.Finish(stopCtx)
+			if err == nil {
+				err = s.store.RecoverSender(stopCtx, s.senderIncarnation)
+			}
+			cancel()
+		}
+		s.senderSession.Close()
+		s.senderSession = nil
+	}
+	s.workerCancel = nil
 	s.started = false
-	return nil
+	return err
 }
 
 func (s *Service) GetNotificationRuntimeStatus(ctx context.Context, _ *apiclient.GetNotificationRuntimeStatusRequest) (*apiclient.NotificationRuntimeStatus, error) {
@@ -143,18 +186,27 @@ func (s *Service) GetNotificationRuntimeStatus(ctx context.Context, _ *apiclient
 	if s.poller != nil {
 		pollerStatus = s.poller.Status()
 	}
+	recovery := s.recovery.snapshot()
 	statusText := "stopped"
-	if started && pollerStatus.Active {
+	if s.runtimeFailed.Load() {
+		statusText = "failed"
+	} else if started && (recovery == nil || recovery.State == "initializing" || recovery.State == "waiting") {
+		statusText = "recovering"
+	} else if started && recovery.State == "failed" {
+		statusText = "failed"
+	} else if started && recovery.State == "completed" && pollerStatus.Active {
 		statusText = "running"
 	} else if started {
 		statusText = "degraded"
 	}
 	response := &apiclient.NotificationRuntimeStatus{
-		Started: started, Status: statusText, PollerActive: pollerStatus.Active,
+		Recovery: recovery, Started: started, Status: statusText, PollerActive: pollerStatus.Active,
 		SystemPendingCount: systemCounts.Pending, SystemRetryCount: systemCounts.Retry,
 		SystemFailedCount: systemCounts.Failed, AccountPendingCount: accountCounts.Pending,
 		AccountRetryCount: accountCounts.Retry, AccountFailedCount: accountCounts.Failed,
 		UnreachableBindingCount: accountCounts.UnreachableBindings,
+		SystemSendingCount:      systemCounts.Sending, SystemUnknownCount: systemCounts.Unknown,
+		AccountSendingCount: accountCounts.Sending, AccountUnknownCount: accountCounts.Unknown,
 	}
 	if identity != nil {
 		response.BotAvailable = true
@@ -181,15 +233,20 @@ func (s *Service) SendSystemNotification(ctx context.Context, req *apiclient.Sen
 	if err := validateRenderedTelegramMessage(params); err != nil {
 		return nil, err
 	}
-	if _, err := s.store.EnsureSystemNotificationTopic(ctx, params.telegramChat, params.topicLabel, func(createCtx context.Context) (int, error) {
+	topic, err := s.store.EnsureSystemNotificationTopic(ctx, params.telegramChat, params.topicLabel, func(createCtx context.Context) (int, error) {
 		return s.sender.CreateSystemTopic(createCtx, params.telegramChat, params.topicLabel)
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, status.Errorf(codes.Unavailable, "failed to ensure system notification topic: %v", err)
+	}
+	frozen, err := delivery.EncodePayload(delivery.Payload{Format: "html", Text: renderNotificationMessage(params).Text, MessageThreadID: topic})
+	if err != nil {
+		return nil, err
 	}
 	delivery, err := s.store.CreateSystemNotificationDelivery(ctx, notificationstore.CreateSystemNotificationDeliveryRequest{
 		Source: params.source, Severity: params.severity, Title: params.title, Body: params.body,
 		Link: params.link, Channel: notificationChannelTelegram, Status: notificationStatusPending,
-		TelegramChat: params.telegramChat, TopicLabel: params.topicLabel,
+		TelegramChat: params.telegramChat, TopicLabel: params.topicLabel, Payload: frozen,
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create system notification delivery: %v", err)
@@ -354,8 +411,12 @@ func (s *Service) SendAccountNotification(ctx context.Context, req *apiclient.Se
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to digest account notification payload: %v", err)
 	}
+	frozen, err := delivery.EncodePayload(delivery.Payload{Format: "html", Text: renderNotificationMessage(params).Text})
+	if err != nil {
+		return nil, err
+	}
 	result, err := s.store.EnqueueAccountNotification(ctx, notificationstore.CreateAccountNotificationDeliveryRequest{
-		AccountID: accountID, IdempotencyKey: idempotencyKey, PayloadDigest: payloadDigest,
+		AccountID: accountID, IdempotencyKey: idempotencyKey, PayloadDigest: payloadDigest, Payload: frozen,
 		Source: params.source, Severity: params.severity, Title: params.title, Body: params.body,
 		Link: params.link, Channel: notificationChannelTelegram, Status: notificationStatusPending,
 	})
@@ -507,7 +568,7 @@ func normalizeDeliveryStatusFilter(value string) (string, error) {
 		return "", nil
 	}
 	switch value {
-	case notificationStatusPending, notificationStatusSent, notificationStatusFailed:
+	case notificationStatusPending, notificationStatusSent, notificationStatusFailed, "sending", "unknown", "cancelled":
 		return value, nil
 	default:
 		return "", status.Error(codes.InvalidArgument, "status filter is invalid")

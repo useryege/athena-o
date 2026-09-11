@@ -105,7 +105,7 @@ administrator account-directory commands use separate facades.
 2. A cryptographically verified but unknown Google subject or Solana address in
    an explicit application realm remains outside PostgreSQL until the browser
    submits an acceptable username through the shared registration handler.
-   `RegisterExternalAccount` creates identity, access, nine module rows, profile,
+   `RegisterExternalAccount` creates identity, access, ten module rows, profile,
    and preferences in one transaction. Member accounts start Pending. The admin
    realm accepts only the configured verified Google email and can create only
    the single fixed administrator aggregate; the same email entering through

@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "gogoproto/gogo.proto";
+
 // Notification exposes the internal system and account notification domains.
 package athena.internal.notification;
 
@@ -23,6 +25,8 @@ enum NotificationDeliveryStatus {
   NOTIFICATION_DELIVERY_STATUS_SENT = 2;
   NOTIFICATION_DELIVERY_STATUS_FAILED = 3;
   NOTIFICATION_DELIVERY_STATUS_CANCELLED = 4;
+  NOTIFICATION_DELIVERY_STATUS_SENDING = 5;
+  NOTIFICATION_DELIVERY_STATUS_UNKNOWN = 6;
 }
 
 // TelegramChat selects the configured system Telegram chat.
@@ -33,6 +37,17 @@ enum TelegramChat {
 }
 
 message GetNotificationRuntimeStatusRequest {}
+
+
+// Recovery is observed by the sender process. Missing remaining evidence is not zero.
+message NotificationRecoveryStatus {
+  string state = 1;
+  string reason = 2;
+  string started_at = 3 [json_name="startedAt", (gogoproto.jsontag)="startedAt,omitempty"];
+  string remaining_millis = 4 [json_name="remainingMillis", (gogoproto.jsontag)="remainingMillis,omitempty"];
+  string elapsed_millis = 5 [json_name="elapsedMillis", (gogoproto.jsontag)="elapsedMillis,omitempty"];
+  string clock_source = 6 [json_name="clockSource", (gogoproto.jsontag)="clockSource,omitempty"];
+}
 
 message NotificationRuntimeStatus {
   bool started = 1;
@@ -50,6 +65,11 @@ message NotificationRuntimeStatus {
   int64 account_retry_count = 13;
   int64 account_failed_count = 14;
   int64 unreachable_binding_count = 15;
+  int64 system_sending_count = 16;
+  int64 system_unknown_count = 17;
+  int64 account_sending_count = 18;
+  int64 account_unknown_count = 19;
+  NotificationRecoveryStatus recovery = 20;
 }
 
 message SendSystemNotificationRequest {

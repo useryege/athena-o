@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "v1.0.0-1110-ga2cce704-dirty"
+    "version": "v1.0.0-1197-g27b2caa0-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -478,6 +478,113 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/notificationSendSystemNotificationTestResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/trader-sync/status": {
+      "get": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_GetTraderSyncRuntimeStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncGetTraderSyncRuntimeStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/trader-sync/subscriptions": {
+      "get": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_ListSubscriptionSummaries",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page.page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "page.cursor",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "account_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "state",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "wallet",
+            "in": "query"
+          },
+          {
+            "type": "boolean",
+            "name": "include_cancelled",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncListSubscriptionSummariesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/trader-sync/subscriptions/{subscription_id}": {
+      "get": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_GetSubscriptionSummary",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "subscription_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncGetSubscriptionSummaryResponse"
             }
           },
           "default": {
@@ -2521,6 +2628,502 @@
         }
       }
     },
+    "/api/v1/trader-sync/activities": {
+      "get": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_ListActivities",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page.page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "page.cursor",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "subscription_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "summary_batch_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "refresh_cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncListActivitiesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trader-sync/activities/{activity_id}": {
+      "get": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_GetActivity",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "activity_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncGetActivityResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trader-sync/subscriptions": {
+      "get": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_ListSubscriptions",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page.page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "page.cursor",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "view",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "state",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncListSubscriptionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_CreateSubscription",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tradersyncCreateSubscriptionRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncCreateSubscriptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trader-sync/subscriptions/{subscription_id}": {
+      "get": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_GetSubscription",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "subscription_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncGetSubscriptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trader-sync/subscriptions/{subscription_id}/history": {
+      "get": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_ListSubscriptionHistory",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "subscription_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page.page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "page.cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncListSubscriptionHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trader-sync/subscriptions/{subscription_id}:cancel": {
+      "post": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_CancelSubscription",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "subscription_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tradersyncCancelSubscriptionRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncCancelSubscriptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trader-sync/subscriptions/{subscription_id}:pause": {
+      "post": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_PauseSubscription",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "subscription_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tradersyncPauseSubscriptionRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncPauseSubscriptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trader-sync/subscriptions/{subscription_id}:resume": {
+      "post": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_ResumeSubscription",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "subscription_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tradersyncResumeSubscriptionRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncResumeSubscriptionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trader-sync/summaries/{batch_id}": {
+      "get": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_GetSummaryBatch",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "batch_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncGetSummaryBatchResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trader-sync/summaries/{batch_id}/parts": {
+      "get": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_ListSummaryParts",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "batch_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "activity_id",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int32",
+            "name": "page.page_size",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "page.cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncListSummaryPartsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trader-sync/targets/{wallet}/note": {
+      "patch": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_UpdateTargetNote",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "wallet",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tradersyncUpdateTargetNoteRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncUpdateTargetNoteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trader-sync/targets:resolve": {
+      "post": {
+        "tags": [
+          "TraderSyncService"
+        ],
+        "operationId": "TraderSyncService_ResolveTarget",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tradersyncResolveTargetRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tradersyncResolveTargetResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/wallet/status": {
       "get": {
         "tags": [
@@ -3076,7 +3679,8 @@
         "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
         "ACCOUNT_DATA_MODULE_TOKEN",
         "ACCOUNT_DATA_MODULE_WALLET",
-        "ACCOUNT_DATA_MODULE_WORM_TRADING"
+        "ACCOUNT_DATA_MODULE_WORM_TRADING",
+        "ACCOUNT_DATA_MODULE_TRADER_SYNC"
       ]
     },
     "accountAccountIdentity": {
@@ -3726,6 +4330,30 @@
         }
       }
     },
+    "notificationNotificationRecoveryStatus": {
+      "description": "Recovery is observed by the sender process. Missing remaining evidence is not zero.",
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "string"
+        },
+        "remainingMillis": {
+          "type": "string"
+        },
+        "elapsedMillis": {
+          "type": "string"
+        },
+        "clockSource": {
+          "type": "string"
+        }
+      }
+    },
     "notificationNotificationRuntimeStatus": {
       "type": "object",
       "properties": {
@@ -3738,6 +4366,14 @@
           "format": "int64"
         },
         "account_retry_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "account_sending_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "account_unknown_count": {
           "type": "integer",
           "format": "int64"
         },
@@ -3760,6 +4396,9 @@
         "poller_active": {
           "type": "boolean"
         },
+        "recovery": {
+          "$ref": "#/definitions/notificationNotificationRecoveryStatus"
+        },
         "started": {
           "type": "boolean"
         },
@@ -3775,6 +4414,14 @@
           "format": "int64"
         },
         "system_retry_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "system_sending_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "system_unknown_count": {
           "type": "integer",
           "format": "int64"
         },
@@ -5108,6 +5755,312 @@
         }
       }
     },
+    "tradersyncActivityPageInfo": {
+      "type": "object",
+      "properties": {
+        "asOf": {
+          "type": "string"
+        },
+        "hasNewer": {
+          "type": "boolean"
+        },
+        "nextCursor": {
+          "type": "string"
+        },
+        "refreshCursor": {
+          "type": "string"
+        },
+        "snapshot": {
+          "type": "string"
+        }
+      }
+    },
+    "tradersyncCancelSubscriptionRequest": {
+      "type": "object",
+      "properties": {
+        "expectedRevision": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "subscriptionId": {
+          "type": "string"
+        }
+      }
+    },
+    "tradersyncCancelSubscriptionResponse": {
+      "type": "object",
+      "properties": {
+        "subscription": {
+          "$ref": "#/definitions/v1alpha1TraderSyncSubscription"
+        }
+      }
+    },
+    "tradersyncCreateSubscriptionRequest": {
+      "type": "object",
+      "properties": {
+        "confirmationToken": {
+          "type": "string"
+        },
+        "note": {
+          "$ref": "#/definitions/tradersyncTraderSyncNoteInput"
+        },
+        "requestId": {
+          "type": "string"
+        }
+      }
+    },
+    "tradersyncCreateSubscriptionResponse": {
+      "type": "object",
+      "properties": {
+        "subscription": {
+          "$ref": "#/definitions/v1alpha1TraderSyncSubscription"
+        }
+      }
+    },
+    "tradersyncGetActivityResponse": {
+      "type": "object",
+      "properties": {
+        "activity": {
+          "$ref": "#/definitions/v1alpha1TraderSyncActivity"
+        }
+      }
+    },
+    "tradersyncGetSubscriptionResponse": {
+      "type": "object",
+      "properties": {
+        "subscription": {
+          "$ref": "#/definitions/v1alpha1TraderSyncSubscription"
+        }
+      }
+    },
+    "tradersyncGetSubscriptionSummaryResponse": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "$ref": "#/definitions/v1alpha1TraderSyncSubscriptionSummary"
+        }
+      }
+    },
+    "tradersyncGetSummaryBatchResponse": {
+      "type": "object",
+      "properties": {
+        "batch": {
+          "$ref": "#/definitions/v1alpha1TraderSyncSummaryBatch"
+        }
+      }
+    },
+    "tradersyncGetTraderSyncRuntimeStatusResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/v1alpha1TraderSyncRuntimeStatus"
+        }
+      }
+    },
+    "tradersyncListActivitiesResponse": {
+      "type": "object",
+      "properties": {
+        "activities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TraderSyncActivity"
+          }
+        },
+        "page": {
+          "$ref": "#/definitions/tradersyncActivityPageInfo"
+        }
+      }
+    },
+    "tradersyncListSubscriptionHistoryResponse": {
+      "type": "object",
+      "properties": {
+        "asOf": {
+          "type": "string"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TraderSyncHistoryEntry"
+          }
+        },
+        "page": {
+          "$ref": "#/definitions/tradersyncPageInfo"
+        }
+      }
+    },
+    "tradersyncListSubscriptionSummariesResponse": {
+      "type": "object",
+      "properties": {
+        "asOf": {
+          "type": "string"
+        },
+        "page": {
+          "$ref": "#/definitions/tradersyncPageInfo"
+        },
+        "summaries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TraderSyncSubscriptionSummary"
+          }
+        }
+      }
+    },
+    "tradersyncListSubscriptionsResponse": {
+      "type": "object",
+      "properties": {
+        "asOf": {
+          "type": "string"
+        },
+        "page": {
+          "$ref": "#/definitions/tradersyncPageInfo"
+        },
+        "quota": {
+          "$ref": "#/definitions/v1alpha1TraderSyncQuota"
+        },
+        "subscriptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TraderSyncSubscription"
+          }
+        }
+      }
+    },
+    "tradersyncListSummaryPartsResponse": {
+      "type": "object",
+      "properties": {
+        "asOf": {
+          "type": "string"
+        },
+        "page": {
+          "$ref": "#/definitions/tradersyncPageInfo"
+        },
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TraderSyncSummaryPart"
+          }
+        }
+      }
+    },
+    "tradersyncPageInfo": {
+      "type": "object",
+      "properties": {
+        "nextCursor": {
+          "type": "string"
+        }
+      }
+    },
+    "tradersyncPageInput": {
+      "type": "object",
+      "properties": {
+        "cursor": {
+          "type": "string"
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "tradersyncPauseSubscriptionRequest": {
+      "type": "object",
+      "properties": {
+        "expectedRevision": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "subscriptionId": {
+          "type": "string"
+        }
+      }
+    },
+    "tradersyncPauseSubscriptionResponse": {
+      "type": "object",
+      "properties": {
+        "subscription": {
+          "$ref": "#/definitions/v1alpha1TraderSyncSubscription"
+        }
+      }
+    },
+    "tradersyncResolveTargetRequest": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "string"
+        }
+      }
+    },
+    "tradersyncResolveTargetResponse": {
+      "type": "object",
+      "properties": {
+        "target": {
+          "$ref": "#/definitions/v1alpha1TraderSyncResolvedTarget"
+        }
+      }
+    },
+    "tradersyncResumeSubscriptionRequest": {
+      "type": "object",
+      "properties": {
+        "expectedRevision": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "subscriptionId": {
+          "type": "string"
+        }
+      }
+    },
+    "tradersyncResumeSubscriptionResponse": {
+      "type": "object",
+      "properties": {
+        "subscription": {
+          "$ref": "#/definitions/v1alpha1TraderSyncSubscription"
+        }
+      }
+    },
+    "tradersyncTraderSyncNoteInput": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "tradersyncUpdateTargetNoteRequest": {
+      "type": "object",
+      "properties": {
+        "expectedRevision": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "note": {
+          "type": "string"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "tradersyncUpdateTargetNoteResponse": {
+      "type": "object",
+      "properties": {
+        "note": {
+          "$ref": "#/definitions/v1alpha1TraderSyncTargetNote"
+        }
+      }
+    },
     "v1alpha1ManagedOODisputeItem": {
       "type": "object",
       "properties": {
@@ -5867,6 +6820,9 @@
     "v1alpha1SystemNotificationDeliveryDetail": {
       "type": "object",
       "properties": {
+        "authorized_at": {
+          "type": "string"
+        },
         "body": {
           "type": "string"
         },
@@ -5889,6 +6845,9 @@
         "provider_message_id": {
           "type": "string"
         },
+        "result_at": {
+          "type": "string"
+        },
         "sent_at": {
           "type": "string"
         },
@@ -5896,6 +6855,9 @@
           "type": "string"
         },
         "source": {
+          "type": "string"
+        },
+        "started_at": {
           "type": "string"
         },
         "status": {
@@ -5915,6 +6877,9 @@
     "v1alpha1SystemNotificationDeliveryItem": {
       "type": "object",
       "properties": {
+        "authorized_at": {
+          "type": "string"
+        },
         "body": {
           "type": "string"
         },
@@ -5937,6 +6902,9 @@
         "provider_message_id": {
           "type": "string"
         },
+        "result_at": {
+          "type": "string"
+        },
         "sent_at": {
           "type": "string"
         },
@@ -5944,6 +6912,9 @@
           "type": "string"
         },
         "source": {
+          "type": "string"
+        },
+        "started_at": {
           "type": "string"
         },
         "status": {
@@ -7255,6 +8226,849 @@
           "format": "int64"
         },
         "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncActivity": {
+      "type": "object",
+      "properties": {
+        "collateralDecimals": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "collateralRaw": {
+          "type": "string"
+        },
+        "collateralSymbol": {
+          "type": "string"
+        },
+        "delivery": {
+          "$ref": "#/definitions/v1alpha1TraderSyncDelivery"
+        },
+        "feeRaw": {
+          "type": "string"
+        },
+        "finalityAnomaly": {
+          "$ref": "#/definitions/v1alpha1TraderSyncFinalityAnomaly"
+        },
+        "id": {
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "#/definitions/v1alpha1TraderSyncTradeMetadata"
+        },
+        "noteSnapshot": {
+          "type": "string"
+        },
+        "notificationMode": {
+          "type": "string"
+        },
+        "notificationReason": {
+          "type": "string"
+        },
+        "positionId": {
+          "type": "string"
+        },
+        "priceDenominator": {
+          "type": "string"
+        },
+        "priceEvidence": {
+          "$ref": "#/definitions/v1alpha1TraderSyncFieldEvidence"
+        },
+        "priceNumerator": {
+          "type": "string"
+        },
+        "publicTimeEvidence": {
+          "$ref": "#/definitions/v1alpha1TraderSyncFieldEvidence"
+        },
+        "receivedAt": {
+          "type": "string"
+        },
+        "recordedAt": {
+          "type": "string"
+        },
+        "settledAt": {
+          "type": "string"
+        },
+        "sharesDecimals": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sharesRaw": {
+          "type": "string"
+        },
+        "side": {
+          "type": "string"
+        },
+        "sourceLocation": {
+          "$ref": "#/definitions/v1alpha1TraderSyncSourceLocation"
+        },
+        "sourceRecordId": {
+          "type": "string"
+        },
+        "sourceVersion": {
+          "type": "string"
+        },
+        "subscriptionId": {
+          "type": "string"
+        },
+        "summaryProgress": {
+          "$ref": "#/definitions/v1alpha1TraderSyncSummaryProgress"
+        },
+        "targetDisplaySnapshot": {
+          "$ref": "#/definitions/v1alpha1TraderSyncTargetDisplay"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncAttempt": {
+      "type": "object",
+      "properties": {
+        "authorizedAt": {
+          "type": "string"
+        },
+        "index": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "resultAt": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncBoolField": {
+      "type": "object",
+      "properties": {
+        "evidence": {
+          "$ref": "#/definitions/v1alpha1TraderSyncFieldEvidence"
+        },
+        "value": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1alpha1TraderSyncComboLeg": {
+      "type": "object",
+      "properties": {
+        "market": {
+          "$ref": "#/definitions/v1alpha1TraderSyncMarketRef"
+        },
+        "positionId": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncCurve": {
+      "type": "object",
+      "properties": {
+        "evidence": {
+          "$ref": "#/definitions/v1alpha1TraderSyncFieldEvidence"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TraderSyncCurvePoint"
+          }
+        }
+      }
+    },
+    "v1alpha1TraderSyncCurvePoint": {
+      "type": "object",
+      "properties": {
+        "p": {
+          "type": "string"
+        },
+        "t": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncDecimalField": {
+      "type": "object",
+      "properties": {
+        "evidence": {
+          "$ref": "#/definitions/v1alpha1TraderSyncFieldEvidence"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncDelivery": {
+      "type": "object",
+      "properties": {
+        "attemptCount": {
+          "type": "string"
+        },
+        "authorizedAt": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "latestAttempt": {
+          "$ref": "#/definitions/v1alpha1TraderSyncAttempt"
+        },
+        "messageId": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "resultAt": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncExistingSubscription": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncFieldEvidence": {
+      "type": "object",
+      "properties": {
+        "availability": {
+          "type": "string"
+        },
+        "queriedAt": {
+          "type": "string"
+        },
+        "reasonCode": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncFinalityAnomaly": {
+      "type": "object",
+      "properties": {
+        "conflictingBlockHash": {
+          "type": "string"
+        },
+        "detectedAt": {
+          "type": "string"
+        },
+        "publishedBlockHash": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncHistoryEntry": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "interruption": {
+          "$ref": "#/definitions/v1alpha1TraderSyncInterruption"
+        },
+        "interval": {
+          "$ref": "#/definitions/v1alpha1TraderSyncInterval"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "sortAt": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncInterruption": {
+      "type": "object",
+      "properties": {
+        "end": {
+          "type": "string"
+        },
+        "possibleMissing": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "recoveredAt": {
+          "type": "string"
+        },
+        "start": {
+          "type": "string"
+        },
+        "uncertainty": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncInterval": {
+      "type": "object",
+      "properties": {
+        "effectiveAt": {
+          "type": "string"
+        },
+        "endedAt": {
+          "type": "string"
+        },
+        "epoch": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "generation": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "v1alpha1TraderSyncMarketRef": {
+      "type": "object",
+      "properties": {
+        "conditionId": {
+          "type": "string"
+        },
+        "evidence": {
+          "$ref": "#/definitions/v1alpha1TraderSyncFieldEvidence"
+        },
+        "id": {
+          "type": "string"
+        },
+        "outcome": {
+          "type": "string"
+        },
+        "positionId": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncObservation": {
+      "type": "object",
+      "properties": {
+        "interruptionCount": {
+          "type": "string"
+        },
+        "lastReliableAt": {
+          "type": "string"
+        },
+        "latestInterruption": {
+          "$ref": "#/definitions/v1alpha1TraderSyncInterruption"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncPnLView": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "$ref": "#/definitions/v1alpha1TraderSyncDecimalField"
+        },
+        "curve": {
+          "$ref": "#/definitions/v1alpha1TraderSyncCurve"
+        },
+        "fidelity": {
+          "type": "string"
+        },
+        "interval": {
+          "type": "string"
+        },
+        "period": {
+          "type": "string"
+        },
+        "referenceTime": {
+          "$ref": "#/definitions/v1alpha1TraderSyncTimeField"
+        },
+        "timezone": {
+          "$ref": "#/definitions/v1alpha1TraderSyncStringField"
+        }
+      }
+    },
+    "v1alpha1TraderSyncQuota": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "used": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1alpha1TraderSyncResolvedTarget": {
+      "type": "object",
+      "properties": {
+        "avatar": {
+          "$ref": "#/definitions/v1alpha1TraderSyncStringField"
+        },
+        "canonicalProfileURL": {
+          "type": "string"
+        },
+        "confirmationToken": {
+          "type": "string"
+        },
+        "defaultPeriod": {
+          "type": "string"
+        },
+        "displayName": {
+          "$ref": "#/definitions/v1alpha1TraderSyncStringField"
+        },
+        "existingSubscription": {
+          "$ref": "#/definitions/v1alpha1TraderSyncExistingSubscription"
+        },
+        "expiresAt": {
+          "type": "string"
+        },
+        "joinedAt": {
+          "$ref": "#/definitions/v1alpha1TraderSyncTimeField"
+        },
+        "largestWin": {
+          "$ref": "#/definitions/v1alpha1TraderSyncDecimalField"
+        },
+        "pnl": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TraderSyncPnLView"
+          }
+        },
+        "positionValue": {
+          "$ref": "#/definitions/v1alpha1TraderSyncDecimalField"
+        },
+        "predictions": {
+          "$ref": "#/definitions/v1alpha1TraderSyncDecimalField"
+        },
+        "quota": {
+          "$ref": "#/definitions/v1alpha1TraderSyncQuota"
+        },
+        "savedNote": {
+          "$ref": "#/definitions/v1alpha1TraderSyncTargetNote"
+        },
+        "usageNotice": {
+          "type": "string"
+        },
+        "verified": {
+          "$ref": "#/definitions/v1alpha1TraderSyncBoolField"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncRuntimeMetric": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "serviceEpoch": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "windowEnd": {
+          "type": "string"
+        },
+        "windowStart": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncRuntimeStatus": {
+      "type": "object",
+      "properties": {
+        "asOf": {
+          "type": "string"
+        },
+        "collectorConnected": {
+          "type": "boolean"
+        },
+        "collectorEpoch": {
+          "type": "string"
+        },
+        "filterRevision": {
+          "type": "string"
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TraderSyncRuntimeMetric"
+          }
+        }
+      }
+    },
+    "v1alpha1TraderSyncSourceLocation": {
+      "type": "object",
+      "properties": {
+        "blockHash": {
+          "type": "string"
+        },
+        "blockNumber": {
+          "type": "string"
+        },
+        "chainId": {
+          "type": "string"
+        },
+        "exchangeAddress": {
+          "type": "string"
+        },
+        "logIndex": {
+          "type": "string"
+        },
+        "transactionHash": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncStatusCounts": {
+      "type": "object",
+      "properties": {
+        "cancelled": {
+          "type": "string"
+        },
+        "failed": {
+          "type": "string"
+        },
+        "pending": {
+          "type": "string"
+        },
+        "sending": {
+          "type": "string"
+        },
+        "sent": {
+          "type": "string"
+        },
+        "total": {
+          "type": "string"
+        },
+        "unknown": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncStringField": {
+      "type": "object",
+      "properties": {
+        "evidence": {
+          "$ref": "#/definitions/v1alpha1TraderSyncFieldEvidence"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncSubscription": {
+      "type": "object",
+      "properties": {
+        "bindingStatus": {
+          "type": "string"
+        },
+        "cancelledAt": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "currentInterval": {
+          "$ref": "#/definitions/v1alpha1TraderSyncInterval"
+        },
+        "generation": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "id": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "noteRevision": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "observation": {
+          "$ref": "#/definitions/v1alpha1TraderSyncObservation"
+        },
+        "pausedAt": {
+          "type": "string"
+        },
+        "permissionDisabledAt": {
+          "type": "string"
+        },
+        "queueCounts": {
+          "$ref": "#/definitions/v1alpha1TraderSyncStatusCounts"
+        },
+        "queueNotice": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "status": {
+          "type": "string"
+        },
+        "targetDisplay": {
+          "$ref": "#/definitions/v1alpha1TraderSyncTargetDisplay"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncSubscriptionSummary": {
+      "type": "object",
+      "properties": {
+        "accountId": {
+          "type": "string"
+        },
+        "activityCount": {
+          "type": "string"
+        },
+        "asOf": {
+          "type": "string"
+        },
+        "associatedDeliveryCounts": {
+          "$ref": "#/definitions/v1alpha1TraderSyncStatusCounts"
+        },
+        "cancelledAt": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "observation": {
+          "$ref": "#/definitions/v1alpha1TraderSyncObservation"
+        },
+        "pausedAt": {
+          "type": "string"
+        },
+        "permissionDisabledAt": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "subscriptionId": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncSummaryBatch": {
+      "type": "object",
+      "properties": {
+        "activityCount": {
+          "type": "string"
+        },
+        "asOf": {
+          "type": "string"
+        },
+        "firstStartedAt": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "oldestAt": {
+          "type": "string"
+        },
+        "partCounts": {
+          "$ref": "#/definitions/v1alpha1TraderSyncStatusCounts"
+        },
+        "recordedFrom": {
+          "type": "string"
+        },
+        "recordedTo": {
+          "type": "string"
+        },
+        "settledFrom": {
+          "type": "string"
+        },
+        "settledTo": {
+          "type": "string"
+        },
+        "targetCounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TraderSyncTargetCount"
+          }
+        }
+      }
+    },
+    "v1alpha1TraderSyncSummaryPart": {
+      "type": "object",
+      "properties": {
+        "associatedActivityCount": {
+          "type": "string"
+        },
+        "delivery": {
+          "$ref": "#/definitions/v1alpha1TraderSyncDelivery"
+        },
+        "id": {
+          "type": "string"
+        },
+        "index": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1alpha1TraderSyncSummaryProgress": {
+      "type": "object",
+      "properties": {
+        "batchId": {
+          "type": "string"
+        },
+        "batchPartCounts": {
+          "$ref": "#/definitions/v1alpha1TraderSyncStatusCounts"
+        },
+        "firstStartedAt": {
+          "type": "string"
+        },
+        "oldestAt": {
+          "type": "string"
+        },
+        "phase": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "relatedPartCounts": {
+          "$ref": "#/definitions/v1alpha1TraderSyncStatusCounts"
+        }
+      }
+    },
+    "v1alpha1TraderSyncTargetCount": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncTargetDisplay": {
+      "type": "object",
+      "properties": {
+        "avatar": {
+          "$ref": "#/definitions/v1alpha1TraderSyncStringField"
+        },
+        "displayName": {
+          "$ref": "#/definitions/v1alpha1TraderSyncStringField"
+        },
+        "profileURL": {
+          "$ref": "#/definitions/v1alpha1TraderSyncStringField"
+        }
+      }
+    },
+    "v1alpha1TraderSyncTargetNote": {
+      "type": "object",
+      "properties": {
+        "note": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "wallet": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncTimeField": {
+      "type": "object",
+      "properties": {
+        "evidence": {
+          "$ref": "#/definitions/v1alpha1TraderSyncFieldEvidence"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1TraderSyncTradeMetadata": {
+      "type": "object",
+      "properties": {
+        "legs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1alpha1TraderSyncComboLeg"
+          }
+        },
+        "legsEvidence": {
+          "$ref": "#/definitions/v1alpha1TraderSyncFieldEvidence"
+        },
+        "market": {
+          "$ref": "#/definitions/v1alpha1TraderSyncMarketRef"
+        },
+        "relationship": {
           "type": "string"
         }
       }

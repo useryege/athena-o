@@ -10,6 +10,7 @@ Athena 是一个面向区块链与预测市场的情报分析平台，用于采�
 - **Market Intelligence**：同步 Polymarket 热门市场、体育市场和 Optimistic Oracle 数据，并提供价格变化与事件告警。
 - **Token Intelligence**：处理 EVM 链上代币、交易对和钱包数据，支持项目研究、风险分析与报告。
 - **Blockchain Indexing**：索引 BSC 普通转账和 V2 Swap 事件，为交易查询与上层分析提供数据。
+- **Trader Sync Activity Alerts**：监控人工选择的低频 Polymarket 交易者，保留站内活动并发送 Telegram 普通或摘要提醒；不执行交易。
 - **Platform Services**：提供 Web UI、HTTP/gRPC API、通知服务、数据迁移以及 PostgreSQL/Redis 运行支持。
 
 ## 快速开始
@@ -48,6 +49,7 @@ make stop
 ```
 
 完整的环境变量、代码生成、本地运行和生产部署说明参见 [Makefile 操作手册](docs/operator-manual/makefile-commands.md)。
+Trader Sync 与 Notification 共用 `ATHENA_SERVER_POSTGRES_DSN` 指向的 `athena` 数据库；本地单实例生命周期、Polygon HTTP/WSS、Profile 来源、代理值和重置边界见[本地运行时编排](docs/design/development-runtime/local-runtime-orchestration.md)。
 
 ## 项目结构
 
@@ -71,6 +73,7 @@ make stop
 - [开发者指南](docs/developer-guide/index.md)
 - [Makefile 操作手册](docs/operator-manual/makefile-commands.md)
 - [API 文档](docs/developer-guide/api-docs.md)
+- [Trader Sync 需求](docs/requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)、[实现设计](docs/design/trading/trader-sync-activity-alerts.md)与[验收记录](docs/testing/trader-sync-activity-alerts-acceptance.md)
 
 ## 开发约定
 

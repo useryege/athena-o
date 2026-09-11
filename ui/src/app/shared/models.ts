@@ -1,4 +1,4 @@
-import {AccountDataAccess, AccountDataModule, accountDataModules, parseAccountDataAccess, parseAccountDataModule} from './access-modules';
+import {AccountDataAccess, AccountDataModule, accountDataModules, normalizeModuleGrant, parseAccountDataAccess, parseAccountDataModule} from './access-modules';
 
 export interface VersionMessage {
     Version: string;
@@ -206,7 +206,7 @@ export const parseAccountAccess = (value: any): AccountAccess => {
         revision: Number(value?.revision || 0),
         moduleAccess: accountDataModules.map(definition => ({
             module: definition.module,
-            dataAccess: Math.min(parsed.get(definition.module) || AccountDataAccess.None, definition.maxAccess) as AccountDataAccess
+            dataAccess: normalizeModuleGrant(definition, parsed.get(definition.module) || AccountDataAccess.None)
         }))
     };
 };

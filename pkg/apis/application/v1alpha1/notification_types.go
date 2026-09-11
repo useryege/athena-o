@@ -15,6 +15,9 @@ type SystemNotificationDeliveryItem struct {
 	SentAt            string `protobuf:"bytes,12,opt,name=sent_at,json=sentAt" json:"sentAt"`
 	TopicLabel        string `protobuf:"bytes,13,opt,name=topic_label,json=topicLabel" json:"topicLabel"`
 	TelegramChat      string `protobuf:"bytes,14,opt,name=telegram_chat,json=telegramChat" json:"telegramChat"`
+	AuthorizedAt      string `protobuf:"bytes,15,opt,name=authorized_at,json=authorizedAt" json:"authorizedAt"`
+	StartedAt         string `protobuf:"bytes,16,opt,name=started_at,json=startedAt" json:"startedAt"`
+	ResultAt          string `protobuf:"bytes,17,opt,name=result_at,json=resultAt" json:"resultAt"`
 }
 
 type SystemNotificationDeliveryDetail struct {
@@ -32,4 +35,7 @@ type SystemNotificationDeliveryDetail struct {
 	SentAt            string `protobuf:"bytes,12,opt,name=sent_at,json=sentAt" json:"sentAt"`
 	TopicLabel        string `protobuf:"bytes,13,opt,name=topic_label,json=topicLabel" json:"topicLabel"`
 	TelegramChat      string `protobuf:"bytes,14,opt,name=telegram_chat,json=telegramChat" json:"telegramChat"`
+	AuthorizedAt      string `protobuf:"bytes,15,opt,name=authorized_at,json=authorizedAt" json:"authorizedAt"`
+	StartedAt         string `protobuf:"bytes,16,opt,name=started_at,json=startedAt" json:"startedAt"`
+	ResultAt          string `protobuf:"bytes,17,opt,name=result_at,json=resultAt" json:"resultAt"`
 }

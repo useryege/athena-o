@@ -1,0 +1,31 @@
+{
+  "at": "2026-09-10T18:00:18.421944+00:00",
+  "url": "https://lb.drpc.live/polygon/Ai_L7JAEMk5hgVgUsOe8aKuLbjItrMIR8Yhzzu2G7ZgM",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "eth_getCode",
+    "params": [
+      "0xe3333700cA9d93003F00f0F71f8515005F6c00Aa",
+      {
+        "blockHash": "0x1d64636dcdfa966bb1c6564f0ff3f4322bfc23150c2579f737eb36c9bb5028ad",
+        "requireCanonical": true
+      }
+    ]
+  },
+  "status": 200,
+  "headers": {
+    "Date": "Thu, 10 Sep 2026 18:00:19 GMT",
+    "Content-Type": "application/json",
+    "Content-Length": "160",
+    "Connection": "close",
+    "Access-Control-Allow-Origin": "*",
+    "Vary": "Origin",
+    "X-Drpc-Owner-Id": "2fcbec90-0432-4e61-8158-14b0e7bc68ab",
+    "X-Drpc-Owner-Tier": "free",
+    "X-Drpc-Provider-Id": "drpc-core-free",
+    "X-Drpc-Trace-Id": "4f51dfe66561d5b33798462ef8b12f3d",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains"
+  },
+  "sha256": "53796ed617590f469a90472deddb90776af905f101d569dbe413c8e31a396a32"
+}

@@ -1,5 +1,5 @@
 import {AccountAccess} from './models';
-import {AccountDataAccess, AccountDataModule, accountAccessDisplayModules, accountDataModuleDefinition, accountDataModules} from './access-modules';
+import {AccountDataAccess, AccountDataModule, accountAccessDisplayModules, accountDataModuleDefinition, accountDataModules, normalizeModuleGrant} from './access-modules';
 
 export type ModuleAccessLevels = Record<AccountDataModule, AccountDataAccess>;
 
@@ -8,22 +8,22 @@ export const moduleAccessLevels = (access?: AccountAccess): ModuleAccessLevels =
     const source = new Map((access?.moduleAccess || []).map(item => [item.module, item.dataAccess]));
     accountDataModules.forEach(definition => {
         const effective = source.get(definition.module) || AccountDataAccess.None;
-        levels[definition.module] = Math.min(effective, definition.maxAccess) as AccountDataAccess;
+        levels[definition.module] = normalizeModuleGrant(definition, effective);
     });
     return levels;
 };
 
 export const moduleAccessLevel = (access: AccountAccess | undefined, module: AccountDataModule): AccountDataAccess => {
-    const maximum = accountDataModuleDefinition(module)?.maxAccess || AccountDataAccess.None;
+    const definition = accountDataModuleDefinition(module);
     const effective = access?.moduleAccess.find(item => item.module === module)?.dataAccess || AccountDataAccess.None;
-    return Math.min(effective, maximum) as AccountDataAccess;
+    return definition ? normalizeModuleGrant(definition, effective) : AccountDataAccess.None;
 };
 
 export const replaceModuleAccess = (access: AccountAccess, module: AccountDataModule, dataAccess: AccountDataAccess): AccountAccess => ({
     ...access,
     moduleAccess: accountDataModules.map(definition => ({
         module: definition.module,
-        dataAccess: definition.module === module ? dataAccess : moduleAccessLevel(access, definition.module)
+        dataAccess: definition.module === module ? normalizeModuleGrant(definition, dataAccess) : moduleAccessLevel(access, definition.module)
     }))
 });
 

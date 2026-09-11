@@ -1,0 +1,21 @@
+[
+  {
+    "name": "getLegs",
+    "type": "function",
+    "inputs": [
+      {
+        "name": "_conditionId",
+        "type": "bytes31",
+        "internalType": "ConditionId"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256[]",
+        "internalType": "PositionId[]"
+      }
+    ],
+    "stateMutability": "view"
+  }
+]

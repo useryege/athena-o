@@ -56,6 +56,7 @@ var canonicalAccountDataModules = []accountDataModuleMapping{
 	{module: accountaccesscore.ModuleWorldCupCorners, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS},
 	{module: accountaccesscore.ModuleToken, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_TOKEN},
 	{module: accountaccesscore.ModuleWallet, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_WALLET},
+	{module: accountaccesscore.ModuleTraderSync, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_TRADER_SYNC},
 }
 
 func toAPIDataAccess(dataAccess accountaccesscore.AccessLevel) account.AccountDataAccess {
@@ -115,6 +116,9 @@ func fromAPIModuleAccess(moduleAccess []*account.AccountModuleAccess) (map[accou
 		}
 		if maximum == accountaccesscore.AccessLevelRead && accessLevel == accountaccesscore.AccessLevelReadWrite {
 			return nil, status.Errorf(codes.InvalidArgument, "account data module %q is read-only", module)
+		}
+		if module == accountaccesscore.ModuleTraderSync && accessLevel == accountaccesscore.AccessLevelRead {
+			return nil, status.Error(codes.InvalidArgument, "Trader Sync grant requires NONE or READ_WRITE")
 		}
 		modules[module] = accessLevel
 	}

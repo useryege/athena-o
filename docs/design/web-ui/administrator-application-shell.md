@@ -1,266 +1,100 @@
-# Administrator Application Shell
+# 管理员应用壳
 
 > 设计状态：已实现
 
-## Scope
+## 范围
 
-The Administrator Application Shell owns Athena's management-only browser
-experience: Google login, the administrator role guard, account directory and
-access editing, Profit Sharing governance, Service Status, Etherscan Gateway
-management, system-notification delivery inspection and testing, administrator
-self-service, responsive management navigation, and administrator-scoped
-request cleanup. It does not expose member modules, API Keys, Phantom, Profit
-Sharing participant commands, member Telegram binding, or a member-application
-switcher.
+管理员应用壳负责 ATHENA 管理专用浏览器体验：Google 登录、管理员角色 guard、账户目录与权限编辑、Profit Sharing 治理、Service Status、Etherscan Gateway、系统通知列表/详情/测试、管理员自助、响应式管理导航及管理员范围的请求清理。它不公开会员模块、API Keys、Phantom、Profit Sharing 会员操作、会员 Telegram 绑定或跨应用 switcher。
 
-The shared deployment/session boundary is documented in [Application
-Shell](application-shell.md). Ordinary-account business routes and module
-authorization belong to [Member Application Shell](member-application-shell.md).
+共享部署与会话边界见[应用壳](application-shell.md)；普通账户业务路由和模块授权见[会员应用壳](member-application-shell.md)。
 
-## Source Locations
+## 源码入口
 
-| Concern | Source | Key symbols |
+| 职责 | 源码 | 关键符号 |
 | --- | --- | --- |
-| Entry and shell | [ui/src/app/entry/admin.tsx](../../../ui/src/app/entry/admin.tsx), [ui/src/app/admin/app.tsx](../../../ui/src/app/admin/app.tsx) | `AdminApp`, administrator bootstrap/role guard, admin shell |
-| Shared bootstrap and administrator login | [ui/src/app/session/bootstrap.tsx](../../../ui/src/app/session/bootstrap.tsx), [ui/src/app/admin/login.tsx](../../../ui/src/app/admin/login.tsx) | `SessionBootstrap`, `AdminLoginPage` |
-| Administrator pages | [ui/src/app/admin/pages/admin-accounts.tsx](../../../ui/src/app/admin/pages/admin-accounts.tsx), [ui/src/app/admin/pages/profit-sharing-admin.tsx](../../../ui/src/app/admin/pages/profit-sharing-admin.tsx), [ui/src/app/admin/pages/service-status.tsx](../../../ui/src/app/admin/pages/service-status.tsx), [ui/src/app/admin/pages/etherscan-gateways.tsx](../../../ui/src/app/admin/pages/etherscan-gateways.tsx) | account management, governance, service and gateway operations |
-| System notifications | [ui/src/app/admin/pages/system-notifications.tsx](../../../ui/src/app/admin/pages/system-notifications.tsx), [ui/src/app/admin/pages/system-notification-detail.tsx](../../../ui/src/app/admin/pages/system-notification-detail.tsx), [ui/src/app/admin/notification-service.ts](../../../ui/src/app/admin/notification-service.ts) | `SystemNotificationsPage`, `SystemNotificationDetailPage`, `AdminNotificationService` |
-| Shared self-service | [ui/src/app/shared/pages/account-center.tsx](../../../ui/src/app/shared/pages/account-center.tsx), [ui/src/app/shared/pages/help.tsx](../../../ui/src/app/shared/pages/help.tsx) | Profile, Appearance, Access, Help |
-| Administrator service registry | [ui/src/app/admin/services.ts](../../../ui/src/app/admin/services.ts), [ui/src/app/session/services.ts](../../../ui/src/app/session/services.ts), [ui/src/app/shared/services/registry.ts](../../../ui/src/app/shared/services/registry.ts) | realm-owned `AdminServices`, neutral session projection, `ensureAdminBusinessServices`, management-only service set |
-| Administrator service boundaries | [ui/src/app/admin/accounts-service.ts](../../../ui/src/app/admin/accounts-service.ts), [ui/src/app/admin/profit-sharing-service.ts](../../../ui/src/app/admin/profit-sharing-service.ts), [ui/src/app/shared/services/profit-sharing-service.ts](../../../ui/src/app/shared/services/profit-sharing-service.ts), [ui/src/app/shared/services/service-status-service.ts](../../../ui/src/app/shared/services/service-status-service.ts) | `AdminAccountsService`, `AdminProfitSharingService`, `AdminNotificationService`, neutral round parsing, service-status, Etherscan, and notification commands |
-| Server authorization | [internal/server/authz.go](../../../internal/server/authz.go), [internal/accountaccess/controller.go](../../../internal/accountaccess/controller.go), [internal/server/notification/notification.proto](../../../internal/server/notification/notification.proto) | `administratorGRPCMethods`, explicit system-notification RPC rules, `Controller.Authorize` |
-| Request and cache realm | [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts), [ui/src/app/components/data.ts](../../../ui/src/app/components/data.ts), [ui/src/app/shared/account-presentation.tsx](../../../ui/src/app/shared/account-presentation.tsx) | `configureAuthorizationRealm`, `realmBoundResourceURL`, `AccountAvatar`, `beginAuthorizationSession`, `setAsyncDataCacheSession`, complete realm cleanup |
-| Administrator style entry | [ui/src/app/styles/admin.css](../../../ui/src/app/styles/admin.css), [ui/src/app/styles/admin-features.css](../../../ui/src/app/styles/admin-features.css) | shared foundation plus administrator-only management, shell, and login rules |
+| 入口与 Shell | [ui/src/app/entry/admin.tsx](../../../ui/src/app/entry/admin.tsx)、[ui/src/app/admin/app.tsx](../../../ui/src/app/admin/app.tsx) | `AdminApp`、管理员 bootstrap/role guard、访问复查状态 |
+| 登录与共享 bootstrap | [bootstrap.tsx](../../../ui/src/app/session/bootstrap.tsx)、[login.tsx](../../../ui/src/app/admin/login.tsx) | `SessionBootstrap`、`AdminLoginPage` |
+| 账户、治理与系统页 | [pages](../../../ui/src/app/admin/pages) | Accounts、Profit Sharing、Service Status、Etherscan、Notifications |
+| Trader Sync 管理视图 | [trader-sync-models.ts](../../../ui/src/app/admin/trader-sync-models.ts)、[trader-sync-service.ts](../../../ui/src/app/admin/trader-sync-service.ts)、[pages/trader-sync](../../../ui/src/app/admin/pages/trader-sync) | 安全 Summary DTO、列表/详情、runtime |
+| 管理员读 scope | [read-scope.ts](../../../ui/src/app/admin/read-scope.ts)、[use-visible-query.ts](../../../ui/src/app/shared/use-visible-query.ts) | `beginAdminReadSession`、`endAdminReadSession`、`useAdminReadScope`、可见 single-flight |
+| 系统通知 | [system-notifications.tsx](../../../ui/src/app/admin/pages/system-notifications.tsx)、[system-notification-detail.tsx](../../../ui/src/app/admin/pages/system-notification-detail.tsx)、[notification-service.ts](../../../ui/src/app/admin/notification-service.ts) | 列表、详情、测试、Notification runtime |
+| 服务注册 | [services.ts](../../../ui/src/app/admin/services.ts)、[registry.ts](../../../ui/src/app/shared/services/registry.ts) | realm-owned `AdminServices`、`ensureAdminBusinessServices` |
+| 服务端鉴权 | [authz.go](../../../internal/server/authz.go)、[accountaccess/controller.go](../../../internal/accountaccess/controller.go) | `administratorGRPCMethods`、`Controller.Authorize` |
+| 请求、缓存与资源 realm | [requests.ts](../../../ui/src/app/shared/services/requests.ts)、[data.ts](../../../ui/src/app/components/data.ts) | admin realm/session generation、abort、cache 清理 |
+| 样式 | [admin.css](../../../ui/src/app/styles/admin.css)、[admin-features.css](../../../ui/src/app/styles/admin-features.css)、[trader-sync.css](../../../ui/src/app/admin/pages/trader-sync/trader-sync.css) | 管理员 Shell、功能页与局部 Trader Sync 状态样式 |
 
-## Architecture
+## 架构与权限
 
-`AdminApp` is the only React root imported by `admin/index.html`. It bootstraps
-the shared session contract, then requires the persisted administrator role
-before constructing management services or starting a management request. An
-ordinary authenticated account stays inside the administrator bundle and sees
-an Athena Admin 403 result with a full-document path to the member application
-root.
+`AdminApp` 是 `admin/index.html` 唯一 React root。它先读取共享会话，再验证持久管理员角色，只有成功后才构造管理 service 或发管理请求。普通认证账户停留在管理员 bundle 内看到 Athena Admin 403，并有整页链接回会员根路径。
 
-The administrator entry fixes the request realm to `admin` before bootstrap.
-Every frontend API request carries `X-Athena-Application-Realm: admin`, which
-selects only the HttpOnly `athena.token.admin` cookie when authentication is
-enabled and the isolated `local-admin` identity in loopback disabled-auth.
-Uploaded account avatars rendered through `AccountAvatar` use
-`athenaRealm=admin` because an `<img>` request cannot attach the header;
-external image URLs are not rewritten. The realm selects a session slot or
-development identity, while the persisted administrator role and operation
-authorization remain authoritative.
+入口在 bootstrap 前把请求 realm 固定为 `admin`。所有 API 请求带 `X-Athena-Application-Realm: admin`，认证开启时只选择 HttpOnly `athena.token.admin`，loopback disabled-auth 时只选择 `local-admin`。`AccountAvatar` 使用 `athenaRealm=admin` 读取相对上传资源；外部图片 URL 不改写。realm 只选择会话，持久管理员角色与操作鉴权仍是权威。
 
-The desktop shell has a persistent management sidebar; compact layouts use a
-drawer. Navigation is fixed and capability-oriented:
+桌面使用常驻管理侧栏，紧凑布局使用 drawer。固定导航为：
 
-- **Account Admin:** Accounts.
-- **Governance:** Profit Sharing.
-- **System:** Service Status, Etherscan Gateways, and Notifications.
+- **Account Admin**：Accounts。
+- **Governance**：Profit Sharing。
+- **System**：Service Status、Etherscan Gateways、Notifications、Trader Sync。
 
-Notifications is a management capability. `/admin/notifications` lists system
-Telegram delivery records and can queue an operational test;
-`/admin/notifications/:id` exposes the complete normalized provider-facing
-delivery detail. `/admin/service-status` separately renders the shared
-Notification runtime snapshot. All list, detail, runtime-status, and test RPCs
-are members of the explicit administrator method set in
-`internal/server/authz.go`; neither an ordinary interactive login nor an API Key
-can call them.
+`/admin/notifications` 和 `/:id` 管理系统 Telegram 投递；Service Status 展示共享 Notification runtime。Trader Sync 使用独立管理员 service/read scope，只提供安全订阅概要和 runtime，不导入会员 model、draft 或 cache。普通账户、API Key 和会员 service 都不能调用这些管理员 RPC。
 
-The account menu contains Profile, Appearance, Access, Help, and Logout under
-the `/admin` route root. It deliberately omits Security/API Keys and any member
-business link. The shell title and browser title identify `Athena Admin`.
+权限编辑器通过 `accountAccessDisplayModules` 隐藏 Token 控件，但 draft、reset、冲突 reload、比较和更新都保留完整十模块 aggregate；改变其他权限不得丢 Token level。管理员自己的 aggregate 仍是不可编辑的登录专用状态。
 
-Neutral account presentation, theme conversion, validation, Profit Sharing DTO
-normalization, components, and transport may be shared. Management pages and
-commands are imported only by the administrator entry; the administrator graph
-does not import member route definitions or member business services.
-Conversely, the member route graph does not import the system-notification
-pages or `AdminNotificationService`; member Telegram binding uses its own
-facade and never pulls management history or testing code into that bundle.
+## 路由与页面流程
 
-## Runtime Flow
+1. 匿名 `/admin/*` 访问显示 `/admin/login` 并保留校验后的管理员本地 return target；仅提供 Google。OIDC 使用 `athenaRealm=admin`，成功注册写 `athena.token.admin`。
+2. bootstrap 只选择 admin cookie/`local-admin` 并核持久角色。普通账户在 management service 构造前收到 403；管理员建立 accountId+iss+generation 的独立 read session。
+3. `/admin` 重定向 `/admin/accounts`。账户页分页/搜索安全身份资料，以 expected revision 一次更新普通账户完整可变权限 aggregate；管理员行只读。
+4. Governance 使用共享 `ListRounds`/`GetRound` 的管理员权限，只提供 lifecycle/roster 管理，不创建会员 proposal 或 vote。
+5. 系统通知页提供 keyword、delivery status、`test`/`prod` chat 筛选；详情显示 provider-facing 规范化结果。Test Notification 单飞提交，提交中不可关闭，成功后刷新列表，失败保留弹窗和错误。
+6. 管理员 Trader Sync 路由为 `/admin/trader-sync/subscriptions` 与 `/admin/trader-sync/subscriptions/:id`，并与 `/admin/service-status` 互链。列表 filter 先保留 draft，只有 Apply 才生效；accountId trim、wallet trim 并小写，includeCancelled=true 表示当前与已取消全部，默认 pageSize=50。
+7. Trader Sync 列表 Previous 使用本页真实输入 cursor，Next 使用响应 nextCursor，不推算 total。只显示用户安全身份、完整钱包、生命周期、观察、活动数和关联逻辑 delivery 数；不同订阅行的 Associated deliveries 不可求和。详情无备注、完整活动、消息正文、逐条 delivery 或 Pause/Resume/Cancel/Resend。
+8. Service Status 对 Services、Notification Runtime、Trader Sync 各维护独立 10 秒可见 single-flight；hidden 不发新请求，visible/focus 和手动 Refresh 使用同一 reload。某一来源 pending/失败不阻塞其余来源，失败保留该来源最后成功值、时间和 stale 提示。
+9. Profile、Appearance、Access、Help 只操作当前管理员 UUID；管理员应用不创建 API Key。Logout 只撤销/清除 `athena.token.admin`，会员会话不受影响。
 
-1. Anonymous `/admin/*` navigation renders `/admin/login` and preserves a
-   validated administrator-local return target. The page offers Google only.
-2. Google OIDC starts through the shared deployment-root handler with
-   `athenaRealm=admin`. Registration retains the server-issued administrator
-   realm and writes the exact `athena.token.admin` cookie. A registered
-   administrator returns to the requested management path or `/admin/accounts`.
-3. Authenticated bootstrap sends `X-Athena-Application-Realm: admin`, selects
-   only `athena.token.admin` in production or `local-admin` in loopback
-   disabled-auth, and checks the persisted role. The existing role guard renders
-   403 for an ordinary account before any management service is constructed. An
-   administrator creates the administrator authorization context and enters the
-   shell.
-4. `/admin` redirects to `/admin/accounts`. Account Admin searches and pages the
-   account directory, displays safe identity/profile data, and applies one
-   expected-revision update to the complete mutable access aggregate of an
-   ordinary account. The editor uses `accountAccessDisplayModules` to display
-   eight module controls, excluding Token. Drafts, resets, conflict reloads,
-   comparisons, and updates retain the complete nine-module matrix and preserve
-   the existing Token level when another permission changes. Account Center
-   permission cards and display summaries also exclude Token. Administrator
-   rows remain read-only.
-5. Governance reads rounds through the shared `ListRounds`/`GetRound` contract
-   using administrator authority and exposes only lifecycle and roster actions.
-   It cannot create a member proposal or vote.
-6. Service Status and Etherscan pages call only their explicit administrator
-   endpoints for aggregate service state and gateway configuration/operations.
-   The shared service list retains Token API health; Etherscan administration
-   is independent of the member Token entry.
-   Service Status refreshes both the standard gRPC-health list and Notification
-   runtime immediately, on manual refresh, and every ten seconds. The runtime
-   section shows Bot identity and availability, poller state and freshness,
-   system/account pending, retry, and failure counts, and unreachable bindings.
-7. `/admin/notifications` pages system-delivery rows and exposes keyword,
-   delivery-status, and `test`/`prod` Telegram-chat filters. Desktop uses the
-   sticky `ResourceTable`; compact mode renders delivery cards. Selecting a row
-   opens `/admin/notifications/:id`, whose key/value detail includes the source,
-   severity, topic, body, channel, status, target chat, provider message/error,
-   and timestamps. Only `http` and `https` delivery links become external links.
-8. Test Notification opens a topic-label form. Submission is single-flight,
-   cannot be dismissed while in progress, queues one administrator-authorized
-   system test, reports success or failure through the shell notification
-   surface, and reloads the delivery list after success.
-9. Profile, Appearance, and Access act on the current administrator UUID through
-   normal self-service APIs. No API Key request is created.
-10. Role/session loss aborts the entire administrator request registry, clears
-    the administrator/account/session cache namespace, and returns to the
-    appropriate login or forbidden boundary. Logout revokes and clears only
-    `athena.token.admin` before returning to `/admin/login`; an active member tab
-    and `athena.token.member` session are unaffected.
+其他路由为 `/admin/profit-sharing`、`/admin/profit-sharing/:slug`、`/admin/etherscan-gateways`、`/admin/notifications`、`/admin/notifications/:id`、`/admin/account/profile`、`/admin/account/appearance`、`/admin/account/access` 与 `/admin/help`。管理路由都位于 `/admin` 应用根下。
 
-The route tree is `/admin/accounts`, `/admin/profit-sharing`,
-`/admin/profit-sharing/:slug`, `/admin/service-status`,
-`/admin/etherscan-gateways`, `/admin/notifications`,
-`/admin/notifications/:id`, `/admin/account/profile`,
-`/admin/account/appearance`, `/admin/account/access`, and `/admin/help`.
-No management route is registered outside the `/admin` application root.
+## 身份清理与访问复查
 
-## State / Data
+`beginAdminReadSession(user)` 以 accountId+iss 建立 generation；Shell logout、401、维护型 503、失 admin、身份变化或卸载调用 `endAdminReadSession()`，先清读 scope 和 cache，再进行导航或状态切换。页面普通卸载只取消本页 query，不结束整个管理员 session。旧 query 的成功、失败或 finally 都必须通过 generation fence。
 
-The administrator authorization projection contains account UUID, persisted
-administrator role, profile, preferences, provider-safe identity presentation,
-access revision, and the fixed login-only access aggregate. The aggregate has
-API Key and Profit Sharing member entitlements disabled and every product module
-at `NONE`.
+普通业务 503 保留各来源旧数据和独立错误，不视为失权。401 或 `503 + code 14 + 系统维护中` 立即清 scope 并跳登录。403 且 reason=`ACCOUNT_ADMIN_REQUIRED` 时立即清屏，再调用真实 `/api/v1/session/userinfo` 复查角色；复查期间以 `Administrator access check` region 取代业务页，显示 `Checking administrator access`、`aria-busy=true`，禁用 `Retry access check`。
 
-Directory selections and management drafts retain target account UUID plus
-expected revision. Presentation strings are never target identity. Requests
-carry administrator realm, viewer account UUID, and session generation. Cache
-keys contain administrator realm, viewer UUID, and session generation, and a
-generation transition clears the prior session's entries. Persistent UI keys
-use `athena.admin.*`; no member drafts, filters, return positions, or feature
-caches are read.
+复查网络/普通 503 失败显示 `Could not verify administrator access` 和原错误，role=alert，并开放 `Retry access check`。重试 single-flight；只有最新复查成功且 `loggedIn=true`、`administrator=true`，才通过原 refresh 建立合法新 session 并重新读取当前路由。返回失管理员显示 Forbidden；之后的新 401 或先前 userinfo 晚成功都不能恢复业务页。
 
-The system-notification list owns page/page-size, keyword query, status, and
-Telegram-chat filter state; the selected numeric delivery ID is carried by the
-detail route. `AdminNotificationService` normalizes list/detail delivery records
-the test-send response, and the shared runtime snapshot, and marks every request with the
-`admin-notifications` read or write feature scope so realm teardown can abort it.
-The administrator application does not read member Telegram bindings, binding
-attempts, deep links, or the member `sessionStorage` key.
+## 数据与 Service Status 语义
 
-All administrator frontend API calls carry the administrator realm header.
-Browser-native uploaded-avatar and `EventSource` URLs carry the administrator
-realm query when they cannot attach a header. If both transports are present,
-the values must match. API Key bearers do not require a realm header or query,
-although the administrator application never creates or exposes API Keys.
+管理员授权投影包含 account UUID、持久管理员角色、profile、preferences、安全 provider 身份、access revision 和登录专用 aggregate。请求/cache key 包含 admin realm、viewer UUID、issuer 与 generation；持久 UI key 使用 `athena.admin.*`，不读取会员 drafts、filters、return positions 或 feature cache。
 
-`athena.token.admin` and `athena.token.member` can coexist on the same origin.
-The two application entries select their own cookie, so administrator and
-member personas can remain signed in in simultaneous tabs without sharing
-React, cache, or authorization state.
+Trader Sync Summary DTO 从源头白名单化：ID 与计数保持 string，不经 JavaScript number；缺值显示 `Unavailable`/`Unknown`，raw 不可观测不补 0。健康六态为 pending_baseline、healthy、interrupted、paused、permission_disabled、cancelled；healthy 显示 `Monitoring`，interrupted 显示 `Monitoring interrupted`。
 
-## Configuration
+Service Status 三来源时间不能混用：Services 的 `Last checked` 来自 server `checkedAt`；Notification 的 `Last received` 是客户端最近成功读取时间；Trader Sync 的 `As of` 来自 server `asOf`。全部时间按 UTC+8 展示。
 
-The browser has no administrator allowlist. Role comes only from bootstrap and
-current server authorization. For an unknown identity in the admin realm,
-`ATHENA_ADMIN_GOOGLE_EMAIL` is the server-side admission rule for creating the
-single administrator persona. It neither restricts the same subject's member
-persona nor converts that independent ordinary account. Disabled-auth mode
-provides the local administrator identity whenever the fixed `admin` realm is
-selected, while retaining the same role guard and authorization controller.
-The notification list and test UI have no browser-side endpoint, bearer-token,
-target-chat, or authorization configuration. They use the normal deployment API
-base and administrator session; the list's `test`/`prod` chat values are fixed
-domain filters rather than delivery targets. The shared resource table switches
-to compact cards at the shell's narrow layout, and at 520 pixels
-notification-card details become a single column and test actions become
-full-width controls.
+Notification 保留 System/Account pending、retry、failed、sending、unknown 等计数及 recovery。`remainingMillis`/`elapsedMillis` 是服务端精确 string，合法 `0` 显示 `0 ms`，缺失显示 `Unavailable`，浏览器不倒计时。initializing/waiting 显示 recovering；顶层 failed/stopped 优先但仍保留 recovery 的 reason、started 和 clock。
 
-## Invariants
+Trader Sync 显示 Collector Connected/Disconnected/Unavailable、collectorEpoch、filterRevision、raw 可观测性与全部 runtime metric。gauge 标记 `Current gauge` 并保留存在的 serviceEpoch；window 显示 windowStart→windowEnd；epoch 显示 opaque `Service epoch`。不同 unit、window 和 producer 不求和，serviceEpoch 不解释为 UTC 时间。当前 window fixture 是明确 synthetic，不能冒充真实进程窗口。
 
-- Only the persisted administrator role can enter the authenticated management
-  shell or call a management operation.
-- The administrator entry selects only `athena.token.admin` with
-  `X-Athena-Application-Realm: admin`; it never falls back to a member cookie.
-- `AccountAvatar` binds Athena-owned relative uploaded images to
-  `athenaRealm=admin` without changing external URLs.
-- Header/query disagreement is an authentication failure, and neither transport
-  can grant administrator authority by itself. API Keys do not require a realm.
-- An ordinary account is rejected before any management service or request is
-  created.
-- System-notification list, detail, status, and test operations repeat an
-  explicit administrator rule on the API Server; route visibility is never the
-  authority.
-- Administrator role does not satisfy any member module, API Key, Profit
-  Sharing participant, or ordinary-member Telegram binding requirement.
-- No Phantom provider code, member route, `MemberNotificationService`, member
-  Telegram binding state, or cross-realm switcher enters the administrator
-  dependency graph. The member bundle likewise excludes the administrator
-  notification pages and service.
-- Account access edits target only ordinary accounts and use full-aggregate
-  revision CAS; the administrator aggregate is immutable.
-- Self-service reads and writes always target the current administrator UUID.
-- Cross-realm navigation and logout use deployment-root full-page URLs, never an
-  `/admin/api` or `/admin/auth` prefix.
-- Administrator logout does not end the member session.
+## 配置、不变量与故障恢复
 
-## Failure Recovery
+浏览器没有管理员 allowlist；角色只来自 bootstrap 与当前服务端授权。`ATHENA_ADMIN_GOOGLE_EMAIL` 仅是未知 Google 身份进入 admin realm 时创建唯一管理员 persona 的服务端准入规则。Notifications/Trader Sync 页面没有浏览器端 endpoint、Bearer、chat 或授权配置。
 
-An ordinary account or stale role projection cannot fall through into a partial
-management shell. A stable administrator denial refreshes bootstrap state and
-keeps the action uncommitted. Revision conflict on an account edit leaves both
-server and local authoritative state unchanged until the directory detail is
-reloaded.
+- 只有持久管理员角色能进入管理 Shell 或调用管理操作；路由可见性不是授权依据。
+- admin 入口只选择 `athena.token.admin`，不回退 member cookie；realm header/query 冲突认证失败。
+- 管理员角色不满足会员模块、API Key、Profit Sharing 参与者或会员 Telegram 绑定要求。
+- 管理员依赖图不导入 member route/service/state；会员 bundle 也不导入管理员通知或 Trader Sync 概要页面。
+- 账户权限编辑只针对普通账户并使用完整 aggregate revision CAS；管理员 aggregate 不可变。
+- Trader Sync 认证身份不由 account_id filter、wallet、资源 ID 或 cursor 覆盖。
+- 管理员登出不结束会员会话；跨 realm 导航使用部署根整页 URL。
 
-Notification list and detail failures stay in their `AppPage` refresh boundary
-and never fall back to member binding APIs. A test-send failure keeps the modal
-open, reports the server error, and does not announce a queued delivery. The
-in-flight test is aborted if the page unmounts; duplicate submissions and modal
-dismissal are disabled until it settles. A Notification runtime failure appears
-inside Service Status without substituting member binding state or hiding the
-standard service-health table.
+列表/详情失败留在各自 `AppPage`；测试发送失败不宣布入队成功。首次 Service Status 来源失败显示该来源错误，后续失败保留上次成功结果；request cancel 不显示成业务失败。缺失/非法 admin realm 认证失败，不选择会员 cookie；未知管理员 route 显示管理员品牌 404。
 
-Management dependency failure remains local to its page and does not grant a
-member fallback. Logout or session expiry clears the whole administrator runtime
-even if a page request is in flight, without clearing the member session. A
-missing, invalid, or mismatched administrator realm fails authentication and
-never selects `athena.token.member`. A missing administrator route renders the
-administrator-branded not-found boundary.
+## 可观测性与维护检查
 
-## Observability
+稳定 reason 区分 administrator-required、revision conflict、maintenance 与 authentication。系统通知详情供操作员查看规范化 provider 结果；Service Status 显示三个来源的更新时间、恢复、积压、raw 边界和 metric 单位。日志只用安全 account UUID 与 operation metadata，不记录 cookie、JWT、Google token、subject、API Key bearer 或管理 secret。
 
-Stable server reasons distinguish administrator-required, revision conflict,
-maintenance, and authentication failures. Delivery rows surface status,
-severity, channel, target chat, and created time; the detail page adds the
-complete normalized delivery, including provider outcome, for operator diagnosis.
-The Notification runtime section exposes lifecycle state, Bot identity, poll
-freshness, both queue domains, retries, failures, and unreachable-binding count.
-Browser titles, shell branding, and 403/404 boundaries identify the
-administrator application. Logs use safe account UUID and operation metadata
-and omit cookies, JWTs, Google tokens, subjects, API Key bearers, and management
-secrets.
-
-## Change Checklist
-
-- [ ] Administrator login, role guard, routes, navigation, and responsive shell remain synchronized.
-- [ ] Ordinary accounts are rejected before management service construction or requests.
-- [ ] Accounts, governance, Service Status, Etherscan, and system-notification commands retain explicit administrator rules.
-- [ ] System-notification filters, detail fields, test submission, runtime status, request abort, and compact-card presentation remain synchronized with `AdminNotificationService`.
-- [ ] Administrator notification code stays out of the member bundle, and member Telegram binding stays out of the administrator bundle.
-- [ ] Administrator self-service excludes API Keys and member business features.
-- [ ] Realm-scoped abort, cache cleanup, logout, 403, and not-found behavior remain current.
-- [ ] Source links resolve and the [design index](../README.md) summary remains current.
+- [ ] 管理员登录、角色 guard、路由、System→Trader Sync 导航和响应式 Shell 保持同步。
+- [ ] 普通账户在管理 service 构造/请求前被拒绝；admin/member bundle 边界保持单向中立共享。
+- [ ] Accounts、Governance、Service Status、Etherscan、Notifications 与 Trader Sync 保留显式管理员规则。
+- [ ] Trader Sync 安全 DTO、两路由、filter/cursor 和 Associated deliveries 口径保持一致。
+- [ ] 三来源 10 秒可见 single-flight、错误隔离、单位/window/epoch 与 UTC+8 保持一致。
+- [ ] 401、维护、`ACCOUNT_ADMIN_REQUIRED` 清屏、可见复查失败和 Retry access check 保持当前行为。
+- [ ] 源码链接和[设计索引](../README.md)保持正确。

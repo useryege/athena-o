@@ -1,0 +1,4 @@
+.trader-sync-admin-status .ant-tag,
+.trader-sync-runtime-status.ant-tag {
+    color: var(--athena-text) !important;
+}

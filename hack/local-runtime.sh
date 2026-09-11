@@ -3,6 +3,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+unset ATHENA_NOTIFICATION_POSTGRES_DSN
 STATE_DIR="${REPO_ROOT}/.run/athena-local-runtime"
 SUPERVISOR_STATE_FILE="${STATE_DIR}/supervisor.state"
 FILTERED_PROCFILE="${STATE_DIR}/Procfile"
@@ -42,6 +43,8 @@ coverage_dirs=(
 	"/tmp/coverage/api-server"
 )
 
+# Trader Sync applies its local default in the Procfile API helper after dotenv.
+# Keep this existing Token-only policy before Goreman.
 configure_token_node_ws_proxy() {
 	unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY
 

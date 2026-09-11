@@ -193,7 +193,11 @@ func NewClient(config Config) (Client, error) {
 	botClient, err := tgbot.New(
 		config.BotToken,
 		tgbot.WithServerURL(config.BaseURL),
-		tgbot.WithHTTPClient(config.Timeout, &http.Client{Timeout: config.Timeout}),
+		tgbot.WithHTTPClient(config.Timeout, &sendHTTPClient{client: &http.Client{
+			Timeout:       config.Timeout,
+			Transport:     &sendTransport{base: http.DefaultTransport},
+			CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+		}}),
 		tgbot.WithSkipGetMe(),
 	)
 	if err != nil {
@@ -224,13 +228,16 @@ func (c Config) withDefaults() Config {
 }
 
 func (c *clientImpl) SendMessage(ctx context.Context, request SendMessageRequest) (*SendMessageResponse, error) {
+	callback, _ := ctx.Value(sendStartedKey{}).(func(time.Time))
+	observation := &sendObservation{callback: callback}
+	ctx = context.WithValue(ctx, sendObservationKey{}, observation)
 	chatID, err := normalizeChatID(request.ChatID)
 	if err != nil {
-		return nil, err
+		return nil, classifySendError(err, observation)
 	}
-	text := strings.TrimSpace(request.Text)
-	if text == "" {
-		return nil, errors.New("telegram message text is required")
+	text := request.Text
+	if strings.TrimSpace(text) == "" {
+		return nil, classifySendError(errors.New("telegram message text is required"), observation)
 	}
 
 	params := &tgbot.SendMessageParams{
@@ -242,7 +249,7 @@ func (c *clientImpl) SendMessage(ctx context.Context, request SendMessageRequest
 
 	message, err := c.bot.SendMessage(ctx, params)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send telegram message: %w", sanitizeTelegramRequestError(err))
+		return nil, classifySendError(err, observation)
 	}
 	return &SendMessageResponse{MessageID: message.ID}, nil
 }

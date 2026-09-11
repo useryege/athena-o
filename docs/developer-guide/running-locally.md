@@ -205,3 +205,28 @@ Stop it with:
 ```bash
 make prod-stop-local
 ```
+
+### Trader Sync configuration
+
+The API process requires `ATHENA_TRADER_SYNC_HTTP_URL`,
+`ATHENA_TRADER_SYNC_WSS_URL`, `ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY`, and
+`ATHENA_URL`. Supply the HTTP/WSS endpoints you have verified for Polygon 137;
+missing settings fail startup instead of selecting another provider. Keep the
+cursor key stable across restarts. `ATHENA_TRADER_SYNC_MAX_IN_FLIGHT_SOURCES`
+optionally sets the positive source-job limit (default 100); it is not a target
+subscription quota or a throughput claim.
+
+`ATHENA_TRADER_SYNC_PROXY_URL` controls only the API's Trader Sync source,
+Gamma/Profile, and directory requests. A present empty string explicitly means
+direct access. The local Procfile runs `hack/trader-sync-local.sh` after Goreman
+has loaded `.env`: inherited values, including empty values, take priority over
+`.env`; only a still-unset key on WSL gets the default gateway port 10809. This
+helper does not change the existing Token proxy policy. Trader Sync transports
+ignore global proxy variables, including values loaded back from `.env`.
+
+Production Compose passes these keys through its selected service `env_file`
+without an `environment` interpolation default that would shadow that file.
+The WSL helper is not used in containers. The notification process consumes
+`ATHENA_URL` to configure the shared summary source before starting its existing
+dispatcher. Trader Sync proxy settings do not configure Telegram. Explicit
+stopped-sender recovery remains independent of Trader Sync source settings.

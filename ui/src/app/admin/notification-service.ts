@@ -20,6 +20,9 @@ export interface NotificationDelivery {
     errorMessage: string;
     createdAt: string;
     sentAt: string;
+    authorizedAt: string;
+    startedAt: string;
+    resultAt: string;
 }
 
 export interface ListNotificationsOptions {
@@ -47,7 +50,17 @@ export interface SendTestNotificationResult {
     errorMessage: string;
 }
 
+export interface NotificationRecovery {
+    state: string;
+    reason: string;
+    startedAt?: string;
+    remainingMillis?: string;
+    elapsedMillis?: string;
+    clockSource: string;
+}
+
 export interface SystemNotificationRuntimeStatus {
+    recovery?: NotificationRecovery;
     started: boolean;
     status: string;
     botAvailable: boolean;
@@ -63,6 +76,10 @@ export interface SystemNotificationRuntimeStatus {
     accountRetryCount: number;
     accountFailedCount: number;
     unreachableBindingCount: number;
+    systemSendingCount: number;
+    systemUnknownCount: number;
+    accountSendingCount: number;
+    accountUnknownCount: number;
 }
 
 const readValue = (item: any, ...names: string[]) => {
@@ -92,10 +109,24 @@ const normalizeDelivery = (item: any = {}): NotificationDelivery => ({
     providerMessageId: readString(item, 'providerMessageId', 'provider_message_id'),
     errorMessage: readString(item, 'errorMessage', 'error_message'),
     createdAt: readString(item, 'createdAt', 'created_at'),
-    sentAt: readString(item, 'sentAt', 'sent_at')
+    sentAt: readString(item, 'sentAt', 'sent_at'),
+    authorizedAt: readString(item, 'authorizedAt', 'authorized_at'),
+    startedAt: readString(item, 'startedAt', 'started_at'),
+    resultAt: readString(item, 'resultAt', 'result_at')
 });
 
 const normalizeRuntimeStatus = (item: any = {}): SystemNotificationRuntimeStatus => ({
+    recovery:
+        item.recovery && typeof item.recovery === 'object'
+            ? {
+                  state: readString(item.recovery, 'state'),
+                  reason: readString(item.recovery, 'reason'),
+                  startedAt: typeof item.recovery.startedAt === 'string' ? item.recovery.startedAt : undefined,
+                  remainingMillis: typeof item.recovery.remainingMillis === 'string' ? item.recovery.remainingMillis : undefined,
+                  elapsedMillis: typeof item.recovery.elapsedMillis === 'string' ? item.recovery.elapsedMillis : undefined,
+                  clockSource: readString(item.recovery, 'clockSource')
+              }
+            : undefined,
     started: readBoolean(item, 'started'),
     status: readString(item, 'status'),
     botAvailable: readBoolean(item, 'botAvailable', 'bot_available'),
@@ -110,6 +141,10 @@ const normalizeRuntimeStatus = (item: any = {}): SystemNotificationRuntimeStatus
     accountPendingCount: readNumber(item, 'accountPendingCount', 'account_pending_count'),
     accountRetryCount: readNumber(item, 'accountRetryCount', 'account_retry_count'),
     accountFailedCount: readNumber(item, 'accountFailedCount', 'account_failed_count'),
+    systemSendingCount: readNumber(item, 'systemSendingCount', 'system_sending_count'),
+    systemUnknownCount: readNumber(item, 'systemUnknownCount', 'system_unknown_count'),
+    accountSendingCount: readNumber(item, 'accountSendingCount', 'account_sending_count'),
+    accountUnknownCount: readNumber(item, 'accountUnknownCount', 'account_unknown_count'),
     unreachableBindingCount: readNumber(item, 'unreachableBindingCount', 'unreachable_binding_count')
 });
 

@@ -211,7 +211,20 @@ EOF
           del(.definitions[]?.properties[]? | select(."$ref" != null and .title != null).title) |
           # grpc-gateway may emit int64 fields as strings in swagger; normalize them for JSON clients.
           (.definitions[]?.properties[]? | select(.type == "string" and .format == "int64")) |= (.type = "integer") |
+          # Trader Sync alone uses explicit JSON tags with optional presence and exact uint64 strings.
+          # Query names remain the generated nested page.page_size / page.cursor contract.
+          (.definitions | with_entries(select(.key | startswith("tradersync") or startswith("v1alpha1TraderSync")))) as $trader_sync_definitions |
+          reduce ($trader_sync_definitions | keys[]) as $name (. ;
+            .definitions[$name].properties |= with_entries(
+              .key |= (if . == "pn_l" then "pnl"
+                elif . == "profile_url" then "profileURL"
+                elif . == "canonical_profile_url" then "canonicalProfileURL"
+                else split("_") | .[0] + (.[1:] | map((.[0:1] | ascii_upcase) + .[1:]) | join("")) end))) |
           # Wallet REST uses the reviewed camelCase contract even though its protobuf field names remain snake_case.
+          rename_definition_property("notificationNotificationRecoveryStatus"; "started_at"; "startedAt") |
+          rename_definition_property("notificationNotificationRecoveryStatus"; "remaining_millis"; "remainingMillis") |
+          rename_definition_property("notificationNotificationRecoveryStatus"; "elapsed_millis"; "elapsedMillis") |
+          rename_definition_property("notificationNotificationRecoveryStatus"; "clock_source"; "clockSource") |
           rename_definition_property("v1alpha1WalletItem"; "wallet_type"; "walletType") |
           rename_definition_property("v1alpha1WalletItem"; "avatar_kind"; "avatarKind") |
           rename_definition_property("v1alpha1WalletItem"; "avatar_preset_id"; "avatarPresetId") |

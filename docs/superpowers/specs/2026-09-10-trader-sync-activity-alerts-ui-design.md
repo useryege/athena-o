@@ -1,14 +1,14 @@
 # Trader Sync / Activity Alerts UI 设计规格
 
-> 日期：2026-09-10。状态：已确认待实现；用户已整体确认完整书面规格。
+> 日期：2026-09-10。状态：完整书面规格已确认，联合实现正在逐项执行；批准记录不等同验收完成。
 >
-> 本文补充已整体确认的[后端 spec](2026-09-10-trader-sync-activity-alerts-design.md)，同步[长期 UI 设计](../../design/web-ui/trader-sync-activity-alerts.md)与[业务需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)。[前后端联合实现计划](../plans/2026-09-10-trader-sync-activity-alerts.md)已编写，共21项任务，尚未执行。
+> 本文补充已整体确认的[后端 spec](2026-09-10-trader-sync-activity-alerts-design.md)，同步[长期 UI 设计](../../design/web-ui/trader-sync-activity-alerts.md)与[业务需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)。[前后端联合实现计划](../plans/2026-09-10-trader-sync-activity-alerts.md)共21项任务，已获实施授权，正在独立工作区逐项执行。
 
 ## 1. 目标、范围与决定
 
 用户能够确认并订阅人工挑选的低频 Polymarket 目标，持续查看跨目标成交，理解监控与 Telegram 的分别状态，并从 Telegram 返回同一份站内详情。管理员只读了解订阅和运行概要。桌面优先，手机完整覆盖添加、阅读、绑定衔接和订阅管理。
 
-本次只形成设计、可丢弃的交互线框及长期文档。后端的同库事务、两进程、共享 WSS、最终确认、无历史回补、发送许可、普通/摘要分配与未知不重发等决定继续有效。首期 10 人、每人 10 个未取消订阅；不增加交易执行、跟单参数、高频准入、收益持续刷新、手动重发、逐订阅渠道设置或整站改版。
+设计阶段形成书面规格、可丢弃的交互线框及长期文档；实现范围由已确认的联合计划承接。后端的同库事务、两进程、共享 WSS、最终确认、无历史回补、发送许可、普通/摘要分配与未知不重发等决定继续有效。首期 10 人、每人 10 个未取消订阅；不增加交易执行、跟单参数、高频准入、收益持续刷新、手动重发、逐订阅渠道设置或整站改版。
 
 | 已确认选择 | 收益与代价 |
 | --- | --- |
@@ -70,7 +70,7 @@
 1. 解析成功先展示身份：头像、名称、认证标记、完整规范钱包、可验证 Profile 链接及资料查询时间。钱包始终可见、可复制，不能只以缩写代替确认身份。
 2. 展示加入时间、持仓价值、最大盈利、原始口径 Predictions；每项按自己的可用性显示，不以其他统计替代。辅助失败不阻止确认，身份失败则没有有效确认按钮。
 3. P/L 恰好六个区间 `1D / 1W / 1M / 1Y / YTD / ALL`，默认 1Y。切换读取本次返回快照，不另发请求。区间标题值与曲线独立判断可用性；缺失区间仍可选择并看到原因，不静默回退到另一区间。真零、负值与未知分别显示。
-4. 曲线提供轴、单位、时间范围与可访问的文字摘要；悬停不是取得关键数值的唯一方式。图形坐标可在保留精确原值后做有限视觉归一化，tooltip/复制仍取原字符串，不能由浮点绘图值反推金额。
+4. Profile 的 P/L、Positions Value、Biggest Win 使用供应商展示符号 `$`，注明 currency code 未提供；不推定 USD/pUSD/USDC 或换算，Predictions 为计数。依据[官方页面展示符号核验](../../requirements/polymarket-copy-trading/profile-pnl-contract-verification.md#2026-09-11-补充金额展示符号与币种边界)，Biggest Win 同符号为同 formatter 推断；已知零值仍显示零。曲线提供轴、单位、时间范围与可访问的文字摘要；悬停不是取得关键数值的唯一方式。图形坐标可在保留精确原值后做有限视觉归一化，tooltip/复制仍取原字符串，不能由浮点绘图值反推金额。
 5. 私有备注显示 owner 对该钱包保存的当前值；计数按 Unicode code point，最多 20，超限展示错误并禁止提交，不静默截断。输入按纯文本，不渲染 HTML/Markdown。
 6. 创建前显示低频定位提醒，不增加勾选确认。未绑定 Telegram 可继续创建，说明将保留站内活动并提供 Notifications 入口。
 7. 创建成功返回原主页筛选上下文并突出新目标；若原筛选不包含新目标，不擅自重置，只在侧栏定位它并提供切换操作。新目标显示 `Preparing monitoring`，取得成功基线后才能显示 `Monitoring` 与生效时间。
@@ -81,16 +81,16 @@ Resolve 返回的配额/重复提示只作快照，Create 在事务中最终判�
 
 ## 5. 订阅管理与观察历史
 
-完整列表默认 Current，另有 Cancelled。Current 包含 pending_baseline、monitoring、paused、error、permission_disabled，全都占名额；Cancelled 默认隐藏，不占名额。列表展示当前备注、身份、状态、生效/最近可靠观察、旧通知概要并进入详情。取消历史使用游标，不要求所有历史一次加载。
+完整列表默认 Current，另有 Cancelled。Current 包含 pending_baseline、healthy、paused、interrupted、permission_disabled，全都占名额；Cancelled 默认隐藏，不占名额。列表展示当前备注、身份、状态、生效/最近可靠观察、旧通知概要并进入详情。取消历史使用游标，不要求所有历史一次加载。
 
 详情从上到下为身份及完整钱包、当前状态与原因、备注、可用操作、观察历史、活动和旧通知入口。状态及操作如下：
 
 | 后端状态 | 英文展示 | 允许操作（当前有 grant） |
 | --- | --- | --- |
 | pending_baseline | Preparing monitoring | 编辑备注、取消 |
-| monitoring | Monitoring | 编辑备注、暂停、取消 |
+| healthy | Monitoring | 编辑备注、暂停、取消 |
 | paused | Paused | 编辑备注、恢复、取消 |
-| error | Monitoring interrupted | 编辑备注、暂停、取消；依赖恢复由后台自动建立新观察边界 |
+| interrupted | Monitoring interrupted | 编辑备注、暂停、取消；依赖恢复由后台自动建立新观察边界 |
 | permission_disabled | Disabled by access change | 编辑备注、手动恢复、取消；重新授予权限不自动恢复 |
 | cancelled | Cancelled | 编辑钱包保留备注、查看历史、进入添加页重新订阅；不能恢复原订阅 |
 
@@ -101,6 +101,8 @@ Resolve 返回的配额/重复提示只作快照，Create 在事务中最终判�
 备注按 owner-wallet 保存，当前值与活动快照分开。未修改时 Create 省略 note 表示沿用，清空用显式空字符串。已取消详情编辑的是该钱包保留备注，可影响当前/未来同钱包订阅；文案明确它不会改写历史活动。
 
 观察历史提供分页时间线，分别显示成功生效区间、中断起止/恢复、原因及可能遗漏。未知起止保留未知；无证据不显示遗漏条数。自动恢复不删除中断。它不是历史成交补查入口，也不因为最近无成交就判断监控异常。
+
+最近可靠观察显示当前 generation 已持久化的区间健康检查点，首次尚无合格检查点时说明缺失；不拿成交、epoch开始或读取时间替代。当前暂停/取消/权限停用时间只展示对应真实记录，恢复后不拼旧操作时间。物理故障起始未知时明确 Unknown；记录停止边界与恢复生效时间分别解释。中断恢复仅表示同代新实时区间生效，仍可能遗漏；手动恢复的新代另列区间，旧条目缺恢复时间不代表当前还在故障。准备基线失败但未发生实际epoch中断时展示准备原因，不增加中断条目；次数标为相关持久中断记录数。时钟顺序不可确定时不显示推测持续时长。
 
 ## 6. 活动详情：事实、资料与精度
 
@@ -158,7 +160,11 @@ Combo 永远是一笔活动。组合 YES 表示所有腿条件满足；组合 NO
 
 Service Status 增加连接状态与新鲜度、目标/关系数量、接收/确认/投影积压、元数据缺失、待发与结果数量及最近异常概要。沿用该页 10 秒可见轮询；与订阅概要互相链接。运行数据有 `as_of`，各积压明确单位；不能把 raw record、candidate、activity、delivery 混成一个总数。
 
+发送进程正在初始化或等待恢复预算时显示 Recovering，单列原因、该进程报告的剩余/已用等待及更新时间；fatal/stopped优先，恢复未完成不显示Running。recovery对象可缺，remainingMillis/elapsedMillis为十进制string，未知剩余保持Unavailable，合法0保留；浏览器不重新推算或解除恢复预算，也不把恢复等待归为Telegram网络耗时。raw队列与持久化中数量只在raw_observation_available可观测时展示，不可观测时不填0；按原10秒单飞读取更新，不另加计时或逐条请求。
+
 管理员活动数按单个订阅全生命周期。投递数按关联的 distinct 逻辑 delivery（普通消息或摘要部分），不是 attempts；一部分关联多个订阅时在各订阅各计一次，明确标“Associated deliveries”，不得跨行求和当全局总数。全局数量单独按 distinct delivery 聚合。当前 gauge 与窗口计数区分，窗口项返回 window_start/window_end，进程累计项说明 service_epoch；不显示来源不明的“累计”。
+
+公开 kind 只取 gauge/window/epoch。Projector 的 epoch 项必须有 serviceEpoch，表示该计数实例的生命周期；同实例跨 Collector 重连不变，新实例或计数重置时改变。serviceEpoch 是 opaque string，不能当作 Collector 连接序号，也不跨指标生产者合并累计值。
 
 ## 9. 刷新、权限和异常交互
 
@@ -251,4 +257,18 @@ ListActivities 请求的 page.cursor 与 refresh_cursor 互斥；两者皆空读
 
 本轮交付完整 UI spec、长期 UI 设计、相关需求/后端接口/索引与 PRODUCT 上下文；自审检查状态、隐私、精度、接口和页面的一致性。用户已整体确认书面规格，现已按 writing-plans 更新21项前后端联合任务及验收顺序，覆盖新增读取、权限矩阵、全部页面、绑定衔接与管理员运行概要。
 
-当前各节及完整书面规格均已确认，无待决设计取舍。实现计划已编写，尚未执行；技术事实的运行证据仍按验收要求核实。本阶段没有实施业务源码、数据库/配置变更或发送完成邮件。
+当前各节及完整书面规格均已确认，无待决设计取舍。用户已授权逐项执行联合实现计划；技术事实的运行证据仍按验收要求核实。设计阶段仅交付文档和线框，当前实现阶段的完成项与验证统一记录在计划中，尚未完成全量实施与验收。
+
+## 实施接续：目标公开展示快照
+
+订阅的targetDisplay保存成功创建所用确认卡的名称、头像和已核验Profile链接及原查询证据；活动的targetDisplaySnapshot在形成时固定。首行优先非空备注（活动使用形成时备注），其次可用名称，再用钱包识别；名称字段缺失仍显示不可用，不能填钱包冒充公开名称。确认卡、详情和通知始终提供完整钱包。没有可靠canonical链接时不提供Profile外链，不从名称拼接。公开资料按确认时值展示并保留查询时刻，暂停/恢复沿用，重新订阅可取得新值；没有新增周期Profile刷新，也不改变历史活动或冻结消息。DTO追加这两个字段，沿用StringField/evidence的缺失规则，其他页面/交互决定不变。
+
+目标首行优先级只决定主标识，不取消已批准的公开名称展示：有备注时可用公开名称仍作为次级身份信息保留（活动行和详情均可读），不把DisplayName自动加@冒充已核准handle；钱包完整性要求不变。
+
+## 实施接续：最终性异常可见性
+
+会员活动的可缺finalityAnomaly对象连接已批准的深度重组隔离。存在时行内显示独立“Finality anomaly”标记，详情说明原记录与后续链证据冲突；证据区保留原因、检测时间、原发布区块与可缺冲突区块。仅收到撤销且未知替代块时明确未知，不填零哈希或推断。保持原成交内容、备注快照、通知结果与阅读位置，没有重发或删除入口；随原有5秒页级刷新更新，不逐行增加请求。后续真实接收并确认同交易的不同区块时，可在同交易证据锁下仅补首次未知的冲突哈希；保留首次原因和检测时间，已有冲突哈希不覆盖，不恢复被隔离活动或生成新通知。
+
+## 实施接续：活动原始证据字段
+
+活动sourceLocation提供原来源的chainId、exchangeAddress、transactionHash、blockHash、blockNumber、logIndex，数字为十进制字符串，地址/哈希完整展示；正常无最终性异常的活动也有这些证据。展开区直接读取，不解析来源版本猜地址或再请求RPC；日志索引0仍有效。价格与首次公开时间使用独立字段证据，当前首次公开时刻不可观测，不用其他时间代填。未发生的发送许可、实际起点、结果或messageId明确缺失，已成功但无起点仍显示成功。

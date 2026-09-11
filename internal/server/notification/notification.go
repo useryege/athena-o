@@ -85,7 +85,7 @@ func (s *Server) GetNotificationRuntimeStatus(ctx context.Context, _ *notificati
 		return nil, err
 	}
 	return &notificationpkg.NotificationRuntimeStatus{
-		Started: response.GetStarted(), Status: response.GetStatus(),
+		Recovery: publicRecovery(response.GetRecovery()), Started: response.GetStarted(), Status: response.GetStatus(),
 		BotAvailable: response.GetBotAvailable(), BotId: response.GetBotId(),
 		BotUsername: response.GetBotUsername(), PollerActive: response.GetPollerActive(),
 		LastPollAt: response.GetLastPollAt(), LastUpdateAt: response.GetLastUpdateAt(),
@@ -93,6 +93,8 @@ func (s *Server) GetNotificationRuntimeStatus(ctx context.Context, _ *notificati
 		SystemFailedCount: response.GetSystemFailedCount(), AccountPendingCount: response.GetAccountPendingCount(),
 		AccountRetryCount: response.GetAccountRetryCount(), AccountFailedCount: response.GetAccountFailedCount(),
 		UnreachableBindingCount: response.GetUnreachableBindingCount(),
+		SystemSendingCount:      response.GetSystemSendingCount(), SystemUnknownCount: response.GetSystemUnknownCount(),
+		AccountSendingCount: response.GetAccountSendingCount(), AccountUnknownCount: response.GetAccountUnknownCount(),
 	}, nil
 }
 
@@ -206,9 +208,20 @@ func deliveryStatusString(value notificationapiclient.NotificationDeliveryStatus
 		return "sent"
 	case notificationapiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_FAILED:
 		return "failed"
+	case notificationapiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_SENDING:
+		return "sending"
+	case notificationapiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_UNKNOWN:
+		return "unknown"
 	case notificationapiclient.NotificationDeliveryStatus_NOTIFICATION_DELIVERY_STATUS_CANCELLED:
 		return "cancelled"
 	default:
 		return ""
 	}
+}
+
+func publicRecovery(in *notificationapiclient.NotificationRecoveryStatus) *notificationpkg.NotificationRecoveryStatus {
+	if in == nil {
+		return nil
+	}
+	return &notificationpkg.NotificationRecoveryStatus{State: in.State, Reason: in.Reason, StartedAt: in.StartedAt, RemainingMillis: in.RemainingMillis, ElapsedMillis: in.ElapsedMillis, ClockSource: in.ClockSource}
 }

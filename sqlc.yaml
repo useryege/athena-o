@@ -19,7 +19,7 @@ sql:
         sql_package: "pgx/v5"
         emit_interface: true
   - engine: "postgresql"
-    schema: "internal/notification/store/migrations"
+    schema: "internal/accountstate/store/migrations"
     queries: "internal/notification/store/queries"
     gen:
       go:
@@ -106,5 +106,14 @@ sql:
       go:
         package: "sqlc"
         out: "internal/bscswap/store/sqlc"
+        sql_package: "pgx/v5"
+        emit_interface: true
+  - engine: "postgresql"
+    schema: "internal/accountstate/store/migrations"
+    queries: "internal/tradersync/store/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/tradersync/store/sqlc"
         sql_package: "pgx/v5"
         emit_interface: true

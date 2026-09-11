@@ -4,260 +4,229 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
-	"strings"
+	"sync/atomic"
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/useryege/athena/internal/notification/delivery"
 	notificationstore "github.com/useryege/athena/internal/notification/store"
-)
-
-const (
-	defaultWorkerSendInterval = 1100 * time.Millisecond
-	defaultWorkerPollInterval = 500 * time.Millisecond
-	defaultWorkerBatchSize    = 10
-	defaultWorkerMaxAttempts  = 5
-	defaultWorkerLockTimeout  = 2 * time.Minute
-	defaultWorkerID           = "notification-worker"
+	utiltelegram "github.com/useryege/athena/util/telegram"
 )
 
 type WorkerConfig struct {
-	SendInterval time.Duration
-	PollInterval time.Duration
-	BatchSize    int
-	MaxAttempts  int
-	LockTimeout  time.Duration
-	WorkerID     string
-	Disabled     bool
+	Concurrency int
+	Disabled    bool
 }
 
-func DefaultWorkerConfig() WorkerConfig {
-	return WorkerConfig{
-		SendInterval: defaultWorkerSendInterval, PollInterval: defaultWorkerPollInterval,
-		BatchSize: defaultWorkerBatchSize, MaxAttempts: defaultWorkerMaxAttempts,
-		LockTimeout: defaultWorkerLockTimeout, WorkerID: defaultWorkerID,
+func DefaultWorkerConfig() WorkerConfig { return WorkerConfig{Concurrency: 12} }
+func normalizeWorkerConfig(c WorkerConfig) WorkerConfig {
+	if c.Concurrency <= 0 {
+		c.Concurrency = 12
 	}
+	return c
 }
-
-func normalizeWorkerConfig(config WorkerConfig) WorkerConfig {
-	defaults := DefaultWorkerConfig()
-	if config.SendInterval <= 0 {
-		config.SendInterval = defaults.SendInterval
-	}
-	if config.PollInterval <= 0 {
-		config.PollInterval = defaults.PollInterval
-	}
-	if config.BatchSize <= 0 {
-		config.BatchSize = defaults.BatchSize
-	}
-	if config.MaxAttempts <= 0 {
-		config.MaxAttempts = defaults.MaxAttempts
-	}
-	if config.LockTimeout <= 0 {
-		config.LockTimeout = defaults.LockTimeout
-	}
-	config.WorkerID = strings.TrimSpace(config.WorkerID)
-	if config.WorkerID == "" {
-		config.WorkerID = defaults.WorkerID
-		if hostname, err := os.Hostname(); err == nil && strings.TrimSpace(hostname) != "" {
-			config.WorkerID += "-" + strings.TrimSpace(hostname)
-		}
-	}
-	return config
-}
-
 func (s *Service) startWorkerLocked(ctx context.Context) {
 	if s.workerConfig.Disabled {
 		return
 	}
-	workerCtx, cancel := context.WithCancel(ctx)
-	s.workerCancel = cancel
-	s.workerWG.Add(1)
+	// Publish the new entry before releasing Start's lifecycle lock. A restart
+	// cannot expose its previous completed recovery while this worker is scheduled.
+	s.recovery.begin(wallClock{})
+	s.workerWG.Add(2)
 	go func() {
 		defer s.workerWG.Done()
-		s.runWorker(workerCtx)
+		if err := s.runWorker(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			s.failRuntime(err)
+		}
+	}()
+	go func() {
+		defer s.workerWG.Done()
+		ticker := time.NewTicker(250 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				checkCtx, cancel := context.WithTimeout(ctx, time.Second)
+				err := s.senderSession.Check(checkCtx)
+				cancel()
+				if err != nil {
+					if ctx.Err() == nil {
+						s.failRuntime(err)
+					}
+					return
+				}
+			}
+		}
 	}()
 }
-
-func (s *Service) stopWorkerLocked() {
-	if s.workerCancel == nil {
-		return
-	}
-	s.workerCancel()
-	s.workerWG.Wait()
-	s.workerCancel = nil
-}
-
-type claimedNotification struct {
-	system  *notificationstore.ClaimedSystemNotificationDelivery
-	account *notificationstore.ClaimedAccountNotificationDelivery
-}
-
-func (s *Service) runWorker(ctx context.Context) {
-	preferAccount := false
-	for ctx.Err() == nil {
-		claimed := s.claimFairNotificationBatch(ctx, preferAccount)
-		preferAccount = !preferAccount
-		if len(claimed) == 0 {
-			if !sleepWorker(ctx, s.workerConfig.PollInterval) {
-				return
-			}
-			continue
+func (s *Service) failRuntime(err error) {
+	if s.runtimeFailed.CompareAndSwap(false, true) {
+		s.workerCancel()
+		if s.onFatal != nil {
+			s.onFatal(err)
 		}
-		for _, delivery := range claimed {
-			if ctx.Err() != nil {
-				return
-			}
-			if delivery.system != nil {
-				s.processClaimedSystemNotification(ctx, *delivery.system)
-			} else if delivery.account != nil {
-				s.processClaimedAccountNotification(ctx, *delivery.account)
-			}
-			if !sleepWorker(ctx, s.workerConfig.SendInterval) {
-				return
-			}
-		}
+		s.runtimeErrors <- err
 	}
 }
 
-func (s *Service) claimFairNotificationBatch(ctx context.Context, preferAccount bool) []claimedNotification {
-	batchSize := s.workerConfig.BatchSize
-	accountLimit := batchSize / 2
-	systemLimit := batchSize - accountLimit
-	if preferAccount {
-		accountLimit, systemLimit = systemLimit, accountLimit
-	}
-	claimOptions := func(limit int) notificationstore.ClaimDeliveriesOptions {
-		return notificationstore.ClaimDeliveriesOptions{
-			Limit: limit, LockedBy: s.workerConfig.WorkerID, LockTimeout: s.workerConfig.LockTimeout,
-		}
-	}
-	var systemItems []notificationstore.ClaimedSystemNotificationDelivery
-	if systemLimit > 0 {
-		items, err := s.store.ClaimPendingSystemNotificationDeliveries(ctx, claimOptions(systemLimit))
-		if err != nil {
-			log.WithError(err).Warn("failed to claim system notification deliveries")
+func (s *Service) runWorker(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	s.recovery.ensureStarted(wallClock{})
+	budget := NewBudget(20, time.Second, 20, time.Minute)
+	if err := restoreBudget(ctx, s.store, budget, time.Now()); err != nil {
+		if ctx.Err() != nil {
+			s.recovery.finish("cancelled", "cancelled")
 		} else {
-			systemItems = items
+			s.recovery.finish("failed", "attempt_history_read_failed")
 		}
+		return err
 	}
-	var accountItems []notificationstore.ClaimedAccountNotificationDelivery
-	if accountLimit > 0 {
-		items, err := s.store.ClaimPendingAccountNotificationDeliveries(ctx, claimOptions(accountLimit))
-		if err != nil {
-			log.WithError(err).Warn("failed to claim account notification deliveries")
-		} else {
-			accountItems = items
-		}
+	firstStart := s.senderSession == nil || s.senderSession.FirstStart()
+	retries, err := recoverStartupBudget(ctx, s.store, budget, wallClock{}, firstStart, &s.recovery)
+	if err != nil {
+		return err
 	}
-	return interleaveClaimedNotifications(systemItems, accountItems, preferAccount)
+	ctx = context.WithValue(ctx, retryBudgetKey{}, retries)
+	retryDone := make(chan error, 1)
+	go func() { err := retries.run(ctx); retryDone <- err; cancel() }()
+	dispatchErr := NewDispatcher(wallClock{}, s.workSources(), budget, s.workerConfig.Concurrency).Run(ctx)
+	cancel()
+	retryErr := <-retryDone
+	if retryErr != nil && !errors.Is(retryErr, context.Canceled) {
+		return retryErr
+	}
+	return dispatchErr
 }
 
-func interleaveClaimedNotifications(
-	systemItems []notificationstore.ClaimedSystemNotificationDelivery,
-	accountItems []notificationstore.ClaimedAccountNotificationDelivery,
-	preferAccount bool,
-) []claimedNotification {
-	items := make([]claimedNotification, 0, len(systemItems)+len(accountItems))
-	for systemIndex, accountIndex := 0, 0; systemIndex < len(systemItems) || accountIndex < len(accountItems); {
-		if preferAccount && accountIndex < len(accountItems) {
-			item := accountItems[accountIndex]
-			items = append(items, claimedNotification{account: &item})
-			accountIndex++
+func (s *Service) sendPermittedNotification(ctx context.Context, candidate delivery.Candidate, onStarted func(time.Time)) (delivery.Outcome, error) {
+	var finishAuthorization func(bool)
+	permit, err := s.store.Authorize(ctx, candidate, s.senderIncarnation, func() error {
+		if s.senderSession != nil {
+			if err := s.senderSession.Check(ctx); err != nil {
+				return err
+			}
 		}
-		if systemIndex < len(systemItems) {
-			item := systemItems[systemIndex]
-			items = append(items, claimedNotification{system: &item})
-			systemIndex++
-		}
-		if !preferAccount && accountIndex < len(accountItems) {
-			item := accountItems[accountIndex]
-			items = append(items, claimedNotification{account: &item})
-			accountIndex++
-		}
-	}
-	return items
-}
-
-func (s *Service) processClaimedSystemNotification(ctx context.Context, delivery notificationstore.ClaimedSystemNotificationDelivery) {
-	message := renderNotificationMessage(sendNotificationParams{
-		source: delivery.Source, severity: delivery.Severity, title: delivery.Title,
-		body: delivery.Body, link: delivery.Link, telegramChat: delivery.TelegramChat,
-		topicLabel: delivery.TopicLabel,
+		var err error
+		finishAuthorization, err = beginDispatchAuthorization(ctx)
+		return err
 	})
-	providerMessageID, err := s.sender.Send(ctx, SendRequest{
-		SystemTelegramChat: delivery.TelegramChat, MessageThreadID: delivery.MessageThreadID,
-		Text: message.Text,
-	})
-	if err == nil {
-		if markErr := s.store.MarkSystemNotificationDeliverySent(ctx, delivery.ID, providerMessageID); markErr != nil {
-			log.WithError(markErr).WithField("notification_id", delivery.ID).Warn("failed to mark system notification delivery sent")
-		}
-		return
+	if finishAuthorization != nil {
+		finishAuthorization(err == nil)
 	}
-	if delivery.Attempts >= s.workerConfig.MaxAttempts {
-		if markErr := s.store.MarkSystemNotificationDeliveryFailed(ctx, delivery.ID, err.Error()); markErr != nil {
-			log.WithError(markErr).WithField("notification_id", delivery.ID).Warn("failed to mark system notification delivery failed")
-		}
-		return
+	if err != nil {
+		log.WithError(err).WithField("notification_id", candidate.Ref.ID).Debug("notification send was not authorized")
+		return delivery.Outcome{}, err
 	}
-	nextAttemptAt := time.Now().UTC().Add(retryDelay(delivery.Attempts, err))
-	if retryErr := s.store.ScheduleSystemNotificationDeliveryRetry(ctx, delivery.ID, err.Error(), nextAttemptAt); retryErr != nil {
-		log.WithError(retryErr).WithField("notification_id", delivery.ID).Warn("failed to schedule system notification retry")
-	}
+	return s.executePermit(ctx, permit, onStarted, nil)
 }
 
-func (s *Service) processClaimedAccountNotification(ctx context.Context, delivery notificationstore.ClaimedAccountNotificationDelivery) {
-	message := renderNotificationMessage(sendNotificationParams{
-		source: delivery.Source, severity: delivery.Severity, title: delivery.Title,
-		body: delivery.Body, link: delivery.Link,
-	})
-	_, err := s.store.SendAccountNotificationWithBindingLock(
-		ctx, delivery.AccountID, delivery.TelegramChatID, delivery.BindingRevision, delivery.ID,
-		func(sendCtx context.Context) (string, error) {
-			return s.sender.Send(sendCtx, SendRequest{
-				TelegramChatID: delivery.TelegramChatID, Text: message.Text,
-			})
-		},
-	)
-	if errors.Is(err, notificationstore.ErrAccountNotificationBindingChanged) {
-		return
+// executePermit is the only Sender/result path, shared by ordinary work and
+// summary first parts. Its input is the committed payload, never re-rendered text.
+func (s *Service) executePermit(ctx context.Context, permit delivery.Permit, onStarted func(time.Time), summary *summaryAttempt) (delivery.Outcome, error) {
+	payload, err := delivery.DecodePayload(permit.Payload)
+	if err != nil {
+		return delivery.Outcome{}, err
 	}
-	if err == nil {
-		return
+	request := SendRequest{TelegramChatID: permit.ChatID, MessageThreadID: payload.MessageThreadID, Text: payload.Text, Format: payload.Format}
+	started := make(chan time.Time, 1)
+	type senderResult struct {
+		outcome delivery.Outcome
+		timing  delivery.ResultTiming
 	}
-	if IsTelegramRecipientUnreachable(err) {
-		if bindingErr := s.store.MarkTelegramBindingUnreachable(
-			ctx, delivery.AccountID, delivery.TelegramChatID, delivery.BindingRevision, delivery.ID, err.Error(),
-		); bindingErr != nil {
-			log.WithError(bindingErr).WithField("notification_id", delivery.ID).Warn("failed to mark telegram binding unreachable")
+	result := make(chan senderResult, 1)
+	// The transport starts its HTTP timeout after cancellable local budget admission.
+	sendCtx, cancel := context.WithCancel(ctx)
+	if summary != nil {
+		sendCtx = utiltelegram.WithSendAdmission(sendCtx, summary.admit)
+	} else if slot, ok := ctx.Value(dispatchSlotKey{}).(dispatchSlot); ok && slot.budget != nil {
+		sendCtx = utiltelegram.WithSendAdmission(sendCtx, func(ctx context.Context) (func(), error) { return slot.budget.admitStart(ctx, slot.clock) })
+	}
+	defer cancel()
+	go func() {
+		var originalStart atomic.Pointer[time.Time]
+		outcome := s.sender.Send(sendCtx, request, func(at time.Time) {
+			originalStart.CompareAndSwap(nil, &at)
+			if onStarted != nil {
+				onStarted(at)
+			}
+			select {
+			case started <- at:
+			default:
+			}
+		})
+		returned := time.Now()
+		timing := delivery.ResultTiming{SenderReturnedAt: &returned}
+		if at := originalStart.Load(); at != nil && *at != at.Round(0) {
+			elapsed := returned.Sub(*at).Nanoseconds()
+			if elapsed >= 0 {
+				timing.SenderElapsedNS = &elapsed
+			}
 		}
-		return
-	}
-	if delivery.Attempts >= s.workerConfig.MaxAttempts {
-		if markErr := s.store.MarkAccountNotificationDeliveryFailed(ctx, delivery, err.Error()); markErr != nil {
-			log.WithError(markErr).WithField("notification_id", delivery.ID).Warn("failed to mark account notification delivery failed")
+		result <- senderResult{outcome: outcome, timing: timing}
+	}()
+	var outcome delivery.Outcome
+	var startedAt time.Time
+	for {
+		select {
+		case at := <-started:
+			startedAt = at
+			recordCtx, recordCancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second)
+			if summary != nil {
+				err = summary.recordStart(recordCtx, at)
+			} else {
+				err = s.store.RecordStarted(recordCtx, permit, at)
+			}
+			recordCancel()
+			if err != nil {
+				log.WithError(err).WithField("attempt_id", permit.AttemptID).Warn("failed to record notification HTTP start")
+			}
+		case receipt := <-result:
+			outcome = receipt.outcome
+			outcome.Timing = receipt.timing
+			// Both channels may be ready; preserve the start even when the result wins the select.
+			if startedAt.IsZero() {
+				select {
+				case startedAt = <-started:
+					if summary != nil {
+						recordCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second)
+						_ = summary.recordStart(recordCtx, startedAt)
+						cancel()
+					}
+				default:
+				}
+			}
+			goto received
 		}
-		return
 	}
-	nextAttemptAt := time.Now().UTC().Add(retryDelay(delivery.Attempts, err))
-	if retryErr := s.store.ScheduleAccountNotificationDeliveryRetry(ctx, delivery, err.Error(), nextAttemptAt); retryErr != nil {
-		log.WithError(retryErr).WithField("notification_id", delivery.ID).Warn("failed to schedule account notification retry")
+received:
+	if summary != nil {
+		summary.releaseGate()
 	}
-}
-
-func retryDelay(attempts int, err error) time.Duration {
-	if retryAfter, ok := RetryAfterFromError(err); ok {
-		return retryAfter
+	resultAt := time.Now().UTC()
+	if retries, ok := ctx.Value(retryBudgetKey{}).(*retryBudget); ok {
+		retries.track(permit.AttemptID, outcome.RetryAfter)
 	}
-	if attempts < 1 {
-		attempts = 1
+	recordCtx, recordCancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	defer recordCancel()
+	if !startedAt.IsZero() && summary == nil {
+		if err = s.store.RecordStarted(recordCtx, permit, startedAt); err != nil {
+			log.WithError(err).Warn("failed to persist notification start evidence")
+		}
 	}
-	delay := time.Duration(1<<min(attempts, 5)) * time.Second
-	if delay > 32*time.Second {
-		return 32 * time.Second
+	for {
+		err = s.store.RecordOutcome(recordCtx, permit, outcome, resultAt)
+		if err == nil {
+			return outcome, nil
+		}
+		if err == notificationstore.ErrStalePermit || !sleepWorker(recordCtx, 100*time.Millisecond) {
+			break
+		}
 	}
-	return delay
+	log.WithError(err).WithField("attempt_id", permit.AttemptID).WithField("observed_outcome", outcome.Kind).WithField("sender_returned_at", outcome.Timing.SenderReturnedAt).WithField("result_persisted", false).Warn("notification result remains unconfirmed; send will not be repeated")
+	return outcome, nil
 }
 
 func sleepWorker(ctx context.Context, duration time.Duration) bool {
@@ -275,6 +244,5 @@ func sleepWorker(ctx context.Context, duration time.Duration) bool {
 }
 
 func (c WorkerConfig) String() string {
-	return fmt.Sprintf("send_interval=%s poll_interval=%s batch_size=%d max_attempts=%d lock_timeout=%s worker_id=%s disabled=%t",
-		c.SendInterval, c.PollInterval, c.BatchSize, c.MaxAttempts, c.LockTimeout, c.WorkerID, c.Disabled)
+	return fmt.Sprintf("concurrency=%d disabled=%t", c.Concurrency, c.Disabled)
 }

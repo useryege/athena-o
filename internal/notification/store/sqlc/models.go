@@ -8,29 +8,123 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AccountAccess struct {
+	AccountID            pgtype.UUID
+	LoginEnabled         bool
+	ApiKeyEnabled        bool
+	ProfitSharingEnabled bool
+	Revision             int64
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
+}
+
+type AccountApiKey struct {
+	AccountID pgtype.UUID
+	DisplayID string
+	Jti       string
+	IssuedAt  pgtype.Timestamptz
+	ExpiresAt pgtype.Timestamptz
+}
+
+type AccountModuleAccess struct {
+	AccountID   pgtype.UUID
+	Module      string
+	AccessLevel string
+}
+
 type AccountNotificationDelivery struct {
-	ID                int64
+	ID                       int64
+	AccountID                pgtype.UUID
+	IdempotencyKey           string
+	PayloadDigest            []byte
+	Source                   string
+	Severity                 string
+	Title                    pgtype.Text
+	Body                     string
+	Link                     pgtype.Text
+	Channel                  string
+	Status                   string
+	TelegramChatID           int64
+	BindingRevision          int64
+	ProviderMessageID        pgtype.Text
+	ErrorMessage             pgtype.Text
+	CreatedAt                pgtype.Timestamptz
+	SentAt                   pgtype.Timestamptz
+	Attempts                 int32
+	NextAttemptAt            pgtype.Timestamptz
+	LastAttemptAt            pgtype.Timestamptz
+	LockedAt                 pgtype.Timestamptz
+	LockedBy                 pgtype.Text
+	CurrentAttemptID         pgtype.UUID
+	EligibilityRevokedAt     pgtype.Timestamptz
+	EligibilityRevokedReason pgtype.Text
+	Payload                  []byte
+	RequestDigest            []byte
+	ActivityID               pgtype.Int8
+}
+
+type AccountPreference struct {
+	AccountID pgtype.UUID
+	Theme     string
+	Revision  int64
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+}
+
+type AccountProfile struct {
 	AccountID         pgtype.UUID
-	IdempotencyKey    string
-	PayloadDigest     []byte
-	Source            string
-	Severity          string
-	Title             pgtype.Text
-	Body              string
-	Link              pgtype.Text
-	Channel           string
-	Status            string
-	TelegramChatID    int64
-	BindingRevision   int64
-	ProviderMessageID pgtype.Text
-	ErrorMessage      pgtype.Text
+	DisplayName       string
+	AccountTier       string
+	AvatarObjectKey   string
+	AvatarContentType string
+	AvatarEtag        string
+	AvatarSizeBytes   int64
+	Revision          int64
 	CreatedAt         pgtype.Timestamptz
-	SentAt            pgtype.Timestamptz
-	Attempts          int32
-	NextAttemptAt     pgtype.Timestamptz
-	LastAttemptAt     pgtype.Timestamptz
-	LockedAt          pgtype.Timestamptz
-	LockedBy          pgtype.Text
+	UpdatedAt         pgtype.Timestamptz
+}
+
+type AthenaAccount struct {
+	AccountID        pgtype.UUID
+	Username         string
+	IdentityProvider string
+	IdentitySubject  pgtype.Text
+	VerifiedEmail    string
+	Administrator    bool
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+	LastLoginAt      pgtype.Timestamptz
+}
+
+type NotificationDeliveryAttempt struct {
+	ID                   pgtype.UUID
+	WorkKind             string
+	WorkID               int64
+	OwnerID              pgtype.UUID
+	SenderIncarnation    pgtype.UUID
+	TelegramChatID       int64
+	TelegramGroup        bool
+	PayloadDigest        []byte
+	AuthorizedAt         pgtype.Timestamptz
+	StartedAt            pgtype.Timestamptz
+	ResultAt             pgtype.Timestamptz
+	SenderReturnedAt     pgtype.Timestamptz
+	SenderElapsedNs      pgtype.Int8
+	MessageID            pgtype.Text
+	Outcome              pgtype.Text
+	OutcomeCode          pgtype.Text
+	RetryAfter           pgtype.Interval
+	RetryAfterReleasedAt pgtype.Timestamptz
+}
+
+type NotificationSenderInstance struct {
+	Incarnation      pgtype.UUID
+	Hostname         string
+	ProcessID        int32
+	ProcessIdentity  string
+	RegisteredAt     pgtype.Timestamptz
+	StoppedAt        pgtype.Timestamptz
+	StopConfirmation pgtype.Text
 }
 
 type SystemNotificationDelivery struct {
@@ -53,6 +147,9 @@ type SystemNotificationDelivery struct {
 	LastAttemptAt     pgtype.Timestamptz
 	LockedAt          pgtype.Timestamptz
 	LockedBy          pgtype.Text
+	CurrentAttemptID  pgtype.UUID
+	Payload           []byte
+	PayloadDigest     []byte
 }
 
 type SystemNotificationTopic struct {
@@ -86,9 +183,38 @@ type TelegramBindingAttempt struct {
 	UpdatedAt     pgtype.Timestamptz
 }
 
+type TelegramBindingReply struct {
+	ID                       int64
+	UpdateID                 int64
+	AccountID                pgtype.UUID
+	BindingRevision          pgtype.Int8
+	TelegramChatID           int64
+	Body                     string
+	PayloadDigest            []byte
+	Status                   string
+	Attempts                 int32
+	CreatedAt                pgtype.Timestamptz
+	NextAttemptAt            pgtype.Timestamptz
+	LastAttemptAt            pgtype.Timestamptz
+	LockedAt                 pgtype.Timestamptz
+	LockedBy                 pgtype.Text
+	CurrentAttemptID         pgtype.UUID
+	ProviderMessageID        pgtype.Text
+	ErrorMessage             pgtype.Text
+	SentAt                   pgtype.Timestamptz
+	EligibilityRevokedAt     pgtype.Timestamptz
+	EligibilityRevokedReason pgtype.Text
+	Payload                  []byte
+}
+
 type TelegramBindingVersion struct {
 	AccountID pgtype.UUID
 	Revision  int64
+}
+
+type TelegramConsumedUpdate struct {
+	UpdateID   int64
+	ConsumedAt pgtype.Timestamptz
 }
 
 type TelegramPollingState struct {
@@ -97,4 +223,283 @@ type TelegramPollingState struct {
 	LastPollAt   pgtype.Timestamptz
 	LastUpdateAt pgtype.Timestamptz
 	UpdatedAt    pgtype.Timestamptz
+}
+
+type TraderSyncActivity struct {
+	ID                    int64
+	OwnerID               pgtype.UUID
+	SubscriptionID        pgtype.UUID
+	SourceRecordID        int64
+	IntervalID            pgtype.UUID
+	ActivationGeneration  int64
+	TradeJson             []byte
+	MetadataKey           string
+	TargetDisplaySnapshot []byte
+	NoteSnapshot          string
+	NotificationMode      string
+	NotificationReason    string
+	FormationEvidence     []byte
+	SettledAt             pgtype.Timestamptz
+	ReceivedAt            pgtype.Timestamptz
+	RecordedAt            pgtype.Timestamptz
+}
+
+type TraderSyncAlertMembership struct {
+	ActivityID           int64
+	OwnerID              pgtype.UUID
+	BindingRevision      int64
+	ChatID               int64
+	Form                 string
+	State                string
+	CreatedAt            pgtype.Timestamptz
+	EligibilityRevokedAt pgtype.Timestamptz
+	Reason               string
+	BatchID              pgtype.Int8
+}
+
+type TraderSyncBaselineAttempt struct {
+	ID                   pgtype.UUID
+	OwnerID              pgtype.UUID
+	SubscriptionID       pgtype.UUID
+	ActivationGeneration int64
+	CollectorEpoch       pgtype.Int8
+	FilterRevision       pgtype.Int8
+	ExpectedRevision     int64
+	RegisteredHigh       pgtype.Int8
+	CandidateEffectiveAt pgtype.Timestamptz
+	State                string
+	EffectiveAt          pgtype.Timestamptz
+	EndedAt              pgtype.Timestamptz
+	Reason               string
+	CreatedAt            pgtype.Timestamptz
+	RegisteredSequence   pgtype.Int8
+}
+
+type TraderSyncCollectorControl struct {
+	Singleton    bool
+	FencingToken int64
+	OwnerID      pgtype.UUID
+	ActiveEpoch  pgtype.Int8
+}
+
+type TraderSyncCollectorEpoch struct {
+	ID               int64
+	FencingToken     int64
+	StartedAt        pgtype.Timestamptz
+	EndedAt          pgtype.Timestamptz
+	Reason           string
+	FilterRevision   int64
+	LastReceivedAt   pgtype.Timestamptz
+	LastReadSequence int64
+}
+
+type TraderSyncComboLegIndex struct {
+	PositionID  string
+	MarketID    string
+	ConditionID string
+	PositionIds []byte
+	SeenAt      pgtype.Timestamptz
+}
+
+type TraderSyncDirectoryRefresh struct {
+	AdmissionID      pgtype.UUID
+	Name             string
+	Cursor           string
+	VisitedCursors   []string
+	RoundStartedAt   pgtype.Timestamptz
+	RoundCompletedAt pgtype.Timestamptz
+	NextPageAt       pgtype.Timestamptz
+}
+
+type TraderSyncFinalityAnomaly struct {
+	ChainID              int64
+	TransactionHash      []byte
+	PublishedBlockHash   []byte
+	ConflictingBlockHash []byte
+	Reason               string
+	DetectedAt           pgtype.Timestamptz
+}
+
+type TraderSyncInterruption struct {
+	ID               int64
+	CollectorEpoch   int64
+	Reason           string
+	RecordedAt       pgtype.Timestamptz
+	LastReceivedAt   pgtype.Timestamptz
+	LastReadSequence int64
+}
+
+type TraderSyncMarketMetadatum struct {
+	CacheKey     string
+	MetadataJson []byte
+	UpdatedAt    pgtype.Timestamptz
+}
+
+type TraderSyncMonitorInterval struct {
+	LastReliableAt       pgtype.Timestamptz
+	ID                   pgtype.UUID
+	OwnerID              pgtype.UUID
+	SubscriptionID       pgtype.UUID
+	BaselineAttemptID    pgtype.UUID
+	ActivationGeneration int64
+	CollectorEpoch       int64
+	FilterRevision       int64
+	ExpectedRevision     int64
+	RegisteredHigh       int64
+	CandidateEffectiveAt pgtype.Timestamptz
+	State                string
+	EffectiveAt          pgtype.Timestamptz
+	EndedAt              pgtype.Timestamptz
+	Reason               string
+}
+
+type TraderSyncRequestResult struct {
+	OwnerID       pgtype.UUID
+	Operation     string
+	RequestID     string
+	PayloadDigest []byte
+	ResultJson    []byte
+	CreatedAt     pgtype.Timestamptz
+}
+
+type TraderSyncSourceCandidate struct {
+	SourceRecordID       int64
+	OwnerID              pgtype.UUID
+	SubscriptionID       pgtype.UUID
+	ActivationGeneration int64
+	BaselineAttemptID    pgtype.UUID
+	ReceivedAt           pgtype.Timestamptz
+	Disposition          string
+	DispositionReason    string
+}
+
+type TraderSyncSourceRecord struct {
+	ID                 int64
+	ChainID            int64
+	ExchangeAddress    []byte
+	Wallet             []byte
+	BlockHash          []byte
+	TransactionHash    []byte
+	LogIndex           int64
+	BlockNumber        int64
+	RawJson            []byte
+	CollectorEpoch     int64
+	ReadSequence       int64
+	ReceivedElapsedNs  pgtype.Int8
+	FinalityTiming     []byte
+	ReceivedAt         pgtype.Timestamptz
+	Removed            bool
+	ConfirmationState  string
+	ConfirmationReason string
+	CheckedAt          pgtype.Timestamptz
+	SettledAt          pgtype.Timestamptz
+	SourceVersion      string
+	TradeJson          []byte
+	MetadataComplete   bool
+}
+
+type TraderSyncSubscription struct {
+	ID                   pgtype.UUID
+	OwnerID              pgtype.UUID
+	Wallet               []byte
+	DesiredState         string
+	ObservationState     string
+	Reason               string
+	Revision             int64
+	ActivationGeneration int64
+	EffectiveAt          pgtype.Timestamptz
+	EndedAt              pgtype.Timestamptz
+	CreatedAt            pgtype.Timestamptz
+	UpdatedAt            pgtype.Timestamptz
+	TargetDisplay        []byte
+}
+
+type TraderSyncSubscriptionInterruption struct {
+	OwnerID              pgtype.UUID
+	SubscriptionID       pgtype.UUID
+	ActivationGeneration int64
+	EpochID              int64
+	ID                   int64
+	RecordedAt           pgtype.Timestamptz
+	EndedAt              pgtype.Timestamptz
+	Reason               string
+	AwaitingCleanup      pgtype.Bool
+	InterruptionJson     []byte
+}
+
+type TraderSyncSubscriptionObservation struct {
+	OwnerID         pgtype.UUID
+	SubscriptionID  pgtype.UUID
+	Status          string
+	ObservationJson []byte
+}
+
+type TraderSyncSummaryBatch struct {
+	ID                   int64
+	OwnerID              pgtype.UUID
+	BindingRevision      int64
+	ChatID               int64
+	OldestAt             pgtype.Timestamptz
+	FrozenAt             pgtype.Timestamptz
+	Sealed               bool
+	FirstStartedAt       pgtype.Timestamptz
+	RecoveryBasisAt      pgtype.Timestamptz
+	RecoveryReason       string
+	BudgetWaitStartedAt  pgtype.Timestamptz
+	BudgetWaitEndedAt    pgtype.Timestamptz
+	BudgetWaitMs         int64
+	BudgetReason         string
+	LocalGateWaitMs      int64
+	StartEvidenceMissing bool
+}
+
+type TraderSyncSummaryHead struct {
+	ID               int64
+	OwnerID          pgtype.UUID
+	CurrentBatchID   pgtype.Int8
+	CurrentAttemptID pgtype.UUID
+	PreviousBasisAt  pgtype.Timestamptz
+}
+
+type TraderSyncSummaryPart struct {
+	ID            int64
+	OwnerID       pgtype.UUID
+	BatchID       int64
+	PartIndex     int32
+	Total         int32
+	Text          string
+	PayloadDigest []byte
+	DeliveryID    int64
+}
+
+type TraderSyncSummaryPartItem struct {
+	OwnerID    pgtype.UUID
+	BatchID    int64
+	PartID     int64
+	ActivityID int64
+}
+
+type TraderSyncTarget struct {
+	ID        pgtype.UUID
+	Wallet    []byte
+	CreatedAt pgtype.Timestamptz
+}
+
+type TraderSyncTargetConfirmation struct {
+	TokenDigest       []byte
+	OwnerID           pgtype.UUID
+	IdentityJson      []byte
+	IdentityDigest    []byte
+	CardJson          []byte
+	CreatedAt         pgtype.Timestamptz
+	ExpiresAt         pgtype.Timestamptz
+	ConsumedRequestID pgtype.Text
+}
+
+type TraderSyncTargetNote struct {
+	OwnerID   pgtype.UUID
+	Wallet    []byte
+	Note      string
+	Revision  int64
+	UpdatedAt pgtype.Timestamptz
 }

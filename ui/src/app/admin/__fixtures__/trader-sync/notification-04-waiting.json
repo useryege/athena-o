@@ -1,0 +1,1 @@
+{"started":true,"status":"recovering","poller_active":true,"recovery":{"state":"waiting","reason":"non_first_start_barrier","startedAt":"2026-09-11T05:13:35.893282919Z","remainingMillis":"55000","elapsedMillis":"5000","clockSource":"sender_monotonic"}}

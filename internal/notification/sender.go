@@ -8,37 +8,22 @@ import (
 	"strings"
 	"time"
 
-	tgbot "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
+	"github.com/useryege/athena/internal/notification/delivery"
 	utiltelegram "github.com/useryege/athena/util/telegram"
 )
 
 type Sender interface {
+	SystemChatID(string) (int64, error)
 	CreateSystemTopic(ctx context.Context, telegramChat string, label string) (int, error)
-	Send(ctx context.Context, request SendRequest) (string, error)
+	Send(ctx context.Context, request SendRequest, started func(time.Time)) delivery.Outcome
 }
 
 type SendRequest struct {
-	SystemTelegramChat string
-	TelegramChatID     int64
-	MessageThreadID    int
-	Text               string
-}
-
-type RateLimitError struct {
-	RetryAfter time.Duration
-	Err        error
-}
-
-func (e *RateLimitError) Error() string {
-	if e.Err == nil {
-		return fmt.Sprintf("telegram rate limited: retry_after %s", e.RetryAfter)
-	}
-	return e.Err.Error()
-}
-
-func (e *RateLimitError) Unwrap() error {
-	return e.Err
+	Format          string
+	TelegramChatID  int64
+	MessageThreadID int
+	Text            string
 }
 
 type TelegramSender struct {
@@ -65,37 +50,36 @@ func (s *TelegramSender) CreateSystemTopic(ctx context.Context, telegramChat str
 	return topic.MessageThreadID, nil
 }
 
-func (s *TelegramSender) Send(ctx context.Context, request SendRequest) (string, error) {
+func (s *TelegramSender) Send(ctx context.Context, request SendRequest, started func(time.Time)) delivery.Outcome {
 	if s.client == nil {
-		return "", errors.New("telegram client is required")
+		return delivery.Outcome{Kind: "failed", Code: "client_unavailable"}
 	}
-	chatID := ""
-	if request.TelegramChatID > 0 {
-		chatID = strconv.FormatInt(request.TelegramChatID, 10)
-	} else {
-		var err error
-		chatID, err = s.systemChatID(request.SystemTelegramChat)
-		if err != nil {
-			return "", err
-		}
-		if request.MessageThreadID <= 0 {
-			return "", errors.New("system telegram message thread id is required")
-		}
+	if request.TelegramChatID == 0 {
+		return delivery.Outcome{Kind: "failed", Code: "invalid_recipient"}
 	}
-	resp, err := s.client.SendMessage(ctx, utiltelegram.SendMessageRequest{
-		ChatID:          chatID,
-		Text:            request.Text,
-		MessageThreadID: request.MessageThreadID,
-		ParseMode:       models.ParseModeHTML,
+	var mode models.ParseMode
+	switch request.Format {
+	case "plain":
+	case "html":
+		mode = models.ParseModeHTML
+	default:
+		return delivery.Outcome{Kind: "failed", Code: "invalid_format"}
+	}
+	chatID := strconv.FormatInt(request.TelegramChatID, 10)
+	resp, err := s.client.SendMessage(utiltelegram.WithSendStarted(utiltelegram.WithSendTimeout(ctx, 5*time.Second), started), utiltelegram.SendMessageRequest{
+		ChatID: chatID, Text: request.Text, MessageThreadID: request.MessageThreadID, ParseMode: mode,
 	})
 	if err != nil {
-		var rateLimitErr *tgbot.TooManyRequestsError
-		if errors.As(err, &rateLimitErr) && rateLimitErr.RetryAfter > 0 {
-			return "", &RateLimitError{RetryAfter: time.Duration(rateLimitErr.RetryAfter) * time.Second, Err: err}
+		var sendErr *utiltelegram.SendError
+		if errors.As(err, &sendErr) {
+			return delivery.Outcome{Kind: sendErr.Kind, Code: sendErr.Code, RetryAfter: sendErr.RetryAfter}
 		}
-		return "", err
+		return delivery.Outcome{Kind: "unknown", Code: "unclassified_send_error"}
 	}
-	return strconv.Itoa(resp.MessageID), nil
+	if resp == nil || resp.MessageID <= 0 {
+		return delivery.Outcome{Kind: "unknown", Code: "invalid_receipt"}
+	}
+	return delivery.Outcome{Kind: "sent", MessageID: strconv.Itoa(resp.MessageID)}
 }
 
 func (s *TelegramSender) systemChatID(telegramChat string) (string, error) {
@@ -122,21 +106,14 @@ func copySystemChatIDs(chatIDs map[string]string) map[string]string {
 	return out
 }
 
-func RetryAfterFromError(err error) (time.Duration, bool) {
-	var rateLimitErr *RateLimitError
-	if errors.As(err, &rateLimitErr) && rateLimitErr.RetryAfter > 0 {
-		return rateLimitErr.RetryAfter, true
+func (s *TelegramSender) SystemChatID(name string) (int64, error) {
+	raw, err := s.systemChatID(name)
+	if err != nil {
+		return 0, err
 	}
-	return 0, false
-}
-
-func IsTelegramRecipientUnreachable(err error) bool {
-	if errors.Is(err, utiltelegram.ErrRecipientUnreachable) ||
-		errors.Is(err, tgbot.ErrorForbidden) || errors.Is(err, tgbot.ErrorNotFound) {
-		return true
+	id, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || id >= 0 {
+		return 0, fmt.Errorf("system Telegram chat %q requires a numeric group ID", name)
 	}
-	message := strings.ToLower(err.Error())
-	return strings.Contains(message, "chat not found") ||
-		strings.Contains(message, "bot was blocked by the user") ||
-		strings.Contains(message, "user is deactivated")
+	return id, nil
 }

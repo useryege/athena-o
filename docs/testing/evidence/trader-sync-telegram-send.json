@@ -1,0 +1,87 @@
+{
+  "scope": "One explicitly authorized direct TelegramSender Send; no worker, PostgreSQL, poller, updates or retry. Not a public-time or device-delivery SLO.",
+  "sourceBase": "27b2caa0408aae97a73b4bd6dbe56f8142a0b469",
+  "authorization": {
+    "authorizedBy": "user via controller /root message",
+    "recipientChatID": "8815996650",
+    "botID": "8945962939",
+    "botUsername": "test_bot_athena_bot",
+    "count": 1,
+    "timeoutSeconds": 5,
+    "retry": false,
+    "text": "ATHENA Trader Sync 联调测试\n这是一条经明确授权发送的测试通知。\n仅验证纯文本发送与本地 ACK，不触发交易。",
+    "buttons": [],
+    "format": "plain",
+    "scope": "one direct real TelegramSender Send only; no poller, DB, updates, product service"
+  },
+  "request": {
+    "apiMethod": "sendMessage",
+    "elapsedNS": 722451737,
+    "host": "api.telegram.org",
+    "method": "POST",
+    "startedUTC": "2026-09-11T04:57:39.307987489Z",
+    "status": 200
+  },
+  "requestBody": "--d7b3edfffd9a71b6cce43079d423de4155a67203d9641757346a61ce5875\r\nContent-Disposition: form-data; name=\"chat_id\"\r\n\r\n8815996650\r\n--d7b3edfffd9a71b6cce43079d423de4155a67203d9641757346a61ce5875\r\nContent-Disposition: form-data; name=\"text\"\r\n\r\nATHENA Trader Sync 联调测试\n这是一条经明确授权发送的测试通知。\n仅验证纯文本发送与本地 ACK，不触发交易。\r\n--d7b3edfffd9a71b6cce43079d423de4155a67203d9641757346a61ce5875--\r\n",
+  "response": {
+    "ok": true,
+    "result": {
+      "message_id": 4,
+      "from": {
+        "id": 8945962939,
+        "is_bot": true,
+        "first_name": "ATHENA",
+        "username": "test_bot_athena_bot"
+      },
+      "chat": {
+        "id": 8815996650,
+        "first_name": "FUNK CONNECT",
+        "last_name": "HK",
+        "username": "FundConnectHK_TEST",
+        "type": "private"
+      },
+      "date": 1789102660,
+      "text": "ATHENA Trader Sync 联调测试\n这是一条经明确授权发送的测试通知。\n仅验证纯文本发送与本地 ACK，不触发交易。"
+    }
+  },
+  "result": {
+    "authorizedSendLimit": 1,
+    "botID": "8945962939",
+    "botUsername": "test_bot_athena_bot",
+    "callElapsedNS": 723531891,
+    "connectionAttempts": 1,
+    "outcome": {
+      "Timing": {
+        "SenderReturnedAt": null,
+        "SenderElapsedNS": null
+      },
+      "Kind": "sent",
+      "MessageID": "4",
+      "RetryAfter": 0,
+      "Code": ""
+    },
+    "recipientChatID": "8815996650",
+    "returnedUTC": "2026-09-11T04:57:40.031407655Z",
+    "rpcCalls": 1,
+    "senderElapsedNS": 723480265,
+    "startedRetainedMonotonic": true,
+    "startedUTC": "2026-09-11T04:57:39.307927395Z"
+  },
+  "sourceArchive": {
+    ".superpowers/sdd/2026-09-10-trader-sync-activity-alerts/task-13-telegram/send.go": "docs/testing/evidence/trader-sync-telegram-send.go.txt"
+  },
+  "sourceSHA256": {
+    ".superpowers/sdd/2026-09-10-trader-sync-activity-alerts/task-13-telegram/send.go": "d838bb0981a837ab508b6fbc212bdd6a4b12cacb4a721de2e6cb8e191875ce25",
+    "internal/notification/sender.go": "0ba38ae18f76d908a1659bfdf4ddc1d2ed58a547506fe7d2cc77c6024efea0ec",
+    "util/telegram/send_transport.go": "51afd2f763605d777457f912dc2f9af236d37d565a5af657ef314ef6aaf18dbd"
+  },
+  "rawSHA256": {
+    "send-authorization.json": "ab90eba54ede2ce06c78d939c0b91358dc28d84c8bf213a22791d22c2151eb99",
+    "send-plan.md": "912867e6c4e23ddb05f46a190abfc0b4c046095d38537251fdba77a2f2446d96",
+    "send-request-body.raw": "fe9c52598c326dfe1179400dacc18cd4d9a0f04332acbaa1a0d97c0b033b827c",
+    "send-request.json": "7c8003757f088d9a39dfb2773a4d6203993611f514032b37ce99fa599daa4017",
+    "send-response.json": "67cd98a9cf7c83ea9a797de9ff4c3efc1de18257b39b86a8002b95e9b7474e63",
+    "send-result.json": "42344177b9f17a5b6919fe2a6cfd849097e54ea748214336831e5904ca123d9c",
+    "send.go": "d838bb0981a837ab508b6fbc212bdd6a4b12cacb4a721de2e6cb8e191875ce25"
+  }
+}

@@ -1,0 +1,162 @@
+package store
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"strings"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	tradersyncsqlc "github.com/useryege/athena/internal/tradersync/store/sqlc"
+	tsmodel "github.com/useryege/athena/internal/tradersync/types"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+func confirmationOwner(owner string) (pgtype.UUID, error) {
+	u, e := uuid.Parse(owner)
+	if e != nil || u == uuid.Nil || len(owner) != 36 || !strings.EqualFold(u.String(), owner) {
+		return pgtype.UUID{}, status.Error(codes.InvalidArgument, "owner must be a nonzero canonical UUID")
+	}
+	return pgtype.UUID{Bytes: u, Valid: true}, nil
+}
+
+func confirmationArgs(tx pgx.Tx, owner string, digest []byte) (pgtype.UUID, error) {
+	if tx == nil {
+		return pgtype.UUID{}, status.Error(codes.InvalidArgument, "confirmation transaction required")
+	}
+	if len(digest) != 32 {
+		return pgtype.UUID{}, status.Error(codes.InvalidArgument, "token digest must be SHA-256")
+	}
+	return confirmationOwner(owner)
+}
+
+func (s *SQLStore) ConfirmationExpiryTx(ctx context.Context, tx pgx.Tx) (time.Time, error) {
+	if tx == nil {
+		return time.Time{}, status.Error(codes.InvalidArgument, "confirmation transaction required")
+	}
+	v, e := tradersyncsqlc.New(tx).ConfirmationExpiry(ctx)
+	return v.Time, e
+}
+
+func (s *SQLStore) SaveConfirmationTx(ctx context.Context, tx pgx.Tx, ownerID string, identity tsmodel.Identity, tokenDigest []byte, expiresAt time.Time) error {
+	owner, e := confirmationArgs(tx, ownerID, tokenDigest)
+	if e != nil {
+		return e
+	}
+	raw, e := json.Marshal(identity)
+	if e != nil {
+		return e
+	}
+	return tradersyncsqlc.New(tx).SaveConfirmation(ctx, tradersyncsqlc.SaveConfirmationParams{OwnerID: owner, IdentityJson: raw, IdentityDigest: identity.Digest[:], TokenDigest: tokenDigest, ExpiresAt: pgtype.Timestamptz{Time: expiresAt, Valid: true}})
+}
+
+// SaveConfirmationCardTx persists auxiliary query evidence separately from identity validation.
+func (s *SQLStore) SaveConfirmationCardTx(ctx context.Context, tx pgx.Tx, ownerID string, tokenDigest []byte, card tsmodel.ConfirmationCard) error {
+	owner, e := confirmationArgs(tx, ownerID, tokenDigest)
+	if e != nil {
+		return e
+	}
+	raw, e := json.Marshal(card)
+	if e != nil {
+		return e
+	}
+	n, e := tradersyncsqlc.New(tx).SaveConfirmationCard(ctx, tradersyncsqlc.SaveConfirmationCardParams{OwnerID: owner, TokenDigest: tokenDigest, CardJson: raw})
+	if e == nil && n != 1 {
+		return status.Error(codes.FailedPrecondition, "confirmation unavailable")
+	}
+	return e
+}
+
+func decodeConfirmation(raw []byte, e error) (tsmodel.Identity, error) {
+	var v tsmodel.Identity
+	if errors.Is(e, pgx.ErrNoRows) {
+		return v, status.Error(codes.FailedPrecondition, "confirmation expired, consumed, or mismatched")
+	}
+	if e != nil {
+		return v, e
+	}
+	e = json.Unmarshal(raw, &v)
+	return v, e
+}
+
+func (s *SQLStore) ReadConfirmationTx(ctx context.Context, tx pgx.Tx, ownerID string, tokenDigest []byte) (tsmodel.Identity, error) {
+	owner, e := confirmationArgs(tx, ownerID, tokenDigest)
+	if e != nil {
+		return tsmodel.Identity{}, e
+	}
+	raw, e := tradersyncsqlc.New(tx).ReadConfirmation(ctx, tradersyncsqlc.ReadConfirmationParams{OwnerID: owner, TokenDigest: tokenDigest})
+	return decodeConfirmation(raw, e)
+}
+
+// ConsumeConfirmationTx must be called inside Create's grant-checked transaction.
+// Committed request-result replay belongs before consumption; consumption itself is single-use.
+func (s *SQLStore) ConsumeConfirmationTx(ctx context.Context, tx pgx.Tx, ownerID string, tokenDigest []byte, requestID string, identityDigest []byte) (tsmodel.Identity, error) {
+	owner, e := confirmationArgs(tx, ownerID, tokenDigest)
+	if e != nil {
+		return tsmodel.Identity{}, e
+	}
+	if strings.TrimSpace(requestID) == "" || len(identityDigest) != 32 {
+		return tsmodel.Identity{}, status.Error(codes.InvalidArgument, "request ID and SHA-256 identity digest required")
+	}
+	raw, e := tradersyncsqlc.New(tx).ConsumeConfirmation(ctx, tradersyncsqlc.ConsumeConfirmationParams{OwnerID: owner, TokenDigest: tokenDigest, ConsumedRequestID: pgtype.Text{String: requestID, Valid: true}, IdentityDigest: identityDigest})
+	return decodeConfirmation(raw, e)
+}
+
+// ReadConfirmationDisplayTx reads only the still-live card bound to this exact token/identity.
+func (s *SQLStore) ReadConfirmationDisplayTx(ctx context.Context, tx pgx.Tx, ownerID string, token []byte, identity tsmodel.Identity) (tsmodel.TargetDisplay, error) {
+	var result tsmodel.TargetDisplay
+	owner, e := confirmationArgs(tx, ownerID, token)
+	if e != nil {
+		return result, e
+	}
+	row, e := tradersyncsqlc.New(tx).ReadConfirmationDisplay(ctx, tradersyncsqlc.ReadConfirmationDisplayParams{OwnerID: owner, TokenDigest: token, IdentityDigest: identity.Digest[:]})
+	if errors.Is(e, pgx.ErrNoRows) {
+		return result, status.Error(codes.FailedPrecondition, "confirmation card unavailable")
+	}
+	if e != nil {
+		return result, e
+	}
+	var card tsmodel.ConfirmationCard
+	var saved tsmodel.Identity
+	if e = json.Unmarshal(row.CardJson, &card); e != nil {
+		return result, e
+	}
+	if e = json.Unmarshal(row.IdentityJson, &saved); e != nil {
+		return result, e
+	}
+	if card.Identity.Wallet != identity.Wallet || card.Identity.Digest != identity.Digest || saved.Wallet != identity.Wallet || saved.Digest != identity.Digest {
+		return result, status.Error(codes.FailedPrecondition, "confirmation card identity mismatch")
+	}
+	normalize := func(v tsmodel.Scalar) tsmodel.Scalar {
+		if v.Availability != "available" || v.Value == nil || strings.TrimSpace(*v.Value) == "" {
+			v.Value = nil
+			v.Availability = "unavailable"
+			if v.ReasonCode == "" {
+				v.ReasonCode = "missing_or_invalid"
+			}
+		}
+		return v
+	}
+	result.DisplayName = normalize(card.DisplayName)
+	result.Avatar = normalize(card.Avatar)
+	// The canonical URL came from the original Profile SSR input; Gamma only
+	// cross-checked its wallet. The card retains that check's original source
+	// and resolution time even when no display name was available.
+	profileSource := "resolution_input: " + saved.ResolutionInput
+	if saved.ProfileURL != "" {
+		profileSource = "canonical_profile_ssr: " + saved.ResolutionInput
+	}
+	profileSource += "; wallet_cross_check: " + card.DisplayName.Source
+	result.ProfileURL = tsmodel.Scalar{Evidence: tsmodel.Evidence{Availability: "unavailable", ReasonCode: "canonical_profile_unavailable", Source: profileSource, QueriedAt: card.DisplayName.QueriedAt}}
+	if saved.ProfileURL != "" {
+		value := saved.ProfileURL
+		result.ProfileURL.Value = &value
+		result.ProfileURL.Availability = "available"
+		result.ProfileURL.ReasonCode = ""
+	}
+	return result, nil
+}

@@ -1,0 +1,10 @@
+{
+  "queried_at": "2026-09-10T17:03:15.616Z",
+  "url": "https://data-api.polymarket.com/value?user=0x5c52d767c32cc18100c72d7471209d9618216058",
+  "http_status": 200,
+  "curl_exit_status": 0,
+  "sha256": "f980a17cc0ae08990c65a52392493fc4d1ed15be51903eb217f653d08a3f3287",
+  "raw_body": "[{\"user\":\"0x5c52d767c32cc18100c72d7471209d9618216058\",\"value\":0}]",
+  "documentation": "https://docs.polymarket.com/api-reference/core/get-total-value-of-a-users-positions",
+  "scope": "公开 Data API v1 单次当前观察。v1 文档标记 Legacy；v2 使用 bearer 认证和不同 envelope，不作为 fallback。未覆盖历史 SSR 或 P/L 实时矩阵。"
+}

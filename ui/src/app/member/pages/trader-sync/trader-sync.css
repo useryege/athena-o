@@ -1,0 +1,242 @@
+.trader-sync-home {
+    color: var(--athena-text);
+    min-width: 0;
+}
+.trader-sync-home * {
+    box-sizing: border-box;
+}
+.trader-sync-binding {
+    margin-bottom: 24px;
+}
+.trader-sync-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+    grid-template-areas: 'main targets';
+    gap: 32px;
+}
+.trader-sync-main {
+    grid-area: main;
+}
+.trader-sync-targets {
+    grid-area: targets;
+}
+.trader-sync-main,
+.trader-sync-targets,
+.trader-sync-activity > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.trader-sync-home h2 {
+    margin: 0 0 16px;
+    font-size: 22px;
+}
+.trader-sync-home p {
+    margin: 8px 0;
+}
+.trader-sync-home button,
+.trader-sync-home input,
+.trader-sync-home select {
+    font: inherit;
+    color: var(--athena-text);
+    background: var(--athena-panel);
+    border: 1px solid var(--athena-border);
+    border-radius: 6px;
+    min-height: 40px;
+    padding: 8px 12px;
+    max-width: 100%;
+}
+.trader-sync-home button {
+    cursor: pointer;
+    text-align: start;
+}
+.trader-sync-home button:hover:not(:disabled),
+.trader-sync-home button[aria-pressed='true'] {
+    border-color: var(--athena-primary);
+}
+.trader-sync-home button:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+.trader-sync-home :focus-visible {
+    outline: 2px solid var(--athena-primary);
+    outline-offset: 3px;
+}
+.trader-sync-home ::selection {
+    background: var(--athena-primary);
+    color: var(--athena-panel);
+}
+.trader-sync-target-toggle {
+    display: none;
+}
+.trader-sync-target {
+    padding: 20px 0;
+    border-bottom: 1px solid var(--athena-border);
+}
+.trader-sync-target.is-highlighted > button {
+    border-color: var(--athena-primary);
+}
+.trader-sync-target-list > a {
+    display: inline-block;
+    margin-top: 20px;
+}
+.trader-sync-wallet {
+    overflow-wrap: anywhere;
+}
+.trader-sync-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 12px;
+}
+.trader-sync-filters label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+.trader-sync-new-activity {
+    font-weight: 600;
+    border-color: var(--athena-primary) !important;
+}
+.trader-sync-activity {
+    padding: 24px 0;
+    border-bottom: 1px solid var(--athena-border);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px 24px;
+    overflow-wrap: anywhere;
+}
+.trader-sync-activity-amounts {
+    font-variant-numeric: tabular-nums;
+}
+.trader-sync-activity-notification {
+    align-self: end;
+}
+.trader-sync-anomaly {
+    color: var(--athena-red);
+    font-weight: 600;
+}
+.trader-sync-cursors {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+.trader-sync-empty {
+    padding: 32px 0;
+}
+@media (max-width: 900px) {
+    .trader-sync-layout {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: 'targets' 'main';
+        gap: 24px;
+    }
+    .trader-sync-target-toggle {
+        display: block;
+        width: 100%;
+    }
+    .trader-sync-target-list {
+        display: none;
+        padding-top: 20px;
+    }
+    .trader-sync-target-list.is-open {
+        display: block;
+    }
+}
+@media (max-width: 560px) {
+    .trader-sync-activity {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .trader-sync-filters label {
+        flex: 1 1 180px;
+    }
+}
+
+.trader-sync-update-slot {
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+}
+.trader-sync-add-action {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 8px 16px;
+    border: 1px solid var(--athena-primary);
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.trader-sync-detail {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.trader-sync-detail .trader-sync-trade-facts,
+.trader-sync-detail .trader-sync-summary-part,
+.trader-sync-detail .trader-sync-delivery {
+    min-width: 0;
+}
+.trader-sync-detail dl {
+    margin: 16px 0;
+}
+.trader-sync-detail dt {
+    color: var(--athena-muted);
+}
+.trader-sync-detail dd {
+    margin: 4px 0 16px;
+    font-variant-numeric: tabular-nums;
+}
+.trader-sync-fact-values,
+.trader-sync-part-counts dl {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+    gap: 16px;
+}
+.trader-sync-detail details {
+    margin: 20px 0;
+}
+.trader-sync-detail summary {
+    cursor: pointer;
+    min-height: 44px;
+    padding-block: 10px;
+}
+.trader-sync-summary-part {
+    padding-block: 24px;
+    border-bottom: 1px solid var(--athena-border);
+}
+.trader-sync-detail li + li {
+    margin-top: 20px;
+}
+.trader-sync-detail h3 {
+    margin-top: 24px;
+    margin-bottom: 12px;
+}
+.trader-sync-detail a {
+    text-underline-offset: 3px;
+}
+
+/* Trader Sync text roles use the same accessible palette as its activity views. */
+.trader-sync-add .ant-typography-secondary,
+.trader-sync-add .ant-input::placeholder {
+    color: var(--athena-muted);
+    opacity: 1;
+}
+.trader-sync-add .ant-typography-danger,
+.trader-sync-subscription-controls .ant-btn-dangerous:not(:disabled) {
+    color: var(--athena-red);
+}
+.trader-sync-add .ant-btn-primary:not(:disabled),
+.trader-sync-view.ant-btn-primary:not(:disabled) {
+    color: #fff;
+    background: var(--athena-primary);
+    border-color: var(--athena-primary);
+}
+.trader-sync-cancel-modal .ant-btn-primary.ant-btn-dangerous:not(:disabled) {
+    color: #fff;
+    background: var(--athena-red);
+    border-color: var(--athena-red);
+}
+html[data-theme='dark'] .trader-sync-add .ant-btn-primary:not(:disabled),
+html[data-theme='dark'] .trader-sync-view.ant-btn-primary:not(:disabled),
+html[data-theme='dark'] .trader-sync-cancel-modal .ant-btn-primary.ant-btn-dangerous:not(:disabled) {
+    color: var(--athena-bg);
+}

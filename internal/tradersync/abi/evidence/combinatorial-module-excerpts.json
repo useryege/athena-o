@@ -1,0 +1,31 @@
+{
+  "sourcePath": "src/modules/CombinatorialModule.sol",
+  "sourceSHA256": "82e3447019986c9713ebafd6e90d4d3f1651ab6917fd9a57271f4d9e8e472ff3",
+  "ranges": [
+    {
+      "startLine": 284,
+      "endLine": 293,
+      "content": "///         extract/inject, YES-basket conversion, compression, redemption, and wrap/unwrap.\n/// @dev Registered as moduleId=3. Requires crossModuleAuth on PositionManager for wrap/unwrap.\n///      Requires MINTER_ROLE on CollateralToken for mint/burn of collateral.\n/// @dev Cross-chain bridging is not supported for this module: it exposes no bridge mint or burn\n///      entry point and holds no bridge role, and `BridgeBase` omits moduleId 3 from its\n///      bridgeable-module allowlist. A condition's leg definition is stored per chain in `legs[]`,\n///      so a position is operable only on a chain that already holds that definition. Positions are\n///      created locally on each chain instead. See `docs/bridge.md`.\ncontract CombinatorialModule is\n    UUPSUpgradeable,"
+    },
+    {
+      "startLine": 355,
+      "endLine": 365,
+      "content": "    /// @notice Returns the module ID (3 = COMBINATORIAL).\n    function moduleId() external pure returns (uint256) {\n        return ModuleIds.COMBINATORIAL;\n    }\n\n    /// @notice Returns the stored canonical leg array for a combinatorial condition ID.\n    /// @param _conditionId The combinatorial condition ID.\n    /// @return The canonical sorted leg array.\n    function getLegs(ConditionId _conditionId) external view returns (PositionId[] memory) {\n        return legs[_conditionId];\n    }"
+    },
+    {
+      "startLine": 922,
+      "endLine": 947,
+      "content": "\n    /*--------------------------------------------------------------\n                          UNWRAP / WRAP\n    --------------------------------------------------------------*/\n\n    /// @notice Unwrap a single-condition combinatorial position into the underlying binary/negrisk position.\n    /// @dev Requires crossModuleAuth on PositionManager. Combinatorial position must be\n    ///      pre-transferred to the module before calling.\n    /// @param _to Recipient for the underlying position.\n    /// @param _positionId The combinatorial position ID to unwrap.\n    /// @param _amount Amount to unwrap.\n    function unwrap(address _to, PositionId _positionId, uint256 _amount) external {\n        ConditionId conditionId = _positionId.conditionId();\n        uint256 outcomeIndex = _positionId.outcomeIndex();\n        require(outcomeIndex < 2, InvalidOutcomeIndex());\n\n        PositionId[] memory storedLegs = legs[conditionId];\n        require(storedLegs.length == 1, SingleConditionRequired());\n\n        // YES combinatorial position of condition C -> C itself\n        // NO combinatorial position of condition C -> flipped C\n        PositionId underlyingPositionId;\n        if (outcomeIndex == 0) underlyingPositionId = storedLegs[0];\n        else underlyingPositionId = _flipLeg(storedLegs[0]);\n\n        POSITION_MANAGER.mint(_to, underlyingPositionId, _amount);"
+    },
+    {
+      "startLine": 989,
+      "endLine": 999,
+      "content": "    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {\n        CombinatorialModule newImpl = CombinatorialModule(newImplementation);\n\n        if (\n            newImpl.moduleId() != ModuleIds.COMBINATORIAL\n                || address(newImpl.POSITION_MANAGER()) != address(POSITION_MANAGER)\n                || address(newImpl.COLLATERAL_TOKEN()) != address(COLLATERAL_TOKEN)\n        ) revert IncompatibleImplementation();\n    }\n\n    /*--------------------------------------------------------------"
+    },
+    {
+      "startLine": 1221,
+      "endLine": 1270,
+      "content": "    /// @dev Calculates the collateral payout once final or terminal.\n    ///      Accumulates a high-precision payout factor and rounds once at the amount boundary.\n    function _getPositionPayout(PositionId _positionId, uint256 _amount) internal view returns (uint256 payout) {\n        ConditionId conditionId = _positionId.conditionId();\n        uint256 outcomeIndex = _positionId.outcomeIndex();\n        require(outcomeIndex < 2, InvalidOutcomeIndex());\n\n        PositionId[] memory storedLegs = legs[conditionId];\n        require(storedLegs.length > 0, ConditionNotPrepared());\n\n        uint256 length = storedLegs.length;\n\n        if (outcomeIndex == 0) {\n            uint256 payoutFactor = PAYOUT_FACTOR_DENOMINATOR;\n            bool hasUnresolved;\n            for (uint256 i; i < length; ++i) {\n                (bool resolved, uint256 conditionPayout) = _getConditionPayout(storedLegs[i]);\n                if (!resolved) {\n                    hasUnresolved = true;\n                    continue;\n                }\n\n                if (conditionPayout == 0) return 0;\n                if (conditionPayout != RESULT_DENOMINATOR) {\n                    payoutFactor = FixedPointMathLib.mulDiv(payoutFactor, conditionPayout, RESULT_DENOMINATOR);\n                }\n            }\n\n            require(!hasUnresolved, PositionNotRedeemable());\n            return FixedPointMathLib.mulDiv(_amount, payoutFactor, PAYOUT_FACTOR_DENOMINATOR);\n        }\n\n        uint256 payoutFactorUp = PAYOUT_FACTOR_DENOMINATOR;\n        bool unresolved;\n        for (uint256 i; i < length; ++i) {\n            (bool resolved, uint256 conditionPayout) = _getConditionPayout(storedLegs[i]);\n            if (!resolved) {\n                unresolved = true;\n                continue;\n            }\n\n            if (conditionPayout == 0) return _amount;\n            if (conditionPayout != RESULT_DENOMINATOR) {\n                payoutFactorUp = FixedPointMathLib.mulDivUp(payoutFactorUp, conditionPayout, RESULT_DENOMINATOR);\n            }\n        }\n\n        require(!unresolved, PositionNotRedeemable());\n        return _amount - FixedPointMathLib.mulDivUp(_amount, payoutFactorUp, PAYOUT_FACTOR_DENOMINATOR);\n    }"
+    }
+  ]
+}

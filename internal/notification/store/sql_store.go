@@ -2,28 +2,29 @@ package store
 
 import (
 	"context"
-	"embed"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
+	accountstatemigrations "github.com/useryege/athena/internal/accountstate/store/migrations"
 	notificationsqlc "github.com/useryege/athena/internal/notification/store/sqlc"
 	"github.com/useryege/athena/util/db/postgres"
 )
 
-//go:embed migrations/*.sql
-var migrations embed.FS
-
-func Migrations() embed.FS {
-	return migrations
+type sqlPool interface {
+	notificationsqlc.DBTX
+	Begin(context.Context) (pgx.Tx, error)
+	BeginTx(context.Context, pgx.TxOptions) (pgx.Tx, error)
+	Close()
 }
 
 type SQLStore struct {
-	pool    *pgxpool.Pool
+	pool    sqlPool
 	queries notificationsqlc.Querier
 }
 
@@ -42,10 +43,10 @@ func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {
 	return func(ctx context.Context) (*SQLStore, error) {
 		pool, err := postgres.ConnectAndMigrate(ctx, postgres.Options{
 			Module:       "notification",
-			DSNEnv:       "ATHENA_NOTIFICATION_POSTGRES_DSN",
-			Database:     "notification",
-			Migrations:   migrations,
-			MigrationDir: "migrations",
+			DSNEnv:       "ATHENA_SERVER_POSTGRES_DSN",
+			Database:     "athena",
+			Migrations:   accountstatemigrations.FS,
+			MigrationDir: accountstatemigrations.Dir,
 		})
 		if err != nil {
 			return nil, err
@@ -121,4 +122,14 @@ func timestamptzValue(value time.Time) pgtype.Timestamptz {
 
 func formatTime(value time.Time) string {
 	return value.UTC().Format(time.RFC3339)
+}
+
+// BorrowPool returns the existing physical pool without transferring ownership.
+// Only this SQLStore's composition owner closes it, after Service.Stop joins all work.
+func (s *SQLStore) BorrowPool() (*pgxpool.Pool, error) {
+	p, ok := s.pool.(*pgxpool.Pool)
+	if !ok || p == nil {
+		return nil, fmt.Errorf("physical notification pool required")
+	}
+	return p, nil
 }

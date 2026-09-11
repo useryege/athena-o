@@ -15,7 +15,7 @@ test('logout clears the local auth cookie without following the server redirect'
 
     await expect(new UserService().logout()).resolves.toBe(true);
 
-    expect(fetchMock).toHaveBeenCalledWith('/auth/logout', {credentials: 'same-origin', redirect: 'manual'});
+    expect(fetchMock).toHaveBeenCalledWith('/auth/logout', {credentials: 'same-origin', redirect: 'manual', headers: expect.any(Headers), signal: expect.any(AbortSignal)});
 });
 
 test('logout reports server failures', async () => {

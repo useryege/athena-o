@@ -17,6 +17,12 @@ const statusColor = (value: string) => {
             return 'green';
         case 'failed':
             return 'red';
+        case 'unknown':
+            return 'orange';
+        case 'sending':
+            return 'cyan';
+        case 'cancelled':
+            return 'default';
         case 'pending':
             return 'blue';
         default:
@@ -166,7 +172,7 @@ export const SystemNotificationsPage = () => {
                     <ChoiceGroup<string>
                         ariaLabel='Filter by notification status'
                         value={status || 'all'}
-                        options={[{label: 'All', value: 'all'}, ...['pending', 'sent', 'failed'].map(value => ({value, label: value}))]}
+                        options={[{label: 'All', value: 'all'}, ...['pending', 'sending', 'sent', 'failed', 'unknown', 'cancelled'].map(value => ({value, label: value}))]}
                         onChange={value => {
                             setStatus(value === 'all' ? '' : value);
                             setPage(1, pageSize);

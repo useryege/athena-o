@@ -16,6 +16,7 @@ WITH ready AS (
   SELECT id
   FROM system_notification_deliveries
   WHERE status = 'pending'
+    AND attempts < 5
     AND next_attempt_at <= NOW()
     AND (locked_at IS NULL OR locked_at < NOW() - $3::interval)
   ORDER BY created_at ASC, id ASC
@@ -24,9 +25,7 @@ WITH ready AS (
 )
 UPDATE system_notification_deliveries AS delivery
 SET locked_at = NOW(),
-    locked_by = $2,
-    attempts = delivery.attempts + 1,
-    last_attempt_at = NOW()
+    locked_by = $2
 FROM ready
 WHERE delivery.id = ready.id
 RETURNING delivery.id, delivery.source, delivery.severity, COALESCE(delivery.title, '') AS title,
@@ -133,21 +132,26 @@ func (q *Queries) CountSystemNotificationDeliveries(ctx context.Context, arg Cou
 }
 
 const createSystemNotificationDelivery = `-- name: CreateSystemNotificationDelivery :one
-INSERT INTO system_notification_deliveries (source, severity, title, body, link, channel, status, telegram_chat, topic_label)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status, telegram_chat, topic_label, provider_message_id, error_message, created_at, sent_at
+INSERT INTO system_notification_deliveries (source, severity, title, body, link, channel, status, telegram_chat, topic_label, payload, payload_digest)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+RETURNING id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link, channel, status, telegram_chat, topic_label, provider_message_id, error_message, created_at, sent_at,
+  (SELECT authorized_at FROM notification_delivery_attempts WHERE notification_delivery_attempts.id = system_notification_deliveries.current_attempt_id) AS authorized_at,
+  (SELECT started_at FROM notification_delivery_attempts WHERE notification_delivery_attempts.id = system_notification_deliveries.current_attempt_id) AS started_at,
+  (SELECT result_at FROM notification_delivery_attempts WHERE notification_delivery_attempts.id = system_notification_deliveries.current_attempt_id) AS result_at
 `
 
 type CreateSystemNotificationDeliveryParams struct {
-	Source       string
-	Severity     string
-	Title        pgtype.Text
-	Body         string
-	Link         pgtype.Text
-	Channel      string
-	Status       string
-	TelegramChat string
-	TopicLabel   string
+	Source        string
+	Severity      string
+	Title         pgtype.Text
+	Body          string
+	Link          pgtype.Text
+	Channel       string
+	Status        string
+	TelegramChat  string
+	TopicLabel    string
+	Payload       []byte
+	PayloadDigest []byte
 }
 
 type CreateSystemNotificationDeliveryRow struct {
@@ -165,6 +169,9 @@ type CreateSystemNotificationDeliveryRow struct {
 	ErrorMessage      pgtype.Text
 	CreatedAt         pgtype.Timestamptz
 	SentAt            pgtype.Timestamptz
+	AuthorizedAt      pgtype.Timestamptz
+	StartedAt         pgtype.Timestamptz
+	ResultAt          pgtype.Timestamptz
 }
 
 func (q *Queries) CreateSystemNotificationDelivery(ctx context.Context, arg CreateSystemNotificationDeliveryParams) (CreateSystemNotificationDeliveryRow, error) {
@@ -178,6 +185,8 @@ func (q *Queries) CreateSystemNotificationDelivery(ctx context.Context, arg Crea
 		arg.Status,
 		arg.TelegramChat,
 		arg.TopicLabel,
+		arg.Payload,
+		arg.PayloadDigest,
 	)
 	var i CreateSystemNotificationDeliveryRow
 	err := row.Scan(
@@ -195,6 +204,9 @@ func (q *Queries) CreateSystemNotificationDelivery(ctx context.Context, arg Crea
 		&i.ErrorMessage,
 		&i.CreatedAt,
 		&i.SentAt,
+		&i.AuthorizedAt,
+		&i.StartedAt,
+		&i.ResultAt,
 	)
 	return i, err
 }
@@ -225,9 +237,12 @@ func (q *Queries) CreateSystemNotificationTopic(ctx context.Context, arg CreateS
 
 const getSystemNotificationDelivery = `-- name: GetSystemNotificationDelivery :one
 SELECT id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link,
-  channel, status, telegram_chat, topic_label, provider_message_id, error_message, created_at, sent_at
+  channel, status, telegram_chat, topic_label, provider_message_id, error_message, created_at, sent_at,
+  (SELECT authorized_at FROM notification_delivery_attempts WHERE notification_delivery_attempts.id = system_notification_deliveries.current_attempt_id) AS authorized_at,
+  (SELECT started_at FROM notification_delivery_attempts WHERE notification_delivery_attempts.id = system_notification_deliveries.current_attempt_id) AS started_at,
+  (SELECT result_at FROM notification_delivery_attempts WHERE notification_delivery_attempts.id = system_notification_deliveries.current_attempt_id) AS result_at
 FROM system_notification_deliveries
-WHERE id = $1
+WHERE system_notification_deliveries.id = $1
 `
 
 type GetSystemNotificationDeliveryRow struct {
@@ -245,6 +260,9 @@ type GetSystemNotificationDeliveryRow struct {
 	ErrorMessage      pgtype.Text
 	CreatedAt         pgtype.Timestamptz
 	SentAt            pgtype.Timestamptz
+	AuthorizedAt      pgtype.Timestamptz
+	StartedAt         pgtype.Timestamptz
+	ResultAt          pgtype.Timestamptz
 }
 
 func (q *Queries) GetSystemNotificationDelivery(ctx context.Context, id int64) (GetSystemNotificationDeliveryRow, error) {
@@ -265,6 +283,9 @@ func (q *Queries) GetSystemNotificationDelivery(ctx context.Context, id int64) (
 		&i.ErrorMessage,
 		&i.CreatedAt,
 		&i.SentAt,
+		&i.AuthorizedAt,
+		&i.StartedAt,
+		&i.ResultAt,
 	)
 	return i, err
 }
@@ -273,7 +294,9 @@ const getSystemNotificationDeliveryCounts = `-- name: GetSystemNotificationDeliv
 SELECT
   COUNT(*) FILTER (WHERE status = 'pending')::bigint AS pending_count,
   COUNT(*) FILTER (WHERE status = 'pending' AND attempts > 0)::bigint AS retry_count,
-  COUNT(*) FILTER (WHERE status = 'failed')::bigint AS failed_count
+  COUNT(*) FILTER (WHERE status = 'failed')::bigint AS failed_count,
+  COUNT(*) FILTER (WHERE status = 'sending')::bigint AS sending_count,
+  COUNT(*) FILTER (WHERE status = 'unknown')::bigint AS unknown_count
 FROM system_notification_deliveries
 `
 
@@ -281,12 +304,20 @@ type GetSystemNotificationDeliveryCountsRow struct {
 	PendingCount int64
 	RetryCount   int64
 	FailedCount  int64
+	SendingCount int64
+	UnknownCount int64
 }
 
 func (q *Queries) GetSystemNotificationDeliveryCounts(ctx context.Context) (GetSystemNotificationDeliveryCountsRow, error) {
 	row := q.db.QueryRow(ctx, getSystemNotificationDeliveryCounts)
 	var i GetSystemNotificationDeliveryCountsRow
-	err := row.Scan(&i.PendingCount, &i.RetryCount, &i.FailedCount)
+	err := row.Scan(
+		&i.PendingCount,
+		&i.RetryCount,
+		&i.FailedCount,
+		&i.SendingCount,
+		&i.UnknownCount,
+	)
 	return i, err
 }
 
@@ -314,9 +345,89 @@ func (q *Queries) GetSystemNotificationTopic(ctx context.Context, arg GetSystemN
 	return i, err
 }
 
+const listDispatchSystems = `-- name: ListDispatchSystems :many
+SELECT d.id, d.source, d.severity, d.title, d.body, d.link, d.channel, d.status, d.provider_message_id, d.error_message, d.created_at, d.sent_at, d.telegram_chat, d.topic_label, d.attempts, d.next_attempt_at, d.last_attempt_at, d.locked_at, d.locked_by, d.current_attempt_id, d.payload, d.payload_digest, t.message_thread_id FROM system_notification_deliveries d
+JOIN system_notification_topics t ON t.telegram_chat=d.telegram_chat AND t.label=d.topic_label
+WHERE d.status = 'pending' AND d.attempts < 5
+ORDER BY d.telegram_chat, d.next_attempt_at, d.id
+`
+
+type ListDispatchSystemsRow struct {
+	ID                int64
+	Source            string
+	Severity          string
+	Title             pgtype.Text
+	Body              string
+	Link              pgtype.Text
+	Channel           string
+	Status            string
+	ProviderMessageID pgtype.Text
+	ErrorMessage      pgtype.Text
+	CreatedAt         pgtype.Timestamptz
+	SentAt            pgtype.Timestamptz
+	TelegramChat      string
+	TopicLabel        string
+	Attempts          int32
+	NextAttemptAt     pgtype.Timestamptz
+	LastAttemptAt     pgtype.Timestamptz
+	LockedAt          pgtype.Timestamptz
+	LockedBy          pgtype.Text
+	CurrentAttemptID  pgtype.UUID
+	Payload           []byte
+	PayloadDigest     []byte
+	MessageThreadID   int32
+}
+
+func (q *Queries) ListDispatchSystems(ctx context.Context) ([]ListDispatchSystemsRow, error) {
+	rows, err := q.db.Query(ctx, listDispatchSystems)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListDispatchSystemsRow
+	for rows.Next() {
+		var i ListDispatchSystemsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Source,
+			&i.Severity,
+			&i.Title,
+			&i.Body,
+			&i.Link,
+			&i.Channel,
+			&i.Status,
+			&i.ProviderMessageID,
+			&i.ErrorMessage,
+			&i.CreatedAt,
+			&i.SentAt,
+			&i.TelegramChat,
+			&i.TopicLabel,
+			&i.Attempts,
+			&i.NextAttemptAt,
+			&i.LastAttemptAt,
+			&i.LockedAt,
+			&i.LockedBy,
+			&i.CurrentAttemptID,
+			&i.Payload,
+			&i.PayloadDigest,
+			&i.MessageThreadID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSystemNotificationDeliveries = `-- name: ListSystemNotificationDeliveries :many
 SELECT id, source, severity, COALESCE(title, '') AS title, body, COALESCE(link, '') AS link,
-  channel, status, telegram_chat, topic_label, provider_message_id, error_message, created_at, sent_at
+  channel, status, telegram_chat, topic_label, provider_message_id, error_message, created_at, sent_at,
+  (SELECT authorized_at FROM notification_delivery_attempts WHERE notification_delivery_attempts.id = system_notification_deliveries.current_attempt_id) AS authorized_at,
+  (SELECT started_at FROM notification_delivery_attempts WHERE notification_delivery_attempts.id = system_notification_deliveries.current_attempt_id) AS started_at,
+  (SELECT result_at FROM notification_delivery_attempts WHERE notification_delivery_attempts.id = system_notification_deliveries.current_attempt_id) AS result_at
 FROM system_notification_deliveries
 WHERE ($3::text IS NULL OR status = $3)
   AND ($4::text IS NULL OR severity = $4)
@@ -330,7 +441,7 @@ WHERE ($3::text IS NULL OR status = $3)
     OR error_message ILIKE $8
     OR provider_message_id ILIKE $8
   )
-ORDER BY created_at DESC, id DESC
+ORDER BY system_notification_deliveries.created_at DESC, system_notification_deliveries.id DESC
 LIMIT $1 OFFSET $2
 `
 
@@ -360,6 +471,9 @@ type ListSystemNotificationDeliveriesRow struct {
 	ErrorMessage      pgtype.Text
 	CreatedAt         pgtype.Timestamptz
 	SentAt            pgtype.Timestamptz
+	AuthorizedAt      pgtype.Timestamptz
+	StartedAt         pgtype.Timestamptz
+	ResultAt          pgtype.Timestamptz
 }
 
 func (q *Queries) ListSystemNotificationDeliveries(ctx context.Context, arg ListSystemNotificationDeliveriesParams) ([]ListSystemNotificationDeliveriesRow, error) {
@@ -395,6 +509,9 @@ func (q *Queries) ListSystemNotificationDeliveries(ctx context.Context, arg List
 			&i.ErrorMessage,
 			&i.CreatedAt,
 			&i.SentAt,
+			&i.AuthorizedAt,
+			&i.StartedAt,
+			&i.ResultAt,
 		); err != nil {
 			return nil, err
 		}
@@ -417,65 +534,5 @@ type LockSystemNotificationTopicParams struct {
 
 func (q *Queries) LockSystemNotificationTopic(ctx context.Context, arg LockSystemNotificationTopicParams) error {
 	_, err := q.db.Exec(ctx, lockSystemNotificationTopic, arg.TelegramChat, arg.Label)
-	return err
-}
-
-const markSystemNotificationDeliveryFailed = `-- name: MarkSystemNotificationDeliveryFailed :exec
-UPDATE system_notification_deliveries
-SET status = 'failed',
-    error_message = $2,
-    locked_at = NULL,
-    locked_by = NULL
-WHERE id = $1
-`
-
-type MarkSystemNotificationDeliveryFailedParams struct {
-	ID           int64
-	ErrorMessage pgtype.Text
-}
-
-func (q *Queries) MarkSystemNotificationDeliveryFailed(ctx context.Context, arg MarkSystemNotificationDeliveryFailedParams) error {
-	_, err := q.db.Exec(ctx, markSystemNotificationDeliveryFailed, arg.ID, arg.ErrorMessage)
-	return err
-}
-
-const markSystemNotificationDeliverySent = `-- name: MarkSystemNotificationDeliverySent :exec
-UPDATE system_notification_deliveries
-SET status = 'sent',
-    provider_message_id = $2,
-    error_message = NULL,
-    sent_at = NOW(),
-    locked_at = NULL,
-    locked_by = NULL
-WHERE id = $1
-`
-
-type MarkSystemNotificationDeliverySentParams struct {
-	ID                int64
-	ProviderMessageID pgtype.Text
-}
-
-func (q *Queries) MarkSystemNotificationDeliverySent(ctx context.Context, arg MarkSystemNotificationDeliverySentParams) error {
-	_, err := q.db.Exec(ctx, markSystemNotificationDeliverySent, arg.ID, arg.ProviderMessageID)
-	return err
-}
-
-const scheduleSystemNotificationDeliveryRetry = `-- name: ScheduleSystemNotificationDeliveryRetry :exec
-UPDATE system_notification_deliveries
-SET error_message = $2,
-    next_attempt_at = $3,
-    locked_at = NULL,
-    locked_by = NULL
-WHERE id = $1
-`
-
-type ScheduleSystemNotificationDeliveryRetryParams struct {
-	ID            int64
-	ErrorMessage  pgtype.Text
-	NextAttemptAt pgtype.Timestamptz
-}
-
-func (q *Queries) ScheduleSystemNotificationDeliveryRetry(ctx context.Context, arg ScheduleSystemNotificationDeliveryRetryParams) error {
-	_, err := q.db.Exec(ctx, scheduleSystemNotificationDeliveryRetry, arg.ID, arg.ErrorMessage, arg.NextAttemptAt)
 	return err
 }

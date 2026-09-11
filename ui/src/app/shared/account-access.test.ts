@@ -1,0 +1,24 @@
+import {parseAccountAccess} from './models';
+import {AccountDataAccess, AccountDataModule} from './access-modules';
+import {cloneAccountAccess, accountAccessEqual, moduleAccessLevel, replaceModuleAccess} from './account-access';
+import {AdminAccountsService} from '../admin/accounts-service';
+import requests from './services/requests';
+
+afterEach(() => jest.restoreAllMocks());
+test('parse, edit, clone and submit retain all ten grants', async () => {
+    const original = parseAccountAccess({revision: 7, loginEnabled: true, moduleAccess: [{module: 'trader_sync', dataAccess: 'read_write'}]});
+    const edited = replaceModuleAccess(original, AccountDataModule.TraderSync, AccountDataAccess.None);
+    expect(accountAccessEqual(original, edited)).toBe(false);
+    expect(accountAccessEqual(edited, cloneAccountAccess(edited))).toBe(true);
+    expect(moduleAccessLevel(original, AccountDataModule.TraderSync)).toBe(2);
+    let payload: any;
+    jest.spyOn(requests, 'put').mockImplementation((() => ({send: (value: any) => {
+        payload = value;
+        return Promise.resolve({body: {id: 'owner', access: value}});
+    }})) as any);
+    const saved = await new AdminAccountsService().updateAccess('owner', edited);
+    expect(payload.moduleAccess).toHaveLength(10);
+    expect(payload.moduleAccess.find((item: any) => item.module === 12)).toEqual({module: 12, dataAccess: 0});
+    expect(accountAccessEqual(saved.access, edited)).toBe(true);
+    expect(moduleAccessLevel(replaceModuleAccess(original, AccountDataModule.TraderSync, AccountDataAccess.Read), AccountDataModule.TraderSync)).toBe(0);
+});
