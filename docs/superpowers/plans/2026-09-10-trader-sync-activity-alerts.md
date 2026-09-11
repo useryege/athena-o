@@ -1212,8 +1212,10 @@ const req = requests.get('/admin/trader-sync/subscriptions', scope).query({
 
 **Files**
 - 新增：`ui/playwright.config.ts`、`ui/e2e/trader-sync.spec.ts`、`ui/e2e/trader-sync-live.spec.ts`、`ui/e2e/trader-sync-fixtures.ts`、`internal/tradersync/acceptance/ui_harness_integration_test.go`。
-- 测试接线：`internal/server/trader_sync_ui_harness.go` 仅以 `integration && uiharness` 编译，窄适配真实鉴权、gateway 和静态 handler；StartUI 及直接消费者同 tag。签名、cookie、logout 复用已有公开入口，不增加生产控制或绕过认证入口。
-- 修改：`internal/tradersync/acceptance/fixtures_test.go`扩展测试专用HTTP网关/静态资源；`docs/testing/trader-sync-activity-alerts-acceptance.md`补UI结果，原始trace/截图放`.superpowers/trader-sync-acceptance/`；每次调用用`--output`指定独立运行/前缀/project/轮次子目录，避免Playwright清理输出时覆盖先前证据。
+- 验收发现的必要修复：`ui/src/app/member/pages/trader-sync/subscription-state.tsx` 保留 Modal 的关闭生命周期，使 Escape/取消关闭后焦点返回触发按钮；对应既有订阅测试按实际需要适配，真实浏览器验证焦点及确认取消行为。
+- 文字对比度修复：会员 `pages/trader-sync/{add.tsx,subscriptions.tsx,subscription-state.tsx,trader-sync.css}` 与管理员 `pages/trader-sync/{subscriptions.tsx,subscription-detail.tsx,trader-sync.css}`（管理员 CSS 新增），以及 `ui/src/app/admin/pages/service-status.tsx` 本次新增 runtime 状态标签；仅在 Trader Sync 与该新增状态区域内复用现有主题 token 修正辅助文字、placeholder、选中/危险控件与状态标签，保留全局 StatusTag；正常可操作状态按 AA 严格阈值验证，禁用/隐藏按标准单列。
+- 测试接线：`internal/server/trader_sync_ui_harness.go` 及其 `trader_sync_ui_harness_test.go` 仅以 `integration && uiharness` 编译，窄适配真实鉴权、gateway 和静态 handler；StartUI、HTTP装配及直接消费者放在同 tag 的 `ui_harness_integration_test.go`。普通 `fixtures_test.go` 不引用这些入口。签名、cookie、logout 复用已有公开入口，不增加生产控制或绕过认证入口。
+- 修改：`internal/tradersync/acceptance/fixtures_test.go`补本地 Telegram Bot update 队列及确定性故障响应（不引用双tag adapter）；`docs/testing/trader-sync-activity-alerts-acceptance.md`补UI结果，原始trace/截图放`.superpowers/trader-sync-acceptance/`；每次调用用`--output`指定独立运行/前缀/project/轮次子目录，避免Playwright清理输出时覆盖先前证据。
 **Interfaces**
 - 消费：任务13真实隔离DB/Service/Dispatcher/loopback来源，任务15–19实际页面；当前仓库有Playwright依赖但没有配置/spec，必须本任务新增。
 - harness新增测试方法`(*harness).StartUI(t *testing.T,distDir string) UIHarnessInfo`，`UIHarnessInfo{BaseURL,PathPrefix,MemberAState,MemberBState,AdminState string}`。测试使用真实网关、权限store、handler及数据库，以测试签名器颁发仅隔离环境可用的会话，导出Playwright storageState文件；不得增加生产绕过认证路由。测试控制入口仅test进程localhost，提供push source/断流/修改grant/丢一次响应的确定性屏障，不能出现在正式server构建。
@@ -1221,7 +1223,7 @@ const req = requests.get('/admin/trader-sync/subscriptions', scope).query({
 - `TestUIHarness`以env `ATHENA_UI_E2E_DIR`为输出目录、`ATHENA_UI_DIST`为已构建静态目录，启动后写`harness.json`，等待目录下`stop`信号再关闭自己创建的服务/DB；缺必需env/测试DSN直接Fatal。manifest仅测试会话路径及loopback base，不含真实凭据。
 - 先构建 UI，再编译 Go harness；`ATHENA_UI_DIST` 指向新的 `ui/dist/app`。两份 member/admin HTML 必须与本次 Go 编译嵌入的对应原文件逐字相同，否则启动失败。保留生产 `getIndexData` 的 base/meta 替换和原静态 handler，不预填缓存或复制 SPA fallback；保存对应 hash，运行中不替换资产。
 
-- [ ] **步骤1：建立测试配置与受控fixture。**所有测试目标必须通过`ATHENA_UI_E2E_BASE_URL`显式设置；没有目标就失败，不能默认访问开发/生产。两个project按testMatch区分route-fixture和live，fixture项目允许intercept，live不得intercept业务读取/写入来伪造通过。使用已有系统Chrome，不为验收引入新库。
+- [x] **步骤1：建立测试配置与受控fixture。**所有测试目标必须通过`ATHENA_UI_E2E_BASE_URL`显式设置；没有目标就失败，不能默认访问开发/生产。两个project按testMatch区分route-fixture和live，fixture项目允许intercept，live不得intercept业务读取/写入来伪造通过。使用已有系统Chrome，不为验收引入新库。
 
 ```ts
 // ui/playwright.config.ts
@@ -1240,7 +1242,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] **步骤2：写关键验收断言，再运行以暴露未覆盖行为。**fixture构造UI spec九种通知场景、超大ID/微小金额、51条history/101 parts、长Combo。桌面/手机分别覆盖，不把交互线框HTML当产品页面。
+- [x] **步骤2：写关键验收断言，再运行以暴露未覆盖行为。**fixture构造UI spec九种通知场景、超大ID/微小金额、51条history/101 parts、长Combo。桌面/手机分别覆盖，不把交互线框HTML当产品页面。
 
 ```ts
 import {test, expect} from '@playwright/test';
@@ -1257,10 +1259,12 @@ test('desktop and mobile keep the document within the viewport', async ({page}) 
 ```
 
 在`trader-sync-fixtures.ts`导出`installTraderSyncRoutes(page:Page,scenario:string):Promise<void>`，通过已知bootstrap、权限和任务12JSON回复；测试beforeEach显式安装，不能遗漏导致上例跳登录后误判通过。另导出`memberPath(path:string):string`，实现为`(process.env.ATHENA_UI_E2E_PATH_PREFIX || '').replace(/\/$/, '') + path`；从manifest设置该前缀，分别以空前缀和`/athena`运行，不能用以斜杠开头的goto绕过部署前缀。admin路径在此前缀下加`/admin`。其余fixture需等待请求/响应事件，不以长sleep掩盖竞争。
-- [ ] **步骤3：启动隔离全链harness并运行live。**`yarn --cwd ui build`后，以任务1测试DSN及ATHENA_UI_DIST/ATHENA_UI_E2E_DIR运行`go test -tags=integration,uiharness ./internal/tradersync/acceptance -run '^TestUIHarness$' -count=1 -timeout=30m`。StartUI复用任务12真实API注册及测试身份；UI可作为同源静态资源或本地代理提供，固定部署子路径测试也由此入口配置。读取manifest设置BASE_URL及三个storageState路径，再运行`yarn --cwd ui test:e2e --project=live`。
-- [ ] **步骤4：走通三身份真实读写。**A添加/备注/暂停/恢复/取消并由真实基线/source推送形成activity；B同钱包独立note/activity，A读B id/cursor/batch均NotFound；admin仅概要且无member读取。Create第一次成功响应被测试传输层丢弃，token过期后同request重取原ID；不能拦截响应伪造第二个成功。撤权屏障后旧请求晚到不显示正文，重授不自动恢复；初始空列表和历史页的新活动提示、点击载入与原位刷新用真实DB确认。
-- [ ] **步骤5：验证设备、键盘、绑定与结果矩阵。**实际DOM检查1440/1280/900附近/390、深浅主题、tab焦点/弹窗返回、20 emoji、复制精度、选择文本后5秒刷新不丢选区；市场外链不误触行。Telegram仅loopback生成实际普通/摘要结果，验证未知/失败/缺started但sent/跨101 parts及全批计数。绑定流程使用loopback Bot update，真实绑定状态与草稿往返/过期不延长；真实Telegram联调仍按任务13明确接收者边界。登录returnTo和部署`/athena/`分别测试。管理员gauge/window/epoch和不可相加计数以只读SQL交叉核验。
-- [ ] **步骤6：处理发现并保存证据。**失败按systematic-debugging定位；只修导致批准行为不满足的问题，重跑受影响场景。执行`yarn --cwd ui test:e2e --project=ui-fixtures`及live，保留运行命令、提交、场景数量、截图/trace和实际失败；无障碍按AA计算新增文本对比度并人工/自动键盘核验，未测不能写通过。写stop并等待harness退出，只清理本任务创建资源；提交 `test(trader-sync): verify complete member and admin browser flows`。
+- [x] **步骤3：启动隔离全链harness并运行live。**`yarn --cwd ui build`后，以任务1测试DSN及ATHENA_UI_DIST/ATHENA_UI_E2E_DIR运行`go test -tags=integration,uiharness ./internal/tradersync/acceptance -run '^TestUIHarness$' -count=1 -timeout=30m`。StartUI复用任务12真实API注册及测试身份；UI可作为同源静态资源或本地代理提供，固定部署子路径测试也由此入口配置。读取manifest设置BASE_URL及三个storageState路径，再运行`yarn --cwd ui test:e2e --project=live`。
+- [x] **步骤4：走通三身份真实读写。**A添加/备注/暂停/恢复/取消并由真实基线/source推送形成activity；B同钱包独立note/activity，A读取B的资源ID/批次返回NotFound（HTTP404）；跨owner或其他上下文不匹配的游标统一InvalidArgument（HTTP400），错误正文不泄漏私有内容；admin仅概要且无member读取。Create第一次成功响应被测试传输层丢弃，token过期后同request重取原ID；不能拦截响应伪造第二个成功。撤权屏障后旧请求晚到不显示正文，重授不自动恢复；初始空列表和历史页的新活动提示、点击载入与原位刷新用真实DB确认。
+- [x] **步骤5：验证设备、键盘、绑定与结果矩阵。**实际DOM检查1440/1280/900附近/390、深浅主题、tab焦点/弹窗返回、20 emoji、复制精度、选择文本后5秒刷新不丢选区；市场外链不误触行。Telegram仅loopback生成实际普通/摘要结果，验证未知/失败/缺started但sent/跨101 parts及全批计数。绑定流程使用loopback Bot update，真实绑定状态与草稿往返/过期不延长；真实Telegram联调仍按任务13明确接收者边界。登录returnTo和部署`/athena/`分别测试。管理员gauge/window/epoch和不可相加计数以只读SQL交叉核验。
+- [x] **步骤6：处理发现并保存证据。**失败按systematic-debugging定位；只修导致批准行为不满足的问题，重跑受影响场景。执行`yarn --cwd ui test:e2e --project=ui-fixtures`及live，保留运行命令、提交、场景数量、截图/trace和实际失败；无障碍按AA计算新增文本对比度并人工/自动键盘核验，未测不能写通过。写stop并等待harness退出，只清理本任务创建资源；提交 `test(trader-sync): verify complete member and admin browser flows`。
+
+本项已实现并完成独立任务审查及一次限定修复复审（e781e505、599028cf）。根路径与 `/athena` 的完整验收分别为33项受控界面场景和10项真实接口流程；备注持久化/owner隔离与单次颜色采样修正后，两种路径各重跑10项真实流程及5项受影响页面矩阵。另有169项相关UI测试、类型检查、资产等价和只读SQL证据。浏览器撤权旧读为实际中止，成功不可取消晚回调由组件测试单列证明；旧告警、范围外标签AA及公网时效/真实持续100活跃目标限制均保留。仅本地提交，未推送、合并或部署。
 
 ## 任务21：运行文档、相关回归和执行交付
 

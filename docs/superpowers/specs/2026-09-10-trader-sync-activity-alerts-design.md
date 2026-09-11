@@ -97,7 +97,7 @@ flowchart LR
 
 方法按仓库 gRPC 规范使用动词开头 PascalCase。member 请求没有 account_id，由服务端注入；所有查询和写入均包含 owner 条件，跨 owner 与不存在资源都返回 NotFound。管理员 DTO/SQL 从源头不选择私有备注、活动正文、消息正文和逐条投递，无管理用户订阅或重发入口。
 
-分页默认 50、最多 100，游标签名并绑定身份、过滤条件、方向及相应页边界。UI 补充将活动排序修订为 owner 内形成顺序 `id DESC`，其 bigint ID 在账户 gate 内由持久 sequence（CACHE 1、正向、NO CYCLE）分配，不预取或回拨；读取在同 gate 取得该 owner 已提交 max(id) 为 snapshot。recorded_at 继续记录真实时间，避免将可回退时钟当新活动水位。其他资源按相应稳定时间/ID，摘要部分按序号。
+分页默认 50、最多 100，游标签名并绑定身份、过滤条件、方向及相应页边界。资源 ID 跨 owner 或不存在返回 NotFound/HTTP404；游标签名或身份、过滤、种类、页大小等上下文不合法属于输入错误，统一 InvalidArgument/HTTP400，使用通用错误正文，不泄漏私有资源。该区分与 UI 错误处理契约一致；实现验收时纠正了计划将游标也统称 NotFound 的过宽表述。UI 补充将活动排序修订为 owner 内形成顺序 `id DESC`，其 bigint ID 在账户 gate 内由持久 sequence（CACHE 1、正向、NO CYCLE）分配，不预取或回拨；读取在同 gate 取得该 owner 已提交 max(id) 为 snapshot。recorded_at 继续记录真实时间，避免将可回退时钟当新活动水位。其他资源按相应稳定时间/ID，摘要部分按序号。
 
 写请求以 owner、操作、request_id 及 payload digest 幂等，重复键不同 payload 拒绝；读幂等结果前仍检查当前权限。已提交 Create 成功在权限检查后优先于 token 到期/消费判定返回，避免响应丢失后不能恢复结果。资源版本竞争返回 Aborted；配额满 ResourceExhausted，重复目标 AlreadyExists，输入 InvalidArgument，过期/失效确认 FailedPrecondition。只有成功事务保存成功幂等结果；失败不会占配额。
 
