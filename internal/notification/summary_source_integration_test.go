@@ -475,7 +475,8 @@ func summaryServiceFixture(t *testing.T, client utiltelegram.Client) (*Service, 
 
 type summaryLostCommit struct {
 	pgx.Tx
-	committed bool
+	committed   bool
+	afterCommit func() error
 }
 
 func (tx summaryLostCommit) Commit(ctx context.Context) error {
@@ -485,6 +486,11 @@ func (tx summaryLostCommit) Commit(ctx context.Context) error {
 		}
 	} else {
 		if e := tx.Tx.Rollback(ctx); e != nil {
+			return e
+		}
+	}
+	if tx.afterCommit != nil {
+		if e := tx.afterCommit(); e != nil {
 			return e
 		}
 	}
@@ -620,6 +626,134 @@ func TestSummaryFirstNotStartedAndActual429KeepDifferentBoundaries(t *testing.T)
 			}
 			if !found {
 				t.Fatal("old batch retry vanished while next first head has future deadline")
+			}
+		})
+	}
+}
+
+// A pool connection object can survive a lost COMMIT acknowledgement after its
+// physical session (and advisory lock) has already gone away.
+func TestSummaryLostCommitConnectionReacquiresSamePermit(t *testing.T) {
+	for _, cancelled := range []bool{false, true} {
+		t.Run(fmt.Sprint("cancel=", cancelled), func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
+			defer cancel()
+			var calls atomic.Int32
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				calls.Add(1)
+				io.Copy(io.Discard, r.Body)
+				io.WriteString(w, `{"ok":true,"result":{"message_id":42}}`)
+			}))
+			defer server.Close()
+			raw, e := utiltelegram.NewClient(utiltelegram.Config{BotToken: "test", BaseURL: server.URL})
+			if e != nil {
+				t.Fatal(e)
+			}
+			client := &pausedMessageClient{Client: raw, entered: make(chan struct{}), resume: make(chan struct{})}
+			service, pool, owner, _ := summaryServiceFixture(t, client)
+			session, e := service.store.AcquireSender(ctx, service.senderIncarnation)
+			if e != nil {
+				t.Fatal(e)
+			}
+			defer session.Close()
+			service.senderSession = session
+			var competing *txgate.AccountSession
+			defer func() {
+				if competing != nil {
+					_ = competing.Release(context.Background())
+				}
+			}()
+			service.summarySource.beginTx = func(ctx context.Context, c *pgxpool.Conn) (pgx.Tx, error) {
+				tx, e := c.Begin(ctx)
+				if e != nil {
+					return nil, e
+				}
+				return summaryLostCommit{Tx: tx, committed: true, afterCommit: func() error {
+					if e := c.Conn().Close(ctx); e != nil {
+						return e
+					}
+					var err error
+					competing, err = txgate.AcquireAccountSession(ctx, pool, owner)
+					return err
+				}}, nil
+			}
+			clock := &manualDispatchClock{now: time.Now()}
+			budget := NewBudget(20, time.Second, 20, time.Minute)
+			ready, e := service.summarySource.Ready(ctx, clock.Now())
+			if e != nil || len(ready) != 1 {
+				t.Fatal(ready, e)
+			}
+			reservation, ok := budget.Reserve(ready[0], clock.Now())
+			if !ok {
+				t.Fatal("reservation")
+			}
+			defer budget.Release(reservation)
+			sendCtx, sendCancel := context.WithCancel(ctx)
+			defer sendCancel()
+			sendCtx = context.WithValue(sendCtx, dispatchSlotKey{}, dispatchSlot{clock: clock, budget: budget, reservation: reservation, until: clock.Now().Add(time.Second)})
+			done := make(chan error, 1)
+			go func() { done <- service.summarySource.Dispatch(sendCtx, ready[0], nil) }()
+			select {
+			case <-client.entered:
+			case e := <-done:
+				t.Fatal(e)
+			case <-ctx.Done():
+				t.Fatal(ctx.Err())
+			}
+			close(client.resume)
+			// Another transaction owns the account after the physical COMMIT connection
+			// closed. The old permit must wait, not treat its nonnil pool pointer as a lock.
+			time.Sleep(80 * time.Millisecond)
+			if calls.Load() != 0 {
+				t.Errorf("HTTP entered after COMMIT lost its session gate: calls=%d", calls.Load())
+			}
+			var attempts int
+			var attempt string
+			if e = pool.QueryRow(ctx, `SELECT count(*),min(id::text) FROM notification_delivery_attempts`).Scan(&attempts, &attempt); e != nil || attempts != 1 {
+				t.Fatal(attempts, e)
+			}
+			writer := make(chan struct{})
+			go func() { budget.Tighten(clock.Now()); close(writer) }()
+			select {
+			case <-writer:
+			case <-time.After(time.Second):
+				t.Fatal("authorization budget lock held while reacquiring account")
+			}
+			if cancelled {
+				sendCancel()
+			}
+			if e = competing.Release(ctx); e != nil {
+				t.Fatal(e)
+			}
+			competing = nil
+			select {
+			case e = <-done:
+				if e != nil && !errors.Is(e, context.Canceled) {
+					t.Fatal(e)
+				}
+			case <-ctx.Done():
+				t.Fatal("send did not join", ctx.Err())
+			}
+			if competing != nil {
+				if e = competing.Release(ctx); e != nil {
+					t.Fatal(e)
+				}
+				competing = nil
+			}
+			var after string
+			var starts int
+			if e = pool.QueryRow(ctx, `SELECT count(*),min(id::text),count(started_at) FROM notification_delivery_attempts`).Scan(&attempts, &after, &starts); e != nil {
+				t.Fatal(e)
+			}
+			want := 1
+			if cancelled {
+				want = 0
+			}
+			if attempts != 1 || attempt != after || int(calls.Load()) != want || starts != want {
+				t.Fatalf("same permit/start facts: attempts=%d id=%s/%s calls=%d starts=%d", attempts, attempt, after, calls.Load(), starts)
+			}
+			if e = txgate.WithAccountTx(ctx, pool, owner, func(pgx.Tx) error { return nil }); e != nil {
+				t.Fatal("gate leaked", e)
 			}
 		})
 	}

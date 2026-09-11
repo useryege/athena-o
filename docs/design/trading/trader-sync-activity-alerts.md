@@ -417,3 +417,5 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 通知 composition owner 通过 `(*notificationstore.SQLStore).BorrowPool() (*pgxpool.Pool,error)` 取得原物理池的借用引用，在启动前调用 `(*notification.Service).ConfigureSummaries(pool *pgxpool.Pool,siteURL string) error`。后者拒绝不同 pool，配置既有 trader-store 纯冻结适配器并将 SummarySource 注册到原 workSources。摘要适配器不关闭 pool、不自建轮询进程；Service.Stop 取消并 join shared dispatcher、全部 Sender 和结果补记，释放其 session 连接。整个 pool 仍由 notification CLI 的原 store 唯一关闭。Task12 负责把校验过的 siteURL 与此配置入口接入 ServerOpts/现有通知 CLI 的 startup；本任务没有另建进程或第二个连接池。
 
 摘要 delivery 以 `summary:<batch>:part:<index>` 幂等，source 保持 trader_sync、activity_id 为 NULL。最终许可查询通过真实 part→batch→冻结 membership 验证 owner、绑定 revision/chat、grant 及永久撤销标记；head 绑定也检验该 attempt 对应本批真实部分。不可用任意普通 delivery 或单一 ActivityID 代替。批次封存后不能追加部分或成员；同一个活动可关联同批多个部分，组合延续不丢关系。最终带 n/m 的 plain payload 由既有 delivery.EncodePayload 编码并计算原 bytes digest，重试只读 Permit.Payload；分页遇到页码位数变化会重新切分，完整 URL 不截断，无法装入单条的超长 URL 明确报错。
+
+摘要首条 COMMIT 结果未知时，有界读回只证明原 attempt/head 已提交，不证明原 PostgreSQL session 仍持 advisory lock。继续同一许可前，先完成授权预算 guard 的提交收尾、释放或丢弃原连接，再可取消地取得新账户 session 并核对同一存活实例/permit/head；禁止持预算读锁等账户。故障间隙允许出现 f<t<s，保持冻结和实际起点原值，重取锁成本不归为外部 Retry-After。

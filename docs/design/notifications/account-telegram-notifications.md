@@ -143,7 +143,7 @@ athena-notification --recover-stopped-sender=<incarnation-UUID>
 
 [SummarySource](../../../internal/notification/summary_source.go) 消费 Trader Sync 的 waiting membership；其未来候选带 notBefore/deadline，按 owner 的持久 head 保序。候选的 summary_head Ref 只服务调度，真实冻结部分继续以 account WorkRef 进入同一个 AuthorizeTx/executePermit/RecordOutcome 路径。普通 account source 不领取未解决首条批次的任何部分；首条有起点后，其他部分独立许可并可与下批首条交错。
 
-固定连接 session advisory key 与账户事务相同。AuthorizeTx 不自行提交，也不再取另一连接的 account gate；guard 位于 delivery 行锁之后，预算完成回调由外层 Commit/Rollback 收尾。首条提交未知只可有界确认原 attempt/head，未确认不发。预算 Tighten 与最终 HTTP 准入通过同一 RW 锁排序；需要等待时先释放账户 session，等待结束释放临时预算读锁，再重取账户 session 和核验原许可。非阻塞 tryAdmitStart 可再次拒绝；真实 Started 回调仍恒定时间，预算读锁在该回调后、实际 I/O 前释放。
+固定连接 session advisory key 与账户事务相同。AuthorizeTx 不自行提交，也不再取另一连接的 account gate；guard 位于 delivery 行锁之后，预算完成回调由外层 Commit/Rollback 收尾。首条提交未知只可有界确认原 attempt/head，未确认不发。确认许可不等于原物理 session 仍持锁：先结束原授权预算 guard，释放或丢弃旧连接，再在同一存活调用中可取消地重取账户 gate，核验同一 permit/head/实例后才进入最终准入；不再次授权或计次。连接故障期间可能存在 f<t<s，实际时间及额外账户锁等待仍保留为本地成本。预算 Tighten 与最终 HTTP 准入通过同一 RW 锁排序；需要等待时先释放账户 session，等待结束释放临时预算读锁，再重取账户 session 和核验原许可。非阻塞 tryAdmitStart 可再次拒绝；真实 Started 回调仍恒定时间，预算读锁在该回调后、实际 I/O 前释放。
 
 Started 事实通过固定连接在一秒内补记后释放 gate，不等 HTTP 回执；RecordStarted 本身不再请求账户 gate，结果仍在原账户短事务里 CAS。已 sent/unknown 且起点丢失的 head 也纳入明确停止恢复，不能只恢复当前 sending，不能因 NULL 起点跨进程重发。运行内保留真实观察的 monotonic 基点；恢复缺证据时只记录 recovery_basis_at 和原因，不伪造 first_started_at。预算等待的起止、时长和外部 Retry-After/本地协调原因及 gate 等待保留在 batch，完整总体延迟与动态 f<t<s 的 miss 不被抹去。
 

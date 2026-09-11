@@ -197,10 +197,11 @@ func (s *SummarySource) Dispatch(ctx context.Context, c delivery.Candidate, onSt
 		return e
 	}
 	e = tx.Commit(ctx)
-	if e != nil {
+	commitUncertain := e != nil
+	if commitUncertain {
 		// A lost acknowledgement is not permission to try another attempt. Read the
-		// exact original durable identity in a bounded independent transaction while
-		// retaining the account session; no account lock is recursively requested.
+		// exact original durable identity in a bounded independent transaction. This
+		// proves the permit, not that the old physical session still owns its lock.
 		_ = tx.Rollback(context.Background())
 		checkCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second)
 		confirmed := s.service.store.ConfirmSummaryPermit(checkCtx, a.batchID, p)
@@ -213,6 +214,17 @@ func (s *SummarySource) Dispatch(ctx context.Context, c delivery.Candidate, onSt
 	if finish != nil {
 		finish(true)
 		finish = nil
+	}
+	if commitUncertain {
+		// End the authorization budget guard before any new account acquisition.
+		// Even a live-looking pooled object may have lost its PostgreSQL session.
+		// Release/discard it and let this same invocation reenter and validate the
+		// original permit under a new gate. No new authorization or slot is created.
+		a.releaseGate()
+		if a.releaseErr != nil {
+			log.WithError(a.releaseErr).WithField("batch_id", a.batchID).Warn("discarded uncertain summary commit session before reentry")
+			a.releaseErr = nil // Release already discarded the physical connection.
+		}
 	}
 	// The single invocation owns gate/admission until its Started signal or a
 	// definite pre-start return. Existing grant revocation cannot replace this permit.
