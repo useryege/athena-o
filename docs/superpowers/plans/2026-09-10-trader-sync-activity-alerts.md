@@ -1139,13 +1139,14 @@ const latestQuery: ActivityQuery = {...session.query, cursor: undefined, refresh
 
 **Files**
 - 新增：`ui/src/app/member/pages/trader-sync/activity-detail.tsx`、`summary-detail.tsx`、`trade-facts.tsx`、`combo-conditions.tsx`、`notification-result.tsx`、`activity-detail.test.tsx`、`summary-detail.test.tsx`。
-- 修改：`ui/src/app/member/app.tsx`、`routes.tsx`及`ui/src/app/app.test.tsx`；同目录`trader-sync.css`、`state.ts/state.test.ts`承接独立详情返回会话与统一清理。
+- 修改：`ui/src/app/member/app.tsx`、`routes.tsx`及`ui/src/app/app.test.tsx`；同目录`trader-sync.css`、`state.ts/state.test.ts`承接独立详情返回会话与统一清理；`cursor-navigation.tsx`增加可选ariaLabel区分两套分页，默认名称不变；`activity-feed.tsx`增加可选summaryBatchId，将合法摘要ID写入本次活动链接state。
 **Interfaces**
 - 消费：任务14 getActivity/getSummaryBatch/listSummaryParts/listActivities，任务17CursorNavigation及返回会话。
 - 产出：`TraderSyncActivityPage({ownerId})`、`TraderSyncSummaryPage({ownerId})`，props均`{ownerId:string}`；`TradeFacts({activity}:{activity:Activity})`、`ComboConditions({metadata}:{metadata:Activity['metadata']})`、`deliveryLabel(delivery:Delivery):string`。
 - 页面分别从useParams取activityId/batchId；站内URL不接收owner覆盖，市场外链只能使用已核验metadata.url。
+- 详情资源会话由state按owner+resource保留独立parts/activities页栈和scroll，并统一清理；返回来源取当前历史条目的受限traderSyncSummaryBatchId，不存入资源缓存。CursorNavigation增加可选ariaLabel，默认名称不变。
 
-- [ ] **步骤1：写结果证据与Combo红灯。**
+- [x] **步骤1：写结果证据与Combo红灯。**
 
 ```ts
 test('sent remains sent when the submit timestamp was not recorded', () => {
@@ -1156,9 +1157,9 @@ test('sent remains sent when the submit timestamp was not recorded', () => {
 ```
 
 renderer同时断言“Submit time not recorded”，没有已读/未调用推断；Combo NO显示“Not all conditions met”，不是各腿NOT；未知腿数不显示0。用1个活动关联2个parts（sent/unknown）证明不是整体成功。
-- [ ] **步骤2：运行详情测试红灯，再实现事实与证据组件。**事实优先、完整钱包、Settled at UTC+8、成交额/份额/费用分开；本条价格用precision helper，分母不可用/舍入说明完整。原始量、Position ID、tx/log、来源与时间在可展开区域。缺metadata可读ID/原因，无可靠市场URL不给伪链接；绑定当前状态不覆盖活动mode。
-- [ ] **步骤3：实现通知模式/阶段和相关部分。**in_app_only显示形成时未绑定；waiting无batch链接，cancelled_before_freeze给原因；frozen按batch+activityId调用ListSummaryParts分页。六态分别显示，latestAttempt证据及attemptCount可读，无重发/全部attempt入口。5秒页级刷新当前parts，不逐part发请求。
-- [ ] **步骤4：实现批次页两个独立游标。**GetSummaryBatch给总量和六态计数；Parts按序号，Activities带summaryBatchId按固定成员分页，各自保存页栈。只有sent==total且其他五态为0才显示整批成功，不用“部分成功”覆盖细分结果。
+- [x] **步骤2：运行详情测试红灯，再实现事实与证据组件。**事实优先、完整钱包、Settled at UTC+8、成交额/份额/费用分开；本条价格用precision helper，分母不可用/舍入说明完整。原始量、Position ID、tx/log、来源与时间在可展开区域。缺metadata可读ID/原因，无可靠市场URL不给伪链接；绑定当前状态不覆盖活动mode。
+- [x] **步骤3：实现通知模式/阶段和相关部分。**in_app_only显示形成时未绑定；waiting无batch链接，cancelled_before_freeze给原因；frozen按batch+activityId调用ListSummaryParts分页。六态分别显示，latestAttempt证据及attemptCount可读，无重发/全部attempt入口。5秒页级刷新当前parts，不逐part发请求。
+- [x] **步骤4：实现批次页两个独立游标。**GetSummaryBatch给总量和六态计数；Parts按序号，Activities带summaryBatchId按固定成员分页，各自保存页栈。只有sent==total且其他五态为0才显示整批成功，不用“部分成功”覆盖细分结果。
 
 ```ts
 const complete = BigInt(batch.partCounts.total) > 0n &&
@@ -1169,8 +1170,8 @@ const complete = BigInt(batch.partCounts.total) > 0n &&
 ```
 
 计数字符串在models规范为无前导零十进制；活动跨part可多次关联但总activityCount独立，不能把part数量叫成交数量。
-- [ ] **步骤5：挂实际路由并验深链接。**三个入口（列表、普通Telegram、摘要Telegram）落同一详情；登录returnTo复用既有helper与base路径。无上下文返回主页，有上下文恢复filter/cursor/scroll。NotFound与跨owner相同，不闪出缓存；外链点击停止行导航且可键盘聚焦。
-- [ ] **步骤6：运行详情/摘要/precision/app相关测试、lint；提交 `feat(trader-sync-ui): show trade and summary delivery evidence`。**含多part第二页、缺started但sent、未知公开时间不可判定、午夜UTC+8和超长Combo。
+- [x] **步骤5：挂实际路由并验深链接。**三个入口（列表、普通Telegram、摘要Telegram）落同一详情；登录returnTo复用既有helper与base路径。无上下文返回主页，有上下文恢复filter/cursor/scroll；摘要来源只随本次导航/历史条目保留，从主页再次进入同一活动不会继承旧摘要。NotFound与跨owner相同，不闪出缓存；外链点击停止行导航且可键盘聚焦。
+- [x] **步骤6：运行详情/摘要/precision/app相关测试、lint；提交 `feat(trader-sync-ui): show trade and summary delivery evidence`。**含多part第二页、缺started但sent、未知公开时间不可判定、午夜UTC+8和超长Combo。
 
 ## 任务19：管理员概要与可见运行健康
 
