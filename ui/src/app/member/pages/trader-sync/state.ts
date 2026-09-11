@@ -30,6 +30,7 @@ export const captureTraderSyncScope = (ownerId: string): ReadScope => {
 export const clearTraderSyncState = (): void => {
     generation++;
     activitySessions.clear();
+    detailSessions.clear();
     subscriptionSessions.clear();
     historySessions.clear();
     subscriptionEdits.clear();
@@ -112,4 +113,28 @@ export const consumeNewSubscriptionFocus = (ownerId: string, subscriptionId: str
     if (readNewSubscriptionFocus(ownerId) !== subscriptionId) return false;
     newSubscriptionFocus = undefined;
     return true;
+};
+
+export interface DetailCursorSession<T> {
+    revision?: number;
+    index: number;
+    cursors: Array<string | undefined>;
+    pages: Record<number, T>;
+    positions: Record<number, number>;
+}
+export interface DetailSession {
+    scrollY: number;
+    returnPath?: string;
+    parts: DetailCursorSession<import('../../trader-sync-models').PartPage>;
+    activities: DetailCursorSession<import('../../trader-sync-models').ActivityPage>;
+}
+export const blankDetailSession = (): DetailSession => ({
+    scrollY: 0,
+    parts: {index: 0, cursors: [undefined], pages: {}, positions: {}},
+    activities: {index: 0, cursors: [undefined], pages: {}, positions: {}}
+});
+const detailSessions = new Map<string, DetailSession>();
+export const readDetailSession = (ownerId: string, resource: string): DetailSession | undefined => detailSessions.get(JSON.stringify([ownerId, resource]));
+export const saveDetailSession = (ownerId: string, resource: string, scope: ReadScope, session: DetailSession): void => {
+    if (scope.isCurrent() && scope.key === captureTraderSyncScope(ownerId).key) detailSessions.set(JSON.stringify([ownerId, resource]), session);
 };

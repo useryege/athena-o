@@ -54,6 +54,8 @@ import {
     HelpPage,
     NotificationsPage,
     TraderSyncHomePage,
+    TraderSyncActivityPage,
+    TraderSyncSummaryPage,
     TraderSyncAddPage,
     TraderSyncSubscriptionsPage,
     TraderSyncSubscriptionPage,
@@ -504,6 +506,18 @@ const AppRoutes = (props: {
                     path='/trader-sync/add'
                     element={traderSyncRoute(
                         <TraderSyncAddPage key={JSON.stringify([props.access.user.accountId, props.access.user.iss])} ownerId={props.access.user.accountId} />
+                    )}
+                />
+                <Route
+                    path='/trader-sync/activities/:activityId'
+                    element={traderSyncRoute(
+                        <TraderSyncActivityPage key={JSON.stringify([props.access.user.accountId, props.access.user.iss])} ownerId={props.access.user.accountId} />
+                    )}
+                />
+                <Route
+                    path='/trader-sync/summaries/:batchId'
+                    element={traderSyncRoute(
+                        <TraderSyncSummaryPage key={JSON.stringify([props.access.user.accountId, props.access.user.iss])} ownerId={props.access.user.accountId} />
                     )}
                 />
                 <Route path='/notifications' element={<NotificationsPage />} />

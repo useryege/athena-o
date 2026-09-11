@@ -350,6 +350,89 @@ describe('Trader Sync real Shell cleanup', () => {
         expect(window.scrollTo).toHaveBeenLastCalledWith({top: 240, behavior: 'instant'});
         Object.defineProperty(window, 'scrollY', {configurable: true, value: 0});
     });
+    test.each([
+        ['/trader-sync/activities/12', 'read'],
+        ['/trader-sync/activities/12', 'none'],
+        ['/trader-sync/summaries/7', 'read'],
+        ['/trader-sync/summaries/7', 'none']
+    ])('real detail route %s rejects %s without private reads', async (path, level) => {
+        ensureMemberBusinessServices();
+        const activity = jest.spyOn(services.traderSync, 'getActivity');
+        const batch = jest.spyOn(services.traderSync, 'getSummaryBatch');
+        await mountMember(level, path);
+        expect(window.location.pathname).toBe('/account/access');
+        expect(activity).not.toHaveBeenCalled();
+        expect(batch).not.toHaveBeenCalled();
+    });
+    test('ordinary Telegram and list activity deep links use the real page and ignore owner query overrides', async () => {
+        ensureMemberBusinessServices();
+        jest.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+        const {normalizeActivity} = await import('./member/trader-sync-models');
+        const fixture = await import('./member/testdata/trader-sync/05.json');
+        const item = {...normalizeActivity(fixture.activity), noteSnapshot: 'original activity note'};
+        const get = jest.spyOn(services.traderSync, 'getActivity').mockResolvedValue(item);
+        await mountMember('read_write', '/trader-sync/activities/12?ownerId=owner-B');
+        expect(document.title).toBe('Activity · Athena');
+        expect(containsText(tree.toJSON(), 'original activity note')).toBe(true);
+        expect(get).toHaveBeenCalledWith('12');
+        const {readDetailSession} = await import('./member/pages/trader-sync/state');
+        expect(readDetailSession('owner-A', 'activity/12')).toBeDefined();
+        expect(readDetailSession('owner-B', 'activity/12')).toBeUndefined();
+        jest.mocked(services.users.get).mockResolvedValue(member('owner-A', 'athena', 'none', 2));
+        await act(async () => window.dispatchEvent(new Event('focus')));
+        expect(window.location.pathname).toBe('/account/access');
+        expect(containsText(tree.toJSON(), 'original activity note')).toBe(false);
+        expect(readDetailSession('owner-A', 'activity/12')).toBeUndefined();
+    });
+    test('summary Telegram deep link loads the real batch and its independent members', async () => {
+        ensureMemberBusinessServices();
+        jest.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+        const stamp = '2026-09-11T00:00:00Z';
+        jest.spyOn(services.traderSync, 'getSummaryBatch').mockResolvedValue({
+            id: '7',
+            oldestAt: stamp,
+            settledFrom: stamp,
+            settledTo: stamp,
+            recordedFrom: stamp,
+            recordedTo: stamp,
+            activityCount: '0',
+            targetCounts: [],
+            partCounts: {total: '0', pending: '0', sending: '0', sent: '0', failed: '0', unknown: '0', cancelled: '0'},
+            asOf: stamp
+        });
+        jest.spyOn(services.traderSync, 'listSummaryParts').mockResolvedValue({parts: [], page: {}, asOf: stamp});
+        jest.spyOn(services.traderSync, 'listActivities').mockResolvedValue({activities: [], page: {snapshot: 'batch-snapshot', refreshCursor: 'batch-refresh', hasNewer: false}});
+        await mountMember('read_write', '/trader-sync/summaries/7');
+        expect(document.title).toBe('Summary batch · Athena');
+        expect(containsText(tree.toJSON(), 'Activities in this batch')).toBe(true);
+        expect(services.traderSync.listActivities).toHaveBeenCalledWith(expect.objectContaining({summaryBatchId: '7'}));
+        expect(tree.root.findByProps({'aria-label': 'Summary part pages'})).toBeDefined();
+    });
+    test.each(['/trader-sync/activities/12', '/trader-sync/summaries/7'])('logged-out deep link %s retains its login destination', async path => {
+        jest.spyOn(services.authService, 'bootstrap').mockResolvedValue(anonymousBootstrap);
+        window.history.replaceState(null, '', path);
+        await act(async () => {
+            tree = renderer.create(<App />);
+        });
+        expect(window.location.pathname).toBe('/login');
+        const {readLoginReturnTo} = await import('./shared/login-navigation');
+        expect(readLoginReturnTo(window.location.search)).toBe(path);
+    });
+    test('detail login return respects the existing deployment base helper', async () => {
+        const {deploymentPath} = await import('./shared/runtime-base');
+        const {loginPathFor, readLoginReturnTo} = await import('./shared/login-navigation');
+        const meta = document.createElement('meta');
+        meta.name = 'athena-deployment-base-href';
+        meta.content = '/athena/';
+        document.head.appendChild(meta);
+        try {
+            const path = '/trader-sync/summaries/7';
+            expect(deploymentPath(loginPathFor(path))).toBe('/athena/login?returnTo=%2Ftrader-sync%2Fsummaries%2F7');
+            expect(deploymentPath(readLoginReturnTo('?returnTo=%2Ftrader-sync%2Factivities%2F12'))).toBe('/athena/trader-sync/activities/12');
+        } finally {
+            meta.remove();
+        }
+    });
     test('RW Add route renders the actual independent page', async () => {
         await mountMember();
         expect(containsText(tree.toJSON(), 'Wallet address or Polymarket profile URL')).toBe(true);

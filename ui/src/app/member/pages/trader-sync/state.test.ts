@@ -78,3 +78,22 @@ test('list and history return sessions are owner isolated and invalid scopes can
     expect(readHistorySession('A', 'sub')).toBeUndefined();
     expect(readSubscriptionSession('A')).toBeUndefined();
 });
+
+test('detail sessions keep independent cursors, remain owner scoped and cannot be resurrected after cleanup', async () => {
+    const {blankDetailSession, saveDetailSession, readDetailSession} = await import('./state');
+    const scope = captureTraderSyncScope('A');
+    const detail = blankDetailSession();
+    detail.parts.cursors.push('parts-next');
+    detail.activities.cursors.push('activities-next');
+    detail.scrollY = 1400;
+    saveDetailSession('A', 'summary/7', scope, detail);
+    expect(readDetailSession('A', 'summary/7')?.parts.cursors).toEqual([undefined, 'parts-next']);
+    expect(readDetailSession('A', 'summary/7')?.activities.cursors).toEqual([undefined, 'activities-next']);
+    expect(readDetailSession('B', 'summary/7')).toBeUndefined();
+    const seen: unknown[] = [];
+    scope.subscribeInvalidation!(() => seen.push(readDetailSession('A', 'summary/7')));
+    clearTraderSyncState();
+    saveDetailSession('A', 'summary/7', scope, detail);
+    expect(seen).toEqual([undefined]);
+    expect(readDetailSession('A', 'summary/7')).toBeUndefined();
+});

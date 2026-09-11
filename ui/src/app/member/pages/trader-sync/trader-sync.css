@@ -165,3 +165,51 @@
     border-radius: 6px;
     font-weight: 600;
 }
+
+.trader-sync-detail {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.trader-sync-detail .trader-sync-trade-facts,
+.trader-sync-detail .trader-sync-summary-part,
+.trader-sync-detail .trader-sync-delivery {
+    min-width: 0;
+}
+.trader-sync-detail dl {
+    margin: 16px 0;
+}
+.trader-sync-detail dt {
+    color: var(--athena-muted);
+}
+.trader-sync-detail dd {
+    margin: 4px 0 16px;
+    font-variant-numeric: tabular-nums;
+}
+.trader-sync-fact-values,
+.trader-sync-part-counts dl {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+    gap: 16px;
+}
+.trader-sync-detail details {
+    margin: 20px 0;
+}
+.trader-sync-detail summary {
+    cursor: pointer;
+    min-height: 44px;
+    padding-block: 10px;
+}
+.trader-sync-summary-part {
+    padding-block: 24px;
+    border-bottom: 1px solid var(--athena-border);
+}
+.trader-sync-detail li + li {
+    margin-top: 20px;
+}
+.trader-sync-detail h3 {
+    margin-top: 24px;
+    margin-bottom: 12px;
+}
+.trader-sync-detail a {
+    text-underline-offset: 3px;
+}
