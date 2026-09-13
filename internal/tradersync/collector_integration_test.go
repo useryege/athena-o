@@ -979,11 +979,11 @@ CREATE TRIGGER reject_owner_release BEFORE UPDATE ON trader_sync_collector_contr
 	if _, err = db.Pool.Exec(ctx, `DROP TRIGGER reject_epoch_start ON trader_sync_collector_epochs;DROP TRIGGER reject_owner_release ON trader_sync_collector_control`); err != nil {
 		t.Fatal(err)
 	}
-	owner, err := store.NewSQLStore(db.Pool).AcquireCollectorSession(ctx)
+	owner, err := store.NewSQLStore(db.Pool).AcquireRuntimeSession(ctx)
 	if err != nil {
 		t.Fatal("fatal cleanup leaked physical ownership lock", err)
 	}
-	if err = owner.Close(ctx); err != nil {
+	if err = owner.CloseAfterWorkers(ctx); err != nil {
 		t.Fatal(err)
 	}
 }

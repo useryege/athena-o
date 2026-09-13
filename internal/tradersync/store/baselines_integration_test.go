@@ -21,34 +21,34 @@ func TestBaselineOwnershipIsExclusiveAndTokenPersistsAcrossInstances(t *testing.
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
 	ctx := context.Background()
 	s := NewSQLStore(db.Pool)
-	first, err := s.AcquireCollectorSession(ctx)
+	first, err := s.AcquireRuntimeSession(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer first.Close(ctx)
-	if second, err := s.AcquireCollectorSession(ctx); err == nil {
-		_ = second.Close(ctx)
+	defer first.CloseAfterWorkers(ctx)
+	if second, err := s.AcquireRuntimeSession(ctx); err == nil {
+		_ = second.CloseAfterWorkers(ctx)
 		t.Fatal("two collectors own same database")
 	}
-	epoch, err := s.StartCollectorEpoch(ctx, first.Token)
+	epoch, err := s.StartCollectorEpoch(ctx, first.CollectorToken())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err = first.Check(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if err = first.Close(ctx); err != nil {
+	if err = first.CloseAfterWorkers(ctx); err != nil {
 		t.Fatal(err)
 	}
-	next, err := s.AcquireCollectorSession(ctx)
+	next, err := s.AcquireRuntimeSession(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer next.Close(ctx)
-	if next.Token <= first.Token {
+	defer next.CloseAfterWorkers(ctx)
+	if next.CollectorToken() <= first.CollectorToken() {
 		t.Fatal("fencing token did not advance")
 	}
-	if _, err = s.StartCollectorEpoch(ctx, first.Token); err == nil {
+	if _, err = s.StartCollectorEpoch(ctx, first.CollectorToken()); err == nil {
 		t.Fatal("old instance wrote after replacement")
 	}
 	var ended bool
@@ -65,12 +65,12 @@ func TestBaselineBoundaryRequiresACKFutureTimeAndCurrentIntent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	session, err := s.AcquireCollectorSession(ctx)
+	session, err := s.AcquireRuntimeSession(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer session.Close(ctx)
-	epoch, err := s.StartCollectorEpoch(ctx, session.Token)
+	defer session.CloseAfterWorkers(ctx)
+	epoch, err := s.StartCollectorEpoch(ctx, session.CollectorToken())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestBaselineBoundaryRequiresACKFutureTimeAndCurrentIntent(t *testing.T) {
 			if err := txgate.LockWallet(ctx, tx, address); err != nil {
 				return err
 			}
-			return s.RegisterBaselineTx(ctx, tx, tm.Subscription{ID: id, OwnerID: owner.ID, Wallet: address, Generation: 1, Revision: 1}, session.Token, epoch, tm.WalletObservation{High: 20, Sequence: 5})
+			return s.RegisterBaselineTx(ctx, tx, tm.Subscription{ID: id, OwnerID: owner.ID, Wallet: address, Generation: 1, Revision: 1}, session.CollectorToken(), epoch, tm.WalletObservation{High: 20, Sequence: 5})
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -99,27 +99,27 @@ func TestBaselineBoundaryRequiresACKFutureTimeAndCurrentIntent(t *testing.T) {
 	}
 	attempt := pending[0].ID
 	future := time.Now().Add(300 * time.Millisecond)
-	if err = s.SaveBaselineBoundary(ctx, session.Token, attempt, 1, future); err == nil {
+	if err = s.SaveBaselineBoundary(ctx, session.CollectorToken(), attempt, 1, future); err == nil {
 		t.Fatal("accepted unacknowledged filter")
 	}
-	if err = s.AckFilters(ctx, session.Token, epoch, 1); err != nil {
+	if err = s.AckFilters(ctx, session.CollectorToken(), epoch, 1); err != nil {
 		t.Fatal(err)
 	}
-	if err = s.SaveBaselineBoundary(ctx, session.Token, attempt, 1, time.Now().Add(-time.Second)); err == nil {
+	if err = s.SaveBaselineBoundary(ctx, session.CollectorToken(), attempt, 1, time.Now().Add(-time.Second)); err == nil {
 		t.Fatal("saved expired boundary")
 	}
 	future = time.Now().Add(300 * time.Millisecond)
-	if err = s.SaveBaselineBoundary(ctx, session.Token, attempt, 1, future); err != nil {
+	if err = s.SaveBaselineBoundary(ctx, session.CollectorToken(), attempt, 1, future); err != nil {
 		t.Fatal(err)
 	}
-	if err = s.CompleteBaseline(ctx, session.Token, attempt); err == nil {
+	if err = s.CompleteBaseline(ctx, session.CollectorToken(), attempt); err == nil {
 		t.Fatal("succeeded before boundary")
 	}
 	time.Sleep(time.Until(future) + 10*time.Millisecond)
-	if err = s.CompleteBaseline(ctx, session.Token, attempt); err != nil {
+	if err = s.CompleteBaseline(ctx, session.CollectorToken(), attempt); err != nil {
 		t.Fatal(err)
 	}
-	if err = s.CompleteBaseline(ctx, session.Token, attempt); err != nil {
+	if err = s.CompleteBaseline(ctx, session.CollectorToken(), attempt); err != nil {
 		t.Fatal("idempotent success read failed", err)
 	}
 	var intervals int
@@ -133,7 +133,7 @@ func TestBaselineBoundaryRequiresACKFutureTimeAndCurrentIntent(t *testing.T) {
 		t.Fatal(pending, err)
 	}
 	future = time.Now().Add(100 * time.Millisecond)
-	if err = s.SaveBaselineBoundary(ctx, session.Token, pending[0].ID, 1, future); err != nil {
+	if err = s.SaveBaselineBoundary(ctx, session.CollectorToken(), pending[0].ID, 1, future); err != nil {
 		t.Fatal(err)
 	}
 	err = txgate.WithAccountTx(ctx, db.Pool, owner.ID, func(tx pgx.Tx) error {
@@ -144,7 +144,7 @@ func TestBaselineBoundaryRequiresACKFutureTimeAndCurrentIntent(t *testing.T) {
 		t.Fatal(err)
 	}
 	time.Sleep(time.Until(future) + time.Millisecond)
-	if err = s.CompleteBaseline(ctx, session.Token, pending[0].ID); err == nil {
+	if err = s.CompleteBaseline(ctx, session.CollectorToken(), pending[0].ID); err == nil {
 		t.Fatal("stale revision became healthy")
 	}
 }
@@ -186,10 +186,10 @@ func TestBaselineOwnershipSnapshotSerializesRegistrationAndPreservesNewPending(t
 	}
 	oldSub, oldID := insert(tx, "0x1111111111111111111111111111111111111111")
 	enabledSub, enabledOldID := insert(tx, "0x3333333333333333333333333333333333333333")
-	acquired := make(chan *CollectorSession, 1)
+	acquired := make(chan *RuntimeSession, 1)
 	acquireError := make(chan error, 1)
 	go func() {
-		session, e := s.AcquireCollectorSession(ctx)
+		session, e := s.AcquireRuntimeSession(ctx)
 		if e != nil {
 			acquireError <- e
 		} else {
@@ -198,7 +198,7 @@ func TestBaselineOwnershipSnapshotSerializesRegistrationAndPreservesNewPending(t
 	}()
 	select {
 	case session := <-acquired:
-		session.Close(ctx)
+		session.CloseAfterWorkers(ctx)
 		t.Fatal("ownership passed uncommitted registration control lock")
 	case e := <-acquireError:
 		t.Fatal(e)
@@ -207,7 +207,7 @@ func TestBaselineOwnershipSnapshotSerializesRegistrationAndPreservesNewPending(t
 	if err = tx.Commit(ctx); err != nil {
 		t.Fatal(err)
 	}
-	var session *CollectorSession
+	var session *RuntimeSession
 	select {
 	case session = <-acquired:
 	case e := <-acquireError:
@@ -215,7 +215,7 @@ func TestBaselineOwnershipSnapshotSerializesRegistrationAndPreservesNewPending(t
 	case <-time.After(2 * time.Second):
 		t.Fatal("ownership remained blocked")
 	}
-	defer session.Close(ctx)
+	defer session.CloseAfterWorkers(ctx)
 	var newID string
 	err = txgate.WithAccountTx(ctx, db.Pool, owner.ID, func(tx pgx.Tx) error { _, newID = insert(tx, "0x2222222222222222222222222222222222222222"); return nil })
 	if err != nil {
@@ -253,7 +253,7 @@ func TestBaselineOwnershipSnapshotSerializesRegistrationAndPreservesNewPending(t
 		if e := txgate.LockWallet(ctx, tx, sub.Wallet); e != nil {
 			return e
 		}
-		return s.RegisterBaselineTx(ctx, tx, sub, session.Token, 0, tm.WalletObservation{})
+		return s.RegisterBaselineTx(ctx, tx, sub, session.CollectorToken(), 0, tm.WalletObservation{})
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -301,12 +301,12 @@ func TestBaselineUnknownCommitReadsPersistedSuccessBeforeAnyRetry(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	session, err := s.AcquireCollectorSession(ctx)
+	session, err := s.AcquireRuntimeSession(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer session.Close(ctx)
-	epoch, err := s.StartCollectorEpoch(ctx, session.Token)
+	defer session.CloseAfterWorkers(ctx)
+	epoch, err := s.StartCollectorEpoch(ctx, session.CollectorToken())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -319,7 +319,7 @@ func TestBaselineUnknownCommitReadsPersistedSuccessBeforeAnyRetry(t *testing.T) 
 		if e := txgate.LockWallet(ctx, tx, wallet); e != nil {
 			return e
 		}
-		return s.RegisterBaselineTx(ctx, tx, tm.Subscription{ID: subID, OwnerID: owner.ID, Wallet: wallet, Revision: 1, Generation: 1}, session.Token, epoch, tm.WalletObservation{})
+		return s.RegisterBaselineTx(ctx, tx, tm.Subscription{ID: subID, OwnerID: owner.ID, Wallet: wallet, Revision: 1, Generation: 1}, session.CollectorToken(), epoch, tm.WalletObservation{})
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -327,22 +327,22 @@ func TestBaselineUnknownCommitReadsPersistedSuccessBeforeAnyRetry(t *testing.T) 
 	if err = db.Pool.QueryRow(ctx, `SELECT id FROM trader_sync_baseline_attempts WHERE subscription_id=$1`, subID).Scan(&attempt); err != nil {
 		t.Fatal(err)
 	}
-	if err = s.AckFilters(ctx, session.Token, epoch, 1); err != nil {
+	if err = s.AckFilters(ctx, session.CollectorToken(), epoch, 1); err != nil {
 		t.Fatal(err)
 	}
 	at := time.Now().Add(20 * time.Millisecond)
-	if err = s.SaveBaselineBoundary(ctx, session.Token, attempt, 1, at); err != nil {
+	if err = s.SaveBaselineBoundary(ctx, session.CollectorToken(), attempt, 1, at); err != nil {
 		t.Fatal(err)
 	}
 	time.Sleep(time.Until(at) + time.Millisecond)
 	lost := &baselineCommitReplyLost{Beginner: db.Pool}
-	if err = s.completeBaselineUsing(ctx, lost, session.Token, attempt); err != nil {
+	if err = s.completeBaselineUsing(ctx, lost, session.CollectorToken(), attempt); err != nil {
 		t.Fatal("successful COMMIT treated as failed", err)
 	}
 	if lost.calls != 1 {
 		t.Fatal("test did not lose real COMMIT reply", lost.calls)
 	}
-	if err = s.CompleteBaseline(ctx, session.Token, attempt); err != nil {
+	if err = s.CompleteBaseline(ctx, session.CollectorToken(), attempt); err != nil {
 		t.Fatal(err)
 	}
 	var n int
@@ -355,13 +355,13 @@ func TestBaselineEpochUnknownCommitRecoversDurableActiveEpoch(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
 	ctx := context.Background()
 	s := NewSQLStore(db.Pool)
-	owner, err := s.AcquireCollectorSession(ctx)
+	owner, err := s.AcquireRuntimeSession(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer owner.Close(ctx)
+	defer owner.CloseAfterWorkers(ctx)
 	lost := &baselineCommitReplyLost{Beginner: db.Pool}
-	epoch, err := s.startCollectorEpochUsing(ctx, lost, owner.Token)
+	epoch, err := s.startCollectorEpochUsing(ctx, lost, owner.CollectorToken())
 	if err != nil || epoch == 0 {
 		t.Fatal("committed active epoch stranded after lost reply", epoch, err)
 	}
@@ -375,10 +375,10 @@ func TestBaselineEpochUnknownCommitRecoversDurableActiveEpoch(t *testing.T) {
 	if err = owner.Check(ctx); err != nil {
 		t.Fatal("ownership connection was not independently healthy", err)
 	}
-	if err = s.CloseCollectorEpoch(ctx, owner.Token, epoch, "test recovered startup"); err != nil {
+	if err = s.CloseCollectorEpoch(ctx, owner.CollectorToken(), epoch, "test recovered startup"); err != nil {
 		t.Fatal(err)
 	}
-	next, err := s.StartCollectorEpoch(ctx, owner.Token)
+	next, err := s.StartCollectorEpoch(ctx, owner.CollectorToken())
 	if err != nil || next <= epoch {
 		t.Fatal("same owner could not advance after recovered startup", next, err)
 	}
@@ -388,17 +388,17 @@ func TestBaselineEpochUnknownRollbackCannotBecomeActiveEvidence(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
 	ctx := context.Background()
 	s := NewSQLStore(db.Pool)
-	owner, err := s.AcquireCollectorSession(ctx)
+	owner, err := s.AcquireRuntimeSession(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer owner.Close(ctx)
+	defer owner.CloseAfterWorkers(ctx)
 	lost := &baselineCommitReplyLost{Beginner: db.Pool, rollback: true}
-	epoch, err := s.startCollectorEpochUsing(ctx, lost, owner.Token)
+	epoch, err := s.startCollectorEpochUsing(ctx, lost, owner.CollectorToken())
 	if epoch == 0 || err == nil || !errors.Is(err, ErrCollectorFenced) {
 		t.Fatal("uncommitted epoch adopted as durable active", epoch, err)
 	}
-	next, err := s.StartCollectorEpoch(ctx, owner.Token)
+	next, err := s.StartCollectorEpoch(ctx, owner.CollectorToken())
 	if err != nil || next <= epoch {
 		t.Fatal("rolled-back epoch leaked control state", next, err)
 	}

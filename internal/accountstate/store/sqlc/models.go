@@ -362,6 +362,12 @@ type TraderSyncRequestResult struct {
 	CreatedAt     pgtype.Timestamptz
 }
 
+type TraderSyncRuntimeControl struct {
+	Singleton  bool
+	OwnerID    pgtype.UUID
+	Generation int64
+}
+
 type TraderSyncSourceCandidate struct {
 	SourceRecordID       int64
 	OwnerID              pgtype.UUID

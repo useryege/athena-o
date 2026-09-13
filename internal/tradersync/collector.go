@@ -89,18 +89,18 @@ func (c *Collector) Run(ctx context.Context) error {
 		return errors.New("collector already running")
 	}
 	defer c.running.Store(false)
-	owner, err := c.store.AcquireCollectorSession(ctx)
+	owner, err := c.store.AcquireRuntimeSession(ctx)
 	if err != nil {
 		return err
 	}
 	if err = owner.RecoverPending(ctx); err != nil {
 		closeCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
 		defer stop()
-		return errors.Join(err, owner.Close(closeCtx))
+		return errors.Join(err, owner.CloseAfterWorkers(closeCtx))
 	}
 	runCtx, cancel := context.WithCancel(ctx)
 	c.mu.Lock()
-	c.token = owner.Token
+	c.token = owner.CollectorToken()
 	c.mu.Unlock()
 	fatal := make(chan error, 1)
 	fail := func(err error) {
@@ -135,11 +135,11 @@ func (c *Collector) Run(ctx context.Context) error {
 	}()
 	delay := c.config.ReconnectMin
 	for runCtx.Err() == nil {
-		if err = c.store.CleanupStoppedBaselines(runCtx, owner.Token); err != nil {
+		if err = c.store.CleanupStoppedBaselines(runCtx, owner.CollectorToken()); err != nil {
 			fail(err)
 			break
 		}
-		err = c.runSession(runCtx, owner.Token)
+		err = c.runSession(runCtx, owner.CollectorToken())
 		if errors.Is(err, errCollectorBoundary) {
 			fail(err)
 			break
@@ -164,7 +164,7 @@ func (c *Collector) Run(ctx context.Context) error {
 	cancel()
 	workers.Wait()
 	closeCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
-	closeErr := owner.Close(closeCtx)
+	closeErr := owner.CloseAfterWorkers(closeCtx)
 	stop()
 	c.mu.Lock()
 	c.token = 0

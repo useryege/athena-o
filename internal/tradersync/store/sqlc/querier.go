@@ -19,7 +19,9 @@ type Querier interface {
 	BaselineDatabaseNow(ctx context.Context) (pgtype.Timestamptz, error)
 	BindBaselineEpoch(ctx context.Context, arg BindBaselineEpochParams) (int64, error)
 	ChangeSubscription(ctx context.Context, arg ChangeSubscriptionParams) (TraderSyncSubscription, error)
+	CheckRuntimeWrite(ctx context.Context, arg CheckRuntimeWriteParams) (CheckRuntimeWriteRow, error)
 	ClaimCollectorOwnership(ctx context.Context, ownerID pgtype.UUID) (TraderSyncCollectorControl, error)
+	ClaimRuntimeOwnership(ctx context.Context, ownerID pgtype.UUID) (ClaimRuntimeOwnershipRow, error)
 	ClearCollectorEpoch(ctx context.Context, activeEpoch pgtype.Int8) (int64, error)
 	CloseStoppedEpochIntervals(ctx context.Context, ownerID pgtype.UUID) error
 	CloseSubscriptionIntervals(ctx context.Context, arg CloseSubscriptionIntervalsParams) error
@@ -74,6 +76,7 @@ type Querier interface {
 	LockCollectorControl(ctx context.Context) (TraderSyncCollectorControl, error)
 	LockComboDirectory(ctx context.Context) (LockComboDirectoryRow, error)
 	LockFinalityTiming(ctx context.Context, id int64) ([]byte, error)
+	LockRuntimeControl(ctx context.Context) (LockRuntimeControlRow, error)
 	LockTradeMetadata(ctx context.Context, cacheKey string) error
 	LookupComboPosition(ctx context.Context, positionID string) ([]LookupComboPositionRow, error)
 	MemberBatchActivityExists(ctx context.Context, arg MemberBatchActivityExistsParams) (bool, error)
@@ -111,6 +114,7 @@ type Querier interface {
 	ReadTraderSyncRuntime(ctx context.Context) (ReadTraderSyncRuntimeRow, error)
 	RecordCollectorInterruption(ctx context.Context, id int64) error
 	ReleaseCollectorOwnership(ctx context.Context, fencingToken int64) (int64, error)
+	ReleaseRuntimeOwnership(ctx context.Context, arg ReleaseRuntimeOwnershipParams) (int64, error)
 	RequireTraderSyncAdministrator(ctx context.Context, accountID pgtype.UUID) (bool, error)
 	RequireTraderSyncGrant(ctx context.Context, ownerID pgtype.UUID) (bool, error)
 	RevokeTraderSyncBaselines(ctx context.Context, arg RevokeTraderSyncBaselinesParams) error
