@@ -476,7 +476,7 @@ Projector 的确认/版本/额外资料等待记录实际本轮 monotonic 耗时
 独立公开区间缺失时公开→站内 P95/P99 不可判定。Sender 已解析成功响应的本地返回上界为 ACK 证据，不是 Telegram 服务端或用户设备送达时间。非首次 sender 恢复等待单列为本地恢复进度，仍保留总体排队时延。测试构造、故障与来源限制见[指标与容量验收](../../testing/trader-sync-activity-alerts-acceptance.md)。
 
 
-首次 finality 观测独立保存于 source 的 typed finality_timing，不使用最后 checked_at 回填首次。首次起点紧邻该 Projector 的 ConfirmReceived 调用前，首个 confirmed 终点紧邻真实返回后；首次轮、首次起点至首个完成、首轮结束后的跨重试等待分别聚合，首轮即成功的后者为合法零。分母是 source。它是单个实例连续可证序列，不是并行进程全局最早；Service 同时启动 Collector/Projector，Collector 锁不能证明 Projector 全局独占。
+首次 finality 观测独立保存于 source 的 typed finality_timing，不使用最后 checked_at 回填首次。首次起点紧邻该 Projector 的 ConfirmReceived 调用前，首个 confirmed 终点紧邻真实返回后；首次轮、首次起点至首个完成、首轮结束后的跨重试等待分别聚合，首轮即成功的后者为合法零。分母是 source。它是单个实例连续可证序列，不是跨实例的全局最早；Runtime 在恢复完成后启动 Collector、Projector 和 Directory，整组单活所有权与运行期写入 guard 同时覆盖 Projector，但不把跨实例未完成的首次观测序列拼接为连续证据。
 
 同实例 epoch/mono origin 在反复快照、再次 Run 与 Collector 重连中稳定；新对象换 UUID。启动已提交 max(id) 截点之前的空 timing 保持 unavailable，不把重启后的新调用冒称首次。失败截点或任何未能确认保存的观察使该实例后续未完成序列及等待年龄失效，包括已 waiting 后丢失 confirmed 的情况；跨实例未完成序列不可串联。已完整保存的同 clock 区间仍是历史有效证据，后续版本/资料失败不改写。runtime 仅聚合有限安全标量，明确 not_started/waiting/completed/unavailable 及原因；当前等待年龄只接受匹配且有效的内部 ObservationClock，不拿 UTC 相减补 mono。
 

@@ -95,16 +95,27 @@ func TestRuntimeProcessWatchdogRetainsDatabaseOwnerUntilExit(t *testing.T) {
 }
 
 func TestRuntimeRecoveryServesNotServingBeforePublishingService(t *testing.T) {
-	for _, mode := range []string{"publish", "owner_loss"} {
-		t.Run(mode, func(t *testing.T) {
+	for _, scenario := range []struct{ attemptType, mode string }{
+		{"unbound", "publish"}, {"unbound", "owner_loss"},
+		{"old_epoch", "publish"}, {"old_epoch", "owner_loss"},
+	} {
+		attemptType, mode := scenario.attemptType, scenario.mode
+		t.Run(attemptType+"/"+mode, func(t *testing.T) {
 			db := pgtest.New(t, migrations.FS, migrations.Dir)
 			ctx := context.Background()
 			account, err := accountstore.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
 			require.NoError(t, err)
-			var sub string
+			var epoch any
+			if attemptType == "old_epoch" {
+				var oldEpoch int64
+				require.NoError(t, db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_collector_epochs(fencing_token) VALUES(1) RETURNING id`).Scan(&oldEpoch))
+				_, err = db.Pool.Exec(ctx, `UPDATE trader_sync_collector_control SET fencing_token=1,active_epoch=$1 WHERE singleton`, oldEpoch)
+				require.NoError(t, err)
+				epoch = oldEpoch
+			}
+			var sub, attempt string
 			require.NoError(t, db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,decode(repeat('66',20),'hex'),'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb) RETURNING id`, account.ID).Scan(&sub))
-			_, err = db.Pool.Exec(ctx, `INSERT INTO trader_sync_baseline_attempts(owner_id,subscription_id,activation_generation,expected_revision) VALUES($1,$2,1,1)`, account.ID, sub)
-			require.NoError(t, err)
+			require.NoError(t, db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_baseline_attempts(owner_id,subscription_id,activation_generation,expected_revision,collector_epoch) VALUES($1,$2,1,1,$3) RETURNING id`, account.ID, sub, epoch).Scan(&attempt))
 			blocker, err := txgate.AcquireAccountSession(ctx, db.Pool, account.ID)
 			require.NoError(t, err)
 			defer blocker.Release(ctx)
@@ -130,9 +141,11 @@ func TestRuntimeRecoveryServesNotServingBeforePublishingService(t *testing.T) {
 				_ = r.Shutdown(cleanup)
 			})
 			require.Eventually(t, func() bool {
-				var owned bool
-				err := db.Pool.QueryRow(ctx, `SELECT owner_id IS NOT NULL FROM trader_sync_runtime_control WHERE singleton`).Scan(&owned)
-				return err == nil && owned
+				// Wait for actual database contention, so an asynchronous Collector
+				// cleanup cannot race the assertion and look like startup recovery.
+				var waiting bool
+				err := db.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datid=(SELECT oid FROM pg_database WHERE datname=current_database()) AND $1::int=ANY(pg_blocking_pids(pid)))`, int32(blocker.Conn.Conn().PgConn().PID())).Scan(&waiting)
+				return err == nil && waiting
 			}, time.Second, 10*time.Millisecond)
 			require.False(t, r.Ready())
 			conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -173,7 +186,12 @@ func TestRuntimeRecoveryServesNotServingBeforePublishingService(t *testing.T) {
 				require.Equal(t, codes.Unavailable, status.Code(err), call.method)
 			}
 			if mode == "owner_loss" {
-				_, err = db.Pool.Exec(ctx, `SELECT pg_terminate_backend(pid) FROM pg_locks WHERE locktype='advisory' AND granted AND classid=((hashtextextended('athena:trader-sync:collector',0)>>32)&4294967295)::oid AND objid=(hashtextextended('athena:trader-sync:collector',0)&4294967295)::oid`)
+				otherDB := pgtest.New(t, migrations.FS, migrations.Dir)
+				otherOwner, err := store.NewSQLStore(otherDB.Pool).AcquireRuntimeSession(ctx)
+				require.NoError(t, err)
+				defer otherOwner.CloseAfterWorkers(ctx)
+				require.NoError(t, otherOwner.Check(ctx))
+				_, err = db.Pool.Exec(ctx, `SELECT pg_terminate_backend(pid) FROM pg_locks WHERE locktype='advisory' AND database=(SELECT oid FROM pg_database WHERE datname=current_database()) AND objsubid=1 AND granted AND classid=((hashtextextended('athena:trader-sync:collector',0)>>32)&4294967295)::oid AND objid=(hashtextextended('athena:trader-sync:collector',0)&4294967295)::oid`)
 				require.NoError(t, err)
 				select {
 				case err = <-started:
@@ -182,10 +200,32 @@ func TestRuntimeRecoveryServesNotServingBeforePublishingService(t *testing.T) {
 					t.Fatal("ownership loss left recovery blocked behind the account lock")
 				}
 				require.False(t, r.Ready())
+				var pending bool
+				require.NoError(t, db.Pool.QueryRow(ctx, `SELECT state='pending' AND ended_at IS NULL FROM trader_sync_baseline_attempts WHERE id=$1`, attempt).Scan(&pending))
+				require.True(t, pending, "cancelled recovery must leave the blocked attempt untouched")
+				require.NoError(t, otherOwner.Check(ctx), "owner-loss injection must preserve another database runtime")
 				return
 			}
 			require.NoError(t, blocker.Release(ctx))
-			require.NoError(t, <-started)
+			select {
+			case err = <-started:
+				require.NoError(t, err)
+			case <-time.After(2 * time.Second):
+				t.Fatal("startup did not complete after recovery account lock released")
+			}
+			var state, reason string
+			var ended bool
+			require.NoError(t, db.Pool.QueryRow(ctx, `SELECT state,reason,ended_at IS NOT NULL FROM trader_sync_baseline_attempts WHERE id=$1`, attempt).Scan(&state, &reason, &ended))
+			require.Equal(t, "failed", state)
+			require.True(t, ended)
+			if attemptType == "old_epoch" {
+				require.Equal(t, "collector_replaced", reason)
+				require.NoError(t, db.Pool.QueryRow(ctx, `SELECT observation_state,reason FROM trader_sync_subscriptions WHERE id=$1`, sub).Scan(&state, &reason))
+				require.Equal(t, "interrupted", state)
+				require.Equal(t, "collector_interrupted", reason)
+			} else {
+				require.Equal(t, "observation_ownership_changed", reason)
+			}
 			require.True(t, r.Ready())
 			serving, stopServing := context.WithTimeout(ctx, time.Second)
 			defer stopServing()

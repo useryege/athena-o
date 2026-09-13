@@ -236,7 +236,7 @@ changes. The smoke command itself never starts or stops `make run`; the agent pe
 
 Follow the [project acceptance rule](../../AGENTS.md#本地验收环境准备与完成标准). Required local acceptance includes preparing its environment; connection refusal alone is not a final blocker.
 
-1. Confirm the target repository/worktree and URL. Inspect the process command, working directory and `.run/athena-local-runtime/supervisor.state` where present. Reuse a healthy matching stack. If another worktree or an unrelated process owns the required port, preserve it and investigate the documented configuration; do not kill it or silently test the wrong checkout.
+1. Confirm the target repository/worktree and URL. Inspect `make runtime-status` and `.run/instances/<instance>/state.json`, together with the process command and working directory. Use `.run/athena-local-runtime/supervisor.state` only as evidence for a legacy environment where that file still exists. Reuse a healthy matching stack. If another worktree or an unrelated process owns the required port, preserve it and investigate the documented configuration; do not kill it or silently test the wrong checkout.
 2. If the target stack is absent, select Node and start it **from the target repository**:
 
    ```bash

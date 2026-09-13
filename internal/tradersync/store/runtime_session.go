@@ -184,9 +184,15 @@ func rollbackRuntimeTx(tx pgx.Tx) {
 	_ = tx.Rollback(ctx)
 }
 
-// RecoverPending ends only committed NULL-epoch attempts captured during claim.
-// It runs after ownership commits; new registrations are absent from the snapshot.
+// RecoverPending completes old-epoch account cleanup before ending committed
+// NULL-epoch attempts captured during claim. Runtime calls this guarded recovery
+// barrier after ownership commits and before starting workers or admitting RPCs.
+// Collector also cleans stopped epochs on reconnect; newly registered NULL-epoch
+// attempts are absent from the claim snapshot.
 func (s *RuntimeSession) RecoverPending(ctx context.Context) error {
+	if err := s.store.CleanupStoppedBaselines(ctx, s.collectorToken); err != nil {
+		return err
+	}
 	for _, id := range s.unbound {
 		if err := s.store.abandonUnboundBaseline(ctx, s.collectorToken, id); err != nil {
 			return err
