@@ -4,6 +4,7 @@ import (
 	trpc "github.com/useryege/athena/internal/tradersync/apiclient"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"hash/fnv"
 	"math"
 	"reflect"
 	"strings"
@@ -61,7 +62,9 @@ func fillSentinels(v reflect.Value, path string) {
 		case reflect.Bool:
 			f.SetBool(true)
 		case reflect.Uint64:
-			f.SetUint(math.MaxUint64)
+			h := fnv.New64a()
+			_, _ = h.Write([]byte(p))
+			f.SetUint((uint64(1) << 63) | (h.Sum64() >> 1))
 		case reflect.Int32:
 			f.SetInt(int64(i + 7))
 		case reflect.Pointer:

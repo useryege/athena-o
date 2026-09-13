@@ -312,6 +312,7 @@ func TestTraderSyncGatewayRealCredentialsAndOwnerPrivacy(t *testing.T) {
 	}
 	get("other", base+"?page.page_size=1&page.cursor="+url.QueryEscape(listing.Page.NextCursor), 400)
 	get("member", base+"?page.page_size=2&page.cursor="+url.QueryEscape(listing.Page.NextCursor), 400)
+	get("member", base+"?page.page_size=1&state=paused&page.cursor="+url.QueryEscape(listing.Page.NextCursor), 400)
 	adminRaw := get("admin", "/api/v1/admin/trader-sync/subscriptions/"+subscription, 200)
 	if strings.Contains(string(adminRaw), "private-note") || strings.Contains(string(adminRaw), "targetDisplay") {
 		t.Fatal("administrator received private projection", string(adminRaw))

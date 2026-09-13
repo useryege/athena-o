@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 	"net"
 	"reflect"
+	"sync/atomic"
 	"testing"
 )
 
@@ -20,12 +21,14 @@ var facadeActor = &trpc.Actor{AccountId: "11111111-1111-4111-8111-111111111111",
 
 type recordingInternal struct {
 	trpc.UnimplementedTraderSyncServiceServer
+	calls    atomic.Int32
 	request  any
 	response any
 	err      error
 }
 
 func (s *recordingInternal) ResolveTarget(ctx context.Context, r *trpc.ResolveTargetRequest) (*trpc.ResolveTargetResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err
@@ -33,6 +36,7 @@ func (s *recordingInternal) ResolveTarget(ctx context.Context, r *trpc.ResolveTa
 	return s.response.(*trpc.ResolveTargetResponse), nil
 }
 func (s *recordingInternal) CreateSubscription(ctx context.Context, r *trpc.CreateSubscriptionRequest) (*trpc.CreateSubscriptionResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err
@@ -40,6 +44,7 @@ func (s *recordingInternal) CreateSubscription(ctx context.Context, r *trpc.Crea
 	return s.response.(*trpc.CreateSubscriptionResponse), nil
 }
 func (s *recordingInternal) ListSubscriptions(ctx context.Context, r *trpc.ListSubscriptionsRequest) (*trpc.ListSubscriptionsResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err
@@ -47,6 +52,7 @@ func (s *recordingInternal) ListSubscriptions(ctx context.Context, r *trpc.ListS
 	return s.response.(*trpc.ListSubscriptionsResponse), nil
 }
 func (s *recordingInternal) GetSubscription(ctx context.Context, r *trpc.GetSubscriptionRequest) (*trpc.GetSubscriptionResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err
@@ -54,6 +60,7 @@ func (s *recordingInternal) GetSubscription(ctx context.Context, r *trpc.GetSubs
 	return s.response.(*trpc.GetSubscriptionResponse), nil
 }
 func (s *recordingInternal) PauseSubscription(ctx context.Context, r *trpc.PauseSubscriptionRequest) (*trpc.PauseSubscriptionResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err
@@ -61,6 +68,7 @@ func (s *recordingInternal) PauseSubscription(ctx context.Context, r *trpc.Pause
 	return s.response.(*trpc.PauseSubscriptionResponse), nil
 }
 func (s *recordingInternal) ResumeSubscription(ctx context.Context, r *trpc.ResumeSubscriptionRequest) (*trpc.ResumeSubscriptionResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err
@@ -68,6 +76,7 @@ func (s *recordingInternal) ResumeSubscription(ctx context.Context, r *trpc.Resu
 	return s.response.(*trpc.ResumeSubscriptionResponse), nil
 }
 func (s *recordingInternal) CancelSubscription(ctx context.Context, r *trpc.CancelSubscriptionRequest) (*trpc.CancelSubscriptionResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err
@@ -75,6 +84,7 @@ func (s *recordingInternal) CancelSubscription(ctx context.Context, r *trpc.Canc
 	return s.response.(*trpc.CancelSubscriptionResponse), nil
 }
 func (s *recordingInternal) UpdateTargetNote(ctx context.Context, r *trpc.UpdateTargetNoteRequest) (*trpc.UpdateTargetNoteResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err
@@ -82,6 +92,7 @@ func (s *recordingInternal) UpdateTargetNote(ctx context.Context, r *trpc.Update
 	return s.response.(*trpc.UpdateTargetNoteResponse), nil
 }
 func (s *recordingInternal) ListActivities(ctx context.Context, r *trpc.ListActivitiesRequest) (*trpc.ListActivitiesResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err
@@ -89,6 +100,7 @@ func (s *recordingInternal) ListActivities(ctx context.Context, r *trpc.ListActi
 	return s.response.(*trpc.ListActivitiesResponse), nil
 }
 func (s *recordingInternal) GetActivity(ctx context.Context, r *trpc.GetActivityRequest) (*trpc.GetActivityResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err
@@ -96,6 +108,7 @@ func (s *recordingInternal) GetActivity(ctx context.Context, r *trpc.GetActivity
 	return s.response.(*trpc.GetActivityResponse), nil
 }
 func (s *recordingInternal) ListSubscriptionHistory(ctx context.Context, r *trpc.ListSubscriptionHistoryRequest) (*trpc.ListSubscriptionHistoryResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err
@@ -103,6 +116,7 @@ func (s *recordingInternal) ListSubscriptionHistory(ctx context.Context, r *trpc
 	return s.response.(*trpc.ListSubscriptionHistoryResponse), nil
 }
 func (s *recordingInternal) GetSummaryBatch(ctx context.Context, r *trpc.GetSummaryBatchRequest) (*trpc.GetSummaryBatchResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err
@@ -110,6 +124,7 @@ func (s *recordingInternal) GetSummaryBatch(ctx context.Context, r *trpc.GetSumm
 	return s.response.(*trpc.GetSummaryBatchResponse), nil
 }
 func (s *recordingInternal) ListSummaryParts(ctx context.Context, r *trpc.ListSummaryPartsRequest) (*trpc.ListSummaryPartsResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err
@@ -117,6 +132,7 @@ func (s *recordingInternal) ListSummaryParts(ctx context.Context, r *trpc.ListSu
 	return s.response.(*trpc.ListSummaryPartsResponse), nil
 }
 func (s *recordingInternal) ListSubscriptionSummaries(ctx context.Context, r *trpc.ListSubscriptionSummariesRequest) (*trpc.ListSubscriptionSummariesResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err
@@ -124,6 +140,7 @@ func (s *recordingInternal) ListSubscriptionSummaries(ctx context.Context, r *tr
 	return s.response.(*trpc.ListSubscriptionSummariesResponse), nil
 }
 func (s *recordingInternal) GetSubscriptionSummary(ctx context.Context, r *trpc.GetSubscriptionSummaryRequest) (*trpc.GetSubscriptionSummaryResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err
@@ -131,6 +148,7 @@ func (s *recordingInternal) GetSubscriptionSummary(ctx context.Context, r *trpc.
 	return s.response.(*trpc.GetSubscriptionSummaryResponse), nil
 }
 func (s *recordingInternal) GetTraderSyncRuntimeStatus(ctx context.Context, r *trpc.GetTraderSyncRuntimeStatusRequest) (*trpc.GetTraderSyncRuntimeStatusResponse, error) {
+	s.calls.Add(1)
 	s.request = r
 	if s.err != nil {
 		return nil, s.err

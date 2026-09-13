@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/test/bufconn"
 	"net"
+	"sync/atomic"
 	"testing"
 )
 
@@ -19,10 +20,20 @@ func newInternalFacade(t *testing.T, service *ts.Service, actors facade.ActorRes
 	t.Helper()
 	const token = "acceptance-internal-token-0123456789"
 	listener := bufconn.Listen(1024 * 1024)
-	server := grpc.NewServer(grpc.UnaryInterceptor(transport.NewUnaryInterceptor(token, func() bool { return true })))
+	var calls atomic.Uint64
+	server := grpc.NewServer(grpc.ChainUnaryInterceptor(transport.NewUnaryInterceptor(token, func() bool { return true }), func(ctx context.Context, request any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		calls.Add(1)
+		return handler(ctx, request)
+	}))
 	trpc.RegisterTraderSyncServiceServer(server, transport.NewServer(service))
 	go server.Serve(listener)
-	t.Cleanup(server.Stop)
+	t.Cleanup(func() {
+		server.Stop()
+		if calls.Load() == 0 {
+			t.Error("acceptance facade bypassed the authenticated internal gRPC handler")
+		}
+		t.Logf("acceptance authenticated internal gRPC handler calls: %d", calls.Load())
+	})
 	conn, err := grpc.DialContext(context.Background(), "passthrough:///internal", grpc.WithInsecure(), grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return listener.Dial() }), grpc.WithUnaryInterceptor(func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoke grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		return invoke(metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token), method, req, reply, cc, opts...)
 	}))
