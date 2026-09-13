@@ -1,6 +1,6 @@
 //go:build linux
 
-// athena-local-runtime is a local resource owner, not a business-service host.
+// athena-local-runtime is a foreground local resource owner.
 package main
 
 import (
@@ -9,25 +9,90 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/useryege/athena/internal/devruntime"
 	"io"
 	"os"
+	"os/signal"
+	"strings"
+	"syscall"
 	"time"
-
-	"github.com/useryege/athena/internal/devruntime"
 )
 
+func makeArguments(action string) ([]string, error) {
+	service := os.Getenv("SERVICE")
+	services := os.Getenv("SERVICES")
+	instance := os.Getenv("INSTANCE")
+	mode := os.Getenv("DB_MODE")
+	if mode == "" {
+		mode = "managed"
+	}
+	file := os.Getenv("ENV_FILE")
+	if file == "" {
+		file = ".env"
+	}
+	target := ""
+	switch action {
+	case "make-build":
+		target = "build"
+		services = service
+		if instance == "" {
+			instance = service
+		}
+	case "make-run-service":
+		target = "run"
+		services = service
+		if instance == "" {
+			instance = service
+		}
+	case "make-run-services":
+		target = "run"
+	case "make-status":
+		target = "status"
+	case "make-stop":
+		target = "stop"
+	case "make-reset":
+		target = "reset"
+	case "make-seed":
+		target = "seed"
+		services = service
+	default:
+		return nil, errors.New("unknown Make runtime action")
+	}
+	if instance == "" {
+		return nil, errors.New("INSTANCE is required for this command")
+	}
+	if target == "build" || target == "run" || target == "seed" {
+		if _, e := devruntime.ResolveServices(strings.Fields(services)); e != nil {
+			return nil, e
+		}
+		return []string{target, "--services", services, "--instance", instance, "--env-file", file, "--db-mode", mode}, nil
+	}
+	return []string{target, "--instance", instance}, nil
+}
 func run(args []string, out io.Writer) error {
 	if len(args) == 0 {
-		return errors.New("usage: athena-local-runtime <status|stop|reset> --instance NAME [--checkout PATH]")
+		return errors.New("usage: athena-local-runtime <build|run|status|stop|reset|seed> --instance NAME")
+	}
+	if strings.HasPrefix(args[0], "make-") {
+		converted, e := makeArguments(args[0])
+		if e != nil {
+			return e
+		}
+		args = converted
 	}
 	action := args[0]
-	if action != "status" && action != "stop" && action != "reset" {
+	switch action {
+	case "build", "run", "supervise", "status", "stop", "reset", "seed":
+	default:
 		return fmt.Errorf("unknown runtime command %q", action)
 	}
 	flags := flag.NewFlagSet(action, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	checkout := flags.String("checkout", ".", "checkout directory")
 	name := flags.String("instance", "", "instance name")
+	services := flags.String("services", "", "space separated explicit service names")
+	mode := flags.String("db-mode", "managed", "managed or external")
+	file := flags.String("env-file", ".env", "dotenv configuration file")
 	if e := flags.Parse(args[1:]); e != nil {
 		return e
 	}
@@ -41,12 +106,39 @@ func run(args []string, out io.Writer) error {
 	if e != nil {
 		return e
 	}
-	m := devruntime.NewManager(key)
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	switch action {
+	case "build":
+		return devruntime.Build(ctx, key, strings.Fields(*services))
+	case "run":
+		if _, e = devruntime.ResolveServices(strings.Fields(*services)); e != nil {
+			return e
+		}
+		self, e := os.Executable()
+		if e != nil {
+			return e
+		}
+		immutable, e := devruntime.ImmutableExecutable(key, self)
+		if e != nil {
+			return e
+		}
+		childArgs := append([]string{immutable, "supervise"}, args[1:]...)
+		env := os.Environ()
+		for i := len(env) - 1; i >= 0; i-- {
+			if strings.HasPrefix(env[i], devruntime.RunIDEnv+"=") {
+				env = append(env[:i], env[i+1:]...)
+			}
+		}
+		env = append(env, devruntime.RunIDEnv+"="+devruntime.NewRunID())
+		if e = syscall.Setpgid(0, 0); e != nil {
+			return e
+		}
+		return syscall.Exec(immutable, childArgs, env)
+	case "supervise":
+		return devruntime.Run(ctx, devruntime.RunOptions{Key: key, Services: strings.Fields(*services), DBMode: *mode, EnvFile: *file})
 	case "status":
-		s, e := m.Status()
+		s, e := devruntime.Status(ctx, key)
 		if e != nil {
 			return e
 		}
@@ -54,9 +146,21 @@ func run(args []string, out io.Writer) error {
 		encoder.SetIndent("", "  ")
 		return encoder.Encode(s)
 	case "stop":
-		return m.Stop(ctx)
+		bounded, c := context.WithTimeout(ctx, 2*time.Minute)
+		defer c()
+		return devruntime.Stop(bounded, key)
 	case "reset":
-		return m.Reset(ctx)
+		bounded, c := context.WithTimeout(ctx, 2*time.Minute)
+		defer c()
+		return devruntime.Reset(bounded, key)
+	case "seed":
+		names := strings.Fields(*services)
+		if len(names) != 1 {
+			return errors.New("seed requires one service")
+		}
+		bounded, c := context.WithTimeout(ctx, 2*time.Minute)
+		defer c()
+		return devruntime.Seed(bounded, key, names[0])
 	}
 	return nil
 }

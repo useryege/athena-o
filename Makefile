@@ -413,3 +413,24 @@ account-state-migrate-build:
 account-state-schema-contract:
 	go run ./tools/account-state-schema-contract > internal/accountstate/schema/contract.json.tmp
 	mv internal/accountstate/schema/contract.json.tmp internal/accountstate/schema/contract.json
+
+# Values are exported as data, never interpolated into a shell recipe.
+export SERVICE SERVICES INSTANCE DB_MODE ENV_FILE
+.PHONY: build-service run-service run-services runtime-status stop-instance reset-instance seed-service account-state-migrate
+build-service:
+	go run ./cmd/athena-local-runtime make-build
+run-service:
+	go run ./cmd/athena-local-runtime make-run-service
+run-services:
+	go run ./cmd/athena-local-runtime make-run-services
+runtime-status:
+	go run ./cmd/athena-local-runtime make-status
+stop-instance:
+	go run ./cmd/athena-local-runtime make-stop
+reset-instance:
+	go run ./cmd/athena-local-runtime make-reset
+seed-service:
+	go run ./cmd/athena-local-runtime make-seed
+account-state-migrate:
+	go run ./cmd/athena-account-state-migrate up --timeout=120s
+	go run ./cmd/athena-account-state-migrate verify --timeout=120s

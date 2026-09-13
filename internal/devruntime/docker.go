@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"sort"
 	"strings"
@@ -15,7 +16,9 @@ type Docker struct{ Exec CommandExecutor }
 
 func command(ctx context.Context, name string, args ...string) ([]byte, error) {
 	// Do not return stderr: daemon diagnostics can echo configuration secrets.
-	b, e := exec.CommandContext(ctx, name, args...).Output()
+	cmd := exec.CommandContext(ctx, name, args...)
+	cmd.Env = EnvironmentFor(environmentMap(os.Environ()), keys(toolEnvironment, []string{"DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_CONFIG", "DOCKER_CERT_PATH", "DOCKER_TLS_VERIFY", "XDG_RUNTIME_DIR", "SSH_AUTH_SOCK"}))
+	b, e := cmd.Output()
 	if e != nil {
 		return nil, fmt.Errorf("%s command failed: %w", name, e)
 	}

@@ -45,6 +45,7 @@ type State struct {
 	Intents                               []CreationIntent
 	Services                              []string
 	Logs, Endpoints                       map[string]string
+	Health                                map[string]string
 	ExitCodes                             map[string]int
 	BuildFingerprints, ConfigFingerprints map[string]string
 	InitializationMode                    string
