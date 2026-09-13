@@ -277,7 +277,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) (*AthenaServer, error
 		}
 	}()
 	traderSyncStore := tradersyncstore.NewSQLStore(accountStateStore.Pool())
-	accountStateStore.SetAccessChangeHook(traderSyncStore.ApplyAccessChangeTx)
+	accountStateStore.SetAccessChangeHook(tradersyncstore.NewAccessRevocationAdapter().ApplyAccessChangeTx)
 	if initErr := accountStateStore.RequireAccessChangeHook(); initErr != nil {
 		return nil, initErr
 	}

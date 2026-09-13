@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -48,7 +49,7 @@ func (g *RuntimeWriteGate) BeginTx(ctx context.Context, options pgx.TxOptions) (
 		_ = tx.Rollback(cleanupCtx)
 		return nil, err
 	}
-	return tx, nil
+	return runtimeWriteTx{Tx: tx}, nil
 }
 
 // CheckTx must run before account, wallet, source, or collector locks. It is for
@@ -67,4 +68,13 @@ func (g *RuntimeWriteGate) CheckTx(ctx context.Context, tx pgx.Tx) error {
 		return errors.Join(ErrRuntimeFenced, fmt.Errorf("check runtime write: %w", err))
 	}
 	return nil
+}
+
+// Bound rollback even when a shared transaction helper supplies Background.
+type runtimeWriteTx struct{ pgx.Tx }
+
+func (tx runtimeWriteTx) Rollback(ctx context.Context) error {
+	cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second)
+	defer cancel()
+	return tx.Tx.Rollback(cleanup)
 }

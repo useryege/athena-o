@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/useryege/athena/internal/accountstate/txgate"
 	"github.com/useryege/athena/internal/tradersync/store"
 	tsmodel "github.com/useryege/athena/internal/tradersync/types"
@@ -23,18 +22,19 @@ import (
 type GrantCheck func(context.Context, pgx.Tx, string) error
 type ResolveContextTx func(context.Context, pgx.Tx, string, common.Address) (tsmodel.ResolutionContext, error)
 type TargetResolver struct {
-	pool           *pgxpool.Pool
+	transactions   txgate.Beginner
 	profiles       *polymarket.ProfileAdapter
 	store          *store.SQLStore
 	grant          GrantCheck
 	resolveContext ResolveContextTx
 }
 
-func NewTargetResolver(pool *pgxpool.Pool, profiles *polymarket.ProfileAdapter, grant GrantCheck, resolveContext ResolveContextTx) (*TargetResolver, error) {
-	if pool == nil || profiles == nil || grant == nil || resolveContext == nil {
-		return nil, fmt.Errorf("pool, profile adapter, grant check and owner context resolver are required")
+func NewTargetResolver(transactions txgate.Beginner, profiles *polymarket.ProfileAdapter, grant GrantCheck, resolveContext ResolveContextTx) (*TargetResolver, error) {
+	if transactions == nil || profiles == nil || grant == nil || resolveContext == nil {
+		return nil, fmt.Errorf("transaction beginner, profile adapter, grant check and owner context resolver are required")
 	}
-	return &TargetResolver{pool: pool, profiles: profiles, store: store.NewSQLStore(pool), grant: grant, resolveContext: resolveContext}, nil
+	// Confirmation helpers borrow the guarded transaction; they never use a pool.
+	return &TargetResolver{transactions: transactions, profiles: profiles, store: store.NewSQLStore(nil), grant: grant, resolveContext: resolveContext}, nil
 }
 
 func identityFromProfile(p polymarket.ProfileIdentity) tsmodel.Identity {
@@ -81,7 +81,7 @@ func (r *TargetResolver) Resolve(ctx context.Context, ownerID, input string) (ts
 		return result, e
 	}
 	digest := sha256.Sum256(token)
-	e = txgate.WithAccountTx(ctx, r.pool, ownerID, func(tx pgx.Tx) error {
+	e = txgate.WithAccountTx(ctx, r.transactions, ownerID, func(tx pgx.Tx) error {
 		if e := r.grant(ctx, tx, ownerID); e != nil {
 			return e
 		}

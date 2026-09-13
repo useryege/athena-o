@@ -194,6 +194,7 @@ func TestRuntimeStaleCloseCannotClearSuccessorOnLiveConnection(t *testing.T) {
 	b, err := s.AcquireRuntimeSession(ctx)
 	require.NoError(t, err)
 	defer b.CloseAfterWorkers(ctx)
+	s = bindTestRuntime(t, s, b)
 	epoch, err := s.StartCollectorEpoch(ctx, b.CollectorToken())
 	require.NoError(t, err)
 	require.ErrorIs(t, a.CloseAfterWorkers(ctx), ErrRuntimeFenced)

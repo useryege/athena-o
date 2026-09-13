@@ -141,7 +141,7 @@ func (s *SQLStore) withBaselineUsing(ctx context.Context, beginner txgate.Beginn
 	if err != nil {
 		return err
 	}
-	return txgate.WithAccountTx(ctx, beginner, uuid.UUID(initial.OwnerID.Bytes).String(), func(tx pgx.Tx) error {
+	return txgate.WithAccountTx(ctx, s.runtimeTransactions(beginner), uuid.UUID(initial.OwnerID.Bytes).String(), func(tx pgx.Tx) error {
 		queries := q.New(tx)
 		row, err := queries.GetBaselineAttempt(ctx, attemptID)
 		if err != nil {
@@ -233,7 +233,12 @@ func (s *SQLStore) completeBaselineUsing(ctx context.Context, beginner txgate.Be
 		if row.State != "succeeded" {
 			return false, nil
 		}
-		return q.New(s.pool).HasBaselineInterval(readCtx, parsed)
+		tx, e := s.BeginTx(readCtx, pgx.TxOptions{})
+		if e != nil {
+			return false, e
+		}
+		defer rollbackRuntimeTx(tx)
+		return q.New(tx).HasBaselineInterval(readCtx, parsed)
 	}
 	if done, err := successful(ctx); err != nil || done {
 		return err
@@ -289,7 +294,7 @@ func (s *SQLStore) CleanupStoppedBaselines(ctx context.Context, token uint64) er
 		return err
 	}
 	for _, owner := range owners {
-		if err = txgate.WithAccountTx(ctx, s.pool, uuid.UUID(owner.Bytes).String(), func(tx pgx.Tx) error {
+		if err = txgate.WithAccountTx(ctx, s, uuid.UUID(owner.Bytes).String(), func(tx pgx.Tx) error {
 			queries := q.New(tx)
 			if err := checkCollectorFence(ctx, queries, token, 0); err != nil {
 				return err
@@ -311,7 +316,7 @@ func (s *SQLStore) CleanupStoppedBaselines(ctx context.Context, token uint64) er
 // RegisterNeededBaseline rechecks the live intent inside the same account TX as
 // the Registrar. That callback takes wallet before capturing the receive cutoff.
 func (s *SQLStore) RegisterNeededBaseline(ctx context.Context, expected tm.Subscription, register func(context.Context, pgx.Tx, tm.Subscription) error) error {
-	return txgate.WithAccountTx(ctx, s.pool, expected.OwnerID, func(tx pgx.Tx) error {
+	return txgate.WithAccountTx(ctx, s, expected.OwnerID, func(tx pgx.Tx) error {
 		id, err := confirmationOwner(expected.ID)
 		if err != nil {
 			return err
@@ -336,7 +341,7 @@ func (s *SQLStore) abandonUnboundBaseline(ctx context.Context, token uint64, id 
 	if err != nil {
 		return err
 	}
-	return txgate.WithAccountTx(ctx, s.pool, uuid.UUID(initial.OwnerID.Bytes).String(), func(tx pgx.Tx) error {
+	return txgate.WithAccountTx(ctx, s, uuid.UUID(initial.OwnerID.Bytes).String(), func(tx pgx.Tx) error {
 		queries := q.New(tx)
 		sub, err := queries.GetBaselineSubscription(ctx, initial.SubscriptionID)
 		if err != nil {
@@ -396,7 +401,7 @@ func (s *SQLStore) SaveObservationCheckpoint(ctx context.Context, target tm.Chec
 	if e != nil {
 		return e
 	}
-	return txgate.WithAccountTx(ctx, s.pool, target.OwnerID, func(tx pgx.Tx) error {
+	return txgate.WithAccountTx(ctx, s, target.OwnerID, func(tx pgx.Tx) error {
 		if !valid() {
 			return ErrCheckpointStale
 		}

@@ -35,6 +35,7 @@ type CollectorRPC interface {
 // into SubscriptionService and owns Run's cancellation/join. The RPC is borrowed.
 type Collector struct {
 	store              *store.SQLStore
+	runtimeStore       *store.SQLStore
 	node               CollectorRPC
 	config             Config
 	running            atomic.Bool
@@ -93,6 +94,14 @@ func (c *Collector) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	// The existing owner supplies every collector write; lifecycle moves to the
+	// process runtime when the standalone composition root is installed.
+	c.runtimeStore, err = c.store.WithRuntime(owner.RuntimeToken())
+	if err != nil {
+		closeCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
+		defer stop()
+		return errors.Join(err, owner.CloseAfterWorkers(closeCtx))
+	}
 	if err = owner.RecoverPending(ctx); err != nil {
 		closeCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
 		defer stop()
@@ -135,7 +144,7 @@ func (c *Collector) Run(ctx context.Context) error {
 	}()
 	delay := c.config.ReconnectMin
 	for runCtx.Err() == nil {
-		if err = c.store.CleanupStoppedBaselines(runCtx, owner.CollectorToken()); err != nil {
+		if err = c.runtimeStore.CleanupStoppedBaselines(runCtx, owner.CollectorToken()); err != nil {
 			fail(err)
 			break
 		}
@@ -189,7 +198,7 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 	if err != nil {
 		return err
 	}
-	epoch, err := c.store.StartCollectorEpoch(ctx, token)
+	epoch, err := c.runtimeStore.StartCollectorEpoch(ctx, token)
 	if err != nil {
 		session.Close()
 		return fmt.Errorf("%w: start epoch: %w", errCollectorBoundary, err)
@@ -204,7 +213,7 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 	c.checkpointAfter = ""
 	c.rawPersistInFlight = false
 	c.mu.Unlock()
-	intake := NewIntake(c.store, token)
+	intake := NewIntake(c.runtimeStore, token)
 	receivedErr := make(chan error, 1)
 	healthErr := make(chan error, 1)
 	wssErr := make(chan error, 1)
@@ -269,7 +278,7 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 				head, err := c.node.HeaderByNumber(requestCtx, nil)
 				if err == nil {
 					var now time.Time
-					now, err = c.store.BaselineNow(requestCtx)
+					now, err = c.runtimeStore.BaselineNow(requestCtx)
 					if err == nil {
 						_, err = ComputeBaseline(now, 0, head)
 					}
@@ -328,10 +337,10 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 		if result != nil && !(errors.Is(result, context.Canceled) && ctx.Err() != nil) {
 			reason = "receive_interrupted: " + result.Error()
 		}
-		if closeErr := c.store.CloseCollectorEpoch(closeCtx, token, epoch, reason); closeErr != nil {
+		if closeErr := c.runtimeStore.CloseCollectorEpoch(closeCtx, token, epoch, reason); closeErr != nil {
 			result = errors.Join(result, fmt.Errorf("%w: %w", errCollectorBoundary, closeErr))
 		}
-		result = errors.Join(result, c.store.CleanupStoppedBaselines(closeCtx, token))
+		result = errors.Join(result, c.runtimeStore.CleanupStoppedBaselines(closeCtx, token))
 	}()
 	reconcile := time.NewTicker(250 * time.Millisecond)
 	defer reconcile.Stop()
@@ -357,28 +366,28 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 	}
 }
 func (c *Collector) reconcile(ctx context.Context, token, epoch uint64, session *liverpc.Session, active *[]common.Address, filters *[]string, revision *uint64) error {
-	needed, err := c.store.SubscriptionsNeedingBaseline(ctx)
+	needed, err := c.runtimeStore.SubscriptionsNeedingBaseline(ctx)
 	if err != nil {
 		return err
 	}
 	for _, sub := range needed {
-		if err = c.store.RegisterNeededBaseline(ctx, sub, c.RegisterTx); err != nil && !errors.Is(err, store.ErrBaselineChanged) {
+		if err = c.runtimeStore.RegisterNeededBaseline(ctx, sub, c.RegisterTx); err != nil && !errors.Is(err, store.ErrBaselineChanged) {
 			return err
 		}
 	}
-	pending, err := c.store.PendingBaselines(ctx)
+	pending, err := c.runtimeStore.PendingBaselines(ctx)
 	if err != nil {
 		return err
 	}
 	for _, attempt := range pending {
 		if attempt.Epoch == 0 {
 			wallet := attempt.Subscription.Wallet
-			if err = c.store.BindBaseline(ctx, token, attempt.ID, epoch, func() tm.WalletObservation { return session.Snapshot(wallet) }); err != nil && !errors.Is(err, store.ErrBaselineChanged) {
+			if err = c.runtimeStore.BindBaseline(ctx, token, attempt.ID, epoch, func() tm.WalletObservation { return session.Snapshot(wallet) }); err != nil && !errors.Is(err, store.ErrBaselineChanged) {
 				return err
 			}
 		}
 	}
-	targets, err := c.store.CollectorTargets(ctx)
+	targets, err := c.runtimeStore.CollectorTargets(ctx)
 	if err != nil {
 		return err
 	}
@@ -399,7 +408,7 @@ func (c *Collector) reconcile(ctx context.Context, token, epoch uint64, session 
 		}
 		if !replacementFailed {
 			next := *revision + 1
-			if err = c.store.AckFilters(ctx, token, epoch, next); err != nil {
+			if err = c.runtimeStore.AckFilters(ctx, token, epoch, next); err != nil {
 				return err
 			}
 			acknowledgedAt := time.Now()
@@ -419,7 +428,7 @@ func (c *Collector) reconcile(ctx context.Context, token, epoch uint64, session 
 			}
 		}
 	}
-	pending, err = c.store.PendingBaselines(ctx)
+	pending, err = c.runtimeStore.PendingBaselines(ctx)
 	if err != nil {
 		return err
 	}
@@ -442,7 +451,7 @@ func (c *Collector) reconcile(ctx context.Context, token, epoch uint64, session 
 				continue
 			}
 			requestCtx, stop := context.WithTimeout(ctx, 5*time.Second)
-			now, e := c.store.BaselineNow(requestCtx)
+			now, e := c.runtimeStore.BaselineNow(requestCtx)
 			if e != nil {
 				stop()
 				return e
@@ -451,18 +460,18 @@ func (c *Collector) reconcile(ctx context.Context, token, epoch uint64, session 
 			if e != nil {
 				stop()
 				c.report(e)
-				if e = c.store.FailBaseline(ctx, token, attempt.ID, "baseline_head_invalid"); e != nil && !errors.Is(e, store.ErrBaselineChanged) {
+				if e = c.runtimeStore.FailBaseline(ctx, token, attempt.ID, "baseline_head_invalid"); e != nil && !errors.Is(e, store.ErrBaselineChanged) {
 					return e
 				}
 				continue
 			}
-			e = c.store.SaveBaselineBoundary(requestCtx, token, attempt.ID, *revision, at)
+			e = c.runtimeStore.SaveBaselineBoundary(requestCtx, token, attempt.ID, *revision, at)
 			stop()
 			if e != nil && !errors.Is(e, store.ErrBaselineChanged) {
 				return e
 			}
 		} else if !time.Now().Before(*attempt.CandidateAt) {
-			if e := c.store.CompleteBaseline(ctx, token, attempt.ID); e != nil && !errors.Is(e, store.ErrBaselineChanged) {
+			if e := c.runtimeStore.CompleteBaseline(ctx, token, attempt.ID); e != nil && !errors.Is(e, store.ErrBaselineChanged) {
 				return e
 			}
 		}
@@ -556,9 +565,9 @@ func (c *Collector) persistHealthCheckpoints(ctx context.Context, token, epoch u
 	}
 	passCtx, stop := context.WithTimeout(ctx, 5*time.Second)
 	defer stop()
-	rows, err := c.store.CheckpointIntervals(passCtx, epoch, after, 100)
+	rows, err := c.runtimeStore.CheckpointIntervals(passCtx, epoch, after, 100)
 	if err == nil && len(rows) == 0 && after != "" {
-		rows, err = c.store.CheckpointIntervals(passCtx, epoch, "", 100)
+		rows, err = c.runtimeStore.CheckpointIntervals(passCtx, epoch, "", 100)
 	}
 	if err != nil {
 		if ctx.Err() == nil {
@@ -580,7 +589,7 @@ func (c *Collector) persistHealthCheckpoints(ctx context.Context, token, epoch u
 			c.checkpointAfter = target.ID
 		}
 		c.mu.Unlock()
-		if err = c.store.SaveObservationCheckpoint(passCtx, target, evidence, alive); err != nil {
+		if err = c.runtimeStore.SaveObservationCheckpoint(passCtx, target, evidence, alive); err != nil {
 			if errors.Is(err, store.ErrCollectorFenced) {
 				return err
 			}

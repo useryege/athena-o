@@ -29,7 +29,7 @@ func TestTimingUTCAnomalyDenominators(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	if e = s.ConfigureActivities("https://athena.test"); e != nil {
 		t.Fatal(e)
 	}
@@ -107,7 +107,7 @@ func TestFinalityObservationPersistence(t *testing.T) {
 		t.Fatal(e)
 	}
 	source := activityFixture(t, db.Pool, owner.ID, 3001).Candidate.SourceID
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	cutoff, e := s.FinalityObservationCutoff(ctx)
 	if e != nil {
 		t.Fatal(e)

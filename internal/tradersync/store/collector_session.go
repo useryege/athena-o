@@ -23,8 +23,9 @@ func boundedCollectorValue(value uint64) (int64, error) {
 	return int64(value), nil
 }
 
-// Fence is always last: account -> wallet -> control, or wallet -> control.
-// Ownership changes commit under control alone before any per-account cleanup.
+// Inside the runtime share lock, the collector fence remains last:
+// account -> wallet -> control, or wallet -> control. Ownership changes commit
+// under runtime -> control before any per-account cleanup.
 func checkCollectorFence(ctx context.Context, queries *q.Queries, token, epoch uint64) error {
 	if token == 0 {
 		return ErrCollectorFenced
@@ -62,11 +63,11 @@ func (s *SQLStore) collectorTx(ctx context.Context, token, epoch uint64, fn func
 	return s.collectorTxUsing(ctx, s.pool, token, epoch, fn)
 }
 func (s *SQLStore) collectorTxUsing(ctx context.Context, beginner txgate.Beginner, token, epoch uint64, fn func(*q.Queries) error) error {
-	tx, err := beginner.BeginTx(ctx, pgx.TxOptions{})
+	tx, err := s.runtimeTransactions(beginner).BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(context.Background())
+	defer rollbackRuntimeTx(tx)
 	queries := q.New(tx)
 	if err = checkCollectorFence(ctx, queries, token, epoch); err != nil {
 		return err

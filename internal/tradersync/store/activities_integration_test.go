@@ -70,7 +70,7 @@ func TestActivityProjectPersistsAndDoesNotReplanDuplicate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	if err = s.ConfigureActivities("https://athena.test"); err != nil {
 		t.Fatal(err)
 	}
@@ -164,7 +164,7 @@ func TestActivityWindowIncludesUnboundAndKeepsFirstTen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	s.ConfigureActivities("https://athena.test")
 	first := activityFixture(t, db.Pool, owner.ID, 1)
 	for i := 1; i <= 12; i++ {
@@ -207,7 +207,9 @@ func TestActivityWindowIncludesUnboundAndKeepsFirstTen(t *testing.T) {
 	if deliveries != 9 {
 		t.Fatal("pause cancelled old queue", deliveries)
 	}
-	if err = txgate.WithAccountTx(ctx, db.Pool, owner.ID, func(tx pgx.Tx) error { return s.RevokeTx(ctx, tx, owner.ID, "permission_revoked") }); err != nil {
+	if err = txgate.WithAccountTx(ctx, db.Pool, owner.ID, func(tx pgx.Tx) error {
+		return NewAccessRevocationAdapter().RevokeTx(ctx, tx, owner.ID, "permission_revoked")
+	}); err != nil {
 		t.Fatal(err)
 	}
 	var cancelled int
@@ -224,7 +226,7 @@ func TestActivityFrozenFactsRollbackAndSequence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	s.ConfigureActivities("https://athena.test")
 	in := activityFixture(t, db.Pool, owner.ID, 1)
 	_, err = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID)
@@ -282,7 +284,7 @@ func TestActivityGrantLossDoesNotStopOtherOwners(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	s.ConfigureActivities("https://athena.test")
 	in := activityFixture(t, db.Pool, owner.ID, 1)
 	if _, err = db.Pool.Exec(ctx, `UPDATE account_module_access SET access_level='none' WHERE account_id=$1 AND module='trader_sync'`, owner.ID); err != nil {
@@ -300,7 +302,7 @@ func TestInvalidSourceTerminatesCandidatesAndRemovedPublicationIsAnomaly(t *test
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	if err = s.ConfigureActivities("https://athena.test"); err != nil {
 		t.Fatal(err)
 	}
@@ -353,7 +355,7 @@ func TestActivityDeliveryPayloadCannotChangeAfterFormation(t *testing.T) {
 	if _, err = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID); err != nil {
 		t.Fatal(err)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	if err = s.ConfigureActivities("https://athena.test"); err != nil {
 		t.Fatal(err)
 	}
@@ -390,7 +392,7 @@ func TestActivityConcurrentOwnersCannotPublishConflictingForks(t *testing.T) {
 		t.Fatal(e)
 	}
 	b := activityOtherOwner(t, db.Pool, a.ID)
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	if e = s.ConfigureActivities("https://athena.test"); e != nil {
 		t.Fatal(e)
 	}
@@ -476,7 +478,7 @@ func TestActivitySameSourceOwnersHaveIndependentNotesAndEligibility(t *testing.T
 	if _, e = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, a.ID); e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	s.ConfigureActivities("https://athena.test")
 	done := make(chan error, 2)
 	for _, in := range []tm.Projection{one, two} {
@@ -518,7 +520,7 @@ func TestPublishedPartialRemainsRetryableAfterTemporaryConfirmationFailure(t *te
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	s.ConfigureActivities("https://athena.test")
 	in := activityFixture(t, db.Pool, owner.ID, 1)
 	if _, _, e = s.Project(ctx, in); e != nil {
@@ -543,7 +545,7 @@ func TestActivityWindowEndpointsAndBackwardTimeSnapshot(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	s.ConfigureActivities("https://athena.test")
 	in := activityFixture(t, db.Pool, owner.ID, 1)
 	base, _, e := s.Project(ctx, in)
@@ -592,7 +594,7 @@ func TestActivityOwnerGatePreventsIDPreallocationAndProjectionAfterPause(t *test
 		t.Fatal(e)
 	}
 	b := activityOtherOwner(t, db.Pool, a.ID)
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	s.ConfigureActivities("https://athena.test")
 	one := activityFixture(t, db.Pool, a.ID, 1)
 	two := activityFixture(t, db.Pool, b, 2)
@@ -643,7 +645,7 @@ func TestActivityOriginalClosedIntervalAndGenerationBoundaries(t *testing.T) {
 			if e != nil {
 				t.Fatal(e)
 			}
-			s := NewSQLStore(db.Pool)
+			s := runtimeTestStore(t, db.Pool)
 			s.ConfigureActivities("https://athena.test")
 			in := activityFixture(t, db.Pool, a.ID, 1)
 			if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_collector_epochs SET ended_at=clock_timestamp(),reason='test_closed'`); e != nil {
@@ -679,7 +681,7 @@ func TestActivityPayloadUsesExistingNonConflictingPartialAtDeadline(t *testing.T
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	s.ConfigureActivities("https://athena.test")
 	in := activityFixture(t, db.Pool, owner.ID, 1)
 	if _, e = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID); e != nil {
@@ -709,7 +711,7 @@ func TestActivityPayloadPreservesUnknownComboLegCountAtFreeze(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	s.ConfigureActivities("https://athena.test")
 	in := activityFixture(t, db.Pool, owner.ID, 1)
 	if _, e = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID); e != nil {
@@ -744,7 +746,7 @@ func TestActivityHundredRelationsSharedAndDistinctTargets(t *testing.T) {
 			if e != nil {
 				t.Fatal(e)
 			}
-			s := NewSQLStore(db.Pool)
+			s := runtimeTestStore(t, db.Pool)
 			s.ConfigureActivities("https://athena.test")
 			for i := 0; i < 10; i++ {
 				owner := first.ID
@@ -784,7 +786,7 @@ func TestActivityConcurrentDuplicatePlansOneQualification(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	s.ConfigureActivities("https://athena.test")
 	in := activityFixture(t, db.Pool, owner.ID, 1)
 	if _, e = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID); e != nil {
@@ -815,7 +817,7 @@ func TestProjectionSourcesPersistentCheckOrderDoesNotStarveFreshCandidates(t *te
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	first := activityFixture(t, db.Pool, owner.ID, 1)
 	for i := 2; i <= 5; i++ {
 		activitySource(t, db.Pool, owner.ID, first.Candidate.SubscriptionID, first.Candidate.AttemptID, first.Trade.Wallet, first.Confirmation.SettledAt, i)
@@ -829,7 +831,7 @@ func TestProjectionSourcesPersistentCheckOrderDoesNotStarveFreshCandidates(t *te
 			t.Fatal(e)
 		}
 	}
-	restarted := NewSQLStore(db.Pool)
+	restarted := runtimeTestStore(t, db.Pool)
 	later, e := restarted.ProjectionSources(ctx, 2)
 	if e != nil || len(later) != 2 || later[0].ID <= rows[1].ID {
 		t.Fatal("old failed source starved later candidates across restart", rows, later, e)
@@ -847,7 +849,7 @@ func TestRemovedAnomalyOnlyFillsFirstConfirmedConflictHash(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	s.ConfigureActivities("https://athena.test")
 	first := activityFixture(t, db.Pool, owner.ID, 1)
 	if _, _, e = s.Project(ctx, first); e != nil {
@@ -895,7 +897,7 @@ func TestOnlyConfirmedDifferentBlockChallengesPublishedTransaction(t *testing.T)
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	s.ConfigureActivities("https://athena.test")
 	first := activityFixture(t, db.Pool, owner.ID, 1)
 	if _, _, e = s.Project(ctx, first); e != nil {
@@ -941,7 +943,7 @@ func TestActivityFreezesFormationEvidenceBeforeSend(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	if err = s.ConfigureActivities("https://athena.test"); err != nil {
 		t.Fatal(err)
 	}
@@ -995,7 +997,7 @@ func TestFormationSnapshotKeepsNearestUnformedArrivalAndImmutableCohort(t *testi
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	if e = s.ConfigureActivities("https://athena.test"); e != nil {
 		t.Fatal(e)
 	}
@@ -1077,7 +1079,7 @@ func TestTimingRuntimeIncludesUnacknowledgedActivitiesAndAllOutcomes(t *testing.
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	if e = s.ConfigureActivities("https://athena.test"); e != nil {
 		t.Fatal(e)
 	}

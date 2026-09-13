@@ -36,6 +36,7 @@ func TestIntakeFirstSequenceFreezesOriginalCandidatesAndRemovedEvidence(t *testi
 	if err != nil {
 		t.Fatal(err)
 	}
+	s = bindTestRuntime(t, s, session)
 	defer session.CloseAfterWorkers(ctx)
 	epoch, err := s.StartCollectorEpoch(ctx, session.CollectorToken())
 	if err != nil {
@@ -124,6 +125,7 @@ func TestIntakeRemovedFirstAndCounterpartyPushNeverBindNewAttempt(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
+	s = bindTestRuntime(t, s, ownerSession)
 	defer ownerSession.CloseAfterWorkers(ctx)
 	epoch, err := s.StartCollectorEpoch(ctx, ownerSession.CollectorToken())
 	if err != nil {
@@ -166,6 +168,7 @@ func TestIntakeWaitingWalletCannotCrossClosedEpochFence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	s = bindTestRuntime(t, s, session)
 	defer session.CloseAfterWorkers(ctx)
 	epoch, err := s.StartCollectorEpoch(ctx, session.CollectorToken())
 	if err != nil {
@@ -241,6 +244,7 @@ func TestIntakeRemovedAfterLastTargetDisabledPreservesOriginalFact(t *testing.T)
 			if err != nil {
 				t.Fatal(err)
 			}
+			s = bindTestRuntime(t, s, session)
 			defer session.CloseAfterWorkers(ctx)
 			epoch, err := s.StartCollectorEpoch(ctx, session.CollectorToken())
 			if err != nil {

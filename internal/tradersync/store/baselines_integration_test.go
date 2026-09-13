@@ -25,6 +25,7 @@ func TestBaselineOwnershipIsExclusiveAndTokenPersistsAcrossInstances(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
+	s = bindTestRuntime(t, s, first)
 	defer first.CloseAfterWorkers(ctx)
 	if second, err := s.AcquireRuntimeSession(ctx); err == nil {
 		_ = second.CloseAfterWorkers(ctx)
@@ -44,6 +45,7 @@ func TestBaselineOwnershipIsExclusiveAndTokenPersistsAcrossInstances(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
+	s = bindTestRuntime(t, s, next)
 	defer next.CloseAfterWorkers(ctx)
 	if next.CollectorToken() <= first.CollectorToken() {
 		t.Fatal("fencing token did not advance")
@@ -69,6 +71,7 @@ func TestBaselineBoundaryRequiresACKFutureTimeAndCurrentIntent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	s = bindTestRuntime(t, s, session)
 	defer session.CloseAfterWorkers(ctx)
 	epoch, err := s.StartCollectorEpoch(ctx, session.CollectorToken())
 	if err != nil {
@@ -215,6 +218,7 @@ func TestBaselineOwnershipSnapshotSerializesRegistrationAndPreservesNewPending(t
 	case <-time.After(2 * time.Second):
 		t.Fatal("ownership remained blocked")
 	}
+	s = bindTestRuntime(t, s, session)
 	defer session.CloseAfterWorkers(ctx)
 	var newID string
 	err = txgate.WithAccountTx(ctx, db.Pool, owner.ID, func(tx pgx.Tx) error { _, newID = insert(tx, "0x2222222222222222222222222222222222222222"); return nil })
@@ -305,6 +309,7 @@ func TestBaselineUnknownCommitReadsPersistedSuccessBeforeAnyRetry(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
+	s = bindTestRuntime(t, s, session)
 	defer session.CloseAfterWorkers(ctx)
 	epoch, err := s.StartCollectorEpoch(ctx, session.CollectorToken())
 	if err != nil {
@@ -359,6 +364,7 @@ func TestBaselineEpochUnknownCommitRecoversDurableActiveEpoch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	s = bindTestRuntime(t, s, owner)
 	defer owner.CloseAfterWorkers(ctx)
 	lost := &baselineCommitReplyLost{Beginner: db.Pool}
 	epoch, err := s.startCollectorEpochUsing(ctx, lost, owner.CollectorToken())
@@ -392,6 +398,7 @@ func TestBaselineEpochUnknownRollbackCannotBecomeActiveEvidence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	s = bindTestRuntime(t, s, owner)
 	defer owner.CloseAfterWorkers(ctx)
 	lost := &baselineCommitReplyLost{Beginner: db.Pool, rollback: true}
 	epoch, err := s.startCollectorEpochUsing(ctx, lost, owner.CollectorToken())

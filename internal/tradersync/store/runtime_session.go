@@ -86,8 +86,17 @@ func (s *SQLStore) AcquireRuntimeSession(ctx context.Context) (*RuntimeSession, 
 	if err = tx.Commit(ctx); err != nil {
 		return nil, err
 	}
+	token := RuntimeToken{OwnerID: uuid.UUID(ownerID.Bytes), Generation: uint64(runtime.Generation)}
+	gate, err := NewRuntimeWriteGate(s.pool, token)
+	if err != nil {
+		return nil, err
+	}
+	guarded, err := NewRuntimeSQLStore(s.pool, gate)
+	if err != nil {
+		return nil, err
+	}
 	owned = true
-	return &RuntimeSession{conn: conn, token: RuntimeToken{OwnerID: uuid.UUID(ownerID.Bytes), Generation: uint64(runtime.Generation)}, collectorToken: uint64(control.FencingToken), store: s, unbound: unbound}, nil
+	return &RuntimeSession{conn: conn, token: token, collectorToken: uint64(control.FencingToken), store: guarded, unbound: unbound}, nil
 }
 
 func (s *RuntimeSession) RuntimeToken() RuntimeToken { return s.token }

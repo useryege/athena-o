@@ -33,7 +33,7 @@ func TestSummaryFreezeIsAtomicCompleteAndUsesRealPartEligibility(t *testing.T) {
 	if _, e = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID); e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	if e = s.ConfigureActivities("https://athena.test/base"); e != nil {
 		t.Fatal(e)
 	}
@@ -117,7 +117,7 @@ func summaryStoreFixture(t *testing.T) (*pgxpool.Pool, *SQLStore, string) {
 	if _, e = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID); e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	if e = s.ConfigureActivities("https://athena.test/base"); e != nil {
 		t.Fatal(e)
 	}

@@ -86,7 +86,7 @@ func (h *harness) StartUI(t *testing.T, distDir string) UIHarnessInfo {
 		t.Fatal("only root and /athena deployments are supported")
 	}
 	store := ac.NewSQLStore(h.db.Pool)
-	store.SetAccessChangeHook(traderstore.NewSQLStore(h.db.Pool).ApplyAccessChangeTx)
+	store.SetAccessChangeHook(traderstore.NewAccessRevocationAdapter().ApplyAccessChangeTx)
 	if err := store.RequireAccessChangeHook(); err != nil {
 		t.Fatal(err)
 	}

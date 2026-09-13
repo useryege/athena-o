@@ -42,11 +42,11 @@ func (s *SQLStore) PersistReceived(ctx context.Context, token, epoch uint64, rec
 	if err != nil {
 		return err
 	}
-	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
+	tx, err := s.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(context.Background())
+	defer rollbackRuntimeTx(tx)
 	if err = txgate.LockWallet(ctx, tx, wallet); err != nil {
 		return err
 	}

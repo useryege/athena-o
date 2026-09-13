@@ -59,7 +59,7 @@ func (s *SQLStore) Project(ctx context.Context, in tm.Projection) (activityID in
 	defer func() {
 		log.WithFields(log.Fields{"source_id": c.SourceID, "activity_id": activityID, "created": created, "gate_phases": phases, "candidate_transaction_ns": time.Since(began).Nanoseconds(), "transaction_completed_at": time.Now().UTC(), "error": err}).Debug("trader sync candidate transaction timing")
 	}()
-	err = txgate.WithAccountTx(ctx, s.pool, c.OwnerID, func(tx pgx.Tx) error {
+	err = txgate.WithAccountTx(ctx, s, c.OwnerID, func(tx pgx.Tx) error {
 		queries := q.New(tx)
 		prior, e := queries.GetProjectedActivity(ctx, q.GetProjectedActivityParams{OwnerID: owner, SubscriptionID: sub, SourceRecordID: c.SourceID})
 		if e == nil {
@@ -267,11 +267,11 @@ func (s *SQLStore) SaveProjectionEvidence(ctx context.Context, id int64, evidenc
 	if e != nil {
 		return e
 	}
-	tx, e := s.pool.Begin(ctx)
+	tx, e := s.BeginTx(ctx, pgx.TxOptions{})
 	if e != nil {
 		return e
 	}
-	defer tx.Rollback(context.Background())
+	defer rollbackRuntimeTx(tx)
 	queries := q.New(tx)
 	if e = queries.LockActivityTransaction(ctx, preview.TransactionHash); e != nil {
 		return e
@@ -342,5 +342,13 @@ func (s *SQLStore) SaveProjectionEvidence(ctx context.Context, id int64, evidenc
 	return tx.Commit(ctx)
 }
 func (s *SQLStore) CompleteProjectionMetadata(ctx context.Context, id int64, complete bool) error {
-	return q.New(s.pool).SetProjectionMetadataComplete(ctx, q.SetProjectionMetadataCompleteParams{ID: id, MetadataComplete: complete})
+	tx, err := s.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer rollbackRuntimeTx(tx)
+	if err = q.New(tx).SetProjectionMetadataComplete(ctx, q.SetProjectionMetadataCompleteParams{ID: id, MetadataComplete: complete}); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }

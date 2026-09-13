@@ -184,7 +184,9 @@ func TestCollectorCommittedRegistrationPrecedesACKWithoutOwningFinality(t *testi
 	}
 
 	// The collector remains healthy while the actual Projector confirmation call fails.
-	projectionStore := store.NewSQLStore(db.Pool)
+	collector.mu.Lock()
+	projectionStore := collector.runtimeStore
+	collector.mu.Unlock()
 	if err = projectionStore.ConfigureActivities("https://athena.test"); err != nil {
 		t.Fatal(err)
 	}

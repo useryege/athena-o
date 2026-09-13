@@ -19,16 +19,17 @@ import (
 
 func TestObservationCheckpointRequiresCurrentCoveredInterval(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	runtimeTestStore(t, db.Pool)
 	ctx := context.Background()
 	owner, e := ac.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
 	if e != nil {
 		t.Fatal(e)
 	}
 	in := activityFixture(t, db.Pool, owner.ID, 1)
-	if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_collector_control SET fencing_token=1,owner_id=$1,active_epoch=1`, uuid.NewString()); e != nil {
+	if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_collector_control SET fencing_token=1,owner_id=$1,active_epoch=1`, runtimeTestStore(t, db.Pool).runtimeGate.token.OwnerID); e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	rows, e := s.CheckpointIntervals(ctx, 1, "", 10)
 	if e != nil {
 		t.Fatal(e)
@@ -90,16 +91,17 @@ func TestSubscriptionCurrentIntervalUsesCausalEpochAcrossClockRegression(t *test
 
 func TestCheckpointRejectsExpiredClosedUncoveredAndClockRegression(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	runtimeTestStore(t, db.Pool)
 	ctx := context.Background()
 	owner, e := ac.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
 	if e != nil {
 		t.Fatal(e)
 	}
 	in := activityFixture(t, db.Pool, owner.ID, 1)
-	if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_collector_control SET fencing_token=1,owner_id=$1,active_epoch=1`, uuid.NewString()); e != nil {
+	if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_collector_control SET fencing_token=1,owner_id=$1,active_epoch=1`, runtimeTestStore(t, db.Pool).runtimeGate.token.OwnerID); e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	rows, e := s.CheckpointIntervals(ctx, 1, "", 100)
 	if e != nil || len(rows) != 1 {
 		t.Fatal(e)
@@ -178,6 +180,7 @@ func TestObservationHistoryRecoveryUsesSameGenerationAndRealBoundaries(t *testin
 	if e != nil {
 		t.Fatal(e)
 	}
+	s = bindTestRuntime(t, s, session)
 	defer session.CloseAfterWorkers(ctx)
 	if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_collector_control SET active_epoch=1 WHERE singleton`); e != nil {
 		t.Fatal(e)
@@ -308,6 +311,7 @@ func TestObservationExcludesAlreadyStoppedIntervalsAndPreparationFailure(t *test
 	if e != nil {
 		t.Fatal(e)
 	}
+	s = bindTestRuntime(t, s, session)
 	defer session.CloseAfterWorkers(ctx)
 	epoch, e := s.StartCollectorEpoch(ctx, session.CollectorToken())
 	if e != nil {

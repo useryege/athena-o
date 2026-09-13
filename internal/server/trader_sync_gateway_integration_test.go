@@ -79,7 +79,7 @@ func newTraderSyncGatewayHarness(t *testing.T, configure func(*ts.Config)) *trad
 	ctx := context.Background()
 	accounts := ac.NewSQLStore(db.Pool)
 	traderStore := tsstore.NewSQLStore(db.Pool)
-	accounts.SetAccessChangeHook(traderStore.ApplyAccessChangeTx)
+	accounts.SetAccessChangeHook(tsstore.NewAccessRevocationAdapter().ApplyAccessChangeTx)
 	codec, e := accountcredentials.NewJWTCodec([]byte(strings.Repeat("gateway-signing-key", 4)))
 	if e != nil {
 		t.Fatal(e)
