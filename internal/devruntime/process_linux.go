@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"golang.org/x/sys/unix"
 )
@@ -90,7 +91,7 @@ func ReadProcess(pid int) (ProcessIdentity, error) { p, e := readProc(pid); retu
 
 // A pidfd is opened BEFORE the second identity read. Even if the PID is recycled
 // afterwards, the signal and exit wait refer only to the pinned kernel task.
-func openVerified(record ProcessIdentity) (int, error) {
+func openVerified(ctx context.Context, record ProcessIdentity) (int, error) {
 	fd, e := unix.PidfdOpen(record.PID, 0)
 	if e != nil {
 		if errors.Is(e, unix.ESRCH) {
@@ -100,9 +101,22 @@ func openVerified(record ProcessIdentity) (int, error) {
 	}
 	now, e := ReadProcess(record.PID)
 	if e != nil || !SameProcess(record, now) {
-		// /proc metadata is torn down before the task becomes a zombie. Only a
-		// kernel pidfd exit event can turn incomplete identity into confirmed exit.
-		exited, pollErr := pidfdExited(fd, 10)
+		// A thread-group leader can lose /proc metadata while other threads are
+		// still exiting. Keep the same pidfd pinned and wait briefly for positive
+		// group-exit evidence. Missing metadata alone never authorizes a signal.
+		// Bound this uncommon path independently and honor WaitProcess's deadline.
+		var exited bool
+		var pollErr error
+		if errors.Is(e, os.ErrNotExist) {
+			settle, cancel := context.WithTimeout(ctx, 250*time.Millisecond)
+			exited, pollErr = waitPidfdExit(settle, fd)
+			cancel()
+			if errors.Is(pollErr, context.DeadlineExceeded) && ctx.Err() == nil {
+				pollErr = nil // Still live: preserve the identity-unavailable error.
+			}
+		} else {
+			exited, pollErr = pidfdExited(fd, 10)
+		}
 		_ = unix.Close(fd)
 		if pollErr != nil {
 			return -1, pollErr
@@ -131,6 +145,18 @@ func pidfdExited(fd, timeout int) (bool, error) {
 	}
 	return events[0].Revents&(unix.POLLIN|unix.POLLHUP) != 0, nil
 }
+
+func waitPidfdExit(ctx context.Context, fd int) (bool, error) {
+	for {
+		if err := ctx.Err(); err != nil {
+			return false, err
+		}
+		exited, err := pidfdExited(fd, 10)
+		if err != nil || exited {
+			return exited, err
+		}
+	}
+}
 func processExited(pid int) bool {
 	fd, e := unix.PidfdOpen(pid, 0)
 	if errors.Is(e, unix.ESRCH) {
@@ -144,7 +170,7 @@ func processExited(pid int) bool {
 	return e == nil && exited
 }
 func VerifyProcess(record ProcessIdentity) (ProcessIdentity, error) {
-	fd, e := openVerified(record)
+	fd, e := openVerified(context.Background(), record)
 	if e != nil {
 		return ProcessIdentity{}, e
 	}
@@ -152,7 +178,7 @@ func VerifyProcess(record ProcessIdentity) (ProcessIdentity, error) {
 	return record, nil
 }
 func SignalProcess(record ProcessIdentity, sig syscall.Signal) error {
-	fd, e := openVerified(record)
+	fd, e := openVerified(context.Background(), record)
 	if errors.Is(e, os.ErrNotExist) {
 		return nil
 	}
@@ -175,7 +201,7 @@ func CheckPlatform() error {
 	return unix.PidfdSendSignal(fd, 0, nil, 0)
 }
 func WaitProcess(ctx context.Context, p ProcessIdentity) error {
-	fd, e := openVerified(p)
+	fd, e := openVerified(ctx, p)
 	if errors.Is(e, os.ErrNotExist) {
 		return nil
 	}
@@ -183,18 +209,8 @@ func WaitProcess(ctx context.Context, p ProcessIdentity) error {
 		return e
 	}
 	defer unix.Close(fd)
-	for {
-		exited, e := pidfdExited(fd, 10)
-		if e != nil {
-			return e
-		}
-		if exited {
-			return nil
-		}
-		if e = ctx.Err(); e != nil {
-			return e
-		}
-	}
+	_, e = waitPidfdExit(ctx, fd)
+	return e
 }
 
 // DiscoverMembers proves parentage before recording new members. A run marker
