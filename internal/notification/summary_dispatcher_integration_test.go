@@ -19,7 +19,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/useryege/athena/internal/notification/delivery"
-	ts "github.com/useryege/athena/internal/tradersync/store"
 	tm "github.com/useryege/athena/internal/tradersync/types"
 	utiltelegram "github.com/useryege/athena/util/telegram"
 )
@@ -139,7 +138,7 @@ func TestSummaryDispatcherMixedSourcesAndNextHead(t *testing.T) {
 			defer session.Close()
 			service.senderSession = session
 			service.sender = NewTelegramSender(client, map[string]string{"test": "-777"})
-			trader := ts.NewSQLStore(pool)
+			trader, _ := summaryRuntimeStore(t, pool)
 			if e = trader.ConfigureActivities("https://athena.test/base"); e != nil {
 				t.Fatal(e)
 			}

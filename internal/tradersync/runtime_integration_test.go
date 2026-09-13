@@ -96,9 +96,14 @@ func TestRuntimeOfflineReadyRejectsSecondBeforeWorkerInitialization(t *testing.T
 }
 func TestRuntimeOwnerLossCancelsAllWorkers(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	// Fault injection must leave owners in other databases on the same cluster alive.
+	otherDB := pgtest.New(t, migrations.FS, migrations.Dir)
+	otherOwner, err := store.NewSQLStore(otherDB.Pool).AcquireRuntimeSession(context.Background())
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, otherOwner.CloseAfterWorkers(context.Background())) })
 	r, _ := newIntegrationRuntime(t, db.DSN)
 	require.NoError(t, r.Start(context.Background()))
-	_, err := db.Pool.Exec(context.Background(), `SELECT pg_terminate_backend(pid) FROM pg_locks WHERE locktype='advisory' AND granted AND classid=((hashtextextended('athena:trader-sync:collector',0)>>32)&4294967295)::oid AND objid=(hashtextextended('athena:trader-sync:collector',0)&4294967295)::oid`)
+	_, err = db.Pool.Exec(context.Background(), `SELECT pg_terminate_backend(pid) FROM pg_locks WHERE locktype='advisory' AND database=(SELECT oid FROM pg_database WHERE datname=current_database()) AND granted AND classid=((hashtextextended('athena:trader-sync:collector',0)>>32)&4294967295)::oid AND objid=(hashtextextended('athena:trader-sync:collector',0)&4294967295)::oid`)
 	require.NoError(t, err)
 	done := make(chan error, 1)
 	go func() { done <- r.Wait() }()
@@ -119,6 +124,7 @@ func TestRuntimeOwnerLossCancelsAllWorkers(t *testing.T) {
 	}
 	require.False(t, r.service.deps.Collector.running.Load())
 	require.NoError(t, db.Pool.Ping(context.Background()))
+	require.NoError(t, otherOwner.Check(context.Background()), "fault injection killed an owner in another database")
 }
 func TestRuntimeCannotReleaseOwnerBeforeBlockedWorkerJoins(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
