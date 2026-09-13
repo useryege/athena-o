@@ -26,12 +26,28 @@ func (s *Store) Migrate(ctx context.Context) error {
 	if s == nil || s.pool == nil {
 		return errors.New("Solana discovery store has no database")
 	}
-	sql, err := migrationFiles.ReadFile("migrations/001_init.sql")
+	entries, err := migrationFiles.ReadDir("migrations")
 	if err != nil {
 		return err
 	}
-	_, err = s.pool.Exec(ctx, string(sql))
-	return err
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		sql, err := migrationFiles.ReadFile("migrations/" + entry.Name())
+		if err != nil {
+			return err
+		}
+		if _, err = tx.Exec(ctx, string(sql)); err != nil {
+			return fmt.Errorf("migration %s: %w", entry.Name(), err)
+		}
+	}
+	return tx.Commit(ctx)
 }
 
 // Initialize records the first scan start exactly once, including across restarts.
@@ -70,10 +86,10 @@ func (s *Store) CommitRange(ctx context.Context, expectedLastProcessed, lastSlot
 			return fmt.Errorf("candidate %q is outside range or has invalid Mint", p.Mint)
 		}
 		_, err = tx.Exec(ctx, `INSERT INTO solana_discovery.projects
-            (mint, token_program, signature, fee_payer, mint_authority, freeze_authority, decimals, slot, block_time)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (mint) DO NOTHING`,
+            (mint, token_program, signature, fee_payer, mint_authority, freeze_authority, decimals, slot, block_time, issuance_source, issuance_program, source_status, source_next_at)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,COALESCE(NULLIF($10,''),'unknown'),$11,COALESCE(NULLIF($12,''),'pending'),CASE WHEN $12 IN ('identified','unrecognized') THEN NULL ELSE now() END) ON CONFLICT (mint) DO NOTHING`,
 			p.Mint, p.TokenProgram, p.Signature, p.FeePayer, p.MintAuthority, p.FreezeAuthority,
-			int32(p.Decimals), int64(p.Slot), p.BlockTime)
+			int32(p.Decimals), int64(p.Slot), p.BlockTime, p.IssuanceSource, p.IssuanceProgram, p.SourceStatus)
 		if err != nil {
 			return err
 		}
@@ -150,7 +166,7 @@ func (s *Store) ListProjects(ctx context.Context, page, pageSize uint32, query s
 	}
 	var total int64
 	err := s.pool.QueryRow(ctx, `SELECT count(*) FROM solana_discovery.projects
-        WHERE ($1 = '' OR position($1 in mint) > 0)`, query).Scan(&total)
+        WHERE ($1 = '' OR position($1 in mint) > 0 OR position(lower($1) in lower(name)) > 0 OR position(lower($1) in lower(symbol)) > 0)`, query).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -158,9 +174,7 @@ func (s *Store) ListProjects(ctx context.Context, page, pageSize uint32, query s
 	if offset > math.MaxInt64 {
 		return nil, 0, errors.New("page offset is too large")
 	}
-	rows, err := s.pool.Query(ctx, `SELECT mint, token_program, signature, fee_payer,
-        mint_authority, freeze_authority, decimals, slot, block_time, discovered_at
-        FROM solana_discovery.projects WHERE ($1 = '' OR position($1 in mint) > 0)
+	rows, err := s.pool.Query(ctx, `SELECT `+projectColumns+` FROM solana_discovery.projects WHERE ($1 = '' OR position($1 in mint) > 0 OR position(lower($1) in lower(name)) > 0 OR position(lower($1) in lower(symbol)) > 0)
         ORDER BY slot DESC, mint ASC LIMIT $2 OFFSET $3`, query, int64(pageSize), int64(offset))
 	if err != nil {
 		return nil, 0, err
@@ -168,14 +182,10 @@ func (s *Store) ListProjects(ctx context.Context, page, pageSize uint32, query s
 	defer rows.Close()
 	items := make([]Project, 0)
 	for rows.Next() {
-		var p Project
-		var decimals int32
-		var slot int64
-		if err := rows.Scan(&p.Mint, &p.TokenProgram, &p.Signature, &p.FeePayer,
-			&p.MintAuthority, &p.FreezeAuthority, &decimals, &slot, &p.BlockTime, &p.DiscoveredAt); err != nil {
+		p, err := scanProject(rows.Scan)
+		if err != nil {
 			return nil, 0, err
 		}
-		p.Decimals, p.Slot = uint32(decimals), uint64(slot)
 		items = append(items, p)
 	}
 	if err := rows.Err(); err != nil {

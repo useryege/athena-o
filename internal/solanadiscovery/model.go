@@ -7,18 +7,22 @@ const (
 	Token2022Program = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
 )
 
-// Project records only facts visible in the successful Mint initialization.
+// Project preserves initialization evidence and separately observed metadata.
 type Project struct {
-	Mint            string
-	TokenProgram    string
-	Signature       string
-	FeePayer        string
-	MintAuthority   string
-	FreezeAuthority string
-	Decimals        uint32
-	Slot            uint64
-	BlockTime       int64
-	DiscoveredAt    time.Time
+	Name, Symbol, MetadataStatus, MetadataSource, MetadataAccount string
+	MetadataObservedSlot                                          uint64
+	MetadataUpdatedAt                                             time.Time
+	IssuanceSource, IssuanceProgram, SourceStatus                 string
+	Mint                                                          string
+	TokenProgram                                                  string
+	Signature                                                     string
+	FeePayer                                                      string
+	MintAuthority                                                 string
+	FreezeAuthority                                               string
+	Decimals                                                      uint32
+	Slot                                                          uint64
+	BlockTime                                                     int64
+	DiscoveredAt                                                  time.Time
 }
 
 type DiscoveryStatus struct {

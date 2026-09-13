@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -59,7 +60,10 @@ func NewCommand() *cobra.Command {
 				StartSlot: c.StartSlot, InitialLookback: 32, RangeSize: c.RangeSize, Concurrency: c.Concurrency, RequestsPerSecond: float64(c.RequestsPerSecond), RequestTimeout: c.RequestTimeout, PollInterval: c.PollInterval,
 			})
 			cmd.Printf("Solana discovery listening on %s; finalized scan progress is available via GetDiscoveryStatus\n", listener.Addr())
-			return serve(ctx, listener, server, scanner.Run)
+			enricher := solanadiscovery.NewEnricher(scanner)
+			return serve(ctx, listener, server, func(ctx context.Context) error {
+				return runDiscovery(ctx, scanner.Run, enricher.Run)
+			})
 		},
 	}
 	f := command.Flags()

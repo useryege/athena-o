@@ -3,11 +3,13 @@ package solanadiscovery
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -70,6 +72,10 @@ func (c *RPCClient) call(ctx context.Context, method string, params []any) (json
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.client.Do(req)
 	if err != nil {
+		var transportErr *url.Error
+		if errors.As(err, &transportErr) {
+			err = transportErr.Err
+		}
 		return nil, fmt.Errorf("Solana %s: %w", method, err)
 	}
 	defer resp.Body.Close()
@@ -139,4 +145,73 @@ func (c *RPCClient) Block(ctx context.Context, slot uint64) (json.RawMessage, er
 		"encoding": "jsonParsed", "transactionDetails": "full", "rewards": false,
 		"commitment": "finalized", "maxSupportedTransactionVersion": 0,
 	}})
+}
+
+// AccountSnapshot preserves request order, including missing and invalid accounts.
+type AccountSnapshot struct {
+	Slot     uint64
+	Accounts []*AccountInfo
+}
+
+func (c *RPCClient) MultipleAccounts(ctx context.Context, addresses []string) (AccountSnapshot, error) {
+	var snapshot AccountSnapshot
+	if len(addresses) < 1 || len(addresses) > 100 {
+		return snapshot, errors.New("invalid account batch size")
+	}
+	for _, address := range addresses {
+		if !validPublicKey(address) {
+			return snapshot, errors.New("invalid requested account address")
+		}
+	}
+	data, err := c.call(ctx, "getMultipleAccounts", []any{addresses, map[string]any{"encoding": "base64", "commitment": "finalized"}})
+	if err != nil {
+		return snapshot, err
+	}
+	var response struct {
+		Context struct {
+			Slot *uint64 `json:"slot"`
+		} `json:"context"`
+		Value []json.RawMessage `json:"value"`
+	}
+	if err := json.Unmarshal(data, &response); err != nil {
+		return snapshot, fmt.Errorf("decode account batch: %w", err)
+	}
+	if response.Context.Slot == nil || response.Value == nil || len(response.Value) != len(addresses) {
+		return snapshot, errors.New("invalid account batch context or count")
+	}
+	snapshot.Slot = *response.Context.Slot
+	snapshot.Accounts = make([]*AccountInfo, len(addresses))
+	for i, raw := range response.Value {
+		if isJSONNull(raw) {
+			continue
+		}
+		a := &AccountInfo{}
+		snapshot.Accounts[i] = a
+		var encoded struct {
+			Owner      string   `json:"owner"`
+			Executable *bool    `json:"executable"`
+			Data       []string `json:"data"`
+		}
+		if err := json.Unmarshal(raw, &encoded); err != nil {
+			a.DecodeError = errors.New("invalid account response shape")
+			continue
+		}
+		if encoded.Owner == "" || encoded.Executable == nil || len(encoded.Data) != 2 || encoded.Data[1] != "base64" {
+			a.DecodeError = errors.New("invalid base64 account response")
+			continue
+		}
+		a.Owner = encoded.Owner
+		a.Executable = *encoded.Executable
+		a.Data, err = base64.StdEncoding.DecodeString(encoded.Data[0])
+		if err != nil {
+			a.DecodeError = errors.New("invalid account base64")
+		}
+	}
+	return snapshot, nil
+}
+func (c *RPCClient) Transaction(ctx context.Context, signature string) (json.RawMessage, error) {
+	if signature == "" {
+		return nil, errors.New("missing transaction signature")
+	}
+	return c.call(ctx, "getTransaction", []any{signature, map[string]any{"encoding": "jsonParsed", "commitment": "finalized", "maxSupportedTransactionVersion": 0}})
 }

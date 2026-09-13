@@ -32,10 +32,11 @@ type parsedBlock struct {
 }
 
 type parsedInstruction struct {
-	ProgramID string          `json:"programId"`
-	Parsed    json.RawMessage `json:"parsed"`
-	Accounts  []string        `json:"accounts"`
-	Data      string          `json:"data"`
+	StackHeight json.RawMessage `json:"stackHeight"`
+	ProgramID   string          `json:"programId"`
+	Parsed      json.RawMessage `json:"parsed"`
+	Accounts    []string        `json:"accounts"`
+	Data        string          `json:"data"`
 }
 
 type mintInstruction struct {
@@ -81,7 +82,11 @@ func ParseBlock(slot uint64, data []byte) ([]Project, error) {
 		if signature == "" || !validPublicKey(feePayer) {
 			return nil, fmt.Errorf("slot %d transaction %d: invalid signature or fee payer", slot, txIndex)
 		}
+		var ancestors []parsedInstruction
+		var parent string
+		topLevel := true
 		appendCandidate := func(mint, program, authority, freeze string, decimals uint32) {
+			source := issuanceSource(mint, program, topLevel, ancestors, parent)
 			if _, exists := seen[mint]; exists {
 				return
 			}
@@ -91,6 +96,7 @@ func ParseBlock(slot uint64, data []byte) ([]Project, error) {
 				blockTime = *block.BlockTime
 			}
 			projects = append(projects, Project{
+				MetadataStatus: "pending", IssuanceSource: source.Source, IssuanceProgram: source.Program, SourceStatus: source.Status,
 				Mint: mint, TokenProgram: program, Signature: signature, FeePayer: feePayer,
 				MintAuthority: authority, FreezeAuthority: freeze,
 				Decimals: decimals, Slot: slot, BlockTime: blockTime,
@@ -148,12 +154,25 @@ func ParseBlock(slot uint64, data []byte) ([]Project, error) {
 			innerByIndex[group.Index] = append(innerByIndex[group.Index], group.Instructions...)
 		}
 		for index, raw := range tx.Transaction.Message.Instructions {
+			topLevel = true
+			ancestors = nil
+			parent = ""
 			if err := consume(raw); err != nil {
 				return nil, fmt.Errorf("slot %d transaction %d: %w", slot, txIndex, err)
 			}
+			var outer parsedInstruction
+			_ = json.Unmarshal(raw, &outer)
+			frames := sourceFrames{frames: []parsedInstruction{outer}}
+			topLevel = false
 			for _, inner := range innerByIndex[uint32(index)] {
+				var current parsedInstruction
+				var push bool
+				ancestors, parent, current, push = frames.before(inner)
 				if err := consume(inner); err != nil {
 					return nil, fmt.Errorf("slot %d transaction %d CPI %d: %w", slot, txIndex, index, err)
+				}
+				if push {
+					frames.frames = append(frames.frames, current)
 				}
 			}
 		}

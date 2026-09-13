@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -30,6 +31,9 @@ type Scanner struct {
 	config          ScannerConfig
 	limiter         *rate.Limiter
 	genesisVerified bool
+	genesisMu       sync.Mutex
+	cooldownMu      sync.Mutex
+	cooldownUntil   time.Time
 }
 
 func NewScanner(store *Store, rpc *RPCClient, config ScannerConfig) *Scanner {
@@ -61,20 +65,8 @@ func NewScanner(store *Store, rpc *RPCClient, config ScannerConfig) *Scanner {
 // A missing listed block, malformed recognized instruction, or cancelled request
 // leaves the range checkpoint unchanged.
 func (s *Scanner) ScanOnce(ctx context.Context) (bool, error) {
-	if !s.genesisVerified {
-		var genesis string
-		err := s.nodeCall(ctx, func(callCtx context.Context) error {
-			var callErr error
-			genesis, callErr = s.rpc.GenesisHash(callCtx)
-			return callErr
-		})
-		if err != nil {
-			return false, err
-		}
-		if genesis != SolanaMainnetGenesisHash {
-			return false, fmt.Errorf("Solana genesis mismatch: expected Mainnet Beta, received %s", genesis)
-		}
-		s.genesisVerified = true
+	if err := s.verifyGenesis(ctx); err != nil {
+		return false, err
 	}
 	var latest uint64
 	err := s.nodeCall(ctx, func(callCtx context.Context) error {
@@ -166,12 +158,47 @@ func (s *Scanner) ScanOnce(ctx context.Context) (bool, error) {
 }
 
 func (s *Scanner) nodeCall(ctx context.Context, call func(context.Context) error) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if err := s.waitNodeCooldown(ctx); err != nil {
+		return err
+	}
 	if err := s.limiter.Wait(ctx); err != nil {
+		return err
+	}
+	if err := s.waitNodeCooldown(ctx); err != nil {
 		return err
 	}
 	callCtx, cancel := context.WithTimeout(ctx, s.config.RequestTimeout)
 	defer cancel()
-	return call(callCtx)
+	err := call(callCtx)
+	var responseErr *HTTPError
+	if errors.As(err, &responseErr) && responseErr.RetryAfter > 0 {
+		s.cooldownMu.Lock()
+		until := time.Now().Add(responseErr.RetryAfter)
+		if until.After(s.cooldownUntil) {
+			s.cooldownUntil = until
+		}
+		s.cooldownMu.Unlock()
+	}
+	return err
+}
+func (s *Scanner) waitNodeCooldown(ctx context.Context) error {
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		s.cooldownMu.Lock()
+		delay := time.Until(s.cooldownUntil)
+		s.cooldownMu.Unlock()
+		if delay <= 0 {
+			return nil
+		}
+		if !waitContext(ctx, delay) {
+			return ctx.Err()
+		}
+	}
 }
 
 // Run keeps following finalized slots until cancellation. Node and parse failures
@@ -223,4 +250,25 @@ func waitContext(ctx context.Context, delay time.Duration) bool {
 	case <-timer.C:
 		return true
 	}
+}
+
+func (s *Scanner) verifyGenesis(ctx context.Context) error {
+	s.genesisMu.Lock()
+	defer s.genesisMu.Unlock()
+	if !s.genesisVerified {
+		var genesis string
+		err := s.nodeCall(ctx, func(callCtx context.Context) error {
+			var callErr error
+			genesis, callErr = s.rpc.GenesisHash(callCtx)
+			return callErr
+		})
+		if err != nil {
+			return err
+		}
+		if genesis != SolanaMainnetGenesisHash {
+			return fmt.Errorf("Solana genesis mismatch: expected Mainnet Beta, received %s", genesis)
+		}
+		s.genesisVerified = true
+	}
+	return nil
 }
