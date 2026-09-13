@@ -34,6 +34,12 @@ cursor key 的值可继续验证现有游标。HTTP、WSS、proxy、站点 URL �
 生产不接受 token/cursor 的明文环境变量。API 只挂载内部 token 和 CA；Notification
 不获得这些 Trader Sync 文件。两个独立进程不通过 Compose 健康依赖互相阻塞启动。
 
+API 的显式白名单保留 Etherscan 网关列表/鉴权/探针、HTTP content types、OTLP、响应
+安全头、缓存、站点设置和日志配置；Notification 只获得自身 Telegram/worker 和日志
+配置。两者按标准 HTTP/gRPC 客户端规则读取代理变量。白名单在 Compose 层透传显式
+空值，只在变量未设置时应用默认值；具体空值的接受、回退或拒绝仍由原消费者决定，
+例如空的 `ATHENA_API_CONTENT_TYPES` 保持“允许任意内容类型”的现有含义。
+
 文件必须可由 UID/GID `999:999` 读取。远程脚本将文件作为归档上传，统一在
 `secrets/trader-sync-*` 下设为 `999:999`、`0600`，重写部署目录 `.env` 中的相对文件路径；
 不会将凭据写入镜像或通过 SSH 参数传递。证书与 token 轮换需在调用方和服务端协调执行。

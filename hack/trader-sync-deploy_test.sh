@@ -2,6 +2,7 @@
 set -euo pipefail
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo"
+bash hack/production-compose_test.sh
 python3 - <<'PY'
 import json, os, pathlib, re, subprocess, tempfile
 root = pathlib.Path.cwd()
