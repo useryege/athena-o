@@ -5879,10 +5879,10 @@ type TraderSyncServiceClient interface {
 }
 
 type traderSyncServiceClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewTraderSyncServiceClient(cc *grpc.ClientConn) TraderSyncServiceClient {
+func NewTraderSyncServiceClient(cc grpc.ClientConnInterface) TraderSyncServiceClient {
 	return &traderSyncServiceClient{cc}
 }
 
