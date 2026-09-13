@@ -3,6 +3,7 @@ package tradersync
 import (
 	"fmt"
 	"github.com/useryege/athena/internal/accountstate/schema"
+	"github.com/useryege/athena/internal/tradersync/rpcconfig"
 	"os"
 	"strconv"
 	"time"
@@ -24,7 +25,11 @@ func LoadConfigFromEnv() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	c := Config{AccountStateDSN: dsn, ShutdownTimeout: 30 * time.Second, HTTPURL: os.Getenv("ATHENA_TRADER_SYNC_HTTP_URL"), WebSocketURL: os.Getenv("ATHENA_TRADER_SYNC_WSS_URL"), ProxyURL: os.Getenv("ATHENA_TRADER_SYNC_PROXY_URL"), SiteURL: os.Getenv("ATHENA_URL"), CursorHMACKey: os.Getenv("ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY"), Projector: ProjectorConfig{Interval: 2 * time.Second, MetadataWait: 2 * time.Second, MetadataTimeout: 30 * time.Second, MaxInFlightSources: 100}, ReconnectMin: time.Second, ReconnectMax: 30 * time.Second}
+	cursorKey, err := rpcconfig.ResolveSecret(os.LookupEnv, "ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY")
+	if err != nil {
+		return Config{}, err
+	}
+	c := Config{AccountStateDSN: dsn, ShutdownTimeout: 30 * time.Second, HTTPURL: os.Getenv("ATHENA_TRADER_SYNC_HTTP_URL"), WebSocketURL: os.Getenv("ATHENA_TRADER_SYNC_WSS_URL"), ProxyURL: os.Getenv("ATHENA_TRADER_SYNC_PROXY_URL"), SiteURL: os.Getenv("ATHENA_URL"), CursorHMACKey: cursorKey, Projector: ProjectorConfig{Interval: 2 * time.Second, MetadataWait: 2 * time.Second, MetadataTimeout: 30 * time.Second, MaxInFlightSources: 100}, ReconnectMin: time.Second, ReconnectMax: 30 * time.Second}
 	if value, ok := os.LookupEnv("ATHENA_TRADER_SYNC_MAX_IN_FLIGHT_SOURCES"); ok {
 		n, err := strconv.Atoi(value)
 		if err != nil || n < 1 {
