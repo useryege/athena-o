@@ -1,7 +1,9 @@
 package devruntime
 
 import (
+	"bytes"
 	"errors"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -46,5 +48,16 @@ func (m *Manager) SaveSecret(name string, data []byte) error {
 	if name == "" || name != filepath.Base(name) || name == "." || name == ".." || name == "state.json" || name == "lock" || name == "operation.lock" {
 		return errors.New("invalid secret filename")
 	}
-	return withLock(m.Key, func() error { return atomicFile(filepath.Join(m.Key.Dir(), name), data) })
+	return withLock(m.Key, func() error {
+		path := filepath.Join(m.Key.Dir(), name)
+		// Docker Desktop keeps the original bind-mounted file. Replacing an
+		// unchanged secret can invalidate that mount when its container restarts.
+		// Lstat ensures an existing symlink is replaced, never preserved.
+		if info, err := os.Lstat(path); err == nil && info.Mode().IsRegular() {
+			if current, err := os.ReadFile(path); err == nil && bytes.Equal(current, data) {
+				return os.Chmod(path, 0600)
+			}
+		}
+		return atomicFile(path, data)
+	})
 }
