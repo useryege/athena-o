@@ -404,3 +404,12 @@ prod-destroy-remote:
 cm:
 	git add .
 	git commit -m "commit"
+
+.PHONY: account-state-migrate-build account-state-schema-contract
+account-state-migrate-build:
+	CGO_ENABLED=$(CGO_FLAG) go build -o $(DIST_DIR)/athena-account-state-migrate ./cmd/athena-account-state-migrate
+
+# Requires an explicit test administrator DSN; the tool creates and removes only its own random database.
+account-state-schema-contract:
+	go run ./tools/account-state-schema-contract > internal/accountstate/schema/contract.json.tmp
+	mv internal/accountstate/schema/contract.json.tmp internal/accountstate/schema/contract.json
