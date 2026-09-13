@@ -1,0 +1,22 @@
+# Positive selection: no UI, aggregation entrypoint, seed tools or local state.
+**
+!go.mod
+!go.sum
+!cmd/
+!cmd/athena-trader-sync/**
+!cmd/athena-account-state-migrate/**
+!common/**
+!internal/**
+!pkg/**
+!util/**
+**/*_test.go
+**/.env
+**/.env.*
+**/secrets
+**/.run
+**/.tmp
+**/.superpowers
+**/.worktrees
+**/.git
+**/node_modules
+**/dist

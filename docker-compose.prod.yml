@@ -282,16 +282,22 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    env_file:
-      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
     environment:
-      <<: *without-auth-secrets
+      ATHENA_LOGLEVEL: ${ATHENA_LOGLEVEL:-info}
+      ATHENA_GRPC_MAX_SIZE_MB: ${ATHENA_GRPC_MAX_SIZE_MB:-200}
+      ATHENA_URL: ${ATHENA_URL:?ATHENA_URL is required}
       ATHENA_BINARY_NAME: athena-notification
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
+      ATHENA_NOTIFICATION_TELEGRAM_API_URL: ${ATHENA_NOTIFICATION_TELEGRAM_API_URL:-https://api.telegram.org}
+      ATHENA_NOTIFICATION_TELEGRAM_TIMEOUT_SECONDS: ${ATHENA_NOTIFICATION_TELEGRAM_TIMEOUT_SECONDS:-30}
+      ATHENA_NOTIFICATION_WORKER_CONCURRENCY: ${ATHENA_NOTIFICATION_WORKER_CONCURRENCY:-12}
+      ATHENA_NOTIFICATION_TELEGRAM_BOT_NAME: ${ATHENA_NOTIFICATION_TELEGRAM_BOT_NAME:-ATHENA}
+      ATHENA_NOTIFICATION_TELEGRAM_BOT_SHORT_DESCRIPTION: ${ATHENA_NOTIFICATION_TELEGRAM_BOT_SHORT_DESCRIPTION:-ATHENA notifications}
+      ATHENA_NOTIFICATION_TELEGRAM_BOT_DESCRIPTION: ${ATHENA_NOTIFICATION_TELEGRAM_BOT_DESCRIPTION:-ATHENA notification bot for account and system updates.}
       ATHENA_NOTIFICATION_LISTEN_ADDRESS: 0.0.0.0
       ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN: ${ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN:?ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN is required}
       ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN: ${ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN:?ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN is required}
-      ATHENA_SERVER_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=athena sslmode=disable
+      ATHENA_ACCOUNT_STATE_POSTGRES_DSN: ${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:?ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required}
       ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID: ${ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID:?ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID is required}
       ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID: ${ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID:?ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID is required}
     command: ["athena", "--port", "8086"]
@@ -441,6 +447,54 @@ services:
       ATHENA_TOKEN_HEALTH_LISTEN_ADDRESS: 0.0.0.0:8118
     expose: ["8118"]
 
+  athena-trader-sync:
+    image: ${TRADER_SYNC_IMAGE:-athena-trader-sync:local}
+    restart: unless-stopped
+    stop_grace_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ATHENA_LOGLEVEL: ${ATHENA_LOGLEVEL:-info}
+      ATHENA_GRPC_MAX_SIZE_MB: ${ATHENA_GRPC_MAX_SIZE_MB:-200}
+      ATHENA_ACCOUNT_STATE_POSTGRES_DSN: ${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:?ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required}
+      ATHENA_URL: ${ATHENA_URL:?ATHENA_URL is required}
+      ATHENA_TRADER_SYNC_HTTP_URL: ${ATHENA_TRADER_SYNC_HTTP_URL:?ATHENA_TRADER_SYNC_HTTP_URL is required}
+      ATHENA_TRADER_SYNC_WSS_URL: ${ATHENA_TRADER_SYNC_WSS_URL:?ATHENA_TRADER_SYNC_WSS_URL is required}
+      ATHENA_TRADER_SYNC_PROXY_URL: ${ATHENA_TRADER_SYNC_PROXY_URL:-}
+      ATHENA_TRADER_SYNC_MAX_IN_FLIGHT_SOURCES: ${ATHENA_TRADER_SYNC_MAX_IN_FLIGHT_SOURCES:-100}
+      ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY_FILE: /run/secrets/trader-sync-cursor-key
+      ATHENA_TRADER_SYNC_LISTEN_ADDRESS: 0.0.0.0:8122
+      ATHENA_TRADER_SYNC_GRPC_TRANSPORT: tls
+      ATHENA_TRADER_SYNC_INTERNAL_AUTH_TOKEN_FILE: /run/secrets/trader-sync-token
+      ATHENA_TRADER_SYNC_TLS_CERT_FILE: /run/secrets/trader-sync-cert
+      ATHENA_TRADER_SYNC_TLS_KEY_FILE: /run/secrets/trader-sync-key
+      ATHENA_TRADER_SYNC_TLS_CA_FILE: /run/secrets/trader-sync-ca
+      ATHENA_TRADER_SYNC_TLS_SERVER_NAME: ${ATHENA_TRADER_SYNC_TLS_SERVER_NAME:-athena-trader-sync}
+    secrets:
+      - trader-sync-token
+      - trader-sync-cursor-key
+      - trader-sync-cert
+      - trader-sync-key
+      - trader-sync-ca
+    healthcheck:
+      test: ["CMD", "athena-trader-sync", "health", "--target", "127.0.0.1:8122"]
+      interval: 10s
+      timeout: 6s
+      retries: 6
+      start_period: 60s
+
+  athena-account-state-migrate:
+    image: ${TRADER_SYNC_IMAGE:-athena-trader-sync:local}
+    profiles: [tools]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ATHENA_ACCOUNT_STATE_POSTGRES_DSN: ${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:?ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required}
+    entrypoint: ["/usr/bin/tini", "--", "athena-account-state-migrate"]
+    command: ["verify"]
+
   athena-migrate:
     image: ${PROD_IMAGE:-athena:local}
     profiles:
@@ -453,7 +507,7 @@ services:
     environment:
       <<: *without-auth-secrets
       ATHENA_BINARY_NAME: athena-migrate
-      ATHENA_SERVER_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=athena sslmode=disable
+      ATHENA_ACCOUNT_STATE_POSTGRES_DSN: ${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:?ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required}
       ATHENA_WORM_MARKETS_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm_markets sslmode=disable
       ATHENA_WORM_TRADING_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm_trading sslmode=disable
       ATHENA_SPORTS_LIVE_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=sports_live sslmode=disable
@@ -495,19 +549,22 @@ services:
         condition: service_started
       athena-token-api:
         condition: service_started
-    env_file:
-      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
     secrets:
       - google-oidc-client-secret
+      - trader-sync-token
+      - trader-sync-ca
     environment:
-      # env_file supplies required ATHENA_TRADER_SYNC_HTTP_URL,
-      # ATHENA_TRADER_SYNC_WSS_URL, ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY and ATHENA_URL.
-      # Optional ATHENA_TRADER_SYNC_PROXY_URL (unset/empty = direct) and
-      # ATHENA_TRADER_SYNC_MAX_IN_FLIGHT_SOURCES remain env_file values; do not
-      # override them with interpolation defaults that shadow an alternate file.
+      ATHENA_LOGLEVEL: ${ATHENA_LOGLEVEL:-info}
+      ATHENA_GRPC_MAX_SIZE_MB: ${ATHENA_GRPC_MAX_SIZE_MB:-200}
+      ATHENA_URL: ${ATHENA_URL:?ATHENA_URL is required}
+      ATHENA_TRADER_SYNC_SERVER_ADDRESS: athena-trader-sync:8122
+      ATHENA_TRADER_SYNC_GRPC_TRANSPORT: tls
+      ATHENA_TRADER_SYNC_INTERNAL_AUTH_TOKEN_FILE: /run/secrets/trader-sync-token
+      ATHENA_TRADER_SYNC_TLS_CA_FILE: /run/secrets/trader-sync-ca
+      ATHENA_TRADER_SYNC_TLS_SERVER_NAME: ${ATHENA_TRADER_SYNC_TLS_SERVER_NAME:-athena-trader-sync}
       ATHENA_BINARY_NAME: athena-server
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_SERVER_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=athena sslmode=disable
+      ATHENA_ACCOUNT_STATE_POSTGRES_DSN: ${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:?ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required}
       ATHENA_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
       ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN: ${ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN:?ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN is required}
       ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN: ""
@@ -528,6 +585,10 @@ services:
       ATHENA_MANAGED_OO_SERVER_ADDRESS: athena-managed-oo:8106
       ATHENA_PROFIT_SHARING_SERVER_ADDRESS: athena-profit-sharing:8108
       ATHENA_TOKEN_API_SERVER_ADDRESS: athena-token-api:8096
+      ATHENA_SERVER_BASEHREF: ${ATHENA_SERVER_BASEHREF:-/}
+      ATHENA_SERVER_ROOTPATH: ${ATHENA_SERVER_ROOTPATH:-}
+      ATHENA_SERVER_STATIC_ASSETS: ${ATHENA_SERVER_STATIC_ASSETS:-/shared/app}
+      ATHENA_SERVER_ENABLE_GZIP: ${ATHENA_SERVER_ENABLE_GZIP:-true}
       ATHENA_SERVER_LISTEN_ADDRESS: 0.0.0.0
       ATHENA_SERVER_DISABLE_AUTH: "false"
       ATHENA_JWT_SECRET: ${ATHENA_JWT_SECRET:?ATHENA_JWT_SECRET is required}
@@ -551,6 +612,16 @@ services:
       - "${ATHENA_SERVER_BIND_ADDR:-127.0.0.1}:${ATHENA_SERVER_PORT:-8080}:8080"
 
 secrets:
+  trader-sync-token:
+    file: ${ATHENA_TRADER_SYNC_INTERNAL_AUTH_TOKEN_FILE:-/dev/null}
+  trader-sync-cursor-key:
+    file: ${ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY_FILE:-/dev/null}
+  trader-sync-cert:
+    file: ${ATHENA_TRADER_SYNC_TLS_CERT_FILE:-/dev/null}
+  trader-sync-key:
+    file: ${ATHENA_TRADER_SYNC_TLS_KEY_FILE:-/dev/null}
+  trader-sync-ca:
+    file: ${ATHENA_TRADER_SYNC_TLS_CA_FILE:-/dev/null}
   google-oidc-client-secret:
     file: ${ATHENA_GOOGLE_OIDC_CLIENT_SECRET_FILE:-/dev/null}
 

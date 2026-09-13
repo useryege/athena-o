@@ -37,6 +37,7 @@ endif
 PATH:=$(PATH):$(PWD)/hack
 
 PROD_IMAGE?=athena:local
+TRADER_SYNC_IMAGE?=athena-trader-sync:local
 PROD_COMPOSE_FILE?=docker-compose.prod.yml
 PROD_ENV_FILE?=.env.prod
 REMOTE_APP_DIR?=/root/athena
@@ -357,17 +358,13 @@ minio-images-local:
 
 .PHONY: prod-build-local
 prod-build-local: minio-images-local
+	$(MAKE) build-service-image SERVICE=trader-sync
 	DOCKER_BUILDKIT=1 $(DOCKER) build --platform=$(TARGET_ARCH) -t $(PROD_IMAGE) .
 
 # use http://127.0.0.1:8080
 .PHONY: prod-start-local
 prod-start-local:
-	$(DOCKER) volume create $(PROD_POSTGRES_VOLUME) >/dev/null
-	$(DOCKER) volume create $(PROD_REDIS_VOLUME) >/dev/null
-	$(DOCKER) volume create $(PROD_MINIO_VOLUME) >/dev/null
-	$(PROD_COMPOSE_LOCAL) up -d postgres
-	$(PROD_COMPOSE_LOCAL) --profile tools run --rm athena-migrate athena up --module $(PROD_MIGRATE_MODULE)
-	ATHENA_SERVER_DISABLE_AUTH=false $(PROD_COMPOSE_LOCAL) up -d
+	ATHENA_SERVER_CONTAINER_USER=$$(id -u):0 bash ./hack/prod-start-local.sh
 
 .PHONY: prod-stop-local
 prod-stop-local:
@@ -434,3 +431,20 @@ seed-service:
 account-state-migrate:
 	go run ./cmd/athena-account-state-migrate up --timeout=120s
 	go run ./cmd/athena-account-state-migrate verify --timeout=120s
+
+# Export user input as data; do not splice image tags or service names into shell code.
+export TRADER_SYNC_IMAGE SERVICE TARGET_ARCH VERSION GIT_COMMIT GIT_TREE_STATE GIT_TAG BUILD_DATE
+export PROD_IMAGE PROD_COMPOSE_FILE PROD_ENV_FILE REMOTE_APP_DIR REMOTE_USER
+export PROD_POSTGRES_VOLUME PROD_REDIS_VOLUME PROD_MINIO_VOLUME PROD_MIGRATE_MODULE
+export MINIO_IMAGE MINIO_MC_IMAGE
+
+.PHONY: build-service-image prod-trader-sync-deploy-remote
+build-service-image:
+	@test "$$SERVICE" = trader-sync || { echo 'build-service-image requires SERVICE=trader-sync' >&2; exit 1; }
+	@DOCKER_BUILDKIT=1 docker build --platform="$$TARGET_ARCH" -f deploy/trader-sync/Dockerfile -t "$$TRADER_SYNC_IMAGE" \
+	  --build-arg "VERSION=$$VERSION" --build-arg "GIT_COMMIT=$$GIT_COMMIT" --build-arg "GIT_TREE_STATE=$$GIT_TREE_STATE" \
+	  --build-arg "GIT_TAG=$$GIT_TAG" --build-arg "BUILD_DATE=$$BUILD_DATE" .
+
+prod-trader-sync-deploy-remote:
+	$(MAKE) build-service-image SERVICE=trader-sync
+	bash ./hack/prod-remote-deploy.sh trader-sync-deploy
