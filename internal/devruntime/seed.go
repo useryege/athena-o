@@ -15,7 +15,10 @@ import (
 	"path/filepath"
 )
 
-type DevelopmentFixture struct{ MemberID, AdministratorID string }
+type DevelopmentFixture struct {
+	MemberID        string `json:"member_id"`
+	AdministratorID string `json:"administrator_id"`
+}
 
 func seedDatabase(ctx context.Context, pool *pgxpool.Pool) (DevelopmentFixture, error) {
 	var result DevelopmentFixture
@@ -60,48 +63,52 @@ func seedDatabase(ctx context.Context, pool *pgxpool.Pool) (DevelopmentFixture, 
 	result.AdministratorID = admin.ID
 	return result, err
 }
-func Seed(ctx context.Context, k InstanceKey, service string) error {
+func Seed(ctx context.Context, k InstanceKey, service string) (DevelopmentFixture, error) {
+	var empty DevelopmentFixture
 	if service != "trader-sync" {
-		return errors.New("seed supports only trader-sync")
+		return empty, errors.New("seed supports only trader-sync")
 	}
 	m := NewManager(k)
 	lease, err := acquireOperation(k)
 	if err != nil {
-		return err
+		return empty, err
 	}
 	defer lease.close()
 	s, err := m.Status()
 	if err != nil {
-		return err
+		return empty, err
 	}
 	if s.DBMode != "managed" || s.Phase != "running" {
-		return errors.New("seed requires a running managed instance")
+		return empty, errors.New("seed requires a running managed instance")
 	}
 	dsn, err := m.currentManagedDSN(ctx, s)
 	if err != nil {
-		return err
+		return empty, err
 	}
 	pool, err := schema.ConnectVerified(ctx, dsn)
 	if err != nil {
-		return err
+		return empty, err
 	}
 	defer pool.Close()
 	var database string
 	if err = pool.QueryRow(ctx, "SELECT current_database()").Scan(&database); err != nil || database != "athena" {
-		return errors.New("seed target database mismatch")
+		return empty, errors.New("seed target database mismatch")
 	}
 	fixture, err := seedDatabase(ctx, pool)
 	if err != nil {
-		return err
+		return empty, err
 	}
 	data, err := json.Marshal(struct {
 		Namespace string
 		Fixture   DevelopmentFixture
 	}{k.Namespace, fixture})
 	if err != nil {
-		return err
+		return empty, err
 	}
-	return m.SaveSecret("development-fixture.json", data)
+	if err = m.SaveSecret("development-fixture.json", data); err != nil {
+		return empty, err
+	}
+	return fixture, nil
 }
 func (m *Manager) currentManagedDSN(ctx context.Context, s State) (string, error) {
 	if s.DBMode != "managed" {

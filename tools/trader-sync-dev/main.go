@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/useryege/athena/internal/devruntime"
@@ -20,7 +21,11 @@ func main() {
 	if err == nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 		defer cancel()
-		err = devruntime.Seed(ctx, key, "trader-sync")
+		var fixture devruntime.DevelopmentFixture
+		fixture, err = devruntime.Seed(ctx, key, "trader-sync")
+		if err == nil {
+			err = json.NewEncoder(os.Stdout).Encode(fixture)
+		}
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

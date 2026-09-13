@@ -127,7 +127,7 @@ func TestRealRunnerTwoInstancesAndPersistentSeed(t *testing.T) {
 	a := runnerOptions(t, "managed", []string{"trader-sync"}, "")
 	_, ad := startRunner(t, a)
 	awaitRunning(t, a, ad)
-	if e := Seed(ctx, a.Key, "trader-sync"); e != nil {
+	if _, e := Seed(ctx, a.Key, "trader-sync"); e != nil {
 		t.Fatal(e)
 	}
 	before, e := os.ReadFile(filepath.Join(a.Key.Dir(), "development-fixture.json"))
@@ -149,7 +149,7 @@ func TestRealRunnerTwoInstancesAndPersistentSeed(t *testing.T) {
 	}
 	_, ad = startRunner(t, a)
 	awaitRunning(t, a, ad)
-	if e = Seed(ctx, a.Key, "trader-sync"); e != nil {
+	if _, e = Seed(ctx, a.Key, "trader-sync"); e != nil {
 		t.Fatal(e)
 	}
 	after, e := os.ReadFile(filepath.Join(a.Key.Dir(), "development-fixture.json"))
@@ -181,7 +181,7 @@ func TestExternalVerificationFailureCreatesNoChildrenOrDatabase(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	if len(s.Processes) != 0 || len(s.Resources) != 0 {
+	if selectedServiceExited(s) || s.Processes["trader-sync"].PID != 0 || len(s.Resources) != 0 {
 		t.Fatal("external verify created resources")
 	}
 	var absent bool
@@ -325,7 +325,7 @@ func TestExternalHealthyBorrowerStopLeavesDatabaseRunning(t *testing.T) {
 	awaitRunning(t, o, done)
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
-	if e := Seed(ctx, o.Key, "trader-sync"); e == nil {
+	if _, e := Seed(ctx, o.Key, "trader-sync"); e == nil {
 		t.Fatal("external seed permitted")
 	}
 	if e := Stop(ctx, o.Key); e != nil {
@@ -349,7 +349,7 @@ func TestAPIOnlyRunsWithBrokenCollectorConfiguration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 	s, e := Status(ctx, o.Key)
-	if e != nil || s.Health["api-server"] != "ready" || len(s.Processes) != 1 {
+	if e != nil || s.Health["api-server"] != "ready" || s.Processes["trader-sync"].PID != 0 || s.Processes["notification"].PID != 0 {
 		t.Fatal(s.Health, e)
 	}
 	data, e := os.ReadFile("/proc/" + strconv.Itoa(s.Processes["api-server"].PID) + "/environ")

@@ -1,3 +1,20 @@
+# Freeze command-line/environment inputs before any $(shell ...) can export them.
+# $(value) returns literal data; := prevents a later recursive Make expansion.
+override SERVICE := $(value SERVICE)
+override SERVICES := $(value SERVICES)
+override INSTANCE := $(value INSTANCE)
+override DB_MODE := $(value DB_MODE)
+override ENV_FILE := $(value ENV_FILE)
+ifneq ($(origin TRADER_SYNC_IMAGE),undefined)
+override TRADER_SYNC_IMAGE := $(value TRADER_SYNC_IMAGE)
+endif
+ifneq ($(origin ACCOUNT_STATE_MAINTENANCE),undefined)
+override ACCOUNT_STATE_MAINTENANCE := $(value ACCOUNT_STATE_MAINTENANCE)
+endif
+ifneq ($(origin ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED),undefined)
+override ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED := $(value ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED)
+endif
+
 PACKAGE=github.com/useryege/athena/common
 CURRENT_DIR=$(shell pwd)
 DIST_DIR=${CURRENT_DIR}/dist
@@ -412,22 +429,22 @@ account-state-schema-contract:
 	mv internal/accountstate/schema/contract.json.tmp internal/accountstate/schema/contract.json
 
 # Values are exported as data, never interpolated into a shell recipe.
-export SERVICE SERVICES INSTANCE DB_MODE ENV_FILE
+export SERVICE SERVICES INSTANCE DB_MODE ENV_FILE ACCOUNT_STATE_MAINTENANCE ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED
 .PHONY: build-service run-service run-services runtime-status stop-instance reset-instance seed-service account-state-migrate
 build-service:
-	go run ./cmd/athena-local-runtime make-build
+	@exec bash ./hack/run-local-runtime.sh make-build
 run-service:
-	go run ./cmd/athena-local-runtime make-run-service
+	@exec bash ./hack/run-local-runtime.sh make-run-service
 run-services:
-	go run ./cmd/athena-local-runtime make-run-services
+	@exec bash ./hack/run-local-runtime.sh make-run-services
 runtime-status:
-	go run ./cmd/athena-local-runtime make-status
+	@exec bash ./hack/run-local-runtime.sh make-status
 stop-instance:
-	go run ./cmd/athena-local-runtime make-stop
+	@exec bash ./hack/run-local-runtime.sh make-stop
 reset-instance:
-	go run ./cmd/athena-local-runtime make-reset
+	@exec bash ./hack/run-local-runtime.sh make-reset
 seed-service:
-	go run ./cmd/athena-local-runtime make-seed
+	@exec bash ./hack/run-local-runtime.sh make-seed
 account-state-migrate:
 	go run ./cmd/athena-account-state-migrate up --timeout=120s
 	go run ./cmd/athena-account-state-migrate verify --timeout=120s

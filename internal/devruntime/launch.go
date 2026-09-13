@@ -29,7 +29,7 @@ type RunOptions struct {
 	DBMode, EnvFile string
 }
 
-func Build(ctx context.Context, key InstanceKey, names []string) error {
+func Build(ctx context.Context, key InstanceKey, names []string) (result error) {
 	specs, err := ResolveServices(names)
 	if err != nil {
 		return err
@@ -39,6 +39,15 @@ func Build(ctx context.Context, key InstanceKey, names []string) error {
 			return errors.New("build-service builds Go services; build UI with its own package build command")
 		}
 	}
+	m := NewManager(key)
+	if _, err = m.Begin(names, "managed"); err != nil {
+		return err
+	}
+	defer func() {
+		cleanup, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+		defer cancel()
+		result = errors.Join(result, m.Stop(cleanup))
+	}()
 	paths, err := buildServices(ctx, key, specs)
 	if err != nil {
 		return err
@@ -73,11 +82,11 @@ func buildServices(ctx context.Context, key InstanceKey, specs []ServiceSpec) (m
 			continue
 		}
 		path := filepath.Join(dir, s.Binary)
-		cmd := exec.CommandContext(ctx, "go", "build", "-o", path, s.BuildPackage)
+		cmd := exec.Command("go", "build", "-o", path, s.BuildPackage)
 		cmd.Dir = key.Checkout
 		cmd.Env = EnvironmentFor(environmentMap(os.Environ()), []string{"PATH", "HOME", "TMPDIR", "GOCACHE", "GOMODCACHE", "GOPATH", "GOROOT", "GOTOOLCHAIN", "CGO_ENABLED", "CC", "CXX", "PKG_CONFIG_PATH"})
-		if err := cmd.Run(); err != nil {
-			return nil, fmt.Errorf("build %s failed: %w", s.Name, err)
+		if err := NewManager(key).RunHelper(ctx, "build-"+s.Name, cmd, 30*time.Second); err != nil {
+			return nil, err
 		}
 		paths[s.Name] = path
 	}
@@ -196,10 +205,6 @@ func Run(ctx context.Context, o RunOptions) (result error) {
 	if err = preflightPorts(specs, env); err != nil {
 		return err
 	}
-	paths, err := buildServices(ctx, o.Key, specs)
-	if err != nil {
-		return err
-	}
 	if _, err = m.Begin(o.Services, o.DBMode); err != nil {
 		return err
 	}
@@ -223,6 +228,10 @@ func Run(ctx context.Context, o RunOptions) (result error) {
 		}
 		result = errors.Join(result, stopErr)
 	}()
+	paths, err := buildServices(ctx, o.Key, specs)
+	if err != nil {
+		return err
+	}
 	fingerprints := map[string]string{}
 	for name, path := range paths {
 		data, e := os.ReadFile(path)
@@ -383,7 +392,7 @@ func Run(ctx context.Context, o RunOptions) (result error) {
 		if s.Phase != "starting" {
 			return errors.New("instance stopped during startup")
 		}
-		if len(s.ExitCodes) != 0 {
+		if selectedServiceExited(*s) {
 			return errors.New("service exited before all services were ready")
 		}
 		s.Phase = "running"
@@ -403,35 +412,26 @@ func runSchema(ctx context.Context, k InstanceKey, action string, env map[string
 		return err
 	}
 	path := filepath.Join(dir, "athena-account-state-migrate")
-	build := exec.CommandContext(deadline, "go", "build", "-o", path, "./cmd/athena-account-state-migrate")
+	build := exec.Command("go", "build", "-o", path, "./cmd/athena-account-state-migrate")
 	build.Dir = k.Checkout
 	build.Env = EnvironmentFor(environmentMap(os.Environ()), []string{"PATH", "HOME", "TMPDIR", "GOCACHE", "GOMODCACHE", "GOPATH", "GOROOT", "GOTOOLCHAIN"})
-	if err = build.Run(); err != nil {
-		return errors.New("schema tool build failed")
+	m := NewManager(k)
+	if err = m.RunHelper(deadline, "build-schema-"+action, build, 30*time.Second); err != nil {
+		return err
 	}
-	cmd := exec.CommandContext(deadline, path, action, "--timeout=120s")
+	cmd := exec.Command(path, action, "--timeout=120s")
+	cmd.Dir = k.Checkout
 	cmd.Env = EnvironmentFor(env, keys(toolEnvironment, []string{schema.DSNEnv}))
-	logPath := filepath.Join(k.Dir(), "schema-"+action+"-"+NewRunID()+".log")
-	log, e := os.OpenFile(logPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
-	if e != nil {
-		return e
-	}
-	defer log.Close()
-	cmd.Stdout = log
-	cmd.Stderr = log
-	_ = NewManager(k).Update(func(s *State) error { s.Logs["schema-"+action] = logPath; return nil })
-	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("account-state %s failed; inspect instance schema log", action)
-	}
-	return nil
+	return m.RunHelper(deadline, "schema-"+action, cmd, 30*time.Second)
 }
+
 func waitService(ctx context.Context, m *Manager, name, address string, env map[string]string) error {
 	for {
 		state, e := m.Status()
 		if e != nil {
 			return e
 		}
-		if len(state.ExitCodes) > 0 {
+		if selectedServiceExited(state) {
 			return errors.New("service exited during initial startup; inspect instance logs")
 		}
 		probe, cancel := context.WithTimeout(ctx, time.Second)

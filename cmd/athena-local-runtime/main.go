@@ -12,7 +12,9 @@ import (
 	"github.com/useryege/athena/internal/devruntime"
 	"io"
 	"os"
+	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -82,7 +84,7 @@ func run(args []string, out io.Writer) error {
 	}
 	action := args[0]
 	switch action {
-	case "build", "run", "supervise", "status", "stop", "reset", "seed":
+	case "build", "run", "supervise", "supervise-build", "status", "stop", "reset", "seed":
 	default:
 		return fmt.Errorf("unknown runtime command %q", action)
 	}
@@ -109,11 +111,26 @@ func run(args []string, out io.Writer) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	switch action {
-	case "build":
-		return devruntime.Build(ctx, key, strings.Fields(*services))
-	case "run":
-		if _, e = devruntime.ResolveServices(strings.Fields(*services)); e != nil {
-			return e
+	case "build", "run":
+		specs, err := devruntime.ResolveServices(strings.Fields(*services))
+		if err != nil {
+			return err
+		}
+		target := "supervise"
+		forwarded := append([]string{}, args[1:]...)
+		if action == "build" {
+			for _, spec := range specs {
+				if spec.Name == "ui" {
+					return errors.New("build-service builds independent Go binaries")
+				}
+			}
+			target = "supervise-build"
+			job, e := devruntime.NewInstanceKey(key.Checkout, "build-"+key.Namespace[:12]+"-"+devruntime.NewRunID()[:8])
+			if e != nil {
+				return e
+			}
+			key = job
+			forwarded = []string{"--checkout", key.Checkout, "--instance", key.Name, "--services", *services}
 		}
 		self, e := os.Executable()
 		if e != nil {
@@ -123,18 +140,25 @@ func run(args []string, out io.Writer) error {
 		if e != nil {
 			return e
 		}
-		childArgs := append([]string{immutable, "supervise"}, args[1:]...)
+		childArgs := append([]string{target}, forwarded...)
 		env := os.Environ()
 		for i := len(env) - 1; i >= 0; i-- {
 			if strings.HasPrefix(env[i], devruntime.RunIDEnv+"=") {
 				env = append(env[:i], env[i+1:]...)
 			}
 		}
-		env = append(env, devruntime.RunIDEnv+"="+devruntime.NewRunID())
-		if e = syscall.Setpgid(0, 0); e != nil {
-			return e
-		}
-		return syscall.Exec(immutable, childArgs, env)
+		runID := devruntime.NewRunID()
+		env = append(env, devruntime.RunIDEnv+"="+runID)
+		child := exec.Command(immutable, childArgs...)
+		child.Env = env
+		child.Stdin = os.Stdin
+		child.Stdout = out
+		child.Stderr = os.Stderr
+		child.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		return superviseForeground(ctx, child, runID)
+	case "supervise-build":
+		return devruntime.Build(ctx, key, strings.Fields(*services))
+
 	case "supervise":
 		return devruntime.Run(ctx, devruntime.RunOptions{Key: key, Services: strings.Fields(*services), DBMode: *mode, EnvFile: *file})
 	case "status":
@@ -160,7 +184,11 @@ func run(args []string, out io.Writer) error {
 		}
 		bounded, c := context.WithTimeout(ctx, 2*time.Minute)
 		defer c()
-		return devruntime.Seed(bounded, key, names[0])
+		fixture, err := devruntime.Seed(bounded, key, names[0])
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(out).Encode(fixture)
 	}
 	return nil
 }
@@ -168,5 +196,55 @@ func main() {
 	if e := run(os.Args[1:], os.Stdout); e != nil {
 		fmt.Fprintln(os.Stderr, e)
 		os.Exit(1)
+	}
+}
+
+// This relay stays in the terminal foreground group. Only the supervised child
+// receives an independent PGID; a terminal signal is forwarded through a
+// verified identity, then the relay waits for the child's normal Stop/reap path.
+func superviseForeground(ctx context.Context, child *exec.Cmd, runID string) error {
+	expected, e := filepath.EvalSymlinks(child.Path)
+	if e != nil {
+		return e
+	}
+	if e := child.Start(); e != nil {
+		return e
+	}
+	done := make(chan error, 1)
+	go func() { done <- child.Wait() }()
+	deadline := time.NewTimer(time.Second)
+	defer deadline.Stop()
+	tick := time.NewTicker(time.Millisecond)
+	defer tick.Stop()
+	var identity devruntime.ProcessIdentity
+	for identity.PID == 0 {
+		select {
+		case e := <-done:
+			return e
+		case <-deadline.C:
+			_ = child.Process.Kill()
+			<-done
+			return errors.New("cannot establish foreground supervisor identity")
+		case <-tick.C:
+			p, e := devruntime.ReadProcess(child.Process.Pid)
+			if e == nil && p.RunID == runID && p.Exe == expected && p.PGID == p.PID {
+				identity = p
+			}
+		}
+	}
+	select {
+	case e := <-done:
+		return e
+	case <-ctx.Done():
+		e := devruntime.SignalProcess(identity, syscall.SIGTERM)
+		if errors.Is(e, os.ErrNotExist) {
+			e = nil
+		}
+		if e != nil {
+			return e
+		}
+		// The service's own bounded Stop protocol decides escalation. The launcher
+		// remains alive so Make and the terminal wait for that actual result.
+		return <-done
 	}
 }
