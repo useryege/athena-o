@@ -2,6 +2,8 @@
 
 日期：2026-09-13。范围：第一批工具安装、独立检查入口及真实运行验证；现有代码和依赖发现仅记录，不在本次批量修复。用法见[开发工具链](../developer-guide/toolchain-guide.md#ai-开发检查工具)，批准范围见[实现计划](../superpowers/plans/2026-09-13-ai-dev-tools.md)。
 
+下文保留首轮扫描基线；后续 Go 1.27.1 升级见 [Go 升级验收记录](go-1.27.1-upgrade.md)，第三方依赖修复及最新漏洞复扫见 [第三方依赖验收记录](third-party-vulnerabilities.md)；共用状态标签对比度修复见[后续 UI 修复验收](#后续-ui-对比度修复验收)。
+
 ## 安装状态
 
 | 工具 | 实测版本 | 安装位置 |
@@ -41,6 +43,9 @@
 
 新增安装器、命令脚本和脚本行为测试的定向 ShellCheck 检查通过。原有脚本及配置提示未被批量改写或全局屏蔽。完整日志路径见本地 `.superpowers/sdd/ai-dev-tools/shell-first-run.log` 的首行；原始扫描日志保存在 `.tmp/ai-dev-tools/shellcheck-*.log`。
 
+后续按用户批准范围修复 ShellCheck 提示及远端命令引用，过程和最新结果见
+[ShellCheck 修复验收记录](shellcheck-cleanup.md)。上文保留工具接入时的49条历史基线。
+
 ## Go 漏洞首轮发现
 
 `make vuln-check` 完成默认构建条件的 `./...` 扫描，govulncheck 原生退出码为3（Make 将失败汇总为2）。报告指出37项可达漏洞；另有14项导入包、30项所需模块中的发现，当前代码未显示调用对应漏洞路径。可达分析不等于已经证明可利用。
@@ -75,3 +80,33 @@
 - [前缀路径 Playwright 报告](../../.tmp/athena-ui-acceptance/2026-09-13T05-20-04-272Z-a3669cc6/athena/a11y/html/index.html)
 
 上述原始产物为本机 Git 忽略目录中的证据，复制仓库或清理缓存后需重新运行命令生成；本文保留此次验证结论。
+
+
+## 后续 UI 对比度修复验收
+
+日期：2026-09-13。范围为已批准的[共用状态标签修复](../superpowers/plans/2026-09-13-ui-status-contrast.md)，上文保留工具接入时的历史失败。
+
+`StatusTag` 仅在 `positive && !negative` 时添加成功状态类；浅色文字由 `#389e0d` 改为 `#237804`，背景仍为 `#f6ffed`。axe 实测三个问题标签的对比度由 3.37:1 升至 5.43:1（直接计算为 5.4379:1，四舍五入为 5.44:1），12px 字号不变，超过 4.5:1 要求。深色主题继续使用现有配色。未修改状态语义、组件接口、背景、边框、字号、依赖或 axe 规则。
+
+| 检查 | 结果与证据 |
+| --- | --- |
+| 修改前完整 `make ui-a11y` | 28通过、4失败；均为两前缀、两视口的浅色服务状态标签 `color-contrast`，每场景3个节点。构建成功，清理通过。 |
+| 修改后完整 `make ui-a11y` | 32/32通过；根路径和 `/athena` 各16通过，零跳过、零 flaky、零 axe 违规，构建及清理通过。 |
+| TypeScript | `node ui/node_modules/typescript/bin/tsc --noEmit --project ui/src/app` 通过。 |
+| 页面抽查 | Accounts、Etherscan Gateways、Trader Sync 各明暗主题；Service Status 加桌面/移动。修复前后各10张截图，共比较70个标签，仅15处预期的浅色共用成功文字/对比度变化。负面、中性、深色及 Trader Sync 局部覆盖均不变。 |
+| 隔离 `make ui-acceptance` | 86/86通过；两前缀各33个 ui-fixtures、10个 live，零跳过、零 flaky；构建成功、临时服务/数据库/锁清理通过，命令退出0。 |
+| 真实 `make ui-acceptance UI_ACCEPTANCE_MODE=smoke` | 2/2通过，系统 Chrome，目标 `http://localhost:4000`。会员/管理员 bootstrap 分别为本地会员与管理员身份，两应用 shell 均通过；命令退出0。 |
+
+抽查由浏览器拦截 API、加载当前根工作区的真实前端资源，属于 `ui-fixtures` 证据，不是对真实业务数据或认证流程的验收。截图目视检查服务状态页的明暗主题和移动布局；before 原始样式未采集几何字段，因此不将截图检查描述为自动像素/尺寸回归。深色成功标签的计算对比度保持7.04:1。自动无障碍结论仅覆盖现有32个场景，不代表全站检查。
+
+本次追加的 Prettier 检查仍提示两个源文件原有格式问题（修改前根工作区也失败），涉及未修改的 JSX 闭合排版和媒体查询缩进；没有批量格式化或将该检查宣称为通过。任务差异检查通过。
+
+本机原始产物（Git 忽略目录，清理后需重新运行）：
+
+- [修改前 a11y 摘要](../../.worktrees/ui-status-contrast/.tmp/athena-ui-acceptance/2026-09-13T07-27-59-160Z-e726f8cf/report.md)
+- [修改后 a11y 摘要](../../.worktrees/ui-status-contrast/.tmp/athena-ui-acceptance/2026-09-13T07-30-54-877Z-a016a1d4/report.md)，包含32份原始 axe 结果。
+- [隔离功能验收摘要](../../.worktrees/ui-status-contrast/.tmp/athena-ui-acceptance/2026-09-13T07-32-19-260Z-3ef7202e/report.md)
+- [真实 smoke 摘要](../../.tmp/athena-ui-acceptance/2026-09-13T07-33-58-458Z-0ccb3039/report.md)
+- [抽查说明及重跑命令](../../.tmp/ui-status-contrast/probe-notes.md)、[修改前样式](../../.tmp/ui-status-contrast/before/status-tag-probe.json)、[修改后样式](../../.tmp/ui-status-contrast/after/status-tag-probe.json)、[70个标签比较结果](../../.tmp/ui-status-contrast/probe-comparison.json)。
+
+真实环境复用 `/home/yege/work/athena` 的已有服务：Goreman PID `307846`、Vite PID `308228`，原持久会话 `29856`，日志 `.tmp/third-party-vulnerabilities/runtime.log`。本次仅在对比基线无并发修改后回写两处 UI 源文件，未重启服务或改动数据；服务继续运行。需要停止时从该根目录执行 `make stop`。

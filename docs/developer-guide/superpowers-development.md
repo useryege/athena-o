@@ -44,20 +44,22 @@ Codex 的仓库技能发现方式见 [OpenAI 官方技能文档](https://learn.c
 
 ## 项目技能的职责
 
-Superpowers 负责开发方法。Impeccable 负责 `ui/` 下的 UI/UX 能力，并复用任务设计讨论与批准结果。`grpc-rpc-naming`、`sync-athena-changes` 继续提供 RPC 命名、生成源与消费者同步知识；本地提交和多仓库 PR 技能提供相应操作支持。[ATHENA 浏览器验收技能](../../.codex/skills/athena-browser-acceptance/SKILL.md)按请求在当前可用的内置浏览器检查、真实本地开发环境冒烟和隔离 Playwright 回归之间选择入口，并如实区分三者的证据。真实验收按 [AGENTS.md 的环境准备规则](../../AGENTS.md#本地验收环境准备与完成标准)复用或主动启动目标环境；smoke 工具不启停服务不免除代理的准备责任，验收后默认保留服务运行。相关测试与验证遵循 Superpowers。
+Superpowers 负责开发方法。Impeccable 负责 `ui/` 下的 UI/UX 能力，并复用任务设计讨论与批准结果。`grpc-rpc-naming`、`sync-athena-changes` 继续提供 RPC 命名、生成源与消费者同步知识；多仓库 PR 技能提供相应操作支持。[ATHENA 浏览器验收技能](../../.codex/skills/athena-browser-acceptance/SKILL.md)按请求在当前可用的内置浏览器检查、真实本地开发环境冒烟和隔离 Playwright 回归之间选择入口，并如实区分三者的证据。真实验收按 [AGENTS.md 的环境准备规则](../../AGENTS.md#本地验收环境准备与完成标准)复用或主动启动目标环境；smoke 工具不启停服务不免除代理的准备责任，验收后默认保留服务运行。相关测试与验证遵循 Superpowers。
 
 本次切换移除了自制后端阶段路由技能、独立的需求/设计/另行实现门禁、额外的前端布局审批门槛，以及默认禁止测试的规定。开发期允许破坏性重构、中文计划、完成邮件等项目约定继续由 `AGENTS.md` 管理。
 
 ## 工具与技能配合
 
-[开发工具链](toolchain-guide.md#ai-开发检查工具)提供安装、就绪检查和可重复执行的命令。
-技能负责判断验证场景，CLI 和报告提供证据：
+[开发工具链的选择表](toolchain-guide.md#按任务选择工具)是工具场景与命令的统一入口，
+由根目录 `AGENTS.md` 引导 AI 按需查阅。技能负责判断任务需要的证据，CLI 和报告提供
+实际结果；已安装不表示每个任务都要调用，也不保证新 worktree 已准备相同依赖。
 
 - `systematic-debugging` 排查启动脚本、RPC 或 SQL 问题时，分别使用 ShellCheck、grpcurl、psql。
-- `athena-browser-acceptance` 与 Impeccable 处理界面验收时，可运行独立的 `make ui-a11y` 检查无障碍；继续保留现有功能与人工操作验证。
+- `athena-browser-acceptance` 按请求选择浏览器检查、隔离回归、真实 smoke 或独立 `make ui-a11y`；Impeccable 结合相关 UI/UX 目标判断哪些检查有用。无障碍预检使用 `UI_ACCEPTANCE_CHECK_ONLY=1 make ui-a11y`，不代表页面扫描通过。
 - Go 依赖安全检查使用 `make vuln-check`；`verification-before-completion` 应区分工具就绪、扫描成功执行和扫描没有发现问题。
 
-这些入口不要求新增技能，也不改写上游 Superpowers / Impeccable。首轮存量问题保留原始证据，后续修复另行确定范围。
+选择性使用针对任务关联性和检查范围，不免除已经要求的验证。复用现有项目技能，
+保持上游 Superpowers / Impeccable 原文；版本与命令细节留在工具链文档和安装器中。
 
 ## 升级
 

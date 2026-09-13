@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	giterr "github.com/go-git/go-git/v5/plumbing/transport"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,21 +12,6 @@ import (
 
 func rewrapError(err error, code codes.Code) error {
 	return status.Error(code, err.Error())
-}
-
-func gitErrToGRPC(err error) error {
-	if err == nil {
-		return nil
-	}
-	errMsg := err.Error()
-	if grpcStatus := UnwrapGRPCStatus(err); grpcStatus != nil {
-		errMsg = grpcStatus.Message()
-	}
-
-	if errMsg == giterr.ErrRepositoryNotFound.Error() {
-		err = rewrapError(errors.New(errMsg), codes.NotFound)
-	}
-	return err
 }
 
 // UnwrapGRPCStatus will attempt to cast the given error into a grpc Status
@@ -99,22 +83,6 @@ func kubeErrToGRPC(err error) error {
 		}
 	}
 	return err
-}
-
-// ErrorCodeGitUnaryServerInterceptor replaces Kubernetes errors with relevant gRPC equivalents, if any.
-func ErrorCodeGitUnaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-		resp, err = handler(ctx, req)
-		return resp, gitErrToGRPC(err)
-	}
-}
-
-// ErrorCodeGitStreamServerInterceptor replaces Kubernetes errors with relevant gRPC equivalents, if any.
-func ErrorCodeGitStreamServerInterceptor() grpc.StreamServerInterceptor {
-	return func(srv any, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		err := handler(srv, ss)
-		return gitErrToGRPC(err)
-	}
 }
 
 // ErrorCodeK8sUnaryServerInterceptor replaces Kubernetes errors with relevant gRPC equivalents, if any.

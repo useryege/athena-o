@@ -97,6 +97,17 @@ administrator entry imports `admin-features.css`. Realm-specific page and shell
 selectors therefore do not enter the opposite stylesheet graph, while shared
 components keep one neutral class contract.
 
+### Shared status tag contrast
+
+`StatusTag` in the neutral display components uses
+`athena-status-tag--positive` only when `positive` is true and `negative` is
+false. In the light theme, `shared.css` sets its text to `#237804` against
+Ant Design's existing `#f6ffed` background (approximately 5.44:1 contrast).
+The dark theme retains Ant Design's palette. Negative/default tags and the
+existing Trader Sync local text overrides retain their styles; this rule does
+not override all green Ant Design tags. Keep ordinary status text at least
+4.5:1 in the rendered page and verify both themes with the existing a11y suite.
+
 ## Runtime Flow
 
 1. Vite development and preview middleware normalize

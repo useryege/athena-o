@@ -10,8 +10,8 @@
 #
 # Use helper scripts under ./hack/installers/checksums to help download checksums.
 ###############################################################################
-protoc_version=29.3
-oras_version=1.2.0
+export protoc_version=29.3
+export oras_version=1.2.0
 export shellcheck_version=0.11.0
 export grpcurl_version=1.9.4
 export govulncheck_version=1.7.0

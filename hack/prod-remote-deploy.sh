@@ -3,12 +3,14 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=hack/lib/ssh-command.sh
+source "${SCRIPT_DIR}/lib/ssh-command.sh"
 
 ENV_FILE="${PROD_ENV_FILE:-${REPO_ROOT}/.env}"
 COMPOSE_FILE="${PROD_COMPOSE_FILE:-${REPO_ROOT}/docker-compose.prod.yml}"
 IMAGE="${PROD_IMAGE:-athena:local}"
-MINIO_IMAGE="${MINIO_IMAGE:-athena-minio:9e49d5e7a648}"
-MINIO_MC_IMAGE="${MINIO_MC_IMAGE:-athena-minio-mc:7394ce0dd2a8}"
+MINIO_IMAGE="${MINIO_IMAGE:-athena-minio:9e49d5e7a648-go1.27.1}"
+MINIO_MC_IMAGE="${MINIO_MC_IMAGE:-athena-minio-mc:7394ce0dd2a8-go1.27.1}"
 REMOTE_USER="${REMOTE_USER:-root}"
 REMOTE_APP_DIR="${REMOTE_APP_DIR:-/root/athena}"
 POSTGRES_VOLUME="${PROD_POSTGRES_VOLUME:-athena-prod-postgres-data}"
@@ -45,16 +47,45 @@ fi
 
 REMOTE="${REMOTE_USER}@${REMOTE_HOST}"
 
+PROD_REMOTE_SETUP="$(cat <<'REMOTE'
+set -e
+IMAGE="$1"
+MINIO_IMAGE="$2"
+MINIO_MC_IMAGE="$3"
+POSTGRES_VOLUME="$4"
+REDIS_VOLUME="$5"
+MINIO_VOLUME="$6"
+APP_DIR="$7"
+MIGRATE_MODULE="$8"
+GOOGLE_OIDC_SECRET_ARCHIVE_PATH="$9"
+ATHENA_CONTAINER_UID="${10}"
+export PROD_IMAGE="$IMAGE" MINIO_IMAGE MINIO_MC_IMAGE
+export PROD_POSTGRES_VOLUME="$POSTGRES_VOLUME" PROD_REDIS_VOLUME="$REDIS_VOLUME" PROD_MINIO_VOLUME="$MINIO_VOLUME"
+compose() {
+  docker compose -f docker-compose.prod.yml --env-file .env "$@"
+}
+REMOTE
+)"
+
+prod_remote_exec() {
+  local body="$1"
+  ssh_exec "${REMOTE}" bash -c "${PROD_REMOTE_SETUP}"$'\n'"${body}" _ \
+    "${IMAGE}" "${MINIO_IMAGE}" "${MINIO_MC_IMAGE}" \
+    "${POSTGRES_VOLUME}" "${REDIS_VOLUME}" "${MINIO_VOLUME}" \
+    "${REMOTE_APP_DIR}" "${MIGRATE_MODULE}" \
+    "${GOOGLE_OIDC_SECRET_ARCHIVE_PATH}" "${ATHENA_CONTAINER_UID}"
+}
+
 destroy_remote() {
   echo "Removing Athena containers, network, and persistent data volumes from ${REMOTE}..."
-  ssh "${REMOTE}" "set -e
+  prod_remote_exec "$(cat <<'REMOTE'
 docker --version >/dev/null
 docker compose version >/dev/null
-if [ -f '${REMOTE_APP_DIR}/docker-compose.prod.yml' ]; then
-  cd '${REMOTE_APP_DIR}'
+if [ -f "$APP_DIR/docker-compose.prod.yml" ]; then
+  cd "$APP_DIR"
   mkdir -p secrets
-  if [ ! -f '${GOOGLE_OIDC_SECRET_ARCHIVE_PATH}' ]; then
-    install -m 0600 /dev/null '${GOOGLE_OIDC_SECRET_ARCHIVE_PATH}'
+  if [ ! -f "$GOOGLE_OIDC_SECRET_ARCHIVE_PATH" ]; then
+    install -m 0600 /dev/null "$GOOGLE_OIDC_SECRET_ARCHIVE_PATH"
   fi
   if [ -f .env ]; then
     compose_env_file=.env
@@ -67,13 +98,15 @@ if [ -f '${REMOTE_APP_DIR}/docker-compose.prod.yml' ]; then
   export ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN=dummy-wallet-worm-execution-signer-token-32bytes
   export ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY=dummy-worm-trading-credential-encryption-key-32bytes
   export ATHENA_WORM_TRADING_SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
-  ATHENA_COMPOSE_ENV_FILE=\"\${compose_env_file}\" ATHENA_TOKEN_ETH_ENABLED=dummy ATHENA_TOKEN_ETH_NODE_WS_URLS=dummy ATHENA_TOKEN_ETH_ATHENA_CONTRACT=dummy ATHENA_TOKEN_ETH_PROCESSOR_INITIAL_LOOKBACK_DURATION=dummy ATHENA_TOKEN_ETH_PROCESSOR_POLL_INTERVAL=dummy ATHENA_TOKEN_BSC_ENABLED=dummy ATHENA_TOKEN_BSC_NODE_WS_URLS=dummy ATHENA_TOKEN_BSC_ATHENA_CONTRACT=dummy ATHENA_TOKEN_BSC_PROCESSOR_INITIAL_LOOKBACK_DURATION=dummy ATHENA_TOKEN_BSC_PROCESSOR_POLL_INTERVAL=dummy POSTGRES_PASSWORD=dummy REDIS_PASSWORD=dummy ATHENA_JWT_SECRET=dummy-jwt-secret-for-compose-cleanup ATHENA_ADMIN_GOOGLE_EMAIL=dummy-admin@example.com ATHENA_WALLET_ENCRYPTION_KEY=dummy ATHENA_WALLET_INTERNAL_AUTH_TOKEN=dummy-wallet-internal-auth-token-32bytes MINIO_ROOT_PASSWORD=dummy-root-password ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID=dummy-access-key ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY=dummy-secret-key ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID=dummy ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID=dummy ATHENA_ETHERSCAN_MANAGER_API_KEYS=dummy ATHENA_ETHERSCAN_MANAGER_GATEWAY_ADDRS=dummy ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN=dummy PROD_IMAGE='${IMAGE}' MINIO_IMAGE='${MINIO_IMAGE}' MINIO_MC_IMAGE='${MINIO_MC_IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' PROD_REDIS_VOLUME='${REDIS_VOLUME}' PROD_MINIO_VOLUME='${MINIO_VOLUME}' docker compose -f docker-compose.prod.yml --env-file \"\${compose_env_file}\" down --remove-orphans
+  ATHENA_COMPOSE_ENV_FILE="$compose_env_file" ATHENA_TOKEN_ETH_ENABLED=dummy ATHENA_TOKEN_ETH_NODE_WS_URLS=dummy ATHENA_TOKEN_ETH_ATHENA_CONTRACT=dummy ATHENA_TOKEN_ETH_PROCESSOR_INITIAL_LOOKBACK_DURATION=dummy ATHENA_TOKEN_ETH_PROCESSOR_POLL_INTERVAL=dummy ATHENA_TOKEN_BSC_ENABLED=dummy ATHENA_TOKEN_BSC_NODE_WS_URLS=dummy ATHENA_TOKEN_BSC_ATHENA_CONTRACT=dummy ATHENA_TOKEN_BSC_PROCESSOR_INITIAL_LOOKBACK_DURATION=dummy ATHENA_TOKEN_BSC_PROCESSOR_POLL_INTERVAL=dummy POSTGRES_PASSWORD=dummy REDIS_PASSWORD=dummy ATHENA_JWT_SECRET=dummy-jwt-secret-for-compose-cleanup ATHENA_ADMIN_GOOGLE_EMAIL=dummy-admin@example.com ATHENA_WALLET_ENCRYPTION_KEY=dummy ATHENA_WALLET_INTERNAL_AUTH_TOKEN=dummy-wallet-internal-auth-token-32bytes MINIO_ROOT_PASSWORD=dummy-root-password ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID=dummy ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY=dummy ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID=dummy ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID=dummy ATHENA_ETHERSCAN_MANAGER_API_KEYS=dummy ATHENA_ETHERSCAN_MANAGER_GATEWAY_ADDRS=dummy ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN=dummy docker compose -f docker-compose.prod.yml --env-file "$compose_env_file" down --remove-orphans
 fi
-for volume_name in '${POSTGRES_VOLUME}' '${REDIS_VOLUME}' '${MINIO_VOLUME}'; do
-  if docker volume inspect \"\${volume_name}\" >/dev/null 2>&1; then
-    docker volume rm \"\${volume_name}\" >/dev/null
+for volume_name in "$POSTGRES_VOLUME" "$REDIS_VOLUME" "$MINIO_VOLUME"; do
+  if docker volume inspect "$volume_name" >/dev/null 2>&1; then
+    docker volume rm "$volume_name" >/dev/null
   fi
-done"
+done
+REMOTE
+)"
 }
 
 if [[ "${ACTION}" == "destroy" ]]; then
@@ -240,111 +273,112 @@ fi
 
 if [[ "${ACTION}" == "hot-deploy" ]]; then
   echo "Checking remote host and persistent data volumes on ${REMOTE}..."
-  ssh "${REMOTE}" "set -e
+  prod_remote_exec "$(cat <<'REMOTE'
 docker --version >/dev/null
 docker compose version >/dev/null
-if ! docker volume inspect '${POSTGRES_VOLUME}' >/dev/null 2>&1; then
-  echo 'PostgreSQL volume not found: ${POSTGRES_VOLUME}. Run a full deployment first.'
+if ! docker volume inspect "$POSTGRES_VOLUME" >/dev/null 2>&1; then
+  echo "PostgreSQL volume not found: $POSTGRES_VOLUME. Run a full deployment first."
   exit 1
 fi
-if ! docker volume inspect '${REDIS_VOLUME}' >/dev/null 2>&1; then
-  echo 'Redis volume not found: ${REDIS_VOLUME}. Run a full deployment first.'
+if ! docker volume inspect "$REDIS_VOLUME" >/dev/null 2>&1; then
+  echo "Redis volume not found: $REDIS_VOLUME. Run a full deployment first."
   exit 1
 fi
-if ! docker volume inspect '${MINIO_VOLUME}' >/dev/null 2>&1; then
-  echo 'MinIO volume not found: ${MINIO_VOLUME}. Run a full deployment first.'
+if ! docker volume inspect "$MINIO_VOLUME" >/dev/null 2>&1; then
+  echo "MinIO volume not found: $MINIO_VOLUME. Run a full deployment first."
   exit 1
 fi
-mkdir -p '${REMOTE_APP_DIR}'"
+mkdir -p "$APP_DIR"
+REMOTE
+)"
 
   echo "Uploading compose file, environment file, and Google OIDC client secret..."
-  tar -C "${UPLOAD_DIR}" -cf - docker-compose.prod.yml .env secrets | ssh "${REMOTE}" "set -e
-tar -C '${REMOTE_APP_DIR}' -xf -
-chown \"\$(id -u):\$(id -g)\" '${REMOTE_APP_DIR}/.env'
-chmod 0600 '${REMOTE_APP_DIR}/.env'
-chown '${ATHENA_CONTAINER_UID}:${ATHENA_CONTAINER_UID}' '${REMOTE_APP_DIR}/${GOOGLE_OIDC_SECRET_ARCHIVE_PATH}'
-chmod 0600 '${REMOTE_APP_DIR}/${GOOGLE_OIDC_SECRET_ARCHIVE_PATH}'"
+  tar -C "${UPLOAD_DIR}" -cf - docker-compose.prod.yml .env secrets | prod_remote_exec "$(cat <<'REMOTE'
+tar -C "$APP_DIR" -xf -
+chown "$(id -u):$(id -g)" "$APP_DIR/.env"
+chmod 0600 "$APP_DIR/.env"
+chown "$ATHENA_CONTAINER_UID:$ATHENA_CONTAINER_UID" "$APP_DIR/$GOOGLE_OIDC_SECRET_ARCHIVE_PATH"
+chmod 0600 "$APP_DIR/$GOOGLE_OIDC_SECRET_ARCHIVE_PATH"
+REMOTE
+)"
 
-  echo "Streaming Docker image ${IMAGE} to ${REMOTE}..."
-  docker save "${IMAGE}" | ssh "${REMOTE}" "docker load"
-  echo "Streaming Docker image ${MINIO_IMAGE} to ${REMOTE}..."
-  docker save "${MINIO_IMAGE}" | ssh "${REMOTE}" "docker load"
-  echo "Streaming Docker image ${MINIO_MC_IMAGE} to ${REMOTE}..."
-  docker save "${MINIO_MC_IMAGE}" | ssh "${REMOTE}" "docker load"
+  for image in "${IMAGE}" "${MINIO_IMAGE}" "${MINIO_MC_IMAGE}"; do
+    echo "Streaming Docker image ${image} to ${REMOTE}..."
+    docker save "${image}" | prod_remote_exec 'docker load'
+  done
 
   echo "Ensuring the Profit Sharing database exists on ${REMOTE}..."
-  ssh "${REMOTE}" "set -e
-cd '${REMOTE_APP_DIR}'
-compose() {
-  PROD_IMAGE='${IMAGE}' MINIO_IMAGE='${MINIO_IMAGE}' MINIO_MC_IMAGE='${MINIO_MC_IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' PROD_REDIS_VOLUME='${REDIS_VOLUME}' PROD_MINIO_VOLUME='${MINIO_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env \"\$@\"
-}
+  prod_remote_exec "$(cat <<'REMOTE'
+cd "$APP_DIR"
 compose up -d postgres redis
 postgres_ready=false
-for attempt in \$(seq 1 60); do
-  if compose exec -T postgres sh -c 'pg_isready --username \"\$POSTGRES_USER\" --dbname \"\$POSTGRES_DB\"' >/dev/null 2>&1; then
+for attempt in $(seq 1 60); do
+  if compose exec -T postgres sh -c 'pg_isready --username "$POSTGRES_USER" --dbname "$POSTGRES_DB"' >/dev/null 2>&1; then
     postgres_ready=true
     break
   fi
   sleep 1
 done
-if [ \"\${postgres_ready}\" != 'true' ]; then
+if [ "$postgres_ready" != true ]; then
   echo 'PostgreSQL did not become ready before Profit Sharing database creation.'
   exit 1
 fi
 redis_ready=false
-for attempt in \$(seq 1 60); do
-  if compose exec -T redis sh -c 'redis-cli -a \"\$REDIS_PASSWORD\" ping' 2>/dev/null | grep -qx PONG; then
+for attempt in $(seq 1 60); do
+  if compose exec -T redis sh -c 'redis-cli -a "$REDIS_PASSWORD" ping' 2>/dev/null | grep -qx PONG; then
     redis_ready=true
     break
   fi
   sleep 1
 done
-if [ \"\${redis_ready}\" != 'true' ]; then
+if [ "$redis_ready" != true ]; then
   echo 'Redis did not become ready before Athena service recreation.'
   exit 1
 fi
-if ! compose exec -T postgres sh -c 'createdb --username \"\$POSTGRES_USER\" profit_sharing' >/dev/null 2>&1; then
-  compose exec -T postgres sh -c 'psql --username \"\$POSTGRES_USER\" --dbname profit_sharing --command \"SELECT 1\"' >/dev/null
-fi"
+if ! compose exec -T postgres sh -c 'createdb --username "$POSTGRES_USER" profit_sharing' >/dev/null 2>&1; then
+  compose exec -T postgres sh -c 'psql --username "$POSTGRES_USER" --dbname profit_sharing --command "SELECT 1"' >/dev/null
+fi
+REMOTE
+)"
 
   echo "Starting and initializing MinIO on ${REMOTE}..."
-  ssh "${REMOTE}" "set -e
-cd '${REMOTE_APP_DIR}'
-compose() {
-  PROD_IMAGE='${IMAGE}' MINIO_IMAGE='${MINIO_IMAGE}' MINIO_MC_IMAGE='${MINIO_MC_IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' PROD_REDIS_VOLUME='${REDIS_VOLUME}' PROD_MINIO_VOLUME='${MINIO_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env \"\$@\"
-}
+  prod_remote_exec "$(cat <<'REMOTE'
+cd "$APP_DIR"
 compose up -d minio
 minio_ready=false
-for attempt in \$(seq 1 60); do
+for attempt in $(seq 1 60); do
   if compose exec -T minio curl --fail --silent http://127.0.0.1:9000/minio/health/live >/dev/null 2>&1; then
     minio_ready=true
     break
   fi
   sleep 1
 done
-if [ \"\${minio_ready}\" != 'true' ]; then
+if [ "$minio_ready" != true ]; then
   echo 'MinIO did not become ready before bucket initialization.'
   exit 1
 fi
-compose run --rm --no-deps minio-init"
+compose run --rm --no-deps minio-init
+REMOTE
+)"
 
   echo "Running Athena migrations on ${REMOTE}..."
-  ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_IMAGE='${IMAGE}' MINIO_IMAGE='${MINIO_IMAGE}' MINIO_MC_IMAGE='${MINIO_MC_IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' PROD_REDIS_VOLUME='${REDIS_VOLUME}' PROD_MINIO_VOLUME='${MINIO_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env --profile tools run --rm athena-migrate athena up --module '${MIGRATE_MODULE}'"
+  # Remote variables expand in bash on the target host.
+  # shellcheck disable=SC2016
+  prod_remote_exec 'cd "$APP_DIR"; compose --profile tools run --rm athena-migrate athena up --module "$MIGRATE_MODULE"'
 
   echo "Recreating Athena backend services on ${REMOTE}..."
-  ssh "${REMOTE}" "set -e
-cd '${REMOTE_APP_DIR}'
-compose() {
-  PROD_IMAGE='${IMAGE}' MINIO_IMAGE='${MINIO_IMAGE}' MINIO_MC_IMAGE='${MINIO_MC_IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' PROD_REDIS_VOLUME='${REDIS_VOLUME}' PROD_MINIO_VOLUME='${MINIO_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env \"\$@\"
-}
-athena_services=\"\$(compose config --services | awk '/^athena-/ && \$0 != \"athena-migrate\" && \$0 != \"athena-server\" { print }')\"
-if [ -z \"\${athena_services}\" ]; then
+  prod_remote_exec "$(cat <<'REMOTE'
+cd "$APP_DIR"
+mapfile -t athena_services < <(compose config --services | awk '/^athena-/ && $0 != "athena-migrate" && $0 != "athena-server" { print }')
+if ((${#athena_services[@]} == 0)); then
   echo 'No Athena backend services found in docker-compose.prod.yml.'
   exit 1
 fi
-compose up -d --no-deps --force-recreate \${athena_services}
+compose up -d --no-deps --force-recreate "${athena_services[@]}"
 compose up -d --no-deps --force-recreate athena-server
-compose ps"
+compose ps
+REMOTE
+)"
 
   echo "Remote hot deployment completed. PostgreSQL, Redis, and MinIO data volumes were preserved."
   exit 0
@@ -355,38 +389,48 @@ cp -a "${REPO_ROOT}/hack/postgres/init" "${UPLOAD_DIR}/hack/postgres/init"
 
 echo "Preparing remote host ${REMOTE}..."
 destroy_remote
-ssh "${REMOTE}" "set -e
+prod_remote_exec "$(cat <<'REMOTE'
 docker --version >/dev/null
 docker compose version >/dev/null
-mkdir -p '${REMOTE_APP_DIR}'
-docker volume create '${POSTGRES_VOLUME}' >/dev/null
-docker volume create '${REDIS_VOLUME}' >/dev/null
-docker volume create '${MINIO_VOLUME}' >/dev/null"
+mkdir -p "$APP_DIR"
+docker volume create "$POSTGRES_VOLUME" >/dev/null
+docker volume create "$REDIS_VOLUME" >/dev/null
+docker volume create "$MINIO_VOLUME" >/dev/null
+REMOTE
+)"
 
 echo "Uploading compose file, environment file, Google OIDC client secret, and PostgreSQL init scripts..."
-tar -C "${UPLOAD_DIR}" -cf - docker-compose.prod.yml .env secrets hack | ssh "${REMOTE}" "set -e
-mkdir -p '${REMOTE_APP_DIR}'
-tar -C '${REMOTE_APP_DIR}' -xf -
-chown \"\$(id -u):\$(id -g)\" '${REMOTE_APP_DIR}/.env'
-chmod 0600 '${REMOTE_APP_DIR}/.env'
-chown '${ATHENA_CONTAINER_UID}:${ATHENA_CONTAINER_UID}' '${REMOTE_APP_DIR}/${GOOGLE_OIDC_SECRET_ARCHIVE_PATH}'
-chmod 0600 '${REMOTE_APP_DIR}/${GOOGLE_OIDC_SECRET_ARCHIVE_PATH}'"
+tar -C "${UPLOAD_DIR}" -cf - docker-compose.prod.yml .env secrets hack | prod_remote_exec "$(cat <<'REMOTE'
+mkdir -p "$APP_DIR"
+tar -C "$APP_DIR" -xf -
+chown "$(id -u):$(id -g)" "$APP_DIR/.env"
+chmod 0600 "$APP_DIR/.env"
+chown "$ATHENA_CONTAINER_UID:$ATHENA_CONTAINER_UID" "$APP_DIR/$GOOGLE_OIDC_SECRET_ARCHIVE_PATH"
+chmod 0600 "$APP_DIR/$GOOGLE_OIDC_SECRET_ARCHIVE_PATH"
+REMOTE
+)"
 
-echo "Streaming Docker image ${IMAGE} to ${REMOTE}..."
-docker save "${IMAGE}" | ssh "${REMOTE}" "docker load"
-echo "Streaming Docker image ${MINIO_IMAGE} to ${REMOTE}..."
-docker save "${MINIO_IMAGE}" | ssh "${REMOTE}" "docker load"
-echo "Streaming Docker image ${MINIO_MC_IMAGE} to ${REMOTE}..."
-docker save "${MINIO_MC_IMAGE}" | ssh "${REMOTE}" "docker load"
+for image in "${IMAGE}" "${MINIO_IMAGE}" "${MINIO_MC_IMAGE}"; do
+  echo "Streaming Docker image ${image} to ${REMOTE}..."
+  docker save "${image}" | prod_remote_exec 'docker load'
+done
 
 echo "Starting PostgreSQL on ${REMOTE}..."
-ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_IMAGE='${IMAGE}' MINIO_IMAGE='${MINIO_IMAGE}' MINIO_MC_IMAGE='${MINIO_MC_IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' PROD_REDIS_VOLUME='${REDIS_VOLUME}' PROD_MINIO_VOLUME='${MINIO_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env up -d postgres"
+# Remote variables expand in bash on the target host.
+# shellcheck disable=SC2016
+prod_remote_exec 'cd "$APP_DIR"; compose up -d postgres'
 
 echo "Running Athena migrations on ${REMOTE}..."
-ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_IMAGE='${IMAGE}' MINIO_IMAGE='${MINIO_IMAGE}' MINIO_MC_IMAGE='${MINIO_MC_IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' PROD_REDIS_VOLUME='${REDIS_VOLUME}' PROD_MINIO_VOLUME='${MINIO_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env --profile tools run --rm athena-migrate athena up --module '${MIGRATE_MODULE}'"
+# Remote variables expand in bash on the target host.
+# shellcheck disable=SC2016
+prod_remote_exec 'cd "$APP_DIR"; compose --profile tools run --rm athena-migrate athena up --module "$MIGRATE_MODULE"'
 
 echo "Starting Athena on ${REMOTE}..."
-ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_IMAGE='${IMAGE}' MINIO_IMAGE='${MINIO_IMAGE}' MINIO_MC_IMAGE='${MINIO_MC_IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' PROD_REDIS_VOLUME='${REDIS_VOLUME}' PROD_MINIO_VOLUME='${MINIO_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env up -d"
+# Remote variables expand in bash on the target host.
+# shellcheck disable=SC2016
+prod_remote_exec 'cd "$APP_DIR"; compose up -d'
 
 echo "Remote deployment status:"
-ssh "${REMOTE}" "cd '${REMOTE_APP_DIR}' && PROD_IMAGE='${IMAGE}' MINIO_IMAGE='${MINIO_IMAGE}' MINIO_MC_IMAGE='${MINIO_MC_IMAGE}' PROD_POSTGRES_VOLUME='${POSTGRES_VOLUME}' PROD_REDIS_VOLUME='${REDIS_VOLUME}' PROD_MINIO_VOLUME='${MINIO_VOLUME}' docker compose -f docker-compose.prod.yml --env-file .env ps"
+# Remote variables expand in bash on the target host.
+# shellcheck disable=SC2016
+prod_remote_exec 'cd "$APP_DIR"; compose ps'

@@ -3,6 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=hack/lib/ssh-command.sh
+source "${SCRIPT_DIR}/lib/ssh-command.sh"
 
 provided_remote_host="${REMOTE_HOST:-}"
 provided_remote_user="${REMOTE_USER:-}"
@@ -122,35 +124,56 @@ remote="${REMOTE_USER}@${REMOTE_HOST}"
 remote_tmp_compose="/tmp/athena-bsc-swap-indexer-compose.$$"
 remote_tmp_env="/tmp/athena-bsc-swap-indexer-env.$$"
 
+# Remote variables expand in bash on the target host.
+# shellcheck disable=SC2016
+remote_setup='set -euo pipefail
+APP_DIR="$1"
+IMAGE="$2"
+export BSC_SWAP_INDEXER_IMAGE="$IMAGE"'
+remote_exec() {
+  local body="$1"
+  ssh_exec "${remote}" bash -c "${remote_setup}"$'\n'"${body}" _ "${BSC_SWAP_INDEXER_REMOTE_APP_DIR}" "${BSC_SWAP_INDEXER_IMAGE}" "${remote_tmp_compose}" "${remote_tmp_env}"
+}
+
 echo "Checking Docker on ${remote}..."
-ssh "${remote}" "set -euo pipefail
-docker --version >/dev/null
+# Remote variables expand in bash on the target host.
+# shellcheck disable=SC2016
+remote_exec 'docker --version >/dev/null
 docker compose version >/dev/null
-mkdir -p '${BSC_SWAP_INDEXER_REMOTE_APP_DIR}'"
+mkdir -p "$APP_DIR"'
 
 echo "Uploading the standalone Compose and environment files..."
 scp "${BSC_SWAP_INDEXER_COMPOSE_FILE}" "${remote}:${remote_tmp_compose}"
 scp "${ENV_FILE}" "${remote}:${remote_tmp_env}"
-ssh "${remote}" "set -euo pipefail
-install -m 0644 '${remote_tmp_compose}' '${BSC_SWAP_INDEXER_REMOTE_APP_DIR}/docker-compose.yml'
-install -m 0600 '${remote_tmp_env}' '${BSC_SWAP_INDEXER_REMOTE_APP_DIR}/.env'
-rm -f '${remote_tmp_compose}' '${remote_tmp_env}'"
+remote_exec "$(cat <<'REMOTE'
+install -m 0644 "$3" "$APP_DIR/docker-compose.yml"
+install -m 0600 "$4" "$APP_DIR/.env"
+rm -f "$3" "$4"
+REMOTE
+)"
 
 echo "Streaming ${BSC_SWAP_INDEXER_IMAGE} to ${remote}..."
-docker save "${BSC_SWAP_INDEXER_IMAGE}" | ssh "${remote}" "docker load"
+docker save "${BSC_SWAP_INDEXER_IMAGE}" | ssh_exec "${remote}" docker load
 
 echo "Starting PostgreSQL 18 and the BSC swap indexer..."
-if ! ssh "${remote}" "set -euo pipefail
-cd '${BSC_SWAP_INDEXER_REMOTE_APP_DIR}'
-BSC_SWAP_INDEXER_IMAGE='${BSC_SWAP_INDEXER_IMAGE}' docker compose -f docker-compose.yml --env-file .env up -d --force-recreate --remove-orphans --wait --wait-timeout 180"; then
+# Remote variables expand in bash on the target host.
+# shellcheck disable=SC2016
+if ! remote_exec 'cd "$APP_DIR"
+docker compose -f docker-compose.yml --env-file .env up -d --force-recreate --remove-orphans --wait --wait-timeout 180'; then
   echo "Remote deployment failed. Recent service logs follow." >&2
-  ssh "${remote}" "cd '${BSC_SWAP_INDEXER_REMOTE_APP_DIR}' && BSC_SWAP_INDEXER_IMAGE='${BSC_SWAP_INDEXER_IMAGE}' docker compose -f docker-compose.yml --env-file .env ps" >&2 || true
-  ssh "${remote}" "cd '${BSC_SWAP_INDEXER_REMOTE_APP_DIR}' && BSC_SWAP_INDEXER_IMAGE='${BSC_SWAP_INDEXER_IMAGE}' docker compose -f docker-compose.yml --env-file .env logs --tail=120" >&2 || true
+  # Remote variables expand in bash on the target host.
+  # shellcheck disable=SC2016
+  remote_exec 'cd "$APP_DIR"; docker compose -f docker-compose.yml --env-file .env ps' >&2 || true
+  # Remote variables expand in bash on the target host.
+  # shellcheck disable=SC2016
+  remote_exec 'cd "$APP_DIR"; docker compose -f docker-compose.yml --env-file .env logs --tail=120' >&2 || true
   exit 1
 fi
 
 echo "Remote deployment status:"
-ssh "${remote}" "cd '${BSC_SWAP_INDEXER_REMOTE_APP_DIR}' && BSC_SWAP_INDEXER_IMAGE='${BSC_SWAP_INDEXER_IMAGE}' docker compose -f docker-compose.yml --env-file .env ps"
+# Remote variables expand in bash on the target host.
+# shellcheck disable=SC2016
+remote_exec 'cd "$APP_DIR"; docker compose -f docker-compose.yml --env-file .env ps'
 
 echo
 echo "BSC swap indexer deployed successfully."

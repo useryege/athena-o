@@ -1,0 +1,318 @@
+{
+  "url": "https://api.dexscreener.com/latest/dex/pairs/ethereum/0xe84d9ac2dfda02adba5587cb11750012855e7f44,0x47b940dddf7a0ae54fb53e6cfb079f1488ecca2f,0x5fd8a51042972b2777e0480817d0c7478a5a3dc2863acfd400ffa50a5c81a638,0xbad43e58b62214d83c9c5508fe5e75e092fc109c67c775674682be3e0273022c,0xad8a6463107576955b9b298c1e66af05b90a6a1af1892a5323fc9747a911ae48",
+  "retrieved_at": "2026-09-13T07:32:46.887982+00:00",
+  "response": {
+    "schemaVersion": "1.0.0",
+    "pairs": [
+      {
+        "chainId": "ethereum",
+        "dexId": "uniswap",
+        "url": "https://dexscreener.com/ethereum/0xe84d9ac2dfda02adba5587cb11750012855e7f44",
+        "pairAddress": "0xe84d9ac2dFda02ADBa5587Cb11750012855E7f44",
+        "labels": [
+          "v2"
+        ],
+        "baseToken": {
+          "address": "0x3cC315D17Bf63020EF5Ed7D36dda8b3dEf1231D5",
+          "name": "Junior Whale Consultants",
+          "symbol": "JWCN"
+        },
+        "quoteToken": {
+          "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+          "name": "Wrapped Ether",
+          "symbol": "WETH"
+        },
+        "priceNative": "0.0000000001456",
+        "priceUsd": "0.0000003662",
+        "txns": {
+          "m5": {
+            "buys": 9,
+            "sells": 1
+          },
+          "h1": {
+            "buys": 19,
+            "sells": 1
+          },
+          "h6": {
+            "buys": 19,
+            "sells": 1
+          },
+          "h24": {
+            "buys": 19,
+            "sells": 1
+          }
+        },
+        "volume": {
+          "h24": 1288.79,
+          "h6": 1288.79,
+          "h1": 1288.79,
+          "m5": 719.89
+        },
+        "priceChange": {
+          "m5": 79.69,
+          "h1": 279,
+          "h6": 279,
+          "h24": 279
+        },
+        "liquidity": {
+          "usd": 4898.65,
+          "base": 6687754572,
+          "quote": 0.9739
+        },
+        "fdv": 4761,
+        "marketCap": 4761,
+        "pairCreatedAt": 1789284023000
+      },
+      {
+        "chainId": "ethereum",
+        "dexId": "uniswap",
+        "url": "https://dexscreener.com/ethereum/0x47b940dddf7a0ae54fb53e6cfb079f1488ecca2f",
+        "pairAddress": "0x47b940dDdF7A0ae54fb53e6cFb079F1488eCca2f",
+        "labels": [
+          "v2"
+        ],
+        "baseToken": {
+          "address": "0x6f76A14a66a5B335cAfaD523217522FB3C5C1054",
+          "name": "Berry Finance",
+          "symbol": "BERRY"
+        },
+        "quoteToken": {
+          "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+          "name": "Wrapped Ether",
+          "symbol": "WETH"
+        },
+        "priceNative": "0.0000000004021",
+        "priceUsd": "0.000001011",
+        "txns": {
+          "m5": {
+            "buys": 1,
+            "sells": 0
+          },
+          "h1": {
+            "buys": 40,
+            "sells": 8
+          },
+          "h6": {
+            "buys": 40,
+            "sells": 8
+          },
+          "h24": {
+            "buys": 40,
+            "sells": 8
+          }
+        },
+        "volume": {
+          "h24": 40789.17,
+          "h6": 40789.17,
+          "h1": 40789.17,
+          "m5": 754.5
+        },
+        "priceChange": {
+          "m5": 12.5,
+          "h1": 1088,
+          "h6": 1088,
+          "h24": 1088
+        },
+        "liquidity": {
+          "usd": 26355.46,
+          "base": 13029386683,
+          "quote": 5.2396
+        },
+        "fdv": 50569,
+        "marketCap": 50569,
+        "pairCreatedAt": 1789281743000
+      },
+      {
+        "chainId": "ethereum",
+        "dexId": "uniswap",
+        "url": "https://dexscreener.com/ethereum/0x5fd8a51042972b2777e0480817d0c7478a5a3dc2863acfd400ffa50a5c81a638",
+        "pairAddress": "0x5fd8a51042972b2777e0480817d0c7478a5a3dc2863acfd400ffa50a5c81a638",
+        "labels": [
+          "v4"
+        ],
+        "baseToken": {
+          "address": "0x47ACCD13264D8F954105256FaaC8376ce6A55999",
+          "name": "send",
+          "symbol": "SEND"
+        },
+        "quoteToken": {
+          "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "name": "USD Coin",
+          "symbol": "USDC"
+        },
+        "priceNative": "0.001902",
+        "priceUsd": "0.001902",
+        "txns": {
+          "m5": {
+            "buys": 0,
+            "sells": 0
+          },
+          "h1": {
+            "buys": 0,
+            "sells": 1
+          },
+          "h6": {
+            "buys": 0,
+            "sells": 11
+          },
+          "h24": {
+            "buys": 0,
+            "sells": 11
+          }
+        },
+        "volume": {
+          "h24": 342.33,
+          "h6": 342.33,
+          "h1": 48.14,
+          "m5": 0
+        },
+        "priceChange": {
+          "h1": -3.27,
+          "h6": -17.19,
+          "h24": -17.19
+        },
+        "liquidity": {
+          "usd": 2982.68,
+          "base": 124925,
+          "quote": 2745.07177
+        },
+        "fdv": 1837089,
+        "marketCap": 1831087,
+        "pairCreatedAt": 1789274687000,
+        "info": {
+          "imageUrl": "https://cdn.dexscreener.com/cms/images/53ZjpTtJSibVnFhw?width=800&height=800&quality=95&format=auto",
+          "header": "https://cdn.dexscreener.com/cms/images/1mqcx7-rJhaiEzkM?width=1500&height=500&quality=95&format=auto",
+          "openGraph": "https://cdn.dexscreener.com/token-images/og/ethereum/0x47accd13264d8f954105256faac8376ce6a55999?timestamp=1789284900000",
+          "websites": [
+            {
+              "url": "https://sender.family/",
+              "label": "Website"
+            }
+          ],
+          "socials": [
+            {
+              "url": "https://x.com/senderdotfamily",
+              "type": "twitter"
+            }
+          ]
+        }
+      },
+      {
+        "chainId": "ethereum",
+        "dexId": "uniswap",
+        "url": "https://dexscreener.com/ethereum/0xbad43e58b62214d83c9c5508fe5e75e092fc109c67c775674682be3e0273022c",
+        "pairAddress": "0xbad43e58b62214d83c9c5508fe5e75e092fc109c67c775674682be3e0273022c",
+        "labels": [
+          "v4"
+        ],
+        "baseToken": {
+          "address": "0xDc3c3D7ADa46bD1C70166D542a1404Bd43Fa802A",
+          "name": "Argonauts Reserve",
+          "symbol": "kARGO"
+        },
+        "quoteToken": {
+          "address": "0x0000000000000000000000000000000000000000",
+          "name": "Ether",
+          "symbol": "ETH"
+        },
+        "priceNative": "0.000007808",
+        "priceUsd": "0.01963",
+        "txns": {
+          "m5": {
+            "buys": 0,
+            "sells": 0
+          },
+          "h1": {
+            "buys": 0,
+            "sells": 1
+          },
+          "h6": {
+            "buys": 124,
+            "sells": 102
+          },
+          "h24": {
+            "buys": 636,
+            "sells": 397
+          }
+        },
+        "volume": {
+          "h24": 329778.16,
+          "h6": 48514.77,
+          "h1": 37.07,
+          "m5": 0
+        },
+        "priceChange": {
+          "h1": -0.63,
+          "h6": -30.65,
+          "h24": 632
+        },
+        "liquidity": {
+          "usd": 36301.14,
+          "base": 1109462,
+          "quote": 5.7704
+        },
+        "fdv": 58917,
+        "marketCap": 58917,
+        "pairCreatedAt": 1789259363000
+      },
+      {
+        "chainId": "ethereum",
+        "dexId": "uniswap",
+        "url": "https://dexscreener.com/ethereum/0xad8a6463107576955b9b298c1e66af05b90a6a1af1892a5323fc9747a911ae48",
+        "pairAddress": "0xad8a6463107576955b9b298c1e66af05b90a6a1af1892a5323fc9747a911ae48",
+        "labels": [
+          "v4"
+        ],
+        "baseToken": {
+          "address": "0x3C62f29621015786ECB65fAef80033C694B3C92B",
+          "name": "BLUECHIP",
+          "symbol": "BLUECHIP"
+        },
+        "quoteToken": {
+          "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "name": "Tether USD",
+          "symbol": "USDT"
+        },
+        "priceNative": "0.000005851",
+        "priceUsd": "0.000005851",
+        "txns": {
+          "m5": {
+            "buys": 0,
+            "sells": 0
+          },
+          "h1": {
+            "buys": 0,
+            "sells": 0
+          },
+          "h6": {
+            "buys": 1,
+            "sells": 1
+          },
+          "h24": {
+            "buys": 3,
+            "sells": 1
+          }
+        },
+        "volume": {
+          "h24": 7.09,
+          "h6": 5.01,
+          "h1": 0,
+          "m5": 0
+        },
+        "priceChange": {
+          "h6": -19.25,
+          "h24": -6.25
+        },
+        "liquidity": {
+          "usd": 13.2,
+          "base": 957515,
+          "quote": 7.6057
+        },
+        "fdv": 5851,
+        "marketCap": 5851,
+        "pairCreatedAt": 1789261055000
+      }
+    ],
+    "pair": null
+  }
+}

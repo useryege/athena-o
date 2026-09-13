@@ -30,8 +30,8 @@
 | `PROD_POSTGRES_VOLUME` | `athena-prod-postgres-data` | PostgreSQL external volume 名称。本地停止、远程部署和远程删除都会删除该 volume。 |
 | `PROD_REDIS_VOLUME` | `athena-prod-redis-data` | Redis AOF external volume 名称。本地停止、全新远程部署和远程删除都会删除该 volume；热部署保留。 |
 | `PROD_MINIO_VOLUME` | `athena-prod-minio-data` | MinIO external volume 名称。本地停止、全新远程部署和远程删除都会删除该 volume；热部署保留。 |
-| `MINIO_IMAGE` | `athena-minio:9e49d5e7a648` | 从固定 MinIO Server commit 构建的镜像名。 |
-| `MINIO_MC_IMAGE` | `athena-minio-mc:7394ce0dd2a8` | 从固定 mc commit 构建的一次性初始化镜像名。 |
+| `MINIO_IMAGE` | `athena-minio:9e49d5e7a648-go1.27.1` | 从固定 MinIO Server commit、Go 1.27.1 构建的镜像名。 |
+| `MINIO_MC_IMAGE` | `athena-minio-mc:7394ce0dd2a8-go1.27.1` | 从固定 mc commit、Go 1.27.1 构建的一次性初始化镜像名。 |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | 本地默认 `true`，生产 compose 为 `false` | 控制服务启动时是否自动执行 PostgreSQL migration。生产部署脚本会在启动业务服务前显式迁移。 |
 | `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | 无 | API Server、系统通知生产者与 Notification gRPC 之间共享的独立 Bearer；至少 32 字节且不得与其他内部凭证相同。 |
 | `TARGET_ARCH` | `linux/amd64` | Docker 镜像构建平台。 |

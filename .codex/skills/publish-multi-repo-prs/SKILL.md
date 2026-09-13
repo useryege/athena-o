@@ -11,7 +11,7 @@ Publish related branches from Git repositories and submodules without including 
 
 - Read and obey the applicable `AGENTS.md` in every repository.
 - Treat each submodule as an independent repository with its own remote, branch, PR, and merge result.
-- Do not stage, commit, amend, rebase, force-push, clean, stash, or delete worktree changes. Use `local-git-commit` first when the user asks to commit local changes.
+- Do not stage, commit, amend, rebase, force-push, clean, stash, or delete worktree changes during PR publishing. If the user also requests a local commit, complete that authorized task separately before continuing this publishing workflow.
 - Exclude untracked, unstaged, and staged worktree content from the PR unless it already belongs to a pushed commit. Report excluded local changes.
 - Never expose tokens, credentials, `.env` values, or authentication output.
 - Follow Superpowers completion verification for the exact commits being published. Use relevant tests, builds, or checks as evidence; preserve unrelated worktree content and avoid modifying source as part of publishing.

@@ -629,7 +629,6 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 		// 	return !sensitiveMethods[c.FullMethod()]
 		// }),
 		// grpc_util.ErrorCodeK8sStreamServerInterceptor(),
-		// grpc_util.ErrorCodeGitStreamServerInterceptor(),
 		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpc_util.LoggerRecoveryHandler(server.log))),
 	))
 	sOpts = append(sOpts, grpc.ChainUnaryInterceptor(
@@ -641,7 +640,6 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 		// 	return !sensitiveMethods[c.FullMethod()]
 		// }),
 		// grpc_util.ErrorCodeK8sUnaryServerInterceptor(),
-		// grpc_util.ErrorCodeGitUnaryServerInterceptor(),
 		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpc_util.LoggerRecoveryHandler(server.log))),
 	))
 	sOpts = append(sOpts, grpc.StatsHandler(otelgrpc.NewServerHandler()))

@@ -6,6 +6,8 @@ trap 'rm -rf "$probe_dir"' EXIT
 printf '#!/bin/sh\nprintf "default via 192.0.2.1 dev fixture\\n"\n' > "$probe_dir/ip"
 printf '#!/bin/sh\nexit 1\n' > "$probe_dir/grep"
 chmod +x "$probe_dir/ip" "$probe_dir/grep"
+# Expand these variables in the child shell after trader-sync-local.sh sets them.
+# shellcheck disable=SC2016
 probe='printf "%s|%s" "${ATHENA_TRADER_SYNC_PROXY_URL+x}" "${ATHENA_TRADER_SYNC_PROXY_URL-}"'
 check() {
  local expected="$1"; shift

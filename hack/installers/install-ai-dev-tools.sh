@@ -71,23 +71,22 @@ else
   install -m 0755 "$staging/grpcurl" "$root/dist/grpcurl"
 fi
 
+required_go=$(awk '$1 == "go" { print "go" $2; exit }' "$root/go.mod")
+if ! command -v go >/dev/null 2>&1; then
+  echo "govulncheck $govulncheck_version requires the project Go toolchain $required_go; install it and retry." >&2
+  exit 1
+fi
+host_go=$(GOTOOLCHAIN=local go env GOVERSION)
+if [[ $host_go != "$required_go" ]]; then
+  echo "govulncheck $govulncheck_version requires the project Go toolchain $required_go; found $host_go. Install $required_go and retry." >&2
+  exit 1
+fi
 if [[ -x "$root/dist/govulncheck" ]] &&
-   "$root/dist/govulncheck" -version 2>&1 | grep -Fq "v$govulncheck_version"; then
-  echo "govulncheck $govulncheck_version already installed."
+   "$root/dist/govulncheck" -version 2>&1 | grep -Fxq "Scanner: govulncheck@v$govulncheck_version" &&
+   go_build_info=$(GOTOOLCHAIN=local go version -m "$root/dist/govulncheck" 2>/dev/null) &&
+   [[ $(awk 'NR == 1 { print $NF }' <<<"$go_build_info") == "$required_go" ]]; then
+  echo "govulncheck $govulncheck_version already installed (built with $required_go)."
 else
-  if ! command -v go >/dev/null 2>&1; then
-    echo "govulncheck $govulncheck_version requires an existing Go 1.25 or newer toolchain." >&2
-    exit 1
-  fi
-  go_version=$(GOTOOLCHAIN=local go env GOVERSION)
-  go_version=${go_version#go}
-  go_major=${go_version%%.*}
-  go_minor=${go_version#*.}
-  go_minor=${go_minor%%.*}
-  if ((go_major < 1 || (go_major == 1 && go_minor < 25))); then
-    echo "govulncheck $govulncheck_version requires an existing Go 1.25 or newer toolchain; found go$go_version." >&2
-    exit 1
-  fi
   GOTOOLCHAIN=local GOWORK=off GOFLAGS=-mod=mod GOBIN="$root/dist" \
     go install "golang.org/x/vuln/cmd/govulncheck@v${govulncheck_version}"
 fi

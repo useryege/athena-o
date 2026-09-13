@@ -13,6 +13,8 @@ else
     exit 1
   fi
   # Resolve NVM aliases (including lts/*) in a subshell; do not change the caller PATH.
+  # NVM is installed outside this repository at the user's configured location.
+  # shellcheck source=/dev/null
   selected_node="$(set +u; . "$nvm_dir/nvm.sh" --no-use; nvm which default)" || {
     printf '%s\n' 'Node unavailable: NVM default does not resolve to an installed version.' >&2
     exit 1

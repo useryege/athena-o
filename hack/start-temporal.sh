@@ -29,7 +29,7 @@ run_psql() {
 wait_for_postgres() {
     local attempt
 
-    for attempt in {1..120}; do
+    for ((attempt = 0; attempt < 120; attempt++)); do
         if run_psql -tAc "SELECT 1" >/dev/null 2>&1; then
             return 0
         fi

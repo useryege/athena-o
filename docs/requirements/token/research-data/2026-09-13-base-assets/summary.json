@@ -1,0 +1,75 @@
+{
+  "chain_id": 1,
+  "classification": "exact address match on either pool side; native ETH zero-address sentinel is not ERC20",
+  "pool_count": 100,
+  "dex_counts": {
+    "uniswap_v2": 24,
+    "uniswap-v4-ethereum": 70,
+    "uniswap_v3": 1,
+    "balancer-v3-ethereum": 2,
+    "dodo-pmm-ethereum": 1,
+    "sushiswap-v3-ethereum": 2
+  },
+  "assets": {
+    "WETH": {
+      "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "pools": 30,
+      "distinct_counterparty_tokens": 30,
+      "reported_reserve_at_least_1000_usd": 9,
+      "protocol_counts": {
+        "uniswap_v2": 24,
+        "uniswap_v3": 1,
+        "balancer-v3-ethereum": 1,
+        "uniswap-v4-ethereum": 3,
+        "sushiswap-v3-ethereum": 1
+      }
+    },
+    "USDC": {
+      "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "pools": 30,
+      "distinct_counterparty_tokens": 13,
+      "reported_reserve_at_least_1000_usd": 4,
+      "protocol_counts": {
+        "uniswap-v4-ethereum": 29,
+        "dodo-pmm-ethereum": 1
+      }
+    },
+    "ETH": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "pools": 12,
+      "distinct_counterparty_tokens": 9,
+      "reported_reserve_at_least_1000_usd": 6,
+      "protocol_counts": {
+        "uniswap-v4-ethereum": 12
+      }
+    },
+    "USDT": {
+      "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+      "pools": 6,
+      "distinct_counterparty_tokens": 4,
+      "reported_reserve_at_least_1000_usd": 0,
+      "protocol_counts": {
+        "uniswap-v4-ethereum": 6
+      }
+    },
+    "WBTC": {
+      "address": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+      "pools": 2,
+      "distinct_counterparty_tokens": 2,
+      "reported_reserve_at_least_1000_usd": 0,
+      "protocol_counts": {
+        "balancer-v3-ethereum": 1,
+        "uniswap-v4-ethereum": 1
+      }
+    },
+    "DAI": {
+      "address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+      "pools": 0,
+      "distinct_counterparty_tokens": 0,
+      "reported_reserve_at_least_1000_usd": 0,
+      "protocol_counts": {}
+    }
+  },
+  "unmatched_pools": 20,
+  "pools_matching_two_known_assets": 0
+}

@@ -36,7 +36,7 @@ compile_solidity() {
 
   tmp_dir="$(mktemp -d)"
 
-  echo "compile ${sol_file#${ROOT}/}"
+  echo "compile ${sol_file#"${ROOT}"/}"
   if ! solcjs --abi --bin --optimize -o "${tmp_dir}" "${sol_file}"; then
     rm -rf "${tmp_dir}"
     return 1
@@ -50,13 +50,13 @@ compile_solidity() {
   done
 
   if [[ ${#non_empty_bins[@]} -eq 0 ]]; then
-    echo "no deployable contract bytecode generated from ${sol_file#${ROOT}/}" >&2
+    echo "no deployable contract bytecode generated from ${sol_file#"${ROOT}"/}" >&2
     rm -rf "${tmp_dir}"
     return 1
   fi
 
   if [[ ${#non_empty_bins[@]} -gt 1 ]]; then
-    echo "multiple deployable contract bytecode files generated from ${sol_file#${ROOT}/}" >&2
+    echo "multiple deployable contract bytecode files generated from ${sol_file#"${ROOT}"/}" >&2
     for generated_bin in "${non_empty_bins[@]}"; do
       echo "  - $(basename "${generated_bin}")" >&2
     done
@@ -90,9 +90,9 @@ for dir in "${ABI_ROOT}"/*; do
   sol_files=("${dir}"/*.sol)
 
   if [[ ${#sol_files[@]} -gt 1 ]]; then
-    echo "multiple Solidity files found in ${dir#${ROOT}/}; keep exactly one *.sol file" >&2
+    echo "multiple Solidity files found in ${dir#"${ROOT}"/}; keep exactly one *.sol file" >&2
     for sol_file in "${sol_files[@]}"; do
-      echo "  - ${sol_file#${ROOT}/}" >&2
+      echo "  - ${sol_file#"${ROOT}"/}" >&2
     done
     exit 1
   fi
@@ -106,7 +106,7 @@ for dir in "${ABI_ROOT}"/*; do
     continue
   fi
 
-  echo "generate ${out_file#${ROOT}/}"
+  echo "generate ${out_file#"${ROOT}"/}"
   abigen \
     --abi "${abi_file}" \
     --bin "${bin_file}" \

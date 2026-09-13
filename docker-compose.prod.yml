@@ -88,7 +88,7 @@ services:
       retries: 5
 
   minio:
-    image: ${MINIO_IMAGE:-athena-minio:9e49d5e7a648}
+    image: ${MINIO_IMAGE:-athena-minio:9e49d5e7a648-go1.27.1}
     restart: unless-stopped
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-athena-minio-root}
@@ -108,7 +108,7 @@ services:
       start_period: 10s
 
   minio-init:
-    image: ${MINIO_MC_IMAGE:-athena-minio-mc:7394ce0dd2a8}
+    image: ${MINIO_MC_IMAGE:-athena-minio-mc:7394ce0dd2a8-go1.27.1}
     restart: "no"
     depends_on:
       minio:

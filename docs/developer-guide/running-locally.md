@@ -5,6 +5,8 @@ Athena local development no longer requires a cluster. The local stack runs Athe
 ## Prerequisites
 
 Complete [Development Environment](development-environment.md).
+Use Go `1.27.1` as required by `go.mod` for local builds and acceptance. Follow
+[Install Go on Linux（WSL）](install-go.md) when preparing a WSL machine.
 
 ## Start Local Services
 
@@ -265,7 +267,7 @@ path, including paths containing spaces. A missing prerequisite is reported as a
 the machine.
 
 The isolated command sets `GOTOOLCHAIN=local`, `GOPROXY=off`, and `GONOPROXY=none` for its Go processes.
-Prepare the required Go toolchain and module cache separately before the first run;
+Prepare Go `1.27.1` and the module cache separately before the first run;
 missing cached modules fail the harness stage without downloading dependencies.
 
 Dependency preparation is an explicit development setup action, separate from acceptance:
@@ -345,6 +347,10 @@ goreman run restart api-server
 Process names are listed in the root `Procfile`.
 
 ## Production-Like Local Run
+
+The Athena and MinIO Docker build stages use the pinned Go `1.27.1` image.
+The default MinIO Server and mc tags carry a `-go1.27.1` suffix so a build
+cannot reuse images compiled with the previous Go toolchain.
 
 For a Docker Compose run that mirrors production deployment more closely:
 

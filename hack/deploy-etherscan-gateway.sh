@@ -3,6 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=hack/lib/ssh-command.sh
+source "${SCRIPT_DIR}/lib/ssh-command.sh"
 
 ETHERSCAN_GATEWAY_ENV_FILE="${ETHERSCAN_GATEWAY_ENV_FILE:-${REPO_ROOT}/.env}"
 provided_ips="${ETHERSCAN_GATEWAY_IPS:-}"
@@ -112,14 +114,21 @@ for gateway_ip in "${gateway_ips[@]}"; do
   scp "${env_tmp}" "${gateway_host}:${remote_tmp_env}"
 
   echo "Installing systemd service on ${gateway_host}..."
-  ssh "${gateway_host}" "set -euo pipefail
-systemctl stop '${SERVICE_NAME}' >/dev/null 2>&1 || true
-install -m 0755 '${remote_tmp_binary}' '${REMOTE_BINARY}'
-rm -f '${remote_tmp_binary}'
+  ssh_exec "${gateway_host}" bash -c "$(cat <<'REMOTE'
+set -euo pipefail
+SERVICE_NAME="$1"
+REMOTE_TMP_BINARY="$2"
+REMOTE_BINARY="$3"
+REMOTE_TMP_ENV="$4"
+REMOTE_ENV_FILE="$5"
+REMOTE_SERVICE_FILE="$6"
+systemctl stop "$SERVICE_NAME" >/dev/null 2>&1 || true
+install -m 0755 "$REMOTE_TMP_BINARY" "$REMOTE_BINARY"
+rm -f "$REMOTE_TMP_BINARY"
 mkdir -p /etc/athena
-install -m 0600 -o root -g root '${remote_tmp_env}' '${REMOTE_ENV_FILE}'
-rm -f '${remote_tmp_env}'
-cat >'${REMOTE_SERVICE_FILE}' <<'UNIT'
+install -m 0600 -o root -g root "$REMOTE_TMP_ENV" "$REMOTE_ENV_FILE"
+rm -f "$REMOTE_TMP_ENV"
+cat >"$REMOTE_SERVICE_FILE" <<'UNIT'
 [Unit]
 Description=Athena Etherscan Gateway
 Wants=network-online.target
@@ -137,29 +146,31 @@ KillSignal=SIGTERM
 WantedBy=multi-user.target
 UNIT
 systemctl daemon-reload
-systemctl enable --now '${SERVICE_NAME}'
-"
+systemctl enable --now "$SERVICE_NAME"
+REMOTE
+)" _ "${SERVICE_NAME}" "${remote_tmp_binary}" "${REMOTE_BINARY}" \
+    "${remote_tmp_env}" "${REMOTE_ENV_FILE}" "${REMOTE_SERVICE_FILE}"
 
   echo "Checking remote service status on ${gateway_host}..."
-  active_status="$(ssh "${gateway_host}" "systemctl is-active '${SERVICE_NAME}'" || true)"
-  enabled_status="$(ssh "${gateway_host}" "systemctl is-enabled '${SERVICE_NAME}'" || true)"
-  listen_status="$(ssh "${gateway_host}" "ss -H -ltnp 'sport = :6776' || true" || true)"
+  active_status="$(ssh_exec "${gateway_host}" systemctl is-active "${SERVICE_NAME}" || true)"
+  enabled_status="$(ssh_exec "${gateway_host}" systemctl is-enabled "${SERVICE_NAME}" || true)"
+  listen_status="$(ssh_exec "${gateway_host}" ss -H -ltnp 'sport = :6776' || true)"
 
   if [[ "${active_status}" != "active" ]]; then
     echo "Service is not active on ${gateway_host}: ${active_status:-unknown}" >&2
-    ssh "${gateway_host}" "journalctl -u '${SERVICE_NAME}' -n 80 --no-pager" >&2 || true
+    ssh_exec "${gateway_host}" journalctl -u "${SERVICE_NAME}" -n 80 --no-pager >&2 || true
     exit 1
   fi
 
   if [[ "${enabled_status}" != "enabled" ]]; then
     echo "Service is not enabled on ${gateway_host}: ${enabled_status:-unknown}" >&2
-    ssh "${gateway_host}" "journalctl -u '${SERVICE_NAME}' -n 80 --no-pager" >&2 || true
+    ssh_exec "${gateway_host}" journalctl -u "${SERVICE_NAME}" -n 80 --no-pager >&2 || true
     exit 1
   fi
 
   if [[ -z "${listen_status}" ]]; then
     echo "Service is active on ${gateway_host}, but port 6776 is not listening." >&2
-    ssh "${gateway_host}" "journalctl -u '${SERVICE_NAME}' -n 80 --no-pager" >&2 || true
+    ssh_exec "${gateway_host}" journalctl -u "${SERVICE_NAME}" -n 80 --no-pager >&2 || true
     exit 1
   fi
 

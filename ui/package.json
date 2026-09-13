@@ -9,7 +9,7 @@
     "start": "vite --host ${ATHENA_YARN_HOST:-localhost}",
     "docker": "./scripts/build_docker.sh",
     "build": "find ./dist -type f -not -name gitkeep -delete && vite build",
-    "lint": "tsc --noEmit --project ./src/app && eslint 'src/**/*.{ts,tsx}'",
+    "lint": "node --test scripts/eslint-config.test.mjs && tsc --noEmit --project ./src/app && eslint 'src/**/*.{ts,tsx}'",
     "lint:fix": "eslint --fix 'src/**/*.{ts,tsx}'",
     "test": "jest",
     "test:e2e": "playwright test",

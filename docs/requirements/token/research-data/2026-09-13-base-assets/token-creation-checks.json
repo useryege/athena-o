@@ -1,0 +1,65 @@
+{
+  "source": "https://eth.blockscout.com/api/v2/",
+  "checks": [
+    {
+      "token": "JWCN",
+      "address": "0x3cc315d17bf63020ef5ed7d36dda8b3def1231d5",
+      "creationTx": "0x7a22a4943cdcdc67830e8df74e68c3a4c6e82fa41c95030ecf0492f976332859",
+      "creationBlock": 25966974,
+      "creationTime": "2026-09-13T07:19:59.000000Z",
+      "pool": "0xe84d9ac2dfda02adba5587cb11750012855e7f44",
+      "poolCreationBlock": 25966976,
+      "poolCreationTime": "2026-09-13T07:20:23Z",
+      "relation": "same UTC minute; 24 seconds later / 2 blocks"
+    },
+    {
+      "token": "BERRY",
+      "address": "0x6f76a14a66a5b335cafad523217522fb3c5c1054",
+      "creationTx": "0x2a718b306d365c1bf45d095708e3a54e365f00912389bad400a5b04cf57a0af2",
+      "creationBlock": 25962478,
+      "creationTime": "2026-09-12T16:17:47.000000Z",
+      "pool": "0x47b940dddf7a0ae54fb53e6cfb079f1488ecca2f",
+      "poolCreationBlock": 25966786,
+      "poolCreationTime": "2026-09-13T06:42:23Z",
+      "relation": "pool created about 14h24m36s after token deployment"
+    },
+    {
+      "token": "SEND",
+      "address": "0x47accd13264d8f954105256faac8376ce6a55999",
+      "creationTx": "0xcbc59e75e793efcc8ec5ee1142bb1d15accc7021f4a461a82016dfbeb4467714",
+      "creationBlock": 25949160,
+      "creationTime": "2026-09-10T19:44:11Z",
+      "poolObservedAt": "2026-09-13T04:44:47Z",
+      "relation": "pool timestamp is 2d9h00m36s later; new pool is not a contemporaneous new token",
+      "matchingInternalCreate": [
+        {
+          "type": "create",
+          "index": 1,
+          "block_number": 25949160,
+          "timestamp": "2026-09-10T19:44:11.000000Z",
+          "from": "0x2126625DF80b8bD01294139B26241B121caB9fff",
+          "created_contract": "0x47ACCD13264D8F954105256FaaC8376ce6A55999"
+        }
+      ]
+    },
+    {
+      "token": "kARGO",
+      "address": "0xdc3c3d7ada46bd1c70166d542a1404bd43fa802a",
+      "creationTx": "0x433713081fcd8afea93019ef6b8a7b9a295a49d8fcb0b8734bc1c60d637ab050",
+      "creationBlock": 25964927,
+      "creationTime": "2026-09-13T00:29:23Z",
+      "poolObservedAt": "2026-09-13T00:29:23Z",
+      "relation": "identical reported second; supports contemporaneous deployment and pool observation, but pool event transaction was not independently supplied here",
+      "matchingInternalCreate": [
+        {
+          "type": "create",
+          "index": 3,
+          "block_number": 25964927,
+          "timestamp": "2026-09-13T00:29:23.000000Z",
+          "from": "0x8c431f7b0a6943bCECC8042e3331ce437Ca1a076",
+          "created_contract": "0xDc3c3D7ADa46bD1C70166D542a1404Bd43Fa802A"
+        }
+      ]
+    }
+  ]
+}

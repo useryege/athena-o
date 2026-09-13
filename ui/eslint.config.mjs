@@ -30,10 +30,10 @@ export default [
     },
     eslintPluginPrettierRecommended,
     {
-        files: ['./src/**/*.{ts,tsx}']
+        files: ['src/**/*.{ts,tsx}']
     },
     {
-        files: ['./src/app/member/**/*.{ts,tsx}'],
+        files: ['src/app/member/**/*.{ts,tsx}'],
         rules: {
             'no-restricted-imports': [
                 'error',
@@ -49,7 +49,7 @@ export default [
         }
     },
     {
-        files: ['./src/app/admin/**/*.{ts,tsx}'],
+        files: ['src/app/admin/**/*.{ts,tsx}'],
         rules: {
             'no-restricted-imports': [
                 'error',
@@ -65,7 +65,7 @@ export default [
         }
     },
     {
-        files: ['./src/app/shared/**/*.{ts,tsx}', './src/app/session/**/*.{ts,tsx}', './src/app/components/**/*.{ts,tsx}'],
+        files: ['src/app/shared/**/*.{ts,tsx}', 'src/app/session/**/*.{ts,tsx}', 'src/app/components/**/*.{ts,tsx}'],
         rules: {
             'no-restricted-imports': [
                 'error',

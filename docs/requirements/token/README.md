@@ -2,6 +2,12 @@
 
 本目录属于 [`docs/requirements/`](../README.md)，记录 Token 业务目标、已确认决定、仍在讨论的边界和支撑调研。`需求状态` 描述业务决定的确定程度；细分状态继续说明其中已经确认、尚待细化或仅供选择的内容。
 
+钱包战绩已确定采用 **Nansen API 接入 ATHENA**。首版仅支持 Ethereum Mainnet，以用户输入的钱包地址查询代币交易、逐币表现、盈亏和胜率；USD 金额与战绩采用供应商返回的数据。ATHENA 负责查询、展示、权限和调用管理，不再设计本地交易日志解析、移动加权平均成本账本、盈亏引擎或历史金额重算报价程序。有效需求见[钱包交易与战绩](wallet-trading-performance.md)，接入细则讨论中，尚未实现。
+
+初期约 3–5 个用户，低频查询，本地开发也需验证接口；使用方向为 Nansen Free API 起步、额度不足时按需购买 credits，无须为 API 订阅网页 Pro。具体注册、充值、运行参数及真实接口验证尚未执行。[成熟产品调研报告](wallet-analytics-vendor-research-2026-09-13.md)保留各家产品、价格、免费额度和选型依据，并记录 Nansen 已被选定。
+
+原 Etherscan 最近 300／1,000 笔取样、自定基础币筛选、多跳归属、成本分摊、Gas 与最新报价重算规则已移入[本地计算方案历史记录](wallet-trading-performance-local-calculation-history.md)，不再作为接入开发要求。[新发代币基础币调研](new-token-base-assets-research.md)保留当时的研究证据与选择。此次替换仅限钱包战绩，不改变下述项目发现与研究第一板块的 Etherscan、日志、资产估值或关联钱包能力。
+
 Token 采用“设计后端 → 设计前端 → 实现后端 → 实现前端”的顺序，在后端编码前完成前端设计并对齐前后端方案。旧业务 UI 已移除，保留禁用 Token 父菜单、独立 Wallets 和后端 API，见[实施顺序与前端范围](token.md#已明确的实施顺序与前端范围)。后续开发遵循 [Superpowers 工作流](../../developer-guide/superpowers-development.md)，长期架构决定同步到 [`docs/design/`](../../design/README.md)。
 
 ## 目标设计
@@ -9,10 +15,12 @@ Token 采用“设计后端 → 设计前端 → 实现后端 → 实现前端�
 | 文档 | 内容 | 状态 |
 | --- | --- | --- |
 | [Token 目标设计](token.md) | ETH 新项目发现、事实资料研究、活动续期与研究停止；第二板块暂不设计 | `讨论中`，包含已确认子项 |
+| [钱包战绩成熟产品选型调研](wallet-analytics-vendor-research-2026-09-13.md) | 成品界面、Ethereum 钱包 PnL／胜率能力、API 定价与免费额度、低用量费用测算 | `选型已确认：Nansen API`；公开资料已核对，尚未进行真实接口验证或接入 |
+| [钱包交易与战绩](wallet-trading-performance.md) | Token 内接入 Nansen 的 Ethereum 钱包交易、逐币表现、USD 盈亏与胜率；查询、展示及调用管理 | `接入方向已确认，细则讨论中`，尚未实现；原本地成本、报价与盈亏计算方案已归档 |
 | [单链实例运行需求](token-chain-runtime.md) | 同代码、单链实例的运行边界和首版链范围 | `已确认`，尚未实现 |
 | [内部 ETH 转账需求](token-wallet-internal-transfers-flow.md) | 部署前两类采样、发起人归因、地址库优先终止及行为分析 | `讨论中`，核心单项已确认，目标技术设计已形成待审阅 |
 
-已确定以下业务边界：
+项目发现与研究第一板块已确定以下业务边界；钱包交易与战绩的具体规则在其独立需求中讨论：
 
 - **首版仅 Ethereum Mainnet（chain ID 1）**，源码、普通交易及按地址内部交易使用现有免费 Etherscan Key；以后扩链前，现有免费 Key 全部更换为付费 Key。持币资料改由 Ave 获取持币地址总数与前 100 名明细，不再设计 Etherscan PRO Key 或完整分页名单。
 - **同代码、单链实例运行**：启动配置选择唯一链，扫描、活动/Swap 监控及外部采集按链运行；首版只启动 ETH，后续 BSC 使用同一构建产物增加实例。汇总、AI、源码报告和 API 可以共享，项目与任务保留链身份，实例不得覆盖其他链状态，详见 [运行设计](token-chain-runtime.md)。

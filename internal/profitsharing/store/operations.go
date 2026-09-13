@@ -282,9 +282,9 @@ func (s *SQLStore) changeProposalStatus(ctx context.Context, slug, authorAccount
 			if proposal.Status != ProposalStatusDraft {
 				return ErrInvalidPhase
 			}
-			participants, err := queries.ListProfitSharingParticipants(ctx, round.ID)
-			if err != nil {
-				return fmt.Errorf("list participants for profit sharing round %q: %w", slug, err)
+			participants, listErr := queries.ListProfitSharingParticipants(ctx, round.ID)
+			if listErr != nil {
+				return fmt.Errorf("list participants for profit sharing round %q: %w", slug, listErr)
 			}
 			persistedItems, err = queries.ListProfitSharingProposalItems(ctx, profitsharingsqlc.ListProfitSharingProposalItemsParams{
 				RoundID:    round.ID,

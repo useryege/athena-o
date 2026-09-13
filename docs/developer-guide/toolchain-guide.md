@@ -1,14 +1,23 @@
 # Development Toolchain
 
-Athena uses the local toolchain for day-to-day development.
+Athena uses Go `1.27.1` from `go.mod` and the local toolchain for day-to-day development.
 
 ## Local Toolchain
+
+After changing the Go toolchain, rebuild Go-installed tools. The pinned
+`golangci-lint` version is `2.13.2`; `govulncheck` stays at `1.7.0` but must be
+compiled with Go `1.27.1`. Verify the compiler and compiled tool version with
+`go version` and `go version -m dist/govulncheck`.
 
 Install the code generation tools:
 
 ```bash
 make install-codegen-tools-local
 ```
+
+The code generation installer pins `mockery` to `3.8.0`, which supports Go
+`1.27.1`. Reinstall these tools after upgrading Go; rebuilding the older
+`mockery 3.6.1` release does not resolve its Go 1.27 type-loading failure.
 
 For UI work, install dependencies directly in the UI directory:
 
@@ -62,23 +71,75 @@ make ai-dev-tools-check
 
 安装入口复用项目安装器：ShellCheck `0.11.0`、grpcurl `1.9.4`、govulncheck
 `1.7.0` 放在仓库 `dist/`，不修改全局 PATH。发布包校验 SHA256；govulncheck
-使用当前 Go 工具链安装，不自动升级 Go。系统安装 `postgresql-client-16`
+使用当前 Go `1.27.1` 工具链安装，并检查可执行文件的编译 Go 版本；切换 Go 后应重新
+安装，即使 `govulncheck` 自身仍为 `1.7.0`。安装器不自动升级 Go。系统安装 `postgresql-client-16`
 （可能需要 sudo），仅提供客户端，接受 Ubuntu 仓库的补丁更新。UI 开发依赖
 `@axe-core/playwright` 固定为 `4.13.0`，安装时读取已有 Yarn 锁文件。
 
 就绪检查只验证安装状态，不下载依赖，也不代表项目扫描没有发现问题。
 
+### 按任务选择工具
+
+AI 通过终端调用这些项目命令即可。先确定需要回答的问题，再选择能提供对应证据的
+工具和检查范围；局部修改先检查相关文件或包。纯文档错别字修改通常只需核对差异，
+不需要启动浏览器、数据库或全仓扫描。用户明确要求的检查和任务方案中的必要验收
+仍按要求执行。
+
+工具选择表同时覆盖首批新增工具和项目已有工具，不是固定执行顺序：
+
 | 修改或排查场景 | 入口 | 如何使用结果 |
 | --- | --- | --- |
-| 修改启动、安装、验收脚本 | `make lint-shell` | 检查 `hack/` 和 `ui/scripts/` 的 Shell 脚本；按文件与规则定位问题 |
-| 检查 Go 依赖的已知漏洞 | `make vuln-check` | 分析默认构建条件下的 `./...`，查看漏洞及调用路径；集成测试构建标签不在默认范围内 |
+| 理解 Go 代码、定位类型或引用 | `gopls`、编辑器语言服务 | 导航和诊断；不能代替运行测试 |
+| 修改 Go 实现或修复回归 | 对应包的 `go test`、`golangci-lint run` | 先验证受影响包；新增诊断与已有问题分别判断 |
+| 修改 UI ESLint 配置或应用隔离导入规则 | `cd ui && yarn lint` | 先用真实 ESLint 配置检查内存回归用例，再执行 TypeScript 与全量 ESLint；记录见 [ESLint files 匹配验收](../testing/eslint-config-matching.md) |
+| 修改启动、安装、验收脚本 | `./dist/shellcheck -x -P . <脚本路径>`；需要全仓扫描时用 `make lint-shell` | 检查相关 Shell 脚本；结合实际展开和运行行为判断诊断 |
+| 升级 Go/依赖或检查已知漏洞 | `make vuln-check` | 分析默认构建条件下的 `./...`，查看漏洞及调用路径；集成测试构建标签不在默认范围内 |
+| 检查页面、交互或浏览器回归 | [athena-browser-acceptance](../../.codex/skills/athena-browser-acceptance/SKILL.md) | 按所需证据选择交互检查、隔离 `make ui-acceptance` 或真实 smoke |
 | 检查 UI 无障碍 | `make ui-a11y` | 使用独立隔离验收，查看 axe 原始结果和 Playwright 报告 |
 | 排查 gRPC 接口 | `./dist/grpcurl` | 对实际监听地址查询反射或提供 proto 定义，再调用具体方法 |
 | 验证 SQL、表结构或连接 | `psql` | 使用明确的开发数据库连接执行查询 |
+| 排查本地容器或启动环境 | `docker`、`docker compose`、项目 `make run` | 先确认目标仓库和进程归属；按任务需要准备环境，遵守 [本地运行规则](running-locally.md#prepare-the-development-environment-for-acceptance) |
+| 修改 SQL、Proto、API 类型或合约等生成源 | [sync-athena-changes](../../.codex/skills/sync-athena-changes/SKILL.md)、对应生成入口 | 定位所需 sqlc、Protobuf、mockery、abigen 等工具及消费者；需要全流程时执行 `make codegen-local` |
+
+已有安装记录表示当时的本机状态。新机器或新 worktree 的 `dist/`、`ui/node_modules/`
+可能尚未准备；在实际目标工作区检查所选工具，例如 `./dist/grpcurl -version`。
+需要核对首批五项工具的整体状态时运行 `make ai-dev-tools-check`；浏览器前置条件
+用所选入口加 `UI_ACCEPTANCE_CHECK_ONLY=1`，例如 `UI_ACCEPTANCE_CHECK_ONLY=1 make ui-a11y`。
+仅因工具存在或历史报告通过，不必重装工具或重跑全部检查。
+
+版本要求以 `go.mod`、`ui/.nvmrc`、`ui/package.json`、`hack/tool-versions.sh`
+及对应安装器为准。就绪检查失败后先核对工作目录、Node 选择和可执行文件位置，
+按实际缺项使用现有安装入口。工具就绪、扫描完成、扫描发现问题、真实验收通过
+是不同结论；保留日志与退出状态，按当前任务范围处理发现。
 
 ShellCheck 与 govulncheck 的扫描日志保存在 `.tmp/ai-dev-tools/`，命令保留失败
 退出状态。govulncheck 使用文本输出；不要将其 JSON 模式的零退出码解释成没有漏洞。
 网络、依赖加载和运行环境错误应先排查，不能当作扫描成功。
+
+### Shell 脚本回归
+
+`make lint-shell` 扫描 `hack/` 和 `ui/scripts/` 下全部 `.sh`，包含辅助库和测试。
+修改 Shell 行为时，按影响范围运行以下本地回归：
+
+```bash
+bash hack/ssh-command_test.sh
+bash hack/deploy-scripts_test.sh
+bash hack/shell-local_test.sh
+bash hack/ai-dev-tools_test.sh
+bash hack/trader-sync-local_test.sh
+```
+
+前两个测试使用本地 SSH/SCP/Docker 等命令替身，验证参数经过远端 shell 解析后的
+实际值、二进制输入、退出码，以及四个部署脚本的操作顺序；不会执行真实远端部署。
+本地脚本测试覆盖特殊路径、清理退出码和资源归属、Temporal 重试次数与间隔。
+涉及浏览器验收入口时，在同一终端激活 `ui/.nvmrc` 的 Node 后执行
+`node --test ui/scripts/acceptance-runner.test.mjs`。
+
+部署脚本通过 `hack/lib/ssh-command.sh` 的 `ssh_exec host command args...`
+传递参数。固定脚本文本与配置值分离；不要把配置值直接拼入远端命令，也不要用
+脚本标准输入通道覆盖 tar 或镜像数据流。ShellCheck 对动态外部 source、信号回调
+等已确认分析边界采用带原因的局部说明，不在全局关闭规则。验收记录见
+[ShellCheck 修复](../testing/shellcheck-cleanup.md)。
 
 ### gRPC 与 PostgreSQL 调试
 

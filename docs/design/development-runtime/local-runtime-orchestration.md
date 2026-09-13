@@ -1,6 +1,6 @@
 # 本地运行编排
 
-> 设计状态：已实现
+> 设计状态：现有全栈编排已实现；Trader Sync 独立构建、本地运行与部署接入目标已确认待实现
 
 ## 范围
 
@@ -9,6 +9,17 @@
 Trader Sync 在现有 `athena-server` 和 `athena-notification` 两个进程内组合，不增加服务进程、独立 Notification 数据库或跨进程连接池对象。
 
 > **服务开发规范差距（2026-09-13）：**上述组合和本文件列出的 `make run`、`make stop`、`make run-reset` 是当前实现事实与源码证据，不是新服务的目标运行模型。原“不增加服务进程”是既有实现决定，不能限制今后的服务边界改造。当前 [Procfile](../../../Procfile) 以 `ATHENA_BINARY_NAME` 复用 `go run ./cmd/main.go`；该入口在 [cmd/main.go](../../../cmd/main.go) 聚合导入全部命令实现，因此局部服务构建仍会耦合无关实现。当前 `make run` 还启动固定资源和整套进程图，`make stop`/`make run-reset` 分别面向整套清理或固定资源重置，不能当作服务的局部生命周期。按[服务开发规范 SDS-R3、SDS-R5](../../developer-guide/service-development-standards.md#sds-r3)，新增独立业务服务需要以目标服务和最小依赖正向选择的可验证构建、部署、启动、测试和停止入口，且局部编排只能回收其拥有资源；当前未实现 `run-service` 等局部命令，故不能作为现有命令列出。既有同库受控事务和连接池 owner 关系仍按 [SDS-R6](../../developer-guide/service-development-standards.md#sds-r6) 保持，改造不得跨 RPC 传递 transaction。
+
+## 已确认的独立运行目标
+
+Trader Sync 的[独立服务职责、接口与事务边界](../../superpowers/specs/2026-09-13-trader-sync-service-boundaries-design.md)及[独立构建与本地运行设计](../../superpowers/specs/2026-09-13-trader-sync-local-runtime-design.md)均已于 2026-09-13 获用户确认，待实现：
+
+- 本机独立 Go 二进制配合最小 PostgreSQL 依赖；服务、API 和 Notification 使用独立入口，Trader Sync 镜像不经过 UI/聚合构建。
+- 默认每个开发实例使用独立持久库；同实例的三个进程共享权威 schema，各自持有 pool。显式复用外部库时，借用方没有数据库清理权限，原 owner 的停库和故障仍会影响借用方。
+- 配置使用统一的 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN`，移除旧 API 命名；独立 schema 命令负责准备和只读校验，业务进程不隐式迁移。API 的 Trader Sync 客户端故障只使对应 facade 不可用。
+- 局部编排按服务正向选择、按 checkout/实例核验资源归属；正常停止保留数据，显式重置只面向拥有的数据。旧全栈清理也须避免误停局部实例；停止预算、TLS 和部署迁移时序按已确认规格执行。
+
+上述入口、变量更名和资源编排尚未实现。下面的命令与源码表继续描述当前行为；[内部字段契约草案](../../superpowers/specs/2026-09-13-trader-sync-grpc-contract-design.md)及[实施计划](../../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service.md)已补齐，待审阅和执行。已有运行证据不证明独立服务改造已完成。
 
 ## 源码入口
 

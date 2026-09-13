@@ -1,6 +1,7 @@
 #!/bin/bash
 set -eux -o pipefail
 
+# shellcheck source=hack/tool-versions.sh
 . "$(dirname "$0")"/../tool-versions.sh
 
 # shellcheck disable=SC2046

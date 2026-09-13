@@ -1,0 +1,260 @@
+{
+  "chainId": 1,
+  "source": {
+    "rpc": "https://ethereum-rpc.publicnode.com",
+    "factoryEvents": {
+      "uniswapV2": {
+        "factory": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
+        "signature": "PairCreated(address,address,address,uint256)",
+        "topic0": "0x0d3648bd0f6ba80134a33ba9275ac585d9d315f0ad8355cddefde31afa28d0e9"
+      },
+      "uniswapV3": {
+        "factory": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+        "signature": "PoolCreated(address,address,uint24,int24,address)",
+        "topic0": "0x783cca1c0412dd0d695e784568c96da2e9c22ff989357a2e8b1d9b2b4e6b7118"
+      }
+    }
+  },
+  "window": {
+    "fromBlock": "0x18c35c3",
+    "toBlock": "0x18c39ab",
+    "blockCount": 1001,
+    "fromBlockTimestamp": "0x6aa621c3",
+    "toBlockTimestamp": "0x6aa650bb"
+  },
+  "recognizedBaseAssets": {
+    "WETH": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+    "USDT": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+    "USDC": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    "DAI": "0x6b175474e89094c44da98b954eedeac495271d0f",
+    "WBTC": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
+  },
+  "eventCounts": {
+    "uniswapV2": 17,
+    "uniswapV3": 1,
+    "total": 18
+  },
+  "decodedEvents": [
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c35dd",
+      "blockTimeHex": "0x6aa622fb",
+      "transactionHash": "0x1f02d33914030e89a47a136acc4babe98be37a383a2ccdbff8138b04060f40ab",
+      "token0": "0xa1a9288a6ec7361b9903037f8a9bfe16c456a2ae",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "pool": "0x4256506e9c7c5bf70293cfe83d9223a1a49c11b2",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c35f7",
+      "blockTimeHex": "0x6aa62433",
+      "transactionHash": "0x2892c5cce025d2f9a51dea565fff4aad6359674bcdb951b6f0a762caf4703bc0",
+      "token0": "0x305cf4cf333dd75730196f07afb0ed48bb300817",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "pool": "0xe58d9189d3baa0aab9b5243ef4b61e5e96d74487",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c3632",
+      "blockTimeHex": "0x6aa62703",
+      "transactionHash": "0x16b40f5a6cb7e4503cd7f6dff16b15aafe3fcf2c0626ae2a9464adcf3192ef99",
+      "token0": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "token1": "0xd929904e9629526f649f83a040d8ff381ee1e64f",
+      "pool": "0x331b8e7f8d7b281cca61d1de8beb4cf2dad61327",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c3659",
+      "blockTimeHex": "0x6aa628d7",
+      "transactionHash": "0x1ff220aeb0ac785a0de4792cd6d9473e32d5b65473ee97454980508b2924bdf1",
+      "token0": "0x4bd4ff36d0448a783a4903c79eacd7338567371a",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "pool": "0x6d9f669ec7e515ec33a2799d9542a634090aa175",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c36a2",
+      "blockTimeHex": "0x6aa62c43",
+      "transactionHash": "0x6e70d09ea509e12629019cb8afdc4d52cca7c4d5e65d03c60057bc72e4bac94b",
+      "token0": "0x80fd34042ef2ac72119dbc002fbf129949fbcebd",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "pool": "0x3d0acc293d535a4ff844bed13916a23eac09a80f",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c36bf",
+      "blockTimeHex": "0x6aa62d9f",
+      "transactionHash": "0x72f8a892bb3257f8bda386533eeae5df12f3d29ecd251a55a52b7674e6e6a60d",
+      "token0": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "token1": "0xff4c982595a157eac49e083bf042f46cf9596c78",
+      "pool": "0x9f838c8d26c8cddb4b625bae462fdcaa3c46cc31",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c370a",
+      "blockTimeHex": "0x6aa63123",
+      "transactionHash": "0x99da793d9e34ba0302174382f0f977aade30ac0a7fabcf17222ca185400f7c1e",
+      "token0": "0x541c6c112eaec5e64bd13a38a4794a6ff6bdf833",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "pool": "0xccbeb119a7ead466a364d44e975118c4ef53b806",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c3783",
+      "blockTimeHex": "0x6aa636db",
+      "transactionHash": "0x714fcc7669acfb94d182bed2cfdd773e93c22cc1feede6f28b758ff006e0b6ec",
+      "token0": "0x0d5935b078a354053ec75d37ca40d37b0790a6a0",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "pool": "0xea3c0dfe385e104c7d19c2f10fa8fb5a2a1fc7b0",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c37f7",
+      "blockTimeHex": "0x6aa63c4b",
+      "transactionHash": "0xaa84d1c240aa13a26003b76e38aeca5dca7a2ff3a957b688fb6d8c2e87b98708",
+      "token0": "0x0880e6c9349daddf8c204dae25cecc8d02064128",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "pool": "0x1e5ce53cc2fe5c3bf33eb97b0b6aa223e62c1b44",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c380e",
+      "blockTimeHex": "0x6aa63d5f",
+      "transactionHash": "0xe2ee29e5fd7385c7acf44048ca760c3ae2181f15336ad6b5069a3d16d2869203",
+      "token0": "0x27339393c0e486f7422b1ca3bb35f5c8e1caec8c",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "pool": "0xf3a2a3d8e8f190d1cebd118095f536bb3497e548",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c3810",
+      "blockTimeHex": "0x6aa63d77",
+      "transactionHash": "0x7f677f7a2cf11952584f3a45a304902960469d7c5b17f87a9e57160b3d507d51",
+      "token0": "0x7f1fdbcf07c8d068272fbfc945f2462af8b46923",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "pool": "0x2a9cab9ca212ac4cf17d20c9f80119615e40664c",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c3855",
+      "blockTimeHex": "0x6aa640b3",
+      "transactionHash": "0x89144077621e187fe97f6c869437a8bbdfc43923bb7152708aa407dc5ed24c6e",
+      "token0": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "token1": "0xc4ebe68cc6127ae8eb8c2c42100e2ac9f6b854ca",
+      "pool": "0x198312064b666ea47f3ec9bf5566c799f307b2dd",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c38bb",
+      "blockTimeHex": "0x6aa6457b",
+      "transactionHash": "0x646be67a92d47dc9fe0fc07bc45e378b497485d810ffa5262a8082be3b5bb07f",
+      "token0": "0x0ec273bd523eefe73ed17d5891eec57e6a16ed1a",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "pool": "0xd15dc23f1ccadb60fb258b6aa5a1833b58fdf174",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c38c2",
+      "blockTimeHex": "0x6aa645cf",
+      "transactionHash": "0x8a370f6c5c0c8cca7bc9f23e9412e0d1e850625ce278d259347932c74f8b29cf",
+      "token0": "0x6f76a14a66a5b335cafad523217522fb3c5c1054",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "pool": "0x47b940dddf7a0ae54fb53e6cfb079f1488ecca2f",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c38c3",
+      "blockTimeHex": "0x6aa645db",
+      "transactionHash": "0xf305af68f7e52a28dadea4ab9745dea905a030108a2408e2573b3053113cdcfe",
+      "token0": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "token1": "0xd14f2808bfdc22e7b13f1de53e3faa010bd364df",
+      "pool": "0x9708ec8060f6bf678fc284251af9296458a1181e",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c3921",
+      "blockTimeHex": "0x6aa64a43",
+      "transactionHash": "0x384e5f01f40db0d1b4d628a3044fab134a706983e916872f603fdcd58648ab40",
+      "token0": "0x809f303a65b62baacd8ce3592473abaaf5ce9850",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "pool": "0xc69a6037988407ba53e8938186046e6ed768771e",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V3",
+      "blockNumber": "0x18c3955",
+      "blockTimeHex": "0x6aa64cb3",
+      "transactionHash": "0x28ee78e094a9841b8f54ed0238f61810c904ac378b1181ace1e7f4a86e0d07f9",
+      "token0": "0x5585a8ca52db686e92bfc03422bf0d19b14344bf",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "pool": "0xef076a43f4785aaf5d54beaaab15dd5a34fc1a59",
+      "knownBase": [
+        "WETH"
+      ]
+    },
+    {
+      "protocol": "Uniswap V2",
+      "blockNumber": "0x18c3980",
+      "blockTimeHex": "0x6aa64eb7",
+      "transactionHash": "0xb3bc07498b7e4901e03725f5644fc47d8ae88d122cfd75e15a823e2efeee2762",
+      "token0": "0x3cc315d17bf63020ef5ed7d36dda8b3def1231d5",
+      "token1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "pool": "0xe84d9ac2dfda02adba5587cb11750012855e7f44",
+      "knownBase": [
+        "WETH"
+      ]
+    }
+  ],
+  "limitations": [
+    "Factory creation event denotes a new Uniswap V2/V3 pool only; neither token contract creation nor liquidity or trading is established.",
+    "Limited to canonical Uniswap V2/V3 factories and a 1001-block observation window; excludes all other DEXs, fork factories, and earlier/later blocks.",
+    "Asset class is determined by exact address equality, not token symbols. This sample cannot measure commonly used trading pairs."
+  ]
+}

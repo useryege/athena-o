@@ -5,6 +5,7 @@ PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")"/../..; pwd)
 DIST_PATH="${PROJECT_ROOT}/dist"
 PATH="${DIST_PATH}:${PATH}"
 
+# shellcheck source=hack/tool-versions.sh
 . "$(dirname "$0")"/../tool-versions.sh
 
 OS=$(go env GOOS)

@@ -13,8 +13,8 @@ MINIO_REGION="${ATHENA_ACCOUNT_AVATAR_S3_REGION:-us-east-1}"
 MINIO_BUCKET="${ATHENA_ACCOUNT_AVATAR_S3_BUCKET:-athena-account-avatars}"
 MINIO_APP_ACCESS_KEY="${ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID:-athena-local-avatar}"
 MINIO_APP_SECRET_KEY="${ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY:-athena-local-avatar-secret}"
-MINIO_IMAGE="${ATHENA_MINIO_IMAGE:-athena-minio:9e49d5e7a648}"
-MINIO_MC_IMAGE="${ATHENA_MINIO_MC_IMAGE:-athena-minio-mc:7394ce0dd2a8}"
+MINIO_IMAGE="${ATHENA_MINIO_IMAGE:-athena-minio:9e49d5e7a648-go1.27.1}"
+MINIO_MC_IMAGE="${ATHENA_MINIO_MC_IMAGE:-athena-minio-mc:7394ce0dd2a8-go1.27.1}"
 MINIO_CONTAINER="athena-minio"
 MINIO_VOLUME="athena-local-minio-data"
 RESOURCE_OWNER_LABEL="io.athena.local-runtime"
@@ -56,6 +56,8 @@ ensure_volume() {
   fi
 }
 
+# Invoked by the INT, TERM and EXIT traps below, including failed startup.
+# shellcheck disable=SC2329
 stop_container() {
   trap - INT TERM EXIT
   if [[ -n "${logs_pid}" ]]; then

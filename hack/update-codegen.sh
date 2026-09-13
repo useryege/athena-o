@@ -39,7 +39,8 @@ sed -i.bak -e 's#${GOBIN}/##g' ${TARGET_SCRIPT}
 
 [ -e "${GOPATH_PROJECT_ROOT}" ] || (mkdir -p "$(dirname "${GOPATH_PROJECT_ROOT}")" && ln -s "${PROJECT_ROOT}" "${GOPATH_PROJECT_ROOT}")
 
-# shellcheck source=pkg/apis/application/v1alpha1/kube_codegen.sh
+# This Kubernetes helper is generated above from vendor at execution time.
+# shellcheck source=/dev/null
 . ${TARGET_SCRIPT}
 
 kube::codegen::gen_helpers pkg/apis/application/v1alpha1

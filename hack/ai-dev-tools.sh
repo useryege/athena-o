@@ -26,7 +26,7 @@ new_artifact() {
 }
 
 check() {
-  local failed=0
+  local failed=0 go_build_info required_go compiled_go host_go
   if [[ -x "$bin_dir/shellcheck" ]] &&
      "$bin_dir/shellcheck" --version | grep -Fq "version: $shellcheck_version"; then
     echo "ShellCheck $shellcheck_version: ready ($bin_dir/shellcheck)"
@@ -41,12 +41,29 @@ check() {
     echo "grpcurl $grpcurl_version: missing or wrong version; run make install-ai-dev-tools" >&2
     failed=1
   fi
-  if [[ -x "$bin_dir/govulncheck" ]] &&
-     "$bin_dir/govulncheck" -version 2>&1 | grep -Fq "v$govulncheck_version"; then
-    echo "govulncheck $govulncheck_version: ready ($bin_dir/govulncheck)"
-  else
+  if [[ ! -x "$bin_dir/govulncheck" ]] ||
+     ! "$bin_dir/govulncheck" -version 2>&1 | grep -Fxq "Scanner: govulncheck@v$govulncheck_version"; then
     echo "govulncheck $govulncheck_version: missing or wrong version; run make install-ai-dev-tools" >&2
     failed=1
+  elif ! command -v go >/dev/null 2>&1 ||
+       ! go_build_info=$(GOTOOLCHAIN=local go version -m "$bin_dir/govulncheck" 2>/dev/null); then
+    echo "govulncheck $govulncheck_version: cannot inspect Go build metadata; run make install-ai-dev-tools" >&2
+    failed=1
+  else
+    required_go=$(awk '$1 == "go" { print "go" $2; exit }' "$root/go.mod")
+    compiled_go=$(awk 'NR == 1 { print $NF }' <<<"$go_build_info")
+    if [[ $compiled_go != "$required_go" ]]; then
+      echo "govulncheck $govulncheck_version: compiled with $compiled_go; require $required_go. Run make install-ai-dev-tools" >&2
+      failed=1
+    elif ! host_go=$(GOTOOLCHAIN=local go env GOVERSION 2>/dev/null); then
+      echo "govulncheck $govulncheck_version: cannot inspect host Go toolchain; run make install-ai-dev-tools" >&2
+      failed=1
+    elif [[ $host_go != "$required_go" ]]; then
+      echo "govulncheck $govulncheck_version: host Go $host_go; require $required_go. Install $required_go and retry" >&2
+      failed=1
+    else
+      echo "govulncheck $govulncheck_version: ready ($bin_dir/govulncheck, $compiled_go)"
+    fi
   fi
   if command -v psql >/dev/null 2>&1 && command -v pg_isready >/dev/null 2>&1 &&
      psql --version | grep -Fq "PostgreSQL) $postgresql_client_major." &&

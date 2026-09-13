@@ -607,11 +607,13 @@ cleanup_foreground_run() {
 	stop_goreman
 	cleanup_status="$?"
 	if [[ "${ATHENA_RUN_PORT_CLEANUP:-true}" != "false" ]]; then
-		cleanup_athena_ports stop
-		[[ "$?" == "0" ]] || cleanup_status=1
+		if ! cleanup_athena_ports stop; then
+			cleanup_status=1
+		fi
 	fi
-	cleanup_local_containers
-	[[ "$?" == "0" ]] || cleanup_status=1
+	if ! cleanup_local_containers; then
+		cleanup_status=1
+	fi
 	remove_runtime_state
 	set -e
 

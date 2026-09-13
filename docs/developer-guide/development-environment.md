@@ -5,7 +5,7 @@
 Install:
 
 - Git
-- Go, using the version required by `go.mod`
+- Go `1.27.1`, using the version required by `go.mod`; see [Install Go on Linux（WSL）](install-go.md)
 - Docker
 - GNU Make
 - Node.js selected by `ui/.nvmrc` and Yarn for UI work; see the

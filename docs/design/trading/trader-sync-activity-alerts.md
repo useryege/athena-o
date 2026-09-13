@@ -1,16 +1,29 @@
 # Trader Sync：Activity Alerts 后端技术设计
 
-> 设计状态：已实现
+> 设计状态：现有 Activity Alerts 已实现；独立服务的职责、接口、事务、构建运行及部署接入目标已确认待实现，具体 proto 字段契约草案与实施计划已补齐，待审阅和执行
 >
 > 关联需求：[Activity Alerts 需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)（已确认；完整书面设计也已整体确认）
 
-本文记录当前有效后端与跨层设计。原后端方案、[UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)和[21项实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)保留批准与实施历史；运行证据及不能外推的范围见[验收记录](../../testing/trader-sync-activity-alerts-acceptance.md)。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
+本文记录当前后端实现与已确认的独立服务目标。原后端方案、[UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)和[21项实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)保留批准与实施历史；运行证据及不能外推的范围见[验收记录](../../testing/trader-sync-activity-alerts-acceptance.md)。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
 
 当前实现包含统一数据库、进程边界、持久发送许可/结果、Bot update 原子消费、共享调度、单 sender 恢复、实时 Collector/基线/持久接收、ActivityProjector、活动与普通消息同事务、摘要冻结与首条协调、公开 API 及生产 runtime 组合。单供应商 WSS、最终确认、资料 evidence、同用户突发限流和撤权永久资格边界均按[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)实现；外部公开时刻、100 个真实持续活跃目标和长期稳定性仍是证据限制，不改写业务目标。
 
-> **服务开发规范差距（2026-09-13）：**本文记录的 `athena-server` 内 Trader Sync 采集/投影与 `athena-notification` 组合是当前实现和已有验收事实。原“**不新增服务进程**”是当时实现方案的决定，不是未来业务服务的约束。按[服务开发规范 SDS-R1 至 SDS-R8](../../developer-guide/service-development-standards.md#sds-r1)，后续边界改造应评估独立业务服务、默认 gRPC、独立生命周期与局部资源所有权；该改造尚未实施，不能据此宣称现有行为已满足新规范。现有同库受控事务、原子撤权和发送许可继续保留，不能为了拆分随意异步化或跨 RPC 传递 transaction。
+> **服务开发规范差距（2026-09-13）：**本文记录的 `athena-server` 内 Trader Sync 采集/投影与 `athena-notification` 组合是当前实现和已有验收事实。原“**不新增服务进程**”是当时实现方案的决定，不是未来业务服务的约束。按[服务开发规范 SDS-R1 至 SDS-R8](../../developer-guide/service-development-standards.md#sds-r1)，独立进程、内部 gRPC、事务边界及构建运行/部署接入均已形成下节的确认目标。改造尚未实施，不能据此宣称现有行为已满足新规范。现有同库受控事务、原子撤权和发送许可继续保留，不能为了拆分随意异步化或跨 RPC 传递 transaction。
 
 技术证据见[数据源契约核验](../../requirements/polymarket-copy-trading/source-contract-verification.md)与[RPC 过滤、确认和额度复核](../../requirements/polymarket-copy-trading/collector-contract-verification.md)。它们记录当前实现版本、100 钱包 OR 推送、Combo 腿映射、Profile 与收益资料的证据及限制。技术参数是可验证的设计默认值；最终本地验收不替代缺失的实网容量与公开时效证明。
+
+## 已确认的独立服务目标
+
+2026-09-13，用户确认[独立服务职责、接口与事务设计](../../superpowers/specs/2026-09-13-trader-sync-service-boundaries-design.md)的第 1、2 板块。后续设计和实施沿用以下决定：
+
+- Trader Sync 独立进程拥有订阅、基线、Collector、Projector 和目录刷新；API 保留公开身份入口和 facade，通过内部 gRPC 调用，不持有其 runtime。
+- Notification 保留 Telegram、摘要冻结、发送许可和调度；账户权限模块暂留现有 API 进程。三进程自有 pool，共用数据库，撤权等原子不变量保留受控事务适配器。
+- 内部调用采用专用服务凭据、可信 Actor 和服务内权威授权；内部认证/契约故障转为公共 503，避免误触发用户退出登录。
+- 单个活跃采集实例，重启后恢复并展示中断，不补查遗漏。整组运行期写入采用 generation 校验；先启用校验再恢复，所有借用者收尾后由 runtime 释放所有权。RPC 就绪与 WSS 连接状态分开。
+
+同日，用户确认[独立构建与本地运行设计](../../superpowers/specs/2026-09-13-trader-sync-local-runtime-design.md)：独立 main/镜像、按服务选择最小依赖、每开发实例的持久库及显式外部库复用、统一 account-state DSN、显式 schema 准备、按资源归属停止和生产 TLS/维护时序。长期运行边界见[本地编排目标](../development-runtime/local-runtime-orchestration.md#已确认的独立运行目标)。
+
+这些是已确认待实现的目标。当前代码仍在 API 内组合 Trader Sync；[内部字段与映射契约草案](../../superpowers/specs/2026-09-13-trader-sync-grpc-contract-design.md)及[完整实施计划](../../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service.md)已补齐并完成本轮自审，待审阅和执行。下面的实现与验收证据不能用于证明拆分已完成。
 
 ## 需求覆盖
 

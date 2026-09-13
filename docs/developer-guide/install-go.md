@@ -1,11 +1,12 @@
 # Install Go on Linux（WSL）
 
-This guide installs Go `1.25.5` from the official Linux `amd64` tarball on WSL.
+This guide installs Go `1.27.1` from the official Linux `amd64` tarball on WSL.
 
 ## 1. Download the Archive
 
 ```bash
-wget https://dl.google.com/go/go1.25.5.linux-amd64.tar.gz
+wget https://dl.google.com/go/go1.27.1.linux-amd64.tar.gz
+echo '63d339f0da5ab53635a56f2490a7984dfe12dfcff22ad749f63edaf590168445  go1.27.1.linux-amd64.tar.gz' | sha256sum -c -
 ```
 
 ## 2. Remove the Previous Installation
@@ -17,7 +18,7 @@ sudo rm -rf /usr/local/go
 ## 3. Extract Go
 
 ```bash
-sudo tar -C /usr/local -xzf go1.25.5.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.27.1.linux-amd64.tar.gz
 ```
 
 ## 4. Add Go to `PATH`
@@ -42,10 +43,11 @@ Verify that Go is installed correctly:
 
 ```bash
 go version
+# Expected: go version go1.27.1 linux/amd64
 ```
 
 ## 6. Clean Up
 
 ```bash
-rm go1.25.5.linux-amd64.tar.gz
+rm go1.27.1.linux-amd64.tar.gz
 ```

@@ -57,6 +57,7 @@ Do not preserve historical compatibility. When implementing changes:
 - Read the relevant [requirements](docs/requirements/README.md), [designs](docs/design/README.md), and actual source as project context. Preserve business decisions, unresolved questions, and scope; keep affected long-term documents consistent with the resulting implementation. Document statuses describe facts, not additional workflow gates.
 - Use Superpowers' default `docs/superpowers/specs/` and `docs/superpowers/plans/` locations when its selected workflow calls for written artifacts. Project-local worktrees belong in `.worktrees/`; temporary Superpowers execution state belongs in `.superpowers/`.
 - Project-specific skills supply domain knowledge and repository operations alongside Superpowers. Installation details and the skill map are in [Superpowers Development](docs/developer-guide/superpowers-development.md).
+- 选择开发、调试或验证工具时，查阅[按任务选择工具](docs/developer-guide/toolchain-guide.md#按任务选择工具)，根据当前问题和影响范围选用，并在当前工作区确认所选工具可用。工具清单不是每个任务的必跑清单；用户或任务方案已经要求的验证仍须完成。
 
 ### 本地验收环境准备与完成标准
 

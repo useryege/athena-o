@@ -829,6 +829,9 @@ body::-webkit-scrollbar-thumb,
     font-weight: 600;
     border-color: var(--athena-border);
 }
+:root:not([data-theme='dark']) .athena-status-tag--positive.ant-tag {
+    color: #237804;
+}
 .ant-tabs .ant-tabs-nav {
     margin-bottom: 14px;
 }

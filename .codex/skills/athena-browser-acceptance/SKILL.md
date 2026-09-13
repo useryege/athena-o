@@ -1,6 +1,6 @@
 ---
 name: athena-browser-acceptance
-description: Use when inspecting ATHENA pages in a browser, smoke-testing a local development UI, or running repeatable Playwright UI acceptance and browser regression.
+description: Use when inspecting ATHENA pages, checking UI accessibility, smoke-testing a local development UI, or running repeatable Playwright UI acceptance and browser regression.
 ---
 
 # ATHENA Browser Acceptance
@@ -14,7 +14,10 @@ Choose the lightest route that produces the evidence the request needs. Read the
 | Explore or inspect a page during development | Use the current session's built-in browser when it is available. Inspect the real page, console, and decisive requests. |
 | Repeatable regression or isolated frontend/backend acceptance | Run `make ui-acceptance`. This creates fresh root-path and `/athena` harnesses and uses Playwright's paired Chromium. |
 | Smoke-test the real local development UI | Prepare or reuse the target development environment below, then run `make ui-acceptance UI_ACCEPTANCE_MODE=smoke` using system Chrome. The command itself never starts or stops the stack. |
-| Check prerequisites only | Add `UI_ACCEPTANCE_CHECK_ONLY=1`. Report prerequisite results only; when full acceptance is required, investigate and resolve prerequisite failures within the authorized scope, then rerun. |
+| Check UI accessibility, including WCAG contrast or accessible names | Run `make ui-a11y`. This runs the existing axe/Playwright scenarios in an isolated harness; an existing development stack is not a prerequisite. See [coverage and evidence](../../../docs/developer-guide/toolchain-guide.md#独立无障碍检查). |
+| Check prerequisites only | Add `UI_ACCEPTANCE_CHECK_ONLY=1` to the selected route; for accessibility, use `UI_ACCEPTANCE_CHECK_ONLY=1 make ui-a11y`. Report prerequisite results only; when full acceptance is required, investigate and resolve prerequisite failures within the authorized scope, then rerun. |
+
+Choose routes for the requested evidence, not as a checklist to run on every task. A documentation-only correction does not itself require browser scans. Availability in a previous checkout does not establish readiness in the current worktree; use the selected route's prerequisite check when needed.
 
 Use `UI_ACCEPTANCE_BASE_URL` only to select an explicit HTTP loopback smoke target. The command discovers WSL Node in the documented order and uses repository-local Yarn and Playwright. It does not install or download dependencies.
 
@@ -34,6 +37,7 @@ The smoke **tool** does not start services; the accepting **agent** must prepare
 
 - Keep member and administrator sessions isolated. For interactive Google or Phantom authentication, use the real browser flow. Harness `storageState` proves only the isolated test identity and is not authentication acceptance.
 - Classify evidence by mode: `ui-fixtures` proves page behavior against intercepted responses; `live` proves the ATHENA components and temporary PostgreSQL exercised by the isolated harness, while chain, profile, and Telegram boundaries remain local substitutes; `smoke` proves the current development application's bootstrap and shell only.
+- The `a11y` suite checks automated accessibility rules for its existing scenarios. Preserve raw axe results and failing exits; it complements keyboard and manual checks and does not prove that every page is accessible.
 - The built-in browser is for interactive inspection. A successful built-in-browser check is not a system-Chrome smoke result or a Playwright regression result.
 - Preserve Playwright's native report, trace, screenshot, and attachments under `.tmp/athena-ui-acceptance/<run-id>/`. Report only checks actually executed, including the mode, target, result, blocker, and cleanup status.
 - Do not broaden an acceptance-only request into a product fix. When a fix is authorized, preserve the failing evidence, use `systematic-debugging` and `test-driven-development`, then rerun the affected scenario and the smallest relevant regression.
