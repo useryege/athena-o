@@ -101,5 +101,7 @@ Pump 官方仓库中的 SDK 使用文档提供 `createV2AndBuyInstructions`，�
 
 实现与真实数据、页面、重启恢复证据记录在[验收记录](../../testing/solana-discovery.md)，任务清单见[实施计划](../../superpowers/plans/2026-09-13-solana-discovery.md)。解析器/数据库/权限/API/页面验证与主网真实数据验收分别记录；公共节点长期容量尚无证据，不作延迟和全链完整性承诺。
 
+名称、符号与发行来源扩展的独立测试、真实主网旧记录补全、最终重启和桌面/手机验收见[补全验收记录](../../developer-guide/acceptance-records/2026-09-13-solana-metadata.md)。历史队列后台持续处理，不把功能验收通过等同于全部记录已补齐。
+
 
 公共节点实测 getBlock 返回约17MB，节点会返回429；即使降低请求次数，也不能仅据QPS推断容量。官方还声明公共端点有数据量额度、限额会变化，不适合作为生产节点；见[Solana公共RPC说明](https://solana.com/docs/references/clusters)。首版预览优先逐块持久保存真实样本，显示catching_up或error，不宣称追平。若后续要求持续低延迟全范围发现，需要相应容量的RPC或更有针对性的发现数据源。
