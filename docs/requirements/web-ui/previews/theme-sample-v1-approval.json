@@ -1,0 +1,44 @@
+{
+  "status": "approved_for_palette_and_button_hierarchy",
+  "confirmed_by": "user",
+  "feedback": "没问题，我喜欢这个感觉。",
+  "approved_scope": [
+    "整体配色搭配",
+    "背景与面板的明暗层次",
+    "主要与辅助文字颜色",
+    "青绿色的使用",
+    "主要实心按钮与次要深色描边按钮的视觉层级"
+  ],
+  "not_approved_by_this_feedback": [
+    "字体与字号",
+    "页面布局",
+    "完整组件与业务状态配色",
+    "业务字段与统计定义",
+    "正式产品实现"
+  ],
+  "baseline_colors": {
+    "page": "#06080B",
+    "panel": "#0F1114",
+    "raised": "#181D22",
+    "divider": "#252A30",
+    "text": "#FFFFFF",
+    "muted": "#9FA0A1",
+    "accent": "#00FFA7",
+    "primary_button_text": "#06080B"
+  },
+  "artifacts": [
+    {
+      "path": "theme-sample-v1.html",
+      "sha256": "a59cce6651e26251179992ae23e51a799cf7befbe37523806f97ebb29ffca40e"
+    },
+    {
+      "path": "theme-sample-v1-desktop.png",
+      "sha256": "61d8d03f8e09c34ff83475de77e9522bd92f5352c03f6f9e3986037626e2d37f"
+    },
+    {
+      "path": "theme-sample-v1-mobile.png",
+      "sha256": "aa208910ce0d987750130f86e65b2ca96c91372e432b1074ca37b31384a5608f"
+    }
+  ],
+  "note": "原始样板及截图保持提交审阅时的状态；后续样板另存版本并沿用本配色基准。"
+}

@@ -1,0 +1,781 @@
+{
+  "checked_at_utc": "2026-09-13T13:23:24.004727+00:00",
+  "purpose": "Check directions/classification and same-wallet transfer vs DEX coverage.",
+  "request": {
+    "method": "POST",
+    "url": "https://api.nansen.ai/api/v1/profiler/address/transactions",
+    "body": {
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "block_timestamp",
+          "direction": "DESC"
+        }
+      ]
+    }
+  },
+  "http_status": 200,
+  "elapsed_seconds": 2.506,
+  "response_headers": {
+    "date": "Sun, 13 Sep 2026 13:23:25 GMT",
+    "content-type": "application/json",
+    "content-length": "21956",
+    "connection": "close",
+    "x-ratelimit-remaining-minute": "2996",
+    "ratelimit-limit": "150",
+    "ratelimit-remaining": "149",
+    "ratelimit-reset": "1",
+    "x-ratelimit-limit-second": "150",
+    "x-ratelimit-limit-minute": "3000",
+    "x-ratelimit-remaining-second": "149",
+    "x-ratelimit-remaining-credit-fails": "10",
+    "server": "cloudflare",
+    "x-nansen-credits-cost": "1",
+    "x-nansen-credits-used": "1",
+    "x-nansen-credits-remaining": "10083",
+    "x-nansen-upgrade-hint": "You are on the free tier. Upgrade at nansen.ai/pricing for higher monthly credit allocation and credit discounts",
+    "x-nansen-plan-notice": "Free tier gets 10 free credits every day. Resets at midnight UTC. Buy more credits at: https://app.nansen.ai/api",
+    "x-ratelimit-limit": "15",
+    "x-ratelimit-remaining": "14",
+    "x-ratelimit-reset": "1",
+    "x-request-id": "c705f54b80587f572ac1c73dd297b906",
+    "vary": "Origin",
+    "access-control-allow-credentials": "true",
+    "access-control-expose-headers": "Deprecation,Link,Payment-Receipt,Payment-Response,Payment-Required,RateLimit-Limit,RateLimit-Remaining,RateLimit-Reset,Retry-After,Sunset,Warning,WWW-Authenticate,X-Nansen-Api-Key-Notice,X-Nansen-Credits-Cost,X-Nansen-Credits-Remaining,X-Nansen-Credits-Used,X-Nansen-Notice,X-Nansen-Plan-Notice,X-Nansen-RateLimit-Scope,X-Nansen-Upgrade-Hint,X-RateLimit-Limit,X-RateLimit-Limit-Minute,X-RateLimit-Limit-Second,X-RateLimit-Remaining,X-RateLimit-Remaining-Minute,X-RateLimit-Remaining-Second,X-RateLimit-Reset,X-Request-Id",
+    "x-ratelimit-limit-credit-fails-minute": "10",
+    "x-ratelimit-remaining-credit-fails-minute": "10",
+    "x-kong-upstream-latency": "1342",
+    "x-kong-proxy-latency": "3",
+    "via": "1.1 kong/3.9.3, 1.1 google",
+    "x-kong-request-id": "c705f54b80587f572ac1c73dd297b906",
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "cf-cache-status": "DYNAMIC",
+    "set-cookie": "__cf_bm=lwqq2F5SCKr1EkpMgoCR_.vDOJ6sVqEt38YlhjQBOBo-1789305804.401127-1.0.1.1-onLIzyHIQsVO8T00EZMdaqwfIfEGTR2hY9exqYOzBRKkLy1js9kpsnVYzjC6yh4eR1Ms0K.f5hn9BaXMISx6yKoeY5Oug6Osxwk5LMDNXzMXxHBzu4GaLPXTCiYfXM7s; HttpOnly; SameSite=None; Secure; Path=/; Domain=nansen.ai; Expires=Sun, 13 Sep 2026 13:53:25 GMT",
+    "cf-ray": "a3a7775d7989eba0-SIN"
+  },
+  "response": {
+    "pagination": {
+      "page": 1,
+      "per_page": 20,
+      "is_last_page": false
+    },
+    "data": [
+      {
+        "chain": "ethereum",
+        "method": "received",
+        "tokens_sent": [],
+        "tokens_received": [
+          {
+            "token_symbol": "SUPRA",
+            "token_amount": 100.0,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0xdc7404100a092c898e93708ef73f3322a7acc213",
+            "chain": "ethereum",
+            "from_address": "0x7aa8c01199b69532281ecb3a9305d2e881ed88ae",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "[0x7aa8c0]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": null,
+        "block_timestamp": "2026-08-31T15:05:59",
+        "transaction_hash": "0x83e6c89e048a3bf7b5ccb14ef6bd5fb0f1cfed0d0ad2428c9070ef886ad660ed",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "0x4a7cf362",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -18695.369808714993,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 4697756034.516492,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 18654.83358212071,
+        "block_timestamp": "2026-08-27T10:17:23",
+        "transaction_hash": "0xc3aa921eb0a0cf365fec51b5f5b795097deb62e35fb9e23862cebcd466b246b4",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "0x4a7cf362",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -32025.618446535347,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 8048108154.188779,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 31956.178914744665,
+        "block_timestamp": "2026-08-27T10:14:47",
+        "transaction_hash": "0x34dabde8490de7c8cb740261ff9690d9aba186213b22cb948f5d21a80940301c",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "settle(address[],uint256[],(uint256,uint256,address,uint256,uint256,uint32,bytes32,uint256,uint256,uint256,bytes)[],(address,uint256,bytes)[][3])",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -226.74517836740858,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "ETH",
+            "token_amount": 0.08933698700218218,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 226.25353824348988,
+        "block_timestamp": "2026-08-27T10:05:47",
+        "transaction_hash": "0x619cbcf4bfd613571c83df61d4bddfb18842d7c9a64a7d7539b5bbad1206b053",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "0x6d7b7040",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -7279.011744749656,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 1831572400.9807167,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 7263.229031035693,
+        "block_timestamp": "2026-08-27T10:05:11",
+        "transaction_hash": "0xdfe97366186407a3df533ca38150a292b98cd2ad481d66d94f878d16c24998cd",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "settle(address[],uint256[],(uint256,uint256,address,uint256,uint256,uint32,bytes32,uint256,uint256,uint256,bytes)[],(address,uint256,bytes)[][3])",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -12000.0,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 3015075376.884422,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 11973.981005772635,
+        "block_timestamp": "2026-08-27T10:03:35",
+        "transaction_hash": "0x189af586c3f4c065d95d259a14c35636e499101885019557ed64937a56be6329",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "settle(address[],uint256[],(uint256,uint256,address,uint256,uint256,uint32,bytes32,uint256,uint256,uint256,bytes)[],(address,uint256,bytes)[][3])",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -58010.552210620706,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 14619792406.430883,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 57884.770858696174,
+        "block_timestamp": "2026-08-27T10:02:59",
+        "transaction_hash": "0x21f640e901dcd896d1bbf4191ddcc879a70db2b3c2cbd9eaad2d9379a353d7ee",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "settle(address[],uint256[],(uint256,uint256,address,uint256,uint256,uint32,bytes32,uint256,uint256,uint256,bytes)[],(address,uint256,bytes)[][3])",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -2373.944197397069,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 596884855.9392626,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 2368.7968940330557,
+        "block_timestamp": "2026-08-27T10:01:47",
+        "transaction_hash": "0xa3faf60b596507ad5460f7b2939e783ae63375f85586ac4836a472877ffb2b8c",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "settle(address[],uint256[],(uint256,uint256,address,uint256,uint256,uint32,bytes32,uint256,uint256,uint256,bytes)[],(address,uint256,bytes)[][3])",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -90900.80444053885,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 22839398100.6379,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 90703.70881503876,
+        "block_timestamp": "2026-08-27T10:01:23",
+        "transaction_hash": "0x53ca0088e21d29c2b4c64c6380425920a77929c16636c94ed8513c9bf345d0e8",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "settle(address[],uint256[],(uint256,uint256,address,uint256,uint256,uint32,bytes32,uint256,uint256,uint256,bytes)[],(address,uint256,bytes)[][3])",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -90903.20574933519,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 22889816993.654716,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 90706.10491719845,
+        "block_timestamp": "2026-08-27T09:59:47",
+        "transaction_hash": "0x502bad734be97fe46b35814fad39a4dbcc9e651eeb58c93a4898de0669a911bf",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "0x4a7cf362",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -53375.44360774775,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 13464276034.397987,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 53259.71232782167,
+        "block_timestamp": "2026-08-27T09:58:59",
+        "transaction_hash": "0x6380b4bd1a4cca64e3c3bfa23d63520651fdca79a541ae866c9c398ffc5e77b6",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "settle(address[],uint256[],(uint256,uint256,address,uint256,uint256,uint32,bytes32,uint256,uint256,uint256,bytes)[],(address,uint256,bytes)[][3])",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -60726.55889942913,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 15263001901.044098,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 60594.88856730814,
+        "block_timestamp": "2026-08-27T09:57:35",
+        "transaction_hash": "0x130c6bd1bae6e866bebbf3fd3913458723b9c9f330033c4fdc26485ee7d50e7f",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "0xef4d7b75",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -5224.070024121446,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 1312696731.062646,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 5212.7429368047,
+        "block_timestamp": "2026-08-27T09:56:35",
+        "transaction_hash": "0xf7f151b837afd9ba1dc15cedd33dc2293f90fc3571188661abd244bbb1457f96",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "0x4a7cf362",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -40000.0,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 10055260018.076946,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 39913.27001924212,
+        "block_timestamp": "2026-08-27T09:55:11",
+        "transaction_hash": "0x355e7ce2c875da511b403a172fbefa51036968b8290315daf30d5bf575329f53",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "settle(address[],uint256[],(uint256,uint256,address,uint256,uint256,uint32,bytes32,uint256,uint256,uint256,bytes)[],(address,uint256,bytes)[][3])",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -57591.31486115683,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 14474706168.79077,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 57466.442520413606,
+        "block_timestamp": "2026-08-27T09:51:35",
+        "transaction_hash": "0xb6983e102781cfd1be66234c1378274780ed6fc6da17ad7b9a5e86a61cf67fe6",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "settle(address[],uint256[],(uint256,uint256,address,uint256,uint256,uint32,bytes32,uint256,uint256,uint256,bytes)[],(address,uint256,bytes)[][3])",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -75408.9927488692,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 18976298061.794025,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 75245.48723661719,
+        "block_timestamp": "2026-08-27T09:39:11",
+        "transaction_hash": "0x89d8d34a71d2ee09e8a38dd74ce8c5865e51c9a6759c466bb793c1dfad22ec46",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "0xef4d7b75",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -9958.13624422124,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 2502670838.2722535,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 9936.544520100098,
+        "block_timestamp": "2026-08-27T09:38:35",
+        "transaction_hash": "0x40b9792491201b8794ea0d0cc0c4199ffbf43b1dc25d756976b4a8ab2bc15f0d",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "settle(address[],uint256[],(uint256,uint256,address,uint256,uint256,uint32,bytes32,uint256,uint256,uint256,bytes)[],(address,uint256,bytes)[][3])",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -8606.215600217462,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 2162371206.266285,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 8587.555177382335,
+        "block_timestamp": "2026-08-27T09:37:11",
+        "transaction_hash": "0x82f18cfcd14cba76a25131df98ce1bec8c6ffb6f91e063207a35649542908dbc",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "settle(address[],uint256[],(uint256,uint256,address,uint256,uint256,uint32,bytes32,uint256,uint256,uint256,bytes)[],(address,uint256,bytes)[][3])",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -7855.625075108295,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 1973775144.4995716,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 7838.592119818164,
+        "block_timestamp": "2026-08-27T09:36:47",
+        "transaction_hash": "0xedec9bc61ac530eab6f3e6306029e5620c635e41e775cb4000310d4df0f47a93",
+        "source_type": "transfer"
+      },
+      {
+        "chain": "ethereum",
+        "method": "settle(address[],uint256[],(uint256,uint256,address,uint256,uint256,uint32,bytes32,uint256,uint256,uint256,bytes)[],(address,uint256,bytes)[][3])",
+        "tokens_sent": [
+          {
+            "token_symbol": "DAI",
+            "token_amount": -8345.663331155014,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "chain": "ethereum",
+            "from_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "to_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "from_address_label": "High Balance [0xfb67ef]",
+            "to_address_label": "Token Millionaire [0x9008d1]"
+          }
+        ],
+        "tokens_received": [
+          {
+            "token_symbol": "PEPE",
+            "token_amount": 2096986342.4028342,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+            "chain": "ethereum",
+            "from_address": "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+            "to_address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+            "from_address_label": "Token Millionaire [0x9008d1]",
+            "to_address_label": "High Balance [0xfb67ef]"
+          }
+        ],
+        "volume_usd": 8327.567850651943,
+        "block_timestamp": "2026-08-27T09:34:47",
+        "transaction_hash": "0xaf0ed7eb3bb19a256169d43d34f448150895aa17d80fe63b64dcb7236d2a77b4",
+        "source_type": "transfer"
+      }
+    ]
+  }
+}

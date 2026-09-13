@@ -1,0 +1,106 @@
+[
+  {
+    "name": "active-pnl-true-asc",
+    "endpoint": "profiler/address/pnl",
+    "purpose": "Controlled sorting/page comparison; no local reordering to conceal provider behavior.",
+    "body": {
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "filters": {
+        "show_realized": true
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "pnl_usd_realised",
+          "direction": "ASC"
+        }
+      ]
+    }
+  },
+  {
+    "name": "active-pnl-false-asc",
+    "endpoint": "profiler/address/pnl",
+    "purpose": "Controlled sorting/page comparison; no local reordering to conceal provider behavior.",
+    "body": {
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "filters": {
+        "show_realized": false
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "pnl_usd_realised",
+          "direction": "ASC"
+        }
+      ]
+    }
+  },
+  {
+    "name": "active-pnl-true-page1-size2",
+    "endpoint": "profiler/address/pnl",
+    "purpose": "Controlled sorting/page comparison; no local reordering to conceal provider behavior.",
+    "body": {
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "filters": {
+        "show_realized": true
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 2
+      },
+      "order_by": [
+        {
+          "field": "pnl_usd_realised",
+          "direction": "DESC"
+        }
+      ]
+    }
+  },
+  {
+    "name": "active-pnl-true-page2-size2",
+    "endpoint": "profiler/address/pnl",
+    "purpose": "Controlled sorting/page comparison; no local reordering to conceal provider behavior.",
+    "body": {
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "filters": {
+        "show_realized": true
+      },
+      "pagination": {
+        "page": 2,
+        "per_page": 2
+      },
+      "order_by": [
+        {
+          "field": "pnl_usd_realised",
+          "direction": "DESC"
+        }
+      ]
+    }
+  }
+]

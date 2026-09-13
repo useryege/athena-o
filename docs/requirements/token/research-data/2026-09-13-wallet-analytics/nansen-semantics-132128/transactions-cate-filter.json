@@ -1,0 +1,100 @@
+{
+  "checked_at_utc": "2026-09-13T13:21:41.676837+00:00",
+  "purpose": "Compare transaction and PnL scope for a token absent from prior first transaction page.",
+  "request": {
+    "method": "POST",
+    "url": "https://api.nansen.ai/api/v1/profiler/address/transactions",
+    "body": {
+      "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "block_timestamp",
+          "direction": "DESC"
+        }
+      ],
+      "filters": {
+        "token_address": "0x712f3378cd1a0476b53f0e29b1a9586e00d78683"
+      }
+    }
+  },
+  "http_status": 200,
+  "elapsed_seconds": 1.162,
+  "response_headers": {
+    "date": "Sun, 13 Sep 2026 13:21:42 GMT",
+    "content-type": "application/json",
+    "content-length": "692",
+    "connection": "close",
+    "x-ratelimit-remaining-minute": "2996",
+    "ratelimit-limit": "150",
+    "ratelimit-remaining": "149",
+    "ratelimit-reset": "1",
+    "x-ratelimit-limit-second": "150",
+    "x-ratelimit-limit-minute": "3000",
+    "x-ratelimit-remaining-second": "149",
+    "x-ratelimit-remaining-credit-fails": "10",
+    "server": "cloudflare",
+    "x-nansen-credits-cost": "1",
+    "x-nansen-credits-used": "1",
+    "x-nansen-credits-remaining": "10092",
+    "x-nansen-upgrade-hint": "You are on the free tier. Upgrade at nansen.ai/pricing for higher monthly credit allocation and credit discounts",
+    "x-nansen-plan-notice": "Free tier gets 10 free credits every day. Resets at midnight UTC. Buy more credits at: https://app.nansen.ai/api",
+    "x-ratelimit-limit": "15",
+    "x-ratelimit-remaining": "14",
+    "x-ratelimit-reset": "1",
+    "x-request-id": "b00d602f359fe36b1f3a3f18e7145373",
+    "vary": "Origin",
+    "access-control-allow-credentials": "true",
+    "access-control-expose-headers": "Deprecation,Link,Payment-Receipt,Payment-Response,Payment-Required,RateLimit-Limit,RateLimit-Remaining,RateLimit-Reset,Retry-After,Sunset,Warning,WWW-Authenticate,X-Nansen-Api-Key-Notice,X-Nansen-Credits-Cost,X-Nansen-Credits-Remaining,X-Nansen-Credits-Used,X-Nansen-Notice,X-Nansen-Plan-Notice,X-Nansen-RateLimit-Scope,X-Nansen-Upgrade-Hint,X-RateLimit-Limit,X-RateLimit-Limit-Minute,X-RateLimit-Limit-Second,X-RateLimit-Remaining,X-RateLimit-Remaining-Minute,X-RateLimit-Remaining-Second,X-RateLimit-Reset,X-Request-Id",
+    "x-ratelimit-limit-credit-fails-minute": "10",
+    "x-ratelimit-remaining-credit-fails-minute": "10",
+    "x-kong-upstream-latency": "397",
+    "x-kong-proxy-latency": "3",
+    "via": "1.1 kong/3.9.3, 1.1 google",
+    "x-kong-request-id": "b00d602f359fe36b1f3a3f18e7145373",
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "cf-cache-status": "DYNAMIC",
+    "set-cookie": "__cf_bm=9Q7bcZoox7QxoEXSoZFwqYvNG7D6A1RRHlHyWQi8QQg-1789305702.001181-1.0.1.1-ufzLv1oqjV.VHzsGRhF5fnhX.GjrZM5GYpBAK5vVNzUruAqNhwIbOv8bqxA._kcyZGzNWeuLesYbC8VmdfDKw8CpuJe6CmdsF2MLL6ZpjXNbEvjLW1Q3_E7tkSkcEWWG; HttpOnly; SameSite=None; Secure; Path=/; Domain=nansen.ai; Expires=Sun, 13 Sep 2026 13:51:42 GMT",
+    "cf-ray": "a3a774dd8bb3b585-SIN"
+  },
+  "response": {
+    "pagination": {
+      "page": 1,
+      "per_page": 20,
+      "is_last_page": true
+    },
+    "data": [
+      {
+        "chain": "ethereum",
+        "method": "transfer(address,uint256)",
+        "tokens_sent": [],
+        "tokens_received": [
+          {
+            "token_symbol": "CATE",
+            "token_amount": 30000000.0,
+            "price_usd": null,
+            "value_usd": null,
+            "token_address": "0x712f3378cd1a0476b53f0e29b1a9586e00d78683",
+            "chain": "ethereum",
+            "from_address": "0xd23df64e59059946de021bb7d258a4c1e23a877b",
+            "to_address": "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
+            "from_address_label": "[0xd23df6]",
+            "to_address_label": "washy.eth [0xd8da6b]"
+          }
+        ],
+        "volume_usd": null,
+        "block_timestamp": "2026-08-22T03:08:23",
+        "transaction_hash": "0x732fbfe549bfafa7f57b399cc9670a1face3a5394afb0622534ad965b444eeb8",
+        "source_type": "transfer"
+      }
+    ]
+  }
+}

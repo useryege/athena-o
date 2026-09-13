@@ -96,6 +96,9 @@ AI 通过终端调用这些项目命令即可。先确定需要回答的问题�
 | 升级 Go/依赖或检查已知漏洞 | `make vuln-check` | 分析默认构建条件下的 `./...`，查看漏洞及调用路径；集成测试构建标签不在默认范围内 |
 | 检查页面、交互或浏览器回归 | [athena-browser-acceptance](../../.codex/skills/athena-browser-acceptance/SKILL.md) | 按所需证据选择交互检查、隔离 `make ui-acceptance` 或真实 smoke |
 | 检查 UI 无障碍 | `make ui-a11y` | 使用独立隔离验收，查看 axe 原始结果和 Playwright 报告 |
+| 验证 DOM 交互测试工具接入 | `cd ui && yarn test:dom` | 运行 Testing Library／user-event 表单样例，不代表现有业务组件已迁移 |
+| 验证视觉比对工具接入 | `cd ui && yarn test:visual` | 运行静态样例的基线比较；不能代替产品页面验收 |
+| 验证 Go Fuzz 工具接入 | `make test-fuzz` | 限时探索分页游标样例，保留失败输入；不能据此推断所有输入已覆盖 |
 | 排查 gRPC 接口 | `./dist/grpcurl` | 对实际监听地址查询反射或提供 proto 定义，再调用具体方法 |
 | 验证 SQL、表结构或连接 | `psql` | 使用明确的开发数据库连接执行查询 |
 | 排查本地容器或启动环境 | `docker`、`docker compose`、项目 `make run` | 先确认目标仓库和进程归属；按任务需要准备环境，遵守 [本地运行规则](running-locally.md#prepare-the-development-environment-for-acceptance) |
@@ -115,6 +118,79 @@ AI 通过终端调用这些项目命令即可。先确定需要回答的问题�
 ShellCheck 与 govulncheck 的扫描日志保存在 `.tmp/ai-dev-tools/`，命令保留失败
 退出状态。govulncheck 使用文本输出；不要将其 JSON 模式的零退出码解释成没有漏洞。
 网络、依赖加载和运行环境错误应先排查，不能当作扫描成功。
+
+### 测试工具基础接入
+
+新增能力是 React Testing Library／user-event、Playwright 视觉基线比较和 Go 原生
+Fuzz。首批仅提供工具样例，不代表产品交互、视觉或业务流程已完成验收；不替代
+`make ui-acceptance`、`make ui-a11y` 或真实环境 smoke。
+
+#### 安装与执行
+
+沿用项目 Node、Yarn 和 Playwright 安装入口，不需要启动业务服务或数据库：
+
+```bash
+cd ui
+nvm use
+yarn install --frozen-lockfile
+yarn playwright:install chromium
+cd ..
+GOTOOLCHAIN=local go mod download
+make test-ai-tools
+```
+
+React Testing Library `16.3.3`、user-event `14.6.7` 和所需的 DOM Testing Library
+`10.4.1` 固定在 UI 开发依赖与锁文件中，沿用 Jest、ts-jest 和当前自定义 jsdom
+环境。Go Fuzz 直接使用 `go.mod` 指定的工具链，没有额外 Go 依赖。
+
+| 入口 | 验证范围 |
+| --- | --- |
+| `cd ui && yarn test:dom` | 独立 React 表单的标签定位、输入、点击、键盘提交及测试间清理；也纳入默认 Jest 集合 |
+| `cd ui && yarn test:visual` | 固定静态区域与已提交的视觉基线比较，不构建或访问 ATHENA 页面 |
+| `cd ui && yarn test:visual:update` | 显式生成或更新视觉基线，更新结果须审阅后提交 |
+| `make test-fuzz` | 分页游标的单个 Fuzz 样例，探索 10 秒，使用两个 worker |
+| `make test-ai-tools` | 按 DOM、视觉、Fuzz 顺序运行；任一步失败立即退出，后续步骤不运行 |
+
+上表测试入口不自动下载依赖，也不会更新视觉基线。`make test-fuzz` 禁止模块和
+工具链自动下载，并以只读模块模式运行；缺失 Go 缓存时先显式执行安装段中的
+`go mod download`。需要先完成安装，缺失工具或浏览器
+时按实际错误补齐；`make ai-dev-tools-check` 仍只检查原有五项工具的就绪状态。
+
+#### 视觉基线与报告
+
+独立视觉配置使用锁文件对应的 Chromium、固定视口、浅色主题、locale 和时区，
+截图时关闭动画。样例通过 `page.setContent()` 渲染固定内容和内联样式，不发起
+业务或外部网络请求。首批只维护 WSL/Linux 基线；截图生成与比较须使用相同的
+浏览器版本、系统和字体环境。
+
+普通执行遇到基线缺失或差异会失败，不会创建或改写基线。基线 PNG 随样例提交到
+Git；更新时检查实际截图和差异，不能为了消除失败而自动接受变化。Playwright
+升级或渲染环境变化后，也应先核对原因再显式更新。
+
+JSON、HTML、失败截图、差异图和失败 trace 保存在 `.tmp/ai-test-tools/visual/`。
+这是单次运行的工作目录，下一次执行可能覆盖，需保留的失败证据先复制到独立目录；
+同一 worktree 内不要并发运行此工具样例。产品验收仍使用原来的配置与报告目录。
+
+#### Fuzz 种子与复现
+
+`FuzzCursorRoundTrip` 调用真实的分页游标编解码，验证非负快照号往返精确、跨账户
+解码拒绝以及负数输入拒绝。它仅是工具接入的最小示例，不表示已经覆盖所有游标、
+金额或事件输入。普通 `go test` 只执行种子和已保存的失败样本，不持续生成新输入。
+
+```bash
+# 仅执行种子回归。
+go test ./internal/tradersync -run '^FuzzCursorRoundTrip$' -count=1
+# 显式延长同一目标的探索时间；一次只选择一个 Fuzz 目标。
+go test ./internal/tradersync -run '^$' -fuzz '^FuzzCursorRoundTrip$' -fuzztime=60s -parallel=2
+# 将 Go 输出中的具体样本名代入，单独复现失败。
+go test ./internal/tradersync -run '^FuzzCursorRoundTrip/<样本名>$' -count=1
+```
+
+Go 将最小失败样本写入对应包的 `testdata/fuzz/FuzzCursorRoundTrip/`，并打印复现
+命令。保留样本和失败日志，修复经过授权的问题后将样本作为回归证据提交；不要删除
+样本或削弱断言来获得通过。限时探索成功只代表本次探索未发现失败。
+
+本次接入的正向、负向和回归结果见[工具基础接入验收](../testing/ai-test-tools-foundation.md)。
 
 ### Shell 脚本回归
 

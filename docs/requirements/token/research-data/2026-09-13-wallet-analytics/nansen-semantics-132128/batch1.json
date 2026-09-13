@@ -1,0 +1,104 @@
+[
+  {
+    "name": "pnl-cate-filter",
+    "endpoint": "profiler/address/pnl",
+    "body": {
+      "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "filters": {
+        "show_realized": false,
+        "token_address": "0x712f3378cd1a0476b53f0e29b1a9586e00d78683"
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "pnl_usd_realised",
+          "direction": "DESC"
+        }
+      ]
+    },
+    "purpose": "Same fixed wallet/window; exact token address filter compared with prior unfiltered response."
+  },
+  {
+    "name": "transactions-page2",
+    "endpoint": "profiler/address/transactions",
+    "body": {
+      "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "pagination": {
+        "page": 2,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "block_timestamp",
+          "direction": "DESC"
+        }
+      ]
+    },
+    "purpose": "Second page compared with saved first page; hashes, order and date bounds."
+  },
+  {
+    "name": "transactions-usdt-filter",
+    "endpoint": "profiler/address/transactions",
+    "body": {
+      "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "block_timestamp",
+          "direction": "DESC"
+        }
+      ],
+      "filters": {
+        "token_address": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+      }
+    },
+    "purpose": "Exact contract filtering over the whole fixed window, not locally loaded page."
+  },
+  {
+    "name": "transactions-cate-filter",
+    "endpoint": "profiler/address/transactions",
+    "body": {
+      "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "block_timestamp",
+          "direction": "DESC"
+        }
+      ],
+      "filters": {
+        "token_address": "0x712f3378cd1a0476b53f0e29b1a9586e00d78683"
+      }
+    },
+    "purpose": "Compare transaction and PnL scope for a token absent from prior first transaction page."
+  }
+]

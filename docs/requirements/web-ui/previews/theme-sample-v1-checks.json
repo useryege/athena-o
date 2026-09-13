@@ -1,0 +1,31 @@
+{
+  "scope": "isolated visual prototype; not ATHENA product acceptance",
+  "results": [
+    {
+      "viewport": "desktop",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "tableViewport": 986,
+      "tableContent": 986,
+      "smallestText": 12,
+      "consoleErrors": [],
+      "violations": [],
+      "sampleInteractions": "passed",
+      "keyboardFocus": "passed",
+      "referenceImage": "decoded"
+    },
+    {
+      "viewport": "mobile",
+      "width": 390,
+      "scrollWidth": 390,
+      "tableViewport": 348,
+      "tableContent": 521,
+      "smallestText": 12,
+      "consoleErrors": [],
+      "violations": [],
+      "sampleInteractions": "passed",
+      "keyboardFocus": "passed",
+      "referenceImage": "decoded"
+    }
+  ]
+}

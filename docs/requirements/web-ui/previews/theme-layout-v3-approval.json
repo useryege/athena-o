@@ -1,0 +1,42 @@
+{
+  "status": "approved_for_navigation_header_density_visuals",
+  "confirmed_by": "user",
+  "feedback": "舒服",
+  "review_context": "用户查看桌面、手机与手机导航展开三张截图，对整体布局和疏密程度表示认可。",
+  "approved_scope": [
+    "会员样板常驻侧栏、导航分组及宽度的视觉效果",
+    "顶栏当前位置和账户入口、页头操作位置与查询分组",
+    "内容留白、数据密度与阅读顺序",
+    "手机导航抽屉和逐币摘要排列"
+  ],
+  "not_approved_by_this_feedback": [
+    "未展示的76px收起态、账户和二级菜单展开及完整组件状态",
+    "业务字段、计算、精度、API、缓存、筛选与分页等业务规则",
+    "手机交易明细最终结构、临界断点、超宽与长内容完整覆盖",
+    "其他会员业务页面与管理员页面的完整布局",
+    "品牌标志重设计和正式产品实现或验收"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-layout-v3.html",
+      "sha256": "22ad0258a6dd97b999a72849d8e63fae272fc183291aa62dac60521d5f22cf22"
+    },
+    {
+      "path": "theme-layout-v3-desktop.png",
+      "sha256": "b31eceaccadc918d3ed099ff2044e0d1d3ec09f61fc20dc29d18f8096416e5df"
+    },
+    {
+      "path": "theme-layout-v3-mobile.png",
+      "sha256": "08d3e5c0ef5a3ff523b6829e696f8eb4992c6e1bd2046a525abd4bdad856dffc"
+    },
+    {
+      "path": "theme-layout-v3-mobile-navigation.png",
+      "sha256": "1ab4e7306d886e1a4fdba3307ab0fa610f46aec5bd19b1b951a8c76a74fb38fe"
+    },
+    {
+      "path": "theme-layout-v3-checks.json",
+      "sha256": "e79cd51fade2a5f3b9df075213cda8febb69a0a338f37a3547324078f9d68dbb"
+    }
+  ],
+  "note": "HTML、三张截图与原始审阅记录保留提交时状态。后续样板另存版本并沿用已确认 v1／v2／v3 视觉基准。"
+}

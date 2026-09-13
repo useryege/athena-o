@@ -1,0 +1,144 @@
+{
+  "run_started_utc": "2026-09-13T13:03:28+00:00",
+  "common_query": {
+    "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    "chain": "ethereum",
+    "date": {
+      "from": "2026-08-14T13:03:28Z",
+      "to": "2026-09-13T13:03:28Z"
+    }
+  },
+  "results": [
+    {
+      "endpoint": "pnl-summary",
+      "http_status": 200,
+      "elapsed_seconds": 1.273,
+      "cost": "1",
+      "used": "1",
+      "remaining": "10099",
+      "body_keys": [
+        "pagination",
+        "top5_tokens",
+        "traded_token_count",
+        "traded_times",
+        "realized_pnl_usd",
+        "realized_pnl_percent",
+        "win_rate"
+      ],
+      "pagination": {
+        "page": 1,
+        "per_page": 1,
+        "is_last_page": true
+      },
+      "record_count": 0,
+      "sample": {
+        "pagination": {
+          "page": 1,
+          "per_page": 1,
+          "is_last_page": true
+        },
+        "top5_tokens": [],
+        "traded_token_count": 10,
+        "traded_times": 27,
+        "realized_pnl_usd": 0.0,
+        "realized_pnl_percent": 0.0,
+        "win_rate": 0.6
+      }
+    },
+    {
+      "endpoint": "pnl",
+      "http_status": 200,
+      "elapsed_seconds": 0.734,
+      "cost": "1",
+      "used": "1",
+      "remaining": "10098",
+      "body_keys": [
+        "pagination",
+        "data"
+      ],
+      "pagination": {
+        "page": 1,
+        "per_page": 20,
+        "is_last_page": true
+      },
+      "record_count": 0,
+      "sample": []
+    },
+    {
+      "endpoint": "transactions",
+      "http_status": 200,
+      "elapsed_seconds": 3.335,
+      "cost": "1",
+      "used": "1",
+      "remaining": "10097",
+      "body_keys": [
+        "pagination",
+        "data"
+      ],
+      "pagination": {
+        "page": 1,
+        "per_page": 20,
+        "is_last_page": false
+      },
+      "record_count": 20,
+      "sample": [
+        {
+          "chain": "ethereum",
+          "method": "recordSignature(address,address,bytes32,bytes,string)",
+          "tokens_sent": [],
+          "tokens_received": [
+            {
+              "token_symbol": "SOS",
+              "token_amount": 1.0,
+              "price_usd": null,
+              "value_usd": null,
+              "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+              "chain": "ethereum",
+              "from_address": "0x1c10e6574ee696f54b21a611a21313e4714628ad",
+              "to_address": "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
+              "from_address_label": "[0x1c10e6]",
+              "to_address_label": "washy.eth [0xd8da6b]"
+            }
+          ],
+          "volume_usd": null,
+          "block_timestamp": "2026-09-13T08:50:35",
+          "transaction_hash": "0xb6b79ae93ccd350787da71427605c58b8e57a709de3b87c4488396a512a112a8",
+          "source_type": "transfer"
+        },
+        {
+          "chain": "ethereum",
+          "method": "recordSignature(address,address,bytes32,bytes,string)",
+          "tokens_sent": [],
+          "tokens_received": [
+            {
+              "token_symbol": "SOS",
+              "token_amount": 1.0,
+              "price_usd": null,
+              "value_usd": null,
+              "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+              "chain": "ethereum",
+              "from_address": "0x1c10e6574ee696f54b21a611a21313e4714628ad",
+              "to_address": "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
+              "from_address_label": "[0x1c10e6]",
+              "to_address_label": "washy.eth [0xd8da6b]"
+            }
+          ],
+          "volume_usd": null,
+          "block_timestamp": "2026-09-13T07:54:47",
+          "transaction_hash": "0x2489ee592d29826e6ec4f75857543eb861420d2190b374dcf788ef60fa9eb11e",
+          "source_type": "transfer"
+        }
+      ]
+    }
+  ],
+  "follow_up": {
+    "file": "pnl-show-realized-false.json",
+    "only_changed_parameter": "filters.show_realized",
+    "new_value": false,
+    "http_status": 200,
+    "record_count": 10
+  },
+  "total_requests": 4,
+  "total_credits_used": 4,
+  "last_reported_credits_remaining": 10096
+}

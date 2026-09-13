@@ -1,0 +1,23 @@
+{
+  "status": "awaiting_user_review",
+  "scope": "字体与数据排版提案；v1 配色继续有效，字体和展示规则尚未批准",
+  "independent_review": "ready_for_user_review",
+  "artifacts": [
+    {
+      "path": "theme-typography-v2.html",
+      "sha256": "8a669d85bcb0b3393585b1ee4109c2dfce31ff2c42353c947bc4f2fd44c66067"
+    },
+    {
+      "path": "theme-typography-v2-desktop.png",
+      "sha256": "4f375e0c509d84561c31a9d169507c5a145118cd6569c8c74cd810a67c64ac30"
+    },
+    {
+      "path": "theme-typography-v2-mobile.png",
+      "sha256": "849977d21013655baab7fb48d9ff6699d9c7964911c2e7de2381024f6d642f0a"
+    },
+    {
+      "path": "theme-typography-v2-checks.json",
+      "sha256": "290a6155a4ba0d08ff38656b027c4ca5a7a7e23ca717c8faad1f783fe2e5f29a"
+    }
+  ]
+}

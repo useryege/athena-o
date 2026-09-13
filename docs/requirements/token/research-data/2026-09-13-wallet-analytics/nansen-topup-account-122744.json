@@ -1,0 +1,47 @@
+{
+  "checked_at_utc": "2026-09-13T12:27:44+00:00",
+  "context": "Balance recheck using the latest user-provided Key after the user reported a USD 10 top-up.",
+  "request": {
+    "method": "GET",
+    "url": "https://api.nansen.ai/api/v1/account"
+  },
+  "http_status": 200,
+  "elapsed_seconds": 0.61,
+  "response_headers": {
+    "Date": "Sun, 13 Sep 2026 12:27:45 GMT",
+    "Content-Type": "application/json",
+    "Content-Length": "41",
+    "Connection": "close",
+    "x-ratelimit-remaining-second": "149",
+    "x-ratelimit-remaining-minute": "2999",
+    "ratelimit-limit": "150",
+    "ratelimit-remaining": "149",
+    "ratelimit-reset": "1",
+    "x-ratelimit-limit-second": "150",
+    "x-ratelimit-limit-minute": "3000",
+    "x-ratelimit-remaining-credit-fails": "10",
+    "Server": "cloudflare",
+    "x-nansen-credits-cost": "0",
+    "x-ratelimit-limit": "15",
+    "x-ratelimit-remaining": "14",
+    "x-ratelimit-reset": "1",
+    "x-request-id": "e7743b5ddb2cf53fa5d1fe4296405d0b",
+    "vary": "Origin",
+    "access-control-allow-credentials": "true",
+    "access-control-expose-headers": "Deprecation,Link,Payment-Receipt,Payment-Response,Payment-Required,RateLimit-Limit,RateLimit-Remaining,RateLimit-Reset,Retry-After,Sunset,Warning,WWW-Authenticate,X-Nansen-Api-Key-Notice,X-Nansen-Credits-Cost,X-Nansen-Credits-Remaining,X-Nansen-Credits-Used,X-Nansen-Notice,X-Nansen-Plan-Notice,X-Nansen-RateLimit-Scope,X-Nansen-Upgrade-Hint,X-RateLimit-Limit,X-RateLimit-Limit-Minute,X-RateLimit-Limit-Second,X-RateLimit-Remaining,X-RateLimit-Remaining-Minute,X-RateLimit-Remaining-Second,X-RateLimit-Reset,X-Request-Id",
+    "x-ratelimit-remaining-credit-fails-minute": "10",
+    "x-ratelimit-limit-credit-fails-minute": "10",
+    "x-kong-upstream-latency": "84",
+    "x-kong-proxy-latency": "25",
+    "via": "1.1 kong/3.9.3, 1.1 google",
+    "x-kong-request-id": "e7743b5ddb2cf53fa5d1fe4296405d0b",
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "cf-cache-status": "DYNAMIC",
+    "set-cookie": "__cf_bm=KNQxMtJfxPGTkWeueXaUpgL84BThipbrgnruFquyhLM-1789302465.0120423-1.0.1.1-rvvGxSCRyDsGBbOD38fA5YKg9NalL0g70NL9XXJnuUznqyHG7McHNDAIwm57uFlrLp_mXOEKKjpd2FPplwrltR9iI7OE48N_aCnb.ya.OuqOad5t2pMW5j8mLZWY0c9c; HttpOnly; SameSite=None; Secure; Path=/; Domain=nansen.ai; Expires=Sun, 13 Sep 2026 12:57:45 GMT",
+    "CF-RAY": "a3a725d64b2591b9-SIN"
+  },
+  "response": {
+    "plan": "free",
+    "credits_remaining": 10000
+  }
+}

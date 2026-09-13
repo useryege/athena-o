@@ -1,0 +1,129 @@
+{
+  "scope": "Standalone layout prototype only, not production UI acceptance",
+  "results": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "scroll": 1440,
+      "fonts": [
+        {
+          "family": "Inter",
+          "status": "loaded"
+        },
+        {
+          "family": "JetBrains Mono",
+          "status": "loaded"
+        }
+      ],
+      "nav": 224,
+      "mainPadding": "32px",
+      "topbarHeight": 64,
+      "tableRows": [
+        70.140625,
+        70.140625,
+        70.140625,
+        69.640625
+      ],
+      "clipped": [],
+      "duplicateIds": [],
+      "axeViolations": [],
+      "drawerAxeViolations": null,
+      "errors": [],
+      "failedRequests": [],
+      "interactions": "Navigation collapse/drawer, focus trap/Escape, account menu, period, invalid/valid query, refresh and local sorting passed"
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "scroll": 390,
+      "fonts": [
+        {
+          "family": "Inter",
+          "status": "loaded"
+        },
+        {
+          "family": "JetBrains Mono",
+          "status": "loaded"
+        }
+      ],
+      "nav": 0,
+      "mainPadding": "24px 20px",
+      "topbarHeight": 64,
+      "tableRows": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "clipped": [],
+      "duplicateIds": [],
+      "axeViolations": [],
+      "drawerAxeViolations": [],
+      "errors": [],
+      "failedRequests": [],
+      "interactions": "Navigation collapse/drawer, focus trap/Escape, account menu, period, invalid/valid query, refresh and local sorting passed"
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "scroll": 320,
+      "fonts": [
+        {
+          "family": "Inter",
+          "status": "loaded"
+        },
+        {
+          "family": "JetBrains Mono",
+          "status": "loaded"
+        }
+      ],
+      "nav": 0,
+      "mainPadding": "24px 20px",
+      "topbarHeight": 64,
+      "tableRows": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "clipped": [],
+      "duplicateIds": [],
+      "axeViolations": [],
+      "drawerAxeViolations": [],
+      "errors": [],
+      "failedRequests": [],
+      "interactions": "Navigation collapse/drawer, focus trap/Escape, account menu, period, invalid/valid query, refresh and local sorting passed"
+    },
+    {
+      "name": "intermediate",
+      "width": 1024,
+      "scroll": 1024,
+      "fonts": [
+        {
+          "family": "Inter",
+          "status": "loaded"
+        },
+        {
+          "family": "JetBrains Mono",
+          "status": "loaded"
+        }
+      ],
+      "nav": 224,
+      "mainPadding": "28px 24px",
+      "topbarHeight": 64,
+      "tableRows": [
+        70.140625,
+        70.140625,
+        70.140625,
+        69.640625
+      ],
+      "clipped": [],
+      "duplicateIds": [],
+      "axeViolations": [],
+      "drawerAxeViolations": null,
+      "errors": [],
+      "failedRequests": [],
+      "interactions": "Navigation collapse/drawer, focus trap/Escape, account menu, period, invalid/valid query, refresh and local sorting passed"
+    }
+  ]
+}

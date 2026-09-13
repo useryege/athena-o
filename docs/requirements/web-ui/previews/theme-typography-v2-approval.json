@@ -1,0 +1,37 @@
+{
+  "status": "approved_for_typography_and_numeric_visual_hierarchy",
+  "confirmed_by": "user",
+  "feedback": "可以 舒服",
+  "review_context": "用户查看桌面和手机截图，对字体大小和数字清晰度表示认可。",
+  "approved_scope": [
+    "Inter 主字体与 JetBrains Mono 地址字体的视觉搭配",
+    "桌面与手机的字体大小、字重、行高及主次层级",
+    "金额等宽数字、右对齐及可见金额与百分比样例的视觉清晰度"
+  ],
+  "not_approved_by_this_feedback": [
+    "页面布局、导航、页头及页面密度",
+    "完整组件状态与展开复制交互契约",
+    "业务精度、舍入、负零和缺失状态语义规则",
+    "跨平台中文字体回退及正式加载效果",
+    "业务字段、计算口径与正式产品实现"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-typography-v2.html",
+      "sha256": "8a669d85bcb0b3393585b1ee4109c2dfce31ff2c42353c947bc4f2fd44c66067"
+    },
+    {
+      "path": "theme-typography-v2-desktop.png",
+      "sha256": "4f375e0c509d84561c31a9d169507c5a145118cd6569c8c74cd810a67c64ac30"
+    },
+    {
+      "path": "theme-typography-v2-mobile.png",
+      "sha256": "849977d21013655baab7fb48d9ff6699d9c7964911c2e7de2381024f6d642f0a"
+    },
+    {
+      "path": "theme-typography-v2-checks.json",
+      "sha256": "290a6155a4ba0d08ff38656b027c4ca5a7a7e23ca717c8faad1f783fe2e5f29a"
+    }
+  ],
+  "note": "原始 HTML、截图与审阅记录保持提交审阅时的状态；后续视觉样板另存版本并沿用已确认颜色与字体基准。"
+}

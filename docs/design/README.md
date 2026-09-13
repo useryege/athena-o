@@ -6,6 +6,8 @@
 
 目录中既有的 `web-ui/` 文档继续作为界面架构说明维护。前后端新任务均使用 Superpowers；具体界面设计仍遵循根 `AGENTS.md` 中适用的 UI 约定。
 
+全站 UI 的[视觉主题重构目标](../requirements/web-ui/visual-theme.md)已确认采用单一深色、近黑背景与青绿色强调，[v1 配色与按钮层级](../requirements/web-ui/previews/README.md)、[v2 字体与数字排版](../requirements/web-ui/typography-proposal.md)、[v3 导航／页头／页面密度](../requirements/web-ui/layout-proposal.md)的视觉效果均已确认；下一项为通用组件及其状态，其他业务及管理员页面仍按范围设计，正式重构尚未实现。下列已实现文档中的明暗模式、橙色主题和账户主题偏好继续描述当前代码；后续按新目标实施时同步替换相关设计。重构的完整技术设计与执行计划尚未形成。
+
 聊天记录不是跨任务事实来源。长期有效的技术决定应同步到对应设计文档，并与 [`docs/requirements/`](../requirements/README.md) 中的相关需求及任务规格按需互相链接。
 
 ## 设计状态
@@ -64,6 +66,11 @@
 | Trading | Current-selection exact-position, fresh-proof-authorized Worm HMAC Cash Out with whole-position market Close, at-most-once dispatch, read-only recovery, and durable historical detail | [Worm Position Cash Out](trading/worm-position-cash-out.md) | `已实现` |
 | Trading | Up-to-20 selected-Wallet, Wallet-major serial Cash Out batches with complete position freezing, single-operation reuse, confirmed-USDC advancement gates, durable Wallet locks, and manual recovery controls | [Worm Position Cash Out Batches](trading/worm-position-cash-out-batches.md) | `已实现` |
 | Token Intelligence | 第一板块设计包：已确认时效、架构选择、跨子系统契约与容量验收 | [Token 第一板块主 spec](../superpowers/specs/2026-09-10-token-first-block-design.md) | `设计中`，分节已确认，书面待审阅 |
+| Solana Intelligence | 首版范围、后续决定、实现分支与暂停采集状态 | [Solana 设计总览](solana-intelligence/README.md) | 首版在 `codex/solana-discovery` 已验收；当前停机，数据保留 |
+| Solana Intelligence | finalized 新 Mint 发现、持久游标、服务与授权 | [项目发现](solana-intelligence/project-discovery.md) | 首版分支已实现、已验收 |
+| Solana Intelligence | 名称、符号、平台归因、字段合同与首次补全重试 | [基础信息补全与发行来源](solana-intelligence/candidate-metadata.md) | 首版分支已实现、已验收；历史队列未全部补完 |
+| Web UI | Solana 独立列表、查询、资料状态和链上详情 | [Solana 列表页](web-ui/solana-discovery.md) | 首版功能已确认并验收；最终视觉遵循全站主题设计 |
+| Solana Intelligence | 发行后持续研究、活动触发与每项目一小时限频 | [持续研究与刷新调度](solana-intelligence/research-lifecycle-and-refresh.md) | 后续方向已确认，调度细节为建议，尚未实现 |
 | Token Intelligence | 有界发现、连续覆盖、有序活动、owner 观察屏障、七协议 Swap 及停止 | [发现与研究生命周期](token-intelligence/discovery-research-lifecycle.md) | `设计中`，尚未实现 |
 | Token Intelligence | PostgreSQL 持久依赖任务、独立事实、刷新、共享配额和失败恢复 | [研究任务运行时](token-intelligence/research-task-runtime.md) | `设计中`，尚未实现 |
 | Token Intelligence | 非空源码、五项共享 AI 产物与声明式部署读取 | [源码事实与读取方案](token-intelligence/source-facts-and-read-plans.md) | `设计中`，尚未实现 |

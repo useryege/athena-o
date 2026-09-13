@@ -39,11 +39,16 @@ Trader Sync 第一阶段提供目标确认、独立订阅、实时成交活动�
 
 ## Brand Commitments
 
-产品名称为 ATHENA；本模块名为 Trader Sync，第一阶段能力名为 Activity Alerts。现有界面的主题、组件和语言事实以实际 React/CSS 及界面设计文档为依据；本任务未授权整站换品牌或重做其他模块。
+产品名称为 ATHENA；Trader Sync 第一阶段能力名为 Activity Alerts。当前界面的主题、组件和语言事实以实际 React/CSS 及界面设计文档为依据。
+
+用户于 2026-09-13 确认全站视觉主题重构方向：单一深色主题、近黑背景、青绿色强调、清晰的文字与数据层次，以及克制的边框和动效。整体风格为深色极简科技风，带专业金融终端气质；会员与管理员界面遵循同一视觉目标，业务与权限边界继续独立。[v1 配色与按钮层级](docs/requirements/web-ui/previews/README.md)、[v2 字体与数字排版](docs/requirements/web-ui/typography-proposal.md)、[v3 导航／页头／页面密度](docs/requirements/web-ui/layout-proposal.md)的视觉效果均已确认，后续设计沿用该基准：Inter 用于英文标题、正文和数字，JetBrains Mono 用于地址与哈希；会员样板采用常驻侧栏、顶栏账户、集中查询区域，手机使用导航抽屉与逐币摘要。下一项为通用组件及其状态；其他页面、业务展示语义、完整交互与跨平台字体验证按各自范围处理，正式主题重构尚未实现，见[全站视觉主题需求](docs/requirements/web-ui/visual-theme.md)。
+
+**Nansen 是全站 UI 必须采用的主要视觉参考，主题与配色搭配尤其契合用户审美。** 后续设计与验收应整体对照其背景、面板、文字、强调色和边框之间的颜色关系，同时对照字体层次、间距与交互细节，按已确认样例落实。通用的“深色科技风”描述或单独采用一个青绿色不能替代这套参考，现有橙色／双主题也不构成保留旧视觉方向的要求。具体参考证据和确认状态以主题需求为准。
 
 ## Evidence on Hand
 
 - [平台说明](README.md)
+- [全站视觉主题需求](docs/requirements/web-ui/visual-theme.md)
 - [业务需求](docs/requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)
 - [已确认后端 spec](docs/superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)
 - [已整体确认 UI spec](docs/superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)

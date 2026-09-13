@@ -1,0 +1,26 @@
+{
+  "status": "awaiting_user_review",
+  "scope": "导航、页头与页面密度；沿用已确认 v1 配色与 v2 字体，尚非正式 UI 实现",
+  "artifacts": [
+    {
+      "path": "theme-layout-v3.html",
+      "sha256": "22ad0258a6dd97b999a72849d8e63fae272fc183291aa62dac60521d5f22cf22"
+    },
+    {
+      "path": "theme-layout-v3-desktop.png",
+      "sha256": "b31eceaccadc918d3ed099ff2044e0d1d3ec09f61fc20dc29d18f8096416e5df"
+    },
+    {
+      "path": "theme-layout-v3-mobile.png",
+      "sha256": "08d3e5c0ef5a3ff523b6829e696f8eb4992c6e1bd2046a525abd4bdad856dffc"
+    },
+    {
+      "path": "theme-layout-v3-mobile-navigation.png",
+      "sha256": "1ab4e7306d886e1a4fdba3307ab0fa610f46aec5bd19b1b951a8c76a74fb38fe"
+    },
+    {
+      "path": "theme-layout-v3-checks.json",
+      "sha256": "e79cd51fade2a5f3b9df075213cda8febb69a0a338f37a3547324078f9d68dbb"
+    }
+  ]
+}

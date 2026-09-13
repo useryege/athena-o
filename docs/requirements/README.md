@@ -42,5 +42,7 @@
 
 | 业务域 | 入口 | 状态 | 关联技术设计 |
 | --- | --- | --- | --- |
+| Web UI | [全站视觉主题重构](web-ui/visual-theme.md) | `讨论中`（单一深色、Nansen 参考方向及 v1 配色、v2 字体、v3 导航／页头／密度视觉已确认；下一项为通用组件及其状态，正式重构尚未实现） | 当前[共享应用壳](../design/web-ui/application-shell.md)、[账户资料与偏好](../design/identity-access/account-profile-and-preferences.md)；重构技术设计尚未形成 |
 | Trader Sync | [产品需求](polymarket-copy-trading/README.md) | `已确认`（Activity Alerts 业务及完整 UI 设计已确认） | [后端设计](../design/trading/trader-sync-activity-alerts.md)（已实现）；[UI 设计](../design/web-ui/trader-sync-activity-alerts.md)（已实现）；[验收记录](../testing/trader-sync-activity-alerts-acceptance.md) |
 | Token Intelligence | [Token 业务设计与研究资料](token/README.md) | `讨论中`（其中部分独立需求已确认） | [Token Intelligence 当前及目标技术设计](../design/README.md) |
+| Solana Intelligence | [Solana 项目发现与研究](solana/README.md) | 首版范围已确认并在 `codex/solana-discovery` 验收；研究细节延后，采集已暂停 | [设计总览](../design/solana-intelligence/README.md)、[基础信息补全](../design/solana-intelligence/candidate-metadata.md)、[列表页](../design/web-ui/solana-discovery.md) |

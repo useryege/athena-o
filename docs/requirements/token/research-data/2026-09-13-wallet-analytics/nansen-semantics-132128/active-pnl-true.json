@@ -1,0 +1,140 @@
+{
+  "checked_at_utc": "2026-09-13T13:23:19.755354+00:00",
+  "purpose": "Active sample; only show_realized varies, explicit realized-PnL DESC ordering fixed.",
+  "request": {
+    "method": "POST",
+    "url": "https://api.nansen.ai/api/v1/profiler/address/pnl",
+    "body": {
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "filters": {
+        "show_realized": true
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "pnl_usd_realised",
+          "direction": "DESC"
+        }
+      ]
+    }
+  },
+  "http_status": 200,
+  "elapsed_seconds": 1.566,
+  "response_headers": {
+    "date": "Sun, 13 Sep 2026 13:23:21 GMT",
+    "content-type": "application/json",
+    "content-length": "1986",
+    "connection": "close",
+    "x-ratelimit-remaining-second": "149",
+    "x-ratelimit-remaining-minute": "2999",
+    "ratelimit-limit": "150",
+    "ratelimit-remaining": "149",
+    "ratelimit-reset": "1",
+    "x-ratelimit-limit-second": "150",
+    "x-ratelimit-limit-minute": "3000",
+    "x-ratelimit-remaining-credit-fails": "10",
+    "server": "cloudflare",
+    "x-nansen-credits-cost": "1",
+    "x-nansen-credits-used": "1",
+    "x-nansen-credits-remaining": "10086",
+    "x-nansen-upgrade-hint": "You are on the free tier. Upgrade at nansen.ai/pricing for higher monthly credit allocation and credit discounts",
+    "x-nansen-plan-notice": "Free tier gets 10 free credits every day. Resets at midnight UTC. Buy more credits at: https://app.nansen.ai/api",
+    "x-ratelimit-limit": "15",
+    "x-ratelimit-remaining": "14",
+    "x-ratelimit-reset": "1",
+    "x-request-id": "f726fe5acd7e1c3d35988f351e15b208",
+    "vary": "Origin",
+    "access-control-allow-credentials": "true",
+    "access-control-expose-headers": "Deprecation,Link,Payment-Receipt,Payment-Response,Payment-Required,RateLimit-Limit,RateLimit-Remaining,RateLimit-Reset,Retry-After,Sunset,Warning,WWW-Authenticate,X-Nansen-Api-Key-Notice,X-Nansen-Credits-Cost,X-Nansen-Credits-Remaining,X-Nansen-Credits-Used,X-Nansen-Notice,X-Nansen-Plan-Notice,X-Nansen-RateLimit-Scope,X-Nansen-Upgrade-Hint,X-RateLimit-Limit,X-RateLimit-Limit-Minute,X-RateLimit-Limit-Second,X-RateLimit-Remaining,X-RateLimit-Remaining-Minute,X-RateLimit-Remaining-Second,X-RateLimit-Reset,X-Request-Id",
+    "x-ratelimit-remaining-credit-fails-minute": "10",
+    "x-ratelimit-limit-credit-fails-minute": "10",
+    "x-kong-upstream-latency": "596",
+    "x-kong-proxy-latency": "4",
+    "via": "1.1 kong/3.9.3, 1.1 google",
+    "x-kong-request-id": "f726fe5acd7e1c3d35988f351e15b208",
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "cf-cache-status": "DYNAMIC",
+    "set-cookie": "__cf_bm=gnYoDyri36.puCUELP64z9NRpr.N1lOD4i4CH1X2SLA-1789305800.444848-1.0.1.1-FAesl95Htj03lmQrckllj4Ovi2PdnR3o1oJ9m9001jFs3e5IjZ14k62y7DPxoxj89wjtPifEArLMqP.Xu0E23kuCt7YnQo0NzAFyy2GaxmpYCHGLN8U.i_uH2kXncOS9; HttpOnly; SameSite=None; Secure; Path=/; Domain=nansen.ai; Expires=Sun, 13 Sep 2026 13:53:21 GMT",
+    "cf-ray": "a3a77744c94e4d6f-SIN"
+  },
+  "response": {
+    "pagination": {
+      "page": 1,
+      "per_page": 20,
+      "is_last_page": true
+    },
+    "data": [
+      {
+        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+        "token_symbol": "PEPE",
+        "token_price": 3.39307654890872e-06,
+        "roi_percent_realised": 0.10263513135631928,
+        "pnl_usd_realised": 53399.356282457564,
+        "pnl_usd_unrealised": -95214.57179232404,
+        "roi_percent_unrealised": -0.14459774209927082,
+        "bought_amount": 345008466139.4115,
+        "bought_usd": 1178762.37812079,
+        "cost_basis_usd": 3.9666443682715785e-06,
+        "sold_amount": 179004432129.81158,
+        "sold_usd": 573682.7677887044,
+        "avg_sold_price_usd": 3.2048523098728494e-06,
+        "holding_amount": 166004034009.59995,
+        "holding_usd": 563264.3948222192,
+        "nof_buys": "53",
+        "nof_sells": "10",
+        "max_balance_held": 179004432129.81158,
+        "max_balance_held_usd": 607375.7408103863
+      },
+      {
+        "token_address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "token_symbol": "WETH",
+        "token_price": 2471.44,
+        "roi_percent_realised": 0.013836629731983198,
+        "pnl_usd_realised": 8216.039858283058,
+        "pnl_usd_unrealised": 0.0,
+        "roi_percent_unrealised": null,
+        "bought_amount": 0.0,
+        "bought_usd": 0.0,
+        "cost_basis_usd": 1882.4138582363785,
+        "sold_amount": 315.44024883816525,
+        "sold_usd": 602005.1357167771,
+        "avg_sold_price_usd": 1908.4601217951492,
+        "holding_amount": 0.0,
+        "holding_usd": 0.0,
+        "nof_buys": "0",
+        "nof_sells": "2",
+        "max_balance_held": 315.44024883816525,
+        "max_balance_held_usd": 779591.6485885951
+      },
+      {
+        "token_address": "0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce",
+        "token_symbol": "SHIB",
+        "token_price": 5.20463480999498e-06,
+        "roi_percent_realised": 0.033550405499553106,
+        "pnl_usd_realised": 2815.152714429288,
+        "pnl_usd_unrealised": 8.181834517910908e-13,
+        "roi_percent_unrealised": 0.09478102488501154,
+        "bought_amount": 17649856752.650833,
+        "bought_usd": 83908.15766643375,
+        "cost_basis_usd": 4.754041851010014e-06,
+        "sold_amount": 17649856752.650833,
+        "sold_usd": 86723.31038086304,
+        "avg_sold_price_usd": 4.913541882873246e-06,
+        "holding_amount": 1.81579280252e-06,
+        "holding_usd": 9.450538427733932e-12,
+        "nof_buys": "10",
+        "nof_sells": "4",
+        "max_balance_held": 17649856752.650833,
+        "max_balance_held_usd": 91861.05884627148
+      }
+    ]
+  }
+}

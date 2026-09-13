@@ -92,6 +92,8 @@ make notify-task-complete \
 ### Impeccable Integration
 
 - Use Superpowers to guide the development process and Impeccable for UI/UX expertise under `ui/`. Read the relevant requirements, `docs/design/web-ui/` documents, and current React/CSS implementation as context.
+- 全站 UI 的主要视觉参考已明确为 Nansen，其中主题与配色搭配是用户特别强调的核心审美偏好。后续设计、重构与视觉验收必须读取并遵循[全站视觉主题需求](docs/requirements/web-ui/visual-theme.md)，整体对照其近黑背景、深色面板、白／灰文字、青绿色强调与边框的颜色关系，以及文字、空间与交互风格，采用单一深色主题；具体效果按用户逐项确认的设计落实。现有橙色／双主题仅描述尚未替换的实现，不能当作新设计方向。
+- [视觉样板](docs/requirements/web-ui/previews/README.md)的 v1 配色与按钮层级、[v2 字体与数字排版](docs/requirements/web-ui/typography-proposal.md)、[v3 导航／页头／页面密度](docs/requirements/web-ui/layout-proposal.md)视觉效果已确认，后续设计须沿用：Inter 用于英文标题、正文与数字，JetBrains Mono 用于地址与哈希，采用已确认的字号层级、数字对齐及会员样板布局。完整组件状态、其他业务／管理员页面和业务展示语义仍按各项确认范围处理，不将样板认可扩大为正式 UI 全部设计已完成。
 - Reuse the design approval obtained through Superpowers. Layout diagrams and visual previews may support that design discussion without a separate repository-specific layout gate.
 - Derive any Impeccable context files from the repository's requirements, designs, and approved task spec; keep those references aligned with the project facts.
 - Treat automatic Impeccable hook findings as review input. Do not weaken confirmed behavior, accessibility requirements, established brand decisions, or repository-specific UI conventions merely to clear a generic detector rule.

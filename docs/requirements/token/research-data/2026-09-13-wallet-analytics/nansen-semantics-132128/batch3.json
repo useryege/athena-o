@@ -1,0 +1,90 @@
+[
+  {
+    "name": "active-pnl-true",
+    "endpoint": "profiler/address/pnl",
+    "body": {
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "filters": {
+        "show_realized": true
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "pnl_usd_realised",
+          "direction": "DESC"
+        }
+      ]
+    },
+    "purpose": "Active sample; only show_realized varies, explicit realized-PnL DESC ordering fixed."
+  },
+  {
+    "name": "active-pnl-false",
+    "endpoint": "profiler/address/pnl",
+    "body": {
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "filters": {
+        "show_realized": false
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "pnl_usd_realised",
+          "direction": "DESC"
+        }
+      ]
+    },
+    "purpose": "Active sample; only show_realized varies, explicit realized-PnL DESC ordering fixed."
+  },
+  {
+    "name": "active-summary",
+    "endpoint": "profiler/address/pnl-summary",
+    "body": {
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7"
+    },
+    "purpose": "Compare summary with active-wallet detail, preserving provider cache caveat."
+  },
+  {
+    "name": "active-transactions",
+    "endpoint": "profiler/address/transactions",
+    "body": {
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "block_timestamp",
+          "direction": "DESC"
+        }
+      ]
+    },
+    "purpose": "Check directions/classification and same-wallet transfer vs DEX coverage."
+  }
+]

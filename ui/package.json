@@ -12,7 +12,10 @@
     "lint": "node --test scripts/eslint-config.test.mjs && tsc --noEmit --project ./src/app && eslint 'src/**/*.{ts,tsx}'",
     "lint:fix": "eslint --fix 'src/**/*.{ts,tsx}'",
     "test": "jest",
+    "test:dom": "jest --runTestsByPath src/app/test-tools/dom-form.test.tsx",
     "test:e2e": "playwright test",
+    "test:visual": "playwright test --config=playwright.visual.config.ts",
+    "test:visual:update": "playwright test --config=playwright.visual.config.ts --update-snapshots",
     "playwright:install": "playwright install"
   },
   "dependencies": {
@@ -36,6 +39,9 @@
     "@axe-core/playwright": "4.13.0",
     "@eslint/js": "^9.1.1",
     "@playwright/test": "^1.60.0",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.7",
     "@types/jest": "^29.5.14",
     "@types/node": "20.14.12",
     "@types/react": "^18.3.23",

@@ -1,0 +1,30 @@
+{
+  "retrievedDate": "2026-09-13",
+  "sources": [
+    {
+      "file": "InterVariable.woff2",
+      "url": "https://github.com/rsms/inter/raw/refs/heads/master/docs/font-files/InterVariable.woff2",
+      "bytes": 352240,
+      "sha256": "693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3"
+    },
+    {
+      "file": "Inter-LICENSE.txt",
+      "url": "https://github.com/rsms/inter/raw/refs/heads/master/LICENSE.txt",
+      "bytes": 4380,
+      "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+    },
+    {
+      "file": "JetBrainsMono-Regular.woff2",
+      "url": "https://github.com/JetBrains/JetBrainsMono/raw/refs/heads/master/fonts/webfonts/JetBrainsMono-Regular.woff2",
+      "bytes": 92380,
+      "sha256": "f1a7a03672cdd494ce0d5543fac6e4360fe22403c6de297fdc2e55a815f7baff"
+    },
+    {
+      "file": "JetBrainsMono-OFL.txt",
+      "url": "https://github.com/JetBrains/JetBrainsMono/raw/refs/heads/master/OFL.txt",
+      "bytes": 4399,
+      "sha256": "a76abf002c49097d146e86740a3105a5d00450b1592e820a1109a8c5680cd697"
+    }
+  ],
+  "license": "Both font projects use the SIL Open Font License 1.1; see the saved license files."
+}

@@ -20,6 +20,51 @@
         ],
         "createdAt": "2026-09-10T13:04:27.202Z",
         "reason": "Agent review: repeating stripes depict table rows inside the three schematic layout thumbnails; they are diagram content, not decorative application backgrounds."
+      },
+      {
+        "rule": "overused-font",
+        "value": "arial",
+        "files": [
+          "ui/test-tools/visual/visual-sample.spec.ts"
+        ],
+        "createdAt": "2026-09-13T10:30:38.802Z",
+        "reason": "Codex review: Arial is intentional in the isolated page.setContent visual test fixture; retain the reviewed Linux screenshot baseline. This exception does not apply to product UI."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-sample-v1.html"
+        ],
+        "createdAt": "2026-09-13T13:08:41.793Z",
+        "reason": "Codex review: This palette prototype intentionally references Nansen, whose official brand guide lists Inter. Exact ATHENA typography remains unconfirmed; this exception is limited to this sample file."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-typography-v2.html"
+        ],
+        "createdAt": "2026-09-13T13:42:59.025Z",
+        "reason": "Codex review: Inter is intentional in this typography proposal because the user selected Nansen as the primary visual reference and its official brand guide lists Inter; tabular numerals serve the financial table. The proposal remains awaiting user approval. Exception applies only to this sample."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-layout-v3.html"
+        ],
+        "createdAt": "2026-09-13T14:30:11.890Z",
+        "reason": "User confirmed Inter and the v2 typography baseline. This layout-only preview must preserve the approved typeface."
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-layout-v3.html"
+        ],
+        "createdAt": "2026-09-13T14:30:11.896Z",
+        "reason": "Codex visual review: data-panel is a table shell; its header/data cells have 14px vertical padding, table-scroll has 24px horizontal padding, and the footer has 12px/24px padding. Mobile list rows have 16px/20px padding. Text is inset by children while separators intentionally meet the shell. Exception applies only to this layout sample."
       }
     ]
   }

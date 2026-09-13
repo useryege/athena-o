@@ -1,0 +1,47 @@
+{
+  "checked_at_utc": "2026-09-13T12:26:02+00:00",
+  "credential_context": "User supplied new API Key; removed Markdown underscore escape and trailing HTML whitespace entity before use.",
+  "request": {
+    "method": "GET",
+    "url": "https://api.nansen.ai/api/v1/account"
+  },
+  "http_status": 200,
+  "elapsed_seconds": 1.006,
+  "response_headers": {
+    "Date": "Sun, 13 Sep 2026 12:26:03 GMT",
+    "Content-Type": "application/json",
+    "Content-Length": "37",
+    "Connection": "close",
+    "set-cookie": "__cf_bm=QcMA4jewdQxorZq3g.q55wYod08uXwbKCw5z.JUvUwk-1789302362.6314726-1.0.1.1-0ig6mxr1PBFrmiMPCCr1E0I0CmtpEQfk_te7NsLUJPBxPO7TaqdO0gGhle4x2AbcA82F.YxiFn.DyitH8xQ6RxDLNWgDcOuongiYytYil0kCpe786e65skkOQi2h8Ke4; HttpOnly; SameSite=None; Secure; Path=/; Domain=nansen.ai; Expires=Sun, 13 Sep 2026 12:56:03 GMT",
+    "x-ratelimit-remaining-minute": "2999",
+    "ratelimit-limit": "150",
+    "ratelimit-remaining": "149",
+    "ratelimit-reset": "1",
+    "x-ratelimit-limit-second": "150",
+    "x-ratelimit-limit-minute": "3000",
+    "x-ratelimit-remaining-second": "149",
+    "x-ratelimit-remaining-credit-fails": "10",
+    "Server": "cloudflare",
+    "x-nansen-credits-cost": "0",
+    "x-ratelimit-limit": "15",
+    "x-ratelimit-remaining": "14",
+    "x-ratelimit-reset": "1",
+    "x-request-id": "5be2ee784e5de80155cc696921fa6478",
+    "vary": "Origin",
+    "access-control-allow-credentials": "true",
+    "access-control-expose-headers": "Deprecation,Link,Payment-Receipt,Payment-Response,Payment-Required,RateLimit-Limit,RateLimit-Remaining,RateLimit-Reset,Retry-After,Sunset,Warning,WWW-Authenticate,X-Nansen-Api-Key-Notice,X-Nansen-Credits-Cost,X-Nansen-Credits-Remaining,X-Nansen-Credits-Used,X-Nansen-Notice,X-Nansen-Plan-Notice,X-Nansen-RateLimit-Scope,X-Nansen-Upgrade-Hint,X-RateLimit-Limit,X-RateLimit-Limit-Minute,X-RateLimit-Limit-Second,X-RateLimit-Remaining,X-RateLimit-Remaining-Minute,X-RateLimit-Remaining-Second,X-RateLimit-Reset,X-Request-Id",
+    "x-ratelimit-limit-credit-fails-minute": "10",
+    "x-ratelimit-remaining-credit-fails-minute": "10",
+    "x-kong-upstream-latency": "142",
+    "x-kong-proxy-latency": "20",
+    "via": "1.1 kong/3.9.3, 1.1 google",
+    "x-kong-request-id": "5be2ee784e5de80155cc696921fa6478",
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "cf-cache-status": "DYNAMIC",
+    "CF-RAY": "a3a7235668a29caa-SIN"
+  },
+  "response": {
+    "plan": "free",
+    "credits_remaining": 0
+  }
+}

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>ATHENA · 字体与数据排版提案</title>
+  <style>
+    @font-face{font-family:Inter;src:url("files/InterVariable.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
+    @font-face{font-family:"JetBrains Mono";src:url("files/JetBrainsMono-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+    :root{color-scheme:dark;--page:#06080B;--panel:#0F1114;--raised:#181D22;--line:#252A30;--text:#FFFFFF;--muted:#9FA0A1;--accent:#00FFA7;--positive:#55D9A1;--negative:#F58C9B;--sans:Inter,"Noto Sans CJK SC","PingFang SC","Microsoft YaHei",sans-serif;--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace;font-family:var(--sans);font-synthesis:none;font-optical-sizing:auto}
+    *{box-sizing:border-box;scrollbar-width:thin;scrollbar-color:#61717B var(--page)}
+    body{margin:0;background:var(--page);color:var(--text);font-size:1rem;line-height:1.6;-webkit-font-smoothing:antialiased}
+    button,input{font:inherit}button{cursor:pointer}a{color:var(--muted);text-underline-offset:4px}a:hover{color:var(--text)}
+    button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+    ::selection{background:var(--accent);color:var(--page)}input{caret-color:var(--accent)}
+    h1,h2,h3,p{margin:0}h1,h2,h3{text-wrap:balance}p{max-width:68ch}h1{font-size:1.75rem;line-height:1.3;font-weight:600;letter-spacing:-.02em}
+    .muted{color:var(--muted)}.num{font-variant-numeric:tabular-nums lining-nums;letter-spacing:0;white-space:nowrap}.mono{font-family:var(--mono);font-size:.8125rem;line-height:1.7;font-weight:400;font-variant-ligatures:none;letter-spacing:0}
+    .meta{font-size:.8125rem;line-height:1.55;color:var(--muted)}.positive{color:var(--positive)}.negative{color:var(--negative)}.unavailable{color:var(--muted)}
+    .topbar{min-height:76px;padding:18px 44px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:20px}
+    .brand{display:flex;gap:16px;align-items:center;font-size:1.375rem;font-weight:600;letter-spacing:-.02em}.brand span{border-left:1px solid var(--line);padding-left:16px;font-size:.8125rem;font-weight:400;letter-spacing:0;color:var(--muted)}
+    .review-status{font-size:.8125rem;color:var(--muted);white-space:nowrap}
+    main{max-width:1376px;margin:auto;padding:38px 44px 28px}.intro{margin-bottom:28px}.intro h1{margin-bottom:10px}.intro h1 span{color:var(--accent)}.intro p{color:var(--muted)}
+    .layout{display:grid;grid-template-columns:minmax(0,1fr) 254px;gap:30px;align-items:start}.workspace{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+    .workspace-header{padding:26px 28px 22px}.page-title{font-size:1.75rem;line-height:1.3;font-weight:600;letter-spacing:-.02em}.workspace-header>p{margin-top:6px}
+    .identity{margin-top:22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}.identity-value{display:flex;gap:10px;align-items:center;margin-right:auto;min-width:0}.network-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
+    .btn{min-height:40px;border-radius:10px;padding:8px 14px;border:1px solid transparent;font-size:.875rem;line-height:1.4;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background-color .16s ease-out}
+    .primary{color:var(--page);background:var(--accent)}.primary:hover{background:#51FFC3}.primary:active{background:#09C385}.secondary{background:transparent;border-color:#61717B;color:var(--text)}.secondary:hover{background:var(--raised)}
+    .icon{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+    .metrics{padding:24px 28px 26px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:24px;align-items:end}.metric{flex:1 1 8rem;min-width:0}.metric:first-child{flex:1.65 1 18rem}
+    .metric-label{font-size:.8125rem;line-height:1.55;color:var(--muted);margin-bottom:8px}.main-value{font-size:2.5rem;line-height:1.2;font-weight:600;letter-spacing:-.025em}.sub-value{font-size:1.5rem;line-height:1.3;font-weight:500}.unit{font-size:.8125rem;line-height:1.55;color:var(--muted);font-weight:400;letter-spacing:0;margin-left:5px}.pnl-sign{color:var(--positive)}
+    .holdings{border-top:1px solid var(--line)}.table-heading{padding:22px 28px 16px;display:flex;justify-content:space-between;gap:16px;align-items:center}.section-title{font-size:1.25rem;line-height:1.4;font-weight:600;letter-spacing:-.01em}
+    .table-scroll{overflow:auto;padding:0 28px}.table-scroll table{border-collapse:collapse;width:100%;min-width:660px;white-space:nowrap}.table-scroll th{font-size:.8125rem;line-height:1.55;color:var(--muted);font-weight:500;text-align:right;padding:0 14px 12px 0;border-bottom:1px solid var(--line)}
+    .table-scroll td{font-size:.875rem;line-height:1.5;text-align:right;padding:18px 14px 18px 0;border-bottom:1px solid var(--line)}.table-scroll :is(th,td):first-child{text-align:left}.table-scroll :is(th,td):last-child{padding-right:0}.table-scroll tbody tr:last-child td{border:0}.table-scroll tbody tr:hover{background:var(--raised)}
+    .token-name{font-weight:600}.token-caption{font-size:.8125rem;color:var(--muted);line-height:1.5;margin-top:2px;max-width:19ch;overflow:hidden;text-overflow:ellipsis}.table-scroll td.num{font-weight:500}
+    .panel-footer{padding:12px 28px 20px;color:var(--muted);font-size:.8125rem;line-height:1.55}.panel-footer p+p{margin-top:5px}
+    .guide h2{font-size:1.25rem;font-weight:600;line-height:1.4;letter-spacing:-.01em;margin:0 0 8px}.guide>p{color:var(--muted);font-size:.875rem;line-height:1.65;margin-bottom:20px}.guide-item{padding:16px 0;border-top:1px solid var(--line)}.guide-item h3{font-size:.875rem;font-weight:500;margin-bottom:5px}.guide-item p{font-size:.8125rem;line-height:1.7;color:var(--muted)}.guide-item strong{font-weight:500;color:var(--text)}
+    .specimens{margin-top:32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,26rem),1fr));gap:36px}.specimen{border-top:1px solid var(--line);padding-top:22px;min-width:0}.specimen h2{margin-bottom:18px}
+    .type-row{display:grid;grid-template-columns:120px minmax(0,1fr);gap:18px;padding:12px 0;align-items:baseline}.type-role{font-size:.8125rem;line-height:1.6;color:var(--muted)}.type-role small{font-size:inherit;display:block}.body-sample{font-size:1rem;line-height:1.6}.control-sample{font-size:.875rem;line-height:1.5;font-weight:500}
+    .read-example{border-top:1px solid var(--line);padding-top:18px;margin-top:14px}.read-example p+p{margin-top:10px}.precision-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:baseline;padding:13px 0;border-bottom:1px solid var(--line);font-size:.875rem;line-height:1.55}.precision-row>span:first-child{color:var(--muted)}
+    details{margin-top:18px}summary{cursor:pointer;color:var(--text);font-size:.875rem;line-height:1.55;min-height:40px;padding:8px 0;list-style-position:inside}summary:hover{color:var(--accent)}.details-content{margin-top:10px}.details-content label{display:block;font-size:.8125rem;color:var(--muted);margin-bottom:7px}.details-content input{display:block;width:100%;padding:10px 12px;background:var(--panel);color:var(--text);border:1px solid #61717B;border-radius:8px;margin-bottom:14px}.full-value{display:block;overflow-wrap:anywhere;white-space:normal;margin:7px 0 14px;user-select:all}.exact-amount{font-size:.875rem;overflow-wrap:anywhere;white-space:normal;margin-bottom:10px}
+    .copy-status{min-height:22px;margin-top:10px;font-size:.8125rem;line-height:1.55;color:var(--muted)}.bottom-note{margin-top:32px;padding-top:20px;border-top:1px solid var(--line);font-size:.8125rem;line-height:1.65;color:var(--muted);display:flex;justify-content:space-between;gap:20px}
+    @media(max-width:1150px){.layout{grid-template-columns:minmax(0,1fr)}.guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:0 24px}.guide h2,.guide>p{grid-column:1/-1}.guide>p{margin-bottom:12px}.main-value{font-size:2.25rem}}
+    @media(max-width:650px){.topbar{padding:18px 20px;align-items:start}.brand{gap:10px}.brand span{display:none}main{padding:28px 20px}.intro h1,.page-title{font-size:1.5rem;line-height:1.35}.workspace-header{padding:22px 20px}.identity{gap:14px}.identity-value{flex-basis:100%}.identity .btn{min-height:44px}.metrics{padding:22px 20px;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 18px}.metric:first-child{grid-column:1/-1}.main-value{font-size:2rem}.sub-value{font-size:1.5rem}.table-heading{padding:22px 20px 16px;align-items:start;flex-direction:column;gap:6px}.table-scroll{padding:0 20px}.panel-footer{padding:12px 20px 20px}.guide{display:block}.guide>p{margin-bottom:16px}.guide-item{padding:14px 0}.specimens{grid-template-columns:minmax(0,1fr);gap:28px;margin-top:28px}.type-row{grid-template-columns:96px minmax(0,1fr);gap:12px}.type-row .page-title{font-size:1.5rem}.precision-row{gap:12px}.bottom-note{flex-direction:column;gap:8px}.review-status{font-size:.8125rem}}
+    @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="brand">ATHENA<span>字体与数据排版</span></div><span class="review-status">v2 提案 · 待你确认</span></header>
+  <main>
+    <div class="intro"><h1>文字有层次，<span>数字易核对。</span></h1><p>沿用已确认的配色。这一轮看字体的清晰度、字号层级和数据排版；下方英文工作台搭配中文审阅说明。</p></div>
+    <div class="layout">
+      <section class="workspace" lang="en" aria-labelledby="wallet-title">
+        <div class="workspace-header"><h2 class="page-title" id="wallet-title">Wallet performance</h2><p class="meta">Ethereum · Last 30 days · Illustrative data</p>
+          <div class="identity"><div class="identity-value"><span class="network-dot" aria-hidden="true"></span><span class="mono" aria-label="Example wallet address, expand Full values to inspect">0x12ab…90cd</span></div><button class="btn secondary" id="inspect" type="button">Full values</button><button class="btn primary" id="copy" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg>Copy address</button></div>
+        </div>
+        <div class="metrics" aria-label="Independent examples of summary typography">
+          <div class="metric"><div class="metric-label">Realized PnL · USD</div><div class="main-value num"><span class="pnl-sign">+</span>$12,480.32</div></div>
+          <div class="metric"><div class="metric-label">Win rate</div><div class="sub-value num">68.4<span class="unit">%</span></div></div>
+          <div class="metric"><div class="metric-label">Tokens traded</div><div class="sub-value num">19</div></div>
+        </div>
+        <div class="holdings"><div class="table-heading"><h3 class="section-title">Token performance</h3><span class="meta">Amounts in USD</span></div>
+          <div class="table-scroll" role="region" aria-label="Token typography examples, horizontally scrollable" tabindex="0"><table><thead><tr><th scope="col">Token</th><th scope="col">Bought</th><th scope="col">Sold</th><th scope="col">Realized PnL</th></tr></thead><tbody>
+            <tr><td><div class="token-name">AAA</div><div class="token-caption">Example token</div></td><td class="num">$4,250.00</td><td class="num">$8,360.00</td><td class="num positive">+$4,110.00</td></tr>
+            <tr><td><div class="token-name">BBB</div><div class="token-caption">Example token</div></td><td class="num">$1,500.00</td><td class="num">$1,085.00</td><td class="num negative">−$415.00</td></tr>
+            <tr><td><div class="token-name">CCC</div><div class="token-caption">Example token</div></td><td class="num">$800.00</td><td class="num">$800.00</td><td class="num">$0.00</td></tr>
+            <tr><td><div class="token-name">DDD</div><div class="token-caption">Example token</div></td><td class="num">$320.00</td><td class="unavailable">Unavailable</td><td class="unavailable">Unavailable</td></tr>
+          </tbody></table></div><div class="panel-footer"><p>Fictional examples. Summary and rows are separate type specimens.</p><p>Unavailable means data is missing; it does not mean zero.</p></div>
+        </div>
+      </section>
+      <aside class="guide" aria-label="推荐字体方案"><h2>推荐搭配</h2><p>整体延续 Nansen 的简洁质感，让文字安静、数据明确。</p>
+        <div class="guide-item"><h3>Inter · 标题、正文、数字</h3><p>用同一字体的大小与字重建立层次。金额启用<strong>等宽数字</strong>，便于纵向核对。</p></div>
+        <div class="guide-item"><h3>JetBrains Mono · 地址与哈希</h3><p>仅用于需要逐字符辨认的内容。摘要保留首尾，完整值可展开、选中和复制。</p></div>
+        <div class="guide-item"><h3>清楚，但不过度放大</h3><p>正文 16px，表格 14px，辅助信息 13px。主要金额桌面 40px、手机 32px。</p></div>
+      </aside>
+    </div>
+    <div class="specimens">
+      <section class="specimen" aria-labelledby="hierarchy-title"><h2 class="section-title" id="hierarchy-title">文字层级</h2>
+        <div class="type-row"><span class="type-role">页面标题<small>28 / 600</small></span><div class="page-title" lang="en">Wallet performance</div></div>
+        <div class="type-row"><span class="type-role">区块标题<small>20 / 600</small></span><div class="section-title" lang="en">Token performance</div></div>
+        <div class="type-row"><span class="type-role">正文说明<small>16 / 400</small></span><p class="body-sample" lang="en">Review activity across the selected period.</p></div>
+        <div class="type-row"><span class="type-role">控件与表格<small>14 / 500</small></span><span class="control-sample" lang="en">Copy address</span></div>
+        <div class="type-row"><span class="type-role">辅助说明<small>13 / 400</small></span><span class="meta" lang="en">Amounts in USD · Example data</span></div>
+        <div class="read-example"><p class="body-sample">中文阅读样例：查看钱包近期的代币交易，按统一的金额格式核对数据。</p><p class="meta">中文回退至设备上的 Noto Sans CJK SC／苹方／微软雅黑。本轮不更改现有英文产品语言。</p></div>
+      </section>
+      <section class="specimen" aria-labelledby="data-title"><h2 class="section-title" id="data-title">数据边界也要读得清楚</h2>
+        <div class="precision-row"><span>大金额 · 千分位</span><span class="num" lang="en">$1,284,567.89</span></div>
+        <div class="precision-row"><span>小额收益 · 保留方向</span><span class="num positive" lang="en">+&lt;$0.01</span></div>
+        <div class="precision-row"><span>零值 · 明确显示</span><span class="num" lang="en">$0.00</span></div>
+        <div class="precision-row"><span>缺失数据 · 不填成零</span><span class="unavailable" lang="en">Unavailable</span></div>
+        <details id="full-values"><summary lang="en">Full values · address, hash &amp; amount</summary><div class="details-content" lang="en"><label for="full-address">Example wallet address</label><input class="mono" id="full-address" readonly value="0x12ab34cd56ef789012ab34cd56ef789012ab90cd"><p class="meta">Full transaction hash</p><code class="mono full-value" id="full-hash">0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdefabcd</code><p class="meta">Exact amount behind +&lt;$0.01</p><p class="num exact-amount">+$0.004218</p><p class="meta">Display examples only. No calculation or rounding is applied to stored data.</p></div></details>
+        <p class="copy-status" id="copy-status" role="status" lang="en"></p>
+      </section>
+    </div>
+    <footer class="bottom-note"><p>本轮审阅：字体、字号、数字对齐、地址与精度展示。全部数据为虚构样例。</p><p>布局与组件状态后续讨论 · 正式界面尚未修改</p></footer>
+  </main>
+  <script>
+    const details=document.getElementById('full-values');
+    const fullAddress=document.getElementById('full-address');
+    const copyStatus=document.getElementById('copy-status');
+    function inspectValues(){details.open=true;fullAddress.focus();fullAddress.select();}
+    document.getElementById('inspect').addEventListener('click',inspectValues);
+    document.getElementById('copy').addEventListener('click',async()=>{
+      try{await navigator.clipboard.writeText(fullAddress.value);copyStatus.textContent='Full example address copied.';}
+      catch{inspectValues();copyStatus.textContent='Clipboard unavailable. The full address is selected; use your device’s copy command.';}
+    });
+  </script>
+</body>
+</html>

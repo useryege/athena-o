@@ -1,0 +1,76 @@
+{
+  "checked_at_utc": "2026-09-13T13:24:54.619383+00:00",
+  "purpose": "Only date.from changes; fixed realized filter/order/page.",
+  "request": {
+    "method": "POST",
+    "url": "https://api.nansen.ai/api/v1/profiler/address/pnl",
+    "body": {
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-09-06T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "filters": {
+        "show_realized": true
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "pnl_usd_realised",
+          "direction": "DESC"
+        }
+      ]
+    }
+  },
+  "http_status": 200,
+  "elapsed_seconds": 0.825,
+  "response_headers": {
+    "date": "Sun, 13 Sep 2026 13:24:55 GMT",
+    "content-type": "application/json",
+    "content-length": "69",
+    "connection": "close",
+    "x-ratelimit-remaining-minute": "2993",
+    "ratelimit-limit": "150",
+    "ratelimit-remaining": "149",
+    "ratelimit-reset": "1",
+    "x-ratelimit-limit-second": "150",
+    "x-ratelimit-limit-minute": "3000",
+    "x-ratelimit-remaining-second": "149",
+    "x-ratelimit-remaining-credit-fails": "10",
+    "server": "cloudflare",
+    "x-nansen-credits-cost": "1",
+    "x-nansen-credits-used": "1",
+    "x-nansen-credits-remaining": "10076",
+    "x-nansen-upgrade-hint": "You are on the free tier. Upgrade at nansen.ai/pricing for higher monthly credit allocation and credit discounts",
+    "x-nansen-plan-notice": "Free tier gets 10 free credits every day. Resets at midnight UTC. Buy more credits at: https://app.nansen.ai/api",
+    "x-ratelimit-limit": "15",
+    "x-ratelimit-remaining": "13",
+    "x-ratelimit-reset": "1",
+    "x-request-id": "c6e1e634c110497da524ab635a1c0362",
+    "vary": "Origin",
+    "access-control-allow-credentials": "true",
+    "access-control-expose-headers": "Deprecation,Link,Payment-Receipt,Payment-Response,Payment-Required,RateLimit-Limit,RateLimit-Remaining,RateLimit-Reset,Retry-After,Sunset,Warning,WWW-Authenticate,X-Nansen-Api-Key-Notice,X-Nansen-Credits-Cost,X-Nansen-Credits-Remaining,X-Nansen-Credits-Used,X-Nansen-Notice,X-Nansen-Plan-Notice,X-Nansen-RateLimit-Scope,X-Nansen-Upgrade-Hint,X-RateLimit-Limit,X-RateLimit-Limit-Minute,X-RateLimit-Limit-Second,X-RateLimit-Remaining,X-RateLimit-Remaining-Minute,X-RateLimit-Remaining-Second,X-RateLimit-Reset,X-Request-Id",
+    "x-ratelimit-limit-credit-fails-minute": "10",
+    "x-ratelimit-remaining-credit-fails-minute": "10",
+    "x-kong-upstream-latency": "238",
+    "x-kong-proxy-latency": "3",
+    "via": "1.1 kong/3.9.3, 1.1 google",
+    "x-kong-request-id": "c6e1e634c110497da524ab635a1c0362",
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "cf-cache-status": "DYNAMIC",
+    "set-cookie": "__cf_bm=f6aeBuVcceiuSGAEmHbIXNRaoj71Yk_RA6DH319VoNc-1789305895.0600455-1.0.1.1-86znPoM_.WmbVFot4ce45u7rWnNmk06F4QCMBBoeGtw3MAlfUMQ_LOuv9z1GjwWmrRy8v5rzZoywCaZ8lSepL_biSEfGANTusUjMpSRVci7xCClJJMsNSHcbD9rt72AW; HttpOnly; SameSite=None; Secure; Path=/; Domain=nansen.ai; Expires=Sun, 13 Sep 2026 13:54:55 GMT",
+    "cf-ray": "a3a779941c50fd3a-SIN"
+  },
+  "response": {
+    "pagination": {
+      "page": 1,
+      "per_page": 20,
+      "is_last_page": true
+    },
+    "data": []
+  }
+}

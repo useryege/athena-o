@@ -231,6 +231,21 @@ e2e:
 ui-acceptance:
 	@bash ./hack/ui-acceptance.sh
 
+.PHONY: test-dom test-visual test-fuzz test-ai-tools
+test-dom:
+	cd ui && node node_modules/yarn/bin/yarn.js test:dom
+
+test-visual:
+	cd ui && node node_modules/yarn/bin/yarn.js test:visual
+
+test-fuzz:
+	GOPROXY=off GONOPROXY=none GOSUMDB=off GOTOOLCHAIN=local go test -mod=readonly ./internal/tradersync -run='^$$' -fuzz='^FuzzCursorRoundTrip$$' -fuzztime=10s -parallel=2 -count=1
+
+test-ai-tools:
+	+$(MAKE) test-dom
+	+$(MAKE) test-visual
+	+$(MAKE) test-fuzz
+
 .PHONY: install-ai-dev-tools ai-dev-tools-check lint-shell vuln-check ui-a11y
 install-ai-dev-tools:
 	@bash ./hack/ai-dev-tools.sh install

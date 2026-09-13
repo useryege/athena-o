@@ -1,0 +1,149 @@
+[
+  {
+    "name": "active-dex-trades",
+    "endpoint": "profiler/dex-trades",
+    "purpose": "Cross-check transactions with provider-explicit bought/sold records. Optional research endpoint; no app design change.",
+    "body": {
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-08-14T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "block_timestamp",
+          "direction": "DESC"
+        }
+      ]
+    }
+  },
+  {
+    "name": "active-summary-7d",
+    "endpoint": "profiler/address/pnl-summary",
+    "purpose": "Only date.from changes from fixed 30-day query; verify supported product window.",
+    "body": {
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-09-06T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      }
+    }
+  },
+  {
+    "name": "active-pnl-7d",
+    "endpoint": "profiler/address/pnl",
+    "purpose": "Only date.from changes; fixed realized filter/order/page.",
+    "body": {
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-09-06T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "filters": {
+        "show_realized": true
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "pnl_usd_realised",
+          "direction": "DESC"
+        }
+      ]
+    }
+  },
+  {
+    "name": "transactions-7d",
+    "endpoint": "profiler/address/transactions",
+    "purpose": "Only date.from changes for original wallet; inspect timestamps remain within requested dates.",
+    "body": {
+      "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-09-06T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "block_timestamp",
+          "direction": "DESC"
+        }
+      ]
+    }
+  },
+  {
+    "name": "active-summary-90d",
+    "endpoint": "profiler/address/pnl-summary",
+    "purpose": "Only date.from changes from fixed 30-day query; verify supported product window.",
+    "body": {
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-06-15T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      }
+    }
+  },
+  {
+    "name": "active-pnl-90d",
+    "endpoint": "profiler/address/pnl",
+    "purpose": "Only date.from changes; fixed realized filter/order/page.",
+    "body": {
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-06-15T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "filters": {
+        "show_realized": true
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "pnl_usd_realised",
+          "direction": "DESC"
+        }
+      ]
+    }
+  },
+  {
+    "name": "transactions-90d",
+    "endpoint": "profiler/address/transactions",
+    "purpose": "Only date.from changes for original wallet; inspect timestamps remain within requested dates.",
+    "body": {
+      "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+      "chain": "ethereum",
+      "date": {
+        "from": "2026-06-15T13:03:28Z",
+        "to": "2026-09-13T13:03:28Z"
+      },
+      "pagination": {
+        "page": 1,
+        "per_page": 20
+      },
+      "order_by": [
+        {
+          "field": "block_timestamp",
+          "direction": "DESC"
+        }
+      ]
+    }
+  }
+]
