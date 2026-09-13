@@ -70,3 +70,7 @@ metadataStatus 为 pending/ready/unavailable/error；sourceStatus 为 pending/id
 ## 执行事实
 
 实现、评审修复和真实预览验收已完成；历史补全队列持续运行。最终验证包含100项后端PG/race、7项UI、API、lint及系统Chrome实际业务检查与两项smoke。完整证据与当前运行方式见[验收记录](../../developer-guide/acceptance-records/2026-09-13-solana-metadata.md)。本地分支和预览保留，未合并或发布PR。
+
+## 验收后的运行状态
+
+2026-09-13，用户要求停止收集，`solana-preview` 已停止，2321 条候选与扫描游标保留。本文“保留运行”描述验收交付当时状态，当前状态以[Solana 设计总览](../../design/solana-intelligence/README.md)为准。本次仅整合文档，不恢复服务。

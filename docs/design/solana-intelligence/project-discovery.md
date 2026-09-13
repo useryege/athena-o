@@ -2,6 +2,8 @@
 
 > 当前方案：第一步采用标准 HTTP RPC 的 finalized 区块扫描，独立服务持久发现候选并补齐名称、符号及可确认的发行来源，ATHENA 列表查看。更多平台解析、流式订阅和项目研究留待下一步。
 >
+> 实现与运行状态见[设计总览](README.md)：首版已在 `codex/solana-discovery` 验证，当前采集和预览已停止。本文的运行行为不代表程序此刻在线。
+>
 > 关联需求：[Solana 项目研究](../../requirements/solana/README.md)。资料核对日期：2026-09-13。
 
 ## 范围与现状
@@ -14,7 +16,7 @@
 
 - Solana 的普通 SPL 代币以 Mint 账户标识；Token Program 和 Token Extension Program（Token-2022）是两类主要 Token 程序。Mint、持币账户及其权限具有不同含义，Mint authority 不必等于创建或付费账户。来源：[Solana Tokens](https://solana.com/docs/tokens)。
 - Mint 初始化指令包括 `InitializeMint`、`InitializeMint2`。后续对已有 Mint 执行铸币是增加供应量，不能据此判定又发行了一个新项目。来源：[创建 Mint](https://solana.com/docs/tokens/basics/create-mint)、[铸币](https://solana.com/docs/tokens/basics/mint-tokens)。
-- 程序内部调用的指令由交易元数据的 `innerInstructions` 表达。发现解析应覆盖顶层及 CPI 内部初始化；只检查顶层可能遗漏平台创建路径。这是根据交易结构作出的设计建议。来源：[RPC JSON 结构](https://solana.com/docs/rpc/json-structures)。
+- 程序内部调用的指令由交易元数据的 `innerInstructions` 表达。首版解析覆盖顶层及 CPI 内部初始化；只检查顶层可能遗漏平台创建路径。来源：[RPC JSON 结构](https://solana.com/docs/rpc/json-structures)。
 
 新 Mint 是候选事实。是否属于研究范围内的普通代币，需要独立业务定义；不能仅凭供应量或 decimals 就断定项目类型。
 
@@ -39,7 +41,7 @@
 - `logsSubscribe` 的 `mentions` 每个订阅只支持一个地址，返回签名、执行错误和日志。日志文本不能单独证明目标 Mint 已成功初始化；应核对程序身份、实际指令及交易执行结果。来源：[logsSubscribe](https://solana.com/docs/rpc/websocket/logssubscribe)。
 - `blockSubscribe` 被标记为不稳定接口，节点需开启相应配置；不能假设已有 RPC 支持。来源：[blockSubscribe](https://solana.com/docs/rpc/websocket/blocksubscribe)。
 - 补查使用 `getBlocks`、`getBlock` 时，应区分跳过的 slot、暂未取得的数据和节点历史缺口；不能把所有 slot 都当作必有区块。交易版本、地址查找表和内部指令也必须纳入解析验证。来源：[getBlocks](https://solana.com/docs/rpc/http/getblocks)、[跳过 slot 的接口说明](https://solana.com/docs/rpc/deprecated/getconfirmedblocks)、[RPC JSON 结构](https://solana.com/docs/rpc/json-structures)。
-- `processed` 数据可能回滚；发现采用何种 commitment、何时作为确定事实以及分叉如何处理，需要另行决定。不能自动复制 EVM 当前“不考虑重组”的规则。来源：[RPC commitment](https://solana.com/docs/rpc)。
+- `processed` 数据可能回滚；首版已确定仅采纳 `finalized` 数据，并通过主网 genesis hash 校验网络。未来如为降低延迟引入更低确认等级，需要另外设计回滚及重复证据处理；不自动复制 EVM 当前“不考虑重组”的规则。来源：[RPC commitment](https://solana.com/docs/rpc)。
 - `programSubscribe` 是账户变化通知。将首次见到的账户变化直接解释为新发行，可能混淆存量账户更新与创建；这是基于接口含义的限制判断。来源：[programSubscribe](https://solana.com/docs/rpc/websocket/programsubscribe)。
 - Yellowstone 的普通交易流提供执行后的数据；执行前的 deshred 流缺少执行状态及内部指令等证据，不能独立证明发行成功。本文建议不依赖执行前推送。来源：[Yellowstone deshred 说明](https://github.com/rpcpool/yellowstone-grpc#deshred-transactions)。
 
@@ -59,19 +61,13 @@ Pump 官方仓库中的 SDK 使用文档提供 `createV2AndBuyInstructions`，�
 
 ### 首次信息补全
 
-同服务内独立循环每批最多处理 10 个待补全候选，批量 getMultipleAccounts 最多 20 个账户，finalized/base64；旧记录使用 getTransaction（finalized/jsonParsed）读取原初始化交易，并在批内按签名去重。后台与扫描共用请求预算和超时，遵循 429 Retry-After。数据库持久保存待处理和重试时间，不在事务内等待节点。失败不影响发现游标和已有有效字段；已补全信息不自动周期刷新，当前缺失元数据 1 小时后重试，临时读取失败 5 分钟后重试。
-
-名称/符号优先从 Token-2022 自指 MetadataPointer 的 TokenMetadata 扩展解码；传统 Token 使用 canonical Metaplex PDA，Token-2022 指向该 PDA 时也支持。外指未知账户暂不解码，不选择与 pointer 冲突的元数据。验证账户 owner、mint、类型、长度和 UTF-8；Metaplex 尾部 NUL padding 去除。名称和符号可分别为空，元数据缺失不等于 Mint 发行失败。
-
-存储与 API 增加 name、symbol、metadataStatus（pending/ready/unavailable/error）、metadataSource（token2022_on_mint/metaplex/空）、metadataAccount、metadataObservedSlot、metadataUpdatedAt。最后两项描述 finalized 账户观察时刻，不能当作历史发行名称。发行来源与 metadata 管理程序分开：issuanceSource 为 pump_fun/raydium_launchlab/direct_token/unknown，sourceStatus 为 pending/identified/unrecognized/error，issuanceProgram 保存匹配的发行协议程序，未知 CPI 时保存能证明的直接父程序。
-
-归因要求成功初始化及同一候选的调用祖先同时匹配发行程序、selector、指定 Mint 账户。通过 stackHeight 重建 CPI 栈，兄弟调用不会相互归因；缺失/不一致高度不猜直接父程序。顶层 Token 初始化标为 direct_token；LaunchLab 表示协议而非第三方界面品牌。不用 Mint 后缀、名称或 metadata authority 推断平台。协议依据和精确字段合同见[补全设计](../../superpowers/specs/2026-09-13-solana-metadata-design.md)。
+发现流程和补全循环属于同一独立服务，名称/符号使用 finalized 账户快照，历史来源用原初始化交易。它们共用节点预算，候选入库不依赖补全成功；状态、字段合同、来源证据与重试规则统一维护在[基础信息补全与发行来源](candidate-metadata.md)，不依赖任务规格恢复长期知识。
 
 项目与账户权限共用已配置 PostgreSQL 数据库的独立业务表：项目位于 `solana_discovery` schema，账户表在现有 public schema。独立进程拥有连接池，账户 adapter 仅借用读取，不能关闭该池。项目提交事务不跨 RPC。数据库仍是共享故障域，API 与服务必须配置到同一账户数据库；独立开发预览使用自己的数据库，避免干扰另一 checkout。
 
 ## 接口与授权（SDS-R2、R4、R6）
 
-`internal/server/solana/solana.proto` 生成 `SolanaService.ListProjects` 与 `GetDiscoveryStatus`，对应 `GET /api/v1/solana/projects` 和 `/api/v1/solana/status`。列表 page 从1开始，默认25项，最多100项，按slot降序，可按Mint（大小写敏感）及名称/符号（不区分大小写）子串查询。状态含起点、检查点、最新观察的finalized slot、成功时间、候选数和错误。API 仅查询持久化结果，不对节点发补全请求。
+`internal/server/solana/solana.proto` 生成 `SolanaService.ListProjects` 与 `GetDiscoveryStatus`，对应 `GET /api/v1/solana/projects` 和 `/api/v1/solana/status`。列表 page 从1开始，默认25项，最多100项，按 `slot DESC, mint ASC` 稳定排序，query 最多 128 个 Unicode 字符，可按Mint（大小写敏感）及名称/符号（不区分大小写）字面子串查询，`%`/`_` 不作为通配符。状态含起点、检查点、最新观察的finalized slot、成功时间、候选数和错误；状态值为 `starting`、`catching_up`、`current`、`error`。API 仅查询持久化结果，不对节点发补全请求。
 
 公共 API 验证 Solana READ，从认证上下文取账户ID。内部客户端设置10秒deadline、独立Bearer token和唯一 `x-athena-account-id`，不接收公共请求传入的身份字段。业务 RPC 再验证token和规范账户UUID，每次重读持久权限，要求登录有效且Solana READ；管理员无隐式业务访问。撤权后的后续请求不能靠API缓存继续读取。
 
@@ -95,13 +91,10 @@ Pump 官方仓库中的 SDK 使用文档提供 `createV2AndBuyInstructions`，�
 |ATHENA_SOLANA_DISCOVERY_REQUEST_TIMEOUT|15s，每个RPC有界|
 |ATHENA_SOLANA_DISCOVERY_POLL_INTERVAL|2s，追平后等待；积压时持续推进|
 
-参数为初始预算，不是容量SLO。请求失败指数退避，最多30秒；429存在Retry-After时等待至少该时长，始终可取消。错误与积压可查询。终止信号取消扫描和节点请求，gRPC最多5秒优雅等待后强制停止，扫描最多5秒收尾，进程关闭自有资源。具体运行与预览见[本地开发](../../developer-guide/running-locally.md#solana-discovery-local)。
+参数为初始预算，不是容量SLO。请求失败指数退避，最多30秒；429存在Retry-After时等待至少该时长，始终可取消。错误与积压可查询。终止信号取消扫描和节点请求，gRPC最多5秒优雅等待后强制停止，扫描最多5秒收尾，进程关闭自有资源。实现分支 `docs/developer-guide/running-locally.md` 的 Solana 局部运行章节记录环境准备；当前停机与恢复边界见[总览](README.md#当前运行状态与恢复边界)。
 
 ## 验证记录（SDS-R8）
 
-实现与真实数据、页面、重启恢复证据记录在[验收记录](../../testing/solana-discovery.md)，任务清单见[实施计划](../../superpowers/plans/2026-09-13-solana-discovery.md)。解析器/数据库/权限/API/页面验证与主网真实数据验收分别记录；公共节点长期容量尚无证据，不作延迟和全链完整性承诺。
-
-名称、符号与发行来源扩展的独立测试、真实主网旧记录补全、最终重启和桌面/手机验收见[补全验收记录](../../developer-guide/acceptance-records/2026-09-13-solana-metadata.md)。历史队列后台持续处理，不把功能验收通过等同于全部记录已补齐。
-
+首版发现及信息补全已经过解析器/数据库/权限/API/页面隔离验证，以及真实主网数据、桌面/手机页面与重启恢复验收。验证摘要与原始记录位置见[设计总览](README.md#验证事实)。历史补全队列未全部处理，当前按用户要求停机；功能验收通过不等于已追平链头或全部记录已补齐。
 
 公共节点实测 getBlock 返回约17MB，节点会返回429；即使降低请求次数，也不能仅据QPS推断容量。官方还声明公共端点有数据量额度、限额会变化，不适合作为生产节点；见[Solana公共RPC说明](https://solana.com/docs/references/clusters)。首版预览优先逐块持久保存真实样本，显示catching_up或error，不宣称追平。若后续要求持续低延迟全范围发现，需要相应容量的RPC或更有针对性的发现数据源。
