@@ -233,21 +233,9 @@ pip install requests
 
 If installing packages outside a virtual environment is restricted, prefer using a virtual environment instead of installing many packages into the system Python.
 
-### 7.4 Install the goreman
+### 7.4 Local process runtime
 
-Your must install go first
-
-```bash
-# Install goreman
-go install github.com/mattn/goreman@latest
-
-# Add goreman to PATH
-echo 'export PATH="$PATH:$HOME/go/bin"' >> ~/.bashrc
-source ~/.bashrc
-
-# Check if installation is successful
-goreman -v
-```
+Athena uses its Go instance runtime with Linux/WSL, Docker and Bash5.1+. Goreman is no longer a prerequisite. Verify Bash with `bash --version`; run `make run-service SERVICE=trader-sync` for only Trader Sync and PostgreSQL, or `make run` for the explicit full stack. Read [Running Locally](running-locally.md) for configuration, status and instance-owned shutdown.
 
 ### 7.5 Install the abigen
 

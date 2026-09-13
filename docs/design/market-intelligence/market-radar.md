@@ -136,10 +136,10 @@ notification cooldowns.
 | Setting | Behavior |
 | --- | --- |
 | `ATHENA_MARKET_RADAR_LISTEN_ADDRESS` / `--address` | gRPC bind address; default `0.0.0.0`. |
-| `ATHENA_MARKET_RADAR_LISTEN_PORT` / `--port` | gRPC port; default `8092`. The local Procfile uses `ATHENA_MARKET_RADAR_PORT` to supply this flag. |
+| `ATHENA_MARKET_RADAR_LISTEN_PORT` / `--port` | gRPC port; default `8092`. This module is not selected by the default local full-stack graph; configure its direct process explicitly. |
 | `ATHENA_MARKET_RADAR_NOTIFICATION_ENABLED` / `--notification-enabled` | Creates the Notification clientset and enables mover alerts; default `true`. |
 | `ATHENA_MARKET_RADAR_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; local default `127.0.0.1:8086`. Production Compose supplies its service DNS address. |
-| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Shared Notification internal Bearer attached to every non-health system-domain RPC. It must contain at least 32 non-whitespace bytes and match the Notification process; Procfile supplies the local default and Compose requires the production value. |
+| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Shared Notification internal Bearer attached to every non-health system-domain RPC. It must contain at least 32 non-whitespace bytes and match the Notification process; Direct local launches must supply a matching token; Compose requires the production value. |
 | `ATHENA_MARKET_RADAR_NOTIFICATION_INVITE_CODE` / `--notification-invite-code` | Optional `r` query parameter added to Polymarket notification links; default empty. |
 | `ATHENA_LOGFORMAT`, `ATHENA_LOGLEVEL` / command flags | Shared process log format and level; defaults `json` and `info`. |
 

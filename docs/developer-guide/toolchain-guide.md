@@ -33,11 +33,7 @@ cd ..
 package accepts `>=24.14.1 <25`. With an existing NVM installation, these commands
 install and select that project version without changing the global NVM default.
 
-For local process orchestration, install `goreman` if it is not already present:
-
-```bash
-go install github.com/mattn/goreman@latest
-```
+Local orchestration uses the repository's Go instance runtime on Linux/WSL with Bash5.1+ and Docker. It does not require Goreman. A selected Go service uses `make run-service SERVICE=trader-sync`; only the explicit full stack or a set containing UI needs Node.
 
 Start the local stack:
 
@@ -98,7 +94,7 @@ AI 通过终端调用这些项目命令即可。先确定需要回答的问题�
 | 检查 UI 无障碍 | `make ui-a11y` | 使用独立隔离验收，查看 axe 原始结果和 Playwright 报告 |
 | 排查 gRPC 接口 | `./dist/grpcurl` | 对实际监听地址查询反射或提供 proto 定义，再调用具体方法 |
 | 验证 SQL、表结构或连接 | `psql` | 使用明确的开发数据库连接执行查询 |
-| 排查本地容器或启动环境 | `docker`、`docker compose`、项目 `make run` | 先确认目标仓库和进程归属；按任务需要准备环境，遵守 [本地运行规则](running-locally.md#prepare-the-development-environment-for-acceptance) |
+| 排查本地容器或启动环境 | `docker`、`docker compose`、`make runtime-status` / `make run-service` / `make run` | 先确认目标仓库和进程归属；按任务需要准备环境，遵守 [本地运行规则](running-locally.md#prepare-the-development-environment-for-acceptance) |
 | 修改 SQL、Proto、API 类型或合约等生成源 | [sync-athena-changes](../../.codex/skills/sync-athena-changes/SKILL.md)、对应生成入口 | 定位所需 sqlc、Protobuf、mockery、abigen 等工具及消费者；需要全流程时执行 `make codegen-local` |
 
 已有安装记录表示当时的本机状态。新机器或新 worktree 的 `dist/`、`ui/node_modules/`

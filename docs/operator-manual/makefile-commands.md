@@ -232,40 +232,41 @@ PROD_IMAGE=athena:local make prod-build-local
 
 ## 本地运行
 
+所有命令从目标 checkout/worktree 根目录运行；实例资源不能跨 checkout 混用。全栈命令默认实例名为 `full-stack`，可用 `INSTANCE` 指定别名，启停重置时须使用同一名称。
+
 | 命令 | 用途 | 示例 |
 | --- | --- | --- |
-| `make run` | 前台启动本地服务，创建可重建的 PostgreSQL、Redis、MinIO 容器并复用持久化数据。支持 `ATHENA_RUN_EXCLUDE`。 | `make run` |
-| `make stop` | 优雅停止本地服务并删除容器和运行控制状态，保留 PostgreSQL、Redis、MinIO 数据 volume。 | `make stop` |
-| `make run-reset` | 先停止服务，再删除本地容器、数据 volume、运行控制状态和默认临时运行数据。不会重新启动。 | `make run-reset` |
+| `make build-service` | 独立构建所选 Go 服务，不触发 UI 或聚合 main。 | `make build-service SERVICE=trader-sync` |
+| `make run-service` | 启动一个业务服务和它声明的最小依赖。默认实例名为服务名。 | `make run-service SERVICE=trader-sync INSTANCE=ts-dev` |
+| `make run-services` | 启动明确选择的业务集合，要求实例名。 | `make run-services SERVICES='trader-sync api-server ui' INSTANCE=ts-integration` |
+| `make seed-service` | 为 managed 实例准备开发账户，输出 member/admin UUID；不恢复已撤销权限。 | `make seed-service SERVICE=trader-sync INSTANCE=ts-dev` |
+| `make runtime-status` | 查看生命周期、进程、实际资源地址、退出码和日志。 | `make runtime-status INSTANCE=ts-dev` |
+| `make stop-instance` | 核验身份后停止该实例拥有的进程和容器，保留数据。 | `make stop-instance INSTANCE=ts-dev` |
+| `make reset-instance` | 仅重置已停止的 managed 实例，删除它拥有的数据。 | `make reset-instance INSTANCE=ts-dev` |
+| `make run` | 显式启动 full-stack：TS/API/Notification/UI/Wallet/Profit Sharing。 | `make run` |
+| `make stop` | 停止 full-stack 实例，沿用相同资源所有权协议。 | `make stop` |
+| `make run-reset` | 重置已停止的 full-stack 实例，不自动停止或重新启动。 | `make stop` 后 `make run-reset` |
+| `make build-service-image` | 构建独立 Trader Sync/schema tool 镜像。 | `make build-service-image SERVICE=trader-sync TRADER_SYNC_IMAGE=athena-trader-sync:local` |
 
-本地 PostgreSQL、Redis 和私有头像对象分别保存在固定命名 volume
-`athena-local-postgres-data`、`athena-local-redis-data` 和
-`athena-local-minio-data`。前台按
-`Ctrl+C` 与从另一终端执行 `make stop` 具有相同的浅层清理语义，后续
-`make run` 会创建新容器并挂载原数据。PostgreSQL volume 会记录镜像、
-用户、初始数据库、密码和初始化 SQL 的配置指纹；这些初始化设置发生变化
-后必须执行 `make run-reset`，避免以新配置静默打开不兼容的旧数据。
-MinIO 首次运行会从固定源码 commit 构建 Server/mc 镜像，并初始化
-`athena-account-avatars` 私有 bucket 和最小权限应用账号。本地 API、Console
-默认只绑定 `127.0.0.1:9000` 和 `127.0.0.1:9001`。
-Profit Sharing 新增独立的 `profit_sharing` 数据库和 `8108` 端口；首次使用
-包含该数据库的初始化配置时同样必须执行 `make run-reset`。本地 Procfile
-读取 `ATHENA_SERVER_DISABLE_AUTH`，未设置时默认为 `false`。设置为 `true` 后，一次
-`make run` 会同时提供可直接访问的用户端 `http://localhost:4000/` 和管理端
-`http://localhost:4000/admin/`，两个前端会自动携带各自的 application realm。切回
-正常认证前必须执行 `make run-reset`，因为正常认证会拒绝持久化的开发身份。普通用户
-完成 username 注册后创建 Pending 账号，管理员授予独立 Profit Sharing 权限并把
-账号加入轮次后，用户才能提交方案或投票。账号间引用使用 UUID `account_id`，界面
-显示不可修改的 `@username`；普通参与者可以绑定 Google 或 Solana 外部身份，管理员
-身份仍只来自持久化 `administrator` 字段并按 Google `sub` 登录。
+独立入口支持 `trader-sync`、`api-server`、`notification`、`ui`；UI 无数据库依赖。
+API/Notification 不隐式启动 TS。全栈通过显式服务图选择，不再用 `ATHENA_RUN_EXCLUDE`
+从全栈中减服务。Bash5.1+/Linux/WSL 是运行器依赖；仅选择 UI 时需要项目 Node24。
 
-`make run-reset` 还会清理默认的 `/tmp/athena-local`、各 Athena 服务的
-`/tmp/coverage/athena-*` 目录和 `/tmp/coverage/api-server`。通过环境变量
-指定到其他位置的自定义临时目录不会被自动删除。
+默认 `DB_MODE=managed`：每个 checkout/实例自己的持久 PostgreSQL；API 另需自己的
+Redis/MinIO 和私有头像 bucket。基础设施端口动态绑定 loopback，以 status 输出为准。
+业务默认 UI4000/API8080/Notification8086/TS8122/Wallet8088/ProfitSharing8108，并存时
+显式配置各业务端口。前台 Ctrl+C 和 stop 使用同一有界停止协议，保留 volume、fixture、
+token 和日志；不会按全局端口、固定容器名或 `/tmp/coverage` 清理其他实例。
 
-当前 Wallet 初始 schema 只支持 UUID 用户自有的 EVM/Solana 钱包，并直接替换旧的
-系统钱包和 seed 数据模型。使用本版本前必须先执行一次 `make run-reset`，再执行
-`make run`；普通 `make stop` 不会清除不兼容的旧 Wallet 数据。
+使用外部 account-state 库时显式指定 `DB_MODE=external ENV_FILE=.env.ts-external`，文件
+提供 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` 及相应内部凭据。只读 verify，不迁移、seed 或
+管理数据库生命周期；external reset 拒绝。允许借用其他实例数据库，需协调原 owner。
+全栈仅支持 managed。各业务进程只验证 schema，managed 运行器显式执行独立 up/verify。
+
+没有首次运行必须 reset 的步骤。reset 会删除选定实例的账户、授权、活动、通知、会话、
+头像及其全栈模块数据；不能解决远端未知交易或替代远端凭据撤销。disabled-auth 仍只限
+loopback，分别以 realm 选择会员/管理员；切回正常认证可使用没有开发身份的新实例。
+更多配置与异常恢复见[本地运行编排](../design/development-runtime/local-runtime-orchestration.md)。
 
 ## UI
 

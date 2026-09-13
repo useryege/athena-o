@@ -1,29 +1,31 @@
 # Trader Sync：Activity Alerts 后端技术设计
 
-> 设计状态：现有 Activity Alerts 已实现；独立服务的职责、接口、事务、构建运行及部署接入目标已确认待实现，具体 proto 字段契约草案与实施计划已补齐，待审阅和执行
+> 设计状态：Activity Alerts 与独立 gRPC 服务已实现；全栈接入及最终真实验收正在完成。
 >
 > 关联需求：[Activity Alerts 需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)（已确认；完整书面设计也已整体确认）
 
-本文记录当前后端实现与已确认的独立服务目标。原后端方案、[UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)和[21项实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)保留批准与实施历史；运行证据及不能外推的范围见[验收记录](../../testing/trader-sync-activity-alerts-acceptance.md)。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
+本文记录独立 Trader Sync 后端、相邻进程和共享事务的当前实现。原后端方案、[UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)和[21项实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)保留批准与实施历史；运行证据及不能外推的范围见[验收记录](../../testing/trader-sync-activity-alerts-acceptance.md)。首期为 10 名用户、每人最多 10 个未取消订阅，覆盖 100 个订阅关系及目标完全不重叠时的 100 个不同目标。
 
 当前实现包含统一数据库、进程边界、持久发送许可/结果、Bot update 原子消费、共享调度、单 sender 恢复、实时 Collector/基线/持久接收、ActivityProjector、活动与普通消息同事务、摘要冻结与首条协调、公开 API 及生产 runtime 组合。单供应商 WSS、最终确认、资料 evidence、同用户突发限流和撤权永久资格边界均按[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)实现；外部公开时刻、100 个真实持续活跃目标和长期稳定性仍是证据限制，不改写业务目标。
 
-> **服务开发规范差距（2026-09-13）：**本文记录的 `athena-server` 内 Trader Sync 采集/投影与 `athena-notification` 组合是当前实现和已有验收事实。原“**不新增服务进程**”是当时实现方案的决定，不是未来业务服务的约束。按[服务开发规范 SDS-R1 至 SDS-R8](../../developer-guide/service-development-standards.md#sds-r1)，独立进程、内部 gRPC、事务边界及构建运行/部署接入均已形成下节的确认目标。改造尚未实施，不能据此宣称现有行为已满足新规范。现有同库受控事务、原子撤权和发送许可继续保留，不能为了拆分随意异步化或跨 RPC 传递 transaction。
+Trader Sync 已迁出 `athena-server`，独立拥有实时采集、投影、目标确认和订阅状态。API 只通过内部 gRPC 调用；Notification 自己完成摘要、许可和投递。三个进程各自持有同一权威数据库的 pool，受控同库事务保留，事务不跨 RPC。对应[服务开发规范 SDS-R1 至 SDS-R8](../../developer-guide/service-development-standards.md#sds-r1)的逐项证据见[独立服务验收记录](../../testing/trader-sync-independent-service-acceptance.md)。
 
 技术证据见[数据源契约核验](../../requirements/polymarket-copy-trading/source-contract-verification.md)与[RPC 过滤、确认和额度复核](../../requirements/polymarket-copy-trading/collector-contract-verification.md)。它们记录当前实现版本、100 钱包 OR 推送、Combo 腿映射、Profile 与收益资料的证据及限制。技术参数是可验证的设计默认值；最终本地验收不替代缺失的实网容量与公开时效证明。
 
-## 已确认的独立服务目标
+## 独立服务边界
 
-2026-09-13，用户确认[独立服务职责、接口与事务设计](../../superpowers/specs/2026-09-13-trader-sync-service-boundaries-design.md)的第 1、2 板块。后续设计和实施沿用以下决定：
+2026-09-13，用户确认[独立服务职责、接口与事务设计](../../superpowers/specs/2026-09-13-trader-sync-service-boundaries-design.md)的第 1、2 板块。当前实现保持以下决定：
 
 - Trader Sync 独立进程拥有订阅、基线、Collector、Projector 和目录刷新；API 保留公开身份入口和 facade，通过内部 gRPC 调用，不持有其 runtime。
 - Notification 保留 Telegram、摘要冻结、发送许可和调度；账户权限模块暂留现有 API 进程。三进程自有 pool，共用数据库，撤权等原子不变量保留受控事务适配器。
 - 内部调用采用专用服务凭据、可信 Actor 和服务内权威授权；内部认证/契约故障转为公共 503，避免误触发用户退出登录。
 - 单个活跃采集实例，重启后恢复并展示中断，不补查遗漏。整组运行期写入采用 generation 校验；先启用校验再恢复，所有借用者收尾后由 runtime 释放所有权。RPC 就绪与 WSS 连接状态分开。
 
-同日，用户确认[独立构建与本地运行设计](../../superpowers/specs/2026-09-13-trader-sync-local-runtime-design.md)：独立 main/镜像、按服务选择最小依赖、每开发实例的持久库及显式外部库复用、统一 account-state DSN、显式 schema 准备、按资源归属停止和生产 TLS/维护时序。长期运行边界见[本地编排目标](../development-runtime/local-runtime-orchestration.md#已确认的独立运行目标)。
+同日，用户确认[独立构建与本地运行设计](../../superpowers/specs/2026-09-13-trader-sync-local-runtime-design.md)：独立 main/镜像、按服务选择最小依赖、每开发实例的持久库及显式外部库复用、统一 account-state DSN、显式 schema 准备、按资源归属停止和生产 TLS/维护时序。长期运行边界见[本地运行编排](../development-runtime/local-runtime-orchestration.md)。
 
-这些是已确认待实现的目标。当前代码仍在 API 内组合 Trader Sync；[内部字段与映射契约](../../superpowers/specs/2026-09-13-trader-sync-grpc-contract-design.md)及[完整实施计划](../../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service.md)已获用户确认，正在执行。下面的实现与验收证据不能用于证明拆分已完成。
+[内部字段与映射契约](../../superpowers/specs/2026-09-13-trader-sync-grpc-contract-design.md)固定16个方法、强类型消息、presence、精确数字及错误边界；[实施计划](../../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service.md)记录任务范围。API→内部 gRPC→服务领域的两次编解码通过生产 gateway 验证最终 JSON。内部请求携带专用 token 与可信 Actor，业务授权在服务端再次查询持久身份和 owner；内部认证或契约失败映射公共503，公共身份失败仍为401。
+
+读/状态 RPC 默认上限5秒、目标确认/写入15秒，遵守更早的父 deadline，不自动重试 mutation。同一 request_id 的同一内容可显式重放已提交结果，不同内容复用 ID 拒绝。API 在 RPC 期间不持有数据库事务或锁。
 
 ## 需求覆盖
 
@@ -54,7 +56,7 @@ Copy Trading 不在本设计内。本文维护后端和跨层数据契约，已�
 | [Bot update](../../../internal/notification/store/bot_updates.go)将绑定变更、回复 outbox 和消费进度原子提交；[poller](../../../internal/notification/poller.go)只调用该入口，reply 复用 worker 的发送许可。 | reply 与 Trader Sync summary head 已接入跨 chat 公平调度、统一预算和停止确认恢复；冻结 parts 继续复用 account delivery。 |
 | [Profile 适配器](../../../util/polymarket/profile_identity.go)、[六区间 P/L](../../../internal/tradersync/pnl.go)与[目标确认](../../../internal/tradersync/target_resolver.go)已实现精确数值、逐字段 evidence、owner token 与公开入口。 | 实网样本的五个非 ALL 区间缺 reference，ALL 金额缺舍入依据，因此相应字段仍为 unavailable；HTTP 200 或曲线存在不能替代六区间金额证据。 |
 | [Managed OO](../../../internal/managedoo/log_sync.go)与 [BSC Swap](../../../internal/bscswap/scanner.go)有持久游标扫描。 | 业务事件、网络及中断回补语义不同，不能直接沿用为 Trader Sync 监控。 |
-| 独立 Trader Sync types、TargetResolver、SubscriptionService、Collector、BaselineRegistrar、ActivityProjector、摘要协调、公开 API 与 `athena-server` runtime 已组合。 | 本地真实组件链与浏览器链均有验收；录制/合成来源、loopback provider 和有限运行不代表公网生产 SLO 或供应商静默漏推完整性。 |
+| 独立 Trader Sync types、TargetResolver、SubscriptionService、Collector、BaselineRegistrar、ActivityProjector、摘要协调、公开 API facade 与独立 `athena-trader-sync` runtime 已组合。 | 本地真实组件链与浏览器链均有验收；录制/合成来源、loopback provider 和有限运行不代表公网生产 SLO 或供应商静默漏推完整性。 |
 
 ## 关键决定
 
@@ -374,11 +376,11 @@ member 读取在同一数据库事务/gate 下核验 grant 并读取 owner 数�
 
 ## 配置、安全与权限
 
-运行配置集中在 `athena-server` 的 Trader Sync 部分：Polygon HTTP/WSS 入口、chain ID 137、已核验合约清单、资料 API 基址、源超时、连接健康阈值、finality 查询间隔、目标分组大小、资料请求并发和缓存期限。供应商地址从现有[开发端点清单](../../requirements/polymarket-copy-trading/hosted-polygon-rpc-providers.md#已取得的开发候选端点)引用，设计正文不复制凭据。
+采集运行配置由独立 `athena-trader-sync` 读取：Polygon HTTP/WSS 入口、chain ID 137、已核验合约清单、资料 API 基址、源超时、连接健康阈值、finality 查询间隔、目标分组大小、资料请求并发和缓存期限。供应商地址从现有[开发端点清单](../../requirements/polymarket-copy-trading/hosted-polygon-rpc-providers.md#已取得的开发候选端点)引用，设计正文不复制凭据。
 
 业务配额 10 和首期 10 人规模是需求参数，不伪装成运维开关。技术默认值为 finality 2 秒、latest 10 秒、WSS ping 15 秒/pong 截止 5 秒、资料并发 4、外部调用超时 5 秒、最终确认后资料预算 2 秒。通知默认跨 chat 并发 12、Bot 20 次/秒、私聊至少 1 秒间隔、群组最多 20 次/分钟，并响应 429 缩紧预算。Combo 市场目录后台每 10 分钟一轮、最多每秒一页，未完成轮次从游标继续不重叠；重连按 1/2/4/8/16/30 秒退避加抖动。这些初值已由本地故障、摘要和容量夹具覆盖，生产负载及供应商长期行为仍须单独观测。
 
-`athena-notification` 使用 `ATHENA_SERVER_POSTGRES_DSN` 所指的 `athena` 数据库及同一权威迁移集；部署初始化不为通知创建独立数据库。两进程都通过迁移工具的跨进程锁执行同一迁移集，不能互相等待对方才保证 schema 存在。生产继续通过 migration 初始化入口设置 schema；本地编排、重置边界与配置见[本地运行时编排](../development-runtime/local-runtime-orchestration.md)。
+API、Trader Sync 和 Notification 使用 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` 指向同一权威数据库，各自拥有 pool。独立 `athena-account-state-migrate up` 负责准备，`verify` 只读核对 migration 集与实际 catalog；三个业务进程只执行 verify，无隐式 DDL。部署先停止全部同库消费者，再 up/verify 后启动；本地 managed/external 与资源归属见[本地运行编排](../development-runtime/local-runtime-orchestration.md)。
 
 Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥、目标私有凭据或交易执行客户端。所有外链按服务端可信市场资料构造，展示文本转义，公共 API/日志不泄露其他账户资料。内部管理员概要日志只记代码和数量，不包含完整活动正文或用户备注。
 
@@ -434,9 +436,9 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 摘要首条 COMMIT 结果未知时，有界读回只证明原 attempt/head 已提交，不证明原 PostgreSQL session 仍持 advisory lock。继续同一许可前，先完成授权预算 guard 的提交收尾、释放或丢弃原连接，再可取消地取得新账户 session 并核对同一存活实例/permit/head；禁止持预算读锁等账户。故障间隙允许出现 f<t<s，保持冻结和实际起点原值，重取锁成本不归为外部 Retry-After。
 
 
-## 公开读取与进程组合（Task12）
+## 公开读取与独立进程组合
 
-`internal/server/tradersync` 注册 13 个会员 RPC 与 3 个管理员概要 RPC。会员普通登录和已启用 API Key 均需当前 Trader Sync grant；管理员不能借此读取会员正文。管理员查询独立投影账户、目标、状态及去重投递计数，不读取备注快照、市场资料、payload 或逐条投递。每次会员读取在 owner gate 内复核数据库 grant 和资源归属，别人的资源与不存在资源同为 NotFound；已授权读取释放事务后才响应网络。
+`internal/server/tradersync` 作为公共 facade 注册13个会员 RPC 与3个管理员概要 RPC，经 `internal/tradersync/apiclient` 调用独立 transport。会员普通登录和已启用 API Key 均需当前 Trader Sync grant；管理员不能借此读取会员正文。管理员查询独立投影账户、目标、状态及去重投递计数，不读取备注快照、市场资料、payload 或逐条投递。每次会员读取在 owner gate 内复核数据库 grant 和资源归属，别人的资源与不存在资源同为 NotFound；已授权读取释放事务后才响应网络。
 
 活动分页按提交后可见的 int64 ID 倒序，首次签名 snapshot 固定上界；refresh 保留原页上下界和成员，只刷新已存在资料/投递状态并按原过滤计算 hasNewer，空页不会偷偷长出记录。点击最新才取得新 snapshot。HMAC 游标绑定 owner、列表种类、规范过滤、页大小、方向与边界，页大小默认 50、范围 1–100。history 以时间/ID、summary parts 以 part_index 分页，不截断为前 50/100 条；单活动跨部分的关系完整保留。投递只返回最新 attempt 与总次数，sent 缺 startedAt 仍计 sent，不能由结果时间补造调用时间。所有 ID、原金额、position 保留十进制 string，uint64 revision 经实际 gateway 输出 JSON string。请求 note wrapper 缺失/null 与明确空值不混淆；请求分页字段为 page.page_size/page.cursor。
 
@@ -444,11 +446,15 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 
 Session 在实际 pong 接收回调捕获带单调部分的时间与 nonce，writer 匹配后发布原接收时间；writer 延迟出队不得重新计时。Collector 不用 coverage 发布之前收到的 pong 推进新覆盖。Session 的原匹配 nonce pong 证据保留该单调时间，Collector 将原 10 秒 latest 合格结果与已持久过滤覆盖组合，按较早真实观察 UTC 保存 interval.last_reliable_at。整个持久化 pass 最多 5 秒，最多读取 100 个关系并轮转游标，忙 owner 不永久挡住后排。owner gate 后再次验证新鲜度、session/epoch/fence、wallet/filter、当前代及区间开放。普通写失败或提交连接丢失保留原确认点并报告，下一原健康周期再试，不单独结束健康观察；真实失权仍沿原 fatal 边界处理。
 
-`internal/server/trader_sync_runtime.go` 接收已创建且已装权限 hook 的同 pool/traderStore，只构造一个 Collector、共享四槽 MetadataResolver、Projector、DirectoryRefresher 和 Service。Service.Run 一次性运行、取消并 join 三组件；AthenaServer 持有进程级取消、后台错误出口及 facade 注册，监听重启不重建业务后台。NewServer 返回初始化错误，后台 fatal 返回 CLI 并结束监听重启循环。关闭先 join 使用者，再由组合 owner 关闭自有 ethclient/HTTP transport，最后账户 store 关闭池；借用者不关闭池。
+`internal/tradersync/runtime.go` 独立创建自己的 pool、store、TargetResolver、SubscriptionService、Collector、共享四槽 MetadataResolver、Projector、DirectoryRefresher、Service 和 gRPC listener。API 不持有或借用这些对象。RuntimeSession 的 advisory session 保证同库单活；事务先取得 runtime generation 的 `FOR SHARE` guard，再锁账户/业务行，接管以 `FOR UPDATE` 推进 generation。已获得 guard 的旧事务可以完成；新发起的旧代写入失败，不能绕过 guard 做清理。
 
-目录使用独立状态行的两次事务。到期才在第一事务以 UUID token 与 DB now+6 秒预约提交准入；单调 5 秒截止在准入 SQL 前建立，慢 ACK 与第二次锁等待均消耗同一截止。未知准入提交或截止已过不调用 HTTP。第二事务重锁并核验 token/cursor，只发一页，映射/游标/清 token 原子提交；失败回滚保留第一事务预约。成功/确认的失败结算恢复完成后+1 秒节流，末页为 greatest(round_started_at+10min, now+1sec)。未确认提交不信任 next，重锁读回后决定。旧 token 不能覆盖后继者；上下文取消仅为已发页提供最多 5 秒结算及另 1 秒 rollback，真实清理错误保留到关闭结果。目录故障独立报告 phase/http_attempted/commit_known/cleanup，不当作观察 epoch 失败。该协议按正常调度、DB 时钟与取消截止运行，不声称任意进程暂停下数据库能证明物理发包时距。
+启动先只读验证 schema、开放同一 gRPC server 的 NOT_SERVING health，再取得所有权、安装 guard、恢复持久状态并启动工作者，最后原子开放业务准入/发布 SERVING。WSS 离线时 RPC 就绪与采集 degraded 分开。session 失权或后台 fatal 取消整组工作者；总计30秒内停止准入、取消/join并由唯一 owner 关闭 transport/session/pool，卡死时 watchdog 令进程实际退出。API 进程继续运行，对 TS 依赖失败只返回对应 facade 的503。
 
-生产配置必需 ATHENA_TRADER_SYNC_HTTP_URL、ATHENA_TRADER_SYNC_WSS_URL、稳定 ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY 与 ATHENA_URL；缺少时启动明确失败，不自动改用另一供应商。可选 ATHENA_TRADER_SYNC_MAX_IN_FLIGHT_SOURCES 默认 100，是 source job 资源限制，不是业务目标配额或吞吐验收。专用 ATHENA_TRADER_SYNC_PROXY_URL 用于 TS HTTP/WSS、Gamma/Profile 和目录，未配置/空串直连，不继承 HTTP_PROXY 或 Token 配置；本地 WSL 默认仅由 dotenv 后的 Procfile helper 在真正 unset 时选 gateway:10809，部署不应用此默认。notification 只消费 siteURL 和现有发送配置，TS proxy 不接管 Telegram。
+API 的账户权限 adapter 使用调用方事务处理撤权，即使 TS 离线也完整墓碑化旧资格；TS 活动和普通投递同事务。Notification 的冻结、许可和结果使用它自己的 pool 与窄 adapter，不要求 TS runtime generation；已授权尝试的收尾、unknown 不重发和重新授权不复活旧资格保持原规则。
+
+目录使用独立状态行的两次受 runtime guard 保护的事务。到期才在第一事务以 UUID token 与 DB now+6 秒预约提交准入；单调 5 秒截止在准入 SQL 前建立，慢 ACK 与第二次锁等待均消耗同一截止。未知准入提交或截止已过不调用 HTTP。第二事务先取得 runtime guard，再重锁并核验 token/cursor，持锁执行有界 HTTP，只发一页，映射/游标/清 token 原子提交；失败回滚保留第一事务预约。成功/确认的失败结算恢复完成后+1 秒节流，末页为 greatest(round_started_at+10min, now+1sec)。未确认提交不信任 next，重锁读回后决定。旧 token 不能覆盖后继者；上下文取消仅为已发页提供最多 5 秒结算及另 1 秒 rollback，真实清理错误保留到关闭结果。目录故障独立报告 phase/http_attempted/commit_known/cleanup，不当作观察 epoch 失败。该协议按正常调度、DB 时钟与取消截止运行，不声称任意进程暂停下数据库能证明物理发包时距。
+
+独立 TS 生产配置必需 ATHENA_TRADER_SYNC_HTTP_URL、ATHENA_TRADER_SYNC_WSS_URL、稳定 ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY（或对应 _FILE）与 ATHENA_URL；缺少时启动明确失败，不自动改用另一供应商。可选 ATHENA_TRADER_SYNC_MAX_IN_FLIGHT_SOURCES 默认 100，是 source job 资源限制，不是业务目标配额或吞吐验收。专用 ATHENA_TRADER_SYNC_PROXY_URL 用于 TS HTTP/WSS、Gamma/Profile 和目录，未配置/空串直连，不继承 HTTP_PROXY 或 Token 配置；本地 WSL 默认由实例运行器在 dotenv 与导出值合并后、变量真正 unset 时选 gateway:10809，部署不应用此默认。notification 只消费 siteURL 和现有发送配置，TS proxy 不接管 Telegram。
 
 当前验证使用隔离 PostgreSQL、回环 HTTP/WSS、真实 gRPC gateway/凭据及明确 synthetic source；真实供应商完整确认能力、100 目标吞吐与时效仍由 Task13 验收，不由上述组件测试外推。
 

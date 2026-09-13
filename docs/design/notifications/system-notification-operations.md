@@ -21,7 +21,7 @@ Market Radar、Sports Live、Managed OO、Worm Markets 自行决定告警条件�
 | 管理员界面 | [ui/src/app/admin/pages/system-notifications.tsx](../../../ui/src/app/admin/pages/system-notifications.tsx), [ui/src/app/admin/pages/system-notification-detail.tsx](../../../ui/src/app/admin/pages/system-notification-detail.tsx), [ui/src/app/admin/pages/service-status.tsx](../../../ui/src/app/admin/pages/service-status.tsx), [ui/src/app/admin/notification-service.ts](../../../ui/src/app/admin/notification-service.ts) | 列表、筛选、详情、测试页面及 Notification 运行面板 |
 | 内部鉴权客户端 | [internal/notification/apiclient/apiclient.go](../../../internal/notification/apiclient/apiclient.go), [internal/notification/apiclient/internal_auth.go](../../../internal/notification/apiclient/internal_auth.go) | `Clientset.System`, `Clientset.Runtime`, `NewNotificationClientset` |
 | 当前告警生产者 | [internal/marketradar/mover_alerts.go](../../../internal/marketradar/mover_alerts.go), [internal/sportslive/price_alerts.go](../../../internal/sportslive/price_alerts.go), [internal/sportslive/score_alerts.go](../../../internal/sportslive/score_alerts.go), [internal/managedoo/proposed_alerts.go](../../../internal/managedoo/proposed_alerts.go), [internal/managedoo/disputed_alerts.go](../../../internal/managedoo/disputed_alerts.go), [internal/wormmarkets/notifications.go](../../../internal/wormmarkets/notifications.go) | `SendSystemNotification` 调用方 |
-| 进程与部署装配 | [cmd/athena-notification/commands/athena_notification.go](../../../cmd/athena-notification/commands/athena_notification.go), [Procfile](../../../Procfile), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | 单进程、单 Bot、chat ID 与共享内部凭据 |
+| 进程与部署装配 | [cmd/athena-notification/commands/athena_notification.go](../../../cmd/athena-notification/commands/athena_notification.go), [本地服务配置](../../../internal/devruntime/registry.go), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | 单进程、单 Bot、chat ID 与共享内部凭据 |
 | 持久发送许可 | [attempts.go](../../../internal/notification/store/attempts.go)、[delivery/types.go](../../../internal/notification/delivery/types.go)、[delivery_attempts.sql](../../../internal/notification/store/queries/delivery_attempts.sql) | `Authorize`、`RecordStarted`、`RecordOutcome`、`NextState` |
 | HTTP 起点与结构化结果 | [send_transport.go](../../../util/telegram/send_transport.go) | `sendTransport`、`SendError` |
 
@@ -59,7 +59,7 @@ Market Radar、Sports Live、Managed OO、Worm Markets 自行决定告警条件�
 | `ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID` | `TELEGRAM_CHAT_TEST` 对应的具体群组。 |
 | `ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID` | `TELEGRAM_CHAT_PROD` 对应的具体群组。 |
 | `ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN`、`..._API_URL`、`..._TIMEOUT_SECONDS` | Bot 身份、API 地址及适配器超时；worker 消息另有五秒 context 截止，长轮询使用独立客户端。 |
-| `ATHENA_SERVER_POSTGRES_DSN` | 两个通知域共用的 Athena 数据库及唯一权威迁移。 |
+| `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` | 通知各域共用的权威 account-state 数据库；独立 schema 工具准备，业务进程只读 verify。 |
 | `ATHENA_NOTIFICATION_WORKER_CONCURRENCY` / `--worker-concurrency` | 跨 chat 并发默认 12；共享 Bot/私聊/群组预算及五次上限固定。 |
 | 各生产者 `..._NOTIFICATION_ENABLED` 与 `..._NOTIFICATION_SERVER_ADDRESS` | 开启通知及选择内部 gRPC 目标。 |
 

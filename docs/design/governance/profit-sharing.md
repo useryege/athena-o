@@ -132,7 +132,7 @@ username, display name, role, and eligibility come through the API Server.
 | Setting | Behavior |
 | --- | --- |
 | `ATHENA_PROFIT_SHARING_LISTEN_ADDRESS` | Listener address, default `0.0.0.0`. |
-| `ATHENA_PROFIT_SHARING_LISTEN_PORT` | Listener port, default `8108`; the Procfile may provide `--port`. |
+| `ATHENA_PROFIT_SHARING_LISTEN_PORT` | Listener port, default `8108`; the local full-stack runtime supplies `--port` from `ATHENA_PROFIT_SHARING_PORT`. |
 | `ATHENA_PROFIT_SHARING_POSTGRES_DSN` | Connection for the owned `profit_sharing` database. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Enables embedded local migration; production runs migration before service startup. |
 | `ATHENA_PROFIT_SHARING_SERVER_ADDRESS` | API Server internal gRPC target, default `127.0.0.1:8108` and service DNS in Compose. |

@@ -29,7 +29,7 @@ Run Athena locally:
 make run
 ```
 
-`make run` 启动当前 Procfile 进程组和其依赖；它不是任意服务的局部运行入口。服务需要单独验证时，依据其设计中已实现的入口和必要依赖执行，不调用全局 reset 作为局部清理。
+`make run` 显式选择全栈图，默认实例名为 `full-stack`。开发 Trader Sync 时用 `make run-service SERVICE=trader-sync INSTANCE=ts-dev`，只准备 TS 与该实例 PostgreSQL；组合联调用 `run-services` 正向选择。通过 `runtime-status` 核对归属，以 `stop-instance` 停止并保留数据；不调用全栈 reset 作为局部清理。
 
 Run the UI only:
 

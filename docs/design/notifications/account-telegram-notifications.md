@@ -76,7 +76,7 @@ flowchart LR
 
 | 配置 | 行为 |
 | --- | --- |
-| `ATHENA_SERVER_POSTGRES_DSN` | 共享 Athena 数据库与权威嵌入迁移。 |
+| `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` | 共享权威 account-state 数据库；独立 schema 工具准备，业务进程只读 verify。 |
 | `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | 内部共享 Bearer，至少 32 字节且不含空白/控制字符。 |
 | `ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN` | 账户/系统共享 Bot 的必需 token。 |
 | `ATHENA_NOTIFICATION_TELEGRAM_API_URL` | Telegram API 地址，默认官方地址。 |
@@ -84,7 +84,7 @@ flowchart LR
 | `ATHENA_NOTIFICATION_TELEGRAM_BOT_NAME`、`..._SHORT_DESCRIPTION`、`..._DESCRIPTION` | 启动同步的 Bot 资料。 |
 | `ATHENA_NOTIFICATION_WORKER_CONCURRENCY` / `--worker-concurrency` | 跨 chat 并发，默认 12；CLI 读取环境范围 1–12。Bot/私聊/群组窗口及五次上限保持统一。 |
 
-进程只运行一个长轮询消费者。Procfile 提供本地内部凭据；生产 Compose 把同一凭据注入 Notification 与可信调用方。Bot token 和具体系统群组 ID 仅提供给 Notification 容器。
+进程只运行一个长轮询消费者。本地实例运行器按进程白名单提供内部凭据；生产 Compose 把同一凭据注入 Notification 与可信调用方。Bot token 和具体系统群组 ID 仅提供给 Notification 容器。
 
 ## 不变量与故障处理
 

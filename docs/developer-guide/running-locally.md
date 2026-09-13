@@ -58,8 +58,9 @@ isolated development identities and does not require Google configuration. Reque
 the member application use `local-user` with maximum member grants; requests from the
 administrator application use management-only `local-admin`. There is no disabled-auth
 role selector. This mode is accepted only when the API Server listens on `localhost`,
-`127.0.0.0/8`, or `::1`; reset all local state before switching back to OIDC. The local
-Procfile defaults to `127.0.0.1`.
+`127.0.0.0/8`, or `::1`. Use an instance without development identities when switching
+back to OIDC; stop and explicitly reset only the old instance if discarding its data.
+The local runtime defaults to `127.0.0.1`.
 
 Every request that needs an identity carries exactly one
 `X-Athena-Application-Realm: member|admin` header. The two browser applications add it
@@ -82,7 +83,7 @@ two independent accounts even when both belong to the same person.
 
 ### Start the stack
 
-Start through the local helper script:
+Start the explicitly selected full stack from this checkout:
 
 ```bash
 cd ui
@@ -97,20 +98,34 @@ accepts Node.js `>=24.14.1 <25`; do not change the global NVM default. On a new
 machine, complete the Node.js setup in [Development Environment](development-environment.md)
 before starting the stack.
 
-The default local stack exposes:
+The full stack contains Trader Sync, API Server, Notification, Wallet, Profit Sharing,
+and UI. It defaults to the `full-stack` instance (override `INSTANCE` consistently for run/stop/reset) and its own persistent PostgreSQL, Redis,
+and MinIO. Infrastructure binds dynamically assigned loopback ports; inspect them with
+`make runtime-status INSTANCE=full-stack`. Default business ports are API `8080`,
+UI `4000`, Trader Sync `8122`, Notification `8086`, Wallet `8088`, and Profit Sharing
+`8108`. Override the business ports when running several instances concurrently.
 
-- API server: `http://localhost:8080`
-- UI dev server: `http://localhost:4000`
-- Redis: `localhost:6379`
-- PostgreSQL: `localhost:5432`
+For Trader Sync development, select only that service:
 
-The Wallet gRPC process binds `127.0.0.1:8088` by default. The Procfile supplies
-the same explicit development-only `ATHENA_WALLET_INTERNAL_AUTH_TOKEN` to Wallet
-and the API Server, and the API Server attaches it to every internal Wallet RPC.
-If you override this value while running either process separately, use the same
-token of at least 32 bytes for both processes. Missing or mismatched credentials
-leave the standard Wallet health probe available but reject every business and
-private-key RPC.
+```bash
+make build-service SERVICE=trader-sync
+make run-service SERVICE=trader-sync INSTANCE=ts-dev
+# In another terminal, from the same checkout:
+make seed-service SERVICE=trader-sync INSTANCE=ts-dev
+make runtime-status INSTANCE=ts-dev
+make stop-instance INSTANCE=ts-dev
+```
+
+This starts only Trader Sync and its own persistent PostgreSQL. Seed prints member and
+administrator UUIDs for authorized RPCs; repeated seed preserves existing identities
+and revoked grants. To select an integration set, use
+`make run-services SERVICES='trader-sync api-server ui' INSTANCE=ts-integration`.
+API and Notification do not implicitly start Trader Sync. UI alone requires no database.
+The runtime requires Linux/WSL and Bash 5.1+; the selected Go service does not require Node.
+
+Wallet and API use the same development `ATHENA_WALLET_INTERNAL_AUTH_TOKEN` when
+selected in the full stack. If overridden, both must receive the same token of at
+least 32 bytes. Health remains available when business credentials are rejected.
 
 Use the CLI against the local API with:
 
@@ -146,32 +161,33 @@ Key management appears only when its independent entitlement is enabled.
 
 ## Local Data
 
-Redis, PostgreSQL, and MinIO run in disposable Docker containers backed by the
-fixed `athena-local-redis-data`, `athena-local-postgres-data`, and
-`athena-local-minio-data` volumes. Ordinary `make stop` removes the containers
-but preserves those volumes; `make run-reset` removes both containers and owned
-data volumes.
+Each managed instance has persistent volumes named from the canonical checkout path
+and instance name. `.run/instances/<instance>/state.json` records actual resources and
+addresses. `make stop-instance INSTANCE=ts-dev` and terminal Ctrl+C stop only owned
+processes and containers, retaining volumes, credentials, fixture identities and logs.
+`make reset-instance INSTANCE=ts-dev` deletes that instance's owned data and requires
+it to be stopped first. `make stop` and `make run-reset` select `full-stack` through the
+same ownership engine. A new checkout does not import or delete old fixed-name volumes.
 
-The current schema uses UUID account IDs throughout account state, Profit Sharing, Wallet,
-and related service boundaries. Before first use of this implementation, run
-`make run-reset`, then `make run`. Reset removes accounts, administrator binding, profiles,
-access grants, API Keys, sessions, OAuth transactions, Phantom challenges, shared
-registration tickets, Profit Sharing references, and avatars; there is no compatibility
-import. The current Wallet schema also replaces the former system-wallet/seed model with
-owner-only EVM and Solana wallets, so an existing local volume must be reset before its
-next startup; the application never performs that destructive reset automatically.
+There is no mandatory first-run reset. Schema preparation is explicit in the runtime:
+managed instances run the independent `athena-account-state-migrate up` and `verify`
+before business startup; the API, Trader Sync and Notification binaries only verify.
+An incompatible existing database fails clearly; do not reset unrelated instances.
+Reset intentionally removes that instance's accounts, grants, subscriptions, activities,
+notification attempts, sessions and avatars. Full-stack reset also removes its module
+data. It does not revoke remote credentials or resolve unknown remote operations.
 
-Supported variables:
+To borrow an existing account-state database, use `DB_MODE=external` with an explicit
+`ENV_FILE` containing `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` and the appropriate internal
+credentials. External mode performs read-only schema verification and never creates,
+migrates, seeds, stops or deletes the borrowed database. External reset is rejected.
+Borrowing another managed instance's database is allowed; stopping its owner affects
+all borrowers. Full-stack mode accepts only managed databases.
 
-- `ATHENA_SERVER_DISABLE_AUTH` default in the Procfile: `false`; set `true` only for the
-  loopback dual-identity development mode described above
-- `ATHENA_REDIS_PORT` default: `6379`
-- `ATHENA_REDIS_IMAGE_TAG` default: `8.2.3`
-- `ATHENA_POSTGRES_PORT` default: `5432`
-- `ATHENA_POSTGRES_IMAGE_TAG` default: `16`
-- `ATHENA_POSTGRES_INIT_DIR` default: `hack/postgres/init`
-- `ATHENA_WALLET_INTERNAL_AUTH_TOKEN` default in the Procfile:
-  `athena-local-wallet-internal-auth-token-2026`
+Configuration files are parsed as data. Exported values override the file, including
+explicit empty values. Independent processes receive their own configuration allowlist.
+For port variables, TLS, sender recovery, and ownership details see
+[Local Runtime Orchestration](../design/development-runtime/local-runtime-orchestration.md).
 
 Etherscan API keys are documented separately in
 [Etherscan Configuration](../etherscan-configuration.md).
@@ -338,13 +354,18 @@ There is no automatic stale-lock reclamation. Recover manually in this order:
 
 ## Backend Changes
 
-When `make run` is running, restart a process with `goreman`:
+A running instance uses immutable binaries. After changing a selected service, stop
+and restart that instance to rebuild it and reuse its persistent database:
 
 ```bash
-goreman run restart api-server
+make stop-instance INSTANCE=ts-dev
+make run-service SERVICE=trader-sync INSTANCE=ts-dev
 ```
 
-Process names are listed in the root `Procfile`.
+For a full stack, use the same `INSTANCE` with `make stop` and `make run`. The runtime
+has no implicit hot restart of all dependent services. Use a small selected service set
+or [IDE debugging](debugging-locally.md) for frequent iteration; do not use Goreman against
+the descriptive Procfile.
 
 ## Production-Like Local Run
 
@@ -372,25 +393,36 @@ make prod-stop-local
 
 ### Trader Sync configuration
 
-The API process requires `ATHENA_TRADER_SYNC_HTTP_URL`,
-`ATHENA_TRADER_SYNC_WSS_URL`, `ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY`, and
-`ATHENA_URL`. Supply the HTTP/WSS endpoints you have verified for Polygon 137;
-missing settings fail startup instead of selecting another provider. Keep the
-cursor key stable across restarts. `ATHENA_TRADER_SYNC_MAX_IN_FLIGHT_SOURCES`
-optionally sets the positive source-job limit (default 100); it is not a target
-subscription quota or a throughput claim.
+The independent Trader Sync process requires `ATHENA_TRADER_SYNC_HTTP_URL`,
+`ATHENA_TRADER_SYNC_WSS_URL`, `ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY` (or its `_FILE`
+variant), and `ATHENA_URL`. Supply the verified Polygon137 endpoints from the
+[provider document](../requirements/polymarket-copy-trading/hosted-polygon-rpc-providers.md#已取得的开发候选端点).
+Keep the cursor key stable across restarts. `ATHENA_TRADER_SYNC_MAX_IN_FLIGHT_SOURCES`
+optionally sets the positive source-job limit (default100), not a subscription quota
+or a throughput claim. The API receives only the internal gRPC client configuration;
+it does not require provider endpoints or run a Collector.
 
-`ATHENA_TRADER_SYNC_PROXY_URL` controls only the API's Trader Sync source,
-Gamma/Profile, and directory requests. A present empty string explicitly means
-direct access. The local Procfile runs `hack/trader-sync-local.sh` after Goreman
-has loaded `.env`: inherited values, including empty values, take priority over
-`.env`; only a still-unset key on WSL gets the default gateway port 10809. This
-helper does not change the existing Token proxy policy. Trader Sync transports
-ignore global proxy variables, including values loaded back from `.env`.
+API and Trader Sync share an internal token of at least32 non-whitespace bytes, distinct
+from the cursor key. Managed runtime generates and reuses it when absent; external mode
+requires it explicitly. Direct values and corresponding `_FILE` values are mutually
+exclusive. All three account-state consumers use `ATHENA_ACCOUNT_STATE_POSTGRES_DSN`,
+with independent pools and no legacy alias. Their business startup never runs migrations.
 
-Production Compose passes these keys through its selected service `env_file`
-without an `environment` interpolation default that would shadow that file.
-The WSL helper is not used in containers. The notification process consumes
-`ATHENA_URL` to configure the shared summary source before starting its existing
-dispatcher. Trader Sync proxy settings do not configure Telegram. Explicit
-stopped-sender recovery remains independent of Trader Sync source settings.
+`ATHENA_TRADER_SYNC_PROXY_URL` controls TS HTTP/WSS, Gamma/Profile and directory requests.
+An explicitly empty string means direct access. After dotenv parsing and exported-value
+merging, only a still-unset key on WSL gets gateway port10809. TS does not inherit global
+proxy or Token proxy settings. Restart Trader Sync after changing the HTTP/WSS provider
+pair; interruptions remain visible and missing historical trades are not backfilled.
+
+The binary defaults to TLS. The local runtime explicitly selects `loopback-insecure`
+only when transport is unset. Health can run without loading business configuration:
+
+```bash
+go run ./cmd/athena-trader-sync health --target 127.0.0.1:8122 --transport loopback-insecure
+```
+
+Production uses the [independent image, TLS files and schema maintenance protocol](../../deploy/trader-sync/README.md),
+with per-process configuration rather than a shared service `env_file`. Notification
+owns its Bot and dispatch lifecycle; stopped-sender recovery is independent of Trader Sync.
+Detailed validation and limits are recorded in the
+[independent service acceptance report](../testing/trader-sync-independent-service-acceptance.md).
