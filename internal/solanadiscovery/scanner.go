@@ -30,6 +30,7 @@ type Scanner struct {
 	rpc             *RPCClient
 	config          ScannerConfig
 	limiter         *rate.Limiter
+	admission       chan struct{}
 	genesisVerified bool
 	genesisMu       sync.Mutex
 	cooldownMu      sync.Mutex
@@ -58,7 +59,7 @@ func NewScanner(store *Store, rpc *RPCClient, config ScannerConfig) *Scanner {
 	if config.RetryBackoff <= 0 {
 		config.RetryBackoff = time.Second
 	}
-	return &Scanner{store: store, rpc: rpc, config: config, limiter: rate.NewLimiter(rate.Limit(config.RequestsPerSecond), 4)}
+	return &Scanner{store: store, rpc: rpc, config: config, limiter: rate.NewLimiter(rate.Limit(config.RequestsPerSecond), 4), admission: make(chan struct{}, 1)}
 }
 
 // ScanOnce observes finalized state and atomically commits one bounded slot range.
@@ -158,16 +159,7 @@ func (s *Scanner) ScanOnce(ctx context.Context) (bool, error) {
 }
 
 func (s *Scanner) nodeCall(ctx context.Context, call func(context.Context) error) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	if err := s.waitNodeCooldown(ctx); err != nil {
-		return err
-	}
-	if err := s.limiter.Wait(ctx); err != nil {
-		return err
-	}
-	if err := s.waitNodeCooldown(ctx); err != nil {
+	if err := s.waitNodeAdmission(ctx); err != nil {
 		return err
 	}
 	callCtx, cancel := context.WithTimeout(ctx, s.config.RequestTimeout)
@@ -184,6 +176,34 @@ func (s *Scanner) nodeCall(ctx context.Context, call func(context.Context) error
 	}
 	return err
 }
+
+// waitNodeAdmission serializes only admission, never the network request. A
+// provider cooldown may arrive while the one admitted waiter is acquiring a
+// rate token; that obsolete token is discarded and admission starts again.
+// No queue of already-consumed permits can accumulate behind a cooldown.
+func (s *Scanner) waitNodeAdmission(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case s.admission <- struct{}{}:
+	}
+	defer func() { <-s.admission }()
+	for {
+		if err := s.waitNodeCooldown(ctx); err != nil {
+			return err
+		}
+		if err := s.limiter.Wait(ctx); err != nil {
+			return err
+		}
+		s.cooldownMu.Lock()
+		cooling := time.Now().Before(s.cooldownUntil)
+		s.cooldownMu.Unlock()
+		if !cooling {
+			return ctx.Err()
+		}
+	}
+}
+
 func (s *Scanner) waitNodeCooldown(ctx context.Context) error {
 	for {
 		if err := ctx.Err(); err != nil {

@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -188,5 +189,115 @@ func TestMetadataWorkerCancellation(t *testing.T) {
 		require.NoError(t, err)
 	case <-time.After(time.Second):
 		t.Fatal("worker did not exit")
+	}
+}
+
+// An in-flight enrichment 429 must not turn queued scanner reservations into a
+// burst larger than four when the shared provider cooldown ends.
+func TestMetadataCooldownRecoveryDoesNotAccumulateScannerPermits(t *testing.T) {
+	scanner := NewScanner(nil, nil, ScannerConfig{RequestsPerSecond: 10, RequestTimeout: 3 * time.Second})
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	backgroundStarted := make(chan struct{})
+	releaseBackground := make(chan struct{})
+	backgroundDone := make(chan error, 1)
+	go func() {
+		backgroundDone <- NewEnricher(scanner).nodeCall(ctx, func(context.Context) error {
+			close(backgroundStarted)
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-releaseBackground:
+				return &HTTPError{StatusCode: 429, RetryAfter: time.Second}
+			}
+		})
+	}()
+	<-backgroundStarted
+	for i := 0; i < 3; i++ {
+		require.NoError(t, scanner.nodeCall(ctx, func(context.Context) error { return nil }))
+	}
+	sent := make(chan time.Time, 8)
+	done := make(chan error, 8)
+	started := make(chan struct{}, 8)
+	for i := 0; i < 8; i++ {
+		go func() {
+			started <- struct{}{}
+			done <- scanner.nodeCall(ctx, func(context.Context) error { sent <- time.Now(); return nil })
+		}()
+	}
+	for i := 0; i < 8; i++ {
+		<-started
+	}
+	// Let one scanning request consume the first replenished token while the
+	// background RPC remains in flight; the other seven are still waiting.
+	select {
+	case <-sent:
+	case <-ctx.Done():
+		t.Fatal("scanner could not run concurrently with enrichment")
+	}
+	close(releaseBackground)
+	require.Error(t, <-backgroundDone)
+	times := make([]time.Time, 0, 7)
+	for i := 0; i < 7; i++ {
+		select {
+		case at := <-sent:
+			times = append(times, at)
+		case <-ctx.Done():
+			t.Fatal("queued scanner requests did not resume")
+		}
+	}
+	for i := 0; i < 8; i++ {
+		require.NoError(t, <-done)
+	}
+	sort.Slice(times, func(i, j int) bool { return times[i].Before(times[j]) })
+	// With burst=4 and 10 RPS, seven sends require at least another 300ms.
+	// Tolerance covers timer/clock scheduling without allowing the old zero-span burst.
+	require.GreaterOrEqual(t, times[6].Sub(times[0]), 250*time.Millisecond, "cooldown released seven already-consumed permits together")
+}
+
+// Admission synchronization must not hold its lock through the network request,
+// and callers waiting behind it must still observe their own cancellation.
+func TestMetadataAdmissionKeepsRPCConcurrentAndWaitersCancelable(t *testing.T) {
+	scanner := NewScanner(nil, nil, ScannerConfig{RequestsPerSecond: 1, RequestTimeout: time.Second})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	entered := make(chan struct{}, 4)
+	release := make(chan struct{})
+	done := make(chan error, 4)
+	for i := 0; i < 4; i++ {
+		go func() {
+			done <- scanner.nodeCall(ctx, func(callCtx context.Context) error {
+				entered <- struct{}{}
+				select {
+				case <-release:
+					return nil
+				case <-callCtx.Done():
+					return callCtx.Err()
+				}
+			})
+		}()
+	}
+	for i := 0; i < 4; i++ {
+		select {
+		case <-entered:
+		case <-time.After(500 * time.Millisecond):
+			t.Fatal("admission serialized actual RPC calls")
+		}
+	}
+	waiting, cancelWaiting := context.WithCancel(ctx)
+	waitingDone := make(chan error, 1)
+	go func() {
+		waitingDone <- NewEnricher(scanner).nodeCall(waiting, func(context.Context) error { t.Error("canceled waiting request sent"); return nil })
+	}()
+	cancelWaiting()
+	select {
+	case err := <-waitingDone:
+		require.ErrorIs(t, err, context.Canceled)
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("admission waiter ignored cancellation")
+	}
+	close(release)
+	for i := 0; i < 4; i++ {
+		require.NoError(t, <-done)
 	}
 }
