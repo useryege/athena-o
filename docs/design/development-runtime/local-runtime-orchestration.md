@@ -1,169 +1,132 @@
 # 本地运行编排
 
-> 设计状态：现有全栈编排已实现；Trader Sync 独立构建、本地运行与部署接入目标已确认待实现
+> 设计状态：Trader Sync 独立进程、gRPC、schema 工具与实例运行器已实现；Redis持久重启修复、两次真实全栈重启及最终Chrome验收通过，见[验收记录](../../testing/trader-sync-independent-service-acceptance.md)。
 
-## 范围
+## 范围与服务边界
 
-本地运行编排负责 `make run`、`make stop`、`make run-reset`、Foreman/Goreman 进程图、可复用 PostgreSQL/Redis/MinIO 容器，以及 API Server 与各业务服务的本地配置边界。Google OIDC 与 Phantom Solana 认证仍属于 API Server；运行层提供固定公开 origin、认证与 step-up 的 Redis 状态、持久账户/通知/Wallet/Worm Trading 数据、私有头像存储和两个 realm-selected disabled-auth 身份所需的 reset 边界。
+本地运行器提供按服务选择的构建、启动、seed、状态、停止和重置入口，以及显式全栈入口。遵守[服务开发规范 SDS-R1 至 SDS-R8](../../developer-guide/service-development-standards.md)。批准依据为[服务职责与事务](../../superpowers/specs/2026-09-13-trader-sync-service-boundaries-design.md)、[本地运行](../../superpowers/specs/2026-09-13-trader-sync-local-runtime-design.md)和[内部字段契约](../../superpowers/specs/2026-09-13-trader-sync-grpc-contract-design.md)；历史规格保留批准时的事实。
 
-Trader Sync 在现有 `athena-server` 和 `athena-notification` 两个进程内组合，不增加服务进程、独立 Notification 数据库或跨进程连接池对象。
+Trader Sync 在独立 `athena-trader-sync` 进程中运行。API Server 保留公共协议、身份/session、账户权限和 facade，通过内部 gRPC 调用 Trader Sync；API 不持有 Collector、Resolver、Projector 或目录刷新 runtime。Notification 自己拥有 Telegram Bot、poller、摘要协调、发送许可与结果。
 
-> **服务开发规范差距（2026-09-13）：**上述组合和本文件列出的 `make run`、`make stop`、`make run-reset` 是当前实现事实与源码证据，不是新服务的目标运行模型。原“不增加服务进程”是既有实现决定，不能限制今后的服务边界改造。当前 [Procfile](../../../Procfile) 以 `ATHENA_BINARY_NAME` 复用 `go run ./cmd/main.go`；该入口在 [cmd/main.go](../../../cmd/main.go) 聚合导入全部命令实现，因此局部服务构建仍会耦合无关实现。当前 `make run` 还启动固定资源和整套进程图，`make stop`/`make run-reset` 分别面向整套清理或固定资源重置，不能当作服务的局部生命周期。按[服务开发规范 SDS-R3、SDS-R5](../../developer-guide/service-development-standards.md#sds-r3)，新增独立业务服务需要以目标服务和最小依赖正向选择的可验证构建、部署、启动、测试和停止入口，且局部编排只能回收其拥有资源；当前未实现 `run-service` 等局部命令，故不能作为现有命令列出。既有同库受控事务和连接池 owner 关系仍按 [SDS-R6](../../developer-guide/service-development-standards.md#sds-r6) 保持，改造不得跨 RPC 传递 transaction。
-
-## 已确认的独立运行目标
-
-Trader Sync 的[独立服务职责、接口与事务边界](../../superpowers/specs/2026-09-13-trader-sync-service-boundaries-design.md)及[独立构建与本地运行设计](../../superpowers/specs/2026-09-13-trader-sync-local-runtime-design.md)均已于 2026-09-13 获用户确认，待实现：
-
-- 本机独立 Go 二进制配合最小 PostgreSQL 依赖；服务、API 和 Notification 使用独立入口，Trader Sync 镜像不经过 UI/聚合构建。
-- 默认每个开发实例使用独立持久库；同实例的三个进程共享权威 schema，各自持有 pool。显式复用外部库时，借用方没有数据库清理权限，原 owner 的停库和故障仍会影响借用方。
-- 配置使用统一的 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN`，移除旧 API 命名；独立 schema 命令负责准备和只读校验，业务进程不隐式迁移。API 的 Trader Sync 客户端故障只使对应 facade 不可用。
-- 局部编排按服务正向选择、按 checkout/实例核验资源归属；正常停止保留数据，显式重置只面向拥有的数据。旧全栈清理也须避免误停局部实例；停止预算、TLS 和部署迁移时序按已确认规格执行。
-
-上述入口、变量更名和资源编排尚未实现。下面的命令与源码表继续描述当前行为；[内部字段契约草案](../../superpowers/specs/2026-09-13-trader-sync-grpc-contract-design.md)及[实施计划](../../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service.md)已补齐，待审阅和执行。已有运行证据不证明独立服务改造已完成。
+三个进程分别创建和关闭自己的 PostgreSQL pool，连接同一个 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` 权威数据库。共享数据库是明确的共同故障域，不意味着共享内存 pool 或跨 RPC 传递事务。Wallet 与 Profit Sharing 的独立数据库只由显式全栈准备。
 
 ## 源码入口
 
-| 职责 | 源码 | 关键内容 |
+| 职责 | 源码 |
+| --- | --- |
+| 用户命令与前台信号转发 | [Makefile](../../../Makefile)、[run-local-runtime.sh](../../../hack/run-local-runtime.sh)、[运行器 main](../../../cmd/athena-local-runtime/main.go) |
+| 独立服务图与全栈图 | [registry.go](../../../internal/devruntime/registry.go)、[fullstack.go](../../../internal/devruntime/fullstack.go) |
+| 资源归属、恢复与启停 | [internal/devruntime](../../../internal/devruntime) |
+| Trader Sync 入口与生命周期 | [独立 main](../../../cmd/athena-trader-sync/main.go)、[runtime.go](../../../internal/tradersync/runtime.go) |
+| 内部 gRPC、权限与公共 facade | [transport](../../../internal/tradersync/transport)、[client](../../../internal/tradersync/apiclient)、[公共 facade](../../../internal/server/tradersync) |
+| schema 权威与独立工具 | [accountstate/schema](../../../internal/accountstate/schema)、[athena-account-state-migrate](../../../cmd/athena-account-state-migrate) |
+| API 与 Notification 独立入口 | [athena-server](../../../cmd/athena-server/main.go)、[athena-notification](../../../cmd/athena-notification/main.go) |
+| 生产镜像、TLS 与维护 | [部署说明](../../../deploy/trader-sync/README.md)、[Compose](../../../docker-compose.prod.yml) |
+
+## 本地命令与最小依赖
+
+运行器支持 Linux/WSL，依赖 Go、Docker 和 Bash 5.1+；只有选择 UI 时才需要项目规定的 Node 24 与已安装的 UI 依赖。命令从目标 checkout/worktree 根目录运行。`.env` 作为数据解析，不以 shell source 执行；已导出的环境变量覆盖文件，显式空值保留。
+
+```bash
+make build-service SERVICE=trader-sync
+make run-service SERVICE=trader-sync INSTANCE=ts-dev
+make seed-service SERVICE=trader-sync INSTANCE=ts-dev
+make runtime-status INSTANCE=ts-dev
+make stop-instance INSTANCE=ts-dev
+# 仅在已停止且确认要丢弃本实例数据时：
+make reset-instance INSTANCE=ts-dev
+```
+
+`run-service` 默认实例名为服务名；其他实例操作应明确 `INSTANCE`。`run-services` 显式指定集合和实例：
+
+```bash
+make run-services SERVICES='trader-sync api-server ui' INSTANCE=ts-integration
+```
+
+| 正向选择 | 业务进程 | 必要基础设施 |
 | --- | --- | --- |
-| 用户命令 | [Makefile](../../../Makefile) | `run`、`stop`、`run-reset` |
-| 进程图 | [Procfile](../../../Procfile) | migration、API/UI 与业务服务 |
-| 本地生命周期 | [hack/local-runtime.sh](../../../hack/local-runtime.sh) | 启动、停止、reset、exclude、端口与 coverage 清理 |
-| 依赖容器 | [start-postgres-with-password.sh](../../../hack/start-postgres-with-password.sh)、[start-redis-with-password.sh](../../../hack/start-redis-with-password.sh)、[start-minio.sh](../../../hack/start-minio.sh) | 固定 volume 与初始化 fingerprint |
-| 双前端入口 | [vite.config.ts](../../../ui/vite.config.ts)、[member HTML](../../../ui/src/app/index.html)、[admin HTML](../../../ui/src/app/admin/index.html) | `/`、`/admin`、部署 base 与 realm transport |
-| realm 选择 | [application_realm.go](../../../internal/server/application_realm.go)、[athena-server.go](../../../internal/server/athena-server.go) | header/query 校验、gateway/native HTTP 身份选择 |
-| 认证配置与暂态 | 根目录 `.env`、[googleoidc](../../../internal/googleoidc)、[phantomauth](../../../internal/phantomauth)、[authregistration](../../../internal/authregistration) | OAuth、SIWS、注册 ticket 与 scoped proof |
-| 权威账户/通知迁移 | [000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql) | UUID、权限、资料、API Key、Trader Sync 与全部 Notification 表 |
-| Notification 运行 | [athena_notification.go](../../../cmd/athena-notification/commands/athena_notification.go)、[internal/notification](../../../internal/notification) | 同库独立 pool、内部三域、单 Bot/poller/sender、显式恢复 |
-| Trader Sync 运行 | [config.go](../../../internal/tradersync/config.go)、[trader_sync_runtime.go](../../../internal/server/trader_sync_runtime.go)、[trader-sync-local.sh](../../../hack/trader-sync-local.sh) | HTTP/WSS、proxy、Collector/Projector/Directory、API 进程生命周期 |
-| Wallet | [wallet migration](../../../internal/wallet/store/migrations/000001_init.sql)、[internal/wallet](../../../internal/wallet) | UUID-owned custody 与头像元数据 |
-| Worm Trading | [athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go)、[internal/wormtrading](../../../internal/wormtrading)、[execution migration](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql) | 独立数据库、凭据加密、HMAC/Web client、持久 live Run |
-| 生产边界 | [docker-compose.prod.yml](../../../docker-compose.prod.yml)、[prod-remote-deploy.sh](../../../hack/prod-remote-deploy.sh) | env 注入、disabled-auth 拒绝、私有服务网络 |
+| `trader-sync` | 独立 Trader Sync | 本实例 PostgreSQL，或显式外部库 |
+| `notification` | 独立 Notification | 本实例 PostgreSQL，或显式外部库 |
+| `api-server` | 独立 API Server | PostgreSQL、Redis、MinIO 与已准备的私有头像 bucket |
+| `ui` | Vite | 无数据库；按配置连接 API |
+| 显式全栈 | Trader Sync、API、Notification、UI、Wallet、Profit Sharing | 本实例 PostgreSQL、Redis、MinIO |
 
-## 架构与数据归属
+API 和 Notification 的局部入口不会启动 Trader Sync。全栈保留八个既有模块数据库的准备和两个 Temporal 空数据库，未选择的历史模块不启动业务进程。Wallet/Profit Sharing 仍使用既有聚合构建入口，这个既有范围不进入 Trader Sync 的独立构建依赖。
 
-`make run` 先启动依赖容器，再以前台 Procfile 启动进程组。PostgreSQL 存储 UUID 账户、不可变用户名、权限、profile/preferences、API Keys 及业务状态；Redis 存储撤销快照、5 分钟 OAuth/SIWS/scoped reauthentication/Run proof、独立 Wallet/Worm lease 和 15 分钟匿名注册 ticket；MinIO 存储私有账户与 Wallet 头像。Vite 端口 4000 代理 `/auth` 和 `/api`，本地 Google callback 与 SIWS domain/URI 固定为 `http://localhost:4000`，不从请求头推导。
+`make run` 显式选择全栈图，默认实例名为 `full-stack`，允许通过 `INSTANCE` 指定别名；`make stop` 和 `make run-reset` 对应同一实例的停止与重置。它们使用相同的资源引擎，不能按固定容器名或端口清理其他实例。局部选择使用 `run-service`/`run-services`；全栈只接受 `DB_MODE=managed`，不能借全栈入口向外部库隐式创建其他模块数据库。
 
-API Server 与 Notification 都连接 `ATHENA_SERVER_POSTGRES_DSN` 指向的 `athena` 数据库，并使用唯一 accountstate migration 集。两个进程各自创建、持有和关闭自己的 `pgxpool.Pool`；“同库”不表示共享同一个内存 pool。Notification 的系统投递、Telegram Topic、账户 binding/attempt/delivery、reply outbox、polling offset 与 Trader Sync 数据都位于该数据库。Wallet 仍使用独立 `wallet` 数据库，Worm Trading 使用独立 `worm_trading` 数据库。
+## 数据模式与身份
 
-Goreman 监督 API Server、UI、Notification、Wallet、Profit Sharing、Token 与市场情报服务。主要独立进程如下：
+managed 模式为每个 checkout/实例创建独立持久 PostgreSQL。容器、volume 名含规范 checkout 路径与实例的 namespace 哈希；数据库、Redis 和 MinIO 的宿主端口由 Docker 动态分配且只绑定 loopback。业务默认端口仍为 UI4000、API8080、Notification8086、Trader Sync8122、Wallet8088、Profit Sharing8108，并存时必须显式指定不冲突的业务端口。
 
-| 进程 | 端口 | PostgreSQL 数据库 |
-| --- | ---: | --- |
-| `worm-markets` | 8084 | `worm_markets` |
-| `notification` | 8086 | `athena`（进程自持 pool） |
-| `wallet` | 8088 | `wallet` |
-| `worm-trading` | 8090 | `worm_trading` |
-| `market-radar` | 8092 | 无 |
-| `sports-live` | 8094 | `sports_live` |
-| `sports-history` | 8104 | `sports_history` |
-| `managed-oo` | 8106 | `managed_oo` |
-| `profit-sharing` | 8108 | `profit_sharing` |
+用 `runtime-status` 查询实际资源、地址、生命周期和各进程退出码；`.run/instances/<instance>/state.json`、日志和 fixture 属于该 checkout。运行器保存稳定凭据文件与不可变执行文件，不因后来重新构建覆盖正在运行进程的身份。
 
-Notification 一个进程承载 `SystemNotificationService`、`AccountNotificationService` 和 `NotificationRuntimeService`，拥有一个 Bot、一个长轮询 consumer 和一个公平 dispatcher。内部非 health RPC 要求同一 `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN`；API Server 消费账户与 runtime 域，既有生产者只消费系统域。webhook 与 long poll 不并存。
+managed 启动顺序为：验证所选配置与端口 → 登记实例 → 构建所选程序 → 准备所需基础设施 → 独立 schema `up`/`verify` → 启动业务进程并检查初始就绪。辅助构建和迁移也登记进程身份与退出结果；运行器异常退出后，停止操作先回收这些使用者，再清理依赖。
 
-API Server 内一个 process-scoped Trader Sync `Service` 运行 Collector、Projector 和 DirectoryRefresher，并复用已安装 access hook 的 store 与 API Server account pool。listener restart 不创建第二实例；后台 fatal 返回 CLI restart loop。取消时先 join 全部 borrower，再由 owner 关闭 service、HTTP/RPC transport 和 pool。
+seed 是独立的本地操作，不在正常业务启动中隐式创建测试订阅。`seed-service` 输出 `member_id`、`administrator_id` JSON，并保存 `development-fixture.json`。重复 seed 复用持久身份，不重新授予已撤销的 Trader Sync grant。
 
-Wallet 非 health RPC 使用独立 `ATHENA_WALLET_INTERNAL_AUTH_TOKEN`。`ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN` 是 Wallet/Worm Trading 专属 capability Bearer，必须不同于 Wallet 通用 token；API Server 和无关进程明确 unset。Worm Trading 只在本地 loopback/Compose 私网监听，拥有 `worm_trading` 数据库和独立凭据加密 key，不读取 Wallet 私钥；只有它接收专用 Solana RPC、Worm HMAC/Web endpoint 与 signer capability。
+显式使用已有库：
 
-disabled-auth 启动创建/复用 `local-user` 与 `local-admin` 两个完整 aggregate。每个请求用严格 `X-Athena-Application-Realm: member|admin` 选择；浏览器原生资源用一致的 `athenaRealm` query。缺失、重复、非法或 header/query 冲突都不认证。API Server 在非 loopback listener 上拒绝 disabled-auth，生产脚本与 Compose 另行固定拒绝。
+```bash
+make run-service SERVICE=trader-sync INSTANCE=ts-borrower DB_MODE=external ENV_FILE=.env.ts-external
+```
 
-## 本地生命周期
+文件必须提供 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN`；API/Trader Sync 还需显式且一致的内部 token。external 只读验证 schema，不创建、迁移、seed、停止或删除数据库；借用方 reset 被拒绝。允许显式借用另一 managed/full-stack 的库，但原 owner 停库或故障会影响借用方，操作者须协调全部消费者。一个权威库只允许一个活跃 Collector。
 
-1. 正常认证首次使用前在 `.env` 配置 Google Web client、准确 callback、client secret、`ATHENA_ADMIN_GOOGLE_EMAIL` 与稳定 `ATHENA_JWT_SECRET`。Phantom 桌面登录使用注入 provider，不增加 App ID、secret、RPC 或 per-wallet 环境变量。
-2. 当前 schema 与本地 fingerprint 不兼容时，操作员显式运行 `make run-reset`。它先停进程，再删除仓库拥有的 PostgreSQL/Redis/MinIO volume 和默认 scratch，不自动重启，也不访问 Telegram 或 Worm 网络。
-3. `make run` 创建或复用固定 volume，运行唯一权威迁移并启动进程；会员入口是 `http://localhost:4000/`，管理员入口是 `http://localhost:4000/admin/`。`ATHENA_RUN_EXCLUDE` 可在 IDE 单独运行组件时过滤 Procfile。正常 run 不删除 volume 或暗中 reset。
-4. 未知 provider 身份只取得 15 分钟 registration ticket，提交永久 username 后 PostgreSQL 才生成 UUID 并原子创建完整 aggregate。Google 与 Solana 身份不合并；同一 Google subject 可有独立 member/admin UUID。
-5. member realm 始终创建普通 Pending 候选；admin realm 只在验证邮箱匹配 `ATHENA_ADMIN_GOOGLE_EMAIL` 时允许创建唯一管理员。管理员 aggregate 关闭所有会员 entitlement 与模块。
-6. `make stop`、前台退出或 `Ctrl+C` 先通知 Goreman，按有界 grace period 升级清理仓库拥有的 process group/container/listener，保留 volume。它不会执行 `make run-reset`。
-7. Redis 重启会丢失待处理 OAuth/SIWS/step-up/Run proof 和 lease，但不删除 Wallet/Worm/账户/通知持久数据。已持久 Run 授权仍需当前 Session 与 access revision 才能继续。
-8. Worm Trading 启动时迁移并 ping `worm_trading`，核 Solana mainnet，第一轮 probe 成功前 health 为 `NOT_SERVING`。preview worker、凭据维护与 live-Run recovery 一起启动；Open/Finalize dispatch marker 和 isolation 跨正常 stop 保留，已标 dispatched 的 mutation 不重放。
+## 进程、授权与事务
 
-生产中，不兼容的 current-state schema 通过全新持久部署替换；hot deploy 保留 PostgreSQL/MinIO volume，因此不是不兼容初始 schema 的升级机制。
+Trader Sync 内部 gRPC 有 13 个会员方法与 3 个管理员概要方法。API 把已认证账户 UUID 与 realm 转为可信 Actor，同时附带专用服务 token；服务端再次以持久身份、权限和 owner 校验。后台方法也要求服务身份。读调用默认最多 5 秒，写入/目标确认最多 15 秒，并受更早的上游 deadline 限制；不自动重试 mutation。同一 request ID 的相同内容可显式重放原结果，不同内容拒绝。
 
-## Trader Sync 与 Notification 启停顺序
+API 本身的认证失败仍为公共 401；内部 token、Actor 契约或依赖故障变为对应 facade 的 503，避免错误地退出用户登录。Trader Sync 停止不关闭已就绪的 API/Notification；三者同库不可达则分别进入自身失败边界。
 
-API Server 先从环境加载并验证 Trader Sync HTTP/WSS、站点 URL 和游标 HMAC，再构造共享单实例。`ATHENA_TRADER_SYNC_HTTP_URL`、`ATHENA_TRADER_SYNC_WSS_URL`、`ATHENA_URL`、`ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY` 缺失或协议非法会在资源启动前失败。正常停止时先取消 process context、join Trader Sync Service，再关闭 transport 与 API Server pool；不要在 listener restart 中并行启动第二个 Collector。
+运行期写事务先取得 runtime generation 的 `FOR SHARE` guard，再取得账户或业务行锁；接管以 `FOR UPDATE` 更新 generation。已取得 guard 的旧事务可完成，新发起的旧 generation 写入被拒绝。RuntimeSession 持有独占 advisory session，启动先安装 guard 再恢复记录，失权取消全部 Trader Sync 工作者。
 
-本地 API Procfile 在 Goreman dotenv 后调用 `hack/trader-sync-local.sh`。只有 `ATHENA_TRADER_SYNC_PROXY_URL` **未定义**时，脚本才注入 WSL gateway `:10809`；变量已定义为空表示直连。Trader Sync 明确为 HTTP/WSS transport 设置 proxy，因此 dotenv 恢复的全局 proxy 不会静默改路。生产 Compose 不调用本地脚本。
+同库原子不变量继续保留：API 账户撤权在调用方事务中使订阅和未获许可资格失效，即使 TS 离线也可提交；Trader Sync 活动、资格快照、普通通知入队同事务；Notification 摘要冻结、发送许可与结果由它的独立 pool/受控 adapter 完成，不依赖 TS runtime guard。已获许可尝试可以结束，未知结果不自动重发，重新授权不复活旧资格。RPC 期间不持有数据库事务、pool 借用或进程锁。
 
-开发默认以 Chainstack 作为单一 HTTP/WSS provider；切换 dRPC 时同时人工更新对应 HTTP/WSS 配置并重启 API Server。系统不双采、不自动 failover，也不把两个 provider 混为连续 epoch。切换、断线、进程重启和故障均建立新的实时边界，不补查遗漏；已可靠持久化且仍合格的候选可以继续处理。
+## 就绪、停止与恢复
 
-Notification CLI 打开自己的 `athena` pool并运行同一权威迁移，随后先处理 sender 准入，再构造 Bot/summary：
+Trader Sync 配置与只读 schema 验证后先开放同一 gRPC server 的 `NOT_SERVING` health，再取得 RuntimeSession、安装 guard、恢复持久状态、启动工作者，最后开放业务准入并发布 `SERVING`。WSS 暂时离线时 RPC 可用、Collector 显示 degraded，创建/恢复订阅保持待基线；不把连接失败等同于整个 API 失败。
 
-1. `NewServer` 在 `Start` 前从自身 `SQLStore.BorrowPool()` 借同物理 pool 给 `ConfigureSummaries(pool, ATHENA_URL)`；adapter 不拥有或关闭 pool。
-2. `Service.Start` 先为新 incarnation 取得独占 sender session/登记。存在未确认停止的旧 sender 时安全失败；不能用 lease 消失、端口空闲或 PID 变化代替停止证明。
-3. sender 准入成功后才同步 Bot profile、启动 poller，再启动 account/system/reply/summary 的单 dispatcher。恢复屏障完成前不授权发送。
-4. 正常 Stop 先 cancel，停止 poller，join worker/summary/结果补记；随后保存 graceful stop、恢复未决结果并关闭 sender session；最后由 CLI 唯一关闭 pool。
+单活采集不提供多副本 HA 或零中断滚动升级。重启、provider 切换与断线建立新的可观察实时边界，展示中断，不补查未收到的历史成交。已可靠持久化且仍合格的候选按原 generation/区间继续处理。目录刷新使用两次受 guard 保护的事务；第二事务持目录行锁执行有界 HTTP 并结算，不另开无 guard 的清理事务。
 
-异常停止后，操作员须先从对应 supervisor/container/主机确认**已登记旧进程确实退出**，再运行：
+正常 Ctrl+C、TERM 与 `stop-instance` 进入同一停止协议。Trader Sync 总停止预算 30 秒：先停止业务准入、取消和 join 工作，再由 owner 关闭 transport、session 与 pool；超过预算由进程 watchdog 退出。运行器按 PID/PGID、启动时间、boot ID、执行文件、run ID 与 ancestry 核实使用者，以 pidfd 发信号，停止使用者后才处理精确 ID/标签匹配的容器。未知归属或未完成清理保留证据和失败状态，不凭名称抢占端口。
+
+初始就绪失败会回收本次拥有的运行资源并保留持久数据和日志。全部初始就绪后，单个业务进程 fatal 记录退出状态，其他业务继续运行。停止保留 volume、fixture、token 与证据；reset 只针对已停止的 managed 实例，删除其拥有的数据，不能作为跨实例清理工具。运行器不清理全局 `/tmp/coverage` 或其他 checkout 的 scratch。
+
+Notification 一个进程承载系统、账户和 runtime 三个域，拥有一个 Bot、一个 poller 和一个公平 dispatcher。它只读验证同库 schema，先取得 sender 登记，再构造 Bot/summary 并启动轮询。正常停止先 cancel/join，再保存 graceful stop、恢复未决结果并关闭 sender session/pool。
+
+异常停止后须先从对应 supervisor/container/主机确认**已登记旧 sender 进程确实退出**，再执行：
 
 ```bash
 athena-notification --recover-stopped-sender=<incarnation-UUID>
 ```
 
-该命令本身是停止确认，只锁库恢复对应 incarnation 的 attempt 并退出；它在 Telegram client、summary、RPC/WSS 组合前执行，不发消息。恢复把无法确认的已消费许可记为 unknown，unknown、sent、failed、cancelled 不复活或自动重发。除可证明首次无实例/attempt 历史外，正常新启动在授权前等待完整 60 秒 monotonic 恢复屏障；未解除 Retry-After 可能更久。
+该命令只恢复指定 incarnation 的 attempt 并退出，不调用 Telegram。无法确认成功的已消费许可转为 unknown；unknown/sent/failed/cancelled 不复活。非首次 sender 启动保留完整 60 秒 monotonic 恢复屏障，未解除的 Retry-After 可能更久。端口空闲或 advisory lock 消失本身不能代替旧进程停止证明。
 
-## 持久状态与 reset 边界
+## 配置边界
 
-本地 volume 为 `athena-local-postgres-data`、`athena-local-redis-data`、`athena-local-minio-data`。PostgreSQL fingerprint 包含 image、database/user/password 和有序初始化输入，不兼容状态不会静默复用。
-
-`make run-reset` 删除本地所有 UUID、用户名、角色、grant、profile/preferences、API Keys、session/revocation、OAuth/SIWS/registration/step-up/Run proof、Profit Sharing 引用、Wallet custody、Worm connection/credential/combination/preview/Run/dispatch/isolation、Trader Sync 订阅/活动/观察/通知、系统 Topic/delivery、Telegram binding/attempt/reply/poll offset 与头像对象。它还删除默认 `/tmp/athena-local`、已知 coverage 目录和运行控制状态，但不删除这些精确默认之外的自定义临时路径。
-
-reset 不调用 Worm 网络。若远端 credential 需要撤销，先显式 disconnect；若有 live/unknown Run，先在 Worm 侧核对和协调。直接 reset 会删除 ATHENA 的 ciphertext、request correlation 与 durable isolation，不可用来解决远端不确定操作。
-
-## 配置
-
-| 配置 | 本地行为 |
+| 配置 | 消费者与含义 |
 | --- | --- |
-| `ATHENA_GOOGLE_OIDC_CLIENT_ID`、`...CLIENT_SECRET`、`...CLIENT_SECRET_FILE`、`...REDIRECT_URI` | Google Web client；direct secret 优先；redirect 必须精确匹配 `http://localhost:4000/auth/google/callback`。 |
-| `ATHENA_ADMIN_GOOGLE_EMAIL` | admin realm 未知 Google 身份创建唯一管理员 persona 的准入邮箱，不限制同 subject 的 member persona。 |
-| `ATHENA_JWT_SECRET` | 稳定本地 HS256 key；轮换使现有 cookie/API Key 失效。 |
-| `ATHENA_SERVER_DISABLE_AUTH` | 仅 loopback；`true` 时使用 `local-user`/`local-admin`，仍走角色与模块鉴权。 |
-| `ATHENA_SERVER_POSTGRES_DSN` | API Server 与 Notification 共用的 `athena` 数据库；两进程各自建 pool。 |
-| `ATHENA_TRADER_SYNC_HTTP_URL`、`ATHENA_TRADER_SYNC_WSS_URL` | 单一链 provider 的 HTTP/WSS；开发先 Chainstack，dRPC 仅手动切换。 |
-| `ATHENA_TRADER_SYNC_PROXY_URL` | Trader Sync HTTP/WSS 专用 proxy；unset 触发本地 WSL 默认，空串直连。 |
-| `ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY` | 稳定签名游标 key。 |
-| `ATHENA_TRADER_SYNC_MAX_IN_FLIGHT_SOURCES` | Projector 同时处理 source 上限，默认 100，必须为正整数。 |
-| `ATHENA_URL` | 公开站点 URL；API 生成链接，Notification 在启动前配置 summary。 |
-| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Notification/API Server/系统生产者共享 Bearer，至少 32 个无空白字节。 |
-| `ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN`、`...API_URL`、`...TIMEOUT_SECONDS` | 单 Bot 身份、API endpoint 与 transport timeout。 |
-| `ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID`、`...PROD_TELEGRAM_CHAT_ID` | 管理员系统通知群组；会员投递只用 `athena` 表中已绑定私聊。 |
-| `ATHENA_NOTIFICATION_WORKER_CONCURRENCY` | 跨 chat 并发默认 12；Bot/私聊/群组预算与最多五次尝试是实现规则。 |
-| `ATHENA_WALLET_ENCRYPTION_KEY`、`ATHENA_WALLET_INTERNAL_AUTH_TOKEN`、`ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN`、`ATHENA_WALLET_POSTGRES_DSN` | Wallet 加密、通用 Bearer、专用 signer capability 与独立数据库。 |
-| `ATHENA_ACCOUNT_AVATAR_S3_*`、`ATHENA_ACCOUNT_AVATAR_MAX_BYTES` | 私有账户/Wallet 头像对象存储。 |
-| `ATHENA_WORM_TRADING_LISTEN_ADDRESS`、`...PORT`、`...SERVER_ADDRESS` | 默认 loopback `127.0.0.1:8090`；Compose 私网监听/服务名。 |
-| `ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN`、`...POSTGRES_DSN`、`...CREDENTIAL_ENCRYPTION_KEY` | Worm Trading 专用 Bearer、独立数据库与凭据加密。 |
-| `ATHENA_WORM_TRADING_SOLANA_RPC_URL`、`...WORM_API_ATTEMPT_TIMEOUT`、`...POSITION_BUDGET`、`...POSITION_CONCURRENCY` | 专用 mainnet RPC、官方 HMAC 5 秒调用、20 秒页面预算、默认 4/最大 32 并发。 |
+| `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` | API、TS、Notification、schema tool 各自打开同一权威库；没有旧变量别名或默认 localhost 回退。managed 运行器注入自己的 DSN。 |
+| `ATHENA_TRADER_SYNC_HTTP_URL`、`...WSS_URL` | 仅 TS：Polygon137 同一 provider；开发端点见[来源文档](../../requirements/polymarket-copy-trading/hosted-polygon-rpc-providers.md#已取得的开发候选端点)。切换时成对修改并重启 TS。 |
+| `ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY` / `..._FILE` | 仅 TS：稳定游标签名密钥；与服务 token 不同。 |
+| `ATHENA_TRADER_SYNC_INTERNAL_AUTH_TOKEN` / `..._FILE` | TS 与 API：至少32字节、不含空白/控制字符。managed 缺省首次生成并持久复用，external 必须显式配置。 |
+| `ATHENA_TRADER_SYNC_LISTEN_ADDRESS` / `...SERVER_ADDRESS` | TS 监听与 API 连接地址，独立局部运行默认 `127.0.0.1:8122`。 |
+| `ATHENA_TRADER_SYNC_GRPC_TRANSPORT` | 二进制默认 `tls`；本地运行器仅在未设置时显式选 `loopback-insecure`，它拒绝非 loopback 地址。 |
+| `ATHENA_TRADER_SYNC_TLS_CERT_FILE`、`...TLS_KEY_FILE` | 仅 TS 服务端证书与私钥。 |
+| `ATHENA_TRADER_SYNC_TLS_CA_FILE`、`...TLS_SERVER_NAME` | API/health 客户端的 CA 与证书名称；TLS 不能静默降级。 |
+| `ATHENA_TRADER_SYNC_PROXY_URL` | 仅 TS 的 HTTP/WSS、Gamma/Profile、目录请求；明确空串直连。仅本地 WSL 且变量真正未定义时使用 gateway:10809。 |
+| `ATHENA_TRADER_SYNC_MAX_IN_FLIGHT_SOURCES` | TS source job 正整数上限，默认100；不是业务配额或吞吐结论。 |
+| `ATHENA_URL` | 可信公开站点地址；用于 API/Notification 链接等。默认开发站点配置为 `http://localhost:4000`。 |
+| `ATHENA_NOTIFICATION_*` | Notification 自身 Bot/poller/worker 配置；内部 token 按调用者分配。TS 不读取 Bot 凭据。 |
+| `ATHENA_UI_PORT`、`ATHENA_SERVER_PORT`、`ATHENA_NOTIFICATION_PORT` | 运行器所选业务端口；多个实例并存时显式区分。 |
 
-Telegram long-poll timeout 与有限退避是实现常量；`next_update_id` 位于 `athena` 通知表，没有环境 override。生产 secret reset 分别生成 Notification、Wallet、Wallet signer、Worm Trading Bearer 与 Worm encryption passphrase，并拒绝短值、空白或不应相同的凭据。
+同一 secret 的直接变量和 `_FILE` 互斥，文件只允许末尾一个 LF，不静默裁剪其他空白。配置按进程白名单传递，API 不获得 TS provider/cursor/私钥，Notification 不获得 TS 内部凭据。状态和命令参数不保存秘密；本地秘密文件与日志权限为0600。同内容普通配置文件保留inode并收紧0600，避免重复启动时使Docker Desktop文件挂载失效；内容变化和符号链接仍使用原子替换。
 
-## 故障恢复与排查
+Google OIDC、Phantom、realm、disabled-auth 和头像业务保持原权限规则。公开 origin 与 callback 必须匹配实际站点，不能从 Host 推导。disabled-auth 仅限 loopback，会员/管理员分别选择持久 `local-user`/`local-admin` aggregate；缺失或冲突 realm 不认证。切换正常认证应使用没有开发身份的独立实例，需丢弃旧实例时先停止再显式 reset。Wallet signer capability 与 Worm Trading 私有凭据仍不授予 API 或无关进程。
 
-- Notification 在数据库连接/迁移、内部 token、Bot profile 或 webhook 检查失败时不进入 `SERVING`。运行后暂时 poll 失败按有限后台退避，health 仍为 `SERVING`，runtime 显示 `poller_active=false`；binding/offset 事务失败不推进 `next_update_id`。
-- Notification 数据库运行错误或 sender session 失锁会取消新授权、停止 poller、health 失败并让命令退出。先核 sender 登记与 recovery：unknown 不自动重发；缺 `started_at` 的 sent 仍是成功但耗时 unavailable；recovery remaining/elapsed 缺失与合法 `0` 不同。
-- 摘要首条未开始时检查 `summary_head`、waiting membership、冻结/许可、恢复屏障、Bot/chat budget、Retry-After 与 account gate 指标。首条缺失不能通过改形成时间、重发 unknown 或跳过 60 秒恢复屏障修复。
-- Trader Sync Collector 与资料目录独立：WSS/heartbeat/latest/finality 失败影响观察状态并建立新实时边界；Profile/Gamma/metadata unavailable 不得阻塞已经确认的成交形成，也不应单独关闭健康 Collector。页面如实展示资料 unavailable。
-- Chainstack/dRPC 只人工切换。切换前记录旧 provider 与 collector epoch，停止 API 单实例，修改成对 HTTP/WSS 后重启；不把切换窗口或故障遗漏表述为已回补。
-- Wallet/API token 不匹配时 health 仍可探测但业务 RPC unauthenticated；修正两端并重启，不 reset 数据。Notification、Worm Trading 的内部 token 同理。
-- Redis 故障阻止新 OAuth/SIWS/registration/step-up/Run proof，但撤销快照初始化后的既有 session 和持久业务数据仍可使用。Google/JWKS 故障只阻止新 Google callback；Phantom 校验不依赖远端 IdP/RPC。
-- Worm provider 暂时不可达时保持进程并每 30 秒重试；chain/mint/decimals/batch capability 明确不匹配进入 `configuration_error` 直到修配置重启。`CONNECT_OUTCOME_UNKNOWN`、Open/Finalize 不确定结果必须人工协调，禁止盲目重放。
-- 只有 fingerprint/current-state schema 不兼容时才 stop 后显式 `make run-reset`。正常 run/stop 永不自动选择破坏性 reset。
+## 生产与验证证据
 
-## 可观测性
+独立镜像只构建 TS 与 account-state schema tool，不经过 UI 或聚合 main。生产使用 TLS 和按服务挂载的秘密文件。schema 兼容时只替换 TS；不兼容时，确认维护窗口和全部外部同库使用者停止，再停止三个本栈消费者 → 确认退出 → `up` → `verify` → 启动。迁移失败不启动业务。详见[生产部署说明](../../../deploy/trader-sync/README.md)。
 
-`make run` 前台输出全部服务日志；容器状态和单服务日志用于诊断依赖。Notification 标准 health 表示进程生命周期，runtime 单列 Bot、poller、最近 update、system/account 队列、sending/unknown、recovery 与不可达 binding，不暴露 token/Bearer。管理员 Service Status 以独立 10 秒可见 single-flight 读取 Services、Notification、Trader Sync；各来源失败保留自己的最后成功值。
-
-Trader Sync runtime 单列 Collector connection/epoch/filter revision、raw 可观测边界、投影/资料/通知指标及各自 unit/window/opaque serviceEpoch。公开时间未知、资料 unavailable、无 ACK、clock anomaly 和等待成员不填 0 或改称通过。前台日志可显示有界错误类别，但不记录账户私密正文、请求参数、内部 query、credential 或 digest。
-
-Worm Trading 只有专用 Solana probe 成功后 gRPC health 才为 `SERVING`；后续暂时 provider 失败可显示 degraded。公开状态只暴露 credential store readiness 与脱敏 reachability/error，不暴露 URL、HMAC、signer token、Web JWT、原始/签名交易或 signature。
-
-## 维护检查
-
-- [ ] `make run`/`stop`/`run-reset`、固定 volume 和清理边界与脚本一致。
-- [ ] OIDC、SIWS、realm 注册、disabled-auth 与生产拒绝边界保持当前行为。
-- [ ] `athena` 同库、API/Notification 两个独立 pool、唯一迁移和十模块保持一致。
-- [ ] Notification 单 Bot/poller/dispatcher、sender 停止证明、恢复命令和先恢复后启动顺序保持一致。
-- [ ] Trader Sync 单实例、Chainstack/dRPC 手动切换、proxy 空值语义、新实时边界与不补遗漏保持一致。
-- [ ] Wallet/Worm 数据库、lease、proof、signer capability、停止/恢复与 reset 警告保持一致。
-- [ ] 依赖所有权、失败隔离、可观测字段和安全日志保持一致。
-- [ ] 源码链接和[设计索引](../README.md)保持正确。
+运行器状态展示所选进程、依赖、退出码、日志和实际地址；Trader Sync runtime 另列采集连接、epoch、待基线、积压与中断。`SERVING`、端口监听或 HTTP200 不等同于业务验收通过。独立构建、真实进程、契约、故障/事务、TLS 和浏览器证据以及本次测试操作事故见[独立服务验收记录](../../testing/trader-sync-independent-service-acceptance.md)。

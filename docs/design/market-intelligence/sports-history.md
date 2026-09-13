@@ -132,7 +132,7 @@ succeeds.
 | Setting | Behavior |
 | --- | --- |
 | `ATHENA_SPORTS_HISTORY_LISTEN_ADDRESS` / `--address` | gRPC bind address; default `0.0.0.0`. |
-| `ATHENA_SPORTS_HISTORY_LISTEN_PORT` / `--port` | gRPC port; default `8104`. The local Procfile uses `ATHENA_SPORTS_HISTORY_PORT` to supply this flag. |
+| `ATHENA_SPORTS_HISTORY_LISTEN_PORT` / `--port` | gRPC port; default `8104`. This module is not selected by the default local full-stack graph; configure its direct process explicitly. |
 | `ATHENA_SPORTS_HISTORY_POSTGRES_DSN` | PostgreSQL connection for database `sports_history`; required at startup. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls embedded migration application during store connection; default `true`. |
 | `ATHENA_LOGFORMAT`, `ATHENA_LOGLEVEL` / command flags | Shared process log format and level; defaults `json` and `info`. |

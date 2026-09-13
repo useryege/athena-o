@@ -5,12 +5,14 @@ package acceptance
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	facade "github.com/useryege/athena/internal/server/tradersync"
+	trpc "github.com/useryege/athena/internal/tradersync/apiclient"
 	api "github.com/useryege/athena/pkg/apiclient/tradersync"
 	gu "github.com/useryege/athena/util/grpc"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"io"
 	"math/big"
@@ -111,6 +113,7 @@ type harness struct {
 	chainHTTP, wsHTTP, profileHTTP, telegramHTTP *httptest.Server
 	eth                                          *ethclient.Client
 	transport                                    *http.Transport
+	runtimeOwner                                 *store.RuntimeSession
 	service                                      *ts.Service
 	notifier                                     *notification.Service
 	runDone                                      chan error
@@ -138,11 +141,6 @@ func (h *harness) Close() {
 				h.t.Errorf("notification stop: %v", e)
 			}
 		}
-		if h.service != nil {
-			if e := h.service.Close(); e != nil {
-				h.t.Errorf("trader close: %v", e)
-			}
-		}
 		if h.runDone != nil {
 			select {
 			case e := <-h.runDone:
@@ -151,7 +149,15 @@ func (h *harness) Close() {
 				}
 			case <-time.After(8 * time.Second):
 				h.t.Error("trader service did not join")
+				return
 			}
+		}
+		if h.runtimeOwner != nil {
+			cleanup, stop := context.WithTimeout(context.Background(), 5*time.Second)
+			if err := h.runtimeOwner.CloseAfterWorkers(cleanup); err != nil {
+				h.t.Errorf("runtime owner close: %v", err)
+			}
+			stop()
 		}
 		if h.eth != nil {
 			h.eth.Close()
@@ -200,13 +206,24 @@ func newHarness(t *testing.T, owners, targets int) *harness {
 	h.eth = ethclient.NewClient(rpc)
 	node := ts.NewSourceRPC(h.eth)
 	trader := store.NewSQLStore(db.Pool)
+	h.runtimeOwner, e = trader.AcquireRuntimeSession(ctx)
+	if e != nil {
+		t.Fatal(e)
+	}
+	trader, e = trader.WithRuntime(h.runtimeOwner.RuntimeToken())
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = h.runtimeOwner.RecoverPending(ctx); e != nil {
+		t.Fatal(e)
+	}
 	if e = trader.ConfigureActivities("https://athena.test"); e != nil {
 		t.Fatal(e)
 	}
 	h.transport = http.DefaultTransport.(*http.Transport).Clone()
 	h.transport.Proxy = nil
 	rewrite := loopbackTransport{transport: h.transport, target: h.profileHTTP.URL}
-	resolver, e := ts.NewTargetResolver(db.Pool, pm.NewProfileAdapter(rewrite), trader.RequireGrantTx, trader.ResolveContextTx)
+	resolver, e := ts.NewTargetResolver(trader, pm.NewProfileAdapter(rewrite), trader.RequireGrantTx, trader.ResolveContextTx)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -215,7 +232,7 @@ func newHarness(t *testing.T, owners, targets int) *harness {
 	if e != nil {
 		t.Fatal(e)
 	}
-	subscriptions, e := ts.NewSubscriptionService(db.Pool, trader, resolver, collector)
+	subscriptions, e := ts.NewSubscriptionService(trader, trader, resolver, collector)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -227,12 +244,45 @@ func newHarness(t *testing.T, owners, targets int) *harness {
 	if e != nil {
 		t.Fatal(e)
 	}
-	h.service, e = ts.NewService(config, ts.Dependencies{Pool: db.Pool, Resolver: resolver, Subscriptions: subscriptions, Collector: collector, Projector: projector, Directory: ts.NewDirectoryRefresher(trader, gamma, config.OnError)})
+	directory := ts.NewDirectoryRefresher(trader, gamma, config.OnError)
+	h.service, e = ts.NewService(config, ts.Dependencies{Pool: db.Pool, Resolver: resolver, Subscriptions: subscriptions, Collector: collector, Projector: projector, Directory: directory})
 	if e != nil {
 		t.Fatal(e)
 	}
 	h.runDone = make(chan error, 1)
-	go func() { h.runDone <- h.service.Run(ctx) }()
+	go func() {
+		group, gctx := errgroup.WithContext(ctx)
+		for _, worker := range []func(context.Context) error{func(c context.Context) error { return collector.Run(c, h.runtimeOwner) }, projector.Run, directory.Run} {
+			group.Go(func() error {
+				err := worker(gctx)
+				if gctx.Err() != nil && (err == nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)) {
+					return nil
+				}
+				if err == nil {
+					return fmt.Errorf("acceptance worker exited unexpectedly")
+				}
+				return err
+			})
+		}
+		group.Go(func() error {
+			ticker := time.NewTicker(500 * time.Millisecond)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-gctx.Done():
+					return nil
+				case <-ticker.C:
+					check, stop := context.WithTimeout(gctx, 5*time.Second)
+					err := h.runtimeOwner.Check(check)
+					stop()
+					if err != nil && gctx.Err() == nil {
+						return err
+					}
+				}
+			}
+		})
+		h.runDone <- group.Wait()
+	}()
 	client, e := telegram.NewClient(telegram.Config{BotToken: "acceptance", BaseURL: h.telegramHTTP.URL})
 	if e != nil {
 		t.Fatal(e)
@@ -704,7 +754,9 @@ func (h *harness) captureRuntime(name string) map[string]string {
 	g := grpc.NewServer(grpc.UnaryInterceptor(func(ctx context.Context, r any, i *grpc.UnaryServerInfo, next grpc.UnaryHandler) (any, error) {
 		return next(context.WithValue(ctx, "claims", jwt.MapClaims{"sub": admin.ID}), r)
 	}))
-	api.RegisterTraderSyncServiceServer(g, facade.New(h.service))
+	api.RegisterTraderSyncServiceServer(g, newInternalFacade(h.t, h.service, func(ctx context.Context) (*trpc.Actor, error) {
+		return &trpc.Actor{AccountId: admin.ID, Realm: trpc.ApplicationRealm_APPLICATION_REALM_ADMIN}, nil
+	}))
 	go g.Serve(lis)
 	defer g.Stop()
 	conn, e := grpc.Dial(lis.Addr().String(), grpc.WithInsecure())

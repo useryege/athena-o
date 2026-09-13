@@ -35,7 +35,7 @@
 
 | 子系统 | 能力 | 文档 | 状态 |
 | --- | --- | --- | --- |
-| Development Runtime | 本地进程监管、持久基础设施、共享 ATHENA 数据库、Trader Sync 单实例生命周期、Notification sender 恢复、双前端入口与完整重置边界 | [本地运行时编排](development-runtime/local-runtime-orchestration.md) | 现有编排 `已实现`；[Trader Sync 独立运行目标](development-runtime/local-runtime-orchestration.md#已确认的独立运行目标) `已确认待实现` |
+| Development Runtime | 按实例正向选择独立服务、持久基础设施、gRPC 与同库事务、精确归属和有界停止、schema/TLS 部署 | [本地运行编排](development-runtime/local-runtime-orchestration.md) | 独立运行器与全栈已实现；持久重启及真实验收通过，[验收记录](../testing/trader-sync-independent-service-acceptance.md) |
 | Developer Experience | Public LLM discovery documents, one-time Connect AI instructions, Swagger generation and embedding, unauthenticated documentation delivery, and root-path and safety boundaries | [AI Discovery Documentation](developer-experience/ai-discovery-documentation.md) | `已实现` |
 | Developer Experience | Explicit task-completion email delivery through fixed Tencent Exmail transport and recipient boundaries, invocation content, configuration precedence, and bounded retries | [Task Completion Email](developer-experience/task-completion-email.md) | `已实现` |
 | Identity and Access | UUID account identities, immutable public usernames, realm-scoped provider bindings, independent member/admin login cookies, persistent API Keys, Athena JWT v3, typed request credentials, and interactive-only sensitive boundaries | [Account Credentials](identity-access/account-credentials.md) | `已实现` |
@@ -57,7 +57,7 @@
 | Market Intelligence | Completed ATP/WTA event synchronization, price history, status, and manual refresh | [Sports History](market-intelligence/sports-history.md) | `已实现` |
 | Market Intelligence | Managed Optimistic Oracle log ingestion, market enrichment, reads, scans, and alerts | [Managed OO](market-intelligence/managed-oo.md) | `已实现` |
 | Market Intelligence | Worm sports-market synchronization, rules, live state, history, and alerts | [Worm Markets](market-intelligence/worm-markets.md) | `已实现` |
-| Trading | Trader Sync Activity Alerts：10 人共享 WSS、全部通知同库、发送许可与撤权边界、分批摘要、未知终态与安全运行指标 | [Activity Alerts 后端技术设计](trading/trader-sync-activity-alerts.md) | 现有功能 `已实现`；独立服务的[职责、接口、事务及构建运行目标](trading/trader-sync-activity-alerts.md#已确认的独立服务目标) `已确认待实现`；[字段契约草案](../superpowers/specs/2026-09-13-trader-sync-grpc-contract-design.md)与[实施计划](../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service.md)已编写待审阅/执行；[验收与外部限制](../testing/trader-sync-activity-alerts-acceptance.md) |
+| Trading | Trader Sync 实时活动、订阅基线、中断可见、摘要/发送许可、独立 gRPC 与共享事务边界 | [Activity Alerts 后端设计](trading/trader-sync-activity-alerts.md) | 独立服务已实现；最终验收通过，[结果与证据限制](../testing/trader-sync-independent-service-acceptance.md) |
 | Web UI | Trader Sync 活动与目标同屏、独立添加/管理/活动/摘要、稳定刷新、Telegram 衔接、管理员安全概要与受控浏览器验收 | [Activity Alerts UI 设计](web-ui/trader-sync-activity-alerts.md) | `已实现` |
 | Trading | Revisioned owner-scoped selection of up to 20 Solana Wallets, removal-first official-HMAC connection/activity flows, saved combinations and previews, Cash Out, and official Web JWT live-Run orchestration | [Worm Trading](trading/worm-trading.md) | `已实现` |
 | Trading | Provider-backed Worm event catalogs and owner-scoped, revisioned market-combination CRUD with trusted display snapshots | [Worm Market Combinations](trading/worm-market-combinations.md) | `已实现` |

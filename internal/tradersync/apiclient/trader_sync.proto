@@ -1,0 +1,531 @@
+syntax = "proto3";
+
+package tradersync.internal.v1;
+
+option go_package = "github.com/useryege/athena/internal/tradersync/apiclient";
+
+enum ApplicationRealm {
+  APPLICATION_REALM_UNSPECIFIED = 0;
+  APPLICATION_REALM_MEMBER = 1;
+  APPLICATION_REALM_ADMIN = 2;
+}
+
+message Actor {
+  string account_id = 1;
+  ApplicationRealm realm = 2;
+}
+
+message StringValue { string value = 1; }
+message BoolValue { bool value = 1; }
+message NoteInput { string value = 1; }
+
+message PageInput {
+  int32 page_size = 1;
+  string cursor = 2;
+}
+
+message PageInfo { string next_cursor = 1; }
+
+message ActivityPageInfo {
+  string next_cursor = 1;
+  string refresh_cursor = 2;
+  string snapshot = 3;
+  string as_of = 4;
+  bool has_newer = 5;
+}
+
+message FieldEvidence {
+  string availability = 1;
+  string reason_code = 2;
+  string source = 3;
+  string queried_at = 4;
+}
+
+message StringField {
+  FieldEvidence evidence = 1;
+  StringValue value = 2;
+}
+
+message DecimalField {
+  FieldEvidence evidence = 1;
+  StringValue value = 2;
+}
+
+message BoolField {
+  FieldEvidence evidence = 1;
+  BoolValue value = 2;
+}
+
+message TimeField {
+  FieldEvidence evidence = 1;
+  StringValue value = 2;
+}
+
+message CurvePoint {
+  string t = 1;
+  string p = 2;
+}
+
+message CurvePointList { repeated CurvePoint items = 1; }
+
+message Curve {
+  FieldEvidence evidence = 1;
+  CurvePointList points = 2;
+}
+
+message PnLView {
+  string period = 1;
+  DecimalField amount = 2;
+  Curve curve = 3;
+  string interval = 4;
+  string fidelity = 5;
+  TimeField reference_time = 6;
+  StringField timezone = 7;
+}
+
+message TargetNote {
+  string wallet = 1;
+  string note = 2;
+  uint64 revision = 3;
+}
+
+message Quota {
+  int32 used = 1;
+  int32 limit = 2;
+}
+
+message ExistingSubscription {
+  string id = 1;
+  string status = 2;
+  uint64 revision = 3;
+}
+
+message ResolvedTarget {
+  string wallet = 1;
+  string canonical_profile_url = 2;
+  StringField avatar = 3;
+  StringField display_name = 4;
+  BoolField verified = 5;
+  TimeField joined_at = 6;
+  DecimalField position_value = 7;
+  DecimalField largest_win = 8;
+  DecimalField predictions = 9;
+  repeated PnLView pn_l = 10;
+  string default_period = 11;
+  string confirmation_token = 12;
+  string expires_at = 13;
+  string usage_notice = 14;
+  TargetNote saved_note = 15;
+  ExistingSubscription existing_subscription = 16;
+  Quota quota = 17;
+}
+
+message TargetDisplay {
+  StringField display_name = 1;
+  StringField avatar = 2;
+  StringField profile_url = 3;
+}
+
+message Interval {
+  string effective_at = 1;
+  StringValue ended_at = 2;
+  uint64 generation = 3;
+  uint64 epoch = 4;
+}
+
+message Interruption {
+  StringValue start = 1;
+  StringValue end = 2;
+  StringValue recovered_at = 3;
+  string reason = 4;
+  string uncertainty = 5;
+  bool possible_missing = 6;
+}
+
+message Observation {
+  string state = 1;
+  string reason = 2;
+  StringValue last_reliable_at = 3;
+  Interruption latest_interruption = 4;
+  string interruption_count = 5;
+}
+
+message StatusCounts {
+  string total = 1;
+  string pending = 2;
+  string sending = 3;
+  string sent = 4;
+  string failed = 5;
+  string unknown = 6;
+  string cancelled = 7;
+}
+
+message Subscription {
+  string id = 1;
+  string wallet = 2;
+  string status = 3;
+  uint64 revision = 4;
+  uint64 generation = 5;
+  string note = 6;
+  uint64 note_revision = 7;
+  string created_at = 8;
+  string updated_at = 9;
+  StringValue paused_at = 10;
+  StringValue cancelled_at = 11;
+  StringValue permission_disabled_at = 12;
+  Interval current_interval = 13;
+  Observation observation = 14;
+  string binding_status = 15;
+  string queue_notice = 16;
+  StatusCounts queue_counts = 17;
+  TargetDisplay target_display = 18;
+}
+
+message HistoryEntry {
+  string id = 1;
+  string kind = 2;
+  string sort_at = 3;
+  Interval interval = 4;
+  Interruption interruption = 5;
+}
+
+message SourceLocation {
+  string chain_id = 1;
+  string exchange_address = 2;
+  string transaction_hash = 3;
+  string block_hash = 4;
+  string block_number = 5;
+  string log_index = 6;
+}
+
+message FinalityAnomaly {
+  string reason = 1;
+  string detected_at = 2;
+  string published_block_hash = 3;
+  StringValue conflicting_block_hash = 4;
+}
+
+message MarketRef {
+  FieldEvidence evidence = 1;
+  string id = 2;
+  string title = 3;
+  string url = 4;
+  string condition_id = 5;
+  string position_id = 6;
+  string outcome = 7;
+}
+
+message ComboLeg {
+  string position_id = 1;
+  MarketRef market = 2;
+}
+
+message ComboLegList { repeated ComboLeg items = 1; }
+
+message TradeMetadata {
+  MarketRef market = 1;
+  FieldEvidence legs_evidence = 2;
+  ComboLegList legs = 3;
+  string relationship = 4;
+}
+
+message Attempt {
+  string index = 1;
+  string authorized_at = 2;
+  StringValue started_at = 3;
+  StringValue result_at = 4;
+  string status = 5;
+  string reason = 6;
+}
+
+message Delivery {
+  string id = 1;
+  string status = 2;
+  string reason = 3;
+  StringValue authorized_at = 4;
+  StringValue started_at = 5;
+  StringValue result_at = 6;
+  StringValue message_id = 7;
+  string attempt_count = 8;
+  Attempt latest_attempt = 9;
+}
+
+message SummaryProgress {
+  string phase = 1;
+  string reason = 2;
+  StringValue batch_id = 3;
+  StatusCounts related_part_counts = 4;
+  StatusCounts batch_part_counts = 5;
+  string oldest_at = 6;
+  StringValue first_started_at = 7;
+}
+
+message Activity {
+  string id = 1;
+  string subscription_id = 2;
+  string source_record_id = 3;
+  string wallet = 4;
+  string side = 5;
+  string position_id = 6;
+  string collateral_raw = 7;
+  string shares_raw = 8;
+  string fee_raw = 9;
+  string collateral_symbol = 10;
+  int32 collateral_decimals = 11;
+  int32 shares_decimals = 12;
+  string price_numerator = 13;
+  string price_denominator = 14;
+  FieldEvidence price_evidence = 15;
+  string source_version = 16;
+  string settled_at = 17;
+  string received_at = 18;
+  string recorded_at = 19;
+  FieldEvidence public_time_evidence = 20;
+  TradeMetadata metadata = 21;
+  string note_snapshot = 22;
+  string notification_mode = 23;
+  string notification_reason = 24;
+  Delivery delivery = 25;
+  SummaryProgress summary_progress = 26;
+  TargetDisplay target_display_snapshot = 27;
+  FinalityAnomaly finality_anomaly = 28;
+  SourceLocation source_location = 29;
+}
+
+message TargetCount {
+  string wallet = 1;
+  string count = 2;
+}
+
+message SummaryBatch {
+  string id = 1;
+  string oldest_at = 2;
+  string settled_from = 3;
+  string settled_to = 4;
+  string recorded_from = 5;
+  string recorded_to = 6;
+  StringValue first_started_at = 7;
+  string activity_count = 8;
+  repeated TargetCount target_counts = 9;
+  StatusCounts part_counts = 10;
+  string as_of = 11;
+}
+
+message SummaryPart {
+  string id = 1;
+  int32 index = 2;
+  int32 total = 3;
+  Delivery delivery = 4;
+  string associated_activity_count = 5;
+}
+
+message SubscriptionSummary {
+  string subscription_id = 1;
+  string account_id = 2;
+  string username = 3;
+  string email = 4;
+  string wallet = 5;
+  string status = 6;
+  string created_at = 7;
+  string updated_at = 8;
+  StringValue paused_at = 9;
+  StringValue cancelled_at = 10;
+  StringValue permission_disabled_at = 11;
+  Observation observation = 12;
+  string activity_count = 13;
+  StatusCounts associated_delivery_counts = 14;
+  string as_of = 15;
+}
+
+message RuntimeMetric {
+  string name = 1;
+  string value = 2;
+  string unit = 3;
+  string kind = 4;
+  StringValue window_start = 5;
+  StringValue window_end = 6;
+  StringValue service_epoch = 7;
+}
+
+message RuntimeStatus {
+  bool collector_connected = 1;
+  string collector_epoch = 2;
+  string filter_revision = 3;
+  repeated RuntimeMetric metrics = 4;
+  string as_of = 5;
+}
+
+message ResolveTargetRequest {
+  Actor actor = 1;
+  string input = 2;
+}
+
+message ResolveTargetResponse { ResolvedTarget target = 1; }
+
+message CreateSubscriptionRequest {
+  Actor actor = 1;
+  string confirmation_token = 2;
+  string request_id = 3;
+  NoteInput note = 4;
+}
+
+message CreateSubscriptionResponse { Subscription subscription = 1; }
+
+message ListSubscriptionsRequest {
+  Actor actor = 1;
+  PageInput page = 2;
+  string view = 3;
+  string state = 4;
+}
+
+message ListSubscriptionsResponse {
+  repeated Subscription subscriptions = 1;
+  PageInfo page = 2;
+  Quota quota = 3;
+  string as_of = 4;
+}
+
+message GetSubscriptionRequest {
+  Actor actor = 1;
+  string subscription_id = 2;
+}
+
+message GetSubscriptionResponse { Subscription subscription = 1; }
+
+message PauseSubscriptionRequest {
+  Actor actor = 1;
+  string subscription_id = 2;
+  uint64 expected_revision = 3;
+  string request_id = 4;
+}
+
+message PauseSubscriptionResponse { Subscription subscription = 1; }
+
+message ResumeSubscriptionRequest {
+  Actor actor = 1;
+  string subscription_id = 2;
+  uint64 expected_revision = 3;
+  string request_id = 4;
+}
+
+message ResumeSubscriptionResponse { Subscription subscription = 1; }
+
+message CancelSubscriptionRequest {
+  Actor actor = 1;
+  string subscription_id = 2;
+  uint64 expected_revision = 3;
+  string request_id = 4;
+}
+
+message CancelSubscriptionResponse { Subscription subscription = 1; }
+
+message UpdateTargetNoteRequest {
+  Actor actor = 1;
+  string wallet = 2;
+  string note = 3;
+  uint64 expected_revision = 4;
+  string request_id = 5;
+}
+
+message UpdateTargetNoteResponse { TargetNote note = 1; }
+
+message ListActivitiesRequest {
+  Actor actor = 1;
+  PageInput page = 2;
+  string subscription_id = 3;
+  string from = 4;
+  string to = 5;
+  string summary_batch_id = 6;
+  string refresh_cursor = 7;
+}
+
+message ListActivitiesResponse {
+  repeated Activity activities = 1;
+  ActivityPageInfo page = 2;
+}
+
+message GetActivityRequest {
+  Actor actor = 1;
+  string activity_id = 2;
+}
+
+message GetActivityResponse { Activity activity = 1; }
+
+message ListSubscriptionHistoryRequest {
+  Actor actor = 1;
+  string subscription_id = 2;
+  PageInput page = 3;
+}
+
+message ListSubscriptionHistoryResponse {
+  repeated HistoryEntry entries = 1;
+  PageInfo page = 2;
+  string as_of = 3;
+}
+
+message GetSummaryBatchRequest {
+  Actor actor = 1;
+  string batch_id = 2;
+}
+
+message GetSummaryBatchResponse { SummaryBatch batch = 1; }
+
+message ListSummaryPartsRequest {
+  Actor actor = 1;
+  string batch_id = 2;
+  string activity_id = 3;
+  PageInput page = 4;
+}
+
+message ListSummaryPartsResponse {
+  repeated SummaryPart parts = 1;
+  PageInfo page = 2;
+  string as_of = 3;
+}
+
+message ListSubscriptionSummariesRequest {
+  Actor actor = 1;
+  PageInput page = 2;
+  string account_id = 3;
+  string state = 4;
+  string wallet = 5;
+  bool include_cancelled = 6;
+}
+
+message ListSubscriptionSummariesResponse {
+  repeated SubscriptionSummary summaries = 1;
+  PageInfo page = 2;
+  string as_of = 3;
+}
+
+message GetSubscriptionSummaryRequest {
+  Actor actor = 1;
+  string subscription_id = 2;
+}
+
+message GetSubscriptionSummaryResponse { SubscriptionSummary summary = 1; }
+
+message GetTraderSyncRuntimeStatusRequest {
+  Actor actor = 1;
+}
+
+message GetTraderSyncRuntimeStatusResponse { RuntimeStatus status = 1; }
+
+service TraderSyncService {
+  rpc ResolveTarget(ResolveTargetRequest) returns (ResolveTargetResponse);
+  rpc CreateSubscription(CreateSubscriptionRequest) returns (CreateSubscriptionResponse);
+  rpc ListSubscriptions(ListSubscriptionsRequest) returns (ListSubscriptionsResponse);
+  rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse);
+  rpc PauseSubscription(PauseSubscriptionRequest) returns (PauseSubscriptionResponse);
+  rpc ResumeSubscription(ResumeSubscriptionRequest) returns (ResumeSubscriptionResponse);
+  rpc CancelSubscription(CancelSubscriptionRequest) returns (CancelSubscriptionResponse);
+  rpc UpdateTargetNote(UpdateTargetNoteRequest) returns (UpdateTargetNoteResponse);
+  rpc ListActivities(ListActivitiesRequest) returns (ListActivitiesResponse);
+  rpc GetActivity(GetActivityRequest) returns (GetActivityResponse);
+  rpc ListSubscriptionHistory(ListSubscriptionHistoryRequest) returns (ListSubscriptionHistoryResponse);
+  rpc GetSummaryBatch(GetSummaryBatchRequest) returns (GetSummaryBatchResponse);
+  rpc ListSummaryParts(ListSummaryPartsRequest) returns (ListSummaryPartsResponse);
+  rpc ListSubscriptionSummaries(ListSubscriptionSummariesRequest) returns (ListSubscriptionSummariesResponse);
+  rpc GetSubscriptionSummary(GetSubscriptionSummaryRequest) returns (GetSubscriptionSummaryResponse);
+  rpc GetTraderSyncRuntimeStatus(GetTraderSyncRuntimeStatusRequest) returns (GetTraderSyncRuntimeStatusResponse);
+}

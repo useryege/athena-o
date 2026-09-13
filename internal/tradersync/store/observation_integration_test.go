@@ -19,16 +19,17 @@ import (
 
 func TestObservationCheckpointRequiresCurrentCoveredInterval(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	runtimeTestStore(t, db.Pool)
 	ctx := context.Background()
 	owner, e := ac.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
 	if e != nil {
 		t.Fatal(e)
 	}
 	in := activityFixture(t, db.Pool, owner.ID, 1)
-	if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_collector_control SET fencing_token=1,owner_id=$1,active_epoch=1`, uuid.NewString()); e != nil {
+	if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_collector_control SET fencing_token=1,owner_id=$1,active_epoch=1`, runtimeTestStore(t, db.Pool).runtimeGate.token.OwnerID); e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	rows, e := s.CheckpointIntervals(ctx, 1, "", 10)
 	if e != nil {
 		t.Fatal(e)
@@ -90,16 +91,17 @@ func TestSubscriptionCurrentIntervalUsesCausalEpochAcrossClockRegression(t *test
 
 func TestCheckpointRejectsExpiredClosedUncoveredAndClockRegression(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	runtimeTestStore(t, db.Pool)
 	ctx := context.Background()
 	owner, e := ac.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
 	if e != nil {
 		t.Fatal(e)
 	}
 	in := activityFixture(t, db.Pool, owner.ID, 1)
-	if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_collector_control SET fencing_token=1,owner_id=$1,active_epoch=1`, uuid.NewString()); e != nil {
+	if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_collector_control SET fencing_token=1,owner_id=$1,active_epoch=1`, runtimeTestStore(t, db.Pool).runtimeGate.token.OwnerID); e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	rows, e := s.CheckpointIntervals(ctx, 1, "", 100)
 	if e != nil || len(rows) != 1 {
 		t.Fatal(e)
@@ -174,11 +176,12 @@ func TestObservationHistoryRecoveryUsesSameGenerationAndRealBoundaries(t *testin
 		t.Fatal(e)
 	}
 	s := NewSQLStore(db.Pool)
-	session, e := s.AcquireCollectorSession(ctx)
+	session, e := s.AcquireRuntimeSession(ctx)
 	if e != nil {
 		t.Fatal(e)
 	}
-	defer session.Close(ctx)
+	s = bindTestRuntime(t, s, session)
+	defer session.CloseAfterWorkers(ctx)
 	if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_collector_control SET active_epoch=1 WHERE singleton`); e != nil {
 		t.Fatal(e)
 	}
@@ -186,7 +189,7 @@ func TestObservationHistoryRecoveryUsesSameGenerationAndRealBoundaries(t *testin
 	if _, e = db.Pool.Exec(ctx, `UPDATE trader_sync_monitor_intervals SET last_reliable_at=$1 WHERE subscription_id=$2`, checkpoint, in.Candidate.SubscriptionID); e != nil {
 		t.Fatal(e)
 	}
-	if e = s.CloseCollectorEpoch(ctx, session.Token, 1, "connection_lost"); e != nil {
+	if e = s.CloseCollectorEpoch(ctx, session.CollectorToken(), 1, "connection_lost"); e != nil {
 		t.Fatal(e)
 	}
 	before, e := s.ReadSubscriptions(ctx, owner.ID, tm.SubscriptionFilter{ID: in.Candidate.SubscriptionID}, tm.ReadPage{Limit: 1})
@@ -233,24 +236,24 @@ func TestObservationHistoryRecoveryUsesSameGenerationAndRealBoundaries(t *testin
 	if observed.CurrentInterval.EndedAt == nil || observed.Observation.State != "interrupted" || observed.Observation.LatestInterruption == nil || observed.Observation.LatestInterruption.Start != nil || observed.Observation.LatestInterruption.End != nil {
 		t.Fatal("logical close manufactured observation times", observed)
 	}
-	if e = s.CleanupStoppedBaselines(ctx, session.Token); e != nil {
+	if e = s.CleanupStoppedBaselines(ctx, session.CollectorToken()); e != nil {
 		t.Fatal(e)
 	}
 	assertShared("interrupted", 1)
-	epoch2, e := s.StartCollectorEpoch(ctx, session.Token)
+	epoch2, e := s.StartCollectorEpoch(ctx, session.CollectorToken())
 	if e != nil {
 		t.Fatal(e)
 	}
 	if _, e = db.Pool.Exec(ctx, `INSERT INTO trader_sync_baseline_attempts(owner_id,subscription_id,activation_generation,collector_epoch,filter_revision,expected_revision,state) VALUES($1,$2,1,$3,1,1,'pending')`, owner.ID, in.Candidate.SubscriptionID, epoch2); e != nil {
 		t.Fatal(e)
 	}
-	if e = s.CloseCollectorEpoch(ctx, session.Token, epoch2, "connection_lost"); e != nil {
+	if e = s.CloseCollectorEpoch(ctx, session.CollectorToken(), epoch2, "connection_lost"); e != nil {
 		t.Fatal(e)
 	}
-	if e = s.CleanupStoppedBaselines(ctx, session.Token); e != nil {
+	if e = s.CleanupStoppedBaselines(ctx, session.CollectorToken()); e != nil {
 		t.Fatal(e)
 	}
-	epoch3, e := s.StartCollectorEpoch(ctx, session.Token)
+	epoch3, e := s.StartCollectorEpoch(ctx, session.CollectorToken())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -304,12 +307,13 @@ func TestObservationExcludesAlreadyStoppedIntervalsAndPreparationFailure(t *test
 		t.Fatal(e)
 	}
 	s := NewSQLStore(db.Pool)
-	session, e := s.AcquireCollectorSession(ctx)
+	session, e := s.AcquireRuntimeSession(ctx)
 	if e != nil {
 		t.Fatal(e)
 	}
-	defer session.Close(ctx)
-	epoch, e := s.StartCollectorEpoch(ctx, session.Token)
+	s = bindTestRuntime(t, s, session)
+	defer session.CloseAfterWorkers(ctx)
+	epoch, e := s.StartCollectorEpoch(ctx, session.CollectorToken())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -334,10 +338,10 @@ func TestObservationExcludesAlreadyStoppedIntervalsAndPreparationFailure(t *test
 			t.Fatal(e)
 		}
 	}
-	if e = s.CloseCollectorEpoch(ctx, session.Token, epoch, "connection_lost"); e != nil {
+	if e = s.CloseCollectorEpoch(ctx, session.CollectorToken(), epoch, "connection_lost"); e != nil {
 		t.Fatal(e)
 	}
-	if e = s.CleanupStoppedBaselines(ctx, session.Token); e != nil {
+	if e = s.CleanupStoppedBaselines(ctx, session.CollectorToken()); e != nil {
 		t.Fatal(e)
 	}
 	for state, sub := range subscriptions {

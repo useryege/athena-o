@@ -49,7 +49,7 @@ make stop
 ```
 
 完整的环境变量、代码生成、本地运行和生产部署说明参见 [Makefile 操作手册](docs/operator-manual/makefile-commands.md)。
-Trader Sync 与 Notification 共用 `ATHENA_SERVER_POSTGRES_DSN` 指向的 `athena` 数据库；本地单实例生命周期、Polygon HTTP/WSS、Profile 来源、代理值和重置边界见[本地运行时编排](docs/design/development-runtime/local-runtime-orchestration.md)。
+Trader Sync 独立运行，通过 `make run-service SERVICE=trader-sync` 只启动它和本实例 PostgreSQL。API、Trader Sync 与 Notification 各自持有 pool，共用 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` 指向的权威数据库；本地单实例生命周期、Polygon HTTP/WSS、Profile 来源、代理值和重置边界见[本地运行时编排](docs/design/development-runtime/local-runtime-orchestration.md)。
 
 ## 项目结构
 

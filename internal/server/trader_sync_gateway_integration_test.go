@@ -63,7 +63,7 @@ type traderSyncGatewayHarness struct {
 	ctx                                context.Context
 	db                                 *pgtest.DB
 	traderStore                        *tsstore.SQLStore
-	composition                        *traderSyncRuntime
+	composition                        *gatewayServiceFixture
 	controller                         *accountaccess.Controller
 	ids                                map[string]string
 	profileRequests                    *atomic.Int32
@@ -79,7 +79,7 @@ func newTraderSyncGatewayHarness(t *testing.T, configure func(*ts.Config)) *trad
 	ctx := context.Background()
 	accounts := ac.NewSQLStore(db.Pool)
 	traderStore := tsstore.NewSQLStore(db.Pool)
-	accounts.SetAccessChangeHook(traderStore.ApplyAccessChangeTx)
+	accounts.SetAccessChangeHook(tsstore.NewAccessRevocationAdapter().ApplyAccessChangeTx)
 	codec, e := accountcredentials.NewJWTCodec([]byte(strings.Repeat("gateway-signing-key", 4)))
 	if e != nil {
 		t.Fatal(e)
@@ -136,11 +136,12 @@ func newTraderSyncGatewayHarness(t *testing.T, configure func(*ts.Config)) *trad
 	if configure != nil {
 		configure(&cfg)
 	}
-	composition, e := newTraderSyncRuntime(ctx, cfg, db.Pool, traderStore)
+	composition, e := newGatewayServiceFixture(ctx, cfg, db.Pool, traderStore)
 	if e != nil {
 		t.Fatal(e)
 	}
 	t.Cleanup(func() { _ = composition.Close() })
+	traderStore = composition.storage
 	profileRequests := &atomic.Int32{}
 	profileWallet := "0x00000000000000000000000000000000000000cc"
 	profileHTTP := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -202,7 +203,8 @@ func newTraderSyncGatewayHarness(t *testing.T, configure func(*ts.Config)) *trad
 		}
 		return h(next, r)
 	}))
-	api.RegisterTraderSyncServiceServer(grpcServer, facade.New(composition.service))
+	internalClient, _ := newGatewayInternalClient(t, composition.service)
+	api.RegisterTraderSyncServiceServer(grpcServer, facade.New(internalClient, athena.resolveTraderSyncActor))
 	go grpcServer.Serve(listener)
 	t.Cleanup(grpcServer.Stop)
 	conn, e := grpc.Dial(listener.Addr().String(), grpc.WithInsecure())
@@ -310,6 +312,7 @@ func TestTraderSyncGatewayRealCredentialsAndOwnerPrivacy(t *testing.T) {
 	}
 	get("other", base+"?page.page_size=1&page.cursor="+url.QueryEscape(listing.Page.NextCursor), 400)
 	get("member", base+"?page.page_size=2&page.cursor="+url.QueryEscape(listing.Page.NextCursor), 400)
+	get("member", base+"?page.page_size=1&state=paused&page.cursor="+url.QueryEscape(listing.Page.NextCursor), 400)
 	adminRaw := get("admin", "/api/v1/admin/trader-sync/subscriptions/"+subscription, 200)
 	if strings.Contains(string(adminRaw), "private-note") || strings.Contains(string(adminRaw), "targetDisplay") {
 		t.Fatal("administrator received private projection", string(adminRaw))

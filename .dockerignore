@@ -2,3 +2,10 @@ tmp/
 .env
 .env.*
 secrets/
+.run/
+.tmp/
+.superpowers/
+.worktrees/
+.git/
+**/node_modules/
+dist/

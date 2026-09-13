@@ -158,12 +158,12 @@ state is limited to lifecycle cancellation and goroutine tracking.
 | Setting | Behavior |
 | --- | --- |
 | `ATHENA_SPORTS_LIVE_LISTEN_ADDRESS` / `--address` | gRPC bind address; default `0.0.0.0`. |
-| `ATHENA_SPORTS_LIVE_LISTEN_PORT` / `--port` | gRPC port; default `8094`. The local Procfile uses `ATHENA_SPORTS_LIVE_PORT` to supply this flag. |
+| `ATHENA_SPORTS_LIVE_LISTEN_PORT` / `--port` | gRPC port; default `8094`. This module is not selected by the default local full-stack graph; configure its direct process explicitly. |
 | `ATHENA_SPORTS_LIVE_POSTGRES_DSN` | PostgreSQL connection for database `sports_live`; required at process startup. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls embedded migration application during store connection; default `true`. |
 | `ATHENA_SPORTS_LIVE_NOTIFICATION_ENABLED` / `--notification-enabled` | Enables both price and score notifications; default `true`. |
 | `ATHENA_SPORTS_LIVE_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; local default `127.0.0.1:8086`. Production Compose supplies its service DNS address. |
-| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Shared Notification internal Bearer attached to every non-health system-domain RPC. It must contain at least 32 non-whitespace bytes and match the Notification process; Procfile supplies the local default and Compose requires the production value. |
+| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Shared Notification internal Bearer attached to every non-health system-domain RPC. It must contain at least 32 non-whitespace bytes and match the Notification process; Direct local launches must supply a matching token; Compose requires the production value. |
 | `ATHENA_SPORTS_LIVE_NOTIFICATION_INVITE_CODE` / `--notification-invite-code` | Optional `r` query parameter added to Polymarket links; default empty. |
 | `ATHENA_SPORTS_LIVE_PRICE_ALERT_COOLDOWN` / `--price-alert-cooldown` | Same-band repeat cooldown; default 15 minutes, accepted range one second through 24 hours. |
 | `ATHENA_LOGFORMAT`, `ATHENA_LOGLEVEL` / command flags | Shared process log format and level; defaults `json` and `info`. |

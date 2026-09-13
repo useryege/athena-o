@@ -32,6 +32,31 @@ import (
 	"time"
 )
 
+// Only activity construction owns a Trader Sync runtime. Notification's own
+// summary adapter remains unbound and uses its caller-owned account transaction.
+func summaryRuntimeStore(t *testing.T, pool *pgxpool.Pool) (*ts.SQLStore, func()) {
+	t.Helper()
+	base := ts.NewSQLStore(pool)
+	owner, err := base.AcquireRuntimeSession(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	release := func() {
+		t.Helper()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := owner.CloseAfterWorkers(ctx); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Cleanup(release)
+	trader, err := base.WithRuntime(owner.RuntimeToken())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return trader, release
+}
+
 func summaryProjectionFixture(t *testing.T, pool *pgxpool.Pool, owner string, index int) tm.Projection {
 	return summaryWalletFixture(t, pool, owner, index, common.HexToAddress("0x1111111111111111111111111111111111111111"))
 }
@@ -112,7 +137,7 @@ func TestSummarySourceGateActualStartAndDynamicCooldown(t *testing.T) {
 			if _, e = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID); e != nil {
 				t.Fatal(e)
 			}
-			trader := ts.NewSQLStore(db.Pool)
+			trader, _ := summaryRuntimeStore(t, db.Pool)
 			if e = trader.ConfigureActivities("https://athena.test/base"); e != nil {
 				t.Fatal(e)
 			}
@@ -190,8 +215,17 @@ func TestSummarySourceGateActualStartAndDynamicCooldown(t *testing.T) {
 			sendCtx, sendCancel := context.WithCancel(ctx)
 			defer sendCancel()
 			sendCtx = context.WithValue(sendCtx, dispatchSlotKey{}, dispatchSlot{clock: clock, until: clock.Now().Add(time.Second), budget: budget, reservation: reservation})
+			var workers sync.WaitGroup
+			defer func() {
+				cancel()
+				workers.Wait()
+			}()
 			done := make(chan error, 1)
-			go func() { done <- source.Dispatch(sendCtx, c, func(time.Time) { budget.Start(c, clock.Now()) }) }()
+			workers.Add(1)
+			go func() {
+				defer workers.Done()
+				done <- source.Dispatch(sendCtx, c, func(time.Time) { budget.Start(c, clock.Now()) })
+			}()
 			select {
 			case <-client.entered:
 			case e := <-done:
@@ -206,7 +240,12 @@ func TestSummarySourceGateActualStartAndDynamicCooldown(t *testing.T) {
 			}
 			next := summaryProjectionSource(t, db.Pool, owner.ID, first.Candidate.SubscriptionID, first.Candidate.AttemptID, first.Trade.Wallet, first.Confirmation.SettledAt, 13)
 			projected := make(chan error, 1)
-			go func() { _, _, e := trader.Project(ctx, next); projected <- e }()
+			workers.Add(1)
+			go func() {
+				defer workers.Done()
+				_, _, e := trader.Project(ctx, next)
+				projected <- e
+			}()
 			select {
 			case e := <-projected:
 				t.Fatal("activity formed between freeze and ordinary start", e)
@@ -399,7 +438,7 @@ func TestSummaryMissingStartKeepsSentAndDurableHead(t *testing.T) {
 	if _, e = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID); e != nil {
 		t.Fatal(e)
 	}
-	trader := ts.NewSQLStore(db.Pool)
+	trader, releaseRuntime := summaryRuntimeStore(t, db.Pool)
 	if e = trader.ConfigureActivities("https://athena.test/base"); e != nil {
 		t.Fatal(e)
 	}
@@ -413,6 +452,7 @@ func TestSummaryMissingStartKeepsSentAndDurableHead(t *testing.T) {
 			t.Fatal(e)
 		}
 	}
+	releaseRuntime()
 
 	var calls atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -481,7 +521,7 @@ func summaryServiceFixture(t *testing.T, client utiltelegram.Client) (*Service, 
 	if _, e = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID); e != nil {
 		t.Fatal(e)
 	}
-	trader := ts.NewSQLStore(db.Pool)
+	trader, releaseRuntime := summaryRuntimeStore(t, db.Pool)
 	if e = trader.ConfigureActivities("https://athena.test/base"); e != nil {
 		t.Fatal(e)
 	}
@@ -495,6 +535,7 @@ func summaryServiceFixture(t *testing.T, client utiltelegram.Client) (*Service, 
 			t.Fatal(e)
 		}
 	}
+	releaseRuntime()
 
 	service := NewService(ns.NewSQLStore(db.Pool), NewTelegramSender(client, nil), nil, nil)
 	if e = service.ConfigureSummaries(db.Pool, "https://athena.test/base"); e != nil {
@@ -633,9 +674,14 @@ func TestSummaryFirstNotStartedAndActual429KeepDifferentBoundaries(t *testing.T)
 				return
 			}
 			next := summaryProjectionSource(t, pool, owner, first.Candidate.SubscriptionID, first.Candidate.AttemptID, first.Trade.Wallet, first.Confirmation.SettledAt, 13)
-			if _, _, e = source.trader.Project(ctx, next); e != nil {
+			trader, releaseRuntime := summaryRuntimeStore(t, pool)
+			if e = trader.ConfigureActivities("https://athena.test/base"); e != nil {
 				t.Fatal(e)
 			}
+			if _, _, e = trader.Project(ctx, next); e != nil {
+				t.Fatal(e)
+			}
+			releaseRuntime()
 			future, e := source.Ready(ctx, time.Now())
 			if e != nil || len(future) != 1 || future[0].NotBefore.Before(started.Add(time.Minute)) || future[0].Deadline == nil {
 				t.Fatal("next batch lost 60-second reservation", future, e)

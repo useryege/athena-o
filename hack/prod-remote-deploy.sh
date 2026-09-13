@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
+caller_trader_sync_image="${TRADER_SYNC_IMAGE:-}"
+caller_prod_account_state_maintenance="${PROD_ACCOUNT_STATE_MAINTENANCE:-}"
+caller_prod_account_state_external_consumers_stopped="${PROD_ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED:-}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -9,6 +12,7 @@ source "${SCRIPT_DIR}/lib/ssh-command.sh"
 ENV_FILE="${PROD_ENV_FILE:-${REPO_ROOT}/.env}"
 COMPOSE_FILE="${PROD_COMPOSE_FILE:-${REPO_ROOT}/docker-compose.prod.yml}"
 IMAGE="${PROD_IMAGE:-athena:local}"
+TRADER_SYNC_IMAGE="${TRADER_SYNC_IMAGE:-athena-trader-sync:local}"
 MINIO_IMAGE="${MINIO_IMAGE:-athena-minio:9e49d5e7a648-go1.27.1}"
 MINIO_MC_IMAGE="${MINIO_MC_IMAGE:-athena-minio-mc:7394ce0dd2a8-go1.27.1}"
 REMOTE_USER="${REMOTE_USER:-root}"
@@ -22,8 +26,8 @@ GOOGLE_OIDC_SECRET_ARCHIVE_PATH="secrets/google-oidc-client-secret"
 GOOGLE_OIDC_SECRET_SOURCE=""
 ATHENA_CONTAINER_UID=999
 
-if [[ "${ACTION}" != "deploy" && "${ACTION}" != "hot-deploy" && "${ACTION}" != "destroy" ]]; then
-  echo "Usage: $0 deploy|hot-deploy|destroy"
+if [[ "${ACTION}" != "deploy" && "${ACTION}" != "hot-deploy" && "${ACTION}" != "destroy" && "${ACTION}" != "trader-sync-deploy" ]]; then
+  echo "Usage: $0 deploy|hot-deploy|trader-sync-deploy|destroy"
   exit 1
 fi
 
@@ -33,6 +37,9 @@ if [[ -f "${ENV_FILE}" ]]; then
   source "${ENV_FILE}"
   set +a
 fi
+if [[ -n "${caller_trader_sync_image}" ]]; then export TRADER_SYNC_IMAGE="${caller_trader_sync_image}"; fi
+if [[ -n "${caller_prod_account_state_maintenance}" ]]; then export PROD_ACCOUNT_STATE_MAINTENANCE="${caller_prod_account_state_maintenance}"; fi
+if [[ -n "${caller_prod_account_state_external_consumers_stopped}" ]]; then export PROD_ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED="${caller_prod_account_state_external_consumers_stopped}"; fi
 
 REMOTE_HOST="${REMOTE_HOST:-}"
 if [[ -z "${REMOTE_HOST}" ]]; then
@@ -59,7 +66,9 @@ APP_DIR="$7"
 MIGRATE_MODULE="$8"
 GOOGLE_OIDC_SECRET_ARCHIVE_PATH="$9"
 ATHENA_CONTAINER_UID="${10}"
-export PROD_IMAGE="$IMAGE" MINIO_IMAGE MINIO_MC_IMAGE
+TRADER_SYNC_IMAGE="${11}"
+export PROD_ACCOUNT_STATE_MAINTENANCE="${12}" PROD_ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED="${13}"
+export PROD_IMAGE="$IMAGE" MINIO_IMAGE MINIO_MC_IMAGE TRADER_SYNC_IMAGE
 export PROD_POSTGRES_VOLUME="$POSTGRES_VOLUME" PROD_REDIS_VOLUME="$REDIS_VOLUME" PROD_MINIO_VOLUME="$MINIO_VOLUME"
 compose() {
   docker compose -f docker-compose.prod.yml --env-file .env "$@"
@@ -67,13 +76,16 @@ compose() {
 REMOTE
 )"
 
+PROD_REMOTE_SETUP+=$'\n'"$(cat "${SCRIPT_DIR}/lib/account-state-deploy.sh")"
+
 prod_remote_exec() {
   local body="$1"
   ssh_exec "${REMOTE}" bash -c "${PROD_REMOTE_SETUP}"$'\n'"${body}" _ \
     "${IMAGE}" "${MINIO_IMAGE}" "${MINIO_MC_IMAGE}" \
     "${POSTGRES_VOLUME}" "${REDIS_VOLUME}" "${MINIO_VOLUME}" \
     "${REMOTE_APP_DIR}" "${MIGRATE_MODULE}" \
-    "${GOOGLE_OIDC_SECRET_ARCHIVE_PATH}" "${ATHENA_CONTAINER_UID}"
+    "${GOOGLE_OIDC_SECRET_ARCHIVE_PATH}" "${ATHENA_CONTAINER_UID}" \
+    "${TRADER_SYNC_IMAGE}" "${PROD_ACCOUNT_STATE_MAINTENANCE:-false}" "${PROD_ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED:-false}"
 }
 
 destroy_remote() {
@@ -92,6 +104,7 @@ if [ -f "$APP_DIR/docker-compose.prod.yml" ]; then
   else
     compose_env_file=/dev/null
   fi
+  export ATHENA_ACCOUNT_STATE_POSTGRES_DSN=postgres://cleanup/unused ATHENA_URL=https://cleanup.invalid ATHENA_TRADER_SYNC_HTTP_URL=https://cleanup.invalid ATHENA_TRADER_SYNC_WSS_URL=wss://cleanup.invalid
   export ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN=dummy-worm-trading-internal-token-32bytes
   export ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN=dummy-notification-internal-token-32bytes
   export ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN=dummy-telegram-bot-token
@@ -227,6 +240,28 @@ if [[ ! -s "${GOOGLE_OIDC_SECRET_SOURCE}" ]]; then
   exit 1
 fi
 
+trader_secret_names=(INTERNAL_AUTH_TOKEN CURSOR_HMAC_KEY TLS_CERT TLS_KEY TLS_CA)
+trader_secret_files=(trader-sync-token trader-sync-cursor-key trader-sync-cert trader-sync-key trader-sync-ca)
+trader_secret_sources=()
+for suffix in "${trader_secret_names[@]}"; do
+  variable="ATHENA_TRADER_SYNC_${suffix}_FILE"
+  source_file="${!variable:-}"
+  if [[ -z "$source_file" ]]; then echo "$variable is required" >&2; exit 1; fi
+  if [[ "$source_file" != /* ]]; then source_file="$(dirname "$ENV_FILE")/$source_file"; fi
+  if [[ ! -s "$source_file" ]]; then echo "$variable must reference a nonempty file" >&2; exit 1; fi
+  trader_secret_sources+=("$source_file")
+done
+trader_token="$(cat "${trader_secret_sources[0]}")"
+validate_internal_auth_token ATHENA_TRADER_SYNC_INTERNAL_AUTH_TOKEN "$trader_token"
+if [[ "$trader_token" == "$(cat "${trader_secret_sources[1]}")" ]]; then echo 'Trader Sync internal token must differ from cursor key' >&2; exit 1; fi
+unset trader_token
+if [[ -n "${ATHENA_TRADER_SYNC_INTERNAL_AUTH_TOKEN:-}" || -n "${ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY:-}" ]]; then
+  echo 'Production Trader Sync secrets require only _FILE values' >&2; exit 1
+fi
+if [[ -z "${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:-}" ]]; then echo 'ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required' >&2; exit 1; fi
+if ! docker image inspect "${TRADER_SYNC_IMAGE}" >/dev/null 2>&1; then
+  echo "Docker image not found locally: ${TRADER_SYNC_IMAGE}"; exit 1
+fi
 if ! docker image inspect "${IMAGE}" >/dev/null 2>&1; then
   echo "Docker image not found locally: ${IMAGE}"
   exit 1
@@ -271,7 +306,16 @@ else
   install -m 0600 /dev/null "${UPLOAD_DIR}/${GOOGLE_OIDC_SECRET_ARCHIVE_PATH}"
 fi
 
-if [[ "${ACTION}" == "hot-deploy" ]]; then
+for index in "${!trader_secret_names[@]}"; do
+  variable="ATHENA_TRADER_SYNC_${trader_secret_names[index]}_FILE"
+  archive_file="secrets/${trader_secret_files[index]}"
+  install -m 0600 "${trader_secret_sources[index]}" "${UPLOAD_DIR}/${archive_file}"
+  # Input is a fixed configuration key; values are fixed archive-relative paths.
+  sed -i "/^${variable}=/d" "${UPLOAD_DIR}/.env"
+  printf "%s='./%s'\n" "$variable" "$archive_file" >>"${UPLOAD_DIR}/.env"
+done
+
+if [[ "${ACTION}" == "hot-deploy" || "${ACTION}" == "trader-sync-deploy" ]]; then
   echo "Checking remote host and persistent data volumes on ${REMOTE}..."
   prod_remote_exec "$(cat <<'REMOTE'
 docker --version >/dev/null
@@ -299,20 +343,43 @@ chown "$(id -u):$(id -g)" "$APP_DIR/.env"
 chmod 0600 "$APP_DIR/.env"
 chown "$ATHENA_CONTAINER_UID:$ATHENA_CONTAINER_UID" "$APP_DIR/$GOOGLE_OIDC_SECRET_ARCHIVE_PATH"
 chmod 0600 "$APP_DIR/$GOOGLE_OIDC_SECRET_ARCHIVE_PATH"
+for secret in "$APP_DIR"/secrets/trader-sync-*; do
+  chown "$ATHENA_CONTAINER_UID:$ATHENA_CONTAINER_UID" "$secret"
+  chmod 0600 "$secret"
+done
 REMOTE
 )"
 
-  for image in "${IMAGE}" "${MINIO_IMAGE}" "${MINIO_MC_IMAGE}"; do
+  for image in "${IMAGE}" "${MINIO_IMAGE}" "${MINIO_MC_IMAGE}" "${TRADER_SYNC_IMAGE}"; do
     echo "Streaming Docker image ${image} to ${REMOTE}..."
     docker save "${image}" | prod_remote_exec 'docker load'
   done
+
+  if [[ "${ACTION}" == "trader-sync-deploy" ]]; then
+    prod_remote_exec "$(cat <<'REMOTE'
+cd "$APP_DIR"
+account_state_prepare
+compose stop -t 40 athena-trader-sync
+running="$(compose ps --status running -q athena-trader-sync)"
+if [ -n "$running" ]; then echo 'Trader Sync has not exited' >&2; exit 1; fi
+if [ "$ACCOUNT_STATE_CHANGED" = true ]; then
+  compose up -d --no-deps --force-recreate athena-server athena-notification athena-trader-sync
+else
+  compose up -d --no-deps --force-recreate athena-trader-sync
+fi
+compose ps
+REMOTE
+)"
+    echo 'Trader Sync deployment completed.'
+    exit 0
+  fi
 
   echo "Ensuring the Profit Sharing database exists on ${REMOTE}..."
   prod_remote_exec "$(cat <<'REMOTE'
 cd "$APP_DIR"
 compose up -d postgres redis
 postgres_ready=false
-for attempt in $(seq 1 60); do
+for attempt in $(seq 1 120); do
   if compose exec -T postgres sh -c 'pg_isready --username "$POSTGRES_USER" --dbname "$POSTGRES_DB"' >/dev/null 2>&1; then
     postgres_ready=true
     break
@@ -364,12 +431,12 @@ REMOTE
   echo "Running Athena migrations on ${REMOTE}..."
   # Remote variables expand in bash on the target host.
   # shellcheck disable=SC2016
-  prod_remote_exec 'cd "$APP_DIR"; compose --profile tools run --rm athena-migrate athena up --module "$MIGRATE_MODULE"'
+  prod_remote_exec 'cd "$APP_DIR"; account_state_prepare; other_schema_up'
 
   echo "Recreating Athena backend services on ${REMOTE}..."
   prod_remote_exec "$(cat <<'REMOTE'
 cd "$APP_DIR"
-mapfile -t athena_services < <(compose config --services | awk '/^athena-/ && $0 != "athena-migrate" && $0 != "athena-server" { print }')
+mapfile -t athena_services < <(compose config --services | awk '/^athena-/ && $0 != "athena-migrate" && $0 != "athena-account-state-migrate" && $0 != "athena-server" { print }')
 if ((${#athena_services[@]} == 0)); then
   echo 'No Athena backend services found in docker-compose.prod.yml.'
   exit 1
@@ -407,10 +474,14 @@ chown "$(id -u):$(id -g)" "$APP_DIR/.env"
 chmod 0600 "$APP_DIR/.env"
 chown "$ATHENA_CONTAINER_UID:$ATHENA_CONTAINER_UID" "$APP_DIR/$GOOGLE_OIDC_SECRET_ARCHIVE_PATH"
 chmod 0600 "$APP_DIR/$GOOGLE_OIDC_SECRET_ARCHIVE_PATH"
+for secret in "$APP_DIR"/secrets/trader-sync-*; do
+  chown "$ATHENA_CONTAINER_UID:$ATHENA_CONTAINER_UID" "$secret"
+  chmod 0600 "$secret"
+done
 REMOTE
 )"
 
-for image in "${IMAGE}" "${MINIO_IMAGE}" "${MINIO_MC_IMAGE}"; do
+for image in "${IMAGE}" "${MINIO_IMAGE}" "${MINIO_MC_IMAGE}" "${TRADER_SYNC_IMAGE}"; do
   echo "Streaming Docker image ${image} to ${REMOTE}..."
   docker save "${image}" | prod_remote_exec 'docker load'
 done
@@ -418,12 +489,12 @@ done
 echo "Starting PostgreSQL on ${REMOTE}..."
 # Remote variables expand in bash on the target host.
 # shellcheck disable=SC2016
-prod_remote_exec 'cd "$APP_DIR"; compose up -d postgres'
+prod_remote_exec 'cd "$APP_DIR"; compose up -d --wait --wait-timeout 120 postgres'
 
 echo "Running Athena migrations on ${REMOTE}..."
 # Remote variables expand in bash on the target host.
 # shellcheck disable=SC2016
-prod_remote_exec 'cd "$APP_DIR"; compose --profile tools run --rm athena-migrate athena up --module "$MIGRATE_MODULE"'
+prod_remote_exec 'cd "$APP_DIR"; account_state_prepare; other_schema_up'
 
 echo "Starting Athena on ${REMOTE}..."
 # Remote variables expand in bash on the target host.

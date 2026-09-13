@@ -31,10 +31,11 @@ type CollectorRPC interface {
 	HeaderByNumber(context.Context, *big.Int) (*types.Header, error)
 }
 
-// Collector implements BaselineRegistrar. Task12 constructs it once, injects it
-// into SubscriptionService and owns Run's cancellation/join. The RPC is borrowed.
+// Collector implements BaselineRegistrar. Runtime constructs it once and injects
+// it into SubscriptionService. The owner session and source RPC are borrowed.
 type Collector struct {
 	store              *store.SQLStore
+	runtimeStore       *store.SQLStore
 	node               CollectorRPC
 	config             Config
 	running            atomic.Bool
@@ -84,74 +85,44 @@ func (c *Collector) RegisterTx(ctx context.Context, tx pgx.Tx, sub tm.Subscripti
 	// No memory lock spans SQL or the caller's later COMMIT.
 	return c.store.RegisterBaselineTx(ctx, tx, sub, token, epoch, observed)
 }
-func (c *Collector) Run(ctx context.Context) error {
+
+// Run borrows the process owner's session; it never claims or releases ownership.
+func (c *Collector) Run(ctx context.Context, owner *store.RuntimeSession) error {
+	if owner == nil {
+		return errors.New("collector runtime owner required")
+	}
 	if !c.running.CompareAndSwap(false, true) {
 		return errors.New("collector already running")
 	}
 	defer c.running.Store(false)
-	owner, err := c.store.AcquireCollectorSession(ctx)
+	var err error
+	c.runtimeStore, err = c.store.WithRuntime(owner.RuntimeToken())
 	if err != nil {
 		return err
 	}
-	if err = owner.RecoverPending(ctx); err != nil {
-		closeCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
-		defer stop()
-		return errors.Join(err, owner.Close(closeCtx))
-	}
-	runCtx, cancel := context.WithCancel(ctx)
 	c.mu.Lock()
-	c.token = owner.Token
+	c.token = owner.CollectorToken()
 	c.mu.Unlock()
-	fatal := make(chan error, 1)
-	fail := func(err error) {
-		if err != nil && runCtx.Err() == nil {
-			select {
-			case fatal <- err:
-			default:
-			}
-			cancel()
-		}
-	}
-	var workers sync.WaitGroup
-	workers.Add(1)
-	go func() {
-		defer workers.Done()
-		ticker := time.NewTicker(500 * time.Millisecond)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-runCtx.Done():
-				return
-			case <-ticker.C:
-				checkCtx, stop := context.WithTimeout(runCtx, 5*time.Second)
-				err := owner.Check(checkCtx)
-				stop()
-				if err != nil {
-					fail(fmt.Errorf("collector ownership: %w", err))
-					return
-				}
-			}
-		}
-	}()
+	defer func() { c.mu.Lock(); c.token = 0; c.epoch = 0; c.session = nil; c.mu.Unlock() }()
 	delay := c.config.ReconnectMin
-	for runCtx.Err() == nil {
-		if err = c.store.CleanupStoppedBaselines(runCtx, owner.Token); err != nil {
-			fail(err)
-			break
+	for ctx.Err() == nil {
+		if err = c.runtimeStore.CleanupStoppedBaselines(ctx, owner.CollectorToken()); err != nil {
+			if ctx.Err() != nil {
+				return nil
+			}
+			return err
 		}
-		err = c.runSession(runCtx, owner.Token)
-		if errors.Is(err, errCollectorBoundary) {
-			fail(err)
-			break
+		err = c.runSession(ctx, owner.CollectorToken())
+		if ctx.Err() != nil {
+			return nil
 		}
-		if runCtx.Err() != nil {
-			break
+		if errors.Is(err, errCollectorBoundary) || errors.Is(err, store.ErrRuntimeFenced) {
+			return err
 		}
 		c.report(err)
-		// Backoff is outside Session; no implicit reconnect can reuse its epoch.
 		timer := time.NewTimer(delay + time.Duration(rand.Int64N(int64(delay/4)+1)))
 		select {
-		case <-runCtx.Done():
+		case <-ctx.Done():
 			timer.Stop()
 		case <-timer.C:
 		}
@@ -161,35 +132,14 @@ func (c *Collector) Run(ctx context.Context) error {
 			delay = c.config.ReconnectMax
 		}
 	}
-	cancel()
-	workers.Wait()
-	closeCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
-	closeErr := owner.Close(closeCtx)
-	stop()
-	c.mu.Lock()
-	c.token = 0
-	c.epoch = 0
-	c.session = nil
-	c.mu.Unlock()
-	select {
-	case err = <-fatal:
-		return errors.Join(err, closeErr)
-	default:
-	}
-	if closeErr != nil {
-		return closeErr
-	}
-	if ctx.Err() != nil {
-		return nil
-	}
-	return err
+	return nil
 }
 func (c *Collector) runSession(ctx context.Context, token uint64) (result error) {
 	session, err := liverpc.DialSession(ctx, c.config.WebSocketURL, c.config.ProxyURL)
 	if err != nil {
 		return err
 	}
-	epoch, err := c.store.StartCollectorEpoch(ctx, token)
+	epoch, err := c.runtimeStore.StartCollectorEpoch(ctx, token)
 	if err != nil {
 		session.Close()
 		return fmt.Errorf("%w: start epoch: %w", errCollectorBoundary, err)
@@ -204,7 +154,7 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 	c.checkpointAfter = ""
 	c.rawPersistInFlight = false
 	c.mu.Unlock()
-	intake := NewIntake(c.store, token)
+	intake := NewIntake(c.runtimeStore, token)
 	receivedErr := make(chan error, 1)
 	healthErr := make(chan error, 1)
 	wssErr := make(chan error, 1)
@@ -269,7 +219,7 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 				head, err := c.node.HeaderByNumber(requestCtx, nil)
 				if err == nil {
 					var now time.Time
-					now, err = c.store.BaselineNow(requestCtx)
+					now, err = c.runtimeStore.BaselineNow(requestCtx)
 					if err == nil {
 						_, err = ComputeBaseline(now, 0, head)
 					}
@@ -328,10 +278,10 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 		if result != nil && !(errors.Is(result, context.Canceled) && ctx.Err() != nil) {
 			reason = "receive_interrupted: " + result.Error()
 		}
-		if closeErr := c.store.CloseCollectorEpoch(closeCtx, token, epoch, reason); closeErr != nil {
+		if closeErr := c.runtimeStore.CloseCollectorEpoch(closeCtx, token, epoch, reason); closeErr != nil {
 			result = errors.Join(result, fmt.Errorf("%w: %w", errCollectorBoundary, closeErr))
 		}
-		result = errors.Join(result, c.store.CleanupStoppedBaselines(closeCtx, token))
+		result = errors.Join(result, c.runtimeStore.CleanupStoppedBaselines(closeCtx, token))
 	}()
 	reconcile := time.NewTicker(250 * time.Millisecond)
 	defer reconcile.Stop()
@@ -357,28 +307,28 @@ func (c *Collector) runSession(ctx context.Context, token uint64) (result error)
 	}
 }
 func (c *Collector) reconcile(ctx context.Context, token, epoch uint64, session *liverpc.Session, active *[]common.Address, filters *[]string, revision *uint64) error {
-	needed, err := c.store.SubscriptionsNeedingBaseline(ctx)
+	needed, err := c.runtimeStore.SubscriptionsNeedingBaseline(ctx)
 	if err != nil {
 		return err
 	}
 	for _, sub := range needed {
-		if err = c.store.RegisterNeededBaseline(ctx, sub, c.RegisterTx); err != nil && !errors.Is(err, store.ErrBaselineChanged) {
+		if err = c.runtimeStore.RegisterNeededBaseline(ctx, sub, c.RegisterTx); err != nil && !errors.Is(err, store.ErrBaselineChanged) {
 			return err
 		}
 	}
-	pending, err := c.store.PendingBaselines(ctx)
+	pending, err := c.runtimeStore.PendingBaselines(ctx)
 	if err != nil {
 		return err
 	}
 	for _, attempt := range pending {
 		if attempt.Epoch == 0 {
 			wallet := attempt.Subscription.Wallet
-			if err = c.store.BindBaseline(ctx, token, attempt.ID, epoch, func() tm.WalletObservation { return session.Snapshot(wallet) }); err != nil && !errors.Is(err, store.ErrBaselineChanged) {
+			if err = c.runtimeStore.BindBaseline(ctx, token, attempt.ID, epoch, func() tm.WalletObservation { return session.Snapshot(wallet) }); err != nil && !errors.Is(err, store.ErrBaselineChanged) {
 				return err
 			}
 		}
 	}
-	targets, err := c.store.CollectorTargets(ctx)
+	targets, err := c.runtimeStore.CollectorTargets(ctx)
 	if err != nil {
 		return err
 	}
@@ -399,7 +349,7 @@ func (c *Collector) reconcile(ctx context.Context, token, epoch uint64, session 
 		}
 		if !replacementFailed {
 			next := *revision + 1
-			if err = c.store.AckFilters(ctx, token, epoch, next); err != nil {
+			if err = c.runtimeStore.AckFilters(ctx, token, epoch, next); err != nil {
 				return err
 			}
 			acknowledgedAt := time.Now()
@@ -419,7 +369,7 @@ func (c *Collector) reconcile(ctx context.Context, token, epoch uint64, session 
 			}
 		}
 	}
-	pending, err = c.store.PendingBaselines(ctx)
+	pending, err = c.runtimeStore.PendingBaselines(ctx)
 	if err != nil {
 		return err
 	}
@@ -442,7 +392,7 @@ func (c *Collector) reconcile(ctx context.Context, token, epoch uint64, session 
 				continue
 			}
 			requestCtx, stop := context.WithTimeout(ctx, 5*time.Second)
-			now, e := c.store.BaselineNow(requestCtx)
+			now, e := c.runtimeStore.BaselineNow(requestCtx)
 			if e != nil {
 				stop()
 				return e
@@ -451,18 +401,18 @@ func (c *Collector) reconcile(ctx context.Context, token, epoch uint64, session 
 			if e != nil {
 				stop()
 				c.report(e)
-				if e = c.store.FailBaseline(ctx, token, attempt.ID, "baseline_head_invalid"); e != nil && !errors.Is(e, store.ErrBaselineChanged) {
+				if e = c.runtimeStore.FailBaseline(ctx, token, attempt.ID, "baseline_head_invalid"); e != nil && !errors.Is(e, store.ErrBaselineChanged) {
 					return e
 				}
 				continue
 			}
-			e = c.store.SaveBaselineBoundary(requestCtx, token, attempt.ID, *revision, at)
+			e = c.runtimeStore.SaveBaselineBoundary(requestCtx, token, attempt.ID, *revision, at)
 			stop()
 			if e != nil && !errors.Is(e, store.ErrBaselineChanged) {
 				return e
 			}
 		} else if !time.Now().Before(*attempt.CandidateAt) {
-			if e := c.store.CompleteBaseline(ctx, token, attempt.ID); e != nil && !errors.Is(e, store.ErrBaselineChanged) {
+			if e := c.runtimeStore.CompleteBaseline(ctx, token, attempt.ID); e != nil && !errors.Is(e, store.ErrBaselineChanged) {
 				return e
 			}
 		}
@@ -556,9 +506,9 @@ func (c *Collector) persistHealthCheckpoints(ctx context.Context, token, epoch u
 	}
 	passCtx, stop := context.WithTimeout(ctx, 5*time.Second)
 	defer stop()
-	rows, err := c.store.CheckpointIntervals(passCtx, epoch, after, 100)
+	rows, err := c.runtimeStore.CheckpointIntervals(passCtx, epoch, after, 100)
 	if err == nil && len(rows) == 0 && after != "" {
-		rows, err = c.store.CheckpointIntervals(passCtx, epoch, "", 100)
+		rows, err = c.runtimeStore.CheckpointIntervals(passCtx, epoch, "", 100)
 	}
 	if err != nil {
 		if ctx.Err() == nil {
@@ -580,7 +530,7 @@ func (c *Collector) persistHealthCheckpoints(ctx context.Context, token, epoch u
 			c.checkpointAfter = target.ID
 		}
 		c.mu.Unlock()
-		if err = c.store.SaveObservationCheckpoint(passCtx, target, evidence, alive); err != nil {
+		if err = c.runtimeStore.SaveObservationCheckpoint(passCtx, target, evidence, alive); err != nil {
 			if errors.Is(err, store.ErrCollectorFenced) {
 				return err
 			}

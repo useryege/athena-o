@@ -1,3 +1,20 @@
+# Freeze command-line/environment inputs before any $(shell ...) can export them.
+# $(value) returns literal data; := prevents a later recursive Make expansion.
+override SERVICE := $(value SERVICE)
+override SERVICES := $(value SERVICES)
+override INSTANCE := $(value INSTANCE)
+override DB_MODE := $(value DB_MODE)
+override ENV_FILE := $(value ENV_FILE)
+ifneq ($(origin TRADER_SYNC_IMAGE),undefined)
+override TRADER_SYNC_IMAGE := $(value TRADER_SYNC_IMAGE)
+endif
+ifneq ($(origin ACCOUNT_STATE_MAINTENANCE),undefined)
+override ACCOUNT_STATE_MAINTENANCE := $(value ACCOUNT_STATE_MAINTENANCE)
+endif
+ifneq ($(origin ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED),undefined)
+override ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED := $(value ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED)
+endif
+
 PACKAGE=github.com/useryege/athena/common
 CURRENT_DIR=$(shell pwd)
 DIST_DIR=${CURRENT_DIR}/dist
@@ -37,6 +54,7 @@ endif
 PATH:=$(PATH):$(PWD)/hack
 
 PROD_IMAGE?=athena:local
+TRADER_SYNC_IMAGE?=athena-trader-sync:local
 PROD_COMPOSE_FILE?=docker-compose.prod.yml
 PROD_ENV_FILE?=.env.prod
 REMOTE_APP_DIR?=/root/athena
@@ -213,15 +231,15 @@ bsc-swap-indexer-build-image:
 # Manage the foreground local development runtime and its resources.
 .PHONY: run
 run:
-	bash ./hack/local-runtime.sh start
+	@exec bash ./hack/local-runtime.sh start
 
 .PHONY: stop
 stop:
-	bash ./hack/local-runtime.sh stop
+	@exec bash ./hack/local-runtime.sh stop
 
 .PHONY: run-reset
 run-reset:
-	bash ./hack/local-runtime.sh reset
+	@exec bash ./hack/local-runtime.sh reset
 
 .PHONY: e2e
 e2e:
@@ -372,17 +390,13 @@ minio-images-local:
 
 .PHONY: prod-build-local
 prod-build-local: minio-images-local
+	$(MAKE) build-service-image SERVICE=trader-sync
 	DOCKER_BUILDKIT=1 $(DOCKER) build --platform=$(TARGET_ARCH) -t $(PROD_IMAGE) .
 
 # use http://127.0.0.1:8080
 .PHONY: prod-start-local
 prod-start-local:
-	$(DOCKER) volume create $(PROD_POSTGRES_VOLUME) >/dev/null
-	$(DOCKER) volume create $(PROD_REDIS_VOLUME) >/dev/null
-	$(DOCKER) volume create $(PROD_MINIO_VOLUME) >/dev/null
-	$(PROD_COMPOSE_LOCAL) up -d postgres
-	$(PROD_COMPOSE_LOCAL) --profile tools run --rm athena-migrate athena up --module $(PROD_MIGRATE_MODULE)
-	ATHENA_SERVER_DISABLE_AUTH=false $(PROD_COMPOSE_LOCAL) up -d
+	ATHENA_SERVER_CONTAINER_USER=$$(id -u):0 bash ./hack/prod-start-local.sh
 
 .PHONY: prod-stop-local
 prod-stop-local:
@@ -419,3 +433,54 @@ prod-destroy-remote:
 cm:
 	git add .
 	git commit -m "commit"
+
+.PHONY: account-state-migrate-build account-state-schema-contract
+account-state-migrate-build:
+	CGO_ENABLED=$(CGO_FLAG) go build -o $(DIST_DIR)/athena-account-state-migrate ./cmd/athena-account-state-migrate
+
+# Requires an explicit test administrator DSN; the tool creates and removes only its own random database.
+account-state-schema-contract:
+	go run ./tools/account-state-schema-contract > internal/accountstate/schema/contract.json.tmp
+	mv internal/accountstate/schema/contract.json.tmp internal/accountstate/schema/contract.json
+
+# Values are exported as data, never interpolated into a shell recipe.
+export SERVICE SERVICES INSTANCE DB_MODE ENV_FILE ACCOUNT_STATE_MAINTENANCE ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED
+.PHONY: build-service run-service run-services runtime-status stop-instance reset-instance seed-service account-state-migrate
+build-service:
+	@exec bash ./hack/run-local-runtime.sh make-build
+run-service:
+	@exec bash ./hack/run-local-runtime.sh make-run-service
+run-services:
+	@exec bash ./hack/run-local-runtime.sh make-run-services
+runtime-status:
+	@exec bash ./hack/run-local-runtime.sh make-status
+stop-instance:
+	@exec bash ./hack/run-local-runtime.sh make-stop
+reset-instance:
+	@exec bash ./hack/run-local-runtime.sh make-reset
+seed-service:
+	@exec bash ./hack/run-local-runtime.sh make-seed
+account-state-migrate:
+	go run ./cmd/athena-account-state-migrate up --timeout=120s
+	go run ./cmd/athena-account-state-migrate verify --timeout=120s
+
+# Export user input as data; do not splice image tags or service names into shell code.
+export TRADER_SYNC_IMAGE SERVICE TARGET_ARCH VERSION GIT_COMMIT GIT_TREE_STATE GIT_TAG BUILD_DATE
+export PROD_IMAGE PROD_COMPOSE_FILE PROD_ENV_FILE REMOTE_APP_DIR REMOTE_USER
+export PROD_POSTGRES_VOLUME PROD_REDIS_VOLUME PROD_MINIO_VOLUME PROD_MIGRATE_MODULE
+export MINIO_IMAGE MINIO_MC_IMAGE
+
+.PHONY: build-service-image prod-trader-sync-deploy-remote
+build-service-image:
+	@test "$$SERVICE" = trader-sync || { echo 'build-service-image requires SERVICE=trader-sync' >&2; exit 1; }
+	@DOCKER_BUILDKIT=1 docker build --platform="$$TARGET_ARCH" -f deploy/trader-sync/Dockerfile -t "$$TRADER_SYNC_IMAGE" \
+	  --build-arg "VERSION=$$VERSION" --build-arg "GIT_COMMIT=$$GIT_COMMIT" --build-arg "GIT_TREE_STATE=$$GIT_TREE_STATE" \
+	  --build-arg "GIT_TAG=$$GIT_TAG" --build-arg "BUILD_DATE=$$BUILD_DATE" .
+
+prod-trader-sync-deploy-remote:
+	$(MAKE) build-service-image SERVICE=trader-sync
+	bash ./hack/prod-remote-deploy.sh trader-sync-deploy
+
+.PHONY: trader-sync-acceptance
+trader-sync-acceptance:
+	@bash ./hack/trader-sync-independent-acceptance.sh

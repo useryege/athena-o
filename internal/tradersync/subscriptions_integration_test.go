@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/stretchr/testify/require"
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcredentials"
 	as "github.com/useryege/athena/internal/accountstate/store"
@@ -208,7 +209,7 @@ func TestSubscriptionTransactions(t *testing.T) {
 	if !((e1 == nil && status.Code(e2) == codes.ResourceExhausted) || (e2 == nil && status.Code(e1) == codes.ResourceExhausted)) {
 		t.Fatal(e1, e2)
 	}
-	a.SetAccessChangeHook(s.ApplyAccessChangeTx)
+	a.SetAccessChangeHook(ts.NewAccessRevocationAdapter().ApplyAccessChangeTx)
 	access, e := a.GetAccountAccess(ctx, owner)
 	if e != nil {
 		t.Fatal(e)
@@ -230,7 +231,6 @@ func TestAccessHookAtomicRevocation(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := ts.NewSQLStore(db.Pool)
 	var subID string
 	if e = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,decode(repeat('44',20),'hex'),'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb) RETURNING id`, acct.ID).Scan(&subID); e != nil {
 		t.Fatal(e)
@@ -248,7 +248,7 @@ func TestAccessHookAtomicRevocation(t *testing.T) {
 		if previous.Modules[accountaccess.ModuleTraderSync] != accountaccess.AccessLevelReadWrite {
 			t.Fatal(previous)
 		}
-		if e := s.RevokeTx(ctx, tx, id, "permission_revoked"); e != nil {
+		if e := ts.NewAccessRevocationAdapter().RevokeTx(ctx, tx, id, "permission_revoked"); e != nil {
 			return e
 		}
 		if fail {
@@ -364,7 +364,7 @@ func TestRevocationAndPermitShareOwnerGate(t *testing.T) {
 				if e != nil {
 					t.Fatal(e)
 				}
-				s := ts.NewSQLStore(db.Pool)
+				s, runtimeOwner := subscriptionRuntimeFixture(t, db.Pool)
 				ns := notificationstore.NewSQLStore(db.Pool)
 				entered, release := make(chan struct{}), make(chan struct{})
 				a.SetAccessChangeHook(func(ctx context.Context, tx pgx.Tx, id string, prev, next accountaccess.Access) error {
@@ -373,7 +373,7 @@ func TestRevocationAndPermitShareOwnerGate(t *testing.T) {
 							close(entered)
 							<-release
 						}
-						return s.RevokeTx(ctx, tx, id, "permission_revoked")
+						return ts.NewAccessRevocationAdapter().RevokeTx(ctx, tx, id, "permission_revoked")
 					}
 					return nil
 				})
@@ -381,6 +381,7 @@ func TestRevocationAndPermitShareOwnerGate(t *testing.T) {
 					t.Fatal(e)
 				}
 				id := projectPermitFixture(t, db.Pool, s, acct.ID)
+				require.NoError(t, runtimeOwner.CloseAfterWorkers(ctx))
 				candidate := delivery.Candidate{Ref: delivery.WorkRef{Kind: "account", ID: id}, ChatID: 123}
 				access, e := a.GetAccountAccess(ctx, acct.ID)
 				if e != nil {
@@ -598,8 +599,8 @@ func TestCanonicalProfileEvidenceSurvivesRealResolveCreateAndActivity(t *testing
 	defer server.Close()
 	base, _ := url.Parse(server.URL)
 	adapter := polymarket.NewProfileAdapter(routedHTTP{base, server.Client().Transport})
-	s := ts.NewSQLStore(db.Pool)
-	resolver, e := NewTargetResolver(db.Pool, adapter, s.RequireGrantTx, s.ResolveContextTx)
+	s, _ := subscriptionRuntimeFixture(t, db.Pool)
+	resolver, e := NewTargetResolver(s, adapter, s.RequireGrantTx, s.ResolveContextTx)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -613,7 +614,7 @@ func TestCanonicalProfileEvidenceSurvivesRealResolveCreateAndActivity(t *testing
 	if resolved.Card.DisplayName.Availability != "unavailable" || queryAt.IsZero() || !strings.HasPrefix(source, "https://gamma-api.polymarket.com/public-profile?address=") {
 		t.Fatal("real adapter did not preserve cross-check evidence", resolved.Card.DisplayName)
 	}
-	svc, e := NewSubscriptionService(db.Pool, s, resolver, &fakeBaseline{})
+	svc, e := NewSubscriptionService(s, s, resolver, &fakeBaseline{})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -675,4 +676,91 @@ func TestCanonicalProfileEvidenceSurvivesRealResolveCreateAndActivity(t *testing
 		t.Fatal(e)
 	}
 	assertEvidence("Activity", display)
+}
+
+func TestRuntimeWriteSubscriptionAndResolutionRejectTakeover(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	account, err := as.NewSQLStore(db.Pool).EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
+	require.NoError(t, err)
+	base := ts.NewSQLStore(db.Pool)
+	a, err := base.AcquireRuntimeSession(ctx)
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, a.CloseAfterWorkers(ctx)) })
+	gate, err := ts.NewRuntimeWriteGate(db.Pool, a.RuntimeToken())
+	require.NoError(t, err)
+	guarded, err := ts.NewRuntimeSQLStore(db.Pool, gate)
+	require.NoError(t, err)
+	service, err := NewSubscriptionService(gate, guarded, &fakeRevalidator{}, &fakeBaseline{})
+	require.NoError(t, err)
+	wallet := common.HexToAddress("0x1111111111111111111111111111111111111111")
+	identity := tm.Identity{Wallet: wallet, ResolutionInput: wallet.Hex(), Digest: sha256.Sum256(wallet.Bytes())}
+	raw := []byte(uuid.NewString())
+	digest := sha256.Sum256(raw)
+	require.NoError(t, txgate.WithAccountTx(ctx, gate, account.ID, func(tx pgx.Tx) error {
+		if e := guarded.SaveConfirmationTx(ctx, tx, account.ID, identity, digest[:], time.Now().Add(time.Minute)); e != nil {
+			return e
+		}
+		return guarded.SaveConfirmationCardTx(ctx, tx, account.ID, digest[:], tm.ConfirmationCard{Identity: identity})
+	}))
+	input := tm.CreateInput{Token: base64.RawURLEncoding.EncodeToString(raw), RequestID: uuid.NewString()}
+	sub, err := service.Create(ctx, account.ID, input)
+	require.NoError(t, err)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/public-profile" {
+			json.NewEncoder(w).Encode(map[string]any{"proxyWallet": wallet.Hex(), "name": "Alpha"})
+			return
+		}
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+	u, _ := url.Parse(server.URL)
+	resolver, err := NewTargetResolver(gate, polymarket.NewProfileAdapter(routedHTTP{u, server.Client().Transport}), guarded.RequireGrantTx, guarded.ResolveContextTx)
+	require.NoError(t, err)
+	require.NoError(t, a.CloseAfterWorkers(ctx))
+	b, err := base.AcquireRuntimeSession(ctx)
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, b.CloseAfterWorkers(ctx)) })
+	snapshot := func() string {
+		var raw string
+		require.NoError(t, db.Pool.QueryRow(ctx, `SELECT jsonb_build_array(
+   (SELECT jsonb_agg(to_jsonb(t)) FROM trader_sync_subscriptions t),
+   (SELECT jsonb_agg(to_jsonb(t)) FROM trader_sync_target_confirmations t),
+   (SELECT jsonb_agg(to_jsonb(t)) FROM trader_sync_target_notes t),
+   (SELECT jsonb_agg(to_jsonb(t)) FROM trader_sync_baseline_attempts t)
+  )::text`).Scan(&raw))
+		return raw
+	}
+	for _, tc := range []struct {
+		name string
+		call func() error
+	}{
+		{"resolve", func() error { _, e := resolver.Resolve(ctx, account.ID, wallet.Hex()); return e }},
+		{"create", func() error { _, e := service.Create(ctx, account.ID, input); return e }},
+		{"change", func() error {
+			_, e := service.Change(ctx, account.ID, "pause", tm.ChangeInput{SubscriptionID: sub.ID, RequestID: uuid.NewString(), ExpectedRevision: 1})
+			return e
+		}},
+		{"note", func() error {
+			_, e := service.UpdateNote(ctx, account.ID, tm.NoteInput{Wallet: wallet, RequestID: uuid.NewString(), Note: "stale", ExpectedRevision: 0})
+			return e
+		}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			before := snapshot()
+			require.ErrorIs(t, tc.call(), ts.ErrRuntimeFenced)
+			require.Equal(t, before, snapshot())
+		})
+	}
+}
+
+func subscriptionRuntimeFixture(t *testing.T, pool *pgxpool.Pool) (*ts.SQLStore, *ts.RuntimeSession) {
+	t.Helper()
+	base := ts.NewSQLStore(pool)
+	owner, err := base.AcquireRuntimeSession(context.Background())
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, owner.CloseAfterWorkers(context.Background())) })
+	guarded, err := base.WithRuntime(owner.RuntimeToken())
+	require.NoError(t, err)
+	return guarded, owner
 }

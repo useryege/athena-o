@@ -3,8 +3,10 @@ package commands
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/useryege/athena/internal/accountstate/schema"
 	"github.com/useryege/athena/internal/migration"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/db/postgres"
@@ -83,9 +85,27 @@ func newStatusCommand() *cobra.Command {
 }
 
 func migrateUp(ctx context.Context, module migration.Module) error {
+	if module.Name == "account-state" {
+		dsn, err := schema.LoadDSN(os.LookupEnv)
+		if err != nil {
+			return err
+		}
+		return schema.Up(ctx, dsn)
+	}
 	return postgres.Migrate(ctx, postgres.DSN(module.DSNEnv, module.Database), module.Migrations, module.Dir)
 }
 
 func migrationStatus(ctx context.Context, module migration.Module) error {
+	if module.Name == "account-state" {
+		dsn, err := schema.LoadDSN(os.LookupEnv)
+		if err != nil {
+			return err
+		}
+		pool, err := schema.ConnectVerified(ctx, dsn)
+		if pool != nil {
+			pool.Close()
+		}
+		return err
+	}
 	return postgres.MigrationStatus(ctx, postgres.DSN(module.DSNEnv, module.Database), module.Migrations, module.Dir)
 }

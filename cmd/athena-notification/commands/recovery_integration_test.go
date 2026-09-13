@@ -42,7 +42,7 @@ func TestRecoveryCommandConfirmsExactInstanceWithoutTelegramConfiguration(t *tes
 		t.Fatal(err)
 	}
 	session.Close()
-	t.Setenv("ATHENA_SERVER_POSTGRES_DSN", db.DSN)
+	t.Setenv("ATHENA_ACCOUNT_STATE_POSTGRES_DSN", db.DSN)
 	t.Setenv("ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN", "")
 	t.Setenv("ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN", "")
 	command := NewCommand()

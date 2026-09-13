@@ -1,6 +1,6 @@
 # Trader Sync 内部 gRPC 字段与映射契约
 
-> 状态：本轮补全的契约草案，待审阅；尚未创建或生成正式 proto。职责、权限、事务及构建运行方式沿用两份已确认规格，不重复审批。
+> 状态：2026-09-13 已获用户确认，正在实现；正式 proto 与验证进度见实施计划。职责、权限、事务及构建运行方式沿用两份已确认规格，不重复审批。
 
 依据：[服务边界](2026-09-13-trader-sync-service-boundaries-design.md)、[构建与运行](2026-09-13-trader-sync-local-runtime-design.md)、[当前公开 RPC](../../../internal/server/tradersync/tradersync.proto)、[公开资源类型](../../../pkg/apis/application/v1alpha1/trader_sync_types.go)及[现有映射](../../../internal/server/tradersync/tradersync.go)。适用 SDS-R2、R4、R6、R7、R8。
 
@@ -174,4 +174,4 @@ message CreateSubscriptionResponse { Subscription subscription = 1; }
 
 ## 7. 本轮审阅记录
 
-已对照公开 proto、Go 类型和实际映射逐项核验，并完成一次独立的只读契约审阅：16 个 RPC、34 个资源消息、215 个资源字段均有对应，未发现字段号或 presence 遗漏。修正了时间规则中的 `CurvePoint.t` 例外，明确 Unix 秒字符串；补齐了内部认证/Actor 错误的 gRPC code 与稳定 ErrorInfo reason。两跳、授权及运行测试列入实施计划，目前没有执行，本文仍为待用户审阅的新增契约。
+已对照公开 proto、Go 类型和实际映射逐项核验，并完成一次独立的只读契约审阅：16 个 RPC、34 个资源消息、215 个资源字段均有对应，未发现字段号或 presence 遗漏。修正了时间规则中的 `CurvePoint.t` 例外，明确 Unix 秒字符串；补齐了内部认证/Actor 错误的 gRPC code 与稳定 ErrorInfo reason。两跳、授权及运行测试列入实施计划，目前没有执行，用户随后已确认按本契约及实施计划开始实现。

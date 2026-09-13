@@ -7,8 +7,6 @@ import (
 	"io/fs"
 	"net"
 	"net/url"
-	"strings"
-	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -23,9 +21,11 @@ const (
 	pingInterval = time.Second
 
 	AutoMigrateEnv = "ATHENA_POSTGRES_AUTO_MIGRATE"
+	// Advisory locks are database-scoped, independent of DSN spelling or migration directory.
+	MigrationLockName = "athena:postgres:schema:v1"
 )
 
-var gooseMu sync.Mutex
+var gooseGate = make(chan struct{}, 1)
 
 var (
 	runMigrations = Migrate
@@ -99,10 +99,14 @@ func OpenPool(ctx context.Context, module string, dsn string) (*pgxpool.Pool, er
 
 func Migrate(ctx context.Context, dsn string, migrations fs.FS, dir string) error {
 	return withMigrationDB(ctx, dsn, func(db *sql.DB) error {
-		gooseMu.Lock()
-		defer gooseMu.Unlock()
+		select {
+		case gooseGate <- struct{}{}:
+			defer func() { <-gooseGate }()
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 
-		return withMigrationAdvisoryLock(ctx, db, migrationLockName(dsn, dir), func() error {
+		return withMigrationAdvisoryLock(ctx, db, MigrationLockName, func() error {
 			goose.SetBaseFS(migrations)
 			defer goose.SetBaseFS(nil)
 			if err := goose.SetDialect("postgres"); err != nil {
@@ -118,10 +122,14 @@ func Migrate(ctx context.Context, dsn string, migrations fs.FS, dir string) erro
 
 func MigrationStatus(ctx context.Context, dsn string, migrations fs.FS, dir string) error {
 	return withMigrationDB(ctx, dsn, func(db *sql.DB) error {
-		gooseMu.Lock()
-		defer gooseMu.Unlock()
+		select {
+		case gooseGate <- struct{}{}:
+			defer func() { <-gooseGate }()
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 
-		return withMigrationAdvisoryLock(ctx, db, migrationLockName(dsn, dir), func() error {
+		return withMigrationAdvisoryLock(ctx, db, MigrationLockName, func() error {
 			goose.SetBaseFS(migrations)
 			defer goose.SetBaseFS(nil)
 			if err := goose.SetDialect("postgres"); err != nil {
@@ -145,24 +153,16 @@ func withMigrationAdvisoryLock(ctx context.Context, db *sql.DB, lockName string,
 	if _, err := conn.ExecContext(ctx, "SELECT pg_advisory_lock(hashtext($1::text)::bigint)", lockName); err != nil {
 		return fmt.Errorf("acquire postgres migration lock: %w", err)
 	}
+	// If the deadline expired, withMigrationDB closes the physical database
+	// connections and PostgreSQL releases their session locks. Cleanup must not
+	// start a new unbounded network operation after the caller deadline.
 	defer func() {
-		if _, err := conn.ExecContext(context.Background(), "SELECT pg_advisory_unlock(hashtext($1::text)::bigint)", lockName); err != nil {
+		if _, err := conn.ExecContext(ctx, "SELECT pg_advisory_unlock(hashtext($1::text)::bigint)", lockName); err != nil && ctx.Err() == nil {
 			log.Warnf("failed to release postgres migration lock %q: %v", lockName, err)
 		}
 	}()
 
 	return fn()
-}
-
-func migrationLockName(dsn string, dir string) string {
-	if parsed, err := url.Parse(dsn); err == nil && parsed.Host != "" {
-		database := strings.TrimPrefix(parsed.Path, "/")
-		if database == "" {
-			database = parsed.Query().Get("dbname")
-		}
-		return fmt.Sprintf("%s://%s/%s:%s", parsed.Scheme, parsed.Host, database, dir)
-	}
-	return fmt.Sprintf("%s:%s", dsn, dir)
 }
 
 func withMigrationDB(ctx context.Context, dsn string, fn func(*sql.DB) error) error {

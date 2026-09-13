@@ -31,11 +31,11 @@ func (s *SQLStore) LoadMetadata(ctx context.Context, key string) (tm.TradeMetada
 	return result, e == nil, e
 }
 func (s *SQLStore) SaveMetadata(ctx context.Context, key string, result tm.TradeMetadata) error {
-	tx, e := s.pool.Begin(ctx)
+	tx, e := s.BeginTx(ctx, pgx.TxOptions{})
 	if e != nil {
 		return e
 	}
-	defer tx.Rollback(context.Background())
+	defer rollbackRuntimeTx(tx)
 	if e = s.saveMetadataTx(ctx, tx, key, result); e != nil {
 		return e
 	}
@@ -225,9 +225,9 @@ func (s *SQLStore) RefreshComboPage(ctx context.Context, fetch func(context.Cont
 }
 func (s *SQLStore) beginDirectoryTx(ctx context.Context) (pgx.Tx, error) {
 	if s.directoryTransactions != nil {
-		return s.directoryTransactions.BeginTx(ctx, pgx.TxOptions{})
+		return s.runtimeTransactions(s.directoryTransactions).BeginTx(ctx, pgx.TxOptions{})
 	}
-	return s.pool.BeginTx(ctx, pgx.TxOptions{})
+	return s.BeginTx(ctx, pgx.TxOptions{})
 }
 func directoryWakeup(next, now time.Time) time.Time { return time.Now().Add(next.Sub(now)) }
 func validateComboPage(page pm.ComboMarketPage, cursor string, visited []string) error {

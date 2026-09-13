@@ -32,7 +32,7 @@ func TestReadActivitiesSnapshotRefreshAndPrivacy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	if err = s.ConfigureActivities("https://athena.test"); err != nil {
 		t.Fatal(err)
 	}
@@ -323,7 +323,7 @@ func TestReadActivityUsesPersistedCurrentAttemptAcrossClockRollbackAndTie(t *tes
 			if _, err = db.Pool.Exec(ctx, `INSERT INTO telegram_bindings(account_id,telegram_user_id,telegram_chat_id,telegram_display_name,revision)VALUES($1,123,123,'test',1)`, owner.ID); err != nil {
 				t.Fatal(err)
 			}
-			s := NewSQLStore(db.Pool)
+			s := runtimeTestStore(t, db.Pool)
 			if err = s.ConfigureActivities("https://athena.test"); err != nil {
 				t.Fatal(err)
 			}
@@ -431,7 +431,7 @@ func TestRolledBackActivityDoesNotMoveSnapshot(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	if e = s.ConfigureActivities("https://athena.test"); e != nil {
 		t.Fatal(e)
 	}

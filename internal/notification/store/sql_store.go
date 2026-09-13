@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -11,9 +12,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
-	accountstatemigrations "github.com/useryege/athena/internal/accountstate/store/migrations"
+	"github.com/useryege/athena/internal/accountstate/schema"
 	notificationsqlc "github.com/useryege/athena/internal/notification/store/sqlc"
-	"github.com/useryege/athena/util/db/postgres"
 )
 
 type sqlPool interface {
@@ -41,17 +41,15 @@ func NewSQLStoreWithQuerier(querier notificationsqlc.Querier) *SQLStore {
 
 func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {
 	return func(ctx context.Context) (*SQLStore, error) {
-		pool, err := postgres.ConnectAndMigrate(ctx, postgres.Options{
-			Module:       "notification",
-			DSNEnv:       "ATHENA_SERVER_POSTGRES_DSN",
-			Database:     "athena",
-			Migrations:   accountstatemigrations.FS,
-			MigrationDir: accountstatemigrations.Dir,
-		})
+		dsn, err := schema.LoadDSN(os.LookupEnv)
 		if err != nil {
 			return nil, err
 		}
-		log.Info("notification postgres migrations are up to date")
+		pool, err := schema.ConnectVerified(ctx, dsn)
+		if err != nil {
+			return nil, err
+		}
+		log.Info("notification postgres schema verified")
 		return NewSQLStore(pool), nil
 	}
 }

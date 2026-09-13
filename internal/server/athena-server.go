@@ -70,7 +70,7 @@ import (
 	sportshistoryapiclient "github.com/useryege/athena/internal/sportshistory/apiclient"
 	sportsliveapiclient "github.com/useryege/athena/internal/sportslive/apiclient"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
-	ts "github.com/useryege/athena/internal/tradersync"
+	trpc "github.com/useryege/athena/internal/tradersync/apiclient"
 	tradersyncstore "github.com/useryege/athena/internal/tradersync/store"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	"github.com/useryege/athena/internal/walletsecret"
@@ -192,12 +192,10 @@ type AthenaServer struct {
 	// apiFactory         api.Factory
 	// secretInformer    cache.SharedIndexInformer
 	// configMapInformer cache.SharedIndexInformer
-	serviceSet        *AthenaServiceSet
-	traderSyncRuntime *traderSyncRuntime
-	processCancel     context.CancelFunc
-	processWorkers    gosync.WaitGroup
-	traderSyncDone    chan struct{}
-	traderSyncErr     error
+	serviceSet       *AthenaServiceSet
+	traderSyncCloser goio.Closer
+	processCancel    context.CancelFunc
+	processWorkers   gosync.WaitGroup
 	// extensionManager   *extension.Manager
 	Shutdown           func()
 	terminateRequested atomic.Bool
@@ -205,7 +203,8 @@ type AthenaServer struct {
 }
 
 type AthenaServerOpts struct {
-	TraderSyncConfig ts.Config
+	// TraderSyncClient is borrowed. When nil, the API creates and owns its connection.
+	TraderSyncClient trpc.TraderSyncServiceClient
 	DisableAuth      bool
 	ContentTypes     []string
 	EnableGZip       bool
@@ -246,9 +245,6 @@ type AthenaServerOpts struct {
 
 // NewServer returns a new instance of the Athena API server
 func NewServer(ctx context.Context, opts AthenaServerOpts) (*AthenaServer, error) {
-	if err := opts.TraderSyncConfig.Validate(); err != nil {
-		return nil, err
-	}
 	ctx, processCancel := context.WithCancel(ctx)
 	initialized := false
 	defer func() {
@@ -276,8 +272,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) (*AthenaServer, error
 			_ = accountStateStore.Close()
 		}
 	}()
-	traderSyncStore := tradersyncstore.NewSQLStore(accountStateStore.Pool())
-	accountStateStore.SetAccessChangeHook(traderSyncStore.ApplyAccessChangeTx)
+	accountStateStore.SetAccessChangeHook(tradersyncstore.NewAccessRevocationAdapter().ApplyAccessChangeTx)
 	if initErr := accountStateStore.RequireAccessChangeHook(); initErr != nil {
 		return nil, initErr
 	}
@@ -478,18 +473,15 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) (*AthenaServer, error
 	}
 	a.walletAvatarHTTP = walletAvatarHTTP
 
-	runtime, err := newTraderSyncRuntime(ctx, opts.TraderSyncConfig, accountStateStore.Pool(), traderSyncStore)
-	if err != nil {
-		return nil, err
+	if a.TraderSyncClient == nil {
+		a.TraderSyncClient, a.traderSyncCloser = newTraderSyncClient(os.LookupEnv)
 	}
-	a.traderSyncRuntime = runtime
 	a.processWorkers.Add(2)
 	go func() { defer a.processWorkers.Done(); accountAvatarHTTP.RunGarbageCollector(ctx, 0, 0) }()
 	go func() { defer a.processWorkers.Done(); walletAvatarHTTP.RunGarbageCollector(ctx, 0, 0) }()
 	if !opts.DisableAuth {
 		a.userStateStorage.Init(ctx)
 	}
-	a.startProcessServices(ctx)
 	initialized = true
 	return a, nil
 
@@ -515,8 +507,9 @@ func (server *AthenaServer) Close() error {
 		server.processCancel()
 	}
 	var result error
-	if server.traderSyncRuntime != nil {
-		result = server.traderSyncRuntime.Close()
+	if server.traderSyncCloser != nil {
+		result = server.traderSyncCloser.Close()
+		server.traderSyncCloser = nil
 	}
 	server.processWorkers.Wait()
 	if server.staticRoot != nil {
@@ -744,7 +737,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	healthService := health.NewServer()
 
 	return &AthenaServiceSet{
-		TraderSyncService:      servertradersync.New(server.traderSyncRuntime.service),
+		TraderSyncService:      servertradersync.New(server.TraderSyncClient, server.resolveTraderSyncActor),
 		HealthService:          healthService,
 		SessionService:         sessionService,
 		AppBootstrapService:    appBootstrapService,
@@ -1248,12 +1241,6 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) (runE
 		}
 	}()
 
-	select {
-	case <-server.traderSyncDone:
-		server.terminateRequested.Store(true)
-		return server.traderSyncErr
-	default:
-	}
 	// Prepare all services for the athena server
 	svcSet := newAthenaServiceSet(server)
 
@@ -1343,10 +1330,6 @@ func (server *AthenaServer) Run(ctx context.Context, listeners *Listeners) (runE
 		if signal != gracefulRestartSignal {
 			server.terminateRequested.Store(true)
 		}
-		server.Shutdown()
-	case <-server.traderSyncDone:
-		server.terminateRequested.Store(true)
-		runErr = server.traderSyncErr
 		server.Shutdown()
 	case <-ctx.Done():
 		log.Infof("API Server: %s", ctx.Err())

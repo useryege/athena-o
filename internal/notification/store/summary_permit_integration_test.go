@@ -6,6 +6,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/stretchr/testify/require"
 	"github.com/useryege/athena/internal/accountstate/txgate"
 	"github.com/useryege/athena/internal/notification/delivery"
 	"testing"
@@ -66,5 +67,28 @@ func TestAuthorizeTxSharesFixedSessionCommitAndStartedDoesNotRelockAccount(t *te
 	}
 	if e = s.RecordOutcome(ctx, p, delivery.Outcome{Kind: "sent", MessageID: "1"}, time.Now()); e != nil {
 		t.Fatal(e)
+	}
+}
+
+func TestPermitAndActualOutcomeDoNotRequireTraderSyncRuntime(t *testing.T) {
+	for _, kind := range []string{"sent", "unknown"} {
+		t.Run(kind, func(t *testing.T) {
+			s, ref := attemptFixture(t, "account")
+			ctx := context.Background()
+			blocker, err := s.pool.Begin(ctx)
+			require.NoError(t, err)
+			defer blocker.Rollback(ctx)
+			_, err = blocker.Exec(ctx, `SELECT 1 FROM trader_sync_runtime_control FOR UPDATE`)
+			require.NoError(t, err)
+			bounded, cancel := context.WithTimeout(ctx, 2*time.Second)
+			defer cancel()
+			permit, err := s.Authorize(bounded, testPermitCandidate(ref), uuid.New(), nil)
+			require.NoError(t, err)
+			require.NoError(t, s.RecordStarted(bounded, permit, time.Now()))
+			require.NoError(t, s.RecordOutcome(bounded, permit, delivery.Outcome{Kind: kind, MessageID: "123"}, time.Now()))
+			require.Equal(t, kind, deliveryState(t, s, ref))
+			_, err = s.Authorize(bounded, testPermitCandidate(ref), uuid.New(), nil)
+			require.ErrorIs(t, err, ErrDeliveryNotEligible)
+		})
 	}
 }

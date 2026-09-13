@@ -43,8 +43,9 @@ func TestEmptyIntervalKeepsActualEndpoint(t *testing.T) {
 	if _, e = db.Pool.Exec(ctx, `INSERT INTO trader_sync_monitor_intervals(owner_id,subscription_id,baseline_attempt_id,activation_generation,collector_epoch,filter_revision,expected_revision,registered_high,candidate_effective_at,effective_at) VALUES($1,$2,$3,1,1,1,1,1,clock_timestamp()+interval '1 hour',clock_timestamp()+interval '1 hour')`, account.ID, sub, attempt); e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
-	if e = txgate.WithAccountTx(ctx, db.Pool, account.ID, func(tx pgx.Tx) error { return s.RevokeTx(ctx, tx, account.ID, "permission_revoked") }); e != nil {
+	if e = txgate.WithAccountTx(ctx, db.Pool, account.ID, func(tx pgx.Tx) error {
+		return NewAccessRevocationAdapter().RevokeTx(ctx, tx, account.ID, "permission_revoked")
+	}); e != nil {
 		t.Fatal(e)
 	}
 	var empty bool
@@ -61,8 +62,7 @@ func TestAccessFlagsDoNotRevokeProduct(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
-	a.SetAccessChangeHook(s.ApplyAccessChangeTx)
+	a.SetAccessChangeHook(NewAccessRevocationAdapter().ApplyAccessChangeTx)
 	var id string
 	if e = db.Pool.QueryRow(ctx, `INSERT INTO trader_sync_subscriptions(owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,decode(repeat('12',20),'hex'),'enabled','pending_baseline','{"displayName":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"avatar":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"},"profileURL":{"availability":"unavailable","reasonCode":"fixture_not_queried","source":"fixture"}}'::jsonb) RETURNING id`, account.ID).Scan(&id); e != nil {
 		t.Fatal(e)
@@ -103,12 +103,11 @@ func TestResolutionContextOwnerNotesAndQuota(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := NewSQLStore(db.Pool)
 	wallet := common.HexToAddress("0x3333333333333333333333333333333333333333")
 	check := func(owner string, fn func(tm.ResolutionContext)) {
 		t.Helper()
 		if e := txgate.WithAccountTx(ctx, db.Pool, owner, func(tx pgx.Tx) error {
-			value, e := s.ResolveContextTx(ctx, tx, owner, wallet)
+			value, e := NewSQLStore(db.Pool).ResolveContextTx(ctx, tx, owner, wallet)
 			if e == nil {
 				fn(value)
 			}

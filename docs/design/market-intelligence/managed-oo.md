@@ -141,13 +141,13 @@ and pipeline serialization.
 | Setting | Behavior |
 | --- | --- |
 | `ATHENA_MANAGED_OO_LISTEN_ADDRESS` / `--address` | gRPC bind address; default `0.0.0.0`. |
-| `ATHENA_MANAGED_OO_LISTEN_PORT` / `--port` | gRPC port; default `8106`. The local Procfile uses `ATHENA_MANAGED_OO_PORT` to supply this flag. |
+| `ATHENA_MANAGED_OO_LISTEN_PORT` / `--port` | gRPC port; default `8106`. This module is not selected by the default local full-stack graph; configure its direct process explicitly. |
 | `ATHENA_MANAGED_OO_POSTGRES_DSN` | PostgreSQL connection for database `managed_oo`; required at startup. |
 | `ATHENA_POSTGRES_AUTO_MIGRATE` | Controls embedded migration application during store connection; default `true`. |
 | `ATHENA_MANAGED_OO_POLYGON_RPC_URL` / `--polygon-rpc-url` | Polygon JSON-RPC endpoint for chain head and log queries; default `https://polygon-rpc.com`. |
 | `ATHENA_MANAGED_OO_NOTIFICATION_ENABLED` / `--notification-enabled` | Enables proposal and dispute enqueueing; default `true`. |
 | `ATHENA_MANAGED_OO_NOTIFICATION_SERVER_ADDRESS` / `--notification-server-address` | Notification gRPC target; local default `127.0.0.1:8086`. Production Compose supplies its service DNS address. |
-| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Shared Notification internal Bearer attached to every non-health system-domain RPC. It must contain at least 32 non-whitespace bytes and match the Notification process; Procfile supplies the local default and Compose requires the production value. |
+| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Shared Notification internal Bearer attached to every non-health system-domain RPC. It must contain at least 32 non-whitespace bytes and match the Notification process; Direct local launches must supply a matching token; Compose requires the production value. |
 | `ATHENA_MANAGED_OO_NOTIFICATION_INVITE_CODE` / `--notification-invite-code` | Optional `r` query parameter added to Polymarket links; default empty. |
 | `ATHENA_LOGFORMAT`, `ATHENA_LOGLEVEL` / command flags | Shared process log format and level; defaults `json` and `info`. |
 

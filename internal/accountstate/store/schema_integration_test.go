@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"os/exec"
 	"testing"
@@ -72,7 +71,7 @@ func TestAthenaSchemaMigrateIsSafeAcrossTwoProcesses(t *testing.T) {
 		t.Fatalf("connect migration lock holder: %v", err)
 	}
 	defer lock.Close(context.Background())
-	lockName := migrationLockName(t, db.DSN, accountstatemigrations.Dir)
+	lockName := postgres.MigrationLockName
 	if _, err := lock.Exec(ctx, "SELECT pg_advisory_lock(hashtext($1::text)::bigint)", lockName); err != nil {
 		t.Fatalf("acquire migration lock: %v", err)
 	}
@@ -177,15 +176,6 @@ func waitForMigrationWaiters(ctx context.Context, pool *pgxpool.Pool, want int) 
 		case <-ticker.C:
 		}
 	}
-}
-
-func migrationLockName(t *testing.T, dsn string, dir string) string {
-	t.Helper()
-	parsed, err := url.Parse(dsn)
-	if err != nil {
-		t.Fatalf("parse migration DSN: %v", err)
-	}
-	return fmt.Sprintf("%s://%s/%s:%s", parsed.Scheme, parsed.Host, parsed.Path[1:], dir)
 }
 
 func commandOutput(command *exec.Cmd) string {

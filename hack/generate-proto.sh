@@ -113,6 +113,19 @@ if [ -n "${PROTO_FILES}" ]; then
     done
 fi
 
+# The legacy gogo grpc plugin predates ClientConnInterface. The independent
+# Trader Sync client accepts both real connections and unavailable dependencies.
+# Keep this adaptation in generation, scoped to the one new internal service.
+TRADER_SYNC_PROTO_GO="${PROJECT_ROOT}/internal/tradersync/apiclient/trader_sync.pb.go"
+if [ -f "${TRADER_SYNC_PROTO_GO}" ]; then
+    connection_declarations=$(grep -c 'cc \*grpc.ClientConn' "${TRADER_SYNC_PROTO_GO}")
+    if [ "${connection_declarations}" -ne 2 ]; then
+        echo "unexpected Trader Sync generated client connection declarations" >&2
+        exit 1
+    fi
+    sed -i 's/cc \*grpc.ClientConn/cc grpc.ClientConnInterface/g' "${TRADER_SYNC_PROTO_GO}"
+fi
+
 # This is used to delete the swagger file you don't want it to be show in the swagger UI.
 # # This file is generated but should not be checked in.
 # rm util/askpass/askpass.swagger.json

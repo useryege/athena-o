@@ -112,7 +112,7 @@ func TestObservationCheckpointBudgetRotatesPastBusyOwner(t *testing.T) {
 		t.Fatal(e)
 	}
 	done := make(chan error, 1)
-	go func() { done <- collector.Run(ctx) }()
+	go func() { done <- runTestCollector(ctx, collector) }()
 	defer func() {
 		cancel()
 		select {
@@ -188,7 +188,7 @@ func TestCheckpointWriteFailureAndCommitConnectionLossPreserveHealthyEpoch(t *te
 		t.Fatal(e)
 	}
 	done := make(chan error, 1)
-	go func() { done <- collector.Run(ctx) }()
+	go func() { done <- runTestCollector(ctx, collector) }()
 	defer func() {
 		cancel()
 		select {
@@ -374,7 +374,7 @@ func TestCheckpointServerCommittedButAcknowledgementLost(t *testing.T) {
 		t.Fatal(e)
 	}
 	done := make(chan error, 1)
-	go func() { done <- collector.Run(ctx) }()
+	go func() { done <- runTestCollector(ctx, collector) }()
 	defer func() {
 		cancel()
 		select {

@@ -1,0 +1,3892 @@
+[
+  {
+    "kind": "column",
+    "name": "account_access.account_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_access.api_key_enabled",
+    "definition": "boolean NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_access.created_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_access.login_enabled",
+    "definition": "boolean NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_access.profit_sharing_enabled",
+    "definition": "boolean NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_access.revision",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_access.updated_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_api_key.account_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_api_key.display_id",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_api_key.expires_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_api_key.issued_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_api_key.jti",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_module_access.access_level",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_module_access.account_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_module_access.module",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.account_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.activity_id",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.attempts",
+    "definition": "integer NOT NULL DEFAULT 0 identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.binding_revision",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.body",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.channel",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.created_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.current_attempt_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.eligibility_revoked_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.eligibility_revoked_reason",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.error_message",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.id",
+    "definition": "bigint NOT NULL DEFAULT nextval('account_notification_deliveries_id_seq'::regclass) identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.idempotency_key",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.last_attempt_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.link",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.locked_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.locked_by",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.next_attempt_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.payload",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.payload_digest",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.provider_message_id",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.request_digest",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.sent_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.severity",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.source",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.status",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.telegram_chat_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_notification_deliveries.title",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_preferences.account_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_preferences.created_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_preferences.revision",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_preferences.theme",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_preferences.updated_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_profile.account_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_profile.account_tier",
+    "definition": "text NOT NULL DEFAULT 'standard'::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_profile.avatar_content_type",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_profile.avatar_etag",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_profile.avatar_object_key",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_profile.avatar_size_bytes",
+    "definition": "bigint NOT NULL DEFAULT 0 identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_profile.created_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_profile.display_name",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "account_profile.revision",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "account_profile.updated_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "athena_account.account_id",
+    "definition": "uuid NOT NULL DEFAULT gen_random_uuid() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "athena_account.administrator",
+    "definition": "boolean NOT NULL DEFAULT false identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "athena_account.created_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "athena_account.identity_provider",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "athena_account.identity_subject",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "athena_account.last_login_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "athena_account.updated_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "athena_account.username",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "athena_account.verified_email",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "goose_db_version.id",
+    "definition": "integer NOT NULL DEFAULT  identity=d generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "goose_db_version.is_applied",
+    "definition": "boolean NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "goose_db_version.tstamp",
+    "definition": "timestamp without time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "goose_db_version.version_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.authorized_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.message_id",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.outcome",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.outcome_code",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.owner_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.payload_digest",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.result_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.retry_after",
+    "definition": "interval NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.retry_after_released_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.sender_elapsed_ns",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.sender_incarnation",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.sender_returned_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.started_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.telegram_chat_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.telegram_group",
+    "definition": "boolean NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.work_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_delivery_attempts.work_kind",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "notification_sender_instances.hostname",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "notification_sender_instances.incarnation",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_sender_instances.process_id",
+    "definition": "integer NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_sender_instances.process_identity",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "notification_sender_instances.registered_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "notification_sender_instances.stop_confirmation",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "notification_sender_instances.stopped_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.attempts",
+    "definition": "integer NOT NULL DEFAULT 0 identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.body",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.channel",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.created_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.current_attempt_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.error_message",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.id",
+    "definition": "bigint NOT NULL DEFAULT nextval('system_notification_deliveries_id_seq'::regclass) identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.last_attempt_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.link",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.locked_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.locked_by",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.next_attempt_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.payload",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.payload_digest",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.provider_message_id",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.sent_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.severity",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.source",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.status",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.telegram_chat",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.title",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_deliveries.topic_label",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_topics.created_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_topics.label",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_topics.message_thread_id",
+    "definition": "integer NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "system_notification_topics.telegram_chat",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_attempts.account_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_attempts.created_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_attempts.expires_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_attempts.failure_reason",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_attempts.id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_attempts.status",
+    "definition": "text NOT NULL DEFAULT 'pending'::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_attempts.token_digest",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_attempts.updated_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.account_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.attempts",
+    "definition": "integer NOT NULL DEFAULT 0 identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.binding_revision",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.body",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.created_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.current_attempt_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.eligibility_revoked_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.eligibility_revoked_reason",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.error_message",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.id",
+    "definition": "bigint NOT NULL DEFAULT nextval('telegram_binding_replies_id_seq'::regclass) identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.last_attempt_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.locked_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.locked_by",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.next_attempt_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.payload",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.payload_digest",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.provider_message_id",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.sent_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.status",
+    "definition": "text NOT NULL DEFAULT 'pending'::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.telegram_chat_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_replies.update_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_versions.account_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_binding_versions.revision",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_bindings.account_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_bindings.bound_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_bindings.last_error",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "telegram_bindings.revision",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_bindings.status",
+    "definition": "text NOT NULL DEFAULT 'connected'::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "telegram_bindings.telegram_chat_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_bindings.telegram_display_name",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "telegram_bindings.telegram_user_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_bindings.telegram_username",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "telegram_bindings.updated_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_consumed_updates.consumed_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_consumed_updates.update_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_polling_state.last_poll_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_polling_state.last_update_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_polling_state.next_update_id",
+    "definition": "bigint NOT NULL DEFAULT 0 identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_polling_state.singleton",
+    "definition": "boolean NOT NULL DEFAULT true identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "telegram_polling_state.updated_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.activation_generation",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.formation_evidence",
+    "definition": "jsonb NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.id",
+    "definition": "bigint NOT NULL DEFAULT nextval('trader_sync_activity_id_seq'::regclass) identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.interval_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.metadata_key",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.note_snapshot",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.notification_mode",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.notification_reason",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.owner_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.received_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.recorded_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.settled_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.source_record_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.subscription_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.target_display_snapshot",
+    "definition": "jsonb NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_activities.trade_json",
+    "definition": "jsonb NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_alert_memberships.activity_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_alert_memberships.batch_id",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_alert_memberships.binding_revision",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_alert_memberships.chat_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_alert_memberships.created_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_alert_memberships.eligibility_revoked_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_alert_memberships.form",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_alert_memberships.owner_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_alert_memberships.reason",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_alert_memberships.state",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_baseline_attempts.activation_generation",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_baseline_attempts.candidate_effective_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_baseline_attempts.collector_epoch",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_baseline_attempts.created_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_baseline_attempts.effective_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_baseline_attempts.ended_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_baseline_attempts.expected_revision",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_baseline_attempts.filter_revision",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_baseline_attempts.id",
+    "definition": "uuid NOT NULL DEFAULT gen_random_uuid() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_baseline_attempts.owner_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_baseline_attempts.reason",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_baseline_attempts.registered_high",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_baseline_attempts.registered_sequence",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_baseline_attempts.state",
+    "definition": "text NOT NULL DEFAULT 'pending'::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_baseline_attempts.subscription_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_collector_control.active_epoch",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_collector_control.fencing_token",
+    "definition": "bigint NOT NULL DEFAULT 0 identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_collector_control.owner_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_collector_control.singleton",
+    "definition": "boolean NOT NULL DEFAULT true identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_collector_epochs.ended_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_collector_epochs.fencing_token",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_collector_epochs.filter_revision",
+    "definition": "bigint NOT NULL DEFAULT 0 identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_collector_epochs.id",
+    "definition": "bigint NOT NULL DEFAULT nextval('trader_sync_collector_epochs_id_seq'::regclass) identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_collector_epochs.last_read_sequence",
+    "definition": "bigint NOT NULL DEFAULT 0 identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_collector_epochs.last_received_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_collector_epochs.reason",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_collector_epochs.started_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_combo_leg_index.condition_id",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_combo_leg_index.market_id",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_combo_leg_index.position_id",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_combo_leg_index.position_ids",
+    "definition": "jsonb NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_combo_leg_index.seen_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_directory_refresh.admission_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_directory_refresh.cursor",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_directory_refresh.name",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_directory_refresh.next_page_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_directory_refresh.round_completed_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_directory_refresh.round_started_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_directory_refresh.visited_cursors",
+    "definition": "text[] NOT NULL DEFAULT '{}'::text[] identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_finality_anomalies.chain_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_finality_anomalies.conflicting_block_hash",
+    "definition": "bytea NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_finality_anomalies.detected_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_finality_anomalies.published_block_hash",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_finality_anomalies.reason",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_finality_anomalies.transaction_hash",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_interruptions.collector_epoch",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_interruptions.id",
+    "definition": "bigint NOT NULL DEFAULT nextval('trader_sync_interruptions_id_seq'::regclass) identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_interruptions.last_read_sequence",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_interruptions.last_received_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_interruptions.reason",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_interruptions.recorded_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_market_metadata.cache_key",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_market_metadata.metadata_json",
+    "definition": "jsonb NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_market_metadata.updated_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_monitor_intervals.activation_generation",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_monitor_intervals.baseline_attempt_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_monitor_intervals.candidate_effective_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_monitor_intervals.collector_epoch",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_monitor_intervals.effective_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_monitor_intervals.ended_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_monitor_intervals.expected_revision",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_monitor_intervals.filter_revision",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_monitor_intervals.id",
+    "definition": "uuid NOT NULL DEFAULT gen_random_uuid() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_monitor_intervals.last_reliable_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_monitor_intervals.owner_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_monitor_intervals.reason",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_monitor_intervals.registered_high",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_monitor_intervals.state",
+    "definition": "text NOT NULL DEFAULT 'open'::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_monitor_intervals.subscription_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_request_results.created_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_request_results.operation",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_request_results.owner_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_request_results.payload_digest",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_request_results.request_id",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_request_results.result_json",
+    "definition": "jsonb NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_runtime_control.generation",
+    "definition": "bigint NOT NULL DEFAULT 0 identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_runtime_control.owner_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_runtime_control.singleton",
+    "definition": "boolean NOT NULL DEFAULT true identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_candidates.activation_generation",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_candidates.baseline_attempt_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_candidates.disposition",
+    "definition": "text NOT NULL DEFAULT 'pending'::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_candidates.disposition_reason",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_candidates.owner_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_candidates.received_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_candidates.source_record_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_candidates.subscription_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.block_hash",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.block_number",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.chain_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.checked_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.collector_epoch",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.confirmation_reason",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.confirmation_state",
+    "definition": "text NOT NULL DEFAULT 'unverified'::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.exchange_address",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.finality_timing",
+    "definition": "jsonb NOT NULL DEFAULT '{}'::jsonb identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.id",
+    "definition": "bigint NOT NULL DEFAULT nextval('trader_sync_source_records_id_seq'::regclass) identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.log_index",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.metadata_complete",
+    "definition": "boolean NOT NULL DEFAULT false identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.raw_json",
+    "definition": "jsonb NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.read_sequence",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.received_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.received_elapsed_ns",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.removed",
+    "definition": "boolean NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.settled_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.source_version",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.trade_json",
+    "definition": "jsonb NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.transaction_hash",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_source_records.wallet",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscription_interruptions.activation_generation",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscription_interruptions.awaiting_cleanup",
+    "definition": "boolean NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscription_interruptions.ended_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscription_interruptions.epoch_id",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscription_interruptions.id",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscription_interruptions.interruption_json",
+    "definition": "jsonb NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscription_interruptions.owner_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscription_interruptions.reason",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscription_interruptions.recorded_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscription_interruptions.subscription_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscription_observations.observation_json",
+    "definition": "jsonb NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscription_observations.owner_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscription_observations.status",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscription_observations.subscription_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscriptions.activation_generation",
+    "definition": "bigint NOT NULL DEFAULT 1 identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscriptions.created_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscriptions.desired_state",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscriptions.effective_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscriptions.ended_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscriptions.id",
+    "definition": "uuid NOT NULL DEFAULT gen_random_uuid() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscriptions.observation_state",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscriptions.owner_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscriptions.reason",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscriptions.revision",
+    "definition": "bigint NOT NULL DEFAULT 1 identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscriptions.target_display",
+    "definition": "jsonb NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscriptions.updated_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_subscriptions.wallet",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.binding_revision",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.budget_reason",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.budget_wait_ended_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.budget_wait_ms",
+    "definition": "bigint NOT NULL DEFAULT 0 identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.budget_wait_started_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.chat_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.first_started_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.frozen_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.id",
+    "definition": "bigint NOT NULL DEFAULT nextval('trader_sync_summary_batches_id_seq'::regclass) identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.local_gate_wait_ms",
+    "definition": "bigint NOT NULL DEFAULT 0 identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.oldest_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.owner_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.recovery_basis_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.recovery_reason",
+    "definition": "text NOT NULL DEFAULT ''::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.sealed",
+    "definition": "boolean NOT NULL DEFAULT false identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_batches.start_evidence_missing",
+    "definition": "boolean NOT NULL DEFAULT false identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_heads.current_attempt_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_heads.current_batch_id",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_heads.id",
+    "definition": "bigint NOT NULL DEFAULT nextval('trader_sync_summary_heads_id_seq'::regclass) identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_heads.owner_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_heads.previous_basis_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_part_items.activity_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_part_items.batch_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_part_items.owner_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_part_items.part_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_parts.batch_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_parts.delivery_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_parts.id",
+    "definition": "bigint NOT NULL DEFAULT nextval('trader_sync_summary_parts_id_seq'::regclass) identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_parts.owner_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_parts.part_index",
+    "definition": "integer NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_parts.payload_digest",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_parts.text",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_summary_parts.total",
+    "definition": "integer NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_target_confirmations.card_json",
+    "definition": "jsonb NOT NULL DEFAULT '{}'::jsonb identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_target_confirmations.consumed_request_id",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_target_confirmations.created_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_target_confirmations.expires_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_target_confirmations.identity_digest",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_target_confirmations.identity_json",
+    "definition": "jsonb NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_target_confirmations.owner_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_target_confirmations.token_digest",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_target_notes.note",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_target_notes.owner_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_target_notes.revision",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_target_notes.updated_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_target_notes.wallet",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_targets.created_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_targets.id",
+    "definition": "uuid NOT NULL DEFAULT gen_random_uuid() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "trader_sync_targets.wallet",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "constraint",
+    "name": "account_access.account_access_account_fk",
+    "definition": "FOREIGN KEY (account_id) REFERENCES athena_account(account_id) ON DELETE CASCADE validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_access.account_access_pkey",
+    "definition": "PRIMARY KEY (account_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_access.account_access_revision_check",
+    "definition": "CHECK ((revision \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_api_key.account_api_key_account_fk",
+    "definition": "FOREIGN KEY (account_id) REFERENCES athena_account(account_id) ON DELETE CASCADE validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_api_key.account_api_key_display_id_check",
+    "definition": "CHECK ((display_id ~ '^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$'::text)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_api_key.account_api_key_expiry_check",
+    "definition": "CHECK (((expires_at IS NULL) OR (expires_at \u003e issued_at))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_api_key.account_api_key_jti_check",
+    "definition": "CHECK (((jti \u003c\u003e ''::text) AND (jti !~ '[[:cntrl:]]'::text))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_api_key.account_api_key_jti_key",
+    "definition": "UNIQUE (jti) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_api_key.account_api_key_pk",
+    "definition": "PRIMARY KEY (account_id, display_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_module_access.account_module_access_account_fk",
+    "definition": "FOREIGN KEY (account_id) REFERENCES account_access(account_id) ON DELETE CASCADE validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_module_access.account_module_access_check",
+    "definition": "CHECK (((module \u003c\u003e 'trader_sync'::text) OR (access_level \u003c\u003e 'read'::text))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_module_access.account_module_access_level_check",
+    "definition": "CHECK ((access_level = ANY (ARRAY['none'::text, 'read'::text, 'read_write'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_module_access.account_module_access_max_level_check",
+    "definition": "CHECK (((access_level \u003c\u003e 'read_write'::text) OR (module = ANY (ARRAY['sports_history'::text, 'managed_oo'::text, 'worm_trading'::text, 'token'::text, 'wallet'::text, 'trader_sync'::text])))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_module_access.account_module_access_module_check",
+    "definition": "CHECK ((module = ANY (ARRAY['market_radar'::text, 'sports_live'::text, 'sports_history'::text, 'managed_oo'::text, 'worm_markets'::text, 'worm_trading'::text, 'world_cup_corners'::text, 'token'::text, 'wallet'::text, 'trader_sync'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_module_access.account_module_access_pk",
+    "definition": "PRIMARY KEY (account_id, module) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_notification_deliveries.account_notification_deliveries_account_id_activity_id_fkey",
+    "definition": "FOREIGN KEY (account_id, activity_id) REFERENCES trader_sync_activities(owner_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_notification_deliveries.account_notification_deliveries_account_id_id_key",
+    "definition": "UNIQUE (account_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_notification_deliveries.account_notification_deliveries_attempts_check",
+    "definition": "CHECK ((attempts \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_notification_deliveries.account_notification_deliveries_binding_revision_check",
+    "definition": "CHECK ((binding_revision \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_notification_deliveries.account_notification_deliveries_channel_check",
+    "definition": "CHECK ((channel = 'telegram'::text)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_notification_deliveries.account_notification_deliveries_current_attempt_id_fkey",
+    "definition": "FOREIGN KEY (current_attempt_id) REFERENCES notification_delivery_attempts(id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_notification_deliveries.account_notification_deliveries_idempotency_unique",
+    "definition": "UNIQUE (account_id, source, idempotency_key) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_notification_deliveries.account_notification_deliveries_payload_check",
+    "definition": "CHECK ((octet_length(payload) \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_notification_deliveries.account_notification_deliveries_payload_digest_check",
+    "definition": "CHECK ((octet_length(payload_digest) = 32)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_notification_deliveries.account_notification_deliveries_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_notification_deliveries.account_notification_deliveries_request_digest_check",
+    "definition": "CHECK ((octet_length(request_digest) = 32)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_notification_deliveries.account_notification_deliveries_severity_check",
+    "definition": "CHECK ((severity = ANY (ARRAY['info'::text, 'warning'::text, 'error'::text, 'critical'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_notification_deliveries.account_notification_deliveries_status_check",
+    "definition": "CHECK ((status = ANY (ARRAY['pending'::text, 'sending'::text, 'sent'::text, 'failed'::text, 'unknown'::text, 'cancelled'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_notification_deliveries.account_notification_deliveries_telegram_chat_id_check",
+    "definition": "CHECK ((telegram_chat_id \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_preferences.account_preferences_account_fk",
+    "definition": "FOREIGN KEY (account_id) REFERENCES athena_account(account_id) ON DELETE CASCADE validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_preferences.account_preferences_pkey",
+    "definition": "PRIMARY KEY (account_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_preferences.account_preferences_revision_check",
+    "definition": "CHECK ((revision \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_preferences.account_preferences_theme_check",
+    "definition": "CHECK ((theme = ANY (ARRAY['system'::text, 'light'::text, 'dark'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_profile.account_profile_account_fk",
+    "definition": "FOREIGN KEY (account_id) REFERENCES athena_account(account_id) ON DELETE CASCADE validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_profile.account_profile_avatar_check",
+    "definition": "CHECK ((((avatar_object_key = ''::text) AND (avatar_content_type = ''::text) AND (avatar_etag = ''::text) AND (avatar_size_bytes = 0)) OR ((avatar_object_key \u003c\u003e ''::text) AND (avatar_content_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text, 'image/webp'::text])) AND (avatar_etag \u003c\u003e ''::text) AND (avatar_size_bytes \u003e 0)))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_profile.account_profile_display_name_check",
+    "definition": "CHECK ((((char_length(display_name) \u003e= 1) AND (char_length(display_name) \u003c= 80)) AND (display_name !~ '[[:cntrl:]]'::text))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_profile.account_profile_pkey",
+    "definition": "PRIMARY KEY (account_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_profile.account_profile_revision_check",
+    "definition": "CHECK ((revision \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "account_profile.account_profile_tier_check",
+    "definition": "CHECK ((account_tier = ANY (ARRAY['standard'::text, 'pro'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "athena_account.athena_account_admin_username_check",
+    "definition": "CHECK (((lower(username) \u003c\u003e 'admin'::text) OR (administrator AND (username = 'admin'::text)))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "athena_account.athena_account_administrator_provider_check",
+    "definition": "CHECK (((NOT administrator) OR (identity_provider = ANY (ARRAY['google'::text, 'development'::text])))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "athena_account.athena_account_identity_binding_check",
+    "definition": "CHECK ((((identity_provider = 'google'::text) AND (identity_subject IS NOT NULL) AND (verified_email \u003c\u003e ''::text)) OR ((identity_provider = 'solana_wallet'::text) AND (identity_subject IS NOT NULL) AND athena_is_canonical_solana_public_key(identity_subject) AND (verified_email = ''::text) AND (NOT administrator)) OR ((identity_provider = 'development'::text) AND (identity_subject IS NULL) AND (verified_email = ''::text) AND ((administrator AND (username = 'local-admin'::text)) OR ((NOT administrator) AND (username = 'local-user'::text)))))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "athena_account.athena_account_identity_provider_check",
+    "definition": "CHECK ((identity_provider = ANY (ARRAY['google'::text, 'solana_wallet'::text, 'development'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "athena_account.athena_account_identity_subject_check",
+    "definition": "CHECK (((identity_subject IS NULL) OR ((identity_subject = btrim(identity_subject)) AND (identity_subject \u003c\u003e ''::text) AND (identity_subject !~ '[[:cntrl:]]'::text)))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "athena_account.athena_account_last_login_check",
+    "definition": "CHECK (((last_login_at IS NULL) OR (last_login_at \u003e= created_at))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "athena_account.athena_account_pkey",
+    "definition": "PRIMARY KEY (account_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "athena_account.athena_account_username_check",
+    "definition": "CHECK ((((char_length(username) \u003e= 3) AND (char_length(username) \u003c= 42)) AND (username ~ '^[A-Za-z0-9.-]+$'::text) AND (username ~ '[A-Za-z0-9]'::text) AND (username !~* '^0x[0-9a-f]{40}$'::text))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "athena_account.athena_account_verified_email_check",
+    "definition": "CHECK (((verified_email = ''::text) OR ((verified_email = btrim(verified_email)) AND (verified_email !~ '[[:cntrl:]]'::text)))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "goose_db_version.goose_db_version_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "notification_delivery_attempts.notification_delivery_attempts_check",
+    "definition": "CHECK (((sender_elapsed_ns IS NULL) OR (sender_returned_at IS NOT NULL))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "notification_delivery_attempts.notification_delivery_attempts_check1",
+    "definition": "CHECK ((((work_kind \u003c\u003e 'account'::text) OR (owner_id IS NOT NULL)) AND ((work_kind \u003c\u003e 'system'::text) OR (owner_id IS NULL)))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "notification_delivery_attempts.notification_delivery_attempts_check2",
+    "definition": "CHECK (((result_at IS NULL) = (outcome IS NULL))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "notification_delivery_attempts.notification_delivery_attempts_outcome_check",
+    "definition": "CHECK ((outcome = ANY (ARRAY['sent'::text, 'retryable'::text, 'failed'::text, 'unknown'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "notification_delivery_attempts.notification_delivery_attempts_payload_digest_check",
+    "definition": "CHECK ((octet_length(payload_digest) = 32)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "notification_delivery_attempts.notification_delivery_attempts_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "notification_delivery_attempts.notification_delivery_attempts_sender_elapsed_ns_check",
+    "definition": "CHECK ((sender_elapsed_ns \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "notification_delivery_attempts.notification_delivery_attempts_telegram_chat_id_check",
+    "definition": "CHECK ((telegram_chat_id \u003c\u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "notification_delivery_attempts.notification_delivery_attempts_work_id_check",
+    "definition": "CHECK ((work_id \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "notification_delivery_attempts.notification_delivery_attempts_work_kind_check",
+    "definition": "CHECK ((work_kind = ANY (ARRAY['account'::text, 'system'::text, 'reply'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "notification_sender_instances.notification_sender_instances_pkey",
+    "definition": "PRIMARY KEY (incarnation) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "notification_sender_instances.notification_sender_instances_stop_confirmation_check",
+    "definition": "CHECK ((stop_confirmation = ANY (ARRAY['graceful'::text, 'operator'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "system_notification_deliveries.system_notification_deliveries_attempts_check",
+    "definition": "CHECK ((attempts \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "system_notification_deliveries.system_notification_deliveries_channel_check",
+    "definition": "CHECK ((channel = 'telegram'::text)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "system_notification_deliveries.system_notification_deliveries_current_attempt_id_fkey",
+    "definition": "FOREIGN KEY (current_attempt_id) REFERENCES notification_delivery_attempts(id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "system_notification_deliveries.system_notification_deliveries_payload_check",
+    "definition": "CHECK ((octet_length(payload) \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "system_notification_deliveries.system_notification_deliveries_payload_digest_check",
+    "definition": "CHECK ((octet_length(payload_digest) = 32)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "system_notification_deliveries.system_notification_deliveries_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "system_notification_deliveries.system_notification_deliveries_severity_check",
+    "definition": "CHECK ((severity = ANY (ARRAY['info'::text, 'warning'::text, 'error'::text, 'critical'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "system_notification_deliveries.system_notification_deliveries_status_check",
+    "definition": "CHECK ((status = ANY (ARRAY['pending'::text, 'sending'::text, 'sent'::text, 'failed'::text, 'unknown'::text, 'cancelled'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "system_notification_deliveries.system_notification_deliveries_topic_fk",
+    "definition": "FOREIGN KEY (telegram_chat, topic_label) REFERENCES system_notification_topics(telegram_chat, label) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "system_notification_topics.system_notification_topics_chat_check",
+    "definition": "CHECK ((telegram_chat = ANY (ARRAY['test'::text, 'prod'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "system_notification_topics.system_notification_topics_message_thread_id_check",
+    "definition": "CHECK ((message_thread_id \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "system_notification_topics.system_notification_topics_pkey",
+    "definition": "PRIMARY KEY (telegram_chat, label) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_attempts.telegram_binding_attempts_account_id_key",
+    "definition": "UNIQUE (account_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_attempts.telegram_binding_attempts_failure_check",
+    "definition": "CHECK ((((status = 'pending'::text) AND (failure_reason IS NULL)) OR ((status = 'failed'::text) AND (failure_reason IS NOT NULL)))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_attempts.telegram_binding_attempts_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_attempts.telegram_binding_attempts_status_check",
+    "definition": "CHECK ((status = ANY (ARRAY['pending'::text, 'failed'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_attempts.telegram_binding_attempts_token_digest_check",
+    "definition": "CHECK ((octet_length(token_digest) = 32)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_attempts.telegram_binding_attempts_token_digest_key",
+    "definition": "UNIQUE (token_digest) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_replies.telegram_binding_replies_attempts_check",
+    "definition": "CHECK (((attempts \u003e= 0) AND (attempts \u003c= 5))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_replies.telegram_binding_replies_binding_revision_check",
+    "definition": "CHECK (((binding_revision IS NULL) OR (binding_revision \u003e 0))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_replies.telegram_binding_replies_check",
+    "definition": "CHECK (((account_id IS NULL) = (binding_revision IS NULL))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_replies.telegram_binding_replies_current_attempt_id_fkey",
+    "definition": "FOREIGN KEY (current_attempt_id) REFERENCES notification_delivery_attempts(id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_replies.telegram_binding_replies_payload_check",
+    "definition": "CHECK ((octet_length(payload) \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_replies.telegram_binding_replies_payload_digest_check",
+    "definition": "CHECK ((octet_length(payload_digest) = 32)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_replies.telegram_binding_replies_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_replies.telegram_binding_replies_status_check",
+    "definition": "CHECK ((status = ANY (ARRAY['pending'::text, 'sending'::text, 'sent'::text, 'failed'::text, 'unknown'::text, 'cancelled'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_replies.telegram_binding_replies_telegram_chat_id_check",
+    "definition": "CHECK ((telegram_chat_id \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_replies.telegram_binding_replies_update_id_fkey",
+    "definition": "FOREIGN KEY (update_id) REFERENCES telegram_consumed_updates(update_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_replies.telegram_binding_replies_update_id_key",
+    "definition": "UNIQUE (update_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_versions.telegram_binding_versions_pkey",
+    "definition": "PRIMARY KEY (account_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_binding_versions.telegram_binding_versions_revision_check",
+    "definition": "CHECK ((revision \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_bindings.telegram_bindings_pkey",
+    "definition": "PRIMARY KEY (account_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_bindings.telegram_bindings_revision_check",
+    "definition": "CHECK ((revision \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_bindings.telegram_bindings_status_check",
+    "definition": "CHECK ((status = ANY (ARRAY['connected'::text, 'unreachable'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_bindings.telegram_bindings_telegram_chat_id_check",
+    "definition": "CHECK ((telegram_chat_id \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_bindings.telegram_bindings_telegram_chat_id_key",
+    "definition": "UNIQUE (telegram_chat_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_bindings.telegram_bindings_telegram_user_id_check",
+    "definition": "CHECK ((telegram_user_id \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_bindings.telegram_bindings_telegram_user_id_key",
+    "definition": "UNIQUE (telegram_user_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_consumed_updates.telegram_consumed_updates_pkey",
+    "definition": "PRIMARY KEY (update_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_consumed_updates.telegram_consumed_updates_update_id_check",
+    "definition": "CHECK ((update_id \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_polling_state.telegram_polling_state_next_update_id_check",
+    "definition": "CHECK ((next_update_id \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_polling_state.telegram_polling_state_pkey",
+    "definition": "PRIMARY KEY (singleton) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "telegram_polling_state.telegram_polling_state_singleton_check",
+    "definition": "CHECK (singleton) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_activities.trader_sync_activities_activation_generation_check",
+    "definition": "CHECK ((activation_generation \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_activities.trader_sync_activities_formation_evidence_check",
+    "definition": "CHECK ((jsonb_typeof(formation_evidence) = 'object'::text)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_activities.trader_sync_activities_metadata_key_fkey",
+    "definition": "FOREIGN KEY (metadata_key) REFERENCES trader_sync_market_metadata(cache_key) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_activities.trader_sync_activities_notification_mode_check",
+    "definition": "CHECK ((notification_mode = ANY (ARRAY['in_app_only'::text, 'ordinary'::text, 'summary'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_activities.trader_sync_activities_owner_id_id_key",
+    "definition": "UNIQUE (owner_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_activities.trader_sync_activities_owner_id_subscription_id_interval_i_fkey",
+    "definition": "FOREIGN KEY (owner_id, subscription_id, interval_id) REFERENCES trader_sync_monitor_intervals(owner_id, subscription_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_activities.trader_sync_activities_owner_id_subscription_id_source_rec_fkey",
+    "definition": "FOREIGN KEY (owner_id, subscription_id, source_record_id) REFERENCES trader_sync_source_candidates(owner_id, subscription_id, source_record_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_activities.trader_sync_activities_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_activities.trader_sync_activities_subscription_id_source_record_id_key",
+    "definition": "UNIQUE (subscription_id, source_record_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_alert_memberships.summary_membership_batch_fkey",
+    "definition": "FOREIGN KEY (owner_id, batch_id, binding_revision, chat_id) REFERENCES trader_sync_summary_batches(owner_id, id, binding_revision, chat_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_alert_memberships.trader_sync_alert_memberships_binding_revision_check",
+    "definition": "CHECK ((binding_revision \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_alert_memberships.trader_sync_alert_memberships_chat_id_check",
+    "definition": "CHECK ((chat_id \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_alert_memberships.trader_sync_alert_memberships_check",
+    "definition": "CHECK (((form = 'summary'::text) OR (state \u003c\u003e 'waiting'::text))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_alert_memberships.trader_sync_alert_memberships_check1",
+    "definition": "CHECK (((batch_id IS NULL) OR (form = 'summary'::text))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_alert_memberships.trader_sync_alert_memberships_form_check",
+    "definition": "CHECK ((form = ANY (ARRAY['ordinary'::text, 'summary'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_alert_memberships.trader_sync_alert_memberships_owner_id_activity_id_fkey",
+    "definition": "FOREIGN KEY (owner_id, activity_id) REFERENCES trader_sync_activities(owner_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_alert_memberships.trader_sync_alert_memberships_owner_id_batch_id_activity_id_key",
+    "definition": "UNIQUE (owner_id, batch_id, activity_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_alert_memberships.trader_sync_alert_memberships_pkey",
+    "definition": "PRIMARY KEY (activity_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_alert_memberships.trader_sync_alert_memberships_state_check",
+    "definition": "CHECK ((state = ANY (ARRAY['waiting'::text, 'frozen'::text, 'cancelled'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_baseline_attempts.trader_sync_baseline_attempts_activation_generation_check",
+    "definition": "CHECK ((activation_generation \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_baseline_attempts.trader_sync_baseline_attempts_expected_revision_check",
+    "definition": "CHECK ((expected_revision \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_baseline_attempts.trader_sync_baseline_attempts_owner_id_subscription_id_fkey",
+    "definition": "FOREIGN KEY (owner_id, subscription_id) REFERENCES trader_sync_subscriptions(owner_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_baseline_attempts.trader_sync_baseline_attempts_owner_id_subscription_id_id_key",
+    "definition": "UNIQUE (owner_id, subscription_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_baseline_attempts.trader_sync_baseline_attempts_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_baseline_attempts.trader_sync_baseline_attempts_registered_sequence_check",
+    "definition": "CHECK ((registered_sequence \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_baseline_attempts.trader_sync_baseline_attempts_state_check",
+    "definition": "CHECK ((state = ANY (ARRAY['pending'::text, 'succeeded'::text, 'failed'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_collector_control.trader_sync_collector_control_active_epoch_fkey",
+    "definition": "FOREIGN KEY (active_epoch) REFERENCES trader_sync_collector_epochs(id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_collector_control.trader_sync_collector_control_fencing_token_check",
+    "definition": "CHECK ((fencing_token \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_collector_control.trader_sync_collector_control_pkey",
+    "definition": "PRIMARY KEY (singleton) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_collector_control.trader_sync_collector_control_singleton_check",
+    "definition": "CHECK (singleton) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_collector_epochs.trader_sync_collector_epochs_fencing_token_check",
+    "definition": "CHECK ((fencing_token \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_collector_epochs.trader_sync_collector_epochs_filter_revision_check",
+    "definition": "CHECK ((filter_revision \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_collector_epochs.trader_sync_collector_epochs_last_read_sequence_check",
+    "definition": "CHECK ((last_read_sequence \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_collector_epochs.trader_sync_collector_epochs_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_combo_leg_index.trader_sync_combo_leg_index_condition_id_check",
+    "definition": "CHECK ((length(condition_id) \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_combo_leg_index.trader_sync_combo_leg_index_market_id_check",
+    "definition": "CHECK ((market_id ~ '^[1-9][0-9]*$'::text)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_combo_leg_index.trader_sync_combo_leg_index_pkey",
+    "definition": "PRIMARY KEY (position_id, market_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_combo_leg_index.trader_sync_combo_leg_index_position_id_check",
+    "definition": "CHECK ((position_id ~ '^(0|[1-9][0-9]{0,77})$'::text)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_combo_leg_index.trader_sync_combo_leg_index_position_ids_check",
+    "definition": "CHECK ((jsonb_typeof(position_ids) = 'array'::text)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_directory_refresh.trader_sync_directory_refresh_name_check",
+    "definition": "CHECK ((name = 'combo_markets'::text)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_directory_refresh.trader_sync_directory_refresh_pkey",
+    "definition": "PRIMARY KEY (name) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_finality_anomalies.trader_sync_finality_anomalies_chain_id_check",
+    "definition": "CHECK ((chain_id = 137)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_finality_anomalies.trader_sync_finality_anomalies_conflicting_block_hash_check",
+    "definition": "CHECK (((conflicting_block_hash IS NULL) OR (octet_length(conflicting_block_hash) = 32))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_finality_anomalies.trader_sync_finality_anomalies_pkey",
+    "definition": "PRIMARY KEY (chain_id, transaction_hash) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_finality_anomalies.trader_sync_finality_anomalies_published_block_hash_check",
+    "definition": "CHECK ((octet_length(published_block_hash) = 32)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_finality_anomalies.trader_sync_finality_anomalies_transaction_hash_check",
+    "definition": "CHECK ((octet_length(transaction_hash) = 32)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_interruptions.trader_sync_interruptions_collector_epoch_fkey",
+    "definition": "FOREIGN KEY (collector_epoch) REFERENCES trader_sync_collector_epochs(id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_interruptions.trader_sync_interruptions_collector_epoch_key",
+    "definition": "UNIQUE (collector_epoch) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_interruptions.trader_sync_interruptions_last_read_sequence_check",
+    "definition": "CHECK ((last_read_sequence \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_interruptions.trader_sync_interruptions_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_market_metadata.trader_sync_market_metadata_cache_key_check",
+    "definition": "CHECK ((length(cache_key) \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_market_metadata.trader_sync_market_metadata_pkey",
+    "definition": "PRIMARY KEY (cache_key) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_monitor_intervals.trader_sync_monitor_intervals_activation_generation_check",
+    "definition": "CHECK ((activation_generation \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_monitor_intervals.trader_sync_monitor_intervals_expected_revision_check",
+    "definition": "CHECK ((expected_revision \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_monitor_intervals.trader_sync_monitor_intervals_owner_id_subscription_id_bas_fkey",
+    "definition": "FOREIGN KEY (owner_id, subscription_id, baseline_attempt_id) REFERENCES trader_sync_baseline_attempts(owner_id, subscription_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_monitor_intervals.trader_sync_monitor_intervals_owner_id_subscription_id_fkey",
+    "definition": "FOREIGN KEY (owner_id, subscription_id) REFERENCES trader_sync_subscriptions(owner_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_monitor_intervals.trader_sync_monitor_intervals_owner_id_subscription_id_id_key",
+    "definition": "UNIQUE (owner_id, subscription_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_monitor_intervals.trader_sync_monitor_intervals_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_monitor_intervals.trader_sync_monitor_intervals_state_check",
+    "definition": "CHECK ((state = ANY (ARRAY['open'::text, 'closed'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_request_results.trader_sync_request_results_operation_check",
+    "definition": "CHECK ((length(btrim(operation)) \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_request_results.trader_sync_request_results_payload_digest_check",
+    "definition": "CHECK ((octet_length(payload_digest) = 32)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_request_results.trader_sync_request_results_pkey",
+    "definition": "PRIMARY KEY (owner_id, operation, request_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_request_results.trader_sync_request_results_request_id_check",
+    "definition": "CHECK ((length(btrim(request_id)) \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_runtime_control.trader_sync_runtime_control_generation_check",
+    "definition": "CHECK ((generation \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_runtime_control.trader_sync_runtime_control_pkey",
+    "definition": "PRIMARY KEY (singleton) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_runtime_control.trader_sync_runtime_control_singleton_check",
+    "definition": "CHECK (singleton) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_candidates.trader_sync_source_candidates_activation_generation_check",
+    "definition": "CHECK ((activation_generation \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_candidates.trader_sync_source_candidates_disposition_check",
+    "definition": "CHECK ((disposition = ANY (ARRAY['pending'::text, 'projected'::text, 'ineligible'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_candidates.trader_sync_source_candidates_owner_id_subscription_id_bas_fkey",
+    "definition": "FOREIGN KEY (owner_id, subscription_id, baseline_attempt_id) REFERENCES trader_sync_baseline_attempts(owner_id, subscription_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_candidates.trader_sync_source_candidates_owner_id_subscription_id_sour_key",
+    "definition": "UNIQUE (owner_id, subscription_id, source_record_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_candidates.trader_sync_source_candidates_pkey",
+    "definition": "PRIMARY KEY (source_record_id, subscription_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_candidates.trader_sync_source_candidates_source_record_id_fkey",
+    "definition": "FOREIGN KEY (source_record_id) REFERENCES trader_sync_source_records(id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_records.trader_sync_source_records_block_hash_check",
+    "definition": "CHECK ((octet_length(block_hash) = 32)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_records.trader_sync_source_records_block_number_check",
+    "definition": "CHECK ((block_number \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_records.trader_sync_source_records_chain_id_check",
+    "definition": "CHECK ((chain_id = 137)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_records.trader_sync_source_records_chain_id_exchange_address_block__key",
+    "definition": "UNIQUE (chain_id, exchange_address, block_hash, transaction_hash, log_index) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_records.trader_sync_source_records_collector_epoch_fkey",
+    "definition": "FOREIGN KEY (collector_epoch) REFERENCES trader_sync_collector_epochs(id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_records.trader_sync_source_records_confirmation_state_check",
+    "definition": "CHECK ((confirmation_state = ANY (ARRAY['unverified'::text, 'invalid'::text, 'confirmed'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_records.trader_sync_source_records_exchange_address_check",
+    "definition": "CHECK ((octet_length(exchange_address) = 20)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_records.trader_sync_source_records_finality_timing_check",
+    "definition": "CHECK ((jsonb_typeof(finality_timing) = 'object'::text)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_records.trader_sync_source_records_log_index_check",
+    "definition": "CHECK ((log_index \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_records.trader_sync_source_records_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_records.trader_sync_source_records_read_sequence_check",
+    "definition": "CHECK ((read_sequence \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_records.trader_sync_source_records_received_elapsed_ns_check",
+    "definition": "CHECK ((received_elapsed_ns \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_records.trader_sync_source_records_transaction_hash_check",
+    "definition": "CHECK ((octet_length(transaction_hash) = 32)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_source_records.trader_sync_source_records_wallet_check",
+    "definition": "CHECK ((octet_length(wallet) = 20)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_subscriptions.trader_sync_subscriptions_activation_generation_check",
+    "definition": "CHECK ((activation_generation \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_subscriptions.trader_sync_subscriptions_desired_state_check",
+    "definition": "CHECK ((desired_state = ANY (ARRAY['enabled'::text, 'paused'::text, 'permission_disabled'::text, 'cancelled'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_subscriptions.trader_sync_subscriptions_observation_state_check",
+    "definition": "CHECK ((observation_state = ANY (ARRAY['pending_baseline'::text, 'healthy'::text, 'interrupted'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_subscriptions.trader_sync_subscriptions_owner_id_fkey",
+    "definition": "FOREIGN KEY (owner_id) REFERENCES athena_account(account_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_subscriptions.trader_sync_subscriptions_owner_id_id_key",
+    "definition": "UNIQUE (owner_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_subscriptions.trader_sync_subscriptions_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_subscriptions.trader_sync_subscriptions_revision_check",
+    "definition": "CHECK ((revision \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_subscriptions.trader_sync_subscriptions_wallet_check",
+    "definition": "CHECK ((octet_length(wallet) = 20)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_batches.trader_sync_summary_batches_binding_revision_check",
+    "definition": "CHECK ((binding_revision \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_batches.trader_sync_summary_batches_budget_wait_ms_check",
+    "definition": "CHECK ((budget_wait_ms \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_batches.trader_sync_summary_batches_chat_id_check",
+    "definition": "CHECK ((chat_id \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_batches.trader_sync_summary_batches_local_gate_wait_ms_check",
+    "definition": "CHECK ((local_gate_wait_ms \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_batches.trader_sync_summary_batches_owner_id_id_binding_revision_ch_key",
+    "definition": "UNIQUE (owner_id, id, binding_revision, chat_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_batches.trader_sync_summary_batches_owner_id_id_key",
+    "definition": "UNIQUE (owner_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_batches.trader_sync_summary_batches_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_heads.trader_sync_summary_heads_check",
+    "definition": "CHECK (((current_attempt_id IS NULL) OR (current_batch_id IS NOT NULL))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_heads.trader_sync_summary_heads_current_attempt_id_fkey",
+    "definition": "FOREIGN KEY (current_attempt_id) REFERENCES notification_delivery_attempts(id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_heads.trader_sync_summary_heads_owner_id_current_batch_id_fkey",
+    "definition": "FOREIGN KEY (owner_id, current_batch_id) REFERENCES trader_sync_summary_batches(owner_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_heads.trader_sync_summary_heads_owner_id_key",
+    "definition": "UNIQUE (owner_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_heads.trader_sync_summary_heads_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_part_items.trader_sync_summary_part_item_owner_id_batch_id_activity_i_fkey",
+    "definition": "FOREIGN KEY (owner_id, batch_id, activity_id) REFERENCES trader_sync_alert_memberships(owner_id, batch_id, activity_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_part_items.trader_sync_summary_part_items_owner_id_batch_id_part_id_fkey",
+    "definition": "FOREIGN KEY (owner_id, batch_id, part_id) REFERENCES trader_sync_summary_parts(owner_id, batch_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_part_items.trader_sync_summary_part_items_pkey",
+    "definition": "PRIMARY KEY (part_id, activity_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_parts.trader_sync_summary_parts_batch_id_part_index_key",
+    "definition": "UNIQUE (batch_id, part_index) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_parts.trader_sync_summary_parts_check",
+    "definition": "CHECK ((total \u003e= part_index)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_parts.trader_sync_summary_parts_delivery_id_key",
+    "definition": "UNIQUE (delivery_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_parts.trader_sync_summary_parts_owner_id_batch_id_fkey",
+    "definition": "FOREIGN KEY (owner_id, batch_id) REFERENCES trader_sync_summary_batches(owner_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_parts.trader_sync_summary_parts_owner_id_batch_id_id_key",
+    "definition": "UNIQUE (owner_id, batch_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_parts.trader_sync_summary_parts_owner_id_delivery_id_fkey",
+    "definition": "FOREIGN KEY (owner_id, delivery_id) REFERENCES account_notification_deliveries(account_id, id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_parts.trader_sync_summary_parts_part_index_check",
+    "definition": "CHECK ((part_index \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_parts.trader_sync_summary_parts_payload_digest_check",
+    "definition": "CHECK ((octet_length(payload_digest) = 32)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_parts.trader_sync_summary_parts_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_summary_parts.trader_sync_summary_parts_text_check",
+    "definition": "CHECK ((length(text) \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_target_confirmations.trader_sync_target_confirmations_card_json_check",
+    "definition": "CHECK ((jsonb_typeof(card_json) = 'object'::text)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_target_confirmations.trader_sync_target_confirmations_check",
+    "definition": "CHECK ((expires_at \u003c= (created_at + '00:05:00'::interval))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_target_confirmations.trader_sync_target_confirmations_consumed_request_id_check",
+    "definition": "CHECK (((consumed_request_id IS NULL) OR (length(btrim(consumed_request_id)) \u003e 0))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_target_confirmations.trader_sync_target_confirmations_identity_digest_check",
+    "definition": "CHECK ((octet_length(identity_digest) = 32)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_target_confirmations.trader_sync_target_confirmations_identity_json_check",
+    "definition": "CHECK ((jsonb_typeof(identity_json) = 'object'::text)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_target_confirmations.trader_sync_target_confirmations_pkey",
+    "definition": "PRIMARY KEY (token_digest) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_target_confirmations.trader_sync_target_confirmations_token_digest_check",
+    "definition": "CHECK ((octet_length(token_digest) = 32)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_target_notes.trader_sync_target_notes_note_check",
+    "definition": "CHECK ((char_length(note) \u003c= 20)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_target_notes.trader_sync_target_notes_owner_id_fkey",
+    "definition": "FOREIGN KEY (owner_id) REFERENCES athena_account(account_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_target_notes.trader_sync_target_notes_pkey",
+    "definition": "PRIMARY KEY (owner_id, wallet) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_target_notes.trader_sync_target_notes_revision_check",
+    "definition": "CHECK ((revision \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_target_notes.trader_sync_target_notes_wallet_check",
+    "definition": "CHECK ((octet_length(wallet) = 20)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_targets.trader_sync_targets_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_targets.trader_sync_targets_wallet_check",
+    "definition": "CHECK ((octet_length(wallet) = 20)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "trader_sync_targets.trader_sync_targets_wallet_key",
+    "definition": "UNIQUE (wallet) validated=t"
+  },
+  {
+    "kind": "function",
+    "name": "athena_is_canonical_solana_public_key(value text)",
+    "definition": "CREATE OR REPLACE FUNCTION public.athena_is_canonical_solana_public_key(value text)\n RETURNS boolean\n LANGUAGE plpgsql\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$\nDECLARE\n  alphabet CONSTANT TEXT := '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';\n  encoded_length INTEGER := char_length(value);\n  leading_zero_bytes INTEGER := 0;\n  accumulator NUMERIC := 0;\n  remaining NUMERIC;\n  decoded_nonzero_bytes INTEGER := 0;\n  position_index INTEGER;\n  digit INTEGER;\nBEGIN\n  IF encoded_length \u003c 32 OR encoded_length \u003e 44 THEN\n    RETURN FALSE;\n  END IF;\n\n  FOR position_index IN 1..encoded_length LOOP\n    digit := strpos(alphabet, substr(value, position_index, 1)) - 1;\n    IF digit \u003c 0 THEN\n      RETURN FALSE;\n    END IF;\n    IF position_index = leading_zero_bytes + 1 AND digit = 0 THEN\n      leading_zero_bytes := leading_zero_bytes + 1;\n    END IF;\n    accumulator := accumulator * 58 + digit;\n  END LOOP;\n\n  remaining := accumulator;\n  WHILE remaining \u003e 0 LOOP\n    decoded_nonzero_bytes := decoded_nonzero_bytes + 1;\n    remaining := trunc(remaining / 256);\n  END LOOP;\n\n  RETURN leading_zero_bytes + decoded_nonzero_bytes = 32;\nEND;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "notification_guard_frozen_payload()",
+    "definition": "CREATE OR REPLACE FUNCTION public.notification_guard_frozen_payload()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n IF NEW.payload IS DISTINCT FROM OLD.payload OR NEW.payload_digest IS DISTINCT FROM OLD.payload_digest THEN\n  RAISE EXCEPTION 'notification payload is immutable';\n END IF;\n RETURN NEW;\nEND;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "trader_sync_guard_activity_immutable()",
+    "definition": "CREATE OR REPLACE FUNCTION public.trader_sync_guard_activity_immutable()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n IF NEW IS DISTINCT FROM OLD THEN RAISE EXCEPTION 'activity facts are immutable'; END IF;\n RETURN NEW;\nEND;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "trader_sync_guard_attempt_terminal()",
+    "definition": "CREATE OR REPLACE FUNCTION public.trader_sync_guard_attempt_terminal()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n IF OLD.state \u003c\u003e 'pending' AND NEW IS DISTINCT FROM OLD THEN\n  RAISE EXCEPTION 'baseline attempt is terminal';\n END IF;\n RETURN NEW;\nEND;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "trader_sync_guard_summary_batch()",
+    "definition": "CREATE OR REPLACE FUNCTION public.trader_sync_guard_summary_batch()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n IF (NEW.id,NEW.owner_id,NEW.binding_revision,NEW.chat_id,NEW.oldest_at,NEW.frozen_at) IS DISTINCT FROM\n    (OLD.id,OLD.owner_id,OLD.binding_revision,OLD.chat_id,OLD.oldest_at,OLD.frozen_at)\n    OR (OLD.sealed AND NOT NEW.sealed)\n    OR (OLD.first_started_at IS NOT NULL AND NEW.first_started_at IS DISTINCT FROM OLD.first_started_at)\n THEN RAISE EXCEPTION 'summary batch facts are immutable'; END IF;\n RETURN NEW;\nEND;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "trader_sync_guard_summary_content()",
+    "definition": "CREATE OR REPLACE FUNCTION public.trader_sync_guard_summary_content()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n IF TG_OP\u003c\u003e'INSERT' THEN RAISE EXCEPTION 'summary content is immutable'; END IF;\n IF EXISTS(SELECT 1 FROM trader_sync_summary_batches WHERE id=NEW.batch_id AND sealed)\n THEN RAISE EXCEPTION 'summary batch is sealed'; END IF;\n RETURN NEW;\nEND;\n$function$\n"
+  },
+  {
+    "kind": "function",
+    "name": "trader_sync_guard_summary_member()",
+    "definition": "CREATE OR REPLACE FUNCTION public.trader_sync_guard_summary_member()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n IF (NEW.activity_id,NEW.owner_id,NEW.binding_revision,NEW.chat_id,NEW.form,NEW.created_at) IS DISTINCT FROM\n    (OLD.activity_id,OLD.owner_id,OLD.binding_revision,OLD.chat_id,OLD.form,OLD.created_at)\n    OR (OLD.batch_id IS NOT NULL AND (NEW.batch_id IS DISTINCT FROM OLD.batch_id OR NEW.state IS DISTINCT FROM OLD.state))\n    OR (OLD.eligibility_revoked_at IS NOT NULL AND NEW.eligibility_revoked_at IS DISTINCT FROM OLD.eligibility_revoked_at)\n THEN RAISE EXCEPTION 'summary member identity is immutable'; END IF;\n IF NEW.batch_id IS DISTINCT FROM OLD.batch_id AND EXISTS(SELECT 1 FROM trader_sync_summary_batches WHERE id=NEW.batch_id AND sealed)\n THEN RAISE EXCEPTION 'summary batch is sealed'; END IF;\n RETURN NEW;\nEND;\n$function$\n"
+  },
+  {
+    "kind": "index",
+    "name": "account_access_pkey",
+    "definition": "CREATE UNIQUE INDEX account_access_pkey ON public.account_access USING btree (account_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "account_api_key_account_issued_idx",
+    "definition": "CREATE INDEX account_api_key_account_issued_idx ON public.account_api_key USING btree (account_id, issued_at DESC, display_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "account_api_key_jti_key",
+    "definition": "CREATE UNIQUE INDEX account_api_key_jti_key ON public.account_api_key USING btree (jti) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "account_api_key_pk",
+    "definition": "CREATE UNIQUE INDEX account_api_key_pk ON public.account_api_key USING btree (account_id, display_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "account_module_access_pk",
+    "definition": "CREATE UNIQUE INDEX account_module_access_pk ON public.account_module_access USING btree (account_id, module) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "account_notification_activity",
+    "definition": "CREATE UNIQUE INDEX account_notification_activity ON public.account_notification_deliveries USING btree (activity_id) WHERE (activity_id IS NOT NULL) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "account_notification_deliveries_account_id_id_key",
+    "definition": "CREATE UNIQUE INDEX account_notification_deliveries_account_id_id_key ON public.account_notification_deliveries USING btree (account_id, id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "account_notification_deliveries_idempotency_unique",
+    "definition": "CREATE UNIQUE INDEX account_notification_deliveries_idempotency_unique ON public.account_notification_deliveries USING btree (account_id, source, idempotency_key) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "account_notification_deliveries_pkey",
+    "definition": "CREATE UNIQUE INDEX account_notification_deliveries_pkey ON public.account_notification_deliveries USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "account_preferences_pkey",
+    "definition": "CREATE UNIQUE INDEX account_preferences_pkey ON public.account_preferences USING btree (account_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "account_profile_pkey",
+    "definition": "CREATE UNIQUE INDEX account_profile_pkey ON public.account_profile USING btree (account_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "athena_account_identity_uidx",
+    "definition": "CREATE UNIQUE INDEX athena_account_identity_uidx ON public.athena_account USING btree (identity_provider, identity_subject, administrator) WHERE (identity_subject IS NOT NULL) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "athena_account_pkey",
+    "definition": "CREATE UNIQUE INDEX athena_account_pkey ON public.athena_account USING btree (account_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "athena_account_recent_login_idx",
+    "definition": "CREATE INDEX athena_account_recent_login_idx ON public.athena_account USING btree (last_login_at DESC NULLS LAST, account_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "athena_account_single_administrator_uidx",
+    "definition": "CREATE UNIQUE INDEX athena_account_single_administrator_uidx ON public.athena_account USING btree (administrator) WHERE administrator valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "athena_account_username_lower_uidx",
+    "definition": "CREATE UNIQUE INDEX athena_account_username_lower_uidx ON public.athena_account USING btree (lower(username)) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "goose_db_version_pkey",
+    "definition": "CREATE UNIQUE INDEX goose_db_version_pkey ON public.goose_db_version USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "idx_account_notification_deliveries_account_created",
+    "definition": "CREATE INDEX idx_account_notification_deliveries_account_created ON public.account_notification_deliveries USING btree (account_id, created_at DESC) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "idx_account_notification_deliveries_pending_ready",
+    "definition": "CREATE INDEX idx_account_notification_deliveries_pending_ready ON public.account_notification_deliveries USING btree (status, next_attempt_at, id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "idx_notification_delivery_attempts_work",
+    "definition": "CREATE INDEX idx_notification_delivery_attempts_work ON public.notification_delivery_attempts USING btree (work_kind, work_id, authorized_at) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "idx_system_notification_deliveries_chat_topic",
+    "definition": "CREATE INDEX idx_system_notification_deliveries_chat_topic ON public.system_notification_deliveries USING btree (telegram_chat, topic_label) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "idx_system_notification_deliveries_created_at",
+    "definition": "CREATE INDEX idx_system_notification_deliveries_created_at ON public.system_notification_deliveries USING btree (created_at DESC) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "idx_system_notification_deliveries_pending_ready",
+    "definition": "CREATE INDEX idx_system_notification_deliveries_pending_ready ON public.system_notification_deliveries USING btree (status, next_attempt_at, id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "idx_system_notification_deliveries_severity",
+    "definition": "CREATE INDEX idx_system_notification_deliveries_severity ON public.system_notification_deliveries USING btree (severity) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "idx_system_notification_deliveries_source",
+    "definition": "CREATE INDEX idx_system_notification_deliveries_source ON public.system_notification_deliveries USING btree (source) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "idx_system_notification_deliveries_status",
+    "definition": "CREATE INDEX idx_system_notification_deliveries_status ON public.system_notification_deliveries USING btree (status) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "idx_telegram_binding_attempts_expiry",
+    "definition": "CREATE INDEX idx_telegram_binding_attempts_expiry ON public.telegram_binding_attempts USING btree (status, expires_at) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "idx_telegram_binding_replies_ready",
+    "definition": "CREATE INDEX idx_telegram_binding_replies_ready ON public.telegram_binding_replies USING btree (status, next_attempt_at, id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "notification_delivery_attempts_pkey",
+    "definition": "CREATE UNIQUE INDEX notification_delivery_attempts_pkey ON public.notification_delivery_attempts USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "notification_sender_instances_pkey",
+    "definition": "CREATE UNIQUE INDEX notification_sender_instances_pkey ON public.notification_sender_instances USING btree (incarnation) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "system_notification_deliveries_pkey",
+    "definition": "CREATE UNIQUE INDEX system_notification_deliveries_pkey ON public.system_notification_deliveries USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "system_notification_topics_pkey",
+    "definition": "CREATE UNIQUE INDEX system_notification_topics_pkey ON public.system_notification_topics USING btree (telegram_chat, label) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "telegram_binding_attempts_account_id_key",
+    "definition": "CREATE UNIQUE INDEX telegram_binding_attempts_account_id_key ON public.telegram_binding_attempts USING btree (account_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "telegram_binding_attempts_pkey",
+    "definition": "CREATE UNIQUE INDEX telegram_binding_attempts_pkey ON public.telegram_binding_attempts USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "telegram_binding_attempts_token_digest_key",
+    "definition": "CREATE UNIQUE INDEX telegram_binding_attempts_token_digest_key ON public.telegram_binding_attempts USING btree (token_digest) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "telegram_binding_replies_pkey",
+    "definition": "CREATE UNIQUE INDEX telegram_binding_replies_pkey ON public.telegram_binding_replies USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "telegram_binding_replies_update_id_key",
+    "definition": "CREATE UNIQUE INDEX telegram_binding_replies_update_id_key ON public.telegram_binding_replies USING btree (update_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "telegram_binding_versions_pkey",
+    "definition": "CREATE UNIQUE INDEX telegram_binding_versions_pkey ON public.telegram_binding_versions USING btree (account_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "telegram_bindings_pkey",
+    "definition": "CREATE UNIQUE INDEX telegram_bindings_pkey ON public.telegram_bindings USING btree (account_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "telegram_bindings_telegram_chat_id_key",
+    "definition": "CREATE UNIQUE INDEX telegram_bindings_telegram_chat_id_key ON public.telegram_bindings USING btree (telegram_chat_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "telegram_bindings_telegram_user_id_key",
+    "definition": "CREATE UNIQUE INDEX telegram_bindings_telegram_user_id_key ON public.telegram_bindings USING btree (telegram_user_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "telegram_consumed_updates_pkey",
+    "definition": "CREATE UNIQUE INDEX telegram_consumed_updates_pkey ON public.telegram_consumed_updates USING btree (update_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "telegram_polling_state_pkey",
+    "definition": "CREATE UNIQUE INDEX telegram_polling_state_pkey ON public.telegram_polling_state USING btree (singleton) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_activities_owner_id_id_key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_activities_owner_id_id_key ON public.trader_sync_activities USING btree (owner_id, id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_activities_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_activities_pkey ON public.trader_sync_activities USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_activities_subscription_id_source_record_id_key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_activities_subscription_id_source_record_id_key ON public.trader_sync_activities USING btree (subscription_id, source_record_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_activity_owner_id",
+    "definition": "CREATE INDEX trader_sync_activity_owner_id ON public.trader_sync_activities USING btree (owner_id, id DESC) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_activity_owner_time",
+    "definition": "CREATE INDEX trader_sync_activity_owner_time ON public.trader_sync_activities USING btree (owner_id, recorded_at) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_alert_memberships_owner_id_batch_id_activity_id_key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_alert_memberships_owner_id_batch_id_activity_id_key ON public.trader_sync_alert_memberships USING btree (owner_id, batch_id, activity_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_alert_memberships_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_alert_memberships_pkey ON public.trader_sync_alert_memberships USING btree (activity_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_baseline_attempts_owner_id_subscription_id_id_key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_baseline_attempts_owner_id_subscription_id_id_key ON public.trader_sync_baseline_attempts USING btree (owner_id, subscription_id, id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_baseline_attempts_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_baseline_attempts_pkey ON public.trader_sync_baseline_attempts USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_collector_control_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_collector_control_pkey ON public.trader_sync_collector_control USING btree (singleton) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_collector_epochs_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_collector_epochs_pkey ON public.trader_sync_collector_epochs USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_combo_leg_index_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_combo_leg_index_pkey ON public.trader_sync_combo_leg_index USING btree (position_id, market_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_confirmations_owner_idx",
+    "definition": "CREATE INDEX trader_sync_confirmations_owner_idx ON public.trader_sync_target_confirmations USING btree (owner_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_directory_refresh_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_directory_refresh_pkey ON public.trader_sync_directory_refresh USING btree (name) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_finality_anomalies_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_finality_anomalies_pkey ON public.trader_sync_finality_anomalies USING btree (chain_id, transaction_hash) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_interruptions_collector_epoch_key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_interruptions_collector_epoch_key ON public.trader_sync_interruptions USING btree (collector_epoch) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_interruptions_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_interruptions_pkey ON public.trader_sync_interruptions USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_market_metadata_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_market_metadata_pkey ON public.trader_sync_market_metadata USING btree (cache_key) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_monitor_intervals_owner_id_subscription_id_id_key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_monitor_intervals_owner_id_subscription_id_id_key ON public.trader_sync_monitor_intervals USING btree (owner_id, subscription_id, id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_monitor_intervals_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_monitor_intervals_pkey ON public.trader_sync_monitor_intervals USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_one_interval_per_attempt",
+    "definition": "CREATE UNIQUE INDEX trader_sync_one_interval_per_attempt ON public.trader_sync_monitor_intervals USING btree (baseline_attempt_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_one_live_target",
+    "definition": "CREATE UNIQUE INDEX trader_sync_one_live_target ON public.trader_sync_subscriptions USING btree (owner_id, wallet) WHERE (desired_state \u003c\u003e 'cancelled'::text) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_one_pending_baseline",
+    "definition": "CREATE UNIQUE INDEX trader_sync_one_pending_baseline ON public.trader_sync_baseline_attempts USING btree (subscription_id) WHERE (state = 'pending'::text) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_request_results_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_request_results_pkey ON public.trader_sync_request_results USING btree (owner_id, operation, request_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_runtime_control_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_runtime_control_pkey ON public.trader_sync_runtime_control USING btree (singleton) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_source_candidates_owner_id_subscription_id_sour_key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_source_candidates_owner_id_subscription_id_sour_key ON public.trader_sync_source_candidates USING btree (owner_id, subscription_id, source_record_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_source_candidates_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_source_candidates_pkey ON public.trader_sync_source_candidates USING btree (source_record_id, subscription_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_source_records_chain_id_exchange_address_block__key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_source_records_chain_id_exchange_address_block__key ON public.trader_sync_source_records USING btree (chain_id, exchange_address, block_hash, transaction_hash, log_index) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_source_records_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_source_records_pkey ON public.trader_sync_source_records USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_sources_unverified",
+    "definition": "CREATE INDEX trader_sync_sources_unverified ON public.trader_sync_source_records USING btree (id) WHERE (confirmation_state = 'unverified'::text) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_subscriptions_owner_id_id_key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_subscriptions_owner_id_id_key ON public.trader_sync_subscriptions USING btree (owner_id, id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_subscriptions_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_subscriptions_pkey ON public.trader_sync_subscriptions USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_summary_batches_owner_id_id_binding_revision_ch_key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_summary_batches_owner_id_id_binding_revision_ch_key ON public.trader_sync_summary_batches USING btree (owner_id, id, binding_revision, chat_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_summary_batches_owner_id_id_key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_summary_batches_owner_id_id_key ON public.trader_sync_summary_batches USING btree (owner_id, id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_summary_batches_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_summary_batches_pkey ON public.trader_sync_summary_batches USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_summary_heads_owner_id_key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_summary_heads_owner_id_key ON public.trader_sync_summary_heads USING btree (owner_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_summary_heads_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_summary_heads_pkey ON public.trader_sync_summary_heads USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_summary_part_items_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_summary_part_items_pkey ON public.trader_sync_summary_part_items USING btree (part_id, activity_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_summary_parts_batch_id_part_index_key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_summary_parts_batch_id_part_index_key ON public.trader_sync_summary_parts USING btree (batch_id, part_index) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_summary_parts_delivery_id_key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_summary_parts_delivery_id_key ON public.trader_sync_summary_parts USING btree (delivery_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_summary_parts_owner_id_batch_id_id_key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_summary_parts_owner_id_batch_id_id_key ON public.trader_sync_summary_parts USING btree (owner_id, batch_id, id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_summary_parts_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_summary_parts_pkey ON public.trader_sync_summary_parts USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_target_confirmations_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_target_confirmations_pkey ON public.trader_sync_target_confirmations USING btree (token_digest) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_target_notes_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_target_notes_pkey ON public.trader_sync_target_notes USING btree (owner_id, wallet) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_targets_pkey",
+    "definition": "CREATE UNIQUE INDEX trader_sync_targets_pkey ON public.trader_sync_targets USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_targets_wallet_key",
+    "definition": "CREATE UNIQUE INDEX trader_sync_targets_wallet_key ON public.trader_sync_targets USING btree (wallet) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "trader_sync_waiting_memberships",
+    "definition": "CREATE INDEX trader_sync_waiting_memberships ON public.trader_sync_alert_memberships USING btree (owner_id, activity_id) WHERE ((state = 'waiting'::text) AND (eligibility_revoked_at IS NULL)) valid=t ready=t"
+  },
+  {
+    "kind": "sequence",
+    "name": "account_notification_deliveries_id_seq",
+    "definition": "bigint start=1 increment=1 min=1 max=9223372036854775807 cache=1 cycle=f"
+  },
+  {
+    "kind": "sequence",
+    "name": "goose_db_version_id_seq",
+    "definition": "integer start=1 increment=1 min=1 max=2147483647 cache=1 cycle=f"
+  },
+  {
+    "kind": "sequence",
+    "name": "system_notification_deliveries_id_seq",
+    "definition": "bigint start=1 increment=1 min=1 max=9223372036854775807 cache=1 cycle=f"
+  },
+  {
+    "kind": "sequence",
+    "name": "telegram_binding_replies_id_seq",
+    "definition": "bigint start=1 increment=1 min=1 max=9223372036854775807 cache=1 cycle=f"
+  },
+  {
+    "kind": "sequence",
+    "name": "trader_sync_activity_id_seq",
+    "definition": "bigint start=1 increment=1 min=1 max=9223372036854775807 cache=1 cycle=f"
+  },
+  {
+    "kind": "sequence",
+    "name": "trader_sync_collector_epochs_id_seq",
+    "definition": "bigint start=1 increment=1 min=1 max=9223372036854775807 cache=1 cycle=f"
+  },
+  {
+    "kind": "sequence",
+    "name": "trader_sync_interruptions_id_seq",
+    "definition": "bigint start=1 increment=1 min=1 max=9223372036854775807 cache=1 cycle=f"
+  },
+  {
+    "kind": "sequence",
+    "name": "trader_sync_source_records_id_seq",
+    "definition": "bigint start=1 increment=1 min=1 max=9223372036854775807 cache=1 cycle=f"
+  },
+  {
+    "kind": "sequence",
+    "name": "trader_sync_summary_batches_id_seq",
+    "definition": "bigint start=1 increment=1 min=1 max=9223372036854775807 cache=1 cycle=f"
+  },
+  {
+    "kind": "sequence",
+    "name": "trader_sync_summary_heads_id_seq",
+    "definition": "bigint start=1 increment=1 min=1 max=9223372036854775807 cache=1 cycle=f"
+  },
+  {
+    "kind": "sequence",
+    "name": "trader_sync_summary_parts_id_seq",
+    "definition": "bigint start=1 increment=1 min=1 max=9223372036854775807 cache=1 cycle=f"
+  },
+  {
+    "kind": "table",
+    "name": "account_access",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "account_api_key",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "account_module_access",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "account_notification_deliveries",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "account_preferences",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "account_profile",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "athena_account",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "goose_db_version",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "notification_delivery_attempts",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "notification_sender_instances",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "system_notification_deliveries",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "system_notification_topics",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "telegram_binding_attempts",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "telegram_binding_replies",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "telegram_binding_versions",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "telegram_bindings",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "telegram_consumed_updates",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "telegram_polling_state",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_activities",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_alert_memberships",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_baseline_attempts",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_collector_control",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_collector_epochs",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_combo_leg_index",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_directory_refresh",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_finality_anomalies",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_interruptions",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_market_metadata",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_monitor_intervals",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_request_results",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_runtime_control",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_source_candidates",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_source_records",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_subscriptions",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_summary_batches",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_summary_heads",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_summary_part_items",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_summary_parts",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_target_confirmations",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_target_notes",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "trader_sync_targets",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "trigger",
+    "name": "account_notification_deliveries.account_notification_frozen_payload",
+    "definition": "CREATE TRIGGER account_notification_frozen_payload BEFORE UPDATE ON public.account_notification_deliveries FOR EACH ROW EXECUTE FUNCTION notification_guard_frozen_payload() enabled=O"
+  },
+  {
+    "kind": "trigger",
+    "name": "system_notification_deliveries.system_notification_frozen_payload",
+    "definition": "CREATE TRIGGER system_notification_frozen_payload BEFORE UPDATE ON public.system_notification_deliveries FOR EACH ROW EXECUTE FUNCTION notification_guard_frozen_payload() enabled=O"
+  },
+  {
+    "kind": "trigger",
+    "name": "telegram_binding_replies.binding_reply_frozen_payload",
+    "definition": "CREATE TRIGGER binding_reply_frozen_payload BEFORE UPDATE ON public.telegram_binding_replies FOR EACH ROW EXECUTE FUNCTION notification_guard_frozen_payload() enabled=O"
+  },
+  {
+    "kind": "trigger",
+    "name": "trader_sync_activities.trader_sync_activity_immutable",
+    "definition": "CREATE TRIGGER trader_sync_activity_immutable BEFORE UPDATE ON public.trader_sync_activities FOR EACH ROW EXECUTE FUNCTION trader_sync_guard_activity_immutable() enabled=O"
+  },
+  {
+    "kind": "trigger",
+    "name": "trader_sync_alert_memberships.summary_member_immutable",
+    "definition": "CREATE TRIGGER summary_member_immutable BEFORE UPDATE ON public.trader_sync_alert_memberships FOR EACH ROW EXECUTE FUNCTION trader_sync_guard_summary_member() enabled=O"
+  },
+  {
+    "kind": "trigger",
+    "name": "trader_sync_baseline_attempts.trader_sync_attempt_terminal",
+    "definition": "CREATE TRIGGER trader_sync_attempt_terminal BEFORE UPDATE ON public.trader_sync_baseline_attempts FOR EACH ROW EXECUTE FUNCTION trader_sync_guard_attempt_terminal() enabled=O"
+  },
+  {
+    "kind": "trigger",
+    "name": "trader_sync_summary_batches.summary_batch_immutable",
+    "definition": "CREATE TRIGGER summary_batch_immutable BEFORE UPDATE ON public.trader_sync_summary_batches FOR EACH ROW EXECUTE FUNCTION trader_sync_guard_summary_batch() enabled=O"
+  },
+  {
+    "kind": "trigger",
+    "name": "trader_sync_summary_part_items.summary_part_items_immutable",
+    "definition": "CREATE TRIGGER summary_part_items_immutable BEFORE INSERT OR DELETE OR UPDATE ON public.trader_sync_summary_part_items FOR EACH ROW EXECUTE FUNCTION trader_sync_guard_summary_content() enabled=O"
+  },
+  {
+    "kind": "trigger",
+    "name": "trader_sync_summary_parts.summary_part_immutable",
+    "definition": "CREATE TRIGGER summary_part_immutable BEFORE INSERT OR DELETE OR UPDATE ON public.trader_sync_summary_parts FOR EACH ROW EXECUTE FUNCTION trader_sync_guard_summary_content() enabled=O"
+  },
+  {
+    "kind": "view",
+    "name": "trader_sync_subscription_interruptions",
+    "definition": " SELECT rel.owner_id,\n    rel.subscription_id,\n    rel.activation_generation,\n    rel.epoch_id,\n    rel.id,\n    rel.recorded_at,\n    rel.ended_at,\n    rel.reason,\n    rel.awaiting_cleanup,\n    jsonb_build_object('ID', (rel.id)::text, 'Start', NULL::unknown, 'End', recovered.effective_at, 'RecoveredAt', recovered.effective_at, 'Reason', rel.reason, 'Uncertainty', ('actual_start_unknown;recorded_stop_boundary_available'::text ||\n        CASE\n            WHEN (recovered.effective_at \u003c rel.ended_at) THEN ';clock_order_uncertain'::text\n            ELSE ''::text\n        END), 'PossibleMissing', true) AS interruption_json\n   FROM (( SELECT DISTINCT ba.owner_id,\n            ba.subscription_id,\n            ba.activation_generation,\n            ep.id AS epoch_id,\n            ir.id,\n            ir.recorded_at,\n            ep.ended_at,\n            ep.reason,\n            ((ba.state = 'pending'::text) OR (EXISTS ( SELECT 1\n                   FROM trader_sync_monitor_intervals i\n                  WHERE ((i.baseline_attempt_id = ba.id) AND (i.ended_at IS NULL))))) AS awaiting_cleanup\n           FROM ((trader_sync_baseline_attempts ba\n             JOIN trader_sync_collector_epochs ep ON (((ep.id = ba.collector_epoch) AND (ep.ended_at IS NOT NULL))))\n             JOIN trader_sync_interruptions ir ON ((ir.collector_epoch = ep.id)))\n          WHERE ((ba.state = 'pending'::text) OR ((ba.state = 'failed'::text) AND (ba.ended_at = ep.ended_at) AND (ba.reason = ep.reason)) OR (EXISTS ( SELECT 1\n                   FROM trader_sync_monitor_intervals i\n                  WHERE ((i.baseline_attempt_id = ba.id) AND ((i.ended_at IS NULL) OR ((i.ended_at = ep.ended_at) AND (i.reason = ep.reason)))))))) rel\n     LEFT JOIN LATERAL ( SELECT i.effective_at\n           FROM (trader_sync_monitor_intervals i\n             JOIN trader_sync_baseline_attempts ba ON (((ba.id = i.baseline_attempt_id) AND (ba.state = 'succeeded'::text))))\n          WHERE ((i.owner_id = rel.owner_id) AND (i.subscription_id = rel.subscription_id) AND (i.activation_generation = rel.activation_generation) AND (i.collector_epoch \u003e rel.epoch_id))\n          ORDER BY i.collector_epoch, ba.created_at, ba.id\n         LIMIT 1) recovered ON (true));"
+  },
+  {
+    "kind": "view",
+    "name": "trader_sync_subscription_observations",
+    "definition": " SELECT s.owner_id,\n    s.id AS subscription_id,\n        CASE\n            WHEN (s.desired_state = 'enabled'::text) THEN state.observation_state\n            ELSE s.desired_state\n        END AS status,\n    jsonb_build_object('State', state.observation_state, 'Reason',\n        CASE\n            WHEN logical.interrupted THEN 'collector_interrupted'::text\n            WHEN (s.observation_state = 'pending_baseline'::text) THEN COALESCE(( SELECT ba.reason\n               FROM trader_sync_baseline_attempts ba\n              WHERE ((ba.owner_id = s.owner_id) AND (ba.subscription_id = s.id) AND (ba.activation_generation = s.activation_generation) AND (ba.state = 'failed'::text))\n              ORDER BY ba.created_at DESC, ba.id DESC\n             LIMIT 1), s.reason)\n            ELSE s.reason\n        END, 'LastReliableAt', ( SELECT i.last_reliable_at\n           FROM trader_sync_monitor_intervals i\n          WHERE ((i.owner_id = s.owner_id) AND (i.subscription_id = s.id) AND (i.activation_generation = s.activation_generation) AND (i.last_reliable_at IS NOT NULL))\n          ORDER BY i.collector_epoch DESC, i.effective_at DESC, i.id DESC\n         LIMIT 1), 'InterruptionCount', ( SELECT count(DISTINCT rel.epoch_id) AS count\n           FROM trader_sync_subscription_interruptions rel\n          WHERE ((rel.owner_id = s.owner_id) AND (rel.subscription_id = s.id))), 'LatestInterruption', ( SELECT rel.interruption_json\n           FROM trader_sync_subscription_interruptions rel\n          WHERE ((rel.owner_id = s.owner_id) AND (rel.subscription_id = s.id))\n          ORDER BY rel.recorded_at DESC, rel.id DESC\n         LIMIT 1)) AS observation_json\n   FROM ((trader_sync_subscriptions s\n     CROSS JOIN LATERAL ( SELECT ((s.desired_state = 'enabled'::text) AND (EXISTS ( SELECT 1\n                   FROM trader_sync_subscription_interruptions rel\n                  WHERE ((rel.owner_id = s.owner_id) AND (rel.subscription_id = s.id) AND (rel.activation_generation = s.activation_generation) AND rel.awaiting_cleanup)))) AS interrupted) logical)\n     CROSS JOIN LATERAL ( SELECT\n                CASE\n                    WHEN logical.interrupted THEN 'interrupted'::text\n                    ELSE s.observation_state\n                END AS observation_state) state);"
+  }
+]

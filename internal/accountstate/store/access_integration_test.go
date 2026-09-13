@@ -4,8 +4,14 @@ package store_test
 
 import (
 	"context"
+	"errors"
+	"github.com/jackc/pgx/v5"
+	"github.com/stretchr/testify/require"
+	"github.com/useryege/athena/internal/accountaccess"
+	traderstore "github.com/useryege/athena/internal/tradersync/store"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -95,4 +101,60 @@ func TestExternalRegistrationReportsFirstCreationAndIdempotentRetry(t *testing.T
 			}
 		})
 	}
+}
+
+func TestAccessRevocationIsAtomicWithoutTraderSyncRuntime(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	accounts := accountstore.NewSQLStore(db.Pool)
+	account, err := accounts.EnsureDevelopmentAccount(ctx, accountcredentials.DevelopmentRoleMember)
+	require.NoError(t, err)
+	sub, pending, complete, interval := uuid.NewString(), uuid.NewString(), uuid.NewString(), uuid.NewString()
+	_, err = db.Pool.Exec(ctx, `INSERT INTO trader_sync_subscriptions(id,owner_id,wallet,desired_state,observation_state,target_display) VALUES($1,$2,decode(repeat('11',20),'hex'),'enabled','healthy','{}')`, sub, account.ID)
+	require.NoError(t, err)
+	_, err = db.Pool.Exec(ctx, `INSERT INTO trader_sync_baseline_attempts(id,owner_id,subscription_id,activation_generation,expected_revision,state) VALUES($1,$2,$3,1,1,'pending'),($4,$2,$3,1,1,'succeeded')`, pending, account.ID, sub, complete)
+	require.NoError(t, err)
+	_, err = db.Pool.Exec(ctx, `INSERT INTO trader_sync_monitor_intervals(id,owner_id,subscription_id,baseline_attempt_id,activation_generation,collector_epoch,filter_revision,expected_revision,registered_high,candidate_effective_at,effective_at) VALUES($1,$2,$3,$4,1,1,1,1,0,clock_timestamp(),clock_timestamp())`, interval, account.ID, sub, complete)
+	require.NoError(t, err)
+	// Any accidental runtime-share requirement would block behind this transaction.
+	blocker, err := db.Pool.Begin(ctx)
+	require.NoError(t, err)
+	defer blocker.Rollback(ctx)
+	_, err = blocker.Exec(ctx, `SELECT 1 FROM trader_sync_runtime_control FOR UPDATE`)
+	require.NoError(t, err)
+	access, err := accounts.GetAccountAccess(ctx, account.ID)
+	require.NoError(t, err)
+	next := access.Clone()
+	next.Modules[accountaccess.ModuleTraderSync] = accountaccess.AccessLevelNone
+	adapter := traderstore.NewAccessRevocationAdapter()
+	fail := true
+	rollback := errors.New("rollback entire access mutation")
+	accounts.SetAccessChangeHook(func(c context.Context, tx pgx.Tx, id string, previous, next accountaccess.Access) error {
+		if err := adapter.ApplyAccessChangeTx(c, tx, id, previous, next); err != nil {
+			return err
+		}
+		if fail {
+			return rollback
+		}
+		return nil
+	})
+	bounded, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	_, err = accounts.UpdateAccountAccess(bounded, account.ID, next, access.Revision)
+	require.ErrorIs(t, err, rollback)
+	var state string
+	var ended bool
+	require.NoError(t, db.Pool.QueryRow(ctx, `SELECT state FROM trader_sync_baseline_attempts WHERE id=$1`, pending).Scan(&state))
+	require.Equal(t, "pending", state)
+	require.NoError(t, db.Pool.QueryRow(ctx, `SELECT ended_at IS NOT NULL FROM trader_sync_monitor_intervals WHERE id=$1`, interval).Scan(&ended))
+	require.False(t, ended)
+	fail = false
+	_, err = accounts.UpdateAccountAccess(bounded, account.ID, next, access.Revision)
+	require.NoError(t, err)
+	require.NoError(t, db.Pool.QueryRow(ctx, `SELECT state FROM trader_sync_baseline_attempts WHERE id=$1`, pending).Scan(&state))
+	require.Equal(t, "failed", state)
+	require.NoError(t, db.Pool.QueryRow(ctx, `SELECT ended_at IS NOT NULL FROM trader_sync_monitor_intervals WHERE id=$1`, interval).Scan(&ended))
+	require.True(t, ended)
+	require.NoError(t, db.Pool.QueryRow(ctx, `SELECT desired_state FROM trader_sync_subscriptions WHERE id=$1`, sub).Scan(&state))
+	require.Equal(t, "permission_disabled", state)
 }

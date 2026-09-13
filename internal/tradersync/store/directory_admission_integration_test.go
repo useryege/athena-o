@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/stretchr/testify/require"
 	"github.com/useryege/athena/internal/accountstate/store/migrations"
 	"github.com/useryege/athena/internal/testutil/pgtest"
 	q "github.com/useryege/athena/internal/tradersync/store/sqlc"
@@ -47,7 +48,7 @@ func TestDirectoryAdmissionSurvivesPostSendRollback(t *testing.T) {
 	if _, err = db.Pool.Exec(ctx, `CREATE FUNCTION fail_directory_mapping() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN RAISE EXCEPTION 'injected mapping failure'; END$$; CREATE TRIGGER fail_directory_mapping BEFORE INSERT ON trader_sync_combo_leg_index FOR EACH ROW EXECUTE FUNCTION fail_directory_mapping()`); err != nil {
 		t.Fatal(err)
 	}
-	_, err = NewSQLStore(db.Pool).RefreshComboPage(ctx, fetch)
+	_, err = runtimeTestStore(t, db.Pool).RefreshComboPage(ctx, fetch)
 	if err == nil {
 		t.Fatal("mapping fault was not exercised")
 	}
@@ -63,7 +64,7 @@ func TestDirectoryAdmissionSurvivesPostSendRollback(t *testing.T) {
 	if _, err = other.Exec(ctx, `DROP TRIGGER fail_directory_mapping ON trader_sync_combo_leg_index`); err != nil {
 		t.Fatal(err)
 	}
-	next, err := NewSQLStore(other).RefreshComboPage(ctx, fetch)
+	next, err := runtimeTestStore(t, other).RefreshComboPage(ctx, fetch)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +89,7 @@ func TestDirectoryAdmissionSurvivesPostSendRollback(t *testing.T) {
 		defer timer.Stop()
 		<-timer.C
 	}
-	if _, err = NewSQLStore(other).RefreshComboPage(ctx, fetch); err != nil {
+	if _, err = runtimeTestStore(t, other).RefreshComboPage(ctx, fetch); err != nil {
 		t.Fatal(err)
 	}
 	if requests.Load() != 2 {
@@ -130,7 +131,7 @@ func TestDirectoryAdmissionUnknownAndSettlementFailure(t *testing.T) {
 				t.Fatal(e)
 			}
 			defer other.Close()
-			s := NewSQLStore(db.Pool)
+			s := runtimeTestStore(t, db.Pool)
 			requests := 0
 			fetch := func(context.Context, string, int) (pm.ComboMarketPage, error) {
 				requests++
@@ -193,7 +194,7 @@ func TestDirectoryAdmissionUnknownAndSettlementFailure(t *testing.T) {
 				t.Fatal("mapping and cursor must commit atomically", cursor, mappings)
 			}
 			before := requests
-			_, e = NewSQLStore(other).RefreshComboPage(ctx, fetch)
+			_, e = runtimeTestStore(t, other).RefreshComboPage(ctx, fetch)
 			if e != nil {
 				t.Fatal(e)
 			}
@@ -225,7 +226,7 @@ func TestDirectoryAdmissionOriginalDeadlineIncludesAckAndLockWait(t *testing.T) 
 					_ = blocker.Rollback(ctx)
 				}
 			}()
-			s := NewSQLStore(db.Pool)
+			s := runtimeTestStore(t, db.Pool)
 			s.directoryTransactions = &directoryFaults{pool: db.Pool, wrap: func(n int, tx pgx.Tx) pgx.Tx {
 				if n != 1 {
 					return tx
@@ -287,7 +288,7 @@ func TestDirectoryLostConnectionCancelsOldHTTPAndRejectsStaleToken(t *testing.T)
 	cancelled := make(chan struct{})
 	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { close(entered); <-r.Context().Done(); close(cancelled) }))
 	defer provider.Close()
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	var pid uint32
 	s.directoryTransactions = &directoryFaults{pool: db.Pool, wrap: func(n int, tx pgx.Tx) pgx.Tx {
 		if n == 2 {
@@ -324,7 +325,7 @@ func TestDirectoryLostConnectionCancelsOldHTTPAndRejectsStaleToken(t *testing.T)
 		requests++
 		return pm.ComboMarketPage{Markets: []pm.ComboMarket{{ID: "18", ConditionID: "new", PositionIDs: []string{"124"}}}, NextCursor: "new-cursor"}, nil
 	}
-	next, e := NewSQLStore(other).RefreshComboPage(ctx, fetch)
+	next, e := runtimeTestStore(t, other).RefreshComboPage(ctx, fetch)
 	if e != nil || requests != 0 {
 		t.Fatal("lost lock bypassed reservation", requests, e)
 	}
@@ -345,7 +346,7 @@ func TestDirectoryLostConnectionCancelsOldHTTPAndRejectsStaleToken(t *testing.T)
 		timer := time.NewTimer(wait + 20*time.Millisecond)
 		<-timer.C
 	}
-	if _, e = NewSQLStore(other).RefreshComboPage(ctx, fetch); e != nil || requests != 1 {
+	if _, e = runtimeTestStore(t, other).RefreshComboPage(ctx, fetch); e != nil || requests != 1 {
 		t.Fatal("successor could not acquire due admission", requests, e)
 	}
 	_, e = q.New(other).AdvanceComboPage(ctx, q.AdvanceComboPageParams{NextCursor: "stale", ExpectedCursor: "", AdmissionID: oldToken})
@@ -360,4 +361,120 @@ func TestDirectoryLostConnectionCancelsOldHTTPAndRejectsStaleToken(t *testing.T)
 	if e = other.QueryRow(ctx, `SELECT count(*) FROM trader_sync_combo_leg_index WHERE market_id='18'`).Scan(&count); e != nil || count != 1 {
 		t.Fatal(count, e)
 	}
+}
+
+func TestDirectoryRuntimeTakeoverBetweenAdmissionAndPage(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	base := NewSQLStore(db.Pool)
+	a, err := base.AcquireRuntimeSession(ctx)
+	require.NoError(t, err)
+	stale := bindTestRuntime(t, base, a)
+	t.Cleanup(func() { require.NoError(t, a.CloseAfterWorkers(ctx)) })
+	var b *RuntimeSession
+	stale.directoryTransactions = &directoryFaults{pool: db.Pool, wrap: func(n int, tx pgx.Tx) pgx.Tx {
+		if n != 1 {
+			return tx
+		}
+		return &directoryFaultTx{Tx: tx, commit: func(c context.Context) error {
+			if err := tx.Commit(c); err != nil {
+				return err
+			}
+			require.NoError(t, a.CloseAfterWorkers(ctx))
+			b, err = base.AcquireRuntimeSession(ctx)
+			require.NoError(t, err)
+			t.Cleanup(func() { require.NoError(t, b.CloseAfterWorkers(ctx)) })
+			return nil
+		}}
+	}}
+	calls := 0
+	_, err = stale.RefreshComboPage(ctx, func(context.Context, string, int) (pm.ComboMarketPage, error) {
+		calls++
+		return pm.ComboMarketPage{Markets: []pm.ComboMarket{}, NextCursor: "stale"}, nil
+	})
+	require.ErrorIs(t, err, ErrRuntimeFenced)
+	require.Zero(t, calls)
+	var cursor string
+	var reserved bool
+	require.NoError(t, db.Pool.QueryRow(ctx, `SELECT cursor,admission_id IS NOT NULL FROM trader_sync_directory_refresh WHERE name='combo_markets'`).Scan(&cursor, &reserved))
+	require.Empty(t, cursor)
+	require.True(t, reserved)
+}
+
+func TestDirectoryRuntimeTakeoverWaitsForHTTPSettlement(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	base := NewSQLStore(db.Pool)
+	a, err := base.AcquireRuntimeSession(ctx)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = a.CloseAfterWorkers(ctx) })
+	stale := bindTestRuntime(t, base, a)
+	entered, release := make(chan struct{}), make(chan struct{})
+	defer func() {
+		select {
+		case <-release:
+		default:
+			close(release)
+		}
+	}()
+	settled := make(chan error, 1)
+	go func() {
+		_, err := stale.RefreshComboPage(ctx, func(context.Context, string, int) (pm.ComboMarketPage, error) {
+			close(entered)
+			<-release
+			return pm.ComboMarketPage{Markets: []pm.ComboMarket{{ID: "17", ConditionID: "old", PositionIDs: []string{"123"}}}, NextCursor: "settled"}, nil
+		})
+		settled <- err
+	}()
+	select {
+	case <-entered:
+	case <-time.After(2 * time.Second):
+		t.Fatal("HTTP not reached")
+	}
+	pid := a.conn.Conn().PgConn().PID()
+	_, err = db.Pool.Exec(ctx, `SELECT pg_terminate_backend($1)`, pid)
+	require.NoError(t, err)
+	require.Eventually(t, func() bool {
+		var locked bool
+		require.NoError(t, db.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pg_locks WHERE pid=$1 AND locktype='advisory' AND granted)`, pid).Scan(&locked))
+		return !locked
+	}, time.Second, 10*time.Millisecond)
+	type replacement struct {
+		owner *RuntimeSession
+		err   error
+	}
+	acquired := make(chan replacement, 1)
+	go func() {
+		owner, e := base.AcquireRuntimeSession(ctx)
+		if owner != nil {
+			t.Cleanup(func() { require.NoError(t, owner.CloseAfterWorkers(ctx)) })
+		}
+		acquired <- replacement{owner, e}
+	}()
+	require.Eventually(t, func() bool {
+		var waiting bool
+		require.NoError(t, db.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pg_stat_activity a WHERE a.datname=current_database() AND a.wait_event_type='Lock' AND a.query LIKE '%trader_sync_runtime_control%FOR UPDATE%' AND EXISTS(SELECT 1 FROM pg_locks l WHERE l.pid=a.pid AND l.locktype='advisory' AND l.granted))`).Scan(&waiting))
+		return waiting
+	}, time.Second, 10*time.Millisecond)
+	select {
+	case <-acquired:
+		t.Fatal("takeover passed in-flight page transaction")
+	default:
+	}
+	close(release)
+	require.NoError(t, <-settled)
+	result := <-acquired
+	require.NoError(t, result.err)
+	// The dead owning connection is discarded even though close cannot use it.
+	require.Error(t, a.CloseAfterWorkers(ctx))
+	before := runtimeWriteSnapshot(t, db.Pool)
+	_, err = stale.RefreshComboPage(ctx, func(context.Context, string, int) (pm.ComboMarketPage, error) {
+		t.Error("fenced runtime fetched another page")
+		return pm.ComboMarketPage{}, nil
+	})
+	require.ErrorIs(t, err, ErrRuntimeFenced)
+	require.Equal(t, before, runtimeWriteSnapshot(t, db.Pool))
+	var cursor string
+	require.NoError(t, db.Pool.QueryRow(ctx, `SELECT cursor FROM trader_sync_directory_refresh WHERE name='combo_markets'`).Scan(&cursor))
+	require.Equal(t, "settled", cursor)
 }

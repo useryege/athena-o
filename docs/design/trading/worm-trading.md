@@ -78,6 +78,8 @@ balance, catalog, and Estimate work while building a plan. A usable plan can be 
 order. `/worm-trading/executions` and `/{runId}` provide permanent history,
 Run-bound authorization, explicit serial control, and read-only reconciliation.
 
+Worm Trading is not selected by the default local full-stack graph. Its direct process must receive its own configuration explicitly; full-stack schema preparation retains the module database. See [local runtime boundaries](../development-runtime/local-runtime-orchestration.md).
+
 ## Source Locations
 
 | Concern | Source | Key symbols |
@@ -105,7 +107,7 @@ Run-bound authorization, explicit serial control, and read-only reconciliation.
 | Worm HMAC Cash-Out protocol | [util/worm/margin_position_cash_out_stages.go](../../../util/worm/margin_position_cash_out_stages.go), [util/worm/worm.go](../../../util/worm/worm.go), [util/worm/README.md](../../../util/worm/README.md) | exact-position inspection, immutable whole-position market Close, one-shot dispatch, exact GET observation |
 | Independent reauthentication lease | [internal/walletsecret/manager.go](../../../internal/walletsecret/manager.go), [internal/googleoidc/worm_credential_reauth.go](../../../internal/googleoidc/worm_credential_reauth.go), [internal/phantomauth/worm_credential_reauth.go](../../../internal/phantomauth/worm_credential_reauth.go) | `NewWormCredentialManager`, `EnableWormCredentialReauthentication`, Worm-only Google and Solana proof flows |
 | Browser navigation and pages | [ui/src/app/member/app.tsx](../../../ui/src/app/member/app.tsx), [ui/src/app/member/pages/worm-trading.tsx](../../../ui/src/app/member/pages/worm-trading.tsx), [ui/src/app/member/pages/worm-trading-combinations.tsx](../../../ui/src/app/member/pages/worm-trading-combinations.tsx), [ui/src/app/member/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/member/pages/worm-trading-execution-preview.tsx), [ui/src/app/member/pages/worm-trading-executions.tsx](../../../ui/src/app/member/pages/worm-trading-executions.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts) | `wormTradingNavItem`, Assets position Cash-Out controls and polling, Combinations/Preview pages, execution history/detail and explicit driver, strict response normalizers |
-| Process graph and production secrets | [Procfile](../../../Procfile), [docker-compose.prod.yml](../../../docker-compose.prod.yml), [hack/postgres/init/00-databases.sql](../../../hack/postgres/init/00-databases.sql), [tools/prod-env-reset/main.go](../../../tools/prod-env-reset/main.go) | port `8090`, `worm_trading` database, independent encryption key and internal token |
+| Process graph and production secrets | [docker-compose.prod.yml](../../../docker-compose.prod.yml), [hack/postgres/init/00-databases.sql](../../../hack/postgres/init/00-databases.sql), [tools/prod-env-reset/main.go](../../../tools/prod-env-reset/main.go) | port `8090`, `worm_trading` database, independent encryption key and internal token |
 
 ## Architecture
 

@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	trpc "github.com/useryege/athena/internal/tradersync/apiclient"
 	api "github.com/useryege/athena/pkg/apiclient/tradersync"
-	app "github.com/useryege/athena/pkg/apis/application/v1alpha1"
 	gu "github.com/useryege/athena/util/grpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
 	"net"
 	"net/http"
@@ -20,22 +22,28 @@ import (
 // This harness tests protobuf + the production JSON marshaler, not HandlerServer.
 // The application's actual authentication policy is covered separately.
 type contractServer struct {
-	api.UnimplementedTraderSyncServiceServer
+	trpc.UnimplementedTraderSyncServiceServer
 	mu      sync.Mutex
-	creates []*api.CreateSubscriptionRequest
+	creates []*trpc.CreateSubscriptionRequest
 }
 
-func (s *contractServer) CreateSubscription(ctx context.Context, r *api.CreateSubscriptionRequest) (*api.CreateSubscriptionResponse, error) {
+func (s *contractServer) CreateSubscription(ctx context.Context, r *trpc.CreateSubscriptionRequest) (*trpc.CreateSubscriptionResponse, error) {
 	s.mu.Lock()
 	s.creates = append(s.creates, r)
 	s.mu.Unlock()
-	return &api.CreateSubscriptionResponse{Subscription: &app.TraderSyncSubscription{ID: "subscription", Revision: 9007199254740993}}, nil
+	v := completeWire[trpc.Subscription]()
+	v.Id = "subscription"
+	v.Revision = 9007199254740993
+	return &trpc.CreateSubscriptionResponse{Subscription: v}, nil
 }
-func (s *contractServer) ListActivities(ctx context.Context, r *api.ListActivitiesRequest) (*api.ListActivitiesResponse, error) {
-	zero := "0"
-	no := false
-	_ = no
-	return &api.ListActivitiesResponse{Activities: []*app.TraderSyncActivity{{ID: "9007199254740993", PositionID: "90071992547409931234567890", CollateralRaw: zero, SourceLocation: app.TraderSyncSourceLocation{ChainID: "137", LogIndex: "0"}, TargetDisplaySnapshot: app.TraderSyncTargetDisplay{DisplayName: app.TraderSyncStringField{Evidence: app.TraderSyncFieldEvidence{Availability: "available"}, Value: &zero}}}}, Page: &api.ActivityPageInfo{NextCursor: "next", RefreshCursor: "refresh", Snapshot: "snapshot", AsOf: "2026-09-11T00:00:00Z", HasNewer: true}}, nil
+func (s *contractServer) ListActivities(ctx context.Context, r *trpc.ListActivitiesRequest) (*trpc.ListActivitiesResponse, error) {
+	v := completeWire[trpc.Activity]()
+	v.Id = "9007199254740993"
+	v.PositionId = "90071992547409931234567890"
+	v.CollateralRaw = "0"
+	v.SourceLocation = &trpc.SourceLocation{ChainId: "137", LogIndex: "0"}
+	v.TargetDisplaySnapshot.DisplayName = &trpc.StringField{Evidence: &trpc.FieldEvidence{Availability: "available"}, Value: &trpc.StringValue{Value: "0"}}
+	return &trpc.ListActivitiesResponse{Activities: []*trpc.Activity{v}, Page: &trpc.ActivityPageInfo{NextCursor: "next", RefreshCursor: "refresh", Snapshot: "snapshot", AsOf: "2026-09-11T00:00:00Z", HasNewer: true}}, nil
 }
 func contractGateway(t *testing.T, s api.TraderSyncServiceServer) *httptest.Server {
 	t.Helper()
@@ -62,7 +70,7 @@ func contractGateway(t *testing.T, s api.TraderSyncServiceServer) *httptest.Serv
 }
 func TestGatewayCamelCaseAndPresence(t *testing.T) {
 	s := &contractServer{}
-	h := contractGateway(t, s)
+	h := contractGateway(t, New(trpc.NewTraderSyncServiceClient(internalConnection(t, s)), func(context.Context) (*trpc.Actor, error) { return facadeActor, nil }))
 	for _, body := range []string{`{"confirmationToken":"x","requestId":"a"}`, `{"confirmationToken":"x","requestId":"b","note":{"value":""}}`, `{"confirmationToken":"x","requestId":"c","note":null}`} {
 		resp, e := h.Client().Post(h.URL+"/api/v1/trader-sync/subscriptions", "application/json", strings.NewReader(body))
 		if e != nil {
@@ -100,5 +108,30 @@ func TestGatewayCamelCaseAndPresence(t *testing.T) {
 	}
 	if page["refreshCursor"] != "refresh" || page["hasNewer"] != true || page["asOf"] != "2026-09-11T00:00:00Z" {
 		t.Fatal("page camelCase lost", page)
+	}
+}
+
+func TestGatewayDistinguishesDependency503FromPublic401(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		authErr error
+		want    int
+	}{{"dependency", nil, http.StatusServiceUnavailable}, {"public identity", status.Error(codes.Unauthenticated, "identity required"), http.StatusUnauthorized}} {
+		t.Run(tc.name, func(t *testing.T) {
+			h := contractGateway(t, New(trpc.NewUnavailableClient("dependency_unavailable"), func(context.Context) (*trpc.Actor, error) {
+				if tc.authErr != nil {
+					return nil, tc.authErr
+				}
+				return facadeActor, nil
+			}))
+			r, e := h.Client().Get(h.URL + "/api/v1/trader-sync/subscriptions")
+			if e != nil {
+				t.Fatal(e)
+			}
+			defer r.Body.Close()
+			if r.StatusCode != tc.want {
+				t.Fatalf("got %d want %d", r.StatusCode, tc.want)
+			}
+		})
 	}
 }

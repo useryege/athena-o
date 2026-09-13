@@ -33,7 +33,7 @@ endpoint, bucket name, or object key.
 | Browser realm-bound presentation | [ui/src/app/shared/services/requests.ts](../../../ui/src/app/shared/services/requests.ts), [ui/src/app/shared/account-presentation.tsx](../../../ui/src/app/shared/account-presentation.tsx), [ui/src/app/member/pages/wallets.tsx](../../../ui/src/app/member/pages/wallets.tsx), [ui/src/app/member/pages/worm-trading.tsx](../../../ui/src/app/member/pages/worm-trading.tsx), [ui/src/app/member/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/member/pages/worm-trading-execution-preview.tsx) | `realmBoundResourceURL`, `AccountAvatar`, uploaded Wallet and Worm avatar rendering |
 | Pinned object-store images | [deploy/minio/Dockerfile.server](../../../deploy/minio/Dockerfile.server), [deploy/minio/Dockerfile.mc](../../../deploy/minio/Dockerfile.mc) | MinIO commit `9e49d5e7a648`, mc commit `7394ce0dd2a8` |
 | Private bucket initialization | [deploy/minio/init-avatar-bucket.sh](../../../deploy/minio/init-avatar-bucket.sh) | bucket creation, anonymous-access removal, application IAM policy |
-| Local runtime | [hack/start-minio.sh](../../../hack/start-minio.sh), [hack/local-runtime.sh](../../../hack/local-runtime.sh) | pinned image bootstrap, `athena-local-minio-data`, stop/reset ownership checks |
+| Local runtime | [internal/devruntime/infrastructure.go](../../../internal/devruntime/infrastructure.go), [instance lifecycle](../development-runtime/local-runtime-orchestration.md) | pinned image bootstrap, per-instance persistent volume, dynamic loopback ports, exact stop/reset ownership |
 | Production runtime | [docker-compose.prod.yml](../../../docker-compose.prod.yml), [hack/prod-remote-deploy.sh](../../../hack/prod-remote-deploy.sh) | `minio`, `minio-init`, `PROD_MINIO_VOLUME` |
 
 ## Architecture
@@ -135,8 +135,8 @@ bearers are authenticated directly and do not require a realm header or query.
    prefix, and deletes unreferenced objects after a 24-hour grace period. A
    reference-load or listing failure stops that collection pass without deleting
    anything.
-10. Ordinary local stop removes the MinIO container but retains its volume.
-    `make run-reset` removes the owned MinIO volume. Production hot deploy
+10. Ordinary local stop stops the instance-owned MinIO container and retains its volume.
+    Reset requires the instance to be stopped and deletes only its owned MinIO volume. Production hot deploy
     retains the configured external volume, while a full fresh deployment owns
     its complete new object state.
 
@@ -157,7 +157,7 @@ PostgreSQL metadata is the live-reference source of truth. Account references
 are committed in `account_profile`; wallet references are committed in the
 owner-scoped `wallets` row and are mutually exclusive with an avatar preset. An
 object-store write alone is only a candidate. MinIO data lives in
-`athena-local-minio-data` locally and `PROD_MINIO_VOLUME` in production.
+a namespace-qualified persistent volume locally (inspect `make runtime-status INSTANCE=<name>`) and `PROD_MINIO_VOLUME` in production.
 
 Avatar metadata exposes an Athena relative API URL, not a storage URL. The
 current frontend entry binds that relative resource to its realm only while
@@ -237,7 +237,7 @@ IAM from retained MinIO state.
 
 ## Observability
 
-MinIO logs are streamed by Goreman locally and retained by Compose in
+MinIO logs are available from the exact container recorded by the local instance runtime and retained by Compose in
 production. Lifecycle logs identify image builds, volume creation/removal,
 readiness failure, and private-bucket initialization. Avatar handler logs use
 account UUID and, for wallet operations, wallet ID when diagnosing storage,

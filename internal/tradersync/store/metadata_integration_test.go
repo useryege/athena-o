@@ -37,7 +37,7 @@ func TestMetadataSchema(t *testing.T) {
 func TestMetadataDirectoryPersistsPageFailureRestartAndCache(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
 	ctx := context.Background()
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	page := pm.ComboMarket{ID: "8", ConditionID: "condition", PositionIDs: []string{"999999999999999999999999999999999999999999999999999999999"}}
 	calls := 0
 	fetch := func(_ context.Context, cursor string, limit int) (pm.ComboMarketPage, error) {
@@ -58,7 +58,7 @@ func TestMetadataDirectoryPersistsPageFailureRestartAndCache(t *testing.T) {
 		t.Fatal(rows, e)
 	}
 	// Simulate process restart, advancing only the isolated fixture's schedule.
-	s = NewSQLStore(db.Pool)
+	s = runtimeTestStore(t, db.Pool)
 	_, e = db.Pool.Exec(ctx, "UPDATE trader_sync_directory_refresh SET next_page_at=clock_timestamp()-interval '1 second'")
 	if e != nil {
 		t.Fatal(e)
@@ -135,9 +135,9 @@ func TestMetadataDirectoryConcurrentInstancesAndAtomicInvalidPage(t *testing.T) 
 		}
 		return pm.ComboMarketPage{Markets: []pm.ComboMarket{{ID: "1", ConditionID: "c", PositionIDs: []string{"1"}}}, NextCursor: "p2"}, nil
 	}
-	go func() { _, e := NewSQLStore(db.Pool).RefreshComboPage(ctx, fetch); done <- e }()
+	go func() { _, e := runtimeTestStore(t, db.Pool).RefreshComboPage(ctx, fetch); done <- e }()
 	<-entered
-	go func() { _, e := NewSQLStore(other).RefreshComboPage(ctx, fetch); done <- e }()
+	go func() { _, e := runtimeTestStore(t, other).RefreshComboPage(ctx, fetch); done <- e }()
 	close(release)
 	for i := 0; i < 2; i++ {
 		if e := <-done; e != nil {
@@ -148,7 +148,7 @@ func TestMetadataDirectoryConcurrentInstancesAndAtomicInvalidPage(t *testing.T) 
 		t.Fatal("concurrent page requests", calls.Load())
 	}
 	_, _ = db.Pool.Exec(ctx, "UPDATE trader_sync_directory_refresh SET next_page_at=clock_timestamp()-interval '1 second'")
-	_, e = NewSQLStore(db.Pool).RefreshComboPage(ctx, func(context.Context, string, int) (pm.ComboMarketPage, error) {
+	_, e = runtimeTestStore(t, db.Pool).RefreshComboPage(ctx, func(context.Context, string, int) (pm.ComboMarketPage, error) {
 		return pm.ComboMarketPage{Markets: []pm.ComboMarket{{ID: "2", ConditionID: "c", PositionIDs: []string{"2"}}, {ID: "3", ConditionID: "c", PositionIDs: []string{"not-decimal"}}}, NextCursor: "p3"}, nil
 	})
 	if e == nil {
@@ -167,7 +167,7 @@ func TestMetadataDirectoryConcurrentInstancesAndAtomicInvalidPage(t *testing.T) 
 func TestMetadataDirectoryLongRoundContinuesCursorAndPacesNextRound(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
 	ctx := context.Background()
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	_, e := db.Pool.Exec(ctx, `INSERT INTO trader_sync_directory_refresh(name,cursor,round_started_at,next_page_at,visited_cursors) VALUES('combo_markets','mid-round',clock_timestamp()-interval '20 minutes',clock_timestamp()-interval '1 second',ARRAY[''])`)
 	if e != nil {
 		t.Fatal(e)
@@ -205,7 +205,7 @@ func TestMetadataDirectoryCancelledFetchPersistsPacingAcrossPools(t *testing.T) 
 	entered := make(chan struct{})
 	firstDone := make(chan error, 1)
 	go func() {
-		_, err := NewSQLStore(db.Pool).RefreshComboPage(parent, func(fetchCtx context.Context, cursor string, _ int) (pm.ComboMarketPage, error) {
+		_, err := runtimeTestStore(t, db.Pool).RefreshComboPage(parent, func(fetchCtx context.Context, cursor string, _ int) (pm.ComboMarketPage, error) {
 			if cursor != "resume-cursor" {
 				return pm.ComboMarketPage{}, fmt.Errorf("wrong cursor %q", cursor)
 			}
@@ -225,7 +225,7 @@ func TestMetadataDirectoryCancelledFetchPersistsPacingAcrossPools(t *testing.T) 
 		return pm.ComboMarketPage{Markets: []pm.ComboMarket{}, NextCursor: "after-retry"}, nil
 	}
 	secondDone := make(chan error, 1)
-	go func() { _, err := NewSQLStore(other).RefreshComboPage(ctx, retry); secondDone <- err }()
+	go func() { _, err := runtimeTestStore(t, other).RefreshComboPage(ctx, retry); secondDone <- err }()
 	cancel()
 	select {
 	case err := <-firstDone:
@@ -259,7 +259,7 @@ func TestMetadataDirectoryCancelledFetchPersistsPacingAcrossPools(t *testing.T) 
 	if wait > 0 {
 		time.Sleep(wait)
 	}
-	if _, err = NewSQLStore(other).RefreshComboPage(ctx, retry); err != nil {
+	if _, err = runtimeTestStore(t, other).RefreshComboPage(ctx, retry); err != nil {
 		t.Fatal(err)
 	}
 	if retryCalls.Load() != 1 {
@@ -278,7 +278,7 @@ func TestMetadataDirectoryCancellationReportsPacingCleanupFailure(t *testing.T) 
 	}
 	parent, cancel := context.WithCancel(ctx)
 	defer cancel()
-	_, err = NewSQLStore(db.Pool).RefreshComboPage(parent, func(context.Context, string, int) (pm.ComboMarketPage, error) {
+	_, err = runtimeTestStore(t, db.Pool).RefreshComboPage(parent, func(context.Context, string, int) (pm.ComboMarketPage, error) {
 		cancel()
 		return pm.ComboMarketPage{}, parent.Err()
 	})
@@ -297,7 +297,7 @@ func TestMetadataDirectoryPageWriteFailureRollsBackMappingsAndCursor(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = NewSQLStore(db.Pool).RefreshComboPage(ctx, func(context.Context, string, int) (pm.ComboMarketPage, error) {
+	_, err = runtimeTestStore(t, db.Pool).RefreshComboPage(ctx, func(context.Context, string, int) (pm.ComboMarketPage, error) {
 		return pm.ComboMarketPage{Markets: []pm.ComboMarket{{ID: "1", ConditionID: "c", PositionIDs: []string{"1", "2"}}}, NextCursor: "next"}, nil
 	})
 	if err == nil {
@@ -318,7 +318,7 @@ func TestMetadataDirectoryPageWriteFailureRollsBackMappingsAndCursor(t *testing.
 
 func TestMetadataPreservesKnownPartialAcrossTransientFailure(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
-	s := NewSQLStore(db.Pool)
+	s := runtimeTestStore(t, db.Pool)
 	ctx := context.Background()
 	original := tm.TradeMetadata{Market: tm.MarketRef{PositionID: "100"}, LegsEvidence: tm.Evidence{Availability: "available"}, Legs: []tm.ComboLeg{{PositionID: "1", Market: tm.MarketRef{PositionID: "1", ID: "11", Evidence: tm.Evidence{Availability: "available", Source: "gamma"}}}, {PositionID: "2", Market: tm.MarketRef{PositionID: "2", Evidence: tm.Evidence{Availability: "unavailable", ReasonCode: "market_not_found"}}}}}
 	if err := s.SaveMetadata(ctx, "combo:100:hash", original); err != nil {
@@ -341,7 +341,7 @@ func TestMetadataConcurrentOldAvailableCannotHideExplicitConflict(t *testing.T) 
 		t.Fatal(e)
 	}
 	defer other.Close()
-	one, two := NewSQLStore(db.Pool), NewSQLStore(other)
+	one, two := runtimeTestStore(t, db.Pool), runtimeTestStore(t, other)
 	old := tm.TradeMetadata{Market: tm.MarketRef{PositionID: "1", ID: "known", Evidence: tm.Evidence{Availability: "available"}}, LegsEvidence: tm.Evidence{Availability: "available"}, Legs: []tm.ComboLeg{{PositionID: "2", Market: tm.MarketRef{PositionID: "2", Evidence: tm.Evidence{Availability: "available"}, ID: "leg"}}}}
 	conflict := old
 	conflict.Market.Availability = "unavailable"

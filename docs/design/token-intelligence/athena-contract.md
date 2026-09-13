@@ -81,7 +81,7 @@ tracked asset balances and is scaled by the configured USDT decimals.
 
 The Ethereum fee-recipient address is `0xf38521f130fcCF29dB1961597bc5d2B60F995f85`; the BSC fee-recipient address is `0x0ED943Ce24BaEBf257488771759F9BF482C39706`. Runtime services obtain the deployed contract addresses from `ATHENA_TOKEN_ETH_ATHENA_CONTRACT` and `ATHENA_TOKEN_BSC_ATHENA_CONTRACT`, exposed as the corresponding `--eth-athena-contract` and `--bsc-athena-contract` command settings. The maintained [local](../../../.env) and [production](../../../.env.prod) configurations enable Ethereum Mainnet at `0x68244311ba4c8ef8127e1e8b2ff30818d01e56b6` and disable BSC Mainnet while retaining its deployment at `0x372333a07c7b358Ef29187315e4FDF42Bc44FAC1`.
 
-`ATHENA_TOKEN_NODE_WS_PROXY_URL` / `--node-ws-proxy-url` supplies an optional HTTP, HTTPS, or SOCKS5 proxy exclusively to the shared Token EVM WebSocket registry. `make run` removes standard proxy variables from Goreman children and supplies the WSL host's HTTP proxy on port `10809` by default. An empty value forces direct dialing, which is the production and manual-launch behavior. Process-wide HTTP proxy variables are not consulted by this EVM connection path.
+`ATHENA_TOKEN_NODE_WS_PROXY_URL` / `--node-ws-proxy-url` supplies an optional HTTP, HTTPS, or SOCKS5 proxy exclusively to the shared Token EVM WebSocket registry. Token processes are not selected by the default local full-stack graph; configure this dedicated proxy explicitly when launching them. The Trader Sync runtime proxy default does not configure Token. An empty value forces direct dialing, which is the production and manual-launch behavior. Process-wide HTTP proxy variables are not consulted by this EVM connection path.
 
 ## Invariants
 

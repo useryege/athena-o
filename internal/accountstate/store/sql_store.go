@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"os"
 	"strings"
 	"time"
 
@@ -18,10 +19,10 @@ import (
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcenter"
 	"github.com/useryege/athena/internal/accountcredentials"
+	"github.com/useryege/athena/internal/accountstate/schema"
 	accountstatemigrations "github.com/useryege/athena/internal/accountstate/store/migrations"
 	accountstatesqlc "github.com/useryege/athena/internal/accountstate/store/sqlc"
 	"github.com/useryege/athena/internal/accountstate/txgate"
-	"github.com/useryege/athena/util/db/postgres"
 )
 
 func Migrations() embed.FS {
@@ -52,17 +53,15 @@ func (s *SQLStore) Pool() *pgxpool.Pool {
 
 func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {
 	return func(ctx context.Context) (*SQLStore, error) {
-		pool, err := postgres.ConnectAndMigrate(ctx, postgres.Options{
-			Module:       "account-state",
-			DSNEnv:       "ATHENA_SERVER_POSTGRES_DSN",
-			Database:     "athena",
-			Migrations:   accountstatemigrations.FS,
-			MigrationDir: accountstatemigrations.Dir,
-		})
+		dsn, err := schema.LoadDSN(os.LookupEnv)
+		if err != nil {
+			return nil, err
+		}
+		pool, err := schema.ConnectVerified(ctx, dsn)
 		if err != nil {
 			return nil, fmt.Errorf("connect account-state postgres: %w", err)
 		}
-		log.Info("account-state postgres migrations are up to date")
+		log.Info("account-state postgres schema verified")
 		return NewSQLStore(pool), nil
 	}
 }
