@@ -70,3 +70,29 @@ func TestRuntimeShutdownBeforeStartPreventsStart(t *testing.T) {
 	require.Error(t, r.Start(context.Background()))
 	require.False(t, r.Ready())
 }
+
+func TestRuntimeShutdownLogFieldsNeverWaitForWorkerLocks(t *testing.T) {
+	t.Setenv("ATHENA_LOCAL_RUNTIME_INSTANCE", "cached-instance")
+	t.Setenv("ATHENA_LOCAL_RUNTIME_RUN_ID", "cached-run")
+	r, err := NewRuntime(runtimeTestConfig(), runtimeTestRPC(), runtimeTestDeps())
+	require.NoError(t, err)
+	// Even a stuck holder of both lifecycle and collector locks must not stop
+	// the command's final diagnostic read or postpone its process deadline.
+	collector := &Collector{}
+	r.service = &Service{deps: Dependencies{Collector: collector}}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	collector.mu.Lock()
+	defer collector.mu.Unlock()
+	fields := make(chan RuntimeLogFields, 1)
+	go func() { fields <- r.ShutdownLogFields() }()
+	select {
+	case snapshot := <-fields:
+		require.Equal(t, "cached-instance", snapshot.Instance)
+		require.Equal(t, "cached-run", snapshot.Run)
+		require.Equal(t, "unknown", snapshot.RuntimeGeneration)
+		require.Equal(t, "unknown", snapshot.CollectorEpoch)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("watchdog diagnostics blocked on a worker lock")
+	}
+}

@@ -65,7 +65,7 @@ func TestRuntimeProcessWatchdogRetainsDatabaseOwnerUntilExit(t *testing.T) {
 	address := l.Addr().String()
 	require.NoError(t, l.Close())
 	child := exec.Command(os.Args[0], "-test.run=^TestRuntimeDatabaseHelperProcess$")
-	child.Env = append(os.Environ(), "ATHENA_TEST_RUNTIME_DB_HELPER=1", "ATHENA_TEST_RUNTIME_DSN="+db.DSN, "ATHENA_TEST_RUNTIME_ADDRESS="+address)
+	child.Env = append(os.Environ(), "ATHENA_TEST_RUNTIME_DB_HELPER=1", "ATHENA_TEST_RUNTIME_DSN="+db.DSN, "ATHENA_TEST_RUNTIME_ADDRESS="+address, "ATHENA_LOCAL_RUNTIME_INSTANCE=watchdog-fixture", "ATHENA_LOCAL_RUNTIME_RUN_ID=watchdog-run")
 	var logs bytes.Buffer
 	child.Stdout = &logs
 	child.Stderr = &logs
@@ -82,7 +82,11 @@ func TestRuntimeProcessWatchdogRetainsDatabaseOwnerUntilExit(t *testing.T) {
 	err = child.Wait()
 	require.Error(t, err)
 	require.Less(t, time.Since(started), 5*time.Second)
-	require.Contains(t, logs.String(), "shutdown deadline exceeded")
+	line := watchdogLogLine(t, logs.String())
+	require.Contains(t, line, `instance="watchdog-fixture"`)
+	require.Contains(t, line, `run="watchdog-run"`)
+	require.Contains(t, line, "runtime_generation=1")
+	require.Contains(t, line, "collector_epoch=unknown")
 	require.Contains(t, logs.String(), "accepted RPC remains blocked")
 	successor, err := store.NewSQLStore(db.Pool).AcquireRuntimeSession(context.Background())
 	require.NoError(t, err)

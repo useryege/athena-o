@@ -34,6 +34,13 @@ type RuntimeDependencies struct {
 	// runtime publishes the fully initialized Service through that atomic gate.
 	NewRPCServer func(*Service, func() bool) *grpc.Server
 }
+
+// RuntimeLogFields is the last observed lifecycle identity, not a health probe.
+// It contains no credentials and can be read without waiting on runtime workers.
+type RuntimeLogFields struct {
+	Instance, Run, RuntimeGeneration, CollectorEpoch string
+}
+
 type runtimeWorker struct {
 	name string
 	run  func(context.Context) error
@@ -48,6 +55,7 @@ type Runtime struct {
 	mu           sync.Mutex
 	started      bool
 	ready        atomic.Bool
+	shutdownLog  atomic.Pointer[RuntimeLogFields]
 	runCtx       context.Context
 	cancel       context.CancelFunc
 	stopping     chan struct{}
@@ -107,27 +115,40 @@ func NewRuntime(cfg Config, rpcCfg rpcconfig.Server, deps RuntimeDependencies) (
 	if deps.NewRPCServer == nil {
 		return nil, errors.New("Trader Sync RPC server factory required")
 	}
-	return &Runtime{cfg: cfg, rpcCfg: rpcCfg, deps: deps, stopping: make(chan struct{}), joined: make(chan struct{}), closed: make(chan struct{})}, nil
-}
-
-func (r *Runtime) phase(phase string) {
-	fields := log.Fields{"service": "trader-sync", "phase": phase, "instance": "unmanaged", "run": "direct", "runtime_generation": "unknown", "collector_epoch": "unknown"}
+	r := &Runtime{cfg: cfg, rpcCfg: rpcCfg, deps: deps, stopping: make(chan struct{}), joined: make(chan struct{}), closed: make(chan struct{})}
+	fields := r.ShutdownLogFields()
 	if v := os.Getenv("ATHENA_LOCAL_RUNTIME_INSTANCE"); v != "" {
-		fields["instance"] = v
+		fields.Instance = v
 	}
 	if v := os.Getenv("ATHENA_LOCAL_RUNTIME_RUN_ID"); v != "" {
-		fields["run"] = v
+		fields.Run = v
 	}
+	r.shutdownLog.Store(&fields)
+	return r, nil
+}
+
+// ShutdownLogFields uses only an atomic load of an immutable snapshot. In
+// particular it never acquires the runtime/collector locks or probes a source.
+func (r *Runtime) ShutdownLogFields() RuntimeLogFields {
+	if fields := r.shutdownLog.Load(); fields != nil {
+		return *fields
+	}
+	return RuntimeLogFields{Instance: "unmanaged", Run: "direct", RuntimeGeneration: "unknown", CollectorEpoch: "unknown"}
+}
+func (r *Runtime) phase(phase string) {
+	fields := r.ShutdownLogFields()
 	if r.owner != nil {
-		fields["runtime_generation"] = r.owner.RuntimeToken().Generation
+		fields.RuntimeGeneration = fmt.Sprint(r.owner.RuntimeToken().Generation)
 	}
+	fields.CollectorEpoch = "unknown"
 	if r.service != nil && r.service.deps.Collector != nil {
 		epoch, _, _, available := r.service.deps.Collector.RawSnapshot()
 		if available {
-			fields["collector_epoch"] = epoch
+			fields.CollectorEpoch = fmt.Sprint(epoch)
 		}
 	}
-	log.WithFields(fields).Info("Trader Sync lifecycle")
+	r.shutdownLog.Store(&fields)
+	log.WithFields(log.Fields{"service": "trader-sync", "phase": phase, "instance": fields.Instance, "run": fields.Run, "runtime_generation": fields.RuntimeGeneration, "collector_epoch": fields.CollectorEpoch}).Info("Trader Sync lifecycle")
 }
 
 func (r *Runtime) Start(ctx context.Context) (err error) {

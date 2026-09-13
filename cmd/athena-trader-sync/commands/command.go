@@ -66,7 +66,7 @@ func NewCommand() *cobra.Command {
 					return err
 				}
 			case <-timer.C:
-				shutdownDeadline()
+				shutdownDeadline(r.ShutdownLogFields())
 			}
 			remaining = time.Until(deadline)
 		}
@@ -79,6 +79,7 @@ func NewCommand() *cobra.Command {
 type lifecycle interface {
 	Wait() error
 	Shutdown(context.Context) error
+	ShutdownLogFields() tradersync.RuntimeLogFields
 }
 
 func runLifecycle(ctx context.Context, r lifecycle, budget time.Duration) error {
@@ -96,15 +97,15 @@ func runLifecycle(ctx context.Context, r lifecycle, budget time.Duration) error 
 	select {
 	case err := <-finished:
 		if errors.Is(err, context.DeadlineExceeded) || shutdownCtx.Err() != nil {
-			shutdownDeadline()
+			shutdownDeadline(r.ShutdownLogFields())
 		}
 		return errors.Join(runErr, err)
 	case <-shutdownCtx.Done():
-		shutdownDeadline()
+		shutdownDeadline(r.ShutdownLogFields())
 	}
 	return nil
 }
-func shutdownDeadline() {
-	fmt.Fprintln(os.Stderr, "service=trader-sync phase=shutdown shutdown deadline exceeded")
+func shutdownDeadline(fields tradersync.RuntimeLogFields) {
+	fmt.Fprintf(os.Stderr, "service=trader-sync phase=shutdown instance=%q run=%q runtime_generation=%s collector_epoch=%s shutdown deadline exceeded\n", fields.Instance, fields.Run, fields.RuntimeGeneration, fields.CollectorEpoch)
 	os.Exit(1)
 }
