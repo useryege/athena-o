@@ -23,7 +23,6 @@ import (
 	sportshistoryapiclient "github.com/useryege/athena/internal/sportshistory/apiclient"
 	sportsliveapiclient "github.com/useryege/athena/internal/sportslive/apiclient"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
-	"github.com/useryege/athena/internal/tradersync"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	wormtradingapiclient "github.com/useryege/athena/internal/wormtrading/apiclient"
@@ -183,13 +182,7 @@ func NewCommand() *cobra.Command {
 			}
 			defer utilio.Close(tokenAPIClientset)
 
-			traderSyncConfig, err := tradersync.LoadConfigFromEnv()
-			if err != nil {
-				return err
-			}
-			traderSyncConfig.OnError = func(err error) { log.WithError(err).Warn("Trader Sync background processing") }
 			athenaOpts := server.AthenaServerOpts{
-				TraderSyncConfig:                  traderSyncConfig,
 				ContentTypes:                      contentTypesList,
 				ListenPort:                        listenPort,
 				ListenHost:                        listenHost,

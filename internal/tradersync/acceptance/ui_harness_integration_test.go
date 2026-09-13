@@ -35,12 +35,13 @@ import (
 	bootstrap "github.com/useryege/athena/internal/server/appbootstrap"
 	sessions "github.com/useryege/athena/internal/server/session"
 	settingsserver "github.com/useryege/athena/internal/server/settings"
-	facade "github.com/useryege/athena/internal/server/tradersync"
+	trpc "github.com/useryege/athena/internal/tradersync/apiclient"
 	accountapi "github.com/useryege/athena/pkg/apiclient/account"
 	bootstrapapi "github.com/useryege/athena/pkg/apiclient/appbootstrap"
 	sessionapi "github.com/useryege/athena/pkg/apiclient/session"
 	api "github.com/useryege/athena/pkg/apiclient/tradersync"
 	httphelper "github.com/useryege/athena/util/http"
+	"github.com/useryege/athena/util/session"
 	sessionmgr "github.com/useryege/athena/util/session"
 	"github.com/useryege/athena/util/settings"
 	"google.golang.org/grpc"
@@ -175,7 +176,18 @@ func (h *harness) StartUI(t *testing.T, distDir string) UIHarnessInfo {
 		t.Fatal(err)
 	}
 	gs := grpc.NewServer(grpc.UnaryInterceptor(adapter.Unary))
-	api.RegisterTraderSyncServiceServer(gs, facade.New(h.service))
+	api.RegisterTraderSyncServiceServer(gs, newInternalFacade(t, h.service, func(ctx context.Context) (*trpc.Actor, error) {
+		id := session.AccountID(ctx)
+		account, e := credentials.Get(id)
+		if e != nil {
+			return nil, e
+		}
+		realm := trpc.ApplicationRealm_APPLICATION_REALM_MEMBER
+		if account.ApplicationRealm() == accountcredentials.ApplicationRealmAdmin {
+			realm = trpc.ApplicationRealm_APPLICATION_REALM_ADMIN
+		}
+		return &trpc.Actor{AccountId: account.ID, Realm: realm}, nil
+	}))
 	napi.RegisterNotificationServiceServer(gs, nfacade.NewServer(nc))
 	bootstrapapi.RegisterAppBootstrapServiceServer(gs, bootstrap.NewServer(settingsserver.NewProjector(config), access, center, credentials, adapter.Authenticator))
 	sessionapi.RegisterSessionServiceServer(gs, sessions.NewServer(adapter.Authenticator, access, center, credentials))
