@@ -1,6 +1,6 @@
 # Trader Sync 独立服务验收记录
 
-> 状态：独立服务、两跳契约、后端并发、TLS、实例生命周期验收通过；全栈双向隔离/真实 smoke 与最终分支审阅尚在进行。必需项全部完成前不作为整个任务完成声明。
+> 状态：独立服务、两跳契约、后端并发、TLS、实例生命周期、全栈双向隔离和真实 Chrome smoke 已通过；最终审阅发现的启动恢复顺序与故障测试隔离问题正在修复并复验。必需项全部完成前不作为整个任务完成声明。
 
 实施范围见[12项计划](../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service.md)。本次工作区为 `/home/yege/work/athena/.worktrees/trader-sync-independent`，分支 `codex/trader-sync-independent`，基于 `3b1cd556`；未合并或发布到原 `rf4` checkout，也未执行生产部署。
 
@@ -14,10 +14,10 @@
 | SDS-R2 | 16个内部 gRPC、专用 token、可信 Actor、服务端权限；事务不跨 RPC。 | 52消息完整字段目录、最终 gateway JSON 两跳、真实 PG owner/realm/replay；`task-12a-report.md`、`task-12ac-review.md`。 |
 | SDS-R3 | 独立构建、health、schema 工具、TLS 镜像、局部启停。 | `task-6-report.md`、`task-11-report.md`、`task-9-fix-1-report.md`；真实 Ctrl+C、停止/重启、镜像最小文件系统。 |
 | SDS-R4 | 每进程白名单、5/15秒调用预算、TS 故障隔离、RPC ready 与 WSS degraded 分开。 | 配置/认证测试、真实 TS fatal 后 API/Notification 继续、WSS中断时 Create/Resume pending；部署与 Make 修复均独立复审通过。 |
-| SDS-R5 | checkout/instance 精确归属、持久记录、辅助进程回收、managed/external 边界。 | `task-8-review.md`、`task-8-rereview-1.md`、`task-9-rereview-1.md`；真实 Go/迁移器崩溃回收、双实例与外部借用。全栈并存最终证据待补。 |
+| SDS-R5 | checkout/instance 精确归属、持久记录、辅助进程回收、managed/external 边界。 | `task-8-review.md`、`task-8-rereview-1.md`、`task-9-rereview-1.md`；真实 Go/迁移器崩溃回收、双实例与外部借用。真实局部→全栈及全栈→局部 stop/reset，peer进程、资源、数据库和健康快照保持。 |
 | SDS-R6 | 单活 generation guard、离线撤权、活动/通知同事务、Notification 自有冻结/许可/结果。 | 真实跨 pool/PG 并发与完整后端 race；独立 TS 在 Notification 缺席时形成1活动和1待发送投递。 |
-| SDS-R7 | 长期设计与实际入口/资源/配置同步，历史规格保留。 | 本报告及上述长期文档；最终链接/文档校验待完成。 |
-| SDS-R8 | 后端、proto/gateway、真实实例、UI双base、镜像与失败场景。 | 下列命令及退出结果；真实全栈 smoke 与最后审阅待完成，不能由预检替代。 |
+| SDS-R7 | 长期设计与实际入口/资源/配置同步，历史规格保留。 | 本报告及上述长期文档；25份长期文档的相对文件链接及diff whitespace已校验，最终事实增量继续检查。 |
+| SDS-R8 | 后端、proto/gateway、真实实例、UI双base、镜像与失败场景。 | 下列命令及退出结果；真实全栈 smoke 两项通过；最终审阅修复单独列明，不由预检替代。 |
 
 ## 契约、事务与后端验证
 
@@ -84,7 +84,7 @@ make trader-sync-acceptance
 | WSS暂时离线 | 上述真实独立进程证据：ready/degraded分离，pending基线与恢复。 |
 | external/schema错误 | `TestExternalVerificationFailureCreatesNoChildrenOrDatabase` / `TestExternalHealthyBorrowerStopLeavesDatabaseRunning`：只读verify，无DDL/seed/reset，借用者停止不动库。 |
 | 创建失败、supervisor崩溃 | `TestInitialTraderSyncExitRollsBackBatchAndPreservesEvidence` / `TestStartupToolsRemainOwnedAfterSupervisorCrash`：真实Go build/schema迁移使用者退出后才stop数据库，日志/卷保留。 |
-| 局部/fullstack双向隔离 | 最终全栈证据待补；不以两个局部实例测试代替。 |
+| 局部/fullstack双向隔离 | 真实局部实例stop/reset后全栈快照相同；真实全栈stop/reset后ts-acceptance快照相同，已reset目标容器/卷残留0；见下节结构化证据。 |
 
 ## 全栈实现回归与退出竞态
 
@@ -94,7 +94,7 @@ make trader-sync-acceptance
 
 修后真实pthread五场景GREEN0.884s、相关race4.021s、vet0；原唯一失败的全栈场景连续两次通过33.19s/30.21s，合计63.407s。最终普通devruntime/CLI测试6.802s/0.811s及vet通过。此证据由“原完整集成其余项目通过+唯一失败项修后重验”组成，不把原失败全集日志改称PASS。
 
-证据：`task-10-report.md`、`task-10-green-integration.log`、`task-10-final-all-integration.log`、`task-10-stop-race-fix-report.md`、`task-10-final-stop-retest.log`。Task10代码提交 `94ddc21b`，独立审阅进行中。
+证据：`task-10-report.md`、`task-10-green-integration.log`、`task-10-final-all-integration.log`、`task-10-stop-race-fix-report.md`、`task-10-final-stop-retest.log`。Task10代码提交 `94ddc21b`，`task-10-review.md` 的规格与质量审阅均为 Approved。
 
 ## 独立镜像、TLS与部署
 
@@ -108,7 +108,37 @@ make trader-sync-acceptance
 
 项目Node24下 `make ui-acceptance` exit0，报告 `.tmp/athena-ui-acceptance/2026-09-13T12-13-23-523Z-8a65ceb3/report.md`。`/`与`/athena`各通过33项UI fixtures和10项live，cleanup通过。live使用真实领域/PG/内部gRPC/facade/gateway，外界为loopback替身；页面fixture断言与真实网络证据分开。
 
-系统Chrome149及新全栈地址预检通过，`task-12-smoke-preflight.log`。**实际全栈启动、member/admin bootstrap、API+TS+UI业务路径及真实smoke尚待完成**；预检不是这些项目通过的证据。
+从本工作区使用 Node24、独立测试配置和 `DB_MODE=managed` 启动 `make run INSTANCE=full-stack`，真实六进程及各自基础设施就绪。测试配置只使用loopback Telegram fixture，实际HTTP/WSS/cursor沿用 `.env`；本次全栈站点和Google回调使用 `localhost:24000`，没有修改原 `.env` 或 `ts-acceptance` 的站点4000配置。
+
+第一轮 run `6d1e74cb-c0b0-4267-8a46-8da6fa7ba999` 完成以下故障演练：
+
+- `make trader-sync-acceptance INSTANCE=ts-peer` exit0，30.835s。新局部实例走真实启动、停止和reset；前后全栈真实进程、资源、数据库、健康快照完全相同。日志 `task-12b-peer-make.log`，artifact `.tmp/trader-sync-independent-acceptance/20260913T132626Z-YqULyTiQ/`，快照 `task-12b-fullstack-before-peer.json` / `task-12b-fullstack-after-peer.json`。
+- 新UI实例占用已用24000端口时，Make按预期exit2；原UI PID不变、HTTP仍200。日志 `task-12b-port-conflict.log`。
+- 按登记身份/pidfd仅TERM该全栈Trader Sync。会员和管理员TS接口变为503，但两个bootstrap保持200且完整session对象相同；其余五个进程PID和ready保持。证据 `task-12b-ts-outage-http.json`、对应响应体及 `task-12b-ts-fault-signal.log`。
+- 仅对本轮新建全栈执行 `make stop INSTANCE=full-stack`、`make run-reset INSTANCE=full-stack`，均exit0；该run会话正常exit0。其容器/卷残留0，局部 `ts-acceptance` 的进程、资源、DB、run和健康快照完全相同。证据 `task-12b-fullstack-reset-isolation.json`、`task-12b-original-preserved-baseline.json` / `task-12b-original-after-fullstack-reset.json`。reset只用于本次隔离演练，保留开发实例的日常停止不执行reset。
+
+第二轮全栈 run `603fb553-fdd9-4055-9be8-e40100d54bfe` 已启动并保留；`task-12b-final-delivery-fullstack.json`核对真实进程/资源/DB/health，`task-12b-final-delivery-ts.json`再次核对独立实例。实际UI24000代理下，会员/管理员bootstrap和TS公开查询四项HTTP200，两个HTML入口200，session均已认证；见 `task-12b-final-http.json`及响应体。
+
+```bash
+PATH=/home/yege/.nvm/versions/node/v24.14.1/bin:$PATH \
+  make ui-acceptance UI_ACCEPTANCE_MODE=smoke \
+  UI_ACCEPTANCE_BASE_URL=http://127.0.0.1:24000
+```
+
+真实系统Chrome149 smoke exit0，会员/管理员两项通过（4.8s），cleanup通过，无基础设施失败；完整执行日志 `task-12b-final-smoke.log`，报告 `.tmp/athena-ui-acceptance/2026-09-13T13-31-14-818Z-939154b8/report.md`。smoke证明入口和会话；上面的真实TS查询/503故障演练证明内部服务路径，变更与精度由两跳/PG测试覆盖，不把shell smoke外推为交易SLO。
+
+| 保留的全栈资源 | 当前值 |
+| --- | --- |
+| 实例 / namespace | `full-stack` / `d18893a9ea0eb3f2f2fcf0d542861c26` |
+| UI / API | `http://127.0.0.1:24000`，PID236670 / `http://127.0.0.1:28080`，PID236694 |
+| Trader Sync | `127.0.0.1:8122`，PID236608 |
+| Notification / Wallet / Profit Sharing | `127.0.0.1:28086`，PID236636 / `127.0.0.1:28088`，PID236657 / `127.0.0.1:28108`，PID236623 |
+| PG / Redis / MinIO | `127.0.0.1:58087` / `127.0.0.1:64821` / `127.0.0.1:64822`，各自持久volume。 |
+| supervisor / 持久会话 | PID234952 / session83310（仍运行）。 |
+| 运行配置 / 日志 | 证据目录 `task-12b-fullstack.env`（0600）/ `task-12b-fullstack-final-run.log`。 |
+| 停止 | 从本工作区执行 `make stop`；保留数据。 |
+
+本次全栈依赖的Telegram替身仍保留：`http://127.0.0.1:39131`，PID4126952，持久session35842；日志和真实身份见证据目录 `task-12b-telegram-fixture.log` / `.json`。停止全栈后，可从同工作区执行 `python3 .superpowers/sdd/2026-09-13-trader-sync-independent-grpc-service/task-12b-stop-telegram-fixture.py`。该工具先持有pidfd，再验证boot/start/exe/cwd/script身份，仅停止本任务登记的fixture。
 
 ## 本次操作事故与恢复
 
@@ -124,7 +154,7 @@ make trader-sync-acceptance
 
 录制/合成provider、loopback Telegram、有限本机测试不证明公网供应商静默漏推完整性、100个真实持续活跃目标、长期稳定性或端到端公开时效SLO。单活采集重启有可见中断，不承诺多副本HA或无中断滚动升级。没有执行真实Telegram测试投递或生产发布。
 
-必需剩余项：全栈公开入口与双向隔离的最终证据、真实Chrome smoke及API+TS+UI路径、长期文档核对、最终分支独立审阅和必要修复。完成后才发送唯一完成邮件。
+必需剩余项：最终分支审阅的两项修复、受影响runtime/保留环境复验、最终文档事实和审阅结论。全部完成后才发送唯一完成邮件。
 
 ## 实施裁定记录
 
@@ -169,3 +199,5 @@ make trader-sync-acceptance
 19. 全栈入口本轮只支持DB_MODE=managed，external同库联调使用run-service/run-services；fullstack external在资源/DDL前拒绝 — 批准external协议只定义权威account-state库，未定义8旧模块库借用验证，避免对外部PG隐式CREATE/migrate — 若用户后续需要全栈外部库，需要单独明确多个库的配置与维护权责。
 
 20. 保留本次工作区运行日志和验收证据目录，完成后不按通用skill删除execution workspace — 项目AGENTS要求交付实际日志/证据并保留开发服务，报告也指向本地证据 — 代价是占用本地磁盘，可在用户不再需要验收证据时单独清理。
+
+21. 最终审阅确认启动恢复必须遵守批准spec第45行，旧bound epoch逐账户清理同步在workers/ready前完成；observation view的读取正确性不能替代该初始化顺序 — 最小补齐recover barrier并扩展真实PG/gRPC恢复测试 — 若判断过严，代价仅为恢复完成前延后业务ready，与已批准要求一致。

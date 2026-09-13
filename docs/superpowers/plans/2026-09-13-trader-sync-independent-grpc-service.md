@@ -10,7 +10,7 @@
 
 **Spec:** [已确认的服务边界](../specs/2026-09-13-trader-sync-service-boundaries-design.md)、[已确认的构建与运行](../specs/2026-09-13-trader-sync-local-runtime-design.md)、[已确认的字段契约](../specs/2026-09-13-trader-sync-grpc-contract-design.md)。执行者必须同时阅读三份文档；本计划没有修改前两份已确认决定。
 
-**状态：**2026-09-13 用户已确认按现有方案开始实现；本计划与内部字段契约进入实施阶段。任务1–9及11完成并通过独立审阅；任务10与12的最终全栈验证/文档/审阅正在完成。任务勾选与验收报告记录实际进度，未完成项不视为已实现。
+**状态：**2026-09-13 用户已确认按现有方案开始实现；本计划与内部字段契约进入实施阶段。任务1–11完成并通过独立审阅；任务12的契约、后端、真实全栈和浏览器验收已通过，最终审阅修复及复验正在完成。任务勾选与验收报告记录实际进度，未完成项不视为已实现。
 
 ## 全局约束
 
@@ -556,7 +556,7 @@ make account-state-migrate
 
 **接口：**新增 `FullStackServices() []string`，显式列出现有 Procfile 的全图；`make run/stop/run-reset` 默认使用当前 checkout 的 `INSTANCE=full-stack`，进入任务 8–9 同一个引擎。旧脚本只做命令参数适配。full-stack 可保留无关服务的聚合 build 差距，但实际受管业务进程必须运行已构建 binary，不能监管 `go run` 包装器。
 
-- [ ] 写两个状态目录/资源集合的测试，调用 full-stack stop/reset 后断言局部 TS 的 PGID、container、volume 没有出现在操作清单。用新 engine 的同一命令执行器收集真实调用参数：
+- [x] 写两个状态目录/资源集合的测试，调用 full-stack stop/reset 后断言局部 TS 的 PGID、container、volume 没有出现在操作清单。用新 engine 的同一命令执行器收集真实调用参数：
 
 ```go
 require.NotContains(t, signalledPGIDs, traderSyncPGID)
@@ -565,11 +565,11 @@ require.NotContains(t, removedVolumeNames, traderSyncVolumeName)
 ```
 
 这些变量均由测试内创建的两个 State 和注入执行器捕获，不查询或终止机器上的现有未知进程。
-- [ ] 运行 `go test ./internal/devruntime -run TestFullStack -count=1` 与现有 shell runtime 测试；预期旧全局清理路径导致隔离断言失败。
-- [ ] 将全栈数据库/Redis/MinIO 生命周期接到资源记录。删除按端口、cwd、ATHENA_BINARY_NAME、泛化标签清杀和固定 volume reset 的路径；历史无归属资源出现时提示冲突，不能自动认领。保留用户现有数据，不把第一次新命令执行当作清理旧环境的授权。
-- [ ] 明确全栈 account-state up/verify 先于其 API/TS/Notification；其余数据库迁移按原全栈列表显式执行。独立 TS 作为独立进程登记，API 不再经过 trader-sync-local helper。去掉 Goreman 全量 dotenv 给所有进程的行为，逐个服务使用白名单；Procfile 同步为实际清单说明/直接 binary 入口，不保留第二条可绕开归属记录的默认运行路径。
-- [ ] 保持全栈原来声明的 API/UI/Redis/avatar 行为；没有把其他业务架构全改成独立服务。测试 full-stack 启动前 schema 失败不会启动消费者；运行中 TS fatal 不结束全图；两个 checkout 的 stop/reset 互不触碰。
-- [ ] 运行 `go test ./internal/devruntime -count=1`、`bash hack/shell-local_test.sh`、适用 shellcheck；审阅当前其他任务对 shell 的修改并合并，提交 `refactor(devruntime): unify full-stack resource ownership`。
+- [x] 运行 `go test ./internal/devruntime -run TestFullStack -count=1` 与现有 shell runtime 测试；预期旧全局清理路径导致隔离断言失败。
+- [x] 将全栈数据库/Redis/MinIO 生命周期接到资源记录。删除按端口、cwd、ATHENA_BINARY_NAME、泛化标签清杀和固定 volume reset 的路径；历史无归属资源出现时提示冲突，不能自动认领。保留用户现有数据，不把第一次新命令执行当作清理旧环境的授权。
+- [x] 明确全栈 account-state up/verify 先于其 API/TS/Notification；其余数据库迁移按原全栈列表显式执行。独立 TS 作为独立进程登记，API 不再经过 trader-sync-local helper。去掉 Goreman 全量 dotenv 给所有进程的行为，逐个服务使用白名单；Procfile 同步为实际清单说明/直接 binary 入口，不保留第二条可绕开归属记录的默认运行路径。
+- [x] 保持全栈原来声明的 API/UI/Redis/avatar 行为；没有把其他业务架构全改成独立服务。测试 full-stack 启动前 schema 失败不会启动消费者；运行中 TS fatal 不结束全图；两个 checkout 的 stop/reset 互不触碰。
+- [x] 运行 `go test ./internal/devruntime -count=1`、`bash hack/shell-local_test.sh`、适用 shellcheck；审阅当前其他任务对 shell 的修改并合并，提交 `refactor(devruntime): unify full-stack resource ownership`。
 
 ### 任务 11：独立镜像、TLS 注入与部署消费者
 
@@ -604,7 +604,7 @@ RUN go build -o /out/athena-account-state-migrate ./cmd/athena-account-state-mig
 
 **接口：**新增 `make trader-sync-acceptance INSTANCE=ts-acceptance` 调受控运行验收脚本；脚本不启动未知环境或调用全局 reset，调用任务 9 的实例命令并核验所属 checkout/state。UI harness 的公共 facade 改为内部真实 gRPC 客户端，形成“领域/fixture→内部 gRPC→facade→公开 gRPC→生产 gateway JSON”的两次编解码。
 
-- [ ] 先让当前 contractGateway 在新增内部 hop 下运行；断言实际经过内部 server（计数/捕获请求），防止测试误绕回内存 service。以下是必须保留的最终 JSON 断言形状，使用现有测试的 JSON 解码 map：
+- [x] 先让当前 contractGateway 在新增内部 hop 下运行；断言实际经过内部 server（计数/捕获请求），防止测试误绕回内存 service。以下是必须保留的最终 JSON 断言形状，使用现有测试的 JSON 解码 map：
 
 ```go
 require.Equal(t, "9007199254740993", activity["id"])
@@ -617,9 +617,9 @@ require.Equal(t, originalCursor, page["nextCursor"])
 ```
 
 变量从该测试完整 fixture 取得；每个被断言字段在 fixture 中显式赋值。最终 JSON 的空 repeated 编码沿用现有 gateway 实测行为，不把 Go nil slice 当成协议 presence。新增 16 RPC 请求/响应表驱动覆盖及字段目录全覆盖比较。
-- [ ] 运行 `go test ./internal/server/tradersync ./internal/tradersync/apiclient ./internal/tradersync/transport -count=1`，确认两跳新增场景在错误映射版本上失败，然后修复最小映射问题并通过。测试包含 note 未传/null/显式空、无效 Bool/Time、六 PnL 区间、同时间重复点、legs 未知/空/部分值、长整数金额、未知时间/消息 ID、空列表和必需对象缺失。
-- [ ] 扩展真实 PG 授权/事务链：会员/API Key/Bearer/admin、跨 owner/realm、grant 撤销、旧 cursor owner/filter/page_size 不匹配、写请求提交后丢响应。最后一例在内部 handler 已 commit 后阻断响应，facade 得到超时/取消，再以原 request_id 和相同载荷调用，断言只生成一次订阅/版本/备注更新；不同载荷复用 request_id 仍拒绝。
-- [ ] 跑集中后端回归，保存命令、退出码、日志；先准备只供 pgtest 创建随机测试库的 admin DSN：
+- [x] 运行 `go test ./internal/server/tradersync ./internal/tradersync/apiclient ./internal/tradersync/transport -count=1`，确认两跳新增场景在错误映射版本上失败，然后修复最小映射问题并通过。测试包含 note 未传/null/显式空、无效 Bool/Time、六 PnL 区间、同时间重复点、legs 未知/空/部分值、长整数金额、未知时间/消息 ID、空列表和必需对象缺失。
+- [x] 扩展真实 PG 授权/事务链：会员/API Key/Bearer/admin、跨 owner/realm、grant 撤销、旧 cursor owner/filter/page_size 不匹配、写请求提交后丢响应。最后一例在内部 handler 已 commit 后阻断响应，facade 得到超时/取消，再以原 request_id 和相同载荷调用，断言只生成一次订阅/版本/备注更新；不同载荷复用 request_id 仍拒绝。
+- [x] 跑集中后端回归，保存命令、退出码、日志；先准备只供 pgtest 创建随机测试库的 admin DSN：
 
 ```bash
 go test -tags=integration ./internal/tradersync/acceptance -count=1
@@ -628,8 +628,8 @@ go test -race ./internal/devruntime/... -count=1
 ```
 
 覆盖既有 finality/removed/version retry/summary/unknown 规则；100 distinct 与 10 shared 目标的既有受控容量场景保持。失败按 systematic-debugging 处理；不因较小单测通过略过必要数据库并发验证。
-- [ ] 用正确 checkout 的持久会话启动 `make run-service SERVICE=trader-sync INSTANCE=ts-acceptance`，只应出现 TS+该实例 PostgreSQL。先 `seed-service` 获得真实开发 Actor，直接通过内部客户端调用授权查询；记录 DB身份、进程、日志、ready/collector状态。停止并重启该专属验收实例，验证数据保留、中断可见、不发起历史补查。验收脚本通过自身临时 provider/fixture 验证基线、活动和故障，真实配置来源的连接与恢复结果另列，不把 fixture 证明外推为实网 SLO。
-- [ ] 运行故障场景表并保存逐项证据：
+- [x] 用正确 checkout 的持久会话启动 `make run-service SERVICE=trader-sync INSTANCE=ts-acceptance`，只应出现 TS+该实例 PostgreSQL。先 `seed-service` 获得真实开发 Actor，直接通过内部客户端调用授权查询；记录 DB身份、进程、日志、ready/collector状态。停止并重启该专属验收实例，验证数据保留、中断可见、不发起历史补查。验收脚本通过自身临时 provider/fixture 验证基线、活动和故障，真实配置来源的连接与恢复结果另列，不把 fixture 证明外推为实网 SLO。
+- [x] 运行故障场景表并保存逐项证据：
 
 | 场景 | 必须观察到的结果 |
 | --- | --- |
@@ -644,8 +644,8 @@ go test -race ./internal/devruntime/... -count=1
 | 创建中失败/超时 | 只收回本次新启动资源，数据和日志保留，能通过精确归属恢复状态 |
 
 测试发送路径使用受控 Telegram fixture。需要向真实 Telegram 账户发送消息时必须有该次明确授权；本计划不额外授权对外发信。
-- [ ] 运行镜像/TLS和独立构建证据：TS build 不调用 Node/UI/其他 service build，迁移工具不导入聚合 registry，容器 health 使用正确证书名。检查 `/proc` 和 Docker 实际资源，不能仅依据 runner 声称最小依赖。
-- [ ] 按浏览器验收 skill 执行 `make ui-acceptance` 的 `/`、`/athena` 两个隔离入口。真实 smoke 前检查目标地址、仓库/worktree、进程归属；健康现有环境复用，否则从目标仓库按 Node 版本要求启动 `make run` 并保存持久会话/log，再执行：
+- [x] 运行镜像/TLS和独立构建证据：TS build 不调用 Node/UI/其他 service build，迁移工具不导入聚合 registry，容器 health 使用正确证书名。检查 `/proc` 和 Docker 实际资源，不能仅依据 runner 声称最小依赖。
+- [x] 按浏览器验收 skill 执行 `make ui-acceptance` 的 `/`、`/athena` 两个隔离入口。真实 smoke 前检查目标地址、仓库/worktree、进程归属；健康现有环境复用，否则从目标仓库按 Node 版本要求启动 `make run` 并保存持久会话/log，再执行：
 
 ```bash
 make ui-acceptance UI_ACCEPTANCE_MODE=smoke
