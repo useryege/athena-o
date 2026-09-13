@@ -49,7 +49,9 @@ func Verify(ctx context.Context, pool *pgxpool.Pool) error {
 	if err != nil {
 		return fmt.Errorf("begin account-state schema verification: %w", err)
 	}
-	defer tx.Rollback(context.Background())
+	// Cleanup shares the remaining verification budget. pgx closes a connection
+	// on rollback failure, and pgxpool discards it instead of returning it idle.
+	defer tx.Rollback(ctx)
 	var exists bool
 	if err := tx.QueryRow(ctx, `SELECT to_regclass('public.goose_db_version') IS NOT NULL`).Scan(&exists); err != nil {
 		return err
