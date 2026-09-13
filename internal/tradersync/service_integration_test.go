@@ -24,7 +24,7 @@ func (unavailableDirectory) ListComboMarkets(context.Context, string, int) (pm.C
 	return pm.ComboMarketPage{}, errors.New("fixture directory provider unavailable")
 }
 
-func TestServiceOwnsOneRuntimeJoinsAndSeparatesDirectoryErrors(t *testing.T) {
+func TestRuntimeOwnsSessionJoinsAndSeparatesDirectoryErrors(t *testing.T) {
 	for _, mode := range []string{"cancel", "projector_fatal"} {
 		t.Run(mode, func(t *testing.T) {
 			db := pgtest.New(t, migrations.FS, migrations.Dir)
@@ -60,6 +60,17 @@ func TestServiceOwnsOneRuntimeJoinsAndSeparatesDirectoryErrors(t *testing.T) {
 			defer wss.Close()
 			cfg := Config{HTTPURL: "http://127.0.0.1:1", WebSocketURL: "ws" + strings.TrimPrefix(wss.URL, "http"), SiteURL: "https://athena.test", CursorHMACKey: "runtime-test-key"}
 			storage := store.NewSQLStore(db.Pool)
+			runtimeOwner, ownerErr := storage.AcquireRuntimeSession(ctx)
+			if ownerErr != nil {
+				t.Fatal(ownerErr)
+			}
+			storage, ownerErr = storage.WithRuntime(runtimeOwner.RuntimeToken())
+			if ownerErr != nil {
+				t.Fatal(ownerErr)
+			}
+			if ownerErr = runtimeOwner.RecoverPending(ctx); ownerErr != nil {
+				t.Fatal(ownerErr)
+			}
 			if e := storage.ConfigureActivities(cfg.SiteURL); e != nil {
 				t.Fatal(e)
 			}
@@ -88,7 +99,17 @@ func TestServiceOwnsOneRuntimeJoinsAndSeparatesDirectoryErrors(t *testing.T) {
 				t.Fatal(e)
 			}
 			done := make(chan error, 1)
-			go func() { done <- service.Run(ctx) }()
+			runtimeCfg := cfg
+			runtimeCfg.AccountStateDSN = db.DSN
+			runtimeCfg.ShutdownTimeout = 5 * time.Second
+			runtime, e := NewRuntime(runtimeCfg, runtimeTestRPC(), runtimeTestDeps())
+			if e != nil {
+				t.Fatal(e)
+			}
+			runtime.owner = runtimeOwner
+			runtime.service = service
+			runtime.startWorkers(ctx, []runtimeWorker{{"collector", func(ctx context.Context) error { return collector.Run(ctx, runtimeOwner) }}, {"projector", projector.Run}, {"directory", directory.Run}, {"owner", runtime.checkOwner}})
+			go func() { done <- runtime.Wait() }()
 			select {
 			case <-directoryErrors:
 			case <-time.After(2 * time.Second):
@@ -98,9 +119,6 @@ func TestServiceOwnsOneRuntimeJoinsAndSeparatesDirectoryErrors(t *testing.T) {
 			case e := <-done:
 				t.Fatal("directory failure stopped healthy runtime", e)
 			default:
-			}
-			if e = service.Run(ctx); e == nil {
-				t.Fatal("duplicate Run accepted")
 			}
 			if mode == "projector_fatal" {
 				if _, e = db.Pool.Exec(ctx, `ALTER TABLE trader_sync_source_candidates RENAME TO injected_missing_candidates`); e != nil {
@@ -120,9 +138,10 @@ func TestServiceOwnsOneRuntimeJoinsAndSeparatesDirectoryErrors(t *testing.T) {
 			case <-time.After(6 * time.Second):
 				t.Fatal("runtime failed to join all workers")
 			}
-			_ = service.Close()
-			if e = service.Run(context.Background()); e == nil {
-				t.Fatal("closed service restarted")
+			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer shutdownCancel()
+			if e = runtime.Shutdown(shutdownCtx); e != nil {
+				t.Fatal(e)
 			}
 			if e = db.Pool.Ping(context.Background()); e != nil {
 				t.Fatal("service closed borrowed pool", e)

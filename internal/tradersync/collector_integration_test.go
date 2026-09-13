@@ -120,7 +120,7 @@ func TestCollectorCommittedRegistrationPrecedesACKWithoutOwningFinality(t *testi
 		t.Fatal(err)
 	}
 	running := make(chan error, 1)
-	go func() { running <- collector.Run(ctx) }()
+	go func() { running <- runTestCollector(ctx, collector) }()
 	tx, err := db.Pool.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -318,7 +318,7 @@ func TestCollectorReconnectCreatesNewAttemptWithoutReassigningOldSource(t *testi
 		t.Fatal(err)
 	}
 	running := make(chan error, 1)
-	go func() { running <- collector.Run(ctx) }()
+	go func() { running <- runTestCollector(ctx, collector) }()
 	waitFor := func(label string, predicate func() bool) {
 		t.Helper()
 		deadline := time.Now().Add(5 * time.Second)
@@ -458,7 +458,7 @@ func TestCollectorNewFilterFailureStillBaselinesAlreadyCoveredWallet(t *testing.
 		t.Fatal(err)
 	}
 	running := make(chan error, 1)
-	go func() { running <- collector.Run(ctx) }()
+	go func() { running <- runTestCollector(ctx, collector) }()
 	state := func(id string) string {
 		var result string
 		_ = db.Pool.QueryRow(ctx, `SELECT observation_state FROM trader_sync_subscriptions WHERE id=$1`, id).Scan(&result)
@@ -576,7 +576,7 @@ func TestCollectorPersistenceFailureRecordsLastReliableReceiveAndReconnects(t *t
 		t.Fatal(err)
 	}
 	running := make(chan error, 1)
-	go func() { running <- collector.Run(ctx) }()
+	go func() { running <- runTestCollector(ctx, collector) }()
 	var count int
 	deadline := time.Now().Add(4 * time.Second)
 	for time.Now().Before(deadline) {
@@ -648,7 +648,7 @@ func TestCollectorOwnershipLossReturnsFatalAndStopsReceiver(t *testing.T) {
 		t.Fatal(err)
 	}
 	running := make(chan error, 1)
-	go func() { running <- collector.Run(ctx) }()
+	go func() { running <- runTestCollector(ctx, collector) }()
 	select {
 	case <-connected:
 	case <-time.After(3 * time.Second):
@@ -700,7 +700,7 @@ func TestCollectorFailedBoundaryCloseReturnsErrorInsteadOfReusingEpoch(t *testin
 		t.Fatal(err)
 	}
 	running := make(chan error, 1)
-	go func() { running <- collector.Run(ctx) }()
+	go func() { running <- runTestCollector(ctx, collector) }()
 	select {
 	case err = <-running:
 		if err == nil || !strings.Contains(err.Error(), "epoch end failure") {
@@ -779,7 +779,7 @@ func TestCollectorLatestHealthContinuesWhileBaselineWaitsForAccount(t *testing.T
 		t.Fatal(err)
 	}
 	running := make(chan error, 1)
-	go func() { running <- collector.Run(ctx) }()
+	go func() { running <- runTestCollector(ctx, collector) }()
 	var reason string
 	deadline := time.Now().Add(12 * time.Second)
 	for time.Now().Before(deadline) {
@@ -854,7 +854,7 @@ func TestCollectorWSSFailureCancelsAccountWaitWithHealthyLatest(t *testing.T) {
 		t.Fatal(err)
 	}
 	running := make(chan error, 1)
-	go func() { running <- collector.Run(ctx) }()
+	go func() { running <- runTestCollector(ctx, collector) }()
 	wait := func(label string, fn func() bool) {
 		t.Helper()
 		deadline := time.Now().Add(3 * time.Second)
@@ -964,7 +964,7 @@ CREATE TRIGGER reject_owner_release BEFORE UPDATE ON trader_sync_collector_contr
 		t.Fatal(err)
 	}
 	running := make(chan error, 1)
-	go func() { running <- collector.Run(ctx) }()
+	go func() { running <- runTestCollector(ctx, collector) }()
 	select {
 	case err = <-running:
 		if err == nil || !strings.Contains(err.Error(), "injected epoch start failure") || !strings.Contains(err.Error(), "injected owner cleanup failure") {
@@ -1051,7 +1051,7 @@ func TestCollectorQuietHealthyPersistsIntervalCheckpoint(t *testing.T) {
 		t.Fatal(e)
 	}
 	done := make(chan error, 1)
-	go func() { done <- collector.Run(ctx) }()
+	go func() { done <- runTestCollector(ctx, collector) }()
 	defer func() {
 		cancel()
 		select {
@@ -1088,4 +1088,22 @@ func TestCollectorQuietHealthyPersistsIntervalCheckpoint(t *testing.T) {
 			}
 		}
 	}
+}
+
+// The fixture owns the session around a borrower, mirroring process ordering.
+func runTestCollector(ctx context.Context, c *Collector) error {
+	owner, err := c.store.AcquireRuntimeSession(ctx)
+	if err != nil {
+		return err
+	}
+	runtime := &Runtime{owner: owner, stopping: make(chan struct{}), joined: make(chan struct{}), closed: make(chan struct{})}
+	if err = owner.RecoverPending(ctx); err != nil {
+		close(runtime.joined)
+	} else {
+		runtime.startWorkers(ctx, []runtimeWorker{{"collector", func(ctx context.Context) error { return c.Run(ctx, owner) }}, {"owner", runtime.checkOwner}})
+		err = runtime.Wait()
+	}
+	cleanup, stop := context.WithTimeout(context.Background(), 5*time.Second)
+	defer stop()
+	return errors.Join(err, runtime.Shutdown(cleanup))
 }

@@ -31,8 +31,8 @@ type CollectorRPC interface {
 	HeaderByNumber(context.Context, *big.Int) (*types.Header, error)
 }
 
-// Collector implements BaselineRegistrar. Task12 constructs it once, injects it
-// into SubscriptionService and owns Run's cancellation/join. The RPC is borrowed.
+// Collector implements BaselineRegistrar. Runtime constructs it once and injects
+// it into SubscriptionService. The owner session and source RPC are borrowed.
 type Collector struct {
 	store              *store.SQLStore
 	runtimeStore       *store.SQLStore
@@ -85,82 +85,44 @@ func (c *Collector) RegisterTx(ctx context.Context, tx pgx.Tx, sub tm.Subscripti
 	// No memory lock spans SQL or the caller's later COMMIT.
 	return c.store.RegisterBaselineTx(ctx, tx, sub, token, epoch, observed)
 }
-func (c *Collector) Run(ctx context.Context) error {
+
+// Run borrows the process owner's session; it never claims or releases ownership.
+func (c *Collector) Run(ctx context.Context, owner *store.RuntimeSession) error {
+	if owner == nil {
+		return errors.New("collector runtime owner required")
+	}
 	if !c.running.CompareAndSwap(false, true) {
 		return errors.New("collector already running")
 	}
 	defer c.running.Store(false)
-	owner, err := c.store.AcquireRuntimeSession(ctx)
+	var err error
+	c.runtimeStore, err = c.store.WithRuntime(owner.RuntimeToken())
 	if err != nil {
 		return err
 	}
-	// The existing owner supplies every collector write; lifecycle moves to the
-	// process runtime when the standalone composition root is installed.
-	c.runtimeStore, err = c.store.WithRuntime(owner.RuntimeToken())
-	if err != nil {
-		closeCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
-		defer stop()
-		return errors.Join(err, owner.CloseAfterWorkers(closeCtx))
-	}
-	if err = owner.RecoverPending(ctx); err != nil {
-		closeCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
-		defer stop()
-		return errors.Join(err, owner.CloseAfterWorkers(closeCtx))
-	}
-	runCtx, cancel := context.WithCancel(ctx)
 	c.mu.Lock()
 	c.token = owner.CollectorToken()
 	c.mu.Unlock()
-	fatal := make(chan error, 1)
-	fail := func(err error) {
-		if err != nil && runCtx.Err() == nil {
-			select {
-			case fatal <- err:
-			default:
-			}
-			cancel()
-		}
-	}
-	var workers sync.WaitGroup
-	workers.Add(1)
-	go func() {
-		defer workers.Done()
-		ticker := time.NewTicker(500 * time.Millisecond)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-runCtx.Done():
-				return
-			case <-ticker.C:
-				checkCtx, stop := context.WithTimeout(runCtx, 5*time.Second)
-				err := owner.Check(checkCtx)
-				stop()
-				if err != nil {
-					fail(fmt.Errorf("collector ownership: %w", err))
-					return
-				}
-			}
-		}
-	}()
+	defer func() { c.mu.Lock(); c.token = 0; c.epoch = 0; c.session = nil; c.mu.Unlock() }()
 	delay := c.config.ReconnectMin
-	for runCtx.Err() == nil {
-		if err = c.runtimeStore.CleanupStoppedBaselines(runCtx, owner.CollectorToken()); err != nil {
-			fail(err)
-			break
+	for ctx.Err() == nil {
+		if err = c.runtimeStore.CleanupStoppedBaselines(ctx, owner.CollectorToken()); err != nil {
+			if ctx.Err() != nil {
+				return nil
+			}
+			return err
 		}
-		err = c.runSession(runCtx, owner.CollectorToken())
-		if errors.Is(err, errCollectorBoundary) {
-			fail(err)
-			break
+		err = c.runSession(ctx, owner.CollectorToken())
+		if ctx.Err() != nil {
+			return nil
 		}
-		if runCtx.Err() != nil {
-			break
+		if errors.Is(err, errCollectorBoundary) || errors.Is(err, store.ErrRuntimeFenced) {
+			return err
 		}
 		c.report(err)
-		// Backoff is outside Session; no implicit reconnect can reuse its epoch.
 		timer := time.NewTimer(delay + time.Duration(rand.Int64N(int64(delay/4)+1)))
 		select {
-		case <-runCtx.Done():
+		case <-ctx.Done():
 			timer.Stop()
 		case <-timer.C:
 		}
@@ -170,28 +132,7 @@ func (c *Collector) Run(ctx context.Context) error {
 			delay = c.config.ReconnectMax
 		}
 	}
-	cancel()
-	workers.Wait()
-	closeCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
-	closeErr := owner.CloseAfterWorkers(closeCtx)
-	stop()
-	c.mu.Lock()
-	c.token = 0
-	c.epoch = 0
-	c.session = nil
-	c.mu.Unlock()
-	select {
-	case err = <-fatal:
-		return errors.Join(err, closeErr)
-	default:
-	}
-	if closeErr != nil {
-		return closeErr
-	}
-	if ctx.Err() != nil {
-		return nil
-	}
-	return err
+	return nil
 }
 func (c *Collector) runSession(ctx context.Context, token uint64) (result error) {
 	session, err := liverpc.DialSession(ctx, c.config.WebSocketURL, c.config.ProxyURL)

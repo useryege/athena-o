@@ -6,6 +6,7 @@ import (
 )
 
 func TestConfigLoadsOnlyDedicatedProxyAndStableResources(t *testing.T) {
+	t.Setenv("ATHENA_ACCOUNT_STATE_POSTGRES_DSN", "postgres://fixture@localhost/test")
 	t.Setenv("ATHENA_TRADER_SYNC_HTTP_URL", "https://rpc.test")
 	t.Setenv("ATHENA_TRADER_SYNC_WSS_URL", "wss://rpc.test")
 	t.Setenv("ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY", "deployment-stable-key")

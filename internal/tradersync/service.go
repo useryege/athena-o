@@ -10,12 +10,10 @@ import (
 	"github.com/useryege/athena/internal/tradersync/store"
 	tm "github.com/useryege/athena/internal/tradersync/types"
 	"github.com/useryege/athena/util/ethws"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"net/url"
 	"strconv"
-	"sync"
 	"time"
 )
 
@@ -28,14 +26,9 @@ type Dependencies struct {
 	Directory     *DirectoryRefresher
 }
 type Service struct {
-	deps            Dependencies
-	reads           *store.SQLStore
-	key             []byte
-	mu              sync.Mutex
-	started, closed bool
-	cancel          context.CancelFunc
-	done            chan struct{}
-	runErr          error
+	deps  Dependencies
+	reads *store.SQLStore
+	key   []byte
 }
 
 func NewService(cfg Config, deps Dependencies) (*Service, error) {
@@ -75,61 +68,6 @@ func (c Config) Validate() error {
 	return nil
 }
 
-// Run is process-scoped and one-shot. Listener restarts reuse this Service.
-func (s *Service) Run(ctx context.Context) error {
-	s.mu.Lock()
-	if s.closed || s.started {
-		s.mu.Unlock()
-		return fmt.Errorf("Trader Sync service already started or closed")
-	}
-	s.started = true
-	runCtx, cancel := context.WithCancel(ctx)
-	s.cancel = cancel
-	s.done = make(chan struct{})
-	s.mu.Unlock()
-	group, gctx := errgroup.WithContext(runCtx)
-	for _, worker := range []struct {
-		name string
-		run  func(context.Context) error
-	}{{"collector", s.deps.Collector.Run}, {"projector", s.deps.Projector.Run}, {"directory", s.deps.Directory.Run}} {
-		worker := worker
-		group.Go(func() error {
-			err := worker.run(gctx)
-			if gctx.Err() != nil && (err == nil || err == context.Canceled || err == context.DeadlineExceeded) {
-				return nil
-			}
-			if err == nil {
-				return fmt.Errorf("Trader Sync %s stopped unexpectedly", worker.name)
-			}
-			return fmt.Errorf("Trader Sync %s: %w", worker.name, err)
-		})
-	}
-	err := group.Wait()
-	cancel()
-	s.mu.Lock()
-	s.runErr = err
-	close(s.done)
-	s.mu.Unlock()
-	return err
-}
-
-// Close joins borrowers only. The composition root alone closes the pool and
-// owned HTTP/RPC transports after all users have exited.
-func (s *Service) Close() error {
-	s.mu.Lock()
-	s.closed = true
-	cancel, done := s.cancel, s.done
-	s.mu.Unlock()
-	if cancel != nil {
-		cancel()
-	}
-	if done != nil {
-		<-done
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.runErr
-}
 func (s *Service) ResolveTarget(ctx context.Context, owner, input string) (tm.ResolvedTarget, error) {
 	return s.deps.Resolver.Resolve(ctx, owner, input)
 }
