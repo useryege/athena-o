@@ -64,6 +64,8 @@
 | Trading | Current-selection exact-position, fresh-proof-authorized Worm HMAC Cash Out with whole-position market Close, at-most-once dispatch, read-only recovery, and durable historical detail | [Worm Position Cash Out](trading/worm-position-cash-out.md) | `已实现` |
 | Trading | Up-to-20 selected-Wallet, Wallet-major serial Cash Out batches with complete position freezing, single-operation reuse, confirmed-USDC advancement gates, durable Wallet locks, and manual recovery controls | [Worm Position Cash Out Batches](trading/worm-position-cash-out-batches.md) | `已实现` |
 | Token Intelligence | 第一板块设计包：已确认时效、架构选择、跨子系统契约与容量验收 | [Token 第一板块主 spec](../superpowers/specs/2026-09-10-token-first-block-design.md) | `设计中`，分节已确认，书面待审阅 |
+| Solana Intelligence | 独立项目研究的 Mint 发现、节点接入、发行平台与创建首买边界 | [新项目发现方案调研](solana-intelligence/project-discovery.md) | `设计中`，能力调研与方案比较，尚未实现 |
+| Solana Intelligence | 发行后持续研究、活动触发、一小时限频及合并刷新 | [持续研究与刷新调度](solana-intelligence/research-lifecycle-and-refresh.md) | `设计中`，持续研究与限频已确认，调度细节为建议，尚未实现 |
 | Token Intelligence | 有界发现、连续覆盖、有序活动、owner 观察屏障、七协议 Swap 及停止 | [发现与研究生命周期](token-intelligence/discovery-research-lifecycle.md) | `设计中`，尚未实现 |
 | Token Intelligence | PostgreSQL 持久依赖任务、独立事实、刷新、共享配额和失败恢复 | [研究任务运行时](token-intelligence/research-task-runtime.md) | `设计中`，尚未实现 |
 | Token Intelligence | 非空源码、五项共享 AI 产物与声明式部署读取 | [源码事实与读取方案](token-intelligence/source-facts-and-read-plans.md) | `设计中`，尚未实现 |
