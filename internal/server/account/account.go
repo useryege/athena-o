@@ -55,6 +55,7 @@ var canonicalAccountDataModules = []accountDataModuleMapping{
 	{module: accountaccesscore.ModuleWormTrading, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_WORM_TRADING},
 	{module: accountaccesscore.ModuleWorldCupCorners, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS},
 	{module: accountaccesscore.ModuleToken, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_TOKEN},
+	{module: accountaccesscore.ModuleSolana, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_SOLANA},
 	{module: accountaccesscore.ModuleWallet, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_WALLET},
 	{module: accountaccesscore.ModuleTraderSync, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_TRADER_SYNC},
 }

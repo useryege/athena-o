@@ -64,6 +64,7 @@ import {
     MarketRadarRealtimePage,
     SportsLivePage,
     SportsHistoryPage,
+    SolanaPage,
     ManagedOODisputesPage,
     ManagedOOProposalsPage,
     WalletsPage,
@@ -202,6 +203,14 @@ const tokenNavItem: NavItem = {
     disabled: true
 };
 
+const solanaNavItem: NavItem = {
+    key: '/solana',
+    label: 'Solana',
+    path: '/solana',
+    icon: <ApiOutlined />,
+    module: AccountDataModule.Solana
+};
+
 const navSections: NavSection[] = [
     {
         key: 'markets',
@@ -224,7 +233,7 @@ const navSections: NavSection[] = [
     {
         key: 'token-risk',
         label: 'Token & Risk',
-        children: [tokenNavItem, {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />, module: AccountDataModule.Wallet}]
+        children: [tokenNavItem, solanaNavItem, {key: '/wallet', label: 'Wallets', path: '/wallet', icon: <WalletOutlined />, module: AccountDataModule.Wallet}]
     },
     {
         key: 'operations',
@@ -358,6 +367,7 @@ const moduleLandingPaths: Partial<Record<AccountDataModule, string>> = {
     [AccountDataModule.ManagedOO]: '/managed-oo/proposals',
     [AccountDataModule.WormTrading]: '/worm-trading',
     [AccountDataModule.WorldCupCorners]: '/world-cup-corners',
+    [AccountDataModule.Solana]: '/solana',
     [AccountDataModule.Wallet]: '/wallet'
 };
 
@@ -479,6 +489,7 @@ const AppRoutes = (props: {
                 <Route path='/market-radar' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarHotPage />)} />
                 <Route path='/market-radar/realtime' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarRealtimePage />)} />
                 <Route path='/market-radar/movers' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarMoversPage />)} />
+                <Route path='/solana' element={moduleRoute(AccountDataModule.Solana, <SolanaPage />)} />
                 <Route path='/sports-live' element={moduleRoute(AccountDataModule.SportsLive, <SportsLivePage />)} />
                 <Route path='/sports-history' element={moduleRoute(AccountDataModule.SportsHistory, <SportsHistoryPage />)} />
                 <Route path='/world-cup-corners' element={moduleRoute(AccountDataModule.WorldCupCorners, <WorldCupCornersPage />)} />

@@ -143,6 +143,7 @@ WITH inserted_account AS (
       ('worm_trading'),
       ('world_cup_corners'),
       ('token'),
+      ('solana'),
       ('wallet'),
       ('trader_sync')
   ) AS module(name)
@@ -174,7 +175,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 10
+  AND (SELECT COUNT(*) FROM inserted_modules) = 11
   AND EXISTS (SELECT 1 FROM inserted_profile)
   AND EXISTS (SELECT 1 FROM inserted_preferences)
 `
@@ -264,6 +265,7 @@ WITH inserted_account AS (
       ('worm_trading'),
       ('world_cup_corners'),
       ('token'),
+      ('solana'),
       ('wallet'),
       ('trader_sync')
   ) AS module(name)
@@ -295,7 +297,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 10
+  AND (SELECT COUNT(*) FROM inserted_modules) = 11
   AND EXISTS (SELECT 1 FROM inserted_profile)
   AND EXISTS (SELECT 1 FROM inserted_preferences)
 `
@@ -373,6 +375,7 @@ WITH inserted_account AS (
       ('worm_trading', 'read_write'),
       ('world_cup_corners', 'read'),
       ('token', 'read_write'),
+      ('solana', 'read'),
       ('wallet', 'read_write'),
       ('trader_sync', 'read_write')
   ) AS module(name, access_level)
@@ -404,7 +407,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 10
+  AND (SELECT COUNT(*) FROM inserted_modules) = 11
   AND EXISTS (SELECT 1 FROM inserted_profile)
   AND EXISTS (SELECT 1 FROM inserted_preferences)
 `
@@ -489,6 +492,7 @@ WITH inserted_account AS (
       ('worm_trading'),
       ('world_cup_corners'),
       ('token'),
+      ('solana'),
       ('wallet'),
       ('trader_sync')
   ) AS module(name)
@@ -520,7 +524,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 10
+  AND (SELECT COUNT(*) FROM inserted_modules) = 11
   AND EXISTS (SELECT 1 FROM inserted_profile)
   AND EXISTS (SELECT 1 FROM inserted_preferences)
 `

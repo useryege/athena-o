@@ -44,4 +44,4 @@
 | --- | --- | --- | --- |
 | Trader Sync | [产品需求](polymarket-copy-trading/README.md) | `已确认`（Activity Alerts 业务及完整 UI 设计已确认） | [后端设计](../design/trading/trader-sync-activity-alerts.md)（已实现）；[UI 设计](../design/web-ui/trader-sync-activity-alerts.md)（已实现）；[验收记录](../testing/trader-sync-activity-alerts-acceptance.md) |
 | Token Intelligence | [Token 业务设计与研究资料](token/README.md) | `讨论中`（其中部分独立需求已确认） | [Token Intelligence 当前及目标技术设计](../design/README.md) |
-| Solana Intelligence | [Solana 项目研究](solana/README.md) | `讨论中`（独立板块、发行后持续研究、活动刷新及每项目一小时限频已确认） | [新项目发现](../design/solana-intelligence/project-discovery.md)、[持续研究与刷新调度](../design/solana-intelligence/research-lifecycle-and-refresh.md)（均设计中） |
+| Solana Intelligence | [Solana 项目发现与研究](solana/README.md) | 首版发现与列表已实现并验收；研究规则延后 | [项目发现](../design/solana-intelligence/project-discovery.md)、[列表页](../design/web-ui/solana-discovery.md)、[后续研究](../design/solana-intelligence/research-lifecycle-and-refresh.md) |

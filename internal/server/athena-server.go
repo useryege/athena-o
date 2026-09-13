@@ -56,6 +56,7 @@ import (
 	serverservicestatus "github.com/useryege/athena/internal/server/servicestatus"
 	"github.com/useryege/athena/internal/server/session"
 	"github.com/useryege/athena/internal/server/settings"
+	serversolana "github.com/useryege/athena/internal/server/solana"
 	serversportshistory "github.com/useryege/athena/internal/server/sportshistory"
 	serversportslive "github.com/useryege/athena/internal/server/sportslive"
 	servertokenapi "github.com/useryege/athena/internal/server/tokenapi"
@@ -67,6 +68,7 @@ import (
 	serverworldcupcorners "github.com/useryege/athena/internal/server/worldcupcorners"
 	serverwormmarkets "github.com/useryege/athena/internal/server/wormmarkets"
 	serverwormtrading "github.com/useryege/athena/internal/server/wormtrading"
+	solanaapiclient "github.com/useryege/athena/internal/solanadiscovery/apiclient"
 	sportshistoryapiclient "github.com/useryege/athena/internal/sportshistory/apiclient"
 	sportsliveapiclient "github.com/useryege/athena/internal/sportslive/apiclient"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
@@ -80,6 +82,7 @@ import (
 	appbootstrappkg "github.com/useryege/athena/pkg/apiclient/appbootstrap"
 	servicestatuspkg "github.com/useryege/athena/pkg/apiclient/servicestatus"
 	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
+	solanapkg "github.com/useryege/athena/pkg/apiclient/solana"
 	tspkg "github.com/useryege/athena/pkg/apiclient/tradersync"
 	"github.com/useryege/athena/ui"
 	"github.com/useryege/athena/util/assets"
@@ -233,6 +236,7 @@ type AthenaServerOpts struct {
 	WormTradingClientset              wormtradingapiclient.Clientset
 	ProfitSharingClientset            profitsharingapiclient.Clientset
 	TokenAPIClientset                 tokenapiapiclient.Clientset
+	SolanaClientset                   solanaapiclient.Clientset
 	EtherscanGatewayIPs               string
 	EtherscanGatewayToken             string
 	EtherscanAPIKeys                  string
@@ -667,6 +671,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	tokenapipkg.RegisterTokenCollectionServiceServer(grpcS, server.serviceSet.TokenServices)
 	tokenapipkg.RegisterTokenPolicyServiceServer(grpcS, server.serviceSet.TokenServices)
 	tokenapipkg.RegisterTokenOperationsServiceServer(grpcS, server.serviceSet.TokenServices)
+	solanapkg.RegisterSolanaServiceServer(grpcS, server.serviceSet.SolanaService)
 	servicestatuspkg.RegisterServiceStatusServiceServer(grpcS, server.serviceSet.ServiceStatusService)
 
 	// Register reflection service on gRPC server.
@@ -694,6 +699,7 @@ type AthenaServiceSet struct {
 	ProfitSharingService   *serverprofitsharing.Server
 	WorldCupCornersService *serverworldcupcorners.Server
 	TokenServices          *servertokenapi.Server
+	SolanaService          *serversolana.Server
 	ServiceStatusService   *serverservicestatus.Server
 }
 
@@ -719,6 +725,11 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	worldCupCornersService := serverworldcupcorners.NewServer()
 	// token api service
 	tokenAPIService := servertokenapi.NewServer(server.TokenAPIClientset)
+	var solanaClient solanapkg.SolanaServiceClient
+	if server.SolanaClientset != nil {
+		solanaClient = server.SolanaClientset.Solana()
+	}
+	solanaService := serversolana.NewServer(solanaClient)
 	serviceStatusService := serverservicestatus.NewServer(
 		server.NotificationClientset,
 		server.WalletClientset,
@@ -761,6 +772,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		ProfitSharingService:   profitSharingService,
 		WorldCupCornersService: worldCupCornersService,
 		TokenServices:          tokenAPIService,
+		SolanaService:          solanaService,
 		ServiceStatusService:   serviceStatusService,
 	}
 }
@@ -1144,6 +1156,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenCollectionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenPolicyServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenOperationsServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, solanapkg.RegisterSolanaServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, servicestatuspkg.RegisterServiceStatusServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, sessionpkg.RegisterSessionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, appbootstrappkg.RegisterAppBootstrapServiceHandler, gwmux, conn)

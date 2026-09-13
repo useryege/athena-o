@@ -6,15 +6,23 @@ import {parseAccountAccess, parseAccountIdentity, parseAccountProfile} from '../
 
 test('real editor exposes only NONE and RW for Trader Sync and edits full matrix', () => {
     window.matchMedia = window.matchMedia || jest.fn().mockReturnValue({matches: false, addListener: () => {}, removeListener: () => {}});
-    const access = parseAccountAccess({moduleAccess: [{module: 'trader_sync', dataAccess: 'read_write'}]});
+    const access = parseAccountAccess({moduleAccess: [
+        {module: 'trader_sync', dataAccess: 'read_write'},
+        {module: 'solana', dataAccess: 'read'},
+        {module: 'token', dataAccess: 'read'}
+    ]});
     let edited: any;
     let tree: renderer.ReactTestRenderer;
     act(() => {tree = renderer.create(<AccountAccessEditor account={{username: 'member', identity: parseAccountIdentity({}), profile: parseAccountProfile({}, 'member')} as any} access={access} editable={true} dirty={false} updating={false} onChange={value => {edited = value;}} onSave={() => {}} onReset={() => {}} />);});
     const choice = tree!.root.findAllByType(ChoiceGroup).find(item => item.props.ariaLabel === 'Trader Sync data access for @member');
     expect(choice).toBeDefined();
     expect(choice!.props.options.map((item: any) => item.value)).toEqual([0, 2]);
+    const solanaChoice = tree!.root.findAllByType(ChoiceGroup).find(item => item.props.ariaLabel === 'Solana data access for @member');
+    expect(solanaChoice!.props.options.map((item: any) => item.value)).toEqual([0, 1]);
     act(() => choice!.props.onChange(0));
-    expect(edited.moduleAccess).toHaveLength(10);
+    expect(edited.moduleAccess).toHaveLength(11);
     expect(edited.moduleAccess.find((item: any) => item.module === 12).dataAccess).toBe(0);
+    expect(edited.moduleAccess.find((item: any) => item.module === 13).dataAccess).toBe(1);
+    expect(edited.moduleAccess.find((item: any) => item.module === 8).dataAccess).toBe(1);
     act(() => tree!.unmount());
 });

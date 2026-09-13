@@ -105,18 +105,20 @@ export const ResourceTable = <T,>(props: {
                             showSizeChanger={false}
                             onChange={nextPage => props.onPageChange?.(nextPage, currentPageSize)}
                         />
-                        <div className='resource-table-pagination__sizes'>
-                            <Typography.Text className='resource-table-pagination__sizes-label' type='secondary'>
-                                Per page
-                            </Typography.Text>
-                            <ChoiceGroup<number>
-                                ariaLabel='Items per page'
-                                size='small'
-                                value={currentPageSize}
-                                options={pageSizeOptions.map(value => ({label: String(value), value}))}
-                                onChange={nextPageSize => props.onPageChange?.(1, nextPageSize)}
-                            />
-                        </div>
+                        {pageSizeOptions.length > 1 && (
+                            <div className='resource-table-pagination__sizes'>
+                                <Typography.Text className='resource-table-pagination__sizes-label' type='secondary'>
+                                    Per page
+                                </Typography.Text>
+                                <ChoiceGroup<number>
+                                    ariaLabel='Items per page'
+                                    size='small'
+                                    value={currentPageSize}
+                                    options={pageSizeOptions.map(value => ({label: String(value), value}))}
+                                    onChange={nextPageSize => props.onPageChange?.(1, nextPageSize)}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

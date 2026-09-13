@@ -1,12 +1,12 @@
-# Solana 新项目发现方案调研
+# Solana 新项目发现设计
 
-> 设计状态：设计中；当前为能力核对与方案比较，尚未选定接入方式，尚未实现。
+> 当前方案：第一步采用标准 HTTP RPC 的 finalized 区块扫描，独立服务持久发现候选，ATHENA 列表查看。平台解析、流式订阅和项目研究留待下一步。
 >
 > 关联需求：[Solana 项目研究](../../requirements/solana/README.md)。资料核对日期：2026-09-13。
 
 ## 范围与现状
 
-本文回答如何从发行阶段发现 Solana 新代币，为独立研究板块建立起点。生命周期采用[持续研究与刷新调度](research-lifecycle-and-refresh.md)：发行后持续监控，活动按每项目一小时限频触发刷新；研究资料与完整服务架构另随需求细化。
+本文落实第一步“发现并查看样本”。[持续研究与刷新调度](research-lifecycle-and-refresh.md)保留未来方向，本步没有项目研究、活动监控和每小时资料刷新任务。
 
 现有 [Token 扫描器](../../../internal/token/discovery/application/chain_processor.go) 和 [EVM 候选识别器](../../../internal/token/adapters/evm/candidate_inspector.go) 处理 EVM 合约候选；它们不能直接解释为 Solana 新项目发现能力。已有 [Solana 钱包登录](../identity-access/solana-wallet-authentication.md) 也不承担项目发现。
 
@@ -30,13 +30,9 @@
 
 节点接口依据为 [logsSubscribe](https://solana.com/docs/rpc/websocket/logssubscribe)、[getTransaction](https://solana.com/docs/rpc/http/gettransaction)、[getBlock](https://solana.com/docs/rpc/http/getblock)。平台依据为 [Pump Program](https://github.com/pump-fun/pump-public-docs/blob/main/docs/PUMP_PROGRAM_README.md)、[LaunchLab](https://docs.raydium.io/user-flows/launchlab-overview)。交易流及过滤依据为 [Yellowstone 官方项目](https://github.com/rpcpool/yellowstone-grpc#filters-for-streamed-data)。上述收益判断是面向本项目的推论，尚无本地性能验证。
 
-## 当前建议，尚未确认
+## 前期方案比较结论与本次取舍
 
-建议以“成功初始化新 Mint”作为最早候选发现事实，解析选定 Token 程序的顶层和内部指令；平台解析补充发行背景。新项目是否正式进入研究，由待确认的资产纳入规则决定。
-
-实时订阅与历史补查共同处理发现。使用 HTTP 区块扫描作为覆盖与恢复依据时，需要保存处理进度并校验数据完整性；不把一次订阅连接成功视为已完整覆盖。实时通道选标准 WebSocket 还是 Yellowstone，由目标时效、节点权限、吞吐及历史能力决定。平台首版清单也未选定。
-
-这沿用“链上发现后研究”的业务思路，具体发行证据按 Solana 定义。尚未选择购买提供方服务或部署自有节点。
+首版采用成功初始化新 Mint 作为候选事实，Token Program 和 Token-2022 顶层/CPI 均处理。HTTP finalized 区块扫描提供最小持久发现闭环；暂不叠加 WebSocket、Yellowstone 或平台 parser。官方方案比较仍保留，用户查看真实样本后再决定是否需要这些能力。
 
 ## 影响设计的接口边界
 
@@ -53,15 +49,47 @@ Pump 官方仓库中的 SDK 使用文档提供 `createV2AndBuyInstructions`，�
 
 系统首次取得成功创建交易时，项目可能已经有首笔买入。已确认 Solana 项目持续研究，因此创建交易内或之后出现买入/Swap 都不结束研究，也无需人为忽略首买或改用下一笔交易作为停止条件。发现流程仍需完整解析创建交易并保留顺序与证据；若发现与认可的交易活动产生重复研究需求，建议按[刷新调度建议](research-lifecycle-and-refresh.md)合并，具体去重语义随活动清单细化。
 
-## 后续设计需要解决的事项
+## 当前服务与数据边界（SDS-R1、R2、R6、R7）
 
-- 发现起点、资产纳入、平台覆盖、链上角色归因与活动触发清单。
-- 目标网络、初始历史区间、时效目标、节点配额与历史保留能力。
-- 项目身份、重复发现、交易顺序、确认等级、分叉及持续覆盖模型。
-- 独立服务职责、进程、接口、持久化、事务、鉴权、配置和停止边界。
+`internal/solanadiscovery` 是唯一业务 owner，拥有解析、RPC 适配、扫描生命周期、`solana_discovery` schema 和查询。独立入口 `cmd/athena-solana-discovery` 不导入 API/UI/其他业务实现；API 仅通过生成的 gRPC 契约代理查询。
 
-服务边界设计须按 [SDS-R1 至 SDS-R8](../../developer-guide/service-development-standards.md)形成独立运行和验证方案；当前没有新增进程、RPC 契约或运行命令。仅本文档修改适用 SDS-R7、SDS-R8 的事实记录与静态验证要求。
+扫描 Mainnet Beta 并核对 genesis hash；读取 finalized 范围的 getBlocks，然后并发 getBlock（jsonParsed/full、legacy/v0、maxSupportedTransactionVersion=0）。首次从 head 向前32 slots开始，显式 start-slot 仅在无检查点时生效。范围按slot提交，每个范围内候选和检查点同一事务落库。Mint唯一，重复发现保留首次证据；失败块/损坏已识别初始化不推进范围。提供方返回的跳过slot依其getBlocks结果处理，不宣称自行证明账本完整性。
 
-## 验证状态
+只保存 Mint、Token 程序、交易签名、手续费支付方、初始化权限、精度、slot、blockTime 和 discoveredAt；两个时间分别表示链上时间和首次保存时间。所有资产尚未分类，不主动抓取外部 metadata。
 
-本轮核对官方文档与既有源码入口，未连接实际 Solana 节点采样，未验证提供方容量或实现目标流程。后续验证应覆盖直接初始化、CPI 初始化、失败交易、同笔创建与买入、重复通知、断线补查、Token-2022、版本化交易及不完整历史；具体预期由已确认规则决定。
+项目与账户权限共用已配置 PostgreSQL 数据库的独立业务表：项目位于 `solana_discovery` schema，账户表在现有 public schema。独立进程拥有连接池，账户 adapter 仅借用读取，不能关闭该池。项目提交事务不跨 RPC。数据库仍是共享故障域，API 与服务必须配置到同一账户数据库；独立开发预览使用自己的数据库，避免干扰另一 checkout。
+
+## 接口与授权（SDS-R2、R4、R6）
+
+`internal/server/solana/solana.proto` 生成 `SolanaService.ListProjects` 与 `GetDiscoveryStatus`，对应 `GET /api/v1/solana/projects` 和 `/api/v1/solana/status`。列表 page 从1开始，默认25项，最多100项，按slot降序，可按Mint文本查询。状态含起点、检查点、最新观察的finalized slot、成功时间、候选数和错误。
+
+公共 API 验证 Solana READ，从认证上下文取账户ID。内部客户端设置10秒deadline、独立Bearer token和唯一 `x-athena-account-id`，不接收公共请求传入的身份字段。业务 RPC 再验证token和规范账户UUID，每次重读持久权限，要求登录有效且Solana READ；管理员无隐式业务访问。撤权后的后续请求不能靠API缓存继续读取。
+
+新 `solana` 授权最高READ，完整账户矩阵11项，新/现有普通成员默认NONE。账户初始化及必要升级SQL、生成客户端和UI一同更新。健康RPC只说明进程/查询入口可用，节点扫描健康以GetDiscoveryStatus为准；不把监听端口等同于扫描追平。
+
+## 独立运行与配置（SDS-R3、R4、R5）
+
+当前入口：`make solana-discovery-build`、`make solana-discovery-run`、`make solana-discovery-stop`。最小依赖为已启动的PostgreSQL和可用主网HTTP RPC；账户数据库结构由账户迁移入口准备，扫描本身不依赖API在线。局部profile只管理自己的进程组，借用基础设施，不创建/停止容器或删除数据卷。完整Procfile显式包含新服务。
+
+|配置|默认/行为|
+|---|---|
+|ATHENA_SOLANA_DISCOVERY_RPC_URL|https://api.mainnet-beta.solana.com；只接受HTTP(S)|
+|ATHENA_SOLANA_DISCOVERY_POSTGRES_DSN|回退ATHENA_SERVER_POSTGRES_DSN，再回退本地athena数据库|
+|ATHENA_SOLANA_DISCOVERY_INTERNAL_AUTH_TOKEN|生产环境必填；局部Procfile提供明确开发token|
+|ATHENA_SOLANA_DISCOVERY_LISTEN_ADDRESS / PORT|127.0.0.1 / 8112|
+|ATHENA_SOLANA_DISCOVERY_SERVER_ADDRESS|API客户端默认127.0.0.1:8112|
+|ATHENA_SOLANA_DISCOVERY_START_SLOT|0；首次取head向前32slots，重启沿用持久起点|
+|ATHENA_SOLANA_DISCOVERY_RANGE_SIZE|4，允许1..32|
+|ATHENA_SOLANA_DISCOVERY_CONCURRENCY|1，允许1..32|
+|ATHENA_SOLANA_DISCOVERY_REQUESTS_PER_SECOND|1，允许1..1000；短时令牌突发最多4|
+|ATHENA_SOLANA_DISCOVERY_REQUEST_TIMEOUT|15s，每个RPC有界|
+|ATHENA_SOLANA_DISCOVERY_POLL_INTERVAL|2s，追平后等待；积压时持续推进|
+
+参数为初始预算，不是容量SLO。请求失败指数退避，最多30秒；429存在Retry-After时等待至少该时长，始终可取消。错误与积压可查询。终止信号取消扫描和节点请求，gRPC最多5秒优雅等待后强制停止，扫描最多5秒收尾，进程关闭自有资源。具体运行与预览见[本地开发](../../developer-guide/running-locally.md#solana-discovery-local)。
+
+## 验证记录（SDS-R8）
+
+实现与真实数据、页面、重启恢复证据记录在[验收记录](../../testing/solana-discovery.md)，任务清单见[实施计划](../../superpowers/plans/2026-09-13-solana-discovery.md)。解析器/数据库/权限/API/页面验证与主网真实数据验收分别记录；公共节点长期容量尚无证据，不作延迟和全链完整性承诺。
+
+
+公共节点实测 getBlock 返回约17MB，节点会返回429；即使降低请求次数，也不能仅据QPS推断容量。官方还声明公共端点有数据量额度、限额会变化，不适合作为生产节点；见[Solana公共RPC说明](https://solana.com/docs/references/clusters)。首版预览优先逐块持久保存真实样本，显示catching_up或error，不宣称追平。若后续要求持续低延迟全范围发现，需要相应容量的RPC或更有针对性的发现数据源。

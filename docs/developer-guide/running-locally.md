@@ -394,3 +394,33 @@ The WSL helper is not used in containers. The notification process consumes
 `ATHENA_URL` to configure the shared summary source before starting its existing
 dispatcher. Trader Sync proxy settings do not configure Telegram. Explicit
 stopped-sender recovery remains independent of Trader Sync source settings.
+
+
+<a id="solana-discovery-local"></a>
+## Solana 发现的局部运行
+
+首版的独立入口不构建 API 或启动其他业务：
+
+```bash
+make solana-discovery-build
+make solana-discovery-run
+# 另一个终端，同一 checkout：
+make solana-discovery-stop
+```
+
+依赖已运行的 PostgreSQL 和主网 RPC；使用 `.env` 中 `ATHENA_SOLANA_DISCOVERY_POSTGRES_DSN`（回退账户数据库配置）、`ATHENA_SOLANA_DISCOVERY_RPC_URL`。内部查询要求同库已准备账户表与 READ 授权。局部命令只拥有 `.run/solana-discovery` 中记录的进程组，借用基础设施，不清理容器或数据。全栈 `make run` 的 Procfile 也显式包含该服务。
+
+如另一 checkout 已在运行，可用独立数据库与端口预览 Solana + API + UI。先准备空的开发数据库，并在当前 checkout `.env` 配置 `ATHENA_SOLANA_PREVIEW_POSTGRES_DSN` 指向它；不要指向另一 checkout 正在使用的账户库。API 会应用账户迁移，本地开发会员沿用既有权限机制。复用已运行的 Redis；通知、钱包等其他业务沿用各自配置，预览不会管理它们。
+
+```bash
+# 先按 ui/.nvmrc 选择 Node 24.14.1
+make run ATHENA_RUN_PROFILE=solana-preview
+# 默认 UI http://127.0.0.1:14000/solana；API 18080；Solana gRPC 18112；Redis DB 13
+make ui-acceptance UI_ACCEPTANCE_MODE=smoke UI_ACCEPTANCE_BASE_URL=http://127.0.0.1:14000
+# 另一个终端，同一 checkout：
+make stop ATHENA_RUN_PROFILE=solana-preview
+```
+
+对应端口可通过 `ATHENA_SOLANA_PREVIEW_UI_PORT`、`ATHENA_SOLANA_PREVIEW_API_PORT`、`ATHENA_SOLANA_PREVIEW_DISCOVERY_PORT` 调整；UI使用strictPort，避免静默换到别处。profile只停止自己记录并验证的进程，不回收基础设施。它也可选择 `ATHENA_RUN_PROFILE=solana-discovery` 仅运行扫描服务。标准全栈停止语义保持不变，停止预览须带上相同profile。
+
+Solana预览为公共节点采样设置每范围1 slot、并发1、每秒请求预算1；有积压时页面照实展示。服务常规默认每范围4 slots；更高容量节点可通过自身配置调整。

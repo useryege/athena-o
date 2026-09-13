@@ -1,0 +1,1 @@
+solana-discovery: sh -c 'ATHENA_SOLANA_DISCOVERY_INTERNAL_AUTH_TOKEN=${ATHENA_SOLANA_DISCOVERY_INTERNAL_AUTH_TOKEN:-athena-local-solana-discovery-internal-auth-token-2026} go run ./cmd/athena-solana-discovery'

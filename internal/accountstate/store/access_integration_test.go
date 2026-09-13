@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcredentials"
 	accountstore "github.com/useryege/athena/internal/accountstate/store"
 	"github.com/useryege/athena/internal/accountstate/store/migrations"
@@ -62,10 +63,45 @@ func TestAccountCreationQueriesReturnFirstInsertedRow(t *testing.T) {
 				t.Fatalf("unexpected first returned account: %+v", row)
 			}
 			var modules int
-			if err := db.Pool.QueryRow(ctx, "SELECT count(*) FROM account_module_access WHERE account_id=$1", row.id).Scan(&modules); err != nil || modules != 10 {
+			if err := db.Pool.QueryRow(ctx, "SELECT count(*) FROM account_module_access WHERE account_id=$1", row.id).Scan(&modules); err != nil || modules != 11 {
 				t.Fatalf("returned account module rows=%d error=%v", modules, err)
 			}
 		})
+	}
+}
+
+func TestAccountAccessUpdatePreservesSolanaAndToken(t *testing.T) {
+	db := pgtest.New(t, migrations.FS, migrations.Dir)
+	ctx := context.Background()
+	store := accountstore.NewSQLStore(db.Pool)
+	row, err := q.New(db.Pool).CreateOrdinaryAccount(ctx, q.CreateOrdinaryAccountParams{Username: "access-member", IdentityProvider: "google", IdentitySubject: "access-member-subject", VerifiedEmail: "access@example.test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	accountID := uuid.UUID(row.AccountID.Bytes).String()
+	current, err := store.GetAccountAccess(ctx, accountID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if current.Modules[accountaccess.ModuleSolana] != accountaccess.AccessLevelNone {
+		t.Fatalf("initial Solana = %q", current.Modules[accountaccess.ModuleSolana])
+	}
+	current.Modules[accountaccess.ModuleSolana] = accountaccess.AccessLevelRead
+	current.Modules[accountaccess.ModuleToken] = accountaccess.AccessLevelReadWrite
+	granted, err := store.UpdateAccountAccess(ctx, accountID, current, current.Revision)
+	if err != nil {
+		t.Fatal(err)
+	}
+	granted.Modules[accountaccess.ModuleMarketRadar] = accountaccess.AccessLevelRead
+	if _, err := store.UpdateAccountAccess(ctx, accountID, granted, granted.Revision); err != nil {
+		t.Fatal(err)
+	}
+	persisted, err := store.GetAccountAccess(ctx, accountID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if persisted.Modules[accountaccess.ModuleSolana] != accountaccess.AccessLevelRead || persisted.Modules[accountaccess.ModuleToken] != accountaccess.AccessLevelReadWrite {
+		t.Fatalf("Solana/Token lost after other module update: %v", persisted.Modules)
 	}
 }
 

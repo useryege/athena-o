@@ -213,11 +213,22 @@ bsc-swap-indexer-build-image:
 # Manage the foreground local development runtime and its resources.
 .PHONY: run
 run:
-	bash ./hack/local-runtime.sh start
+	$(if $(filter solana-discovery solana-preview,$(ATHENA_RUN_PROFILE)),bash ./hack/solana-local.sh start $(ATHENA_RUN_PROFILE),bash ./hack/local-runtime.sh start)
 
 .PHONY: stop
 stop:
-	bash ./hack/local-runtime.sh stop
+	$(if $(filter solana-discovery solana-preview,$(ATHENA_RUN_PROFILE)),bash ./hack/solana-local.sh stop $(ATHENA_RUN_PROFILE),bash ./hack/local-runtime.sh stop)
+
+.PHONY: solana-discovery-build solana-discovery-run solana-discovery-stop
+solana-discovery-build:
+	mkdir -p .tmp/bin
+	go build -o .tmp/bin/athena-solana-discovery ./cmd/athena-solana-discovery
+
+solana-discovery-run:
+	bash ./hack/solana-local.sh start solana-discovery
+
+solana-discovery-stop:
+	bash ./hack/solana-local.sh stop solana-discovery
 
 .PHONY: run-reset
 run-reset:

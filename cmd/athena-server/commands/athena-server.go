@@ -20,6 +20,7 @@ import (
 	profitsharingapiclient "github.com/useryege/athena/internal/profitsharing/apiclient"
 	"github.com/useryege/athena/internal/server"
 	servercache "github.com/useryege/athena/internal/server/cache"
+	solanaapiclient "github.com/useryege/athena/internal/solanadiscovery/apiclient"
 	sportshistoryapiclient "github.com/useryege/athena/internal/sportshistory/apiclient"
 	sportsliveapiclient "github.com/useryege/athena/internal/sportslive/apiclient"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
@@ -70,6 +71,7 @@ func NewCommand() *cobra.Command {
 		wormTradingServerAddress   string
 		profitSharingServerAddress string
 		tokenAPIServerAddress      string
+		solanaServerAddress        string
 		etherscanGatewayIPs        string
 		etherscanGatewayAuthToken  string
 		etherscanAPIKeys           string
@@ -182,6 +184,13 @@ func NewCommand() *cobra.Command {
 				return fmt.Errorf("create Token API clientset: %w", err)
 			}
 			defer utilio.Close(tokenAPIClientset)
+			solanaClientset := newOptionalSolanaClientset(
+				solanaServerAddress,
+				env.StringFromEnv(solanaapiclient.InternalAuthTokenEnv, ""),
+			)
+			if solanaClientset != nil {
+				defer utilio.Close(solanaClientset)
+			}
 
 			traderSyncConfig, err := tradersync.LoadConfigFromEnv()
 			if err != nil {
@@ -212,6 +221,7 @@ func NewCommand() *cobra.Command {
 				WormTradingClientset:              wormTradingClientset,
 				ProfitSharingClientset:            profitSharingClientset,
 				TokenAPIClientset:                 tokenAPIClientset,
+				SolanaClientset:                   solanaClientset,
 				EtherscanGatewayIPs:               etherscanGatewayIPs,
 				EtherscanGatewayToken:             etherscanGatewayAuthToken,
 				EtherscanAPIKeys:                  etherscanAPIKeys,
@@ -300,6 +310,7 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&wormTradingServerAddress, "worm-trading-server-address", env.StringFromEnv("ATHENA_WORM_TRADING_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWormTrading)), "Athena Worm Trading server address")
 	command.Flags().StringVar(&profitSharingServerAddress, "profit-sharing-server-address", env.StringFromEnv("ATHENA_PROFIT_SHARING_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortProfitSharing)), "Athena Profit Sharing server address")
 	command.Flags().StringVar(&tokenAPIServerAddress, "token-api-server-address", env.StringFromEnv("ATHENA_TOKEN_API_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortTokenAPI)), "Athena token API server address")
+	command.Flags().StringVar(&solanaServerAddress, "solana-server-address", env.StringFromEnv("ATHENA_SOLANA_DISCOVERY_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, 8112)), "Athena Solana discovery server address")
 	command.Flags().StringVar(&etherscanGatewayIPs, "etherscan-gateway-ips", env.StringFromEnv("ETHERSCAN_GATEWAY_IPS", ""), "Comma, space, or newline-separated Etherscan Gateway IP addresses")
 	command.Flags().StringVar(&etherscanGatewayAuthToken, "etherscan-gateway-auth-token", env.StringFromEnv("ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN", ""), "Bearer token for Etherscan Gateway gRPC status calls")
 	command.Flags().StringVar(&etherscanAPIKeys, "etherscan-api-keys", env.StringFromEnv("ATHENA_ETHERSCAN_MANAGER_API_KEYS", ""), "Comma, space, or newline-separated Etherscan API keys used by Etherscan Gateway probe runs")

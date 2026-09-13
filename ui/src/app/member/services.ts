@@ -4,6 +4,7 @@ import {ManagedOOService} from '../shared/services/managed-oo-service';
 import {MarketRadarService} from '../shared/services/market-radar-service';
 import {SportsHistoryService} from '../shared/services/sports-history-service';
 import {SportsLiveService} from '../shared/services/sports-live-service';
+import {SolanaService} from '../shared/services/solana-service';
 import {configureServices, serviceProjection} from '../shared/services/registry';
 import {UserService} from '../shared/services/user-service';
 import {VersionService} from '../shared/services/version-service';
@@ -25,6 +26,7 @@ export interface MemberServices extends SelfAccountServices {
     marketRadar: MarketRadarService;
     sportsLive: SportsLiveService;
     sportsHistory: SportsHistoryService;
+    solana: SolanaService;
     managedOO: ManagedOOService;
     memberNotifications: MemberNotificationService;
     worldCupCorners: WorldCupCornersService;
@@ -57,6 +59,7 @@ export const ensureMemberBusinessServices = () => {
         marketRadar: new MarketRadarService(),
         sportsLive: new SportsLiveService(),
         sportsHistory: new SportsHistoryService(),
+        solana: new SolanaService(),
         managedOO: new ManagedOOService(),
         memberNotifications: new MemberNotificationService(),
         worldCupCorners: new WorldCupCornersService(),
