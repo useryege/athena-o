@@ -23,7 +23,7 @@
 
 同日，用户确认[独立构建与本地运行设计](../../superpowers/specs/2026-09-13-trader-sync-local-runtime-design.md)：独立 main/镜像、按服务选择最小依赖、每开发实例的持久库及显式外部库复用、统一 account-state DSN、显式 schema 准备、按资源归属停止和生产 TLS/维护时序。长期运行边界见[本地编排目标](../development-runtime/local-runtime-orchestration.md#已确认的独立运行目标)。
 
-这些是已确认待实现的目标。当前代码仍在 API 内组合 Trader Sync；[内部字段与映射契约草案](../../superpowers/specs/2026-09-13-trader-sync-grpc-contract-design.md)及[完整实施计划](../../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service.md)已补齐并完成本轮自审，待审阅和执行。下面的实现与验收证据不能用于证明拆分已完成。
+这些是已确认待实现的目标。当前代码仍在 API 内组合 Trader Sync；[内部字段与映射契约](../../superpowers/specs/2026-09-13-trader-sync-grpc-contract-design.md)及[完整实施计划](../../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service.md)已获用户确认，正在执行。下面的实现与验收证据不能用于证明拆分已完成。
 
 ## 需求覆盖
 

@@ -19,7 +19,7 @@ Trader Sync 的[独立服务职责、接口与事务边界](../../superpowers/sp
 - 配置使用统一的 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN`，移除旧 API 命名；独立 schema 命令负责准备和只读校验，业务进程不隐式迁移。API 的 Trader Sync 客户端故障只使对应 facade 不可用。
 - 局部编排按服务正向选择、按 checkout/实例核验资源归属；正常停止保留数据，显式重置只面向拥有的数据。旧全栈清理也须避免误停局部实例；停止预算、TLS 和部署迁移时序按已确认规格执行。
 
-上述入口、变量更名和资源编排尚未实现。下面的命令与源码表继续描述当前行为；[内部字段契约草案](../../superpowers/specs/2026-09-13-trader-sync-grpc-contract-design.md)及[实施计划](../../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service.md)已补齐，待审阅和执行。已有运行证据不证明独立服务改造已完成。
+上述入口、变量更名和资源编排尚未实现。下面的命令与源码表继续描述当前行为；[内部字段契约](../../superpowers/specs/2026-09-13-trader-sync-grpc-contract-design.md)及[实施计划](../../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service.md)已获用户确认，正在执行。已有运行证据不证明独立服务改造已完成。
 
 ## 源码入口
 
