@@ -65,7 +65,7 @@ metadataStatus 为 pending/ready/unavailable/error；sourceStatus 为 pending/id
 - [x] 比较重启前后的 StartSlot、LastProcessedSlot、候选数，确认已有记录补全、后续新记录仍在入库；通过 API 搜索一个真实 Pump 候选验证名称、符号、平台与 metadata 观察证据；调用失败状态不能当作全部任务完成。
 - [x] 在 1440px 桌面与 390px 手机浏览 `/solana`，验证字段、详情、搜索、复制可访问性及表格自身滚动。运行 `make ui-acceptance UI_ACCEPTANCE_MODE=smoke UI_ACCEPTANCE_BASE_URL=http://127.0.0.1:14000`，检查真实退出结果与报告。
 - [x] 完成最终代码评审和验收记录，保存本地提交并保留运行环境。
-- [ ] 全部通过后从 worktree 根执行一次 `make notify-task-complete TASK_NOTIFICATION_SUBJECT='任务完成：Solana 名称与发行来源' TASK_NOTIFICATION_BODY='已完成：Solana 候选名称、符号、发行来源与历史补全；验证：后端、前端及真实预览验收通过。'`，等待退出。最终回复用户可访问页面、可查看内容和实际限制。
+- [x] 全部通过后从 worktree 根执行一次 `make notify-task-complete TASK_NOTIFICATION_SUBJECT='任务完成：Solana 名称与发行来源' TASK_NOTIFICATION_BODY='已完成：Solana 候选名称、符号、发行来源与历史补全；验证：后端、前端及真实预览验收通过。'`，等待退出。最终回复用户可访问页面、可查看内容和实际限制。
 
 ## 执行事实
 

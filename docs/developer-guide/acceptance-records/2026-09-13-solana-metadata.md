@@ -73,3 +73,5 @@ API 与列表展示相同持久化字段，支持名称/符号/Mint 查询、复
 - 停止本预览：从该 worktree 执行 `make stop ATHENA_RUN_PROFILE=solana-preview`。该 profile 只停止自己的进程，保留借用的基础设施和数据。
 
 公共 RPC 容量仍有限，页面如实显示 catching_up；本次不宣称已经追平链头、覆盖所有发行平台或全部历史补全已结束。元数据是观察时发行方自述的信息，不代表平台或项目认证。
+
+完成通知：从本 worktree 根调用一次 `make notify-task-complete`，首次连接失败后内置第二次尝试获 SMTP 接收，命令退出 0；未再次调用。日志 `.tmp/solana-metadata/notification.log`。任务专有测试 PostgreSQL 容器与匿名测试卷在验证结束后清理；预览与原共享基础设施保留。
