@@ -1,4 +1,0 @@
-interface:
-  display_name: "Make Run Playwright Acceptance"
-  short_description: "Run evidence-backed local frontend/backend acceptance"
-  default_prompt: "Use $make-run-playwright-acceptance to validate the changed local frontend and backend flows after make run."

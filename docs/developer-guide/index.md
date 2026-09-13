@@ -11,6 +11,7 @@
 ## Preface
 #### Understand the [Code Contribution Preface](submit-your-pr.md#preface)
 #### Follow the [Superpowers Development Workflow](superpowers-development.md)
+#### Read the [Service Development Standards](service-development-standards.md) for new services and service-boundary changes
     
 ## Contributing to Athena documentation
 
@@ -66,6 +67,7 @@ As is the case with the development process, this document is under constant cha
 ### Perform the development cycle 
 - [Start with the compact local development workflow](how-to-develop.md)
 - [Follow the upstream Superpowers development workflow](superpowers-development.md)
+- [Apply service boundaries, local-runtime ownership, and PR evidence](service-development-standards.md)
 - How to contribute to documentation: maintain repository Markdown directly, use `docs/superpowers/specs/` and `docs/superpowers/plans/` for task artifacts, and keep the project's long-term [requirements](../requirements/README.md) and [system designs](../design/README.md) current
 
 ### Run and debug Athena locally

@@ -227,6 +227,26 @@ run-reset:
 e2e:
 	go test $(E2E_GO_TEST_FLAGS) $(E2E_PACKAGES)
 
+.PHONY: ui-acceptance
+ui-acceptance:
+	@bash ./hack/ui-acceptance.sh
+
+.PHONY: install-ai-dev-tools ai-dev-tools-check lint-shell vuln-check ui-a11y
+install-ai-dev-tools:
+	@bash ./hack/ai-dev-tools.sh install
+
+ai-dev-tools-check:
+	@bash ./hack/ai-dev-tools.sh check
+
+lint-shell:
+	@bash ./hack/ai-dev-tools.sh lint-shell
+
+vuln-check:
+	@bash ./hack/ai-dev-tools.sh vuln-check
+
+ui-a11y:
+	@UI_ACCEPTANCE_MODE=isolated UI_ACCEPTANCE_SUITE=a11y bash ./hack/ui-acceptance.sh
+
 .PHONY: e2e-etherscan-manager
 e2e-etherscan-manager:
 	go test $(E2E_GO_TEST_FLAGS) ./e2e/tests/etherscanmanager

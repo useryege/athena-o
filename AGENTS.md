@@ -3,17 +3,25 @@
 ## Table of Contents
 
 - [Rules](#rules)
+  - [服务独立性与开发边界](#服务独立性与开发边界)
   - [Project Status](#project-status)
   - [Requirement-Driven Architecture](#requirement-driven-architecture)
   - [Test Data and API Keys](#test-data-and-api-keys)
   - [No Historical Compatibility](#no-historical-compatibility)
   - [Superpowers Development Workflow](#superpowers-development-workflow)
+  - [本地验收环境准备与完成标准](#本地验收环境准备与完成标准)
   - [Chinese Plans](#chinese-plans)
   - [Plan Implementation Completion Email](#plan-implementation-completion-email)
   - [Impeccable Integration](#impeccable-integration)
   - [本地图片路径规则](#本地图片路径规则)
 
 ## Rules
+
+### 服务独立性与开发边界
+
+新服务或服务边界改造必须先阅读并遵守[服务开发规范](docs/developer-guide/service-development-standards.md)。该规范以 `SDS-R1` 至 `SDS-R8` 定义服务边界、API、独立构建运行、授权、事务、本地编排和验证证据；设计与 PR 必须按变更适用范围引用相应规则和证据。
+
+既有实现的差距不得新增耦合；无关的小修复不因此强制全系统重构。纯解析器或内部工具库无需为了该规范拆成服务。
 
 ### Project Status
 
@@ -49,6 +57,16 @@ Do not preserve historical compatibility. When implementing changes:
 - Read the relevant [requirements](docs/requirements/README.md), [designs](docs/design/README.md), and actual source as project context. Preserve business decisions, unresolved questions, and scope; keep affected long-term documents consistent with the resulting implementation. Document statuses describe facts, not additional workflow gates.
 - Use Superpowers' default `docs/superpowers/specs/` and `docs/superpowers/plans/` locations when its selected workflow calls for written artifacts. Project-local worktrees belong in `.worktrees/`; temporary Superpowers execution state belongs in `.superpowers/`.
 - Project-specific skills supply domain knowledge and repository operations alongside Superpowers. Installation details and the skill map are in [Superpowers Development](docs/developer-guide/superpowers-development.md).
+
+### 本地验收环境准备与完成标准
+
+- 已授权的本地验收包含必要的环境检查、准备、启动、排查和重验。服务未启动是待处理的前置条件，不能仅凭首次连接拒绝、预检失败或其他测试通过就结束必要的真实环境验收。
+- 先确认目标地址、运行进程及其所属仓库/worktree。正确且健康的已有环境直接复用；未启动时按[本地运行说明](docs/developer-guide/running-locally.md#prepare-the-development-environment-for-acceptance)选择项目 Node 版本，从目标仓库执行 `make run`，保存持久运行会话及日志。这些必要操作无须再次请求用户确认。
+- smoke 命令本身不启停开发服务；执行验收的代理负责准备环境。不得把工具的职责边界解释成代理不能执行 `make run`。启动后检查进程、前端入口和会员/管理员 bootstrap，再执行真实 smoke 并检查退出结果和报告；端口监听或 HTTP 200 不等于验收通过。
+- 失败时保留证据，检查相关日志，在已授权范围内解决环境问题并重验。只有确实无法自行解决的外部依赖、凭据、权限或需要用户决定的问题，才报告阻塞，写明尝试、原因和未完成项；验收任务本身不授权扩大为产品行为修改。
+- 必要的真实验收未通过时，区分“实现完成”和“验收未完成”，不得宣称整个任务完成，也不得发送整个任务的完成通知。隔离测试、受控场景和预检不能替代真实环境验收。
+- 本次启动的开发服务在验收结束后默认保留运行，交付时说明地址、仓库/worktree、会话或进程、日志、验收结果及从该仓库执行 `make stop` 的停止方式。已有服务保持原样；不得自动执行 `make run-reset`、删除数据卷或终止归属不明的进程。
+- 用户明确要求只读、仅预检或不启动服务时遵循该限制，仅报告实际检查结果。规则文档修改、纯隔离测试不因此自动扩大为启动真实环境。
 
 ### Chinese Plans
 

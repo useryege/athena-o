@@ -8,6 +8,8 @@
 
 当前实现包含统一数据库、进程边界、持久发送许可/结果、Bot update 原子消费、共享调度、单 sender 恢复、实时 Collector/基线/持久接收、ActivityProjector、活动与普通消息同事务、摘要冻结与首条协调、公开 API 及生产 runtime 组合。单供应商 WSS、最终确认、资料 evidence、同用户突发限流和撤权永久资格边界均按[完整书面规格](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)实现；外部公开时刻、100 个真实持续活跃目标和长期稳定性仍是证据限制，不改写业务目标。
 
+> **服务开发规范差距（2026-09-13）：**本文记录的 `athena-server` 内 Trader Sync 采集/投影与 `athena-notification` 组合是当前实现和已有验收事实。原“**不新增服务进程**”是当时实现方案的决定，不是未来业务服务的约束。按[服务开发规范 SDS-R1 至 SDS-R8](../../developer-guide/service-development-standards.md#sds-r1)，后续边界改造应评估独立业务服务、默认 gRPC、独立生命周期与局部资源所有权；该改造尚未实施，不能据此宣称现有行为已满足新规范。现有同库受控事务、原子撤权和发送许可继续保留，不能为了拆分随意异步化或跨 RPC 传递 transaction。
+
 技术证据见[数据源契约核验](../../requirements/polymarket-copy-trading/source-contract-verification.md)与[RPC 过滤、确认和额度复核](../../requirements/polymarket-copy-trading/collector-contract-verification.md)。它们记录当前实现版本、100 钱包 OR 推送、Combo 腿映射、Profile 与收益资料的证据及限制。技术参数是可验证的设计默认值；最终本地验收不替代缺失的实网容量与公开时效证明。
 
 ## 需求覆盖
@@ -45,7 +47,7 @@ Copy Trading 不在本设计内。本文维护后端和跨层数据契约，已�
 
 2026-09-10 确认的总体架构、采集路线、接口和发送许可边界均已落入当前实现；批准记录保存在完整书面规格。运行结果和限制由长期验收记录维护，不能从源码存在推导外部达标。
 
-1. **进程部署：**`internal/tradersync.Service` 运行在现有 `athena-server` 内，提供业务 RPC 和后台监控；Telegram 仍由现有 `athena-notification` 的单一 Bot、poller 和 sender 负责。不新增服务进程、消息中间件或 Redis。
+1. **进程部署：**`internal/tradersync.Service` 运行在现有 `athena-server` 内，提供业务 RPC 和后台监控；Telegram 仍由现有 `athena-notification` 的单一 Bot、poller 和 sender 负责。这里“不新增服务进程、消息中间件或 Redis”仅是本已实现方案的事实，不约束后续按服务开发规范进行的边界改造。
 2. **事务范围（已确认）：**账户权限、Trader Sync 数据及全部 Notification 数据统一放在 `athena` PostgreSQL 数据库，包括账户绑定、账户投递、系统群组通知、Bot polling offset 和绑定回复 outbox。各模块保留独立 query adapter，共享受控事务和一个权威迁移集；每个进程建立自己的连接池，不跨进程共享连接池对象。Notification 不再因账户/系统通知而持有两个数据库 store。
 3. **链上实时路线（已确认）：**Chainstack 为首个开发 HTTP/WSS 入口，dRPC 仅供手动切换；不双采、不自动故障切换。共享目标过滤 WSS 采集普通 CTF、Neg Risk 和 Combos Exchange 自身 OrderFilled，先持久接收、再核验规范链及最终确认、最后投影用户活动；公开资料接口补身份与市场。仅常驻目标 logs；ActivityProjector 拥有唯一每 2 秒确认工作调度，Collector 只负责每 10 秒 latest 健康查询，不永久订阅全链 newHeads。
 4. **活动与外发解耦：**每位用户的站内活动在形成时持久化，并在同一事务冻结 Telegram 资格与备注。普通提醒和摘要均有确定的活动成员关系；不会因发送失败再创建成交活动。

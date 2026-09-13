@@ -83,8 +83,17 @@ two independent accounts even when both belong to the same person.
 Start through the local helper script:
 
 ```bash
+cd ui
+nvm use
+cd ..
 make run
 ```
+
+Run these commands in the same shell from the repository root so the helper inherits
+the Node.js version selected by `ui/.nvmrc` (currently `24.14.1`). The UI package
+accepts Node.js `>=24.14.1 <25`; do not change the global NVM default. On a new
+machine, complete the Node.js setup in [Development Environment](development-environment.md)
+before starting the stack.
 
 The default local stack exposes:
 
@@ -171,10 +180,159 @@ Run the UI only:
 
 ```bash
 cd ui
+nvm use
 yarn start
 ```
 
 The dev server listens on port `4000`. Override the host with `ATHENA_YARN_HOST`.
+
+### Browser acceptance
+
+Use the repository entry point for repeatable browser checks. It runs entirely in WSL,
+uses the project's local Yarn and Playwright packages, and never installs or downloads
+dependencies:
+
+```bash
+make ui-acceptance
+```
+
+The default `isolated` mode builds the UI once, then runs the complete maintained
+`ui-fixtures` and `live` projects against fresh root-path and `/athena` harnesses. The run
+owns one temporary PostgreSQL container; each harness uses a fresh database. Browser tests
+use Playwright's paired Chromium. This
+mode does not use, stop, or reset a development stack started with `make run`.
+
+To smoke-test the real development UI with system Chrome, prepare or reuse its environment as described below, then run:
+
+```bash
+make ui-acceptance UI_ACCEPTANCE_MODE=smoke
+```
+
+Smoke mode defaults to `http://localhost:4000`. Set `UI_ACCEPTANCE_BASE_URL` to another
+explicit HTTP loopback URL. It checks the member and administrator bootstrap and application
+shells in separate browser contexts. Anonymous or login-page results are valid session
+states; the smoke does not perform Google or Phantom login and does not submit business
+changes. The smoke command itself never starts or stops `make run`; the agent performing acceptance is responsible for preparing the target environment.
+
+### Prepare the development environment for acceptance
+
+Follow the [project acceptance rule](../../AGENTS.md#本地验收环境准备与完成标准). Required local acceptance includes preparing its environment; connection refusal alone is not a final blocker.
+
+1. Confirm the target repository/worktree and URL. Inspect the process command, working directory and `.run/athena-local-runtime/supervisor.state` where present. Reuse a healthy matching stack. If another worktree or an unrelated process owns the required port, preserve it and investigate the documented configuration; do not kill it or silently test the wrong checkout.
+2. If the target stack is absent, select Node and start it **from the target repository**:
+
+   ```bash
+   cd ui
+   nvm use
+   cd ..
+   make run
+   ```
+
+   Use a persistent terminal/session and capture its output to a task-specific log under `.tmp/`. Keep the session alive after acceptance and record its identifier. Do not change the global Node default. Resolve prerequisite problems using the documented setup within the authorized scope; the smoke tool's no-install policy does not prohibit the agent from preparing the environment.
+3. Observe startup output and process health. Check `/` and `/admin/`, then `/api/v1/app/bootstrap` separately with `X-Athena-Application-Realm: member` and `admin`. Verify the expected realm and session response; anonymous/login states are valid. A listening port or HTTP 200 alone is insufficient. Run the smoke command above and inspect its exit result and native report to verify the actual application shells.
+4. Preserve startup and smoke failures, inspect the relevant logs, resolve environment issues within scope and rerun the affected checks. Do not automatically reset data, delete volumes, change product behavior or repeatedly retry an unchanged failure. An unresolved external dependency, credential, permission or user decision must be reported with attempted actions and remaining verification; passing isolated tests does not close a required real smoke check.
+5. Leave the development service running after acceptance, whether it passed or failed. Report the URL, repository/worktree, session or process identifier, log location and smoke result. Explain that `make stop` from that same repository stops the stack and removes its containers while retaining data volumes. Never stop a pre-existing service just to tidy up acceptance.
+
+If the user requests only a read-only inspection, prerequisite check or no service startup, honor that boundary. A rules-only change or isolated-only test does not require starting a development stack. Required real acceptance that remains unverified prevents claiming full task completion or sending its completion notification.
+
+### Prerequisite checks
+
+Use the read-only prerequisite check before either mode:
+
+```bash
+make ui-acceptance UI_ACCEPTANCE_CHECK_ONLY=1
+make ui-acceptance UI_ACCEPTANCE_MODE=smoke UI_ACCEPTANCE_CHECK_ONLY=1
+```
+
+Select the project Node.js version in the shell before running the command:
+
+```bash
+cd ui
+nvm use
+cd ..
+make ui-acceptance
+```
+
+The command selects WSL Node from `ATHENA_UI_ACCEPTANCE_NODE`, then `PATH` (including the
+version selected by `nvm use`), then the NVM default installation. It does not use a Windows
+Node runtime. Isolated mode additionally
+requires Docker, Go, the project dependencies, the paired Playwright Chromium, and the
+configured PostgreSQL image. Go is selected from `ATHENA_UI_ACCEPTANCE_GO`, then `PATH`,
+then `/usr/local/go/bin/go`. Smoke mode requires system Chrome from `ATHENA_CHROME_PATH` or
+`/usr/bin/google-chrome`. Relative `ATHENA_CHROME_PATH` values are resolved against the
+command's starting directory; prerequisite checks and Playwright use the same absolute
+path, including paths containing spaces. A missing prerequisite is reported as a blocker without changing
+the machine.
+
+The isolated command sets `GOTOOLCHAIN=local`, `GOPROXY=off`, and `GONOPROXY=none` for its Go processes.
+Prepare the required Go toolchain and module cache separately before the first run;
+missing cached modules fail the harness stage without downloading dependencies.
+
+Dependency preparation is an explicit development setup action, separate from acceptance:
+
+```bash
+cd ui
+nvm install
+nvm use
+yarn install
+yarn playwright:install chromium
+```
+
+`yarn install` installs the versions locked by the UI project.
+`yarn playwright:install chromium` downloads the Playwright-paired Chromium used by
+isolated mode. System Chrome for smoke mode is supplied by the workstation and is not
+installed by the repository command.
+
+Each real run writes native Playwright JSON and HTML reports, traces, screenshots,
+attachments, a machine-readable summary, and a Chinese summary below
+`.tmp/athena-ui-acceptance/<run-id>/`. Fixture results cover simulated API responses; live
+results cover the isolated ATHENA components and temporary PostgreSQL while chain, profile,
+and Telegram dependencies remain local substitutes; smoke results cover only the existing
+development bootstrap and application shells. Interactive inspection with an available
+built-in browser is useful during development, but it is not a system-Chrome smoke run or a
+repeatable Playwright regression.
+
+### Browser acceptance readiness and interruption
+
+Smoke observes the application's own bootstrap retries. It allows up to 15 seconds from
+navigation for a valid bootstrap and the corresponding member or administrator shell to
+be ready; transient HTTP errors or malformed JSON do not fail an otherwise recovered
+application. Persistent failure or an invalid final session still fails. Each test attaches
+`bootstrap-attempts` diagnostics with HTTP status, realm, parsing errors and session status.
+The command does not initiate extra bootstrap requests, reload pages, or retry failed tests.
+Role/realm mismatches, uncaught page errors, required resource failures, and attempted
+identity-provider flows remain failures. The latest bootstrap and shell are checked again
+after required resources settle.
+
+`SIGHUP` (terminal hangup), `SIGINT`, and `SIGTERM` enter the same bounded cleanup path and
+exit with codes 129, 130, and 143 respectively. Cleanup finishes before exit, including
+stopping this run's process groups, harness and PostgreSQL container and releasing its lock.
+Repeated signals do not launch another cleanup. Cleanup errors remain in the run report
+alongside the original failure. Smoke never stops the development environment.
+
+`SIGKILL`, a machine crash, or an interrupted Docker daemon can leave resources behind.
+There is no automatic stale-lock reclamation. Recover manually in this order:
+
+1. Read `.athena-ui-acceptance.lock/owner.json` under the path returned by
+   `git rev-parse --git-common-dir` (or under `.tmp/athena-ui-acceptance/` outside a Git
+   repository). Record its `pid` and `runId`. Locate the matching
+   `.tmp/athena-ui-acceptance/<runId>/` in the worktree that started the run.
+2. Check the owner PID's start time, command and working directory; PID existence alone
+   does not establish identity because PIDs can be reused. If the original runner is
+   still alive, send it `SIGTERM` and wait for its normal cleanup.
+3. If the runner is gone, inspect the run's logs and process table to identify its surviving
+   harness and child process groups. Write `stop` into each existing `root/harness/` or
+   `athena/harness/` directory and allow graceful shutdown. Only send `SIGTERM`, followed
+   by `SIGKILL` when necessary, to process groups whose ownership you have confirmed from
+   their command, working directory, and harness environment/logs. Do not kill by shared
+   service port or a partial process-name match; leave ambiguous processes untouched.
+4. Find containers using the exact label `io.athena.ui-acceptance.run=<runId>`. Inspect
+   each container's full ID and label before removing that ID with `docker rm --force -v`.
+   This removes its anonymous database volume; never remove shared development volumes.
+5. After confirming the original runner and its owned resources are gone, re-read
+   `owner.json` and confirm its `runId` is unchanged. Remove that owner file and the now-empty
+   lock directory. Preserve reports and logs, then rerun acceptance. If ownership cannot
+   be established, keep the lock and investigate instead of clearing it speculatively.
 
 ## Backend Changes
 

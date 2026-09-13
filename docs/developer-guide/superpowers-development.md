@@ -25,6 +25,7 @@ Codex 的仓库技能发现方式见 [OpenAI 官方技能文档](https://learn.c
 | 发起与处理审查 | [requesting-code-review](../../.agents/skills/requesting-code-review/SKILL.md)、[receiving-code-review](../../.agents/skills/receiving-code-review/SKILL.md) |
 | 工作隔离、验证和交付 | [using-git-worktrees](../../.agents/skills/using-git-worktrees/SKILL.md)、[verification-before-completion](../../.agents/skills/verification-before-completion/SKILL.md)、[finishing-a-development-branch](../../.agents/skills/finishing-a-development-branch/SKILL.md) |
 | 改进技能 | [writing-skills](../../.agents/skills/writing-skills/SKILL.md) |
+| ATHENA 页面检查、冒烟与浏览器回归 | [athena-browser-acceptance](../../.codex/skills/athena-browser-acceptance/SKILL.md) |
 
 由 `brainstorming` 按任务选取 Spike、Bounded 或 Architectural 路径。局部修改不必一律形成完整 spec 和 plan；需要书面方案的任务按上游技能创建相应文件。方案批准、任务执行和审查遵循所选技能，沿用用户已经明确给出的决定与授权。
 
@@ -43,9 +44,20 @@ Codex 的仓库技能发现方式见 [OpenAI 官方技能文档](https://learn.c
 
 ## 项目技能的职责
 
-Superpowers 负责开发方法。Impeccable 负责 `ui/` 下的 UI/UX 能力，并复用任务设计讨论与批准结果。`grpc-rpc-naming`、`sync-athena-changes` 继续提供 RPC 命名、生成源与消费者同步知识；本地提交、多仓库 PR 和浏览器验收技能提供相应操作支持。相关测试与验证遵循 Superpowers，并报告实际证据。
+Superpowers 负责开发方法。Impeccable 负责 `ui/` 下的 UI/UX 能力，并复用任务设计讨论与批准结果。`grpc-rpc-naming`、`sync-athena-changes` 继续提供 RPC 命名、生成源与消费者同步知识；本地提交和多仓库 PR 技能提供相应操作支持。[ATHENA 浏览器验收技能](../../.codex/skills/athena-browser-acceptance/SKILL.md)按请求在当前可用的内置浏览器检查、真实本地开发环境冒烟和隔离 Playwright 回归之间选择入口，并如实区分三者的证据。真实验收按 [AGENTS.md 的环境准备规则](../../AGENTS.md#本地验收环境准备与完成标准)复用或主动启动目标环境；smoke 工具不启停服务不免除代理的准备责任，验收后默认保留服务运行。相关测试与验证遵循 Superpowers。
 
 本次切换移除了自制后端阶段路由技能、独立的需求/设计/另行实现门禁、额外的前端布局审批门槛，以及默认禁止测试的规定。开发期允许破坏性重构、中文计划、完成邮件等项目约定继续由 `AGENTS.md` 管理。
+
+## 工具与技能配合
+
+[开发工具链](toolchain-guide.md#ai-开发检查工具)提供安装、就绪检查和可重复执行的命令。
+技能负责判断验证场景，CLI 和报告提供证据：
+
+- `systematic-debugging` 排查启动脚本、RPC 或 SQL 问题时，分别使用 ShellCheck、grpcurl、psql。
+- `athena-browser-acceptance` 与 Impeccable 处理界面验收时，可运行独立的 `make ui-a11y` 检查无障碍；继续保留现有功能与人工操作验证。
+- Go 依赖安全检查使用 `make vuln-check`；`verification-before-completion` 应区分工具就绪、扫描成功执行和扫描没有发现问题。
+
+这些入口不要求新增技能，也不改写上游 Superpowers / Impeccable。首轮存量问题保留原始证据，后续修复另行确定范围。
 
 ## 升级
 

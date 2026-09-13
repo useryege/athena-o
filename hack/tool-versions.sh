@@ -12,3 +12,8 @@
 ###############################################################################
 protoc_version=29.3
 oras_version=1.2.0
+export shellcheck_version=0.11.0
+export grpcurl_version=1.9.4
+export govulncheck_version=1.7.0
+export axe_core_playwright_version=4.13.0
+export postgresql_client_major=16

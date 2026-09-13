@@ -145,7 +145,7 @@ curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/instal
 
 ## 7. Install the Athena toolchain in WSL
 
-### 7.1 Install the nodejs
+### 7.1 Install Node.js
 
 ```bash
 # Install nvm
@@ -154,16 +154,22 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
 # Reload shell
 source ~/.bashrc
 
-# Install Node.js LTS version
-nvm install --lts
+# From the Athena repository, install and select the UI version from ui/.nvmrc
+cd ~/work/athena/ui
+nvm install
+nvm use
 
-# Use this version
-nvm use --lts
-
-# Check if installation is successful
+# Check that the project version is selected
 node -v
 npm -v
 ```
+
+`ui/.nvmrc` currently selects Node.js `24.14.1`. The UI package accepts Node.js
+`>=24.14.1 <25`. Do not change your global NVM default for Athena; run `nvm use`
+from `ui` in each shell that will run UI commands or `make run`.
+
+If NVM is already installed, skip its installation command, enter `ui`, and run
+`nvm install` followed by `nvm use`.
 
 ### 7.2 Install the yarn
 
@@ -308,3 +314,20 @@ git clone <your-repository-url> athena
 cd athena
 cursor .
 ```
+
+
+## AI 开发检查工具
+
+完成 Node、Go、Docker 和项目依赖配置后，在同一 WSL 终端运行：
+
+```bash
+cd ~/work/athena/ui
+nvm use
+cd ..
+make install-ai-dev-tools
+make ai-dev-tools-check
+```
+
+安装器将三个 CLI 工具放到项目 `dist/`，安装 PostgreSQL 16 系统客户端和锁定的
+UI 无障碍依赖。系统包安装可能要求 sudo 密码；不安装 PostgreSQL 服务端，也不
+改变 NVM 全局默认版本。日常检查入口及连接示例见 [开发工具链](toolchain-guide.md#ai-开发检查工具)。

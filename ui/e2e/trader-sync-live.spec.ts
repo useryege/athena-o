@@ -1,4 +1,4 @@
-import {test, expect, type Browser, type BrowserContextOptions} from '@playwright/test';
+import {test, expect, type Browser, type BrowserContext, type BrowserContextOptions} from '@playwright/test';
 import fs from 'node:fs';
 const persist = async (info: any, name: string, value: any) => {
     const target = info.outputPath(name);
@@ -9,16 +9,27 @@ const manifest = JSON.parse(fs.readFileSync(process.env.ATHENA_UI_E2E_MANIFEST!,
 const path = (suffix: string) => manifest.PathPrefix + suffix;
 let network: Array<{method?: string; url: string; status?: number; error?: string}> = [];
 let browserErrors: string[] = [];
+let manualContexts = new Set<BrowserContext>();
+let contextCleanupErrors: string[] = [];
 test.beforeEach(() => {
     network = [];
     browserErrors = [];
+    manualContexts = new Set();
+    contextCleanupErrors = [];
 });
 test.afterEach(async ({}, info) => {
-    await persist(info, 'browser-network.json', {body: JSON.stringify({network, browserErrors}, null, 2), contentType: 'application/json'});
-    expect(browserErrors).toEqual([]);
+    for (const context of [...manualContexts]) await closeRealContext(context);
+    await persist(info, 'browser-network.json', {
+        body: JSON.stringify({network, browserErrors, contextCleanupErrors}, null, 2),
+        contentType: 'application/json'
+    });
+    expect.soft(browserErrors).toEqual([]);
+    expect.soft(contextCleanupErrors).toEqual([]);
 });
 async function realContext(browser: Browser, options: BrowserContextOptions) {
     const context = await browser.newContext(options);
+    manualContexts.add(context);
+    context.once('close', () => manualContexts.delete(context));
     context.on('page', page => page.on('pageerror', error => browserErrors.push(error.message)));
     context.on('response', response => {
         const url = new URL(response.url());
@@ -29,6 +40,17 @@ async function realContext(browser: Browser, options: BrowserContextOptions) {
     });
     context.on('requestfailed', request => network.push({method: request.method(), url: request.url(), error: request.failure()?.errorText}));
     return context;
+}
+async function closeRealContext(context: BrowserContext) {
+    if (!manualContexts.has(context)) return;
+    try {
+        // Playwright Test starts and saves traces for every browser.newContext(), including
+        // contexts closed before a later assertion fails. Explicit tracing.stop() conflicts
+        // with its close hook; retain-on-failure in the config owns this lifecycle.
+        await context.close();
+    } catch (error) {
+        contextCleanupErrors.push(error instanceof Error ? error.message : String(error));
+    }
 }
 test('three isolated real cookie sessions bootstrap member and administrator pages', async ({browser}, testInfo) => {
     for (const [role, state, suffix] of [
@@ -48,7 +70,7 @@ test('three isolated real cookie sessions bootstrap member and administrator pag
         await expect(page.getByRole('heading', {name: 'Trader Sync', exact: true, level: 1})).toBeVisible();
         expect(errors).toEqual([]);
         await page.screenshot({path: testInfo.outputPath(role.replace(' ', '-') + '.png'), fullPage: true});
-        await context.close();
+        await closeRealContext(context);
     }
 });
 test('real add, independent same-wallet notes, source activity, lifecycle and owner boundary', async ({browser, request}, info) => {
@@ -111,8 +133,8 @@ test('real add, independent same-wallet notes, source activity, lifecycle and ow
         await page.getByRole('button', {name: 'Resume', exact: true}).click();
         await expect(page.getByText('Monitoring', {exact: true}).first()).toBeVisible({timeout: 20000});
     } finally {
-        await a.close();
-        await b.close();
+        await closeRealContext(a);
+        await closeRealContext(b);
     }
 });
 test('lost successful create response recovers original ID after server token expiry', async ({browser, request}, info) => {
@@ -144,7 +166,7 @@ test('lost successful create response recovers original ID after server token ex
             contentType: 'application/json'
         });
     } finally {
-        await context.close();
+        await closeRealContext(context);
     }
 });
 test('loopback Bot update connects real binding and preserves add draft round trip', async ({browser, request}, info) => {
@@ -184,7 +206,7 @@ test('loopback Bot update connects real binding and preserves add draft round tr
             contentType: 'application/json'
         });
     } finally {
-        await context.close();
+        await closeRealContext(context);
     }
 });
 test('real revocation clears private content and regrant requires manual resume', async ({browser, request}, info) => {
@@ -211,7 +233,7 @@ test('real revocation clears private content and regrant requires manual resume'
         expect(sql.filter((x: any) => x.accountId === manifest.Owners[0]).every((x: any) => x.desiredState === 'permission_disabled')).toBe(true);
         await persist(info, 'revoked-subscriptions.json', {body: JSON.stringify(sql), contentType: 'application/json'});
     } finally {
-        await context.close();
+        await closeRealContext(context);
     }
 });
 test('loopback Telegram produces failed, unknown, ordinary and summary results through real sources', async ({browser, request}, info) => {
@@ -231,7 +253,7 @@ test('loopback Telegram produces failed, unknown, ordinary and summary results t
                 )
                 .toBe('running');
         } finally {
-            await admin.close();
+            await closeRealContext(admin);
         }
         const page = await context.newPage();
         const headers = {'X-Athena-Application-Realm': 'member'};
@@ -266,11 +288,11 @@ test('loopback Telegram produces failed, unknown, ordinary and summary results t
                 expect(response.status()).toBe(404);
             }
         } finally {
-            await foreign.close();
+            await closeRealContext(foreign);
         }
     } finally {
         await request.post(manifest.ControlURL + '/send-fault', {data: {Fault: ''}});
-        await context.close();
+        await closeRealContext(context);
     }
 });
 test('real note edit, keyboard cancellation and safe administrator summaries', async ({browser, request}, info) => {
@@ -356,9 +378,9 @@ test('real note edit, keyboard cancellation and safe administrator summaries', a
         await persist(info, 'safe-admin-summary.json', {body: JSON.stringify({summary, metrics, cancelled, crosscheck}, null, 2), contentType: 'application/json'});
         await ap.screenshot({path: info.outputPath('real-admin-summary.png'), fullPage: true});
     } finally {
-        await context.close();
-        await a.close();
-        await admin.close();
+        await closeRealContext(context);
+        await closeRealContext(a);
+        await closeRealContext(admin);
     }
 });
 test('anonymous deep link retains login return target', async ({page}) => {
@@ -408,8 +430,8 @@ test('real history snapshot shows new activity prompt without changing old page 
             contentType: 'application/json'
         });
     } finally {
-        await context.close();
-        await b.close();
+        await closeRealContext(context);
+        await closeRealContext(b);
     }
 });
 
@@ -430,6 +452,6 @@ test('real permission loss removes an open cancellation modal and its private no
         await page.screenshot({path: info.outputPath('modal-revocation.png')});
     } finally {
         await request.post(manifest.ControlURL + '/grant', {data: {Owner: manifest.Owners[0], Enabled: true}});
-        await context.close();
+        await closeRealContext(context);
     }
 });

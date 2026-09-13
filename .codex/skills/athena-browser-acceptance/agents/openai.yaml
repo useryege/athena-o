@@ -1,0 +1,4 @@
+interface:
+  display_name: "ATHENA Browser Acceptance"
+  short_description: "Inspect and regression-test ATHENA browser flows"
+  default_prompt: "Use $athena-browser-acceptance to validate the affected ATHENA browser flow with the appropriate local inspection, smoke, or isolated regression mode."

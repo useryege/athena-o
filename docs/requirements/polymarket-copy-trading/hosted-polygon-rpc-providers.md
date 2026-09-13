@@ -33,7 +33,7 @@ Alchemy、QuickNode、Chainstack、Infura、dRPC、Chainnodes 都提供 Polygon 
 | dRPC | HTTPS JSON-RPC | `https://lb.drpc.live/polygon/Ai_L7JAEMk5hgVgUsOe8aKuLbjItrMIR8Yhzzu2G7ZgM` | 2026-09-10 10:53–10:55 |
 | dRPC | WSS | `wss://lb.drpc.live/polygon/Ai_L7JAEMk5hgVgUsOe8aKuLbjItrMIR8Yhzzu2G7ZgM` | 2026-09-10 10:53–10:55 |
 
-当前已选 Chainstack 用于开发接入，dRPC 供手动切换，尚未接入业务运行配置。已确认不做历史补查；已收到记录的延后确认仍需考虑 Archive 限制，最新的已知回执/哈希路径见[采集契约复核](collector-contract-verification.md)。验证时的临时订阅均已取消。
+当前本地 `.env` 已通过 `ATHENA_TRADER_SYNC_HTTP_URL` 与 `ATHENA_TRADER_SYNC_WSS_URL` 接入上述 Chainstack 端点，dRPC 供手动切换；该配置状态不代表业务服务已经启动或完成联调。已确认不做历史补查；已收到记录的延后确认仍需考虑 Archive 限制，最新的已知回执/哈希路径见[采集契约复核](collector-contract-verification.md)。验证时的临时订阅均已取消。
 
 套餐信息由用户补充确认：Chainstack 与 dRPC 当前均使用免费节点。以下容量判断按两家的公开免费额度计算，未读取账户的实际剩余额度；四个 URL 是两家服务的 HTTP/WSS 入口，不能按四份独立免费额度计算。
 
@@ -60,7 +60,7 @@ Alchemy、QuickNode、Chainstack、Infura、dRPC、Chainnodes 都提供 Polygon 
 
 ### 首个开发入口建议
 
-**用户已确认先使用 Chainstack 的 HTTP 与 WSS，保留 dRPC 地址供必要时手动切换。**使用单供应商共享目标采集，不设计自动切换。本次没有修改运行配置。
+**用户已确认先使用 Chainstack 的 HTTP 与 WSS，保留 dRPC 地址供必要时手动切换。**使用单供应商共享目标采集，不设计自动切换。本地开发配置已按此选择写入 `.env`。
 
 推荐依据：Chainstack 的当前数据、目标过滤和实际推送均已验证，每月 3M RU、25 RPS 足以支撑上述开发范围；其 Archive 限制与当前不补历史的范围不冲突。dRPC 虽有更大的等价免费额度，但当前还不需要靠这一额度优势起步，且免费请求存在 2 秒超时和随区域需求变化的限流条件。基于这些条件，优先采用 Chainstack 作为开发入口更便于估算用量和排查联调问题。[Chainstack 套餐](https://chainstack.com/pricing/)、[dRPC 免费限制](https://drpc.org/docs/howitworks/ratelimiting)
 

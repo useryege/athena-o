@@ -8,6 +8,8 @@
 
 Trader Sync 在现有 `athena-server` 和 `athena-notification` 两个进程内组合，不增加服务进程、独立 Notification 数据库或跨进程连接池对象。
 
+> **服务开发规范差距（2026-09-13）：**上述组合和本文件列出的 `make run`、`make stop`、`make run-reset` 是当前实现事实与源码证据，不是新服务的目标运行模型。原“不增加服务进程”是既有实现决定，不能限制今后的服务边界改造。当前 [Procfile](../../../Procfile) 以 `ATHENA_BINARY_NAME` 复用 `go run ./cmd/main.go`；该入口在 [cmd/main.go](../../../cmd/main.go) 聚合导入全部命令实现，因此局部服务构建仍会耦合无关实现。当前 `make run` 还启动固定资源和整套进程图，`make stop`/`make run-reset` 分别面向整套清理或固定资源重置，不能当作服务的局部生命周期。按[服务开发规范 SDS-R3、SDS-R5](../../developer-guide/service-development-standards.md#sds-r3)，新增独立业务服务需要以目标服务和最小依赖正向选择的可验证构建、部署、启动、测试和停止入口，且局部编排只能回收其拥有资源；当前未实现 `run-service` 等局部命令，故不能作为现有命令列出。既有同库受控事务和连接池 owner 关系仍按 [SDS-R6](../../developer-guide/service-development-standards.md#sds-r6) 保持，改造不得跨 RPC 传递 transaction。
+
 ## 源码入口
 
 | 职责 | 源码 | 关键内容 |

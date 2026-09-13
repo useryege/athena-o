@@ -2,6 +2,9 @@
   "name": "athena-ui",
   "version": "1.0.0",
   "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24.14.1 <25"
+  },
   "scripts": {
     "start": "vite --host ${ATHENA_YARN_HOST:-localhost}",
     "docker": "./scripts/build_docker.sh",
@@ -30,6 +33,7 @@
     "rxjs": "6.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@eslint/js": "^9.1.1",
     "@playwright/test": "^1.60.0",
     "@types/jest": "^29.5.14",
