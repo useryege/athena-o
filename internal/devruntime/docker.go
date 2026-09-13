@@ -206,3 +206,25 @@ func (m *Manager) Recover(ctx context.Context) error {
 	}
 	return nil
 }
+
+// absent is positive daemon evidence, not an interpretation of inspect stderr.
+// Callers must already possess an exact durable deletion intent for this ID.
+func (d Docker) absent(ctx context.Context, r ResourceRef) (bool, error) {
+	if !validKind(r.Kind) || r.ID == "" {
+		return false, errors.New("invalid deletion resource")
+	}
+	args := []string{r.Kind, "ls", "--quiet"}
+	if r.Kind == "container" {
+		args = append(args, "--all", "--no-trunc")
+	}
+	b, e := d.Exec(ctx, "docker", args...)
+	if e != nil {
+		return false, e
+	}
+	for _, id := range strings.Fields(string(b)) {
+		if id == r.ID {
+			return false, nil
+		}
+	}
+	return true, nil
+}

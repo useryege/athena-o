@@ -43,7 +43,7 @@ func EnvironmentFor(env map[string]string, allow []string) []string {
 	return result
 }
 func (m *Manager) SaveSecret(name string, data []byte) error {
-	if name == "" || name != filepath.Base(name) || name == "." || name == ".." || name == "state.json" || name == "lock" {
+	if name == "" || name != filepath.Base(name) || name == "." || name == ".." || name == "state.json" || name == "lock" || name == "operation.lock" {
 		return errors.New("invalid secret filename")
 	}
 	return withLock(m.Key, func() error { return atomicFile(filepath.Join(m.Key.Dir(), name), data) })

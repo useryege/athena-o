@@ -28,7 +28,14 @@ type ResourceRef struct {
 	Owned                            bool
 }
 type CreationIntent struct{ Kind, Name, Namespace, RunID string }
+type CleanupOperation struct{ ID, Kind, RunID string }
+type DeletionIntent struct {
+	OperationID string
+	Resource    ResourceRef
+}
 type State struct {
+	Cleanup                               *CleanupOperation
+	Deletions                             []DeletionIntent
 	Version                               int
 	Key                                   InstanceKey
 	RunID, Phase, DBMode                  string
@@ -103,7 +110,7 @@ func withLock(k InstanceKey, fn func() error) error {
 	if e := ensureDir(k); e != nil {
 		return e
 	}
-	fd, e := syscall.Open(filepath.Join(k.Dir(), "lock"), syscall.O_CREAT|syscall.O_RDWR|syscall.O_NOFOLLOW, 0600)
+	fd, e := syscall.Open(filepath.Join(k.Dir(), "lock"), syscall.O_CREAT|syscall.O_RDWR|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0600)
 	if e != nil {
 		return e
 	}
@@ -168,7 +175,7 @@ func atomicFile(path string, b []byte) error {
 func LoadState(path string) (State, error) {
 	var s State
 	// Refuse links even for read-only status; do not read another instance's state.
-	fd, e := syscall.Open(path, syscall.O_RDONLY|syscall.O_NOFOLLOW, 0)
+	fd, e := syscall.Open(path, syscall.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0)
 	if e != nil {
 		return s, e
 	}
@@ -190,4 +197,46 @@ func LoadState(path string) (State, error) {
 		return s, e
 	}
 	return s, nil
+}
+
+// ErrOperationInProgress reports an active lifecycle operation. This is separate
+// from the short state lock, so status/exit recording and supervisor handoff work.
+var ErrOperationInProgress = errors.New("instance lifecycle operation is in progress")
+
+type operationLock struct{ fd int }
+
+func acquireOperation(k InstanceKey) (*operationLock, error) {
+	if e := ensureDir(k); e != nil {
+		return nil, e
+	}
+	// A sibling survives temporary loss/replacement of the instance directory.
+	// Names contain a dot and cannot collide with valid instance directory names.
+	path := filepath.Join(filepath.Dir(k.Dir()), k.Name+".operation.lock")
+	fd, e := syscall.Open(path, syscall.O_CREAT|syscall.O_RDWR|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0600)
+	if e != nil {
+		return nil, e
+	}
+	if e = syscall.Flock(fd, syscall.LOCK_EX|syscall.LOCK_NB); e != nil {
+		_ = syscall.Close(fd)
+		if errors.Is(e, syscall.EWOULDBLOCK) {
+			return nil, ErrOperationInProgress
+		}
+		return nil, e
+	}
+	return &operationLock{fd: fd}, nil
+}
+func (l *operationLock) close() {
+	if l != nil && l.fd >= 0 {
+		_ = syscall.Flock(l.fd, syscall.LOCK_UN)
+		_ = syscall.Close(l.fd)
+		l.fd = -1
+	}
+}
+func withOperation(k InstanceKey, fn func() error) error {
+	l, e := acquireOperation(k)
+	if e != nil {
+		return e
+	}
+	defer l.close()
+	return fn()
 }

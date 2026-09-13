@@ -41,7 +41,13 @@ func NewRunID() string { return uuid.NewString() }
 
 // Begin must be called by the foreground supervisor after exec with RunIDEnv.
 // os.Setenv in an already running process does not update Linux /proc/environ.
+
 func (m *Manager) Begin(services []string, mode string) (State, error) {
+	var result State
+	e := withOperation(m.Key, func() error { var e error; result, e = m.begin(services, mode); return e })
+	return result, e
+}
+func (m *Manager) begin(services []string, mode string) (State, error) {
 	var result State
 	if e := CheckPlatform(); e != nil {
 		return result, e
@@ -76,6 +82,9 @@ func (m *Manager) Begin(services []string, mode string) (State, error) {
 			}
 			if old.DBMode != mode {
 				return errors.New("database mode cannot change in place")
+			}
+			if old.Cleanup != nil || len(old.Deletions) > 0 {
+				return errors.New("instance has an unfinished reset; retry reset before starting")
 			}
 			if len(old.Intents) != 0 {
 				return errors.New("instance has unresolved resource creation intents")
@@ -181,9 +190,14 @@ func (m *Manager) RecordExit(name string, code int) error {
 func Stop(ctx context.Context, k InstanceKey) error  { return NewManager(k).Stop(ctx) }
 func Reset(ctx context.Context, k InstanceKey) error { return NewManager(k).Reset(ctx) }
 func (m *Manager) Stop(ctx context.Context) error {
+	lease, lockErr := acquireOperation(m.Key)
+	if lockErr != nil {
+		return lockErr
+	}
+	defer func() { lease.close() }()
 	var snapshot State
 	if e := m.Update(func(s *State) error {
-		if s.Phase == "resetting" {
+		if s.Phase == "resetting" || s.Cleanup != nil || len(s.Deletions) > 0 {
 			return errors.New("instance reset is in progress")
 		}
 		s.Phase = "stopping"
@@ -204,8 +218,13 @@ func (m *Manager) Stop(ctx context.Context) error {
 		if err == nil {
 			if !SameProcess(snapshot.Supervisor, now) {
 				failures = append(failures, ErrIdentityMismatch)
-			} else if err = m.Signal(snapshot.Supervisor, syscall.SIGTERM); err != nil {
-				failures = append(failures, err)
+			} else {
+				// The supervisor must acquire this lock for its own cleanup.
+				// Keep only the durable stopping phase while waiting for it.
+				lease.close()
+				if err = m.Signal(snapshot.Supervisor, syscall.SIGTERM); err != nil {
+					failures = append(failures, err)
+				}
 			}
 			if err == nil {
 				budget := 30 * time.Second
@@ -225,10 +244,19 @@ func (m *Manager) Stop(ctx context.Context) error {
 			failures = append(failures, err)
 		}
 	}
+	if lease.fd < 0 {
+		lease, lockErr = acquireOperation(m.Key)
+		if lockErr != nil {
+			return errors.Join(append(failures, lockErr)...)
+		}
+	}
 	// The supervisor may have registered its last create result while exiting.
 	if latest, err := m.Status(); err == nil {
 		if latest.RunID != snapshot.RunID {
 			return errors.New("run changed during stop")
+		}
+		if latest.Phase == "resetting" || latest.Cleanup != nil || len(latest.Deletions) > 0 {
+			return errors.New("instance reset requires recovery")
 		}
 		snapshot = latest
 	} else {
@@ -346,9 +374,12 @@ func (m *Manager) Stop(ctx context.Context) error {
 	return errors.Join(append(failures, e)...)
 }
 func (m *Manager) Reset(ctx context.Context) error {
+	return withOperation(m.Key, func() error { return m.reset(ctx) })
+}
+func (m *Manager) reset(ctx context.Context) error {
 	var snapshot State
 	e := m.Update(func(s *State) error {
-		if s.Phase != "stopped" {
+		if s.Phase != "stopped" && s.Phase != "resetting" {
 			return errors.New("reset requires a stopped instance")
 		}
 		if s.DBMode != "managed" {
@@ -357,8 +388,22 @@ func (m *Manager) Reset(ctx context.Context) error {
 		if len(s.Intents) > 0 {
 			return errors.New("reset requires recovered creation intents")
 		}
-		snapshot = *s
+		if s.Cleanup == nil {
+			if s.Phase == "resetting" || len(s.Deletions) > 0 {
+				return errors.New("reset has no recoverable operation identity")
+			}
+			s.Cleanup = &CleanupOperation{ID: NewRunID(), Kind: "reset", RunID: s.RunID}
+		}
+		if s.Cleanup.ID == "" || s.Cleanup.Kind != "reset" || s.Cleanup.RunID != s.RunID {
+			return errors.New("reset operation identity mismatch")
+		}
+		for _, intent := range s.Deletions {
+			if intent.OperationID != s.Cleanup.ID {
+				return errors.New("deletion intent operation mismatch")
+			}
+		}
 		s.Phase = "resetting"
+		snapshot = *s
 		return nil
 	})
 	if e != nil {
@@ -377,7 +422,7 @@ func (m *Manager) Reset(ctx context.Context) error {
 		failures = append(failures, e)
 	}
 	for _, p := range members {
-		_, e := ReadProcess(p.PID)
+		_, e := VerifyProcess(p)
 		if e == nil {
 			failures = append(failures, fmt.Errorf("process %d is still active", p.PID))
 		} else if !errors.Is(e, os.ErrNotExist) {
@@ -385,40 +430,104 @@ func (m *Manager) Reset(ctx context.Context) error {
 		}
 	}
 	if len(failures) == 0 {
-		// Containers first: Docker must release volume references before volume rm.
+		// Stop on the first failed destructive step. Further deletion must never
+		// continue after the operation can no longer persist its exact progress.
+		cleanup, cancel := context.WithTimeout(ctx, 40*time.Second)
+	deletion:
 		for _, kind := range []string{"container", "volume"} {
 			for _, r := range snapshot.Resources {
 				if !r.Owned || r.Kind != kind {
 					continue
 				}
-				if e = m.Docker.inspect(ctx, m.Key, r); e != nil {
+				if e = m.deleteResource(cleanup, snapshot, r); e != nil {
 					failures = append(failures, e)
-					continue
-				}
-				if _, e = m.Docker.Exec(ctx, "docker", kind, "rm", r.ID); e != nil {
-					failures = append(failures, e)
-					continue
-				}
-				if e = m.Update(func(s *State) error {
-					for i := len(s.Resources) - 1; i >= 0; i-- {
-						if s.Resources[i] == r {
-							s.Resources = append(s.Resources[:i], s.Resources[i+1:]...)
-						}
-					}
-					return nil
-				}); e != nil {
-					failures = append(failures, e)
+					break deletion
 				}
 			}
 		}
+		cancel()
 	}
-	e = m.Update(func(s *State) error {
+	e = m.updateReset(snapshot, func(s *State) error {
 		s.Failures = nil
-		for _, f := range failures {
-			s.Failures = append(s.Failures, f.Error())
+		for _, failure := range failures {
+			s.Failures = append(s.Failures, failure.Error())
 		}
-		s.Phase = "stopped"
+		if len(failures) == 0 && len(s.Deletions) > 0 {
+			return errors.New("reset has unresolved deletion intents")
+		}
+		if len(s.Deletions) == 0 {
+			s.Phase = "stopped"
+			s.Cleanup = nil
+		} else {
+			s.Phase = "resetting"
+		}
 		return nil
 	})
 	return errors.Join(append(failures, e)...)
+}
+func (m *Manager) updateReset(snapshot State, fn func(*State) error) error {
+	return m.Update(func(s *State) error {
+		if snapshot.Cleanup == nil || s.Cleanup == nil || *s.Cleanup != *snapshot.Cleanup || s.RunID != snapshot.RunID || s.Phase != "resetting" {
+			return errors.New("reset operation changed")
+		}
+		return fn(s)
+	})
+}
+func (m *Manager) deleteResource(ctx context.Context, snapshot State, r ResourceRef) error {
+	if !r.Owned || r.Namespace != m.Key.Namespace || r.RunID == "" || r.Name == "" || !validKind(r.Kind) {
+		return errors.New("invalid owned deletion resource")
+	}
+	intent := DeletionIntent{OperationID: snapshot.Cleanup.ID, Resource: r}
+	current, e := m.Status()
+	if e != nil {
+		return e
+	}
+	pending := false
+	for _, record := range current.Deletions {
+		if record == intent {
+			pending = true
+		}
+	}
+	if e = m.Docker.inspect(ctx, m.Key, r); e != nil {
+		if !pending {
+			return e
+		}
+		absent, checkErr := m.Docker.absent(ctx, r)
+		if checkErr != nil {
+			return errors.Join(e, checkErr)
+		}
+		if !absent {
+			return e
+		}
+		return m.finishDeletion(snapshot, intent)
+	}
+	if pending {
+		if e = m.updateReset(snapshot, func(*State) error { return nil }); e != nil {
+			return e
+		}
+	}
+	if !pending {
+		if e = m.updateReset(snapshot, func(s *State) error { s.Deletions = append(s.Deletions, intent); return nil }); e != nil {
+			return e
+		}
+	}
+	if _, e = m.Docker.Exec(ctx, "docker", r.Kind, "rm", r.ID); e != nil {
+		return e
+	}
+	return m.finishDeletion(snapshot, intent)
+}
+func (m *Manager) finishDeletion(snapshot State, intent DeletionIntent) error {
+	return m.updateReset(snapshot, func(s *State) error {
+		for i := len(s.Resources) - 1; i >= 0; i-- {
+			if s.Resources[i] == intent.Resource {
+				s.Resources = append(s.Resources[:i], s.Resources[i+1:]...)
+			}
+		}
+		for i := len(s.Deletions) - 1; i >= 0; i-- {
+			if s.Deletions[i] == intent {
+				s.Deletions = append(s.Deletions[:i], s.Deletions[i+1:]...)
+			}
+		}
+		return nil
+	})
 }
