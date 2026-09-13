@@ -246,12 +246,29 @@ Follow the [project acceptance rule](../../AGENTS.md#本地验收环境准备与
    make run
    ```
 
-   Use a persistent terminal/session and capture its output to a task-specific log under `.tmp/`. Keep the session alive after acceptance and record its identifier. Do not change the global Node default. Resolve prerequisite problems using the documented setup within the authorized scope; the smoke tool's no-install policy does not prohibit the agent from preparing the environment.
+   Use a persistent terminal/session for the duration of development and acceptance, capture its output to a task-specific log under `.tmp/`, and record its identifier and resource ownership. Stop task-created temporary environments when the task ends according to the procedure below. Do not change the global Node default. Resolve prerequisite problems using the documented setup within the authorized scope; the smoke tool's no-install policy does not prohibit the agent from preparing the environment.
 3. Observe startup output and process health. Check `/` and `/admin/`, then `/api/v1/app/bootstrap` separately with `X-Athena-Application-Realm: member` and `admin`. Verify the expected realm and session response; anonymous/login states are valid. A listening port or HTTP 200 alone is insufficient. Run the smoke command above and inspect its exit result and native report to verify the actual application shells.
 4. Preserve startup and smoke failures, inspect the relevant logs, resolve environment issues within scope and rerun the affected checks. Do not automatically reset data, delete volumes, change product behavior or repeatedly retry an unchanged failure. An unresolved external dependency, credential, permission or user decision must be reported with attempted actions and remaining verification; passing isolated tests does not close a required real smoke check.
-5. Leave the development service running after acceptance, whether it passed or failed. Report the URL, repository/worktree, session or process identifier, log location and smoke result. Explain that `make stop` from that same repository stops the stack and removes its containers while retaining data volumes. Never stop a pre-existing service just to tidy up acceptance.
+5. At task completion, cancellation, pause, or an end caused by failure/blockers, save evidence and follow [task shutdown](#task-shutdown-and-retained-environments). The accepting agent performs this cleanup; the smoke command does not own the development stack. Report the actual acceptance and cleanup results separately.
 
 If the user requests only a read-only inspection, prerequisite check or no service startup, honor that boundary. A rules-only change or isolated-only test does not require starting a development stack. Required real acceptance that remains unverified prevents claiming full task completion or sending its completion notification.
+
+### Task shutdown and retained environments
+
+The [project rule](../../AGENTS.md#本地验收环境准备与完成标准) defaults to stopping task-created temporary environments. Keep them running while development, debugging or acceptance is in progress; finishing one conversation reply does not end an active task. When the task ends, apply the following ownership rules:
+
+| Environment | Action at task end |
+| --- | --- |
+| Temporary development or branch acceptance stack started for this task | Stop its services and owned containers; retain development databases, volumes, logs and reports. |
+| Preview server or test substitute started for this task | Stop it through its own recorded shutdown entrypoint; preserve mockups and evidence. A helper not managed by `make stop` still needs cleanup. |
+| User-started environment, environment used by another active task, or borrowed infrastructure | Leave it unchanged; stop only this task's own consumers. |
+| Environment explicitly requested by the user for continued inspection, debugging or use as the main development environment | Retain that environment and its required helpers; stop other task-created temporary instances. A port number alone does not designate a permanent main environment. |
+
+Before stopping, verify the checkout, instance/profile and recorded process/container identities. Run `make stop INSTANCE=<name>` for a managed full stack, `make stop-instance INSTANCE=<name>` for a selected-service instance, or the matching profile/tool stop command from its owning checkout. For a legacy environment, use its recorded owner and shutdown entrypoint. Stop dependent services before separately launched test substitutes. Never use `make run-reset`, delete development volumes, stop borrowed infrastructure, or kill an unidentified process to tidy up a task.
+
+Confirm owned processes exited, their ports were released and their containers stopped. Save and investigate cleanup failures, and report any remaining resources instead of claiming shutdown. Failure evidence does not require a live server: after saving it, task-created temporary resources are stopped unless the user explicitly requested retaining the debugging environment.
+
+The handoff lists stopped and retained environments. For retained items, record the user's request or existing ownership, URL, checkout, instance/profile, session or PID, logs, acceptance result and exact stop command. Keeping data and evidence does not imply keeping the service running. The agent must invoke shutdown; the runtime does not detect a completed conversation task.
 
 ### Prerequisite checks
 

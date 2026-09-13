@@ -93,6 +93,8 @@ Trader Sync 配置与只读 schema 验证后先开放同一 gRPC server 的 `NOT
 
 初始就绪失败会回收本次拥有的运行资源并保留持久数据和日志。全部初始就绪后，单个业务进程 fatal 记录退出状态，其他业务继续运行。停止保留 volume、fixture、token 与证据；reset 只针对已停止的 managed 实例，删除其拥有的数据，不能作为跨实例清理工具。运行器不清理全局 `/tmp/coverage` 或其他 checkout 的 scratch。
 
+开发任务的生命周期由执行代理负责，运行器不感知对话任务完成。按 [AGENTS.md](../../../AGENTS.md#本地验收环境准备与完成标准)，任务完成、取消、暂停或以失败/阻塞结束时，代理默认调用对应实例的停止入口，并关闭本任务独立启动的预览和测试替身；上文保留 fixture 指数据和文件，不代表保留辅助进程。用户已有环境、其他任务正在使用的环境和借用基础设施保持原样；只有用户明确要求时才按指定范围保留本任务环境及必要依赖。核对退出并保留数据与证据，具体操作和交付信息见[任务收尾说明](../../developer-guide/running-locally.md#task-shutdown-and-retained-environments)。
+
 Notification 一个进程承载系统、账户和 runtime 三个域，拥有一个 Bot、一个 poller 和一个公平 dispatcher。它只读验证同库 schema，先取得 sender 登记，再构造 Bot/summary 并启动轮询。正常停止先 cancel/join，再保存 graceful stop、恢复未决结果并关闭 sender session/pool。
 
 异常停止后须先从对应 supervisor/container/主机确认**已登记旧 sender 进程确实退出**，再执行：

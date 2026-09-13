@@ -44,7 +44,9 @@ Codex 的仓库技能发现方式见 [OpenAI 官方技能文档](https://learn.c
 
 ## 项目技能的职责
 
-Superpowers 负责开发方法。Impeccable 负责 `ui/` 下的 UI/UX 能力，并复用任务设计讨论与批准结果。`grpc-rpc-naming`、`sync-athena-changes` 继续提供 RPC 命名、生成源与消费者同步知识；多仓库 PR 技能提供相应操作支持。[ATHENA 浏览器验收技能](../../.codex/skills/athena-browser-acceptance/SKILL.md)按请求在当前可用的内置浏览器检查、真实本地开发环境冒烟和隔离 Playwright 回归之间选择入口，并如实区分三者的证据。真实验收按 [AGENTS.md 的环境准备规则](../../AGENTS.md#本地验收环境准备与完成标准)复用或主动启动目标环境；smoke 工具不启停服务不免除代理的准备责任，验收后默认保留服务运行。相关测试与验证遵循 Superpowers。
+Superpowers 负责开发方法。Impeccable 负责 `ui/` 下的 UI/UX 能力，并复用任务设计讨论与批准结果。`grpc-rpc-naming`、`sync-athena-changes` 继续提供 RPC 命名、生成源与消费者同步知识；多仓库 PR 技能提供相应操作支持。[ATHENA 浏览器验收技能](../../.codex/skills/athena-browser-acceptance/SKILL.md)按请求在当前可用的内置浏览器检查、真实本地开发环境冒烟和隔离 Playwright 回归之间选择入口，并如实区分三者的证据。
+
+真实验收按 [AGENTS.md 的环境准备与收尾规则](../../AGENTS.md#本地验收环境准备与完成标准)复用或主动启动目标环境。任务结束后，代理默认停止本任务启动的临时服务、预览、测试替身及所属容器，保留数据与证据；用户已有环境、其他任务正在使用的环境和借用基础设施保持原样，用户明确要求保留的环境按指定范围保留。smoke 工具不启停服务不免除代理的准备和收尾责任。开发、调试和验收期间可持续运行；失败或阻塞结束任务时也先保存证据再收尾。具体命令、退出核对和交付清单见[任务收尾说明](running-locally.md#task-shutdown-and-retained-environments)。相关测试与验证遵循 Superpowers。
 
 本次切换移除了自制后端阶段路由技能、独立的需求/设计/另行实现门禁、额外的前端布局审批门槛，以及默认禁止测试的规定。开发期允许破坏性重构、中文计划、完成邮件等项目约定继续由 `AGENTS.md` 管理。
 
