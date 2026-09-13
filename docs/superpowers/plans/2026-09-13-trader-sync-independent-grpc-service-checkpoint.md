@@ -1,6 +1,6 @@
 # Trader Sync 独立服务：暂停交接
 
-本记录保留2026-09-13 22:00（Asia/Shanghai）的暂停现场。用户随后已明确要求继续执行，Redis最小修复与保卷恢复现已推进；最新状态以[验收报告](../../testing/trader-sync-independent-service-acceptance.md)和执行ledger为准。以下PID、地址和未完成项描述暂停时点，继续执行需重新核验。
+本记录保留2026-09-13 22:00（Asia/Shanghai）的暂停现场。用户随后已明确要求继续执行，Redis最小修复与保卷恢复、两次真实重启和最终Chrome验收已完成，整体审阅通过；最新状态以[验收报告](../../testing/trader-sync-independent-service-acceptance.md)和执行ledger为准。以下PID、地址和未完成项描述暂停时点，继续执行需重新核验。
 
 ## 已保存的实现
 

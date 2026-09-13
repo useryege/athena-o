@@ -1,6 +1,6 @@
 # Trader Sync 独立服务验收记录
 
-> 状态：独立服务实现、最终修复和全部必需验收已通过；真实全栈已保卷恢复并连续两次重启，最终Chrome smoke通过。正在收口整体审阅与完成通知，尚未发送完成邮件。
+> 状态：独立服务实现、全部必需验收与最终整体审阅均通过。真实全栈已保卷恢复并连续两次重启，最终Chrome smoke通过。完成通知已发送，SMTP接受，命令exit0。
 
 实施范围见[12项计划](../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service.md)。本次工作区为 `/home/yege/work/athena/.worktrees/trader-sync-independent`，分支 `codex/trader-sync-independent`，基于 `3b1cd556`；未合并或发布到原 `rf4` checkout，也未执行生产部署。
 
@@ -16,7 +16,7 @@
 | SDS-R4 | 每进程白名单、5/15秒调用预算、TS 故障隔离、RPC ready 与 WSS degraded 分开。 | 配置/认证测试、真实 TS fatal 后 API/Notification 继续、WSS中断时 Create/Resume pending；部署与 Make 修复均独立复审通过。 |
 | SDS-R5 | checkout/instance 精确归属、持久记录、辅助进程回收、managed/external 边界。 | `task-8-review.md`、`task-8-rereview-1.md`、`task-9-rereview-1.md`；真实 Go/迁移器崩溃回收、双实例与外部借用。真实局部→全栈及全栈→局部 stop/reset，peer进程、资源、数据库和健康快照保持。 |
 | SDS-R6 | 单活 generation guard、离线撤权、活动/通知同事务、Notification 自有冻结/许可/结果。 | 真实跨 pool/PG 并发与完整后端 race；独立 TS 在 Notification 缺席时形成1活动和1待发送投递。 |
-| SDS-R7 | 长期设计与实际入口/资源/配置同步，历史规格保留。 | 本报告及上述长期文档；25份长期文档的相对文件链接及diff whitespace已校验，最后28份变更Markdown的595个相对链接及diff whitespace检查通过。 |
+| SDS-R7 | 长期设计与实际入口/资源/配置同步，历史规格保留。 | 本报告及上述长期文档；25份长期文档的相对文件链接及diff whitespace已校验，最后28份变更Markdown的596个相对链接及diff whitespace检查通过。 |
 | SDS-R8 | 后端、proto/gateway、真实实例、UI双base、镜像与失败场景。 | 下列命令及退出结果；真实全栈 smoke 两项通过；最终审阅修复单独列明，不由预检替代。 |
 
 ## 契约、事务与后端验证
@@ -220,7 +220,7 @@ PATH=/home/yege/.nvm/versions/node/v24.14.1/bin:$PATH \
   DB_MODE=managed
 ```
 
-完整最新核验及可复查命令见 `resume-runtime-acceptance-report.md`。恢复过程的两个只读探针问题也保留记录：raw state不计算动态Health，改为public runtime-status；管理员页面按既有smoke使用`/admin/`，最初探针`/admin`得到404。两者只改验收探针，未修改产品行为或通过重启掩盖错误。
+最终14:20:56 UTC的真实身份、Docker、数据库与fixture pidfd核验见 `resume-final-runtime-handoff.json`；当时generation4、collector epoch6，后者从ready采样5变化为6是live会话变化，不是数据库重建。完整最新核验及可复查命令见 `resume-runtime-acceptance-report.md`。恢复过程的两个只读探针问题也保留记录：raw state不计算动态Health，改为public runtime-status；管理员页面按既有smoke使用`/admin/`，最初探针`/admin`得到404。两者只改验收探针，未修改产品行为或通过重启掩盖错误。
 
 ## 本次操作事故与恢复
 
@@ -236,7 +236,13 @@ PATH=/home/yege/.nvm/versions/node/v24.14.1/bin:$PATH \
 
 录制/合成provider、loopback Telegram、有限本机测试不证明公网供应商静默漏推完整性、100个真实持续活跃目标、长期稳定性或端到端公开时效SLO。单活采集重启有可见中断，不承诺多副本HA或无中断滚动升级。没有执行真实Telegram测试投递或生产发布。
 
-全部必需代码、配置和真实验收已通过，最终整体审阅及完成通知正在收口；原I1/I2与Redis修复均已限定范围复审通过。没有未完成的业务实现或实际验收，外部证据限制仍如上。
+全部必需代码、配置、文档和真实验收已通过；最终整体Spec Compliance与Task quality均Approved，先前I1/I2与Redis问题均已关闭。保留一项不影响行为的测试日志可读性建议：预期503负例会输出warning，没有抑制生产诊断。没有未完成的必需实现或实际验收，外部证据限制仍如上。
+
+## 交付收尾
+
+本次专用集成测试PostgreSQL已清理：先核对完整container ID、checkout/run/task标签及其他数据库客户端数为0，再正常stop并删除该容器及其匿名测试volume。正向检查两者均不存在，exit0；证据 `test-postgres-cleanup-precheck.json` / `test-postgres-cleanup.json`。开发实例的数据卷、运行服务、失败验收证据与工作区日志全部保留；先前两次受控验收失败实例的停止状态/volume继续作为失败现场保留，不执行全局prune。
+
+已从本worktree根目录使用默认 `.env` 执行唯一一次 `make notify-task-complete`，命令exit0；前两次SMTP连接EOF由命令内置重试处理，第三次被SMTP接受（2026-09-13 22:26:54 Asia/Shanghai）。日志 `completion-email.log`，结果 `completion-email-attempt.json`。没有push、merge或生产部署。代码保留在 `codex/trader-sync-independent`，工作区路径和当前服务/停止命令见上文。
 
 ## 实施裁定记录
 
@@ -285,3 +291,5 @@ PATH=/home/yege/.nvm/versions/node/v24.14.1/bin:$PATH \
 21. 最终审阅确认启动恢复必须遵守批准spec第45行，旧bound epoch逐账户清理同步在workers/ready前完成；observation view的读取正确性不能替代该初始化顺序 — 最小补齐recover barrier并扩展真实PG/gRPC恢复测试 — 若判断过严，代价仅为恢复完成前延后业务ready，与已批准要求一致。
 
 22. 最终新binary真实持久重启暴露Redis文件bind失效，不能用reset后新建实例的成功替代持久重启证明；继续任务须最小修复并保卷复验 — 当前用户要求在合适节点暂停，因此停在证据完整、数据保留、修复尚未派发的节点 — 未完成项及恢复前置状态均保留，整个任务不宣称完成。
+
+23. 用户恢复执行后，依据独立真实RED将SaveSecret同内容普通文件改为保留inode；用一次性精确归属helper保卷移除已坏Redis容器，正常runner重建并两次全栈重启复验 — 修复原因为配置无意义替换，不新增历史兼容产品路径 — 容器重建限定本任务stopped记录，数据卷/其他实例不变，journal/实际验收提供证据。
