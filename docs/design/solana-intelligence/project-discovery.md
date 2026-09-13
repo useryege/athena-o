@@ -1,6 +1,6 @@
 # Solana 新项目发现设计
 
-> 当前方案：第一步采用标准 HTTP RPC 的 finalized 区块扫描，独立服务持久发现候选，ATHENA 列表查看。平台解析、流式订阅和项目研究留待下一步。
+> 当前方案：第一步采用标准 HTTP RPC 的 finalized 区块扫描，独立服务持久发现候选并补齐名称、符号及可确认的发行来源，ATHENA 列表查看。更多平台解析、流式订阅和项目研究留待下一步。
 >
 > 关联需求：[Solana 项目研究](../../requirements/solana/README.md)。资料核对日期：2026-09-13。
 
@@ -32,7 +32,7 @@
 
 ## 前期方案比较结论与本次取舍
 
-首版采用成功初始化新 Mint 作为候选事实，Token Program 和 Token-2022 顶层/CPI 均处理。HTTP finalized 区块扫描提供最小持久发现闭环；暂不叠加 WebSocket、Yellowstone 或平台 parser。官方方案比较仍保留，用户查看真实样本后再决定是否需要这些能力。
+首版采用成功初始化新 Mint 作为候选事实，Token Program 和 Token-2022 顶层/CPI 均处理。HTTP finalized 区块扫描提供持久发现闭环；名称/符号与 Pump.fun、Raydium LaunchLab 归因按用户后续确认纳入，暂不叠加 WebSocket 或 Yellowstone。官方方案比较仍保留，用户查看真实样本后再决定是否需要扩展能力。
 
 ## 影响设计的接口边界
 
@@ -55,13 +55,23 @@ Pump 官方仓库中的 SDK 使用文档提供 `createV2AndBuyInstructions`，�
 
 扫描 Mainnet Beta 并核对 genesis hash；读取 finalized 范围的 getBlocks，然后并发 getBlock（jsonParsed/full、legacy/v0、maxSupportedTransactionVersion=0）。首次从 head 向前32 slots开始，显式 start-slot 仅在无检查点时生效。范围按slot提交，每个范围内候选和检查点同一事务落库。Mint唯一，重复发现保留首次证据；失败块/损坏已识别初始化不推进范围。提供方返回的跳过slot依其getBlocks结果处理，不宣称自行证明账本完整性。
 
-只保存 Mint、Token 程序、交易签名、手续费支付方、初始化权限、精度、slot、blockTime 和 discoveredAt；两个时间分别表示链上时间和首次保存时间。所有资产尚未分类，不主动抓取外部 metadata。
+发现时保存 Mint、Token 程序、交易签名、手续费支付方、初始化权限、精度、slot、blockTime 和 discoveredAt；两个时间分别表示链上时间和首次保存时间。初始化交易同时解析 issuanceSource、issuanceProgram、sourceStatus。所有资产尚未分类，不主动抓取链外 metadata。
+
+### 首次信息补全
+
+同服务内独立循环每批最多处理 10 个待补全候选，批量 getMultipleAccounts 最多 20 个账户，finalized/base64；旧记录使用 getTransaction（finalized/jsonParsed）读取原初始化交易，并在批内按签名去重。后台与扫描共用请求预算和超时，遵循 429 Retry-After。数据库持久保存待处理和重试时间，不在事务内等待节点。失败不影响发现游标和已有有效字段；已补全信息不自动周期刷新，当前缺失元数据 1 小时后重试，临时读取失败 5 分钟后重试。
+
+名称/符号优先从 Token-2022 自指 MetadataPointer 的 TokenMetadata 扩展解码；传统 Token 使用 canonical Metaplex PDA，Token-2022 指向该 PDA 时也支持。外指未知账户暂不解码，不选择与 pointer 冲突的元数据。验证账户 owner、mint、类型、长度和 UTF-8；Metaplex 尾部 NUL padding 去除。名称和符号可分别为空，元数据缺失不等于 Mint 发行失败。
+
+存储与 API 增加 name、symbol、metadataStatus（pending/ready/unavailable/error）、metadataSource（token2022_on_mint/metaplex/空）、metadataAccount、metadataObservedSlot、metadataUpdatedAt。最后两项描述 finalized 账户观察时刻，不能当作历史发行名称。发行来源与 metadata 管理程序分开：issuanceSource 为 pump_fun/raydium_launchlab/direct_token/unknown，sourceStatus 为 pending/identified/unrecognized/error，issuanceProgram 保存匹配的发行协议程序，未知 CPI 时保存能证明的直接父程序。
+
+归因要求成功初始化及同一候选的调用祖先同时匹配发行程序、selector、指定 Mint 账户。通过 stackHeight 重建 CPI 栈，兄弟调用不会相互归因；缺失/不一致高度不猜直接父程序。顶层 Token 初始化标为 direct_token；LaunchLab 表示协议而非第三方界面品牌。不用 Mint 后缀、名称或 metadata authority 推断平台。协议依据和精确字段合同见[补全设计](../../superpowers/specs/2026-09-13-solana-metadata-design.md)。
 
 项目与账户权限共用已配置 PostgreSQL 数据库的独立业务表：项目位于 `solana_discovery` schema，账户表在现有 public schema。独立进程拥有连接池，账户 adapter 仅借用读取，不能关闭该池。项目提交事务不跨 RPC。数据库仍是共享故障域，API 与服务必须配置到同一账户数据库；独立开发预览使用自己的数据库，避免干扰另一 checkout。
 
 ## 接口与授权（SDS-R2、R4、R6）
 
-`internal/server/solana/solana.proto` 生成 `SolanaService.ListProjects` 与 `GetDiscoveryStatus`，对应 `GET /api/v1/solana/projects` 和 `/api/v1/solana/status`。列表 page 从1开始，默认25项，最多100项，按slot降序，可按Mint文本查询。状态含起点、检查点、最新观察的finalized slot、成功时间、候选数和错误。
+`internal/server/solana/solana.proto` 生成 `SolanaService.ListProjects` 与 `GetDiscoveryStatus`，对应 `GET /api/v1/solana/projects` 和 `/api/v1/solana/status`。列表 page 从1开始，默认25项，最多100项，按slot降序，可按Mint（大小写敏感）及名称/符号（不区分大小写）子串查询。状态含起点、检查点、最新观察的finalized slot、成功时间、候选数和错误。API 仅查询持久化结果，不对节点发补全请求。
 
 公共 API 验证 Solana READ，从认证上下文取账户ID。内部客户端设置10秒deadline、独立Bearer token和唯一 `x-athena-account-id`，不接收公共请求传入的身份字段。业务 RPC 再验证token和规范账户UUID，每次重读持久权限，要求登录有效且Solana READ；管理员无隐式业务访问。撤权后的后续请求不能靠API缓存继续读取。
 

@@ -22,12 +22,13 @@ type projectReader struct {
 	query          string
 	calls          int
 	err            error
+	metadataTime   time.Time
 }
 
 func (r *projectReader) ListProjects(_ context.Context, page, pageSize uint32, query string) ([]solanadiscovery.Project, int64, error) {
 	r.calls++
 	r.page, r.pageSize, r.query = page, pageSize, query
-	return []solanadiscovery.Project{{Mint: "mint", TokenProgram: "program", Signature: "signature", FeePayer: "payer", MintAuthority: "authority", FreezeAuthority: "", Decimals: 6, Slot: 42, BlockTime: 123, DiscoveredAt: time.Unix(456, 0)}}, 1, r.err
+	return []solanadiscovery.Project{{Mint: "mint", TokenProgram: "program", Signature: "signature", FeePayer: "payer", MintAuthority: "authority", FreezeAuthority: "", Decimals: 6, Slot: 42, BlockTime: 123, DiscoveredAt: time.Unix(456, 0), Name: "Example", Symbol: "EX", MetadataStatus: "ready", MetadataSource: "metaplex", MetadataAccount: "metadata", MetadataObservedSlot: 1234, MetadataUpdatedAt: r.metadataTime, IssuanceSource: "pump_fun", IssuanceProgram: "pump", SourceStatus: "identified"}}, 1, r.err
 }
 func (r *projectReader) GetDiscoveryStatus(context.Context) (solanadiscovery.DiscoveryStatus, error) {
 	r.calls++
@@ -154,5 +155,30 @@ func TestSolanaServiceReportsAccountStoreFailure(t *testing.T) {
 	}
 	if projects.calls != 0 {
 		t.Fatal("queried projects after account store failure")
+	}
+}
+
+func TestSolanaServiceProjectsMetadataAndUnknownTime(t *testing.T) {
+	for _, observed := range []time.Time{{}, time.Unix(1720000100, 0)} {
+		projects := &projectReader{metadataTime: observed}
+		server, err := NewServer(projects, &accountReader{access: readAccount()}, testToken)
+		if err != nil {
+			t.Fatal(err)
+		}
+		listed, err := server.ListProjects(requestContext(testToken, testAccountID), &api.ListProjectsRequest{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		row := listed.Items[0]
+		if row.Name != "Example" || row.Symbol != "EX" || row.MetadataStatus != "ready" || row.MetadataSource != "metaplex" || row.MetadataAccount != "metadata" || row.MetadataObservedSlot != 1234 || row.IssuanceSource != "pump_fun" || row.IssuanceProgram != "pump" || row.SourceStatus != "identified" {
+			t.Fatalf("metadata = %+v", row)
+		}
+		want := int64(0)
+		if !observed.IsZero() {
+			want = observed.Unix()
+		}
+		if row.MetadataUpdatedAt != want {
+			t.Fatalf("metadata time = %d, want %d", row.MetadataUpdatedAt, want)
+		}
 	}
 }

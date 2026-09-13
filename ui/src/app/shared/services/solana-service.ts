@@ -15,6 +15,16 @@ export interface SolanaProject {
     slot: string;
     blockTime: string;
     discoveredAt: string;
+    name: string;
+    symbol: string;
+    metadataStatus: string;
+    metadataSource: string;
+    metadataAccount: string;
+    metadataObservedSlot: string;
+    metadataUpdatedAt: string;
+    issuanceSource: string;
+    issuanceProgram: string;
+    sourceStatus: string;
 }
 
 export interface SolanaProjectPage {
@@ -61,7 +71,17 @@ const normalizeProject = (item: unknown): SolanaProject => ({
     decimals: readNumber(item, 'decimals') || 0,
     slot: readIntegerText(item, 'slot'),
     blockTime: readIntegerText(item, 'blockTime', 'block_time'),
-    discoveredAt: readIntegerText(item, 'discoveredAt', 'discovered_at')
+    discoveredAt: readIntegerText(item, 'discoveredAt', 'discovered_at'),
+    name: readString(item, 'name'),
+    symbol: readString(item, 'symbol'),
+    metadataStatus: readString(item, 'metadataStatus', 'metadata_status'),
+    metadataSource: readString(item, 'metadataSource', 'metadata_source'),
+    metadataAccount: readString(item, 'metadataAccount', 'metadata_account'),
+    metadataObservedSlot: readIntegerText(item, 'metadataObservedSlot', 'metadata_observed_slot'),
+    metadataUpdatedAt: readIntegerText(item, 'metadataUpdatedAt', 'metadata_updated_at'),
+    issuanceSource: readString(item, 'issuanceSource', 'issuance_source'),
+    issuanceProgram: readString(item, 'issuanceProgram', 'issuance_program'),
+    sourceStatus: readString(item, 'sourceStatus', 'source_status')
 });
 
 const normalizeStatus = (item: unknown): SolanaDiscoveryStatus => ({

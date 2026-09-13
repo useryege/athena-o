@@ -32,6 +32,16 @@ message Project {
   uint64 slot = 8;
   int64 blockTime = 9;
   int64 discoveredAt = 10;
+  string name = 11;
+  string symbol = 12;
+  string metadataStatus = 13;
+  string metadataSource = 14;
+  string metadataAccount = 15;
+  uint64 metadataObservedSlot = 16;
+  int64 metadataUpdatedAt = 17;
+  string issuanceSource = 18;
+  string issuanceProgram = 19;
+  string sourceStatus = 20;
 }
 
 message ListProjectsResponse {

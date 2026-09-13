@@ -30,6 +30,40 @@ const programLabel = (program: string) => {
     return program || 'Unknown';
 };
 
+const missingNameLabel = (status: string) => {
+    if (status === 'pending' || !status) {
+        return 'Metadata pending';
+    }
+    return status === 'error' ? 'Metadata read failed' : 'Name unavailable';
+};
+
+const issuanceLabel = (item: SolanaProject) => {
+    if (item.sourceStatus === 'pending' || !item.sourceStatus) {
+        return 'Source pending';
+    }
+    if (item.sourceStatus === 'error') {
+        return 'Source read failed';
+    }
+    if (item.sourceStatus === 'identified') {
+        switch (item.issuanceSource) {
+            case 'pump_fun':
+                return 'Pump.fun';
+            case 'raydium_launchlab':
+                return 'Raydium LaunchLab';
+            case 'direct_token':
+                return 'Direct Token initialization';
+        }
+    }
+    return 'Unrecognized platform';
+};
+
+const metadataSourceLabel = (source: string) => {
+    if (source === 'token2022_on_mint') {
+        return 'Token-2022 on-mint metadata';
+    }
+    return source === 'metaplex' ? 'Metaplex metadata' : 'Unavailable';
+};
+
 const AddressActions = (props: {value: string; kind: 'token' | 'tx'; copyLabel: string}) => {
     const copy = async () => {
         if (props.value) {
@@ -92,8 +126,26 @@ export const SolanaPage = () => {
         setQuery(pendingQuery.trim());
     }, [pendingQuery]);
     const columns: ColumnsType<SolanaProject> = [
-        {title: 'Mint', width: 280, render: item => <AddressActions value={item.mint} kind='token' copyLabel={`Copy mint ${item.mint}`} />},
-        {title: 'Program', width: 160, render: item => programLabel(item.tokenProgram)},
+        {
+            title: 'Token / Mint',
+            width: 320,
+            render: item => (
+                <Space orientation='vertical' size={2} style={{width: '100%'}}>
+                    <Typography.Paragraph
+                        strong={Boolean(item.name)}
+                        type={item.name ? undefined : 'secondary'}
+                        ellipsis={{rows: 2, tooltip: item.name || undefined}}
+                        style={{maxWidth: 290, marginBottom: 0, overflowWrap: 'anywhere'}}>
+                        {item.name || missingNameLabel(item.metadataStatus)}
+                    </Typography.Paragraph>
+                    <Typography.Text type='secondary' ellipsis={{tooltip: item.symbol || undefined}} style={{display: 'block', maxWidth: 290}}>
+                        {item.symbol || 'Symbol unavailable'}
+                    </Typography.Text>
+                    <AddressActions value={item.mint} kind='token' copyLabel={`Copy mint ${item.mint}`} />
+                </Space>
+            )
+        },
+        {title: 'Issuance source', width: 200, render: item => issuanceLabel(item)},
         {title: 'Issued', width: 180, render: item => formatTime(item.blockTime)},
         {title: 'Discovered', width: 180, render: item => formatTime(item.discoveredAt)},
         {title: 'Decimals', width: 100, dataIndex: 'decimals'},
@@ -108,10 +160,10 @@ export const SolanaPage = () => {
             onRefresh={reload}
             filters={
                 <Input
-                    aria-label='Mint address'
+                    aria-label='Name, symbol or Mint'
                     maxLength={128}
                     allowClear={true}
-                    placeholder='Mint address'
+                    placeholder='Name, symbol or Mint'
                     prefix={<SearchOutlined />}
                     value={pendingQuery}
                     onChange={event => setPendingQuery(event.target.value)}
@@ -122,7 +174,7 @@ export const SolanaPage = () => {
                         setPage(1);
                     }}
                     suffix={
-                        <Button type='text' size='small' onClick={search} aria-label='Search mint'>
+                        <Button type='text' size='small' onClick={search} aria-label='Search candidates'>
                             Search
                         </Button>
                     }
@@ -130,7 +182,7 @@ export const SolanaPage = () => {
             }>
             <Status status={discoveryStatus.data} />
             {!projects.loading && !projects.error && (projects.data?.items.length || 0) === 0 ? (
-                <Empty description={query ? 'No matching Mint' : 'No discovered candidates yet'} />
+                <Empty description={query ? 'No matching candidates' : 'No discovered candidates yet'} />
             ) : (
                 <ResourceTable<SolanaProject>
                     label='Solana token candidates'
@@ -142,7 +194,7 @@ export const SolanaPage = () => {
                     page={page}
                     pageSize={pageSize}
                     pageSizeOptions={[pageSize]}
-                    scrollX={1050}
+                    scrollX={1150}
                     onPageChange={nextPage => setPage(nextPage)}
                     expandable={{
                         expandedRowRender: item => (
@@ -153,7 +205,13 @@ export const SolanaPage = () => {
                                     {label: 'Freeze authority at initialization', value: <TruncatedText value={item.freezeAuthority} copyable={true} />},
                                     {label: 'Fee payer', value: <TruncatedText value={item.feePayer} copyable={true} />},
                                     {label: 'Slot', value: item.slot || '-'},
-                                    {label: 'Token program', value: <TruncatedText value={item.tokenProgram} copyable={true} />}
+                                    {label: 'Token standard', value: programLabel(item.tokenProgram)},
+                                    {label: 'Token program', value: <TruncatedText value={item.tokenProgram} copyable={true} />},
+                                    {label: 'Issuance program', value: <TruncatedText value={item.issuanceProgram} copyable={true} />},
+                                    {label: 'Metadata source', value: metadataSourceLabel(item.metadataSource)},
+                                    {label: 'Metadata account', value: <TruncatedText value={item.metadataAccount} copyable={true} />},
+                                    {label: 'Metadata observed slot', value: item.metadataObservedSlot && item.metadataObservedSlot !== '0' ? item.metadataObservedSlot : '-'},
+                                    {label: 'Metadata observed at', value: formatTime(item.metadataUpdatedAt)}
                                 ]}
                             />
                         )

@@ -115,7 +115,18 @@ func (s *Server) ListProjects(ctx context.Context, req *api.ListProjectsRequest)
 	}
 	items := make([]*api.Project, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, &api.Project{Mint: row.Mint, TokenProgram: row.TokenProgram, Signature: row.Signature, FeePayer: row.FeePayer, MintAuthority: row.MintAuthority, FreezeAuthority: row.FreezeAuthority, Decimals: row.Decimals, Slot: row.Slot, BlockTime: row.BlockTime, DiscoveredAt: row.DiscoveredAt.Unix()})
+		metadataUpdatedAt := int64(0)
+		if !row.MetadataUpdatedAt.IsZero() {
+			metadataUpdatedAt = row.MetadataUpdatedAt.Unix()
+		}
+		items = append(items, &api.Project{
+			Mint: row.Mint, TokenProgram: row.TokenProgram, Signature: row.Signature, FeePayer: row.FeePayer,
+			MintAuthority: row.MintAuthority, FreezeAuthority: row.FreezeAuthority, Decimals: row.Decimals,
+			Slot: row.Slot, BlockTime: row.BlockTime, DiscoveredAt: row.DiscoveredAt.Unix(),
+			Name: row.Name, Symbol: row.Symbol, MetadataStatus: row.MetadataStatus, MetadataSource: row.MetadataSource,
+			MetadataAccount: row.MetadataAccount, MetadataObservedSlot: row.MetadataObservedSlot, MetadataUpdatedAt: metadataUpdatedAt,
+			IssuanceSource: row.IssuanceSource, IssuanceProgram: row.IssuanceProgram, SourceStatus: row.SourceStatus,
+		})
 	}
 	return &api.ListProjectsResponse{Items: items, TotalSize: total}, nil
 }
