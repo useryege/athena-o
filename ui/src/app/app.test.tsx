@@ -284,6 +284,16 @@ describe('Trader Sync real Shell cleanup', () => {
         expect(window.location.pathname).toBe('/account/access');
         expect(tree.root.findAllByType(Menu).some(menu => JSON.stringify(menu.props.items).includes('"key":"/trader-sync"'))).toBe(false);
     });
+    test('Solana navigation hides and its deep link requires read access', async () => {
+        ensureMemberBusinessServices();
+        const list = jest.spyOn(services.solana, 'listProjects');
+        const status = jest.spyOn(services.solana, 'getDiscoveryStatus');
+        await mountMember('none', '/solana');
+        expect(window.location.pathname).toBe('/account/access');
+        expect(tree.root.findAllByType(Menu).some(menu => JSON.stringify(menu.props.items).includes('"key":"/solana"'))).toBe(false);
+        expect(list).not.toHaveBeenCalled();
+        expect(status).not.toHaveBeenCalled();
+    });
     test('RW home has its actual page, navigation and title', async () => {
         ensureMemberBusinessServices();
         jest.spyOn(services.traderSync, 'listSubscriptions').mockResolvedValue({subscriptions: [], page: {}, quota: {used: 0, limit: 10}, asOf: '2026-09-11T00:00:00Z'});

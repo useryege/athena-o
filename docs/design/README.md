@@ -41,13 +41,13 @@
 | Identity and Access | UUID account identities, immutable public usernames, realm-scoped provider bindings, independent member/admin login cookies, persistent API Keys, Athena JWT v3, typed request credentials, and interactive-only sensitive boundaries | [Account Credentials](identity-access/account-credentials.md) | `已实现` |
 | Identity and Access | Realm-bound browser Google Authorization Code flow, PKCE, one-time OAuth state, administrator admission, anonymous username registration, and independent member/admin cookie issuance | [Google OIDC Login](identity-access/google-oidc-login.md) | `已实现` |
 | Identity and Access | Browser-injected Phantom Solana authentication, one-time SIWS challenges, Ed25519 verification, and wallet-first username registration | [Solana Wallet Authentication](identity-access/solana-wallet-authentication.md) | `已实现` |
-| Identity and Access | Realm-to-persisted-role session binding, credential-specific Wallet and Worm-selection rules, login, API Key, Profit Sharing, ten-module access, Pending state, and transactional administrator control | [Account Access Control](identity-access/account-access-control.md) | `已实现` |
+| Identity and Access | Realm-to-persisted-role session binding, credential-specific Wallet and Worm-selection rules, login, API Key, Profit Sharing, eleven-module access, Pending state, and transactional administrator control | [Account Access Control](identity-access/account-access-control.md) | `已实现` |
 | Identity and Access | UUID-owned display profiles, immutable username presentation, display-only tiers, and cross-device theme preferences | [Account Profile and Preferences](identity-access/account-profile-and-preferences.md) | `已实现` |
 | Identity and Access | Private account and Wallet avatar validation, S3-compatible object storage, distinct authorization, authenticated delivery, and orphan recovery | [Account and Wallet Avatar Storage](identity-access/account-avatar-storage.md) | `已实现` |
 | Identity and Access | UUID-owned EVM and Solana custody, canonical key handling, owner-only safe metadata, persisted owner-resolved Worm Wallet selection, and separate purpose-bound Worm credential and live-execution signers | [Wallet Ownership and Custody](identity-access/wallet-ownership.md) | `已实现` |
 | Identity and Access | Independent Wallet-reveal and Worm-credential leases plus selection-reconciliation, exact-Run, and exact-position-Cash-Out proof boundaries; rate-limited Google/Solana reauthentication; and durable intent-bound authorization | [Wallet Secret and Worm Credential Reauthentication](identity-access/wallet-secret-reauthentication.md) | `已实现` |
 | Web UI | Shared bootstrap/session kernel, deployment-root and application-root separation, two HTML/React entry points, realm selection, and cross-realm cleanup | [Application Shell](web-ui/application-shell.md) | `已实现` |
-| Web UI | 会员登录、Pending access、十模块导航、Telegram 绑定、Trader Sync 六路由与可见页单飞刷新、Account Center、API Keys、Profit Sharing 和 Wallet | [会员应用壳](web-ui/member-application-shell.md) | `已实现` |
+| Web UI | 会员登录、Pending access、十一模块导航、Solana 列表、Telegram 绑定、Trader Sync 六路由与可见页单飞刷新、Account Center、API Keys、Profit Sharing 和 Wallet | [会员应用壳](web-ui/member-application-shell.md) | `已实现` |
 | Web UI | 管理员登录/角色复查、账户授权、Trader Sync 安全概要、三来源 Service Status、系统通知和管理员自助 | [管理员应用壳](web-ui/administrator-application-shell.md) | `已实现` |
 | Notifications | 账户 Telegram 绑定、幂等投递、Trader Sync 普通/摘要通知、Add 草稿往返、binding revision fencing 与不可达恢复 | [账户 Telegram 通知](notifications/account-telegram-notifications.md) | `已实现` |
 | Notifications | 认证运维生产者、Telegram Topics、持久系统投递、account/system/reply 与 summary-head 协调调度、sender 恢复及管理员 Service Status | [系统通知运维](notifications/system-notification-operations.md) | `已实现` |
@@ -66,9 +66,9 @@
 | Trading | Current-selection exact-position, fresh-proof-authorized Worm HMAC Cash Out with whole-position market Close, at-most-once dispatch, read-only recovery, and durable historical detail | [Worm Position Cash Out](trading/worm-position-cash-out.md) | `已实现` |
 | Trading | Up-to-20 selected-Wallet, Wallet-major serial Cash Out batches with complete position freezing, single-operation reuse, confirmed-USDC advancement gates, durable Wallet locks, and manual recovery controls | [Worm Position Cash Out Batches](trading/worm-position-cash-out-batches.md) | `已实现` |
 | Token Intelligence | 第一板块设计包：已确认时效、架构选择、跨子系统契约与容量验收 | [Token 第一板块主 spec](../superpowers/specs/2026-09-10-token-first-block-design.md) | `设计中`，分节已确认，书面待审阅 |
-| Solana Intelligence | 首版范围、后续决定、实现分支与暂停采集状态 | [Solana 设计总览](solana-intelligence/README.md) | 首版在 `codex/solana-discovery` 已验收；当前停机，数据保留 |
-| Solana Intelligence | finalized 新 Mint 发现、持久游标、服务与授权 | [项目发现](solana-intelligence/project-discovery.md) | 首版分支已实现、已验收 |
-| Solana Intelligence | 名称、符号、平台归因、字段合同与首次补全重试 | [基础信息补全与发行来源](solana-intelligence/candidate-metadata.md) | 首版分支已实现、已验收；历史队列未全部补完 |
+| Solana Intelligence | 首版范围、后续决定、集成与暂停采集状态 | [Solana 设计总览](solana-intelligence/README.md) | 首版源分支已验收；已集成到 `rf4` 并通过[集成验收](../testing/rf4-branch-integration.md)，采集继续暂停，数据保留 |
+| Solana Intelligence | finalized 新 Mint 发现、持久游标、服务与授权 | [项目发现](solana-intelligence/project-discovery.md) | 已实现、已验收；`rf4` 本次集成验证已通过 |
+| Solana Intelligence | 名称、符号、平台归因、字段合同与首次补全重试 | [基础信息补全与发行来源](solana-intelligence/candidate-metadata.md) | 已实现、已验收；`rf4` 本次集成验证已通过，历史队列未全部补完 |
 | Web UI | Solana 独立列表、查询、资料状态和链上详情 | [Solana 列表页](web-ui/solana-discovery.md) | 首版功能已确认并验收；最终视觉遵循全站主题设计 |
 | Solana Intelligence | 发行后持续研究、活动触发与每项目一小时限频 | [持续研究与刷新调度](solana-intelligence/research-lifecycle-and-refresh.md) | 后续方向已确认，调度细节为建议，尚未实现 |
 | Token Intelligence | 有界发现、连续覆盖、有序活动、owner 观察屏障、七协议 Swap 及停止 | [发现与研究生命周期](token-intelligence/discovery-research-lifecycle.md) | `设计中`，尚未实现 |

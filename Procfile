@@ -9,3 +9,5 @@
 # api-server: athena-server (account-state PostgreSQL, Redis, MinIO; default 8080)
 # Infrastructure: owned PostgreSQL 16, Redis 7.2, MinIO; dynamic loopback ports.
 # Other business modules are not enabled by this full-stack selection.
+# Solana discovery remains paused in the default full stack.
+# Explicit Solana profiles use Procfile.solana-discovery or Procfile.solana-preview.

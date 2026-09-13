@@ -68,3 +68,28 @@ func TestTraderSyncRPCPolicy(t *testing.T) {
 		t.Fatalf("unknown method: %v", err)
 	}
 }
+
+func TestSolanaRPCPolicy(t *testing.T) {
+	read := accountaccess.Access{LoginEnabled: true, Modules: accountaccess.NoModuleAccess(), Revision: 1}
+	read.Modules[accountaccess.ModuleSolana] = accountaccess.AccessLevelRead
+	none := read.Clone()
+	none.Modules[accountaccess.ModuleSolana] = accountaccess.AccessLevelNone
+	admin := accountaccess.Access{Administrator: true, LoginEnabled: true, Modules: accountaccess.NoModuleAccess(), Revision: 1}
+	controller, err := accountaccess.NewController(context.Background(), traderAuthStore{"read": read, "none": none, "admin": admin})
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := &AthenaServer{accessController: controller}
+	for _, method := range []string{"ListProjects", "GetDiscoveryStatus"} {
+		for _, principal := range []string{"read", "none", "admin"} {
+			_, err := server.authorizeGRPC(context.Background(), "/solana.SolanaService/"+method, traderAuthIdentity(principal), nil)
+			want := codes.PermissionDenied
+			if principal == "read" {
+				want = codes.OK
+			}
+			if status.Code(err) != want {
+				t.Errorf("%s %s: got %v, want %v", method, principal, err, want)
+			}
+		}
+	}
+}

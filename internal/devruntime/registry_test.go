@@ -31,3 +31,25 @@ func TestResolveSelectedServices(t *testing.T) {
 		t.Fatal("accepted cycle")
 	}
 }
+
+func TestAPIReceivesSolanaFacadeConfigurationWithoutCollectorCredentials(t *testing.T) {
+	input := map[string]string{
+		"ATHENA_SOLANA_DISCOVERY_SERVER_ADDRESS":      "127.0.0.1:38112",
+		"ATHENA_SOLANA_DISCOVERY_INTERNAL_AUTH_TOKEN": "literal-solana-facade-token-123456789",
+		"ATHENA_SOLANA_DISCOVERY_RPC_URL":             "https://private-node.example",
+		"ATHENA_SOLANA_DISCOVERY_POSTGRES_DSN":        "postgres://collector/private",
+	}
+	for _, spec := range fullStackSpecs() {
+		got := environmentMap(EnvironmentFor(input, spec.EnvironmentKeys))
+		if spec.Name != "api-server" {
+			if len(got) != 0 {
+				t.Fatalf("%s received Solana credentials: %v", spec.Name, got)
+			}
+			continue
+		}
+		if got["ATHENA_SOLANA_DISCOVERY_SERVER_ADDRESS"] != "127.0.0.1:38112" ||
+			got["ATHENA_SOLANA_DISCOVERY_INTERNAL_AUTH_TOKEN"] != "literal-solana-facade-token-123456789" || len(got) != 2 {
+			t.Fatalf("API Solana environment: %v", got)
+		}
+	}
+}

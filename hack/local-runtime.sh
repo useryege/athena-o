@@ -13,4 +13,15 @@ if (( $# > 1 )); then
   exit 2
 fi
 cd "$repo_root"
+case "${ATHENA_RUN_PROFILE:-}" in
+  '') ;;
+  solana-discovery|solana-preview)
+    if [[ "${1:-start}" == reset ]]; then
+      printf 'Solana profiles borrow infrastructure and do not support reset\n' >&2
+      exit 2
+    fi
+    exec bash ./hack/solana-local.sh "${1:-start}" "$ATHENA_RUN_PROFILE"
+    ;;
+  *) printf 'unknown run profile: %s\n' "$ATHENA_RUN_PROFILE" >&2; exit 2 ;;
+esac
 exec bash ./hack/run-local-runtime.sh "$action"

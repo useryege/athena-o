@@ -1,6 +1,6 @@
 # Solana 发现列表
 
-状态：首版信息展示已在 `codex/solana-discovery` 实现并验收，用户已认可；不表示代码已合入其他分支。当前预览已停止，见[设计总览](../solana-intelligence/README.md)。
+状态：首版信息展示在源分支已实现并验收，用户已认可；现已按用户授权集成到 `rf4`，并通过[本次集成验证](../../testing/rf4-branch-integration.md)。预览继续暂停，见[设计总览](../solana-intelligence/README.md)。
 
 成员端在 `/solana` 提供只读的 Solana 新 Mint 候选列表。页面位于 Token & Risk 分组，只有拥有 `Solana` `READ` 权限的成员能看到导航项或进入路由；管理员账户权限编辑器包含同一只读模块。
 
@@ -14,4 +14,4 @@
 
 ## 视觉与功能确认的边界
 
-本轮确认的是独立列表、字段、搜索及链上详情。验收截图记录当时页面实现，不代表全站最终视觉主题。后续页面视觉须遵循当前项目已确认的 Nansen 参考、单一深色、Inter 英文/正文/数字与 JetBrains Mono 地址/哈希方向；主题与字体的权威需求在主目录 `docs/requirements/web-ui/visual-theme.md` 及其关联文档。本次只同步已有决定，不改页面样式，也不将首版认可扩大为全站视觉重构完成。
+本轮确认的是独立列表、字段、搜索及链上详情。验收截图记录当时页面实现，不代表全站最终视觉主题。后续页面视觉须遵循当前项目已确认的 Nansen 参考、单一深色、Inter 英文/正文/数字与 JetBrains Mono 地址/哈希方向；主题与字体的权威需求为[全站视觉主题](../../requirements/web-ui/visual-theme.md)及其关联文档。本次集成保留已有确认范围，不将首版认可扩大为全站视觉重构完成。

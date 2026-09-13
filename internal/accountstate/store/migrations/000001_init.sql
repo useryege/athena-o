@@ -159,6 +159,7 @@ CREATE TABLE account_module_access (
       'worm_trading',
       'world_cup_corners',
       'token',
+      'solana',
       'wallet',
       'trader_sync'
     )),

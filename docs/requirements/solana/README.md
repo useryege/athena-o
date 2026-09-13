@@ -2,7 +2,7 @@
 
 > 需求状态：首版“发现新候选、补齐名称/符号/发行来源、列表查看”已确认，页面已获用户认可；后续研究方向已确认，细节继续逐步设计。
 >
-> 实现状态：首版已在 `codex/solana-discovery` 分支完成并验收，不表示已合入其他分支。当前已按用户要求停止采集与预览；数据及游标保留，见[设计总览](../../design/solana-intelligence/README.md)。
+> 实现状态：首版已在 `codex/solana-discovery` 分支完成并验收，现已按用户授权集成到 `rf4` 并通过本次集成验证，见[集成验收](../../testing/rf4-branch-integration.md)与[集成计划](../../superpowers/plans/2026-09-13-rf4-branch-integration.md)。采集与预览继续按用户要求暂停，数据及游标保留，见[设计总览](../../design/solana-intelligence/README.md)。
 >
 > 关联设计：[项目发现](../../design/solana-intelligence/project-discovery.md)、[列表页](../../design/web-ui/solana-discovery.md)、[后续研究与刷新](../../design/solana-intelligence/research-lifecycle-and-refresh.md)。
 
@@ -53,7 +53,7 @@ ATHENA 在面向 EVM 的 Token 业务之外新增独立 Solana 板块。两者�
 
 两类 Token 程序的直接/CPI 初始化、失败交易排除、真实程序身份、未知字段、版本化交易与缺失数据有解析验证；候选去重、范围原子提交、断点恢复和失败不推进有持久化验证。服务独立构建、启动、停止，API 仅代理并传递可信账户身份，业务服务执行权威 READ 检查。真实主网候选可在独立 ATHENA 页面查询和查看链上证据。
 
-研究持续性、一小时冷却和活动刷新属于后续验收，不是本步交付前置。程序当前暂停是用户的运维决定，不等于废弃后续持续研究方向；本次文档整理不恢复采集。
+研究持续性、一小时冷却和活动刷新属于后续验收，不是本步交付前置。程序当前暂停是用户的运维决定，不等于废弃后续持续研究方向；本次 `rf4` 集成不恢复采集。
 
 ## 后续工作依据
 

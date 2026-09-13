@@ -237,6 +237,17 @@ run:
 stop:
 	@exec bash ./hack/local-runtime.sh stop
 
+.PHONY: solana-discovery-build solana-discovery-run solana-discovery-stop
+solana-discovery-build:
+	mkdir -p .tmp/bin
+	go build -o .tmp/bin/athena-solana-discovery ./cmd/athena-solana-discovery
+
+solana-discovery-run:
+	bash ./hack/solana-local.sh start solana-discovery
+
+solana-discovery-stop:
+	bash ./hack/solana-local.sh stop solana-discovery
+
 .PHONY: run-reset
 run-reset:
 	@exec bash ./hack/local-runtime.sh reset

@@ -6,7 +6,7 @@
 
 Solana 是独立于 EVM Token 的业务板块。首版先完成新 Mint 发现、基础信息补全与 ATHENA 列表查看，用户已认可实际页面；先看真实样本，再决定研究资料、资产筛选和活动规则。
 
-首版已在 `codex/solana-discovery` 分支完成实现和本地验收，实现基线 `cc677b94`。文档整合不代表代码已经合入其他检出分支，也不代表已经部署生产环境。
+首版已在 `codex/solana-discovery` 分支完成实现和本地验收，实现基线 `cc677b94`。现已按用户授权将该分支与 `codex/trader-sync-independent` 集成到 `rf4`，并通过本次集成验证，见[集成验收](../../testing/rf4-branch-integration.md)与[集成计划](../../superpowers/plans/2026-09-13-rf4-branch-integration.md)。源分支验收证据仍保留，本次集成另有验证记录；尚未部署生产环境。
 
 | 能力 | 已确认设计 | 当前状态 |
 | --- | --- | --- |
@@ -47,11 +47,13 @@ flowchart LR
 
 ## 当前运行状态与恢复边界
 
-用户已要求暂停收集。2026-09-13 已停止该分支的 `solana-preview`，其发现、后台补全、API 与 UI 预览进程均已退出；当前预览地址不提供服务。本次文档整理不启动服务。
+用户已要求暂停收集。2026-09-13 已停止源分支的 `solana-preview`，其发现、后台补全、API 与 UI 预览进程均已退出；该预览地址不提供服务。本次 `rf4` 集成保持暂停。默认 managed 全栈只有 Trader Sync、API Server、Notification、Wallet、Profit Sharing 和 UI 六服务，不启动 Solana 扫描或后台补全。
 
 停机时数据库 `athena_solana_preview` 中保留 **2321** 条候选、起点 **446684678**、已处理游标 **446687144**。这些是停止时快照，不是实时计数。基础设施与数据未删除，尚未完成的补全队列一并保留。
 
-以后用户要求恢复时，从该实现 worktree 使用 `make run ATHENA_RUN_PROFILE=solana-preview`；它续接原游标和待处理记录，不重新选取最新链头作为起点。历史区块或交易能否补查仍受节点保留范围限制。停止使用 `make stop ATHENA_RUN_PROFILE=solana-preview`。相关命令属于实现分支，不能假设其他分支已具有相同入口。
+原 `athena_solana_preview` 的账户 schema 与 `rf4` 不兼容，不能指向原库直接运行 `rf4` 的 `up` / `verify` 或 reset。此次保留原库、游标、原分支及 `/home/yege/work/athena/.worktrees/solana-discovery`，不修改旧数据库，也不新增历史 schema 兼容路径。
+
+以后用户明确要求恢复原预览时，从该原 worktree 的保留版本使用 `make run ATHENA_RUN_PROFILE=solana-preview` 管理原库；先确认没有其他 checkout 正在扫描同一数据库。原版本续接原游标和待处理记录，不重新选取最新链头作为起点。历史区块或交易能否补查仍受节点保留范围限制。停止使用同一 checkout 的 `make stop ATHENA_RUN_PROFILE=solana-preview`。`rf4` 预览使用新的专用数据库；将旧数据转入 `rf4` 需单独明确数据迁移范围。本次新入口的 schema 准备、端口及资源归属见[Solana 局部运行说明](../../developer-guide/running-locally.md#solana-discovery-local)。
 
 人工停机是运维动作，不会改变后续“项目不自动结束研究”的业务方向。首版没有项目研究执行器，也没有后台常驻授权要求。
 
@@ -69,6 +71,8 @@ flowchart LR
 
 首版真实主网样本 `s8z8Xg4b21SnUaucPKEzZ1rCmPFkLxYu2okNHidpump` 曾自动补成 `Anita maxyn / brotha / Pump.fun`，名称/符号与独立 finalized 账户快照吻合，重启保留初始化与补全证据。还观察到头寸 NFT，支持保持候选而非自动分类的边界。
 
-本轮实现已有 100 项后端数据库/并发测试及子测试、7 项页面测试、API 契约测试、UI 静态检查、桌面/手机真实页面验收和会员/管理员两项 smoke 通过的记录。证据在实现分支的 `docs/testing/solana-discovery.md` 及 `docs/developer-guide/acceptance-records/2026-09-13-solana-metadata.md`。本次只整合长期文档与停止状态，不重新运行服务验收。
+源分支实现已有 100 项后端数据库/并发测试及子测试、7 项页面测试、API 契约测试、UI 静态检查、桌面/手机真实页面验收和会员/管理员两项 smoke 通过的记录。原始验收已随代码收录为[发现验收](../../testing/solana-discovery.md)及[基础信息补全验收](../../developer-guide/acceptance-records/2026-09-13-solana-metadata.md)。这些记录描述源分支当时结果。
+
+本次 `rf4` 集成验证已通过：Go 包测试及相关 PostgreSQL schema/事务集成测试、31 套共 361 项前端测试、前端静态检查与构建、Solana 独立可执行构建，以及 86 项隔离浏览器测试和真实新环境的 2 项 smoke 均通过。新 managed 全栈在 `http://localhost:34000` 保留运行，Solana 服务继续暂停；会员/管理员 bootstrap、Trader Sync 查询和 Solana 暂停时的 API 隔离行为已核对。命令、证据及验收边界见[本次集成验收](../../testing/rf4-branch-integration.md)。
 
 公共 RPC 预览停止前仍有区块积压，历史元数据队列也未清空；不承诺固定发现延迟、全链全部平台覆盖或全部候选都有名称。未来是否购买高容量 RPC、使用 Yellowstone/Geyser 或扩展平台，在新需求明确后决定。

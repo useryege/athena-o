@@ -426,3 +426,37 @@ with per-process configuration rather than a shared service `env_file`. Notifica
 owns its Bot and dispatch lifecycle; stopped-sender recovery is independent of Trader Sync.
 Detailed validation and limits are recorded in the
 [independent service acceptance report](../testing/trader-sync-independent-service-acceptance.md).
+<a id="solana-discovery-local"></a>
+## Solana 发现的局部运行
+
+Solana 采集与预览当前按用户要求暂停；合并代码和运行默认全栈不授权恢复扫描或后台补全。以下命令用于以后明确要求恢复时。默认 managed 全栈只选择 Trader Sync、API Server、Notification、Wallet、Profit Sharing 和 UI 六个服务，不包含 Solana。Solana 使用单独的显式 profile，未并入 managed 实例运行器。
+
+独立入口不构建 API 或启动其他业务：
+
+```bash
+make solana-discovery-build
+make solana-discovery-run
+# 另一个终端，同一 checkout：
+make solana-discovery-stop
+```
+
+依赖已运行的 PostgreSQL 和主网 RPC；使用 `.env` 中 `ATHENA_SOLANA_DISCOVERY_POSTGRES_DSN`（未配置时回退 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN`，两者均缺失则启动报错）、`ATHENA_SOLANA_DISCOVERY_RPC_URL`。内部查询要求同库已准备账户表与 READ 授权；账户 schema 由 `cmd/athena-account-state-migrate` 的 `up` / `verify` 准备和核对，业务 API 启动只验证 schema。局部命令只拥有 `.run/solana-discovery` 中记录的进程组，借用基础设施，不清理容器或数据。
+
+如另一 checkout 已在运行，可用独立数据库与端口预览 Solana + API + UI。为 `rf4` 准备新的专用开发数据库，并在当前 checkout `.env` 配置 `ATHENA_SOLANA_PREVIEW_POSTGRES_DSN` 指向它；不要指向另一 checkout 正在使用的账户库。preview 将该 DSN 同时用于 Solana 存储和 API 的 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN`；profile 的 API 启动链自动先执行独立账户迁移命令 `up` / `verify`，成功后直接启动 `cmd/athena-server`。API 不再通过 Trader Sync 的旧启动包装器运行，也不承担迁移。本地开发会员沿用既有权限机制。
+
+保留的原 `athena_solana_preview` 来自 Solana 源分支，账户 schema 与 `rf4` 不兼容：两者的账户迁移版本 `000002` 分别代表 Solana 授权和 Trader Sync runtime control。该库、候选、游标及补全队列保持不动；不得用 `rf4` 的自动 `up` 或 reset 尝试恢复。以后明确要求恢复原预览时，使用保留的原 worktree 和原分支版本管理原库。若需要将旧数据转入 `rf4`，须单独明确数据迁移范围；本次集成不提供历史 schema 兼容路径。
+
+预览复用已运行的 Redis；需要头像时按现有配置使用 MinIO。Trader Sync、通知、钱包等其他独立业务由各自入口管理，预览不启动它们；相关远程服务未运行时，其业务调用按实际状态返回不可用。预览无需 Trader Sync 的链上提供方配置，内部客户端如需访问这些服务则须配置匹配的地址、传输和凭据。
+
+```bash
+# 先按 ui/.nvmrc 选择 Node 24.14.1
+make run ATHENA_RUN_PROFILE=solana-preview
+# 默认 UI http://127.0.0.1:14000/solana；API 18080；Solana gRPC 18112；Redis DB 13
+make ui-acceptance UI_ACCEPTANCE_MODE=smoke UI_ACCEPTANCE_BASE_URL=http://127.0.0.1:14000
+# 另一个终端，同一 checkout：
+make stop ATHENA_RUN_PROFILE=solana-preview
+```
+
+对应端口可通过 `ATHENA_SOLANA_PREVIEW_UI_PORT`、`ATHENA_SOLANA_PREVIEW_API_PORT`、`ATHENA_SOLANA_PREVIEW_DISCOVERY_PORT` 调整；UI 使用 strictPort，避免静默换到别处。profile 只停止自己记录并验证的进程，不回收基础设施。也可选择 `ATHENA_RUN_PROFILE=solana-discovery` 仅运行扫描和后台补全服务。标准全栈停止语义保持不变，停止预览须带上相同 profile；Solana profile 不提供数据 reset。
+
+Solana预览为公共节点采样设置每范围1 slot、并发1、每秒请求预算1；有积压时页面照实展示。服务常规默认每范围4 slots；更高容量节点可通过自身配置调整。

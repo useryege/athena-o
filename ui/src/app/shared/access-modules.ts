@@ -14,7 +14,8 @@ export enum AccountDataModule {
     Token = 8,
     Wallet = 9,
     WormTrading = 11,
-    TraderSync = 12
+    TraderSync = 12,
+    Solana = 13
 }
 
 export type AccountDataModuleGroup = 'markets' | 'token-risk';
@@ -99,6 +100,14 @@ export const accountDataModules: AccountDataModuleDefinition[] = [
         description: 'Token discovery, one-time collection, project profiles, and chain operations.',
         group: 'token-risk',
         maxAccess: AccountDataAccess.ReadWrite
+    },
+    {
+        module: AccountDataModule.Solana,
+        id: 'solana',
+        label: 'Solana',
+        description: 'Read-only discovery of newly initialized Solana token candidates.',
+        group: 'token-risk',
+        maxAccess: AccountDataAccess.Read
     },
     {
         module: AccountDataModule.Wallet,

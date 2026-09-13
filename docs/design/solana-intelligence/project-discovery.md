@@ -2,7 +2,7 @@
 
 > 当前方案：第一步采用标准 HTTP RPC 的 finalized 区块扫描，独立服务持久发现候选并补齐名称、符号及可确认的发行来源，ATHENA 列表查看。更多平台解析、流式订阅和项目研究留待下一步。
 >
-> 实现与运行状态见[设计总览](README.md)：首版已在 `codex/solana-discovery` 验证，当前采集和预览已停止。本文的运行行为不代表程序此刻在线。
+> 实现与运行状态见[设计总览](README.md)：首版源分支已验收，现已按用户授权集成到 `rf4`，并通过[本次集成验证](../../testing/rf4-branch-integration.md)；采集和预览继续暂停。本文的运行行为不代表程序此刻在线。
 >
 > 关联需求：[Solana 项目研究](../../requirements/solana/README.md)。资料核对日期：2026-09-13。
 
@@ -75,12 +75,14 @@ Pump 官方仓库中的 SDK 使用文档提供 `createV2AndBuyInstructions`，�
 
 ## 独立运行与配置（SDS-R3、R4、R5）
 
-当前入口：`make solana-discovery-build`、`make solana-discovery-run`、`make solana-discovery-stop`。最小依赖为已启动的PostgreSQL和可用主网HTTP RPC；账户数据库结构由账户迁移入口准备，扫描本身不依赖API在线。局部profile只管理自己的进程组，借用基础设施，不创建/停止容器或删除数据卷。完整Procfile显式包含新服务。
+当前入口：`make solana-discovery-build`、`make solana-discovery-run`、`make solana-discovery-stop`。最小依赖为已启动的 PostgreSQL 和可用主网 HTTP RPC；账户数据库结构由独立 `athena-account-state-migrate up` / `verify` 准备和核对，扫描本身不依赖 API 在线。局部 profile 只管理自己的进程组，借用基础设施，不创建/停止容器或删除数据卷。默认 managed 全栈为 Trader Sync、API Server、Notification、Wallet、Profit Sharing 和 UI 六服务，不包含 Solana；扫描及预览仅通过显式 Solana profile 运行。
+
+专用 `solana-preview` 将 `ATHENA_SOLANA_PREVIEW_POSTGRES_DSN` 同时提供给 Solana 存储和 API 的 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN`；profile 的 API 启动链自动先完成账户 schema 的 `up` / `verify`，成功后直接启动 `cmd/athena-server`。API 启动只验证 schema，不拥有账户迁移，也不启动 Trader Sync runtime。预览依赖已运行的 PostgreSQL、Redis，并按功能需要使用其他独立服务和 MinIO。
 
 |配置|默认/行为|
 |---|---|
 |ATHENA_SOLANA_DISCOVERY_RPC_URL|https://api.mainnet-beta.solana.com；只接受HTTP(S)|
-|ATHENA_SOLANA_DISCOVERY_POSTGRES_DSN|回退ATHENA_SERVER_POSTGRES_DSN，再回退本地athena数据库|
+|ATHENA_SOLANA_DISCOVERY_POSTGRES_DSN|未配置时回退 ATHENA_ACCOUNT_STATE_POSTGRES_DSN，两者均缺失则启动报错；须与 API 账户库一致|
 |ATHENA_SOLANA_DISCOVERY_INTERNAL_AUTH_TOKEN|生产环境必填；局部Procfile提供明确开发token|
 |ATHENA_SOLANA_DISCOVERY_LISTEN_ADDRESS / PORT|127.0.0.1 / 8112|
 |ATHENA_SOLANA_DISCOVERY_SERVER_ADDRESS|API客户端默认127.0.0.1:8112|
@@ -91,7 +93,7 @@ Pump 官方仓库中的 SDK 使用文档提供 `createV2AndBuyInstructions`，�
 |ATHENA_SOLANA_DISCOVERY_REQUEST_TIMEOUT|15s，每个RPC有界|
 |ATHENA_SOLANA_DISCOVERY_POLL_INTERVAL|2s，追平后等待；积压时持续推进|
 
-参数为初始预算，不是容量SLO。请求失败指数退避，最多30秒；429存在Retry-After时等待至少该时长，始终可取消。错误与积压可查询。终止信号取消扫描和节点请求，gRPC最多5秒优雅等待后强制停止，扫描最多5秒收尾，进程关闭自有资源。实现分支 `docs/developer-guide/running-locally.md` 的 Solana 局部运行章节记录环境准备；当前停机与恢复边界见[总览](README.md#当前运行状态与恢复边界)。
+参数为初始预算，不是容量SLO。请求失败指数退避，最多30秒；429存在Retry-After时等待至少该时长，始终可取消。错误与积压可查询。终止信号取消扫描和节点请求，gRPC最多5秒优雅等待后强制停止，扫描最多5秒收尾，进程关闭自有资源。[Solana 局部运行说明](../../developer-guide/running-locally.md#solana-discovery-local)记录环境准备；当前停机与恢复边界见[总览](README.md#当前运行状态与恢复边界)。
 
 ## 验证记录（SDS-R8）
 

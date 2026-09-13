@@ -1,6 +1,6 @@
 # Solana 基础信息补全与发行来源
 
-状态：首版已在 `codex/solana-discovery` 实现并验收。运行已按用户要求停止，现状见[设计总览](README.md)；本文描述程序运行时的行为。
+状态：首版源分支已实现并验收，现已按用户授权集成到 `rf4`，并通过[本次集成验证](../../testing/rf4-branch-integration.md)。运行继续按用户要求暂停，现状见[设计总览](README.md)；本文描述程序运行时的行为。
 
 关联：[业务需求](../../requirements/solana/README.md)、[发现流程](project-discovery.md)、[列表展示](../web-ui/solana-discovery.md)。本文件承接任务规格中的长期字段和证据规则，后续任务无需依赖聊天记录恢复这些约定。
 

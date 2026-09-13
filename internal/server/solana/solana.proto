@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package solana;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/useryege/athena/pkg/apiclient/solana";
+
+service SolanaService {
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) {
+    option (google.api.http) = {get: "/api/v1/solana/projects"};
+  }
+  rpc GetDiscoveryStatus(GetDiscoveryStatusRequest) returns (GetDiscoveryStatusResponse) {
+    option (google.api.http) = {get: "/api/v1/solana/status"};
+  }
+}
+
+message ListProjectsRequest {
+  uint32 page = 1;
+  uint32 pageSize = 2;
+  string query = 3;
+}
+
+message Project {
+  string mint = 1;
+  string tokenProgram = 2;
+  string signature = 3;
+  string feePayer = 4;
+  string mintAuthority = 5;
+  string freezeAuthority = 6;
+  uint32 decimals = 7;
+  uint64 slot = 8;
+  int64 blockTime = 9;
+  int64 discoveredAt = 10;
+  string name = 11;
+  string symbol = 12;
+  string metadataStatus = 13;
+  string metadataSource = 14;
+  string metadataAccount = 15;
+  uint64 metadataObservedSlot = 16;
+  int64 metadataUpdatedAt = 17;
+  string issuanceSource = 18;
+  string issuanceProgram = 19;
+  string sourceStatus = 20;
+}
+
+message ListProjectsResponse {
+  repeated Project items = 1;
+  int64 totalSize = 2;
+}
+
+message GetDiscoveryStatusRequest {}
+
+message GetDiscoveryStatusResponse {
+  string status = 1;
+  uint64 startSlot = 2;
+  uint64 lastProcessedSlot = 3;
+  uint64 latestFinalizedSlot = 4;
+  int64 lastSuccessAt = 5;
+  int64 totalProjects = 6;
+  string lastError = 7;
+}
