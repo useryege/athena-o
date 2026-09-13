@@ -1,10 +1,10 @@
 # Trader Sync 独立服务验收记录
 
-> 状态：2026-09-13 按用户要求在验收节点暂停。独立服务、两跳/后端并发、镜像与首轮全栈/浏览器证据已通过；最终代码修复复审通过，持久全栈重启新发现Redis挂载问题，修复及后续真实smoke未完成。整个任务尚未完成，未发送完成邮件。
+> 状态：独立服务实现、最终修复和全部必需验收已通过；真实全栈已保卷恢复并连续两次重启，最终Chrome smoke通过。正在收口整体审阅与完成通知，尚未发送完成邮件。
 
 实施范围见[12项计划](../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service.md)。本次工作区为 `/home/yege/work/athena/.worktrees/trader-sync-independent`，分支 `codex/trader-sync-independent`，基于 `3b1cd556`；未合并或发布到原 `rf4` checkout，也未执行生产部署。
 
-可重复入口和长期边界见[本地运行编排](../design/development-runtime/local-runtime-orchestration.md)、[运行说明](../developer-guide/running-locally.md)、[生产镜像与维护](../../deploy/trader-sync/README.md)。以下日志与结构化证据保留在该工作区的 `.superpowers/sdd/2026-09-13-trader-sync-independent-grpc-service/`（下文简称证据目录）和 `.tmp/`，属于本地验收产物，不包含在源代码提交中。恢复工作先读[暂停交接记录](../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service-checkpoint.md)。
+可重复入口和长期边界见[本地运行编排](../design/development-runtime/local-runtime-orchestration.md)、[运行说明](../developer-guide/running-locally.md)、[生产镜像与维护](../../deploy/trader-sync/README.md)。以下日志与结构化证据保留在该工作区的 `.superpowers/sdd/2026-09-13-trader-sync-independent-grpc-service/`（下文简称证据目录）和 `.tmp/`，属于本地验收产物，不包含在源代码提交中。[暂停交接记录](../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service-checkpoint.md)保留中途暂停历史，当前结果以本报告为准。
 
 ## SDS 规则与实际证据
 
@@ -16,7 +16,7 @@
 | SDS-R4 | 每进程白名单、5/15秒调用预算、TS 故障隔离、RPC ready 与 WSS degraded 分开。 | 配置/认证测试、真实 TS fatal 后 API/Notification 继续、WSS中断时 Create/Resume pending；部署与 Make 修复均独立复审通过。 |
 | SDS-R5 | checkout/instance 精确归属、持久记录、辅助进程回收、managed/external 边界。 | `task-8-review.md`、`task-8-rereview-1.md`、`task-9-rereview-1.md`；真实 Go/迁移器崩溃回收、双实例与外部借用。真实局部→全栈及全栈→局部 stop/reset，peer进程、资源、数据库和健康快照保持。 |
 | SDS-R6 | 单活 generation guard、离线撤权、活动/通知同事务、Notification 自有冻结/许可/结果。 | 真实跨 pool/PG 并发与完整后端 race；独立 TS 在 Notification 缺席时形成1活动和1待发送投递。 |
-| SDS-R7 | 长期设计与实际入口/资源/配置同步，历史规格保留。 | 本报告及上述长期文档；25份长期文档的相对文件链接及diff whitespace已校验，最终事实增量继续检查。 |
+| SDS-R7 | 长期设计与实际入口/资源/配置同步，历史规格保留。 | 本报告及上述长期文档；25份长期文档的相对文件链接及diff whitespace已校验，最后28份变更Markdown的595个相对链接及diff whitespace检查通过。 |
 | SDS-R8 | 后端、proto/gateway、真实实例、UI双base、镜像与失败场景。 | 下列命令及退出结果；真实全栈 smoke 两项通过；最终审阅修复单独列明，不由预检替代。 |
 
 ## 契约、事务与后端验证
@@ -129,7 +129,7 @@ PATH=/home/yege/.nvm/versions/node/v24.14.1/bin:$PATH \
 
 真实系统Chrome149 smoke exit0，会员/管理员两项通过（4.8s），cleanup通过，无基础设施失败；完整执行日志 `task-12b-final-smoke.log`，报告 `.tmp/athena-ui-acceptance/2026-09-13T13-31-14-818Z-939154b8/report.md`。smoke证明入口和会话；上面的真实TS查询/503故障演练证明内部服务路径，变更与精度由两跳/PG测试覆盖，不把shell smoke外推为交易SLO。
 
-以下为首轮smoke通过时的历史快照；这些业务进程现在已停止，端口不作为当前可用地址。暂停状态见后节。
+以下为首轮smoke通过时的历史快照；这些历史PID已退出；当前相同业务地址由下文最终run提供。
 
 | 全栈验收历史资源 | 当时的值 |
 | --- | --- |
@@ -142,7 +142,7 @@ PATH=/home/yege/.nvm/versions/node/v24.14.1/bin:$PATH \
 | 运行配置 / 日志 | 证据目录 `task-12b-fullstack.env`（0600）/ `task-12b-fullstack-final-run.log`。 |
 | 停止 | 从本工作区执行 `make stop`；保留数据。 |
 
-本次全栈曾依赖Telegram替身 `http://127.0.0.1:39131`，历史PID4126952 / session35842。暂停只读检查发现该PID和监听已不存在，退出原因没有证据；没有在暂停阶段重新启动。旧脚本、日志和身份记录保留为 `task-12b-telegram-fixture.py` / `.log` / `.json`，恢复全栈前需重新启动并记录新身份。不得使用旧PID操作新的未知进程。
+本次全栈曾依赖Telegram替身 `http://127.0.0.1:39131`，历史PID4126952 / session35842。暂停只读检查发现该PID和监听已不存在，退出原因没有证据；没有在暂停阶段重新启动。旧脚本、日志和身份记录保留为 `task-12b-telegram-fixture.py` / `.log` / `.json`。恢复时已启动下文新fixture并记录新身份，未使用旧PID操作新进程。
 
 ## 最终审阅修复与复验
 
@@ -169,7 +169,58 @@ exit0，三个包18.615s / 110.990s / 37.283s；独立TS构建也exit0。日志�
 
 精确Redis容器 `d9e75b6aad544e55f1711624ce3518b265ee052d5d13df9165e81a7c27a8a4b0` 的重复 `docker container start <ID>` 稳定失败：Docker Desktop WSL缓存的文件bind源不存在；其源 `.run/instances/full-stack/redis.conf` 本身仍存在且为0600。`prepareAPIInfrastructure`每次调用 `SaveSecret`，后者以atomic rename替换同内容文件，而后复用旧容器；该inode变化是需在隔离fixture进一步验证的直接原因假设。精确argv、daemon错误、labels/mount/inode证据见 `final-fix-redis-start-reproduce.json`、`final-fix-redis-mount-diagnosis.json`。
 
-待恢复时先按 `redis-restart-fix-brief.md` 在新独立fixture完成RED/GREEN；最小修复应保持未变配置文件的inode和0600语义、保留变值原子写入及路径约束。修复后对已坏且明确stopped的本任务Redis容器做精确保卷恢复，再验证两次真实持久重启及新全栈Chrome smoke。该修复尚未派发或实现；不会通过reset清空数据回避问题。完整暂停现场与继续顺序见 `final-fix-runtime-pause-report.md` 和正式[交接记录](../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service-checkpoint.md)。
+暂停时尚未修复；用户随后要求继续，现已完成下面的有界修复及隔离验证，继续实际保卷恢复。完整暂停现场保留为 `final-fix-runtime-pause-report.md` 和历史[交接记录](../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service-checkpoint.md)。
+
+## Redis 持久重启修复
+
+`75ba6dbf` 仅修改 `SaveSecret` 和相应测试。独立随机Redis/MinIO实例实际复现原错误：首次写入/认证正常，同内容配置经atomic rename后inode改变，首次停止重启得到相同Docker WSL bind源ENOENT，形成真实RED。修复在既有实例锁内对普通文件同内容只收紧0600、保持inode；变值、缺失或符号链接仍走原atomic替换。未增加自动重建旧坏容器或历史兼容代码。
+
+| 验证 | 结果与日志 |
+| --- | --- |
+| 同值文件、权限、原子变值和符号链接 | 原同值inode断言RED；修后 `go test -race ./internal/devruntime ./cmd/athena-local-runtime -count=1` exit0，10.054s / 1.636s。 |
+| 实际Redis/MinIO两次重启 | `go test -race -tags=integration ./internal/devruntime -run '^TestAPIInfrastructureProvidesPrivateRedisAndAvatarStorage$' -count=1 -v` exit0，用例8.03s/包9.046s。保持同container/volume/inode；重新读取动态端口，永久Redis marker和头像内容/Content-Type保留，匿名Redis NOAUTH及头像403保持。 |
+| 本地运行器构建 | 独立 `go build ./cmd/athena-local-runtime`（指定证据目录输出）exit0。 |
+| 临时资源清理 | RED/GREEN两个随机namespace的容器/volume查询均exit0且空列表。 |
+
+详细命令与日志见 `redis-restart-fix-report.md` 和 `redis-restart-evidence/{unit-red,infrastructure-red,unit-race-green,infrastructure-race-green,cli-build}.log`，清理证据 `redis-restart-evidence/cleanup.json`。原保留实例、root环境及共享测试PG未用于故障注入。`redis-restart-review.md`的限定范围Spec Compliance与Task quality均Approved，无新增问题。实际全栈恢复结果如下。
+
+## 最终保卷恢复、两次真实重启与交付环境
+
+一次性恢复工具在正常实例operation锁内重新确认full-stack为stopped、没有存活的登记使用者、所有资源label/ID和mount匹配，先fsync保存独立journal，再仅 `docker container rm` 原坏Redis完整ID（无force、无volume删除）。正向确认该ID消失后，通过正常Manager.Update只移除对应container记录；原PG/Redis/MinIO三个volume、PG/MinIO容器及其他state保留。随后正常runner在原Redis volume上创建新容器 `d6dbef4dbfdb40a1b81488525e8b4a168455955feceaf76ab57113f2b94050d4`。证据 `resume-redis-repair-journal.json`、`resume-redis-repair-result.json`、`resume-redis-repair-apply.log`，exit0。
+
+恢复了本任务自己的loopback Telegram fixture，只修改0600测试配置中的 `ATHENA_NOTIFICATION_TELEGRAM_API_URL` 为新地址，其他配置逐行hash保持一致（`resume-fixture-env-change.json`）。原数据库athena/OID16384、member `9af6b035-3052-4c2d-8fa8-2f130900d3aa`、admin `5816aea7-7cfa-4388-963c-09d009534a03`及业务记录保持；未重新seed或reset。
+
+恢复run `eeafe82b-b83e-4f77-9643-560fa36fcb20` 六服务ready后，执行两次完整 `make stop INSTANCE=full-stack` → 原配置 `make run INSTANCE=full-stack`。两次停止均exit0，旧持久会话正常结束，新run全部ready。比较结果 `resume-cycles-comparison.json`：
+
+| 周期 | 新run / generation / epoch | 保持的不变量 |
+| --- | --- | --- |
+| 1 | `7d453aa9-addc-4899-bf88-11640af0534d` / 3 / 4 | 全部container/volume IDs、配置与secret的hash/inode/mode、账户与业务数据相同，独立TS整个state/DB未变。 |
+| 2 | `68a42750-c4f5-458b-91dd-9f15896877d3` / 4 / 5 | 同上，再次真实验证；未通过清库或换volume取得绿色结果。 |
+
+最终UI代理的会员/管理员bootstrap、会员订阅列表、管理员TS状态、`/`与`/admin/`六项HTTP200，见 `resume-public-http.json`。实际系统Chrome运行 `make ui-acceptance UI_ACCEPTANCE_MODE=smoke UI_ACCEPTANCE_BASE_URL=http://127.0.0.1:24000`，exit0，会员/管理员两项通过（4.6s），cleanup passed，无基础设施失败。日志 `resume-final-smoke.log`，报告 `.tmp/athena-ui-acceptance/2026-09-13T14-18-51-435Z-29ebbccc/report.md`。仍遵守前述smoke证据边界，不外推为真实交易容量或公网SLO。
+
+当前保留全栈均来自本worktree。TS/API/Notification实际二进制的vcs为 `75ba6dbf`；`vcs.modified=true`对应构建时并行更新的正式文档，业务源码未有未提交改动。Wallet/Profit Sharing沿用已批准的旧registry构建入口，不带vcs字段，其实际文件/构建指纹另行保存，不伪称带有该字段。独立TS实例继续运行176a46de的相同业务源码；75ba6dbf仅改变本地运行器，不需要再次重建TS镜像。
+
+| 当前保留资源 | 地址 / 进程 / 日志 |
+| --- | --- |
+| 全栈UI / API | `http://127.0.0.1:24000`，PID1053295 / `http://127.0.0.1:28080`，PID1053318。 |
+| 全栈Trader Sync | `127.0.0.1:8122`，PID1053233。 |
+| Notification / Wallet / Profit Sharing | `127.0.0.1:28086`，PID1053261 / `127.0.0.1:28088`，PID1053282 / `127.0.0.1:28108`，PID1053247。 |
+| PG / Redis / MinIO | `127.0.0.1:60337` / `127.0.0.1:62877` / `127.0.0.1:62878`，原持久数据卷。 |
+| 全栈supervisor / 会话 | PID1051650 / session79668，run `68a42750-c4f5-458b-91dd-9f15896877d3`；`resume-fullstack-run-2.log`。 |
+| 独立TS | `127.0.0.1:28122`，PID536539，PG56711，supervisor535729/session94885；`final-fix-ts-run.log`，上述两周期均未改变它。 |
+| 本次Telegram fixture | `http://127.0.0.1:37847`，PID1014026/session58401；`resume-telegram-fixture.log`与`.json`。 |
+
+从 `/home/yege/work/athena/.worktrees/trader-sync-independent` 执行 `make stop` 停止本次全栈，执行 `make stop-instance INSTANCE=ts-acceptance` 停止独立实例；均保留数据。全栈停止后，可执行 `python3 .superpowers/sdd/2026-09-13-trader-sync-independent-grpc-service/resume-stop-telegram-fixture.py`，该工具按更新后的pidfd及完整身份只停止本fixture。全栈原启动命令为：
+
+```bash
+PATH=/home/yege/.nvm/versions/node/v24.14.1/bin:$PATH \
+  make run INSTANCE=full-stack \
+  ENV_FILE=.superpowers/sdd/2026-09-13-trader-sync-independent-grpc-service/task-12b-fullstack.env \
+  DB_MODE=managed
+```
+
+完整最新核验及可复查命令见 `resume-runtime-acceptance-report.md`。恢复过程的两个只读探针问题也保留记录：raw state不计算动态Health，改为public runtime-status；管理员页面按既有smoke使用`/admin/`，最初探针`/admin`得到404。两者只改验收探针，未修改产品行为或通过重启掩盖错误。
 
 ## 本次操作事故与恢复
 
@@ -185,7 +236,7 @@ exit0，三个包18.615s / 110.990s / 37.283s；独立TS构建也exit0。日志�
 
 录制/合成provider、loopback Telegram、有限本机测试不证明公网供应商静默漏推完整性、100个真实持续活跃目标、长期稳定性或端到端公开时效SLO。单活采集重启有可见中断，不承诺多副本HA或无中断滚动升级。没有执行真实Telegram测试投递或生产发布。
 
-必需剩余项：Redis持久重启缺陷的隔离复现/修复/审阅、原fullstack保卷恢复与两次重启、新binary全栈公开接口/真实Chrome smoke、最终整体审阅与交付事实收口。用户要求暂停，未开始新修复，未发送完成邮件；原I1/I2修复及限定范围复审已经通过。
+全部必需代码、配置和真实验收已通过，最终整体审阅及完成通知正在收口；原I1/I2与Redis修复均已限定范围复审通过。没有未完成的业务实现或实际验收，外部证据限制仍如上。
 
 ## 实施裁定记录
 

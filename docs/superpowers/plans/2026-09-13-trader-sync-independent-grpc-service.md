@@ -10,7 +10,7 @@
 
 **Spec:** [已确认的服务边界](../specs/2026-09-13-trader-sync-service-boundaries-design.md)、[已确认的构建与运行](../specs/2026-09-13-trader-sync-local-runtime-design.md)、[已确认的字段契约](../specs/2026-09-13-trader-sync-grpc-contract-design.md)。执行者必须同时阅读三份文档；本计划没有修改前两份已确认决定。
 
-**状态：**2026-09-13 已按用户确认的方案实施，任务1–11与任务12主要代码和阶段验收已通过审阅；最终I1/I2修复 `176a46de`、关联race、镜像与独立TS新binary验收通过。最终全栈持久重启发现Redis文件bind问题，修复和后续smoke尚未完成。现按用户要求暂停，恢复时先读[交接记录](2026-09-13-trader-sync-independent-grpc-service-checkpoint.md)，不重做已完成任务。未发送完成通知。
+**状态：**2026-09-13 已完成12项实现及必需验证。最终恢复顺序修复 `176a46de`、Redis持久重启修复 `75ba6dbf` 均通过限定范围复审；真实全栈保卷恢复、两次正常重启及最终Chrome smoke通过。正在收口最终整体审阅与唯一完成通知，详[验收报告](../../testing/trader-sync-independent-service-acceptance.md)；[暂停交接记录](2026-09-13-trader-sync-independent-grpc-service-checkpoint.md)仅保留中途历史。
 
 ## 全局约束
 
@@ -652,7 +652,7 @@ make ui-acceptance UI_ACCEPTANCE_MODE=smoke
 ```
 
 确认前端入口和 member/admin bootstrap 后检查 smoke 报告。smoke 证明真实 shell/bootstrap；Trader Sync 页面/操作链用显式选择的 API+TS+必要 UI 集成环境和两跳 fixture 验收共同记录，不能称一次 shell smoke 覆盖全部业务。保留本次开发服务运行，交付说明停止命令；故障演练只启停自己专属实例。
-- [ ] 更新长期设计为真实独立进程/配置/事务/命令图，替换“当前内嵌 API”的旧实现叙述；保留历史任务 spec 原有事实。验收报告逐项写 SDS-R1–R8 映射、命令/退出结果/日志、运行地址和剩余外部限制；未通过的必需项不可记为完成。
+- [x] 更新长期设计为真实独立进程/配置/事务/命令图，替换“当前内嵌 API”的旧实现叙述；保留历史任务 spec 原有事实。验收报告逐项写 SDS-R1–R8 映射、命令/退出结果/日志、运行地址和剩余外部限制；未通过的必需项不可记为完成。
 - [ ] 执行 verification-before-completion、requesting-code-review，处理审阅发现并只重跑受影响检查；检查生成物与消费者同步、本次 diff whitespace/链接。提交 `test(trader-sync): verify independent service boundaries`。
 - [ ] 确认全部代码、配置、文档与必需验收完成后，从仓库根目录发送唯一完成通知，并等待命令结束：
 

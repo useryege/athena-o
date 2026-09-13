@@ -1,6 +1,6 @@
 # 本地运行编排
 
-> 设计状态：Trader Sync 独立进程、gRPC、schema 工具与实例运行器已实现；首轮全栈验收通过，最终持久重启发现Redis文件挂载问题，待修复与复验。2026-09-13按用户要求暂停，见[验收与暂停记录](../../testing/trader-sync-independent-service-acceptance.md)。
+> 设计状态：Trader Sync 独立进程、gRPC、schema 工具与实例运行器已实现；Redis持久重启修复、两次真实全栈重启及最终Chrome验收通过，见[验收记录](../../testing/trader-sync-independent-service-acceptance.md)。
 
 ## 范围与服务边界
 
@@ -121,7 +121,7 @@ athena-notification --recover-stopped-sender=<incarnation-UUID>
 | `ATHENA_NOTIFICATION_*` | Notification 自身 Bot/poller/worker 配置；内部 token 按调用者分配。TS 不读取 Bot 凭据。 |
 | `ATHENA_UI_PORT`、`ATHENA_SERVER_PORT`、`ATHENA_NOTIFICATION_PORT` | 运行器所选业务端口；多个实例并存时显式区分。 |
 
-同一 secret 的直接变量和 `_FILE` 互斥，文件只允许末尾一个 LF，不静默裁剪其他空白。配置按进程白名单传递，API 不获得 TS provider/cursor/私钥，Notification 不获得 TS 内部凭据。状态和命令参数不保存秘密；本地秘密文件与日志权限为0600。
+同一 secret 的直接变量和 `_FILE` 互斥，文件只允许末尾一个 LF，不静默裁剪其他空白。配置按进程白名单传递，API 不获得 TS provider/cursor/私钥，Notification 不获得 TS 内部凭据。状态和命令参数不保存秘密；本地秘密文件与日志权限为0600。同内容普通配置文件保留inode并收紧0600，避免重复启动时使Docker Desktop文件挂载失效；内容变化和符号链接仍使用原子替换。
 
 Google OIDC、Phantom、realm、disabled-auth 和头像业务保持原权限规则。公开 origin 与 callback 必须匹配实际站点，不能从 Host 推导。disabled-auth 仅限 loopback，会员/管理员分别选择持久 `local-user`/`local-admin` aggregate；缺失或冲突 realm 不认证。切换正常认证应使用没有开发身份的独立实例，需丢弃旧实例时先停止再显式 reset。Wallet signer capability 与 Worm Trading 私有凭据仍不授予 API 或无关进程。
 
