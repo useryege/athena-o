@@ -1,6 +1,6 @@
 # Trader Sync：Activity Alerts 后端技术设计
 
-> 设计状态：Activity Alerts 与独立 gRPC 服务已实现；全栈接入及最终真实验收正在完成。
+> 设计状态：Activity Alerts 与独立 gRPC 服务已实现并通过领域/契约验证；本地全栈持久重启问题尚待修复，2026-09-13按用户要求暂停最终验收，见[独立服务验收记录](../../testing/trader-sync-independent-service-acceptance.md)。
 >
 > 关联需求：[Activity Alerts 需求](../../requirements/polymarket-copy-trading/target-trade-monitoring-notifications.md)（已确认；完整书面设计也已整体确认）
 

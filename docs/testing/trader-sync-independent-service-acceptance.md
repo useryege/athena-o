@@ -1,10 +1,10 @@
 # Trader Sync 独立服务验收记录
 
-> 状态：独立服务、两跳契约、后端并发、TLS、实例生命周期、全栈双向隔离和真实 Chrome smoke 已通过；最终审阅发现的启动恢复顺序与故障测试隔离问题正在修复并复验。必需项全部完成前不作为整个任务完成声明。
+> 状态：2026-09-13 按用户要求在验收节点暂停。独立服务、两跳/后端并发、镜像与首轮全栈/浏览器证据已通过；最终代码修复复审通过，持久全栈重启新发现Redis挂载问题，修复及后续真实smoke未完成。整个任务尚未完成，未发送完成邮件。
 
 实施范围见[12项计划](../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service.md)。本次工作区为 `/home/yege/work/athena/.worktrees/trader-sync-independent`，分支 `codex/trader-sync-independent`，基于 `3b1cd556`；未合并或发布到原 `rf4` checkout，也未执行生产部署。
 
-可重复入口和长期边界见[本地运行编排](../design/development-runtime/local-runtime-orchestration.md)、[运行说明](../developer-guide/running-locally.md)、[生产镜像与维护](../../deploy/trader-sync/README.md)。以下日志与结构化证据保留在该工作区的 `.superpowers/sdd/2026-09-13-trader-sync-independent-grpc-service/`（下文简称证据目录）和 `.tmp/`，属于本地验收产物，不包含在源代码提交中。
+可重复入口和长期边界见[本地运行编排](../design/development-runtime/local-runtime-orchestration.md)、[运行说明](../developer-guide/running-locally.md)、[生产镜像与维护](../../deploy/trader-sync/README.md)。以下日志与结构化证据保留在该工作区的 `.superpowers/sdd/2026-09-13-trader-sync-independent-grpc-service/`（下文简称证据目录）和 `.tmp/`，属于本地验收产物，不包含在源代码提交中。恢复工作先读[暂停交接记录](../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service-checkpoint.md)。
 
 ## SDS 规则与实际证据
 
@@ -59,17 +59,17 @@ make trader-sync-acceptance
 - 阻断WSS后标准health仍SERVING；Create/Resume保持pending_baseline且无currentInterval。恢复WSS后两个订阅回到healthy。
 - 两个通过实例已精确Stop+Reset，容器和卷残留为0；日志/证据保留。两轮验收代码自身的失败实例已Stop，保留已退出容器、volume和日志：第一轮混合stdout/stderr误解析JSON，第二轮重启后测试pool仍连旧动态PG端口；修复验收捕获/重连后通过。
 
-另用原 `.env` 中的实际来源启动并保留实例 `ts-acceptance`。授权member/admin内部RPC可用，原HTTP/WSS/cursor/站点配置逐值核对一致。停止重启后 member `fee99519-62cf-4d54-949a-003878ab0a8d`、admin `7f4eb243-5150-45ed-9980-cd4dc159e8f0` 保持，数据库 `athena`/OID16384保持；runtime generation1→2、collector epoch1→3，实际 WSS connected=true。该实例没有订阅，故这只证明真实来源连接与重启，不证明实网交易流量或SLO。
+另用原 `.env` 中的实际来源启动并保留实例 `ts-acceptance`。授权member/admin内部RPC可用，原HTTP/WSS/cursor/站点配置逐值核对一致。停止重启后 member `fee99519-62cf-4d54-949a-003878ab0a8d`、admin `7f4eb243-5150-45ed-9980-cd4dc159e8f0` 保持，数据库 `athena`/OID16384保持；runtime generation1→2、collector epoch1→3，实际 WSS connected=true。最终修复后再次无reset重启，generation2→3、epoch3→4，实际二进制为 `176a46de`；数据库/OID/账户、配置hash及Docker资源ID保持，授权RPC通过（`final-fix-ts-compare.json`、`final-fix-ts-rpc.json`）。该实例没有订阅，故这只证明真实来源连接与重启，不证明实网交易流量或SLO。
 
 | 保留资源 | 当前值 |
 | --- | --- |
 | 工作区 | `/home/yege/work/athena/.worktrees/trader-sync-independent` |
 | 实例 / namespace | `ts-acceptance` / `13aee55fe55c79c78aeaab38a4b8c83d` |
-| Trader Sync | `127.0.0.1:28122`，PID4041588 |
-| PostgreSQL | `127.0.0.1:59035`，本实例持久volume；50472为重启前旧映射。 |
-| supervisor / 持久会话 | PID4040679 / session86479 |
-| run ID | `14cfe07d-f70d-45fa-9315-147a1e9cd1df` |
-| 证据 | `task-12b-original-restart-evidence.json`、`task-12b-original-restart.log`、同前缀before/after/RPC日志 |
+| Trader Sync | `127.0.0.1:28122`，PID536539 |
+| PostgreSQL | `127.0.0.1:56711`，本实例持久volume；50472/59035为先前run的旧映射。 |
+| supervisor / 持久会话 | PID535729 / session94885 |
+| run ID | `abce4e42-b3e0-44f0-9e09-1b14b84641b5` |
+| 证据 | 当前 `final-fix-ts-run.log`、`final-fix-after-restart-ts-acceptance.json`、`final-fix-ts-compare.json`；先前 `task-12b-original-restart-*` 保留历史。 |
 | 停止 | 从上述工作区执行 `make stop-instance INSTANCE=ts-acceptance`；保留数据，不执行reset。 |
 
 ## 故障行为覆盖
@@ -98,9 +98,11 @@ make trader-sync-acceptance
 
 ## 独立镜像、TLS与部署
 
-`athena-trader-sync:task11` 最终镜像ID为 `sha256:aa9db6020484d8b35f6e172577183f6eebeb878c339bc9ae19f8383bfa4fdb54`。实际构建仅含TS和schema tool，没有UI、seed或聚合main；真实镜像测试使用内部网络和专属PG，验证空业务环境health、正确CA/服务名、错误CA/服务名拒绝、非root和TERM退出0。
+任务11阶段镜像 `athena-trader-sync:task11` 的ID为 `sha256:aa9db6020484d8b35f6e172577183f6eebeb878c339bc9ae19f8383bfa4fdb54`。实际构建仅含TS和schema tool，没有UI、seed或聚合main；真实镜像测试使用内部网络和专属PG，验证空业务环境health、正确CA/服务名、错误CA/服务名拒绝、非root和TERM退出0。
 
 证据：`task-11-image-acceptance.log`、`task-11-image-final-build.log`、`task-11-image-final-health.log`。初始完整TLS矩阵与最终源码重建后的health证据分别保留，没有把一次端口监听当作TLS成功。
+
+最终恢复顺序修复 `176a46de` 后，重新执行 `make build-service-image SERVICE=trader-sync TRADER_SYNC_IMAGE=athena-trader-sync:final`，exit0。交付镜像为 `athena-trader-sync:final`，ID `sha256:24759bfbb97428bc78c52b8961d53c7b348b180797f7527fb9b5c03f5d139e46`。`TEST_HEALTH_ONLY=true TRADER_SYNC_IMAGE=athena-trader-sync:final bash hack/trader-sync-image_test.sh` exit0，再证实schema up/verify、空业务环境TLS health、UID/GID999、最小文件系统及TERM退出0；未改变的错误CA/name矩阵沿用前述证据。日志 `final-fix-image-build.log` / `final-fix-image-health.log`，准确镜像/源码关系见 `final-fix-image.json`，精确测试run的容器/network残留均0（`final-fix-image-cleanup.json`）。
 
 `bash hack/trader-sync-deploy_test.sh`、`bash hack/deploy-scripts_test.sh`和真实Compose配置回归均exit0。fake argv测试覆盖镜像选择、save/load、schema兼容只替换TS、不兼容维护停止/确认/up/verify/启动，以及失败不重启；真实Compose解析验证API/Notification消费者白名单、默认与显式空值和凭据隔离。实际Make命令行验证镜像/实例等8个变量的Make/shell表达式按字面传递，无执行副作用。任务9、11的原审阅问题已由 `8b1597bc` / `d94ef3aa` 修复，两个scoped复审Approved。
 
@@ -117,7 +119,7 @@ make trader-sync-acceptance
 - 按登记身份/pidfd仅TERM该全栈Trader Sync。会员和管理员TS接口变为503，但两个bootstrap保持200且完整session对象相同；其余五个进程PID和ready保持。证据 `task-12b-ts-outage-http.json`、对应响应体及 `task-12b-ts-fault-signal.log`。
 - 仅对本轮新建全栈执行 `make stop INSTANCE=full-stack`、`make run-reset INSTANCE=full-stack`，均exit0；该run会话正常exit0。其容器/卷残留0，局部 `ts-acceptance` 的进程、资源、DB、run和健康快照完全相同。证据 `task-12b-fullstack-reset-isolation.json`、`task-12b-original-preserved-baseline.json` / `task-12b-original-after-fullstack-reset.json`。reset只用于本次隔离演练，保留开发实例的日常停止不执行reset。
 
-第二轮全栈 run `603fb553-fdd9-4055-9be8-e40100d54bfe` 已启动并保留；`task-12b-final-delivery-fullstack.json`核对真实进程/资源/DB/health，`task-12b-final-delivery-ts.json`再次核对独立实例。实际UI24000代理下，会员/管理员bootstrap和TS公开查询四项HTTP200，两个HTML入口200，session均已认证；见 `task-12b-final-http.json`及响应体。
+第二轮全栈 run `603fb553-fdd9-4055-9be8-e40100d54bfe` 当时已启动并通过验收，随后为验证最终修复的持久重启而正常停止；`task-12b-final-delivery-fullstack.json`核对真实进程/资源/DB/health，`task-12b-final-delivery-ts.json`再次核对独立实例。实际UI24000代理下，会员/管理员bootstrap和TS公开查询四项HTTP200，两个HTML入口200，session均已认证；见 `task-12b-final-http.json`及响应体。
 
 ```bash
 PATH=/home/yege/.nvm/versions/node/v24.14.1/bin:$PATH \
@@ -127,18 +129,47 @@ PATH=/home/yege/.nvm/versions/node/v24.14.1/bin:$PATH \
 
 真实系统Chrome149 smoke exit0，会员/管理员两项通过（4.8s），cleanup通过，无基础设施失败；完整执行日志 `task-12b-final-smoke.log`，报告 `.tmp/athena-ui-acceptance/2026-09-13T13-31-14-818Z-939154b8/report.md`。smoke证明入口和会话；上面的真实TS查询/503故障演练证明内部服务路径，变更与精度由两跳/PG测试覆盖，不把shell smoke外推为交易SLO。
 
-| 保留的全栈资源 | 当前值 |
+以下为首轮smoke通过时的历史快照；这些业务进程现在已停止，端口不作为当前可用地址。暂停状态见后节。
+
+| 全栈验收历史资源 | 当时的值 |
 | --- | --- |
 | 实例 / namespace | `full-stack` / `d18893a9ea0eb3f2f2fcf0d542861c26` |
 | UI / API | `http://127.0.0.1:24000`，PID236670 / `http://127.0.0.1:28080`，PID236694 |
 | Trader Sync | `127.0.0.1:8122`，PID236608 |
 | Notification / Wallet / Profit Sharing | `127.0.0.1:28086`，PID236636 / `127.0.0.1:28088`，PID236657 / `127.0.0.1:28108`，PID236623 |
 | PG / Redis / MinIO | `127.0.0.1:58087` / `127.0.0.1:64821` / `127.0.0.1:64822`，各自持久volume。 |
-| supervisor / 持久会话 | PID234952 / session83310（仍运行）。 |
+| supervisor / 持久会话 | PID234952 / session83310（已正常结束）。 |
 | 运行配置 / 日志 | 证据目录 `task-12b-fullstack.env`（0600）/ `task-12b-fullstack-final-run.log`。 |
 | 停止 | 从本工作区执行 `make stop`；保留数据。 |
 
-本次全栈依赖的Telegram替身仍保留：`http://127.0.0.1:39131`，PID4126952，持久session35842；日志和真实身份见证据目录 `task-12b-telegram-fixture.log` / `.json`。停止全栈后，可从同工作区执行 `python3 .superpowers/sdd/2026-09-13-trader-sync-independent-grpc-service/task-12b-stop-telegram-fixture.py`。该工具先持有pidfd，再验证boot/start/exe/cwd/script身份，仅停止本任务登记的fixture。
+本次全栈曾依赖Telegram替身 `http://127.0.0.1:39131`，历史PID4126952 / session35842。暂停只读检查发现该PID和监听已不存在，退出原因没有证据；没有在暂停阶段重新启动。旧脚本、日志和身份记录保留为 `task-12b-telegram-fixture.py` / `.log` / `.json`，恢复全栈前需重新启动并记录新身份。不得使用旧PID操作新的未知进程。
+
+## 最终审阅修复与复验
+
+全分支审阅检查基线 `3b1cd556` 至实现/首轮证据提交，发现两个需要修复的问题和两处文档旧表述。已由同一修复批次 `176a46de` 处理，唯一限定范围的复审结论为规格与质量均 Approved：
+
+- **故障测试数据库范围**：command测试的owner-loss SQL原先只按固定advisory key筛选cluster级 `pg_locks`。现限定当前数据库OID及 `objsubid=1`；在独占临时PG中，原查询真实终止第二个随机库owner而得到RED，修复后第二owner保持可用。未对开发集群运行该未限定查询。
+- **启动恢复屏障**：原实现只同步恢复NULL-epoch快照，旧bound epoch逐账户清理由Collector启动后异步执行。现由已经带runtime guard的 `RecoverPending` 先同步收尾旧epoch、再恢复NULL-epoch，全部完成后才启动三个worker和开放RPC；保留Collector重连清理职责。读取view虽已能展示中断，不能替代已批准的固定初始化顺序。
+- **恢复回归**：真实PG/gRPC覆盖 unbound/old_epoch × publish/owner_loss。`pg_blocking_pids`确认账户锁真实阻塞后检查health NOT_SERVING和全部16RPC Unavailable；释放锁后检查baseline持久failed/ended及旧epoch订阅interrupted，再验证ready。恢复中丢失owner会及时取消，阻塞attempt保持pending，另一库owner仍有效。两个old_epoch场景在原代码均得到真实RED，修复后四场景race通过。
+- 两处长期文档已同步为Runtime整组所有权覆盖Projector，以及 `.run/instances/<instance>/state.json` 为实际归属记录主路径。
+
+修复后的关联验证命令：
+
+```bash
+go test -race -tags integration \
+  ./cmd/athena-trader-sync/commands ./internal/tradersync ./internal/tradersync/store \
+  -run 'TestRuntime|TestObservation|TestCollector|TestBaseline' -count=1 -v
+```
+
+exit0，三个包18.615s / 110.990s / 37.283s；独立TS构建也exit0。日志及逐条exitcode见 `final-fix-logs/`，完整说明 `final-fix-report.md`。没有schema/proto变化，没有重跑无关全仓库套件。专供I1 RED使用的临时PG按精确container ID和标签清理完成，共享测试PG容器保持运行，关联集成测试仅使用其中的随机测试库。最终镜像证据见上节；新的独立TS受控Make验收也exit0，35.256s，artifact `.tmp/trader-sync-independent-acceptance/20260913T135143Z-LcPH2V4l/`，日志 `final-fix-controlled.log`。该临时实例已精确stop/reset；真实来源的保留TS重启通过。
+
+## 暂停时的持久全栈重启问题
+
+用户要求找合适节点暂停后，选择在故障证据已保存、数据保留且未开始新修复时收尾。原fullstack正常stop exit0；最终代码下原配置run在Redis启动失败，Make exit2（`final-fix-fullstack-run.log`）。8个旧模块schema准备已成功，业务未启动，启动失败回滚后该实例为stopped，三个owned持久volume均保留。没有reset、重新seed或改动原root及其他实例。
+
+精确Redis容器 `d9e75b6aad544e55f1711624ce3518b265ee052d5d13df9165e81a7c27a8a4b0` 的重复 `docker container start <ID>` 稳定失败：Docker Desktop WSL缓存的文件bind源不存在；其源 `.run/instances/full-stack/redis.conf` 本身仍存在且为0600。`prepareAPIInfrastructure`每次调用 `SaveSecret`，后者以atomic rename替换同内容文件，而后复用旧容器；该inode变化是需在隔离fixture进一步验证的直接原因假设。精确argv、daemon错误、labels/mount/inode证据见 `final-fix-redis-start-reproduce.json`、`final-fix-redis-mount-diagnosis.json`。
+
+待恢复时先按 `redis-restart-fix-brief.md` 在新独立fixture完成RED/GREEN；最小修复应保持未变配置文件的inode和0600语义、保留变值原子写入及路径约束。修复后对已坏且明确stopped的本任务Redis容器做精确保卷恢复，再验证两次真实持久重启及新全栈Chrome smoke。该修复尚未派发或实现；不会通过reset清空数据回避问题。完整暂停现场与继续顺序见 `final-fix-runtime-pause-report.md` 和正式[交接记录](../superpowers/plans/2026-09-13-trader-sync-independent-grpc-service-checkpoint.md)。
 
 ## 本次操作事故与恢复
 
@@ -154,7 +185,7 @@ PATH=/home/yege/.nvm/versions/node/v24.14.1/bin:$PATH \
 
 录制/合成provider、loopback Telegram、有限本机测试不证明公网供应商静默漏推完整性、100个真实持续活跃目标、长期稳定性或端到端公开时效SLO。单活采集重启有可见中断，不承诺多副本HA或无中断滚动升级。没有执行真实Telegram测试投递或生产发布。
 
-必需剩余项：最终分支审阅的两项修复、受影响runtime/保留环境复验、最终文档事实和审阅结论。全部完成后才发送唯一完成邮件。
+必需剩余项：Redis持久重启缺陷的隔离复现/修复/审阅、原fullstack保卷恢复与两次重启、新binary全栈公开接口/真实Chrome smoke、最终整体审阅与交付事实收口。用户要求暂停，未开始新修复，未发送完成邮件；原I1/I2修复及限定范围复审已经通过。
 
 ## 实施裁定记录
 
@@ -201,3 +232,5 @@ PATH=/home/yege/.nvm/versions/node/v24.14.1/bin:$PATH \
 20. 保留本次工作区运行日志和验收证据目录，完成后不按通用skill删除execution workspace — 项目AGENTS要求交付实际日志/证据并保留开发服务，报告也指向本地证据 — 代价是占用本地磁盘，可在用户不再需要验收证据时单独清理。
 
 21. 最终审阅确认启动恢复必须遵守批准spec第45行，旧bound epoch逐账户清理同步在workers/ready前完成；observation view的读取正确性不能替代该初始化顺序 — 最小补齐recover barrier并扩展真实PG/gRPC恢复测试 — 若判断过严，代价仅为恢复完成前延后业务ready，与已批准要求一致。
+
+22. 最终新binary真实持久重启暴露Redis文件bind失效，不能用reset后新建实例的成功替代持久重启证明；继续任务须最小修复并保卷复验 — 当前用户要求在合适节点暂停，因此停在证据完整、数据保留、修复尚未派发的节点 — 未完成项及恢复前置状态均保留，整个任务不宣称完成。

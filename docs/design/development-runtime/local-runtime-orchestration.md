@@ -1,6 +1,6 @@
 # 本地运行编排
 
-> 设计状态：Trader Sync 独立进程、gRPC、schema 工具与实例运行器已实现；全栈接入和必需真实验收已通过，最终审阅修复及复验正在完成。
+> 设计状态：Trader Sync 独立进程、gRPC、schema 工具与实例运行器已实现；首轮全栈验收通过，最终持久重启发现Redis文件挂载问题，待修复与复验。2026-09-13按用户要求暂停，见[验收与暂停记录](../../testing/trader-sync-independent-service-acceptance.md)。
 
 ## 范围与服务边界
 
