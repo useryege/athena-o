@@ -151,6 +151,10 @@ func serviceAddress(name string, env map[string]string) string {
 		return envDefault(env, "ATHENA_TRADER_SYNC_LISTEN_ADDRESS", "127.0.0.1:8122")
 	case "api-server":
 		return net.JoinHostPort(envDefault(env, "ATHENA_SERVER_LISTEN_ADDRESS", "127.0.0.1"), envDefault(env, "ATHENA_SERVER_PORT", "8080"))
+	case "wallet":
+		return net.JoinHostPort(envDefault(env, "ATHENA_WALLET_LISTEN_ADDRESS", "127.0.0.1"), envDefault(env, "ATHENA_WALLET_PORT", "8088"))
+	case "profit-sharing":
+		return net.JoinHostPort(envDefault(env, "ATHENA_PROFIT_SHARING_LISTEN_ADDRESS", "127.0.0.1"), envDefault(env, "ATHENA_PROFIT_SHARING_PORT", "8108"))
 	case "notification":
 		return net.JoinHostPort(envDefault(env, "ATHENA_NOTIFICATION_LISTEN_ADDRESS", "127.0.0.1"), envDefault(env, "ATHENA_NOTIFICATION_PORT", "8086"))
 	case "ui":
@@ -184,6 +188,10 @@ func Run(ctx context.Context, o RunOptions) (result error) {
 	if err != nil {
 		return err
 	}
+	return runResolved(ctx, o, specs, false)
+}
+
+func runResolved(ctx context.Context, o RunOptions, specs []ServiceSpec, fullStack bool) (result error) {
 	if o.DBMode == "" {
 		o.DBMode = "managed"
 	}
@@ -198,6 +206,9 @@ func Run(ctx context.Context, o RunOptions) (result error) {
 		return err
 	}
 	m := NewManager(o.Key)
+	if fullStack {
+		prepareFullStackEnvironment(env)
+	}
 	env, err = m.PrepareEnvironment(env, specs, o.DBMode)
 	if err != nil {
 		return err
@@ -282,6 +293,11 @@ func Run(ctx context.Context, o RunOptions) (result error) {
 			return err
 		}
 	}
+	if fullStack {
+		if err = m.prepareFullStackDatabases(ctx, env); err != nil {
+			return err
+		}
+	}
 	if selected(specs, "api-server") {
 		if err = m.prepareAPIInfrastructure(ctx, env); err != nil {
 			return err
@@ -329,7 +345,7 @@ func Run(ctx context.Context, o RunOptions) (result error) {
 	for _, s := range ordered {
 		address := serviceAddress(s.Name, env)
 		args := append([]string{}, s.Args...)
-		if s.Name == "api-server" || s.Name == "notification" {
+		if s.Name == "api-server" || s.Name == "notification" || s.Name == "wallet" || s.Name == "profit-sharing" {
 			_, port, _ := net.SplitHostPort(address)
 			args = append(args, "--port", port)
 		}
@@ -448,7 +464,7 @@ func waitService(ctx context.Context, m *Manager, name, address string, env map[
 	}
 }
 func probeService(ctx context.Context, name, address string, env map[string]string) error {
-	if name == "trader-sync" || name == "notification" {
+	if name == "trader-sync" || name == "notification" || name == "wallet" || name == "profit-sharing" {
 		credentials := insecure.NewCredentials()
 		service := ""
 		if name == "trader-sync" {

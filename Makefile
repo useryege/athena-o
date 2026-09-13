@@ -231,15 +231,15 @@ bsc-swap-indexer-build-image:
 # Manage the foreground local development runtime and its resources.
 .PHONY: run
 run:
-	bash ./hack/local-runtime.sh start
+	@exec bash ./hack/local-runtime.sh start
 
 .PHONY: stop
 stop:
-	bash ./hack/local-runtime.sh stop
+	@exec bash ./hack/local-runtime.sh stop
 
 .PHONY: run-reset
 run-reset:
-	bash ./hack/local-runtime.sh reset
+	@exec bash ./hack/local-runtime.sh reset
 
 .PHONY: e2e
 e2e:
@@ -465,3 +465,7 @@ build-service-image:
 prod-trader-sync-deploy-remote:
 	$(MAKE) build-service-image SERVICE=trader-sync
 	bash ./hack/prod-remote-deploy.sh trader-sync-deploy
+
+.PHONY: trader-sync-acceptance
+trader-sync-acceptance:
+	@bash ./hack/trader-sync-independent-acceptance.sh

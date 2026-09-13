@@ -34,6 +34,20 @@ func makeArguments(action string) ([]string, error) {
 	}
 	target := ""
 	switch action {
+	case "make-run-full-stack", "make-stop-full-stack", "make-reset-full-stack":
+		if instance == "" {
+			instance = "full-stack"
+		}
+		if action == "make-stop-full-stack" {
+			return []string{"stop", "--instance", instance}, nil
+		}
+		if action == "make-reset-full-stack" {
+			return []string{"reset", "--instance", instance}, nil
+		}
+		if mode != "managed" {
+			return nil, errors.New("full stack requires DB_MODE=managed")
+		}
+		return []string{"run-full-stack", "--instance", instance, "--env-file", file, "--db-mode", mode}, nil
 	case "make-build":
 		target = "build"
 		services = service
@@ -73,7 +87,7 @@ func makeArguments(action string) ([]string, error) {
 }
 func run(args []string, out io.Writer) error {
 	if len(args) == 0 {
-		return errors.New("usage: athena-local-runtime <build|run|status|stop|reset|seed> --instance NAME")
+		return errors.New("usage: athena-local-runtime <build|run|run-full-stack|status|stop|reset|seed> --instance NAME")
 	}
 	if strings.HasPrefix(args[0], "make-") {
 		converted, e := makeArguments(args[0])
@@ -84,7 +98,7 @@ func run(args []string, out io.Writer) error {
 	}
 	action := args[0]
 	switch action {
-	case "build", "run", "supervise", "supervise-build", "status", "stop", "reset", "seed":
+	case "build", "run", "run-full-stack", "supervise-full-stack", "supervise", "supervise-build", "status", "stop", "reset", "seed":
 	default:
 		return fmt.Errorf("unknown runtime command %q", action)
 	}
@@ -111,12 +125,23 @@ func run(args []string, out io.Writer) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	switch action {
-	case "build", "run":
-		specs, err := devruntime.ResolveServices(strings.Fields(*services))
-		if err != nil {
-			return err
+	case "build", "run", "run-full-stack":
+		var specs []devruntime.ServiceSpec
+		if action == "run-full-stack" {
+			if *mode != "managed" || *services != "" {
+				return errors.New("full stack requires managed mode and its explicit service graph")
+			}
+		} else {
+			var err error
+			specs, err = devruntime.ResolveServices(strings.Fields(*services))
+			if err != nil {
+				return err
+			}
 		}
 		target := "supervise"
+		if action == "run-full-stack" {
+			target = "supervise-full-stack"
+		}
 		forwarded := append([]string{}, args[1:]...)
 		if action == "build" {
 			for _, spec := range specs {
@@ -159,6 +184,8 @@ func run(args []string, out io.Writer) error {
 	case "supervise-build":
 		return devruntime.Build(ctx, key, strings.Fields(*services))
 
+	case "supervise-full-stack":
+		return devruntime.RunFullStack(ctx, devruntime.RunOptions{Key: key, Services: strings.Fields(*services), DBMode: *mode, EnvFile: *file})
 	case "supervise":
 		return devruntime.Run(ctx, devruntime.RunOptions{Key: key, Services: strings.Fields(*services), DBMode: *mode, EnvFile: *file})
 	case "status":

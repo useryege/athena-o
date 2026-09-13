@@ -53,73 +53,39 @@ STUB
 }
 
 check_runtime() {
-  local library="$temporary/local-runtime-library.sh" child="$temporary/cleanup-child.sh" scenario expected actual
-  # Load the real function definitions without invoking the production action dispatcher.
-  grep -q '^action=' "$root/hack/local-runtime.sh" || fail 'runtime dispatcher marker missing'
-  awk '/^action=/{exit} {print}' "$root/hack/local-runtime.sh" > "$library"
-  cat > "$child" <<'CHILD'
-#!/usr/bin/env bash
-set -euo pipefail
-source "$LIBRARY"
-stop_goreman() { echo stop >> "$EVENTS"; return "$STOP_STATUS"; }
-cleanup_athena_ports() { echo ports >> "$EVENTS"; return "$PORT_STATUS"; }
-cleanup_local_containers() { echo containers >> "$EVENTS"; return "$CONTAINER_STATUS"; }
-remove_runtime_state() { echo state >> "$EVENTS"; }
-trap cleanup_foreground_run EXIT
-if [[ $SIGNAL != none ]]; then
-  trap 'exit 130' INT
-  trap 'exit 143' TERM
-  kill -s "$SIGNAL" "$BASHPID"
-fi
-exit "$ORIGINAL_STATUS"
-CHILD
-  for scenario in success original stop ports containers both term int skip; do
-    local stop=0 ports=0 containers=0 original=0 signal=none port_cleanup=true
-    expected=0
-    case $scenario in
-      original) original=23; stop=9; ports=7; containers=8; expected=23 ;;
-      stop) stop=9; expected=9 ;;
-      ports) ports=7; expected=1 ;;
-      containers) containers=8; expected=1 ;;
-      both) ports=7; containers=8; expected=1 ;;
-      term) signal=TERM; ports=7; expected=143 ;;
-      int) signal=INT; expected=130 ;;
-      skip) port_cleanup=false ;;
-    esac
-    : > "$temporary/events"
-    actual=0
-    LIBRARY="$library" EVENTS="$temporary/events" STOP_STATUS="$stop" PORT_STATUS="$ports" CONTAINER_STATUS="$containers" \
-      ORIGINAL_STATUS="$original" SIGNAL="$signal" ATHENA_RUN_PORT_CLEANUP="$port_cleanup" bash "$child" || actual=$?
-    [[ $actual == "$expected" ]] || fail "runtime $scenario exit $actual, expected $expected"
-    if [[ $scenario == skip ]]; then
-      [[ $(cat "$temporary/events") == $'stop\ncontainers\nstate' ]] || fail 'skip cleanup ordering'
-    else
-      [[ $(cat "$temporary/events") == $'stop\nports\ncontainers\nstate' ]] || fail "$scenario cleanup ordering"
-    fi
+  local repo="$temporary/runtime repo [x]" action expected actual command
+  mkdir -p "$repo/hack" "$repo/blocked-bin"
+  cp "$root/hack/local-runtime.sh" "$repo/hack/"
+  for command in docker ss lsof goreman kill; do
+    # shellcheck disable=SC2016 # Expand $0 only in the isolated command substitute.
+    printf '#!/usr/bin/env bash\nprintf "unexpected external operation: %%s\\n" "$0" >&2\nexit 99\n' > "$repo/blocked-bin/$command"
+    chmod +x "$repo/blocked-bin/$command"
   done
-  # Exercise the actual ownership checks with a Docker function substitute.
-  cat > "$temporary/ownership-child.sh" <<'CHILD'
+  # An allowlist PATH has no fallback to host Docker/process tools.
+  for command in bash dirname cat grep; do
+    ln -s "$(command -v "$command")" "$repo/blocked-bin/$command"
+  done
+  local PATH="$repo/blocked-bin"
+  cat > "$repo/hack/run-local-runtime.sh" <<'STUB'
 #!/usr/bin/env bash
-set -euo pipefail
-source "$LIBRARY"
-docker() {
-  if [[ $1 == info ]]; then return 0; fi
-  if [[ $2 == rm ]]; then printf '%s\n' "${@: -1}" >> "$EVENTS"; return 0; fi
-  if [[ $3 != --format ]]; then return 0; fi
-  case $4 in
-    *io.athena.local-runtime*) [[ ${@: -1} == athena-postgres ]] && echo another-project || echo athena ;;
-    *io.athena.component*)
-      case ${@: -1} in athena-postgres) echo postgres ;; athena-redis) echo wrong-component ;; athena-minio) echo minio ;; esac ;;
-    *) return 98 ;;
-  esac
-}
-cleanup_local_containers
-CHILD
-  : > "$temporary/events"
+set -eu
+printf '%s\n' "$PWD" "$@" "${INSTANCE-}" "${ENV_FILE-}" > "$EVENTS"
+exit "${RESULT:-0}"
+STUB
+  for action in start stop reset; do
+    case "$action" in start) expected=make-run-full-stack ;; stop) expected=make-stop-full-stack ;; reset) expected=make-reset-full-stack ;; esac
+    EVENTS="$temporary/events" INSTANCE='literal-instance' ENV_FILE='literal $(touch sentinel).env' bash "$repo/hack/local-runtime.sh" "$action"
+    [[ $(cat "$temporary/events") == "$repo"$'\n'"$expected"$'\n'"literal-instance"$'\n'"literal \$(touch sentinel).env" ]] || fail "runtime adapter $action lost literal parameters"
+  done
   actual=0
-  LIBRARY="$library" EVENTS="$temporary/events" bash "$temporary/ownership-child.sh" > "$temporary/ownership.out" 2>&1 || actual=$?
-  [[ $actual == 1 && $(cat "$temporary/events") == athena-minio ]] || fail 'ownership boundary or continuing cleanup changed'
-  printf 'PASS runtime: nine exit/signal scenarios and owned-container cleanup boundary\n'
+  EVENTS="$temporary/events" RESULT=23 bash "$repo/hack/local-runtime.sh" start || actual=$?
+  [[ $actual == 23 ]] || fail 'runtime adapter lost engine failure'
+  actual=0
+  bash "$repo/hack/local-runtime.sh" invalid > "$temporary/invalid.out" 2>&1 || actual=$?
+  [[ $actual == 2 ]] || fail 'runtime adapter accepted invalid action'
+  [[ ! -e "$repo/sentinel" ]] || fail 'runtime evaluated configuration as code'
+  if grep -Eq '^[[:space:]]*[^#[:space:]].*:' "$root/Procfile"; then fail 'Procfile has a second executable ownership path'; fi
+  printf 'PASS runtime: shared engine routing, literal environment, errors, declarative Procfile\n'
 }
 
 check_temporal() {
