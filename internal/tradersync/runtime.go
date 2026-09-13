@@ -144,6 +144,9 @@ func (r *Runtime) Start(ctx context.Context) (err error) {
 	defer func() {
 		if err != nil {
 			r.fail(err)
+			if cause := r.Wait(); cause != nil && !errors.Is(err, cause) {
+				err = errors.Join(err, cause)
+			}
 			go func() { r.workers.Wait(); close(r.joined) }()
 			cleanup, cancel := context.WithTimeout(context.Background(), r.cfg.ShutdownTimeout)
 			defer cancel()
@@ -177,6 +180,8 @@ func (r *Runtime) Start(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
+	// Monitor the dedicated owner while recovery is still waiting on accounts.
+	r.launchWorker(r.runCtx, runtimeWorker{"owner", r.checkOwner})
 	gate, err := store.NewRuntimeWriteGate(r.pool, r.owner.RuntimeToken())
 	if err != nil {
 		return err
@@ -198,7 +203,6 @@ func (r *Runtime) Start(ctx context.Context) (err error) {
 	r.startWorkers(ctx, []runtimeWorker{
 		{"collector", func(ctx context.Context) error { return r.service.deps.Collector.Run(ctx, r.owner) }},
 		{"projector", r.service.deps.Projector.Run}, {"directory", r.service.deps.Directory.Run},
-		{"owner", r.checkOwner},
 	})
 	r.phase("serving")
 	return nil
