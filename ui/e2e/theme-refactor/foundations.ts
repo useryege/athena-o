@@ -356,6 +356,7 @@ test('theme:foundations independent Solana failures retain saved facts and exact
     await expect(page.getByText('Scanner request unavailable', {exact: true})).toBeVisible();
     await expect(page.getByText('Candidate request unavailable', {exact: true})).toBeVisible();
     await expect(page.getByText('Lunar Current', {exact: true}).filter({visible: true})).toBeVisible();
+    await expect(page.getByText('Last known candidates. This list may be stale.', {exact: true})).toBeVisible();
     status.status = 200;
     status.json = scenario('foundations-solana').replies.find(item => item.path === status.path)!.json;
     await page.getByRole('button', {name: 'Retry discovery status'}).click();
@@ -458,3 +459,36 @@ test('theme:foundations missing Solana discovery facts remain unknown', async ({
     expect(ledger.requests.filter(item => item.method !== 'GET')).toHaveLength(0);
     assertThemeLedger(ledger);
 });
+
+for (const width of [1440, 390]) {
+    test(`theme:foundations Solana initial failure differs from successful empty response ${width}px`, async ({page}, info) => {
+        await page.setViewportSize({width, height: 900});
+        const data = scenario('foundations-solana');
+        const projects = data.replies.find(item => item.path === '/api/v1/solana/projects')!;
+        const status = data.replies.find(item => item.path === '/api/v1/solana/status')!;
+        projects.status = 503;
+        projects.json = {message: 'Candidate request unavailable'};
+        status.status = 503;
+        status.json = {message: 'Scanner request unavailable'};
+        const ledger = await go(page, data);
+        const candidates = page.getByRole('region', {name: 'Issuance candidates'});
+        await expect(candidates.getByText('Candidate request unavailable', {exact: true})).toBeVisible();
+        await expect(candidates.locator('.ant-empty')).toHaveCount(0);
+        await expect(candidates.getByText('0 items', {exact: true})).toHaveCount(0);
+        await expect(candidates.getByText('No discovered candidates yet', {exact: true})).toHaveCount(0);
+        await expect(candidates.getByText('Last known candidates. This list may be stale.', {exact: true})).toHaveCount(0);
+        await page.screenshot({path: info.outputPath(`solana-initial-failure-${width}.png`), fullPage: true});
+        projects.status = 200;
+        projects.json = {items: [], totalSize: 0, page: 1, pageSize: 25};
+        await page.getByRole('button', {name: 'Retry candidates', exact: true}).click();
+        await expect(candidates.getByText('Candidate request unavailable', {exact: true})).toHaveCount(0);
+        await expect(candidates.locator('.ant-empty-description:visible')).toBeVisible();
+        await expect(candidates.getByText('0 items', {exact: true})).toBeVisible();
+        await expect(page.getByText('Scanner request unavailable', {exact: true})).toBeVisible();
+        expect(ledger.requests.filter(item => item.path === status.path)).toHaveLength(1);
+        expect(ledger.requests.filter(item => item.path === projects.path).map(item => item.query)).toEqual(['?page=1&pageSize=25&query=', '?page=1&pageSize=25&query=']);
+        expect(ledger.requests.filter(item => item.method !== 'GET')).toHaveLength(0);
+        await page.screenshot({path: info.outputPath(`solana-success-empty-${width}.png`), fullPage: true});
+        assertThemeLedger(ledger);
+    });
+}

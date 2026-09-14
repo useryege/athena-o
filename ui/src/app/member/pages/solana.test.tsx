@@ -185,6 +185,9 @@ test('keeps scanner and candidate failures independent and retries only their so
     await flush();
     expect(JSON.stringify(tree.toJSON())).toContain('Candidates unavailable');
     expect(JSON.stringify(tree.toJSON())).toContain('Scanner unavailable');
+    expect(JSON.stringify(tree.toJSON())).not.toContain('No discovered candidates yet');
+    expect(JSON.stringify(tree.toJSON())).not.toContain('0 items');
+    expect(tree.root.findAllByProps({'aria-label': 'Table pagination'})).toHaveLength(0);
     await act(async () => tree.root.findByProps({'aria-label': 'Retry discovery status'}).props.onClick());
     await flush();
     expect(services.solana.getDiscoveryStatus).toHaveBeenCalledTimes(2);

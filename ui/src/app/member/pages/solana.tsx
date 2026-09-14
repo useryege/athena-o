@@ -269,23 +269,26 @@ export const SolanaPage = () => {
                         />
                     )}
                     {projects.error && projects.data && <p className='foundation-note'>Last known candidates. This list may be stale.</p>}
-                    <ResourceTable<SolanaProject>
-                        label='Solana token candidates'
-                        rowKey='mint'
-                        items={projects.data?.items || []}
-                        columns={columns}
-                        loading={projects.loading}
-                        total={projects.data?.totalSize || 0}
-                        page={page}
-                        pageSize={pageSize}
-                        pageSizeOptions={[pageSize]}
-                        compactRender={item => <CandidateCompact item={item} />}
-                        compactEmptyDescription={query ? 'No matching candidates' : 'No discovered candidates yet'}
-                        onPageChange={nextPage => setPage(nextPage)}
-                        expandable={{
-                            expandedRowRender: item => <Evidence item={item} />
-                        }}
-                    />
+                    {projects.loading && !projects.data && <Skeleton active={true} paragraph={{rows: 4}} />}
+                    {projects.data && (
+                        <ResourceTable<SolanaProject>
+                            label='Solana token candidates'
+                            rowKey='mint'
+                            items={projects.data.items}
+                            columns={columns}
+                            loading={projects.loading}
+                            total={projects.data.totalSize}
+                            page={page}
+                            pageSize={pageSize}
+                            pageSizeOptions={[pageSize]}
+                            compactRender={item => <CandidateCompact item={item} />}
+                            compactEmptyDescription={query ? 'No matching candidates' : 'No discovered candidates yet'}
+                            onPageChange={nextPage => setPage(nextPage)}
+                            expandable={{
+                                expandedRowRender: item => <Evidence item={item} />
+                            }}
+                        />
+                    )}
                     <p className='foundation-note'>Names and symbols are issuer-provided snapshots, not project verification.</p>
                 </section>
             </AppPage>
