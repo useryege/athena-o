@@ -51,7 +51,7 @@
 8. Service Status 对 Services、Notification Runtime、Trader Sync 各维护独立 10 秒可见 single-flight；hidden 不发新请求，visible/focus 和手动 Refresh 使用同一 reload。某一来源 pending/失败不阻塞其余来源，失败保留该来源最后成功值、时间和 stale 提示。
 9. Profile、Access、Help 只操作当前管理员 UUID；管理员应用不创建 API Key。Logout 只撤销/清除 `athena.token.admin`，会员会话不受影响。
 
-其他路由为 `/admin/profit-sharing`、`/admin/profit-sharing/:slug`、`/admin/etherscan-gateways`、`/admin/notifications`、`/admin/notifications/:id`、`/admin/account/profile`、`/admin/account/appearance`、`/admin/account/access` 与 `/admin/help`。管理路由都位于 `/admin` 应用根下。
+其他路由为 `/admin/profit-sharing`、`/admin/profit-sharing/:slug`、`/admin/etherscan-gateways`、`/admin/notifications`、`/admin/notifications/:id`、`/admin/account/profile`、`/admin/account/access` 与 `/admin/help`。管理路由都位于 `/admin` 应用根下，已移除的 Appearance 地址统一落入既有 404 兜底。
 
 ## 身份清理与访问复查
 

@@ -279,6 +279,20 @@ describe('Trader Sync real Shell cleanup', () => {
         expect(scroll).toHaveBeenCalledWith({top: 0, behavior: 'instant'});
         expect(containsText(tree.toJSON(), 'Trader Sync')).toBe(true);
     });
+    test('member identity control belongs to the top bar and the desktop navigation uses the approved width', async () => {
+        ensureMemberBusinessServices();
+        jest.spyOn(services.traderSync, 'listSubscriptions').mockResolvedValue({subscriptions: [], page: {}, quota: {used: 0, limit: 10}, asOf: '2026-09-11T00:00:00Z'});
+        await mountMember('read_write', '/trader-sync/subscriptions');
+        const header = tree.root.findByProps({className: 'athena-shell__header'});
+        const sider = tree.root.findByProps({className: 'athena-shell__sider'});
+        expect(header.findAllByProps({'aria-label': 'Open account menu'})).toHaveLength(1);
+        expect(sider.findAllByProps({'aria-label': 'Open account menu'})).toHaveLength(0);
+        expect(sider.props.width).toBe(224);
+    });
+    test('removed member Appearance URL uses the existing not-found fallback', async () => {
+        await mountMember('read_write', '/account/appearance');
+        expect(containsText(tree.toJSON(), 'Page not found')).toBe(true);
+    });
     test.each(['none', 'read'])('home entry excludes %s and rejects the home deep link', async level => {
         await mountMember(level, '/trader-sync');
         expect(window.location.pathname).toBe('/account/access');

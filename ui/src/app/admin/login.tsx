@@ -36,7 +36,7 @@ export const AdminLoginPage = () => {
             <Card className='login-panel'>
                 <div className='login-panel__brand'>
                     <BrandMark size='large' />
-                    <Typography.Title level={3}>Athena Admin</Typography.Title>
+                    <Typography.Title level={1}>Athena Admin</Typography.Title>
                     <Typography.Text type='secondary'>Administration Console</Typography.Text>
                 </div>
                 <div className='login-panel__alerts' aria-live='polite' aria-atomic='true'>

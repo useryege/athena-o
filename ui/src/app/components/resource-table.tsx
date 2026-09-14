@@ -74,7 +74,7 @@ export const ResourceTable = <T,>(props: {
               }
             : undefined;
     const scroll = props.scrollX === undefined ? undefined : {x: props.scrollX};
-    const sticky = props.stickyHeader === true ? {offsetHeader: 56} : props.stickyHeader ? {offsetHeader: props.stickyHeader.offsetHeader ?? 56} : undefined;
+    const sticky = props.stickyHeader === true ? {offsetHeader: 64} : props.stickyHeader ? {offsetHeader: props.stickyHeader.offsetHeader ?? 64} : undefined;
     const hasPagination = props.total !== undefined && props.onPageChange;
     const regionClassName = [
         'resource-table-region',
@@ -93,7 +93,7 @@ export const ResourceTable = <T,>(props: {
             {hasPagination && (
                 <div className='resource-table-pagination' aria-label='Table pagination'>
                     <div className='resource-table-pagination__controls'>
-                        <Typography.Text className='resource-table-pagination__total' type='secondary'>
+                        <Typography.Text className='resource-table-pagination__total athena-number' type='secondary'>
                             {props.total} {props.total === 1 ? 'item' : 'items'}
                         </Typography.Text>
                         <Pagination

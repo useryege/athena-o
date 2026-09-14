@@ -231,7 +231,7 @@ export const RegisterPage = () => {
                 <header className='registration-panel__header'>
                     <BrandMark size='large' />
                     <div>
-                        <Typography.Title id='registration-title' level={2}>
+                        <Typography.Title id='registration-title' level={1}>
                             Choose a username
                         </Typography.Title>
                         <Typography.Paragraph type='secondary'>Your permanent public name in Athena</Typography.Paragraph>

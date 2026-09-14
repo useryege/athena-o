@@ -78,7 +78,7 @@ export const SessionBootstrap = (props: {
             <div className='athena-recoverable'>
                 <Result
                     status='warning'
-                    title='API 服务暂不可用'
+                    title={<Typography.Title level={1}>API 服务暂不可用</Typography.Title>}
                     subTitle='Athena 后端网关还没有准备好，或正在重启。请稍后重试。'
                     extra={
                         <Space orientation='vertical' size={12}>

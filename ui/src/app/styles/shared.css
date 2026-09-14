@@ -4,6 +4,7 @@ html,
 body,
 #app {
     min-height: 100%;
+    min-width: 0;
     margin: 0;
 }
 body {
@@ -46,7 +47,7 @@ body::-webkit-scrollbar-thumb,
 }
 .athena-boot {
     color: var(--athena-muted);
-    font-weight: 700;
+    font-weight: 600;
 }
 .athena-fatal pre {
     max-width: min(900px, 100%);
@@ -83,7 +84,7 @@ body::-webkit-scrollbar-thumb,
 }
 .athena-brand {
     width: 100%;
-    height: 72px;
+    height: var(--athena-header-height);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -114,14 +115,14 @@ body::-webkit-scrollbar-thumb,
     white-space: nowrap;
 }
 .athena-brand__copy strong {
-    font-size: 15px;
-    font-weight: 800;
+    font-size: var(--athena-type-control);
+    font-weight: 600;
     letter-spacing: 0.01em;
 }
 .athena-brand__copy small {
     color: var(--athena-muted);
-    font-size: 10px;
-    font-weight: 700;
+    font-size: var(--athena-type-aux);
+    font-weight: 400;
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
@@ -134,7 +135,7 @@ body::-webkit-scrollbar-thumb,
     border-radius: 8px;
     background: color-mix(in srgb, var(--athena-brand) 12%, var(--athena-panel-elevated));
     color: var(--athena-brand);
-    font-weight: 900;
+    font-weight: 600;
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--athena-brand) 8%, transparent);
     overflow: hidden;
 }
@@ -156,11 +157,11 @@ body::-webkit-scrollbar-thumb,
 .athena-shell__sider .ant-menu-item-group-title {
     padding: 18px 12px 7px;
     color: var(--athena-muted);
-    font-size: 10px;
-    font-weight: 800;
+    font-size: var(--athena-type-aux);
+    font-weight: 400;
     line-height: 1.2;
-    letter-spacing: 0.11em;
-    text-transform: uppercase;
+    letter-spacing: normal;
+    text-transform: none;
 }
 .athena-shell__sider.ant-layout-sider-collapsed .ant-menu-item-group-title {
     height: 14px;
@@ -182,9 +183,9 @@ body::-webkit-scrollbar-thumb,
         box-shadow 150ms ease;
 }
 .athena-shell__sider .ant-menu-item-selected {
-    color: var(--athena-text);
-    background: color-mix(in srgb, var(--athena-primary) 10%, var(--athena-panel)) !important;
-    box-shadow: inset 3px 0 0 var(--athena-primary);
+    color: var(--athena-primary);
+    background: var(--athena-selected-bg) !important;
+    font-weight: 500;
 }
 .athena-shell__sider .ant-menu-item-selected .anticon {
     color: var(--athena-primary);
@@ -198,8 +199,9 @@ body::-webkit-scrollbar-thumb,
     position: sticky;
     top: 0;
     z-index: 10;
-    height: 56px;
-    padding: 0 20px;
+    min-height: var(--athena-header-height);
+    height: auto;
+    padding: 0 32px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -208,8 +210,8 @@ body::-webkit-scrollbar-thumb,
     box-shadow: 0 1px 0 color-mix(in srgb, var(--athena-border) 45%, transparent);
 }
 .athena-shell__header-actions {
-    padding-left: 8px;
-    border-left: 1px solid var(--athena-border);
+    flex: 0 1 auto;
+    justify-content: flex-end;
 }
 .athena-shell__header .ant-btn-text {
     color: var(--athena-muted);
@@ -219,12 +221,12 @@ body::-webkit-scrollbar-thumb,
     background: var(--athena-bg-soft) !important;
 }
 .athena-shell__icon-button {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    min-height: 44px;
 }
 .athena-shell__sidebar-toggle {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    min-height: 44px;
 }
 .athena-shell__header-left,
 .athena-shell__header-actions {
@@ -239,12 +241,12 @@ body::-webkit-scrollbar-thumb,
 .athena-shell__breadcrumb .ant-breadcrumb-link,
 .athena-shell__breadcrumb .ant-breadcrumb-separator {
     color: var(--athena-muted);
-    font-size: 13px;
+    font-size: var(--athena-type-aux);
     font-weight: 500;
 }
 .athena-shell__breadcrumb li:last-child .ant-breadcrumb-link {
     color: var(--athena-text);
-    font-weight: 700;
+    font-weight: 600;
 }
 .athena-shell__header .ant-btn-text,
 .app-page__actions .ant-btn {
@@ -258,7 +260,8 @@ body::-webkit-scrollbar-thumb,
 .app-page {
     width: min(100%, 1720px);
     margin: 0 auto;
-    padding: 24px 24px 36px;
+    min-width: 0;
+    padding: 32px 32px 48px;
 }
 .app-page__header {
     display: flex;
@@ -274,9 +277,9 @@ body::-webkit-scrollbar-thumb,
 }
 .app-page__heading h1 {
     margin: 0 0 4px;
-    font-size: 24px;
-    font-weight: 700;
-    line-height: 1.2;
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.3;
     letter-spacing: -0.015em;
     color: var(--athena-text);
 }
@@ -284,7 +287,7 @@ body::-webkit-scrollbar-thumb,
     display: block;
     max-width: 920px;
     color: var(--athena-muted);
-    font-size: 13px;
+    font-size: var(--athena-type-aux);
     line-height: 1.45;
 }
 .app-page__actions {
@@ -345,10 +348,10 @@ body::-webkit-scrollbar-thumb,
     color: var(--athena-text);
 }
 .choice-group .ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled) {
-    background: var(--athena-panel-solid);
-    color: var(--athena-text);
-    font-weight: 700;
-    box-shadow: 0 1px 3px rgb(15 23 42 / 12%) !important;
+    background: var(--athena-selected-bg);
+    color: var(--athena-primary);
+    font-weight: 600;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--athena-primary) 38%, transparent) !important;
 }
 .choice-group .ant-radio-button-wrapper-disabled {
     opacity: 0.56;
@@ -370,19 +373,20 @@ body::-webkit-scrollbar-thumb,
 }
 .resource-table-compact__items {
     display: grid;
-    gap: 12px;
+    gap: 0;
     margin: 0;
-    padding: 12px;
+    padding: 0;
     list-style: none;
 }
 .resource-table-compact__item {
     min-width: 0;
+    padding: 16px;
+}
+.resource-table-compact__item + .resource-table-compact__item {
+    border-top: 1px solid var(--athena-border);
 }
 .resource-table-compact__skeleton-card {
-    padding: 16px;
-    border: 1px solid var(--athena-border);
-    border-radius: 8px;
-    background: var(--athena-panel);
+    background: transparent;
 }
 .resource-table-compact__empty {
     padding: 42px 16px;
@@ -403,7 +407,7 @@ body::-webkit-scrollbar-thumb,
 .account-access-expand-button {
     min-height: 36px;
     padding-inline: 8px;
-    font-weight: 650;
+    font-weight: 600;
 }
 .account-compact-card__action {
     display: flex;
@@ -441,7 +445,7 @@ body::-webkit-scrollbar-thumb,
 }
 .account-compact-card__details > div > .ant-typography {
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
 }
 .account-compact-card__details > div > span:last-child {
     min-width: 0;
@@ -466,8 +470,8 @@ body::-webkit-scrollbar-thumb,
 .resource-table .ant-table-thead > tr > th {
     background: var(--athena-panel-elevated);
     color: var(--athena-muted);
-    font-size: 11px;
-    font-weight: 700;
+    font-size: var(--athena-type-aux);
+    font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     border-bottom-color: var(--athena-border);
@@ -478,7 +482,22 @@ body::-webkit-scrollbar-thumb,
     border-color: var(--athena-border);
     background: var(--athena-panel-solid);
     font-variant-numeric: tabular-nums;
+    font-size: var(--athena-type-control);
     transition: background-color 150ms ease;
+}
+.athena-number {
+    font-variant-numeric: tabular-nums lining-nums;
+}
+.athena-identifier {
+    font-family: var(--athena-data-font);
+    font-size: 0.8125rem;
+    font-variant-ligatures: none;
+    overflow-wrap: anywhere;
+}
+.resource-table :is(th, td).athena-numeric-column,
+.athena-numeric-column {
+    text-align: right;
+    font-variant-numeric: tabular-nums lining-nums;
 }
 .resource-table .ant-table-tbody > tr:hover > td {
     background: color-mix(in srgb, var(--athena-blue) 8%, var(--athena-panel-solid)) !important;
@@ -534,7 +553,7 @@ body::-webkit-scrollbar-thumb,
 }
 .resource-table-pagination__sizes-label {
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
 }
 .resource-table-region--paginated .resource-table.ant-table-wrapper {
     border-radius: 0 0 8px 8px;
@@ -599,7 +618,7 @@ body::-webkit-scrollbar-thumb,
 }
 .card-title__main > .ant-typography:first-child {
     color: var(--athena-text);
-    font-weight: 800;
+    font-weight: 600;
 }
 .live-status-indicator {
     display: inline-flex;
@@ -613,7 +632,7 @@ body::-webkit-scrollbar-thumb,
     background: color-mix(in srgb, var(--athena-red) 10%, var(--athena-panel-solid));
     color: var(--athena-red);
     font-size: 12px;
-    font-weight: 850;
+    font-weight: 600;
     line-height: 20px;
     flex: 0 0 auto;
 }
@@ -658,7 +677,7 @@ body::-webkit-scrollbar-thumb,
 }
 .metric strong {
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
     overflow-wrap: anywhere;
     color: var(--athena-text);
     font-family: var(--athena-data-font);
@@ -702,8 +721,9 @@ body::-webkit-scrollbar-thumb,
 }
 .section-panel__header h2 {
     margin: 0;
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 1.25rem;
+    line-height: 1.4;
+    font-weight: 600;
     color: var(--athena-text);
 }
 .section-panel__extra {
@@ -737,13 +757,13 @@ body::-webkit-scrollbar-thumb,
 .break-value {
     font-family: var(--athena-data-font);
     font-variant-ligatures: none;
-    font-size: 12px;
+    font-size: var(--athena-type-aux);
 }
 .truncate-text {
     max-width: 100%;
     font-family: var(--athena-data-font);
     font-variant-ligatures: none;
-    font-size: 12px;
+    font-size: var(--athena-type-aux);
 }
 .truncate-text--single-line {
     display: block;
@@ -785,6 +805,9 @@ body::-webkit-scrollbar-thumb,
     padding: 10px 0;
     font-weight: 600;
 }
+.ant-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+    color: var(--athena-primary);
+}
 .ant-tabs .ant-tabs-ink-bar {
     height: 3px;
     border-radius: 8px;
@@ -802,6 +825,13 @@ body::-webkit-scrollbar-thumb,
 .ant-modal-header,
 .ant-drawer-header {
     border-color: var(--athena-border) !important;
+}
+.ant-pagination .ant-pagination-item-active {
+    border-color: var(--athena-primary);
+    background: var(--athena-panel);
+}
+.ant-pagination .ant-pagination-item-active a {
+    color: var(--athena-primary);
 }
 .login-screen {
     min-height: 100vh;
@@ -827,10 +857,11 @@ body::-webkit-scrollbar-thumb,
     gap: 8px;
     margin-bottom: 24px;
 }
-.login-panel__brand h3 {
+.login-panel__brand h1 {
     margin: 0;
-    font-size: 24px;
-    font-weight: 700;
+    font-size: 1.75rem;
+    line-height: 1.3;
+    font-weight: 600;
 }
 .login-panel__brand .ant-typography-secondary {
     font-size: 12px;
@@ -895,9 +926,11 @@ body,
     .athena-shell__sider {
         position: fixed !important;
         z-index: 60;
-        top: 56px !important;
+        top: calc(max(var(--athena-header-height), var(--athena-control-height)) + 1px) !important;
         left: 0;
-        height: calc(100vh - 56px);
+        width: min(280px, calc(100vw - 48px)) !important;
+        max-width: calc(100vw - 48px);
+        height: calc(100vh - max(var(--athena-header-height), var(--athena-control-height)) - 1px);
         box-shadow: var(--athena-shadow);
     }
 
@@ -920,7 +953,7 @@ body,
     .athena-shell__backdrop {
         position: fixed;
         z-index: 50;
-        inset: 56px 0 0;
+        inset: calc(max(var(--athena-header-height), var(--athena-control-height)) + 1px) 0 0;
         padding: 0;
         border: 0;
         background: rgb(0 0 0 / 48%);
@@ -928,16 +961,17 @@ body,
     }
 
     .app-page {
-        padding: 16px 14px 28px;
+        padding: 24px 20px 36px;
     }
 
     .app-page__header {
         align-items: flex-start;
-        flex-direction: column;
+        flex-wrap: wrap;
     }
 
     .app-page__actions {
         justify-content: flex-start;
+        max-width: 100%;
     }
 
     .resource-table-region--compact .resource-table.ant-table-wrapper {
@@ -977,14 +1011,10 @@ body,
         width: 100%;
     }
 }
-@media (max-width: 1439px) {
-    .app-page {
-        padding-inline: 20px;
-    }
-}
 @media (max-width: 900px) {
-    .app-page {
-        padding-inline: 14px;
+    .app-page__heading h1 {
+        font-size: 1.5rem;
+        line-height: 1.35;
     }
 }
 .profit-sharing-round-heading {
@@ -1029,11 +1059,11 @@ body,
 .profit-sharing-round-card dt {
     color: var(--athena-muted);
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
 }
 .profit-sharing-round-card dd {
     margin: 0;
-    font-weight: 700;
+    font-weight: 600;
 }
 .profit-sharing-metrics {
     display: grid;
@@ -1071,7 +1101,7 @@ body,
 }
 .profit-sharing-metric > div > .ant-typography {
     font-size: 12px;
-    font-weight: 650;
+    font-weight: 600;
 }
 .profit-sharing-metric > div > strong {
     color: var(--athena-text);
@@ -1154,7 +1184,7 @@ body,
     background: var(--athena-panel-elevated);
     color: var(--athena-muted);
     font-size: 10px;
-    font-weight: 750;
+    font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
@@ -1246,7 +1276,7 @@ body,
     flex-direction: column;
 }
 .athena-brand {
-    flex: 0 0 72px;
+    flex: 0 0 var(--athena-header-height);
     cursor: default;
 }
 .athena-brand:hover {
@@ -1268,28 +1298,55 @@ body,
     background: color-mix(in srgb, var(--athena-muted) 42%, transparent);
     background-clip: content-box;
 }
-.athena-sidebar-footer {
-    position: relative;
-    z-index: 3;
+.athena-sidebar-bottom {
+    display: grid;
     flex: 0 0 auto;
-    padding: 8px;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    gap: 2px;
+    padding: 12px 10px 16px;
     border-top: 1px solid var(--athena-border);
-    background: var(--athena-panel);
+}
+.athena-sidebar-bottom .ant-btn {
+    width: 100%;
+    min-height: 44px;
+    justify-content: flex-start;
+    color: var(--athena-muted);
+}
+.athena-sidebar-bottom .ant-btn:hover {
+    color: var(--athena-text) !important;
+    background: var(--athena-bg-soft) !important;
+}
+.athena-sidebar-bottom .ant-btn[aria-current='page'] {
+    color: var(--athena-primary);
+    background: var(--athena-selected-bg);
+}
+.athena-sidebar-bottom p {
+    margin: 0;
+    padding: 2px 12px 0;
+    color: var(--athena-muted);
+    font-size: var(--athena-type-aux);
+    font-weight: 400;
+}
+.athena-shell__sider.ant-layout-sider-collapsed .athena-sidebar-bottom .ant-btn {
+    justify-content: center;
+    padding-inline: 0;
+}
+.athena-shell__sider.ant-layout-sider-collapsed .athena-sidebar-bottom__label {
+    display: none;
 }
 .athena-account-trigger {
     display: flex;
-    width: 100%;
-    min-height: 56px;
+    width: auto;
+    min-height: 44px;
     align-items: center;
     gap: 10px;
-    padding: 8px 10px;
+    padding: 4px 8px;
     border: 0;
     border-radius: 10px;
     background: transparent;
     color: var(--athena-text);
     cursor: pointer;
     font: inherit;
+    line-height: 1.25;
     text-align: left;
     transition:
         color 150ms ease,
@@ -1308,31 +1365,25 @@ body,
 .athena-account-trigger__copy strong,
 .athena-account-trigger__copy small {
     overflow: hidden;
+    line-height: 1.25;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 .athena-account-trigger__copy strong {
-    font-size: 13px;
-    font-weight: 750;
+    font-size: var(--athena-type-control);
+    font-weight: 600;
 }
 .athena-account-trigger__copy small {
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: var(--athena-type-aux);
 }
 .athena-account-trigger__more {
     color: var(--athena-muted);
-    font-weight: 800;
+    font-weight: 600;
     letter-spacing: 1px;
 }
-.athena-shell__sider.ant-layout-sider-collapsed .athena-sidebar-footer {
-    padding-inline: 8px;
-}
-.athena-shell__sider.ant-layout-sider-collapsed .athena-account-trigger {
-    justify-content: center;
-    padding-inline: 0;
-}
 .athena-account-menu {
-    min-width: calc(var(--athena-sidebar-width) - 16px) !important;
+    min-width: min(24rem, calc(100vw - 24px)) !important;
 }
 .athena-account-menu .ant-dropdown-menu {
     max-height: min(620px, calc(100vh - 80px));
@@ -1388,7 +1439,7 @@ body,
 .athena-account-menu__summary small,
 .athena-account-menu__label small {
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: var(--athena-type-aux);
 }
 .athena-account-menu__label {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -1401,7 +1452,17 @@ body,
     gap: 8px;
 }
 .athena-shell__header {
-    justify-content: flex-start;
+    justify-content: space-between;
+}
+.athena-shell__header .athena-account-avatar {
+    width: 1.75rem !important;
+    min-width: 1.75rem;
+    height: 1.75rem !important;
+    border: 1px solid var(--athena-border-strong);
+    background: var(--athena-panel-elevated) !important;
+    color: var(--athena-text) !important;
+    font-size: var(--athena-type-aux) !important;
+    line-height: 1;
 }
 /* Account Center */
 .account-center-hero {
@@ -1605,13 +1666,19 @@ body,
         overflow: visible;
     }
 
-    .athena-sidebar-footer {
-        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    .athena-shell__sider .athena-brand__copy small {
+        display: none;
+    }
+
+    .athena-shell__sider.ant-layout-sider-collapsed {
+        overflow: hidden;
+        pointer-events: none;
+        visibility: hidden;
     }
 
     .athena-account-menu {
-        width: calc(var(--athena-sidebar-width) - 16px);
-        max-width: calc(100vw - 16px);
+        width: min(24rem, calc(100vw - 24px));
+        max-width: calc(100vw - 24px);
     }
 
     .account-center-layout {
@@ -1631,11 +1698,20 @@ body,
     .account-center-mobile-select label {
         color: var(--athena-muted);
         font-size: 12px;
-        font-weight: 700;
+        font-weight: 600;
     }
 
     .account-center-mobile-select .ant-select {
         width: 100%;
+    }
+}
+@media (max-width: 520px) {
+    .athena-shell__header {
+        padding-inline: 12px;
+    }
+    .athena-shell__header .athena-account-trigger__copy,
+    .athena-shell__header .athena-account-trigger__more {
+        display: none;
     }
 }
 @media (max-width: 520px) {
@@ -1726,6 +1802,13 @@ input[readonly]:focus-visible, textarea[readonly]:focus-visible {
   --ant-input-input-font-size: var(--athena-type-control);
   --ant-input-input-font-size-sm: var(--athena-type-control);
   --ant-input-input-font-size-lg: var(--athena-type-body);
+  --ant-table-cell-font-size: var(--athena-type-control);
+  --ant-table-cell-font-size-md: var(--athena-type-control);
+  --ant-table-cell-font-size-sm: var(--athena-type-control);
+  --ant-select-option-font-size: var(--athena-type-control);
+  --ant-modal-title-font-size: var(--athena-type-section);
+  --ant-message-title-font-size: var(--athena-type-control);
+  --ant-notification-title-font-size: var(--athena-type-body);
   --ant-alert-with-description-icon-size: 1.5rem;
   --ant-alert-default-padding: 1rem 1.25rem;
   --ant-alert-with-description-padding: 1.25rem 1.5rem;
@@ -1734,6 +1817,13 @@ input[readonly]:focus-visible, textarea[readonly]:focus-visible {
 /* 固定按钮高还须允许长文本增高。 */
 .ant-btn { min-height: 2.75rem; height: auto; white-space: normal; padding-block: .625rem; line-height: 1.55; }
 .ant-input { min-height: var(--athena-control-height); }
+.ant-table-wrapper .ant-table,
+.ant-select,
+.ant-select-dropdown,
+.ant-modal,
+.ant-dropdown-menu,
+.ant-message,
+.ant-notification-notice { font-size: var(--athena-type-control); }
 .ant-btn > span { overflow-wrap: anywhere; }
 .ant-alert { min-width: 0; }
 .ant-alert-content { min-width: 0; overflow-wrap: anywhere; }

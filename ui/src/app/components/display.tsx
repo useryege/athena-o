@@ -44,7 +44,7 @@ export const MetricRow = (props: {items: Array<{label: string; value: React.Reac
             <Col key={item.label} span={4}>
                 <div className={`metric metric--${item.tone || 'neutral'}`}>
                     <span>{item.label}</span>
-                    <strong>{item.value ?? '-'}</strong>
+                    <strong className='athena-number'>{item.value ?? '-'}</strong>
                 </div>
             </Col>
         ))}
@@ -77,7 +77,7 @@ export const InlineActions = (props: {children: React.ReactNode}) => (
 
 export const TruncatedText = (props: {value?: React.ReactNode; copyable?: boolean; singleLine?: boolean}) => (
     <Typography.Text
-        className={`truncate-text${props.singleLine ? ' truncate-text--single-line' : ''}`}
+        className={`truncate-text athena-identifier${props.singleLine ? ' truncate-text--single-line' : ''}`}
         copyable={props.copyable}
         ellipsis={props.singleLine ? {tooltip: props.value} : undefined}>
         {props.value || '-'}

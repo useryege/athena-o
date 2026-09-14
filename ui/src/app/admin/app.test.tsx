@@ -66,6 +66,19 @@ test('real Shell clears cached data when refresh discovers logout before redirec
     await act(async () => mockAuth.refresh());
     expect(text()).not.toContain('cached administrator summary');
 });
+test('administrator identity control belongs to the top bar and the desktop navigation uses the approved width', async () => {
+    await mount();
+    const header = tree.root.findByProps({className: 'athena-shell__header'});
+    const sider = tree.root.findByProps({className: 'athena-shell__sider'});
+    expect(header.findAllByProps({'aria-label': 'Open account menu'})).toHaveLength(1);
+    expect(sider.findAllByProps({'aria-label': 'Open account menu'})).toHaveLength(0);
+    expect(sider.props.width).toBe(224);
+});
+test('removed administrator Appearance URL uses the existing not-found fallback', async () => {
+    window.history.replaceState({}, '', '/account/appearance');
+    await mount();
+    expect(text()).toContain('Page not found');
+});
 test('real Shell swaps same-account issuer, fences old reads and reopens only the new scope', async () => {
     const pending = late();
     mockLoad = jest.fn().mockReturnValueOnce(pending.promise).mockResolvedValue('new issuer summary');

@@ -31,7 +31,7 @@ if (tool === 'docker') {
 if (tool === 'go') {
   if(env.FAIL === 'harness') process.exit(4);
   const dir=env.ATHENA_UI_E2E_DIR;
-  record({dir, prefix: env.ATHENA_UI_E2E_PATH_PREFIX, dist: env.ATHENA_UI_DIST, dsn: env.ATHENA_TEST_PG_ADMIN_DSN, goProxy:env.GOPROXY, goNoProxy:env.GONOPROXY, goToolchain:env.GOTOOLCHAIN});
+  record({dir, prefix: env.ATHENA_UI_E2E_PATH_PREFIX, dist: env.ATHENA_UI_DIST, dsn: env.ATHENA_TEST_PG_ADMIN_DSN, goProxy:env.GOPROXY, goNoProxy:env.GONOPROXY, goToolchain:env.GOTOOLCHAIN, fixtureOnly:env.ATHENA_UI_E2E_FIXTURE_ONLY});
   if(env.FAIL !== 'startup-timeout') fs.writeFileSync(path.join(dir,'harness.json'), JSON.stringify({BaseURL:'http://127.0.0.1:40123', PathPrefix:env.ATHENA_UI_E2E_PATH_PREFIX, Database:dir, MemberAState:'a', MemberBState:'b', AdminState:'admin', ControlURL:'http://127.0.0.1:40124', Owners:[], HTMLHashes:{}}));
   if(env.FAIL === 'harness-during-test') setTimeout(()=>process.exit(8), 200);
   if(env.FAIL === 'stop-timeout') process.on('SIGTERM',()=>{});
@@ -43,6 +43,7 @@ if (tool === 'go') {
 } else if(tool === 'cli.js') {
   const project=args.find(a=>a.startsWith('--project='))?.split('=')[1];
   record({project, mode:env.ATHENA_UI_E2E_MODE, prefix:env.ATHENA_UI_E2E_PATH_PREFIX, manifest:env.ATHENA_UI_E2E_MANIFEST, output:env.ATHENA_UI_E2E_OUTPUT_DIR});
+  if (args.includes('--grep') && args[args.indexOf('--grep') + 1] === 'no matching acceptance case') process.exit(1);
   if(env.FAIL === 'playwright') process.exit(6);
   if(project === 'a11y' && env.FAIL === 'a11y-playwright') {
     const attachment=path.join(env.ATHENA_UI_E2E_OUTPUT_DIR,'axe-results.json');
@@ -206,6 +207,53 @@ test('isolated builds once, snapshots the build and runs fresh root/prefix harne
   assert.equal(report.cleanup.status, 'passed');
   assert.ok(report.build.files.length);
   assert.equal(await fs.stat(f.env.CONTAINER).catch(() => null), null);
+});
+
+test('acceptance grep is a separate Playwright argument, selects only fixtures and marks the report filtered', async t => {
+  const f = await fixture(t, {UI_ACCEPTANCE_GREP: 'theme:core [member]'});
+  const result = await f.start().done;
+  assert.equal(result.code, 0, result.stderr);
+  const playwright = (await f.events()).filter(event => event.project);
+  assert.deepEqual(
+    playwright.map(event => [event.prefix, event.project]),
+    [
+      ['', 'ui-fixtures'],
+      ['/athena', 'ui-fixtures']
+    ]
+  );
+  for (const event of playwright) assert.deepEqual(event.args.slice(-2), ['--grep', 'theme:core [member]']);
+  assert.ok((await f.events()).filter(event => event.dir).every(event => event.fixtureOnly === '1'));
+  const [report] = await f.reports();
+  assert.equal(report.filtered, true);
+  assert.equal(report.grep, 'theme:core [member]');
+  assert.ok(report.evidence.some(line => /filtered|局部/i.test(line)));
+});
+
+test('a11y grep remains on the a11y project and unfiltered reports stay complete', async t => {
+  const filtered = await fixture(t, {UI_ACCEPTANCE_SUITE: 'a11y', UI_ACCEPTANCE_GREP: 'theme:a11y'});
+  let result = await filtered.start().done;
+  assert.equal(result.code, 0, result.stderr);
+  const filteredPlaywright = (await filtered.events()).filter(event => event.project);
+  assert.deepEqual(filteredPlaywright.map(event => event.project), ['a11y', 'a11y']);
+  assert.ok(filteredPlaywright.every(event => event.args.at(-2) === '--grep' && event.args.at(-1) === 'theme:a11y'));
+  assert.equal((await filtered.reports())[0].filtered, true);
+
+  const complete = await fixture(t);
+  result = await complete.start().done;
+  assert.equal(result.code, 0, result.stderr);
+  assert.ok((await complete.events()).filter(event => event.project).every(event => !event.args.includes('--grep')));
+  const [report] = await complete.reports();
+  assert.equal(report.filtered, false);
+  assert.equal(report.grep, null);
+});
+
+test('a grep with zero matching tests fails instead of reporting an empty success', async t => {
+  const f = await fixture(t, {UI_ACCEPTANCE_GREP: 'no matching acceptance case'});
+  const result = await f.start().done;
+  assert.notEqual(result.code, 0);
+  const [report] = await f.reports();
+  assert.equal(report.status, 'failed');
+  assert.match(report.failure.message, /ui-fixtures|playwright/i);
 });
 
 test('a11y suite runs only the accessibility project for both isolated deployment prefixes', async t => {

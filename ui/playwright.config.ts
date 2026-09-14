@@ -67,9 +67,9 @@ export default defineConfig({
                   }
               ]
             : suite === 'a11y'
-              ? [{name: 'a11y', testMatch: 'trader-sync-a11y.spec.ts', use: {channel: 'chromium'}}]
+              ? [{name: 'a11y', testMatch: /(?:trader-sync-a11y|theme-refactor-a11y)\.spec\.ts$/, use: {channel: 'chromium'}}]
               : [
-                    {name: 'ui-fixtures', testMatch: 'trader-sync.spec.ts', use: {channel: 'chromium'}},
+                    {name: 'ui-fixtures', testMatch: /(?:trader-sync|theme-refactor)\.spec\.ts$/, use: {channel: 'chromium'}},
                     {name: 'live', testMatch: 'trader-sync-live.spec.ts', use: {channel: 'chromium'}}
                 ]
 });

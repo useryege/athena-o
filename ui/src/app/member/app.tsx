@@ -424,8 +424,8 @@ const NotFoundPage = () => {
 };
 
 const narrowShellQuery = '(max-width: 900px)';
-const desktopExpandedSidebarWidth = 272;
-const mobileExpandedSidebarWidth = 248;
+const desktopExpandedSidebarWidth = 224;
+const mobileExpandedSidebarWidth = 280;
 
 const useNarrowShell = () => {
     const matches = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(narrowShellQuery).matches;
@@ -748,13 +748,31 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         }
     }, [location.pathname, narrowShell]);
 
+    React.useEffect(() => {
+        if (!accountMenuOpen) return;
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setAccountMenuOpen(false);
+        };
+        document.addEventListener('keydown', closeOnEscape, true);
+        return () => document.removeEventListener('keydown', closeOnEscape, true);
+    }, [accountMenuOpen]);
+
     React.useLayoutEffect(() => {
         if (!narrowShell || !mobileSidebarOpen) {
             return;
         }
         const sidebar = sidebarRef.current;
         const background = shellBackgroundRef.current;
-        sidebar?.querySelector<HTMLElement>('.athena-shell__mobile-close, .athena-brand, [role="menuitem"]')?.focus();
+        const focusInitialControl = () => sidebar?.querySelector<HTMLElement>('.athena-shell__mobile-close, .athena-brand, [role="menuitem"]')?.focus();
+        let focusFrame = 0;
+        const focusWhenVisible = () => {
+            if (sidebar && getComputedStyle(sidebar).visibility !== 'hidden' && sidebar.getClientRects().length > 0) {
+                focusInitialControl();
+                return;
+            }
+            focusFrame = window.requestAnimationFrame(focusWhenVisible);
+        };
+        focusFrame = window.requestAnimationFrame(focusWhenVisible);
         background?.setAttribute('inert', '');
         background?.setAttribute('aria-hidden', 'true');
         const previousBodyOverflow = document.body.style.overflow;
@@ -790,12 +808,19 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         document.addEventListener('keydown', handleDialogKeyboard, true);
         return () => {
             document.body.style.overflow = previousBodyOverflow;
+            window.cancelAnimationFrame(focusFrame);
             background?.removeAttribute('inert');
             background?.removeAttribute('aria-hidden');
             document.removeEventListener('keydown', handleDialogKeyboard, true);
             window.requestAnimationFrame(() => mobileSidebarToggleRef.current?.focus());
         };
     }, [mobileSidebarOpen, narrowShell]);
+
+    React.useLayoutEffect(() => {
+        const navigation = sidebarRef.current?.querySelector('#athena-primary-navigation');
+        navigation?.querySelectorAll('[aria-current="page"]').forEach(item => item.removeAttribute('aria-current'));
+        navigation?.querySelector('.ant-menu-item-selected')?.setAttribute('aria-current', 'page');
+    }, [location.pathname, mobileSidebarOpen, narrowShell, access?.revision]);
 
     React.useEffect(() => {
         if (session.status === 'anonymous' && !isLoginPath) {
@@ -1098,38 +1123,20 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                 <nav className='athena-sidebar-navigation' id='athena-primary-navigation' aria-label='Primary navigation'>
                     {(!narrowShell || mobileSidebarOpen) && menu}
                 </nav>
-                {access && (!narrowShell || mobileSidebarOpen) && (
-                    <div className='athena-sidebar-footer'>
-                        <Dropdown
-                            open={accountMenuOpen}
-                            trigger={['click']}
-                            placement='topLeft'
-                            classNames={{root: 'athena-account-menu'}}
-                            destroyOnHidden={true}
-                            menu={{items: accountMenuItems, onClick: onAccountMenuClick, selectable: false}}
-                            getPopupContainer={trigger => (trigger.closest('.athena-sidebar-footer') as HTMLElement) || sidebarRef.current || document.body}
-                            onOpenChange={setAccountMenuOpen}>
-                            <button
-                                className='athena-account-trigger'
-                                type='button'
-                                aria-label='Open account menu'
-                                aria-haspopup='menu'
-                                aria-expanded={accountMenuOpen}
-                                title={sidebarCollapsed ? access.user.profile.displayName || access.user.username : undefined}>
-                                <AccountAvatar profile={access.user.profile} username={access.user.username} size={38} />
-                                {!sidebarCollapsed && (
-                                    <span className='athena-account-trigger__copy'>
-                                        <strong>{access.user.profile.displayName || access.user.username}</strong>
-                                        <small>@{access.user.username}</small>
-                                    </span>
-                                )}
-                                {!sidebarCollapsed && (
-                                    <span className='athena-account-trigger__more' aria-hidden='true'>
-                                        •••
-                                    </span>
-                                )}
-                            </button>
-                        </Dropdown>
+                {(!narrowShell || mobileSidebarOpen) && (
+                    <div className='athena-sidebar-bottom'>
+                        <Button
+                            type='text'
+                            icon={<QuestionCircleOutlined />}
+                            aria-label='Help'
+                            aria-current={location.pathname === '/help' ? 'page' : undefined}
+                            onClick={() => {
+                                setMobileSidebarOpen(false);
+                                navigate('/help');
+                            }}>
+                            <span className='athena-sidebar-bottom__label'>Help</span>
+                        </Button>
+                        {!sidebarCollapsed && <p>Member workspace</p>}
                     </div>
                 )}
             </AntLayout.Sider>
@@ -1148,7 +1155,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
             <AntLayout ref={shellBackgroundRef}>
                 <AntLayout.Header className='athena-shell__header'>
                     <div className='athena-shell__header-left'>
-                        <Tooltip title={sidebarCollapsed ? 'Open navigation' : 'Close navigation'}>
+                        <Tooltip title={narrowShell ? undefined : sidebarCollapsed ? 'Open navigation' : 'Close navigation'}>
                             <Button
                                 ref={mobileSidebarToggleRef}
                                 className='athena-shell__sidebar-toggle'
@@ -1170,6 +1177,29 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                         </Tooltip>
                         <Breadcrumb className='athena-shell__breadcrumb' items={breadcrumbItems(location.pathname)} />
                     </div>
+                    {access && (
+                        <div className='athena-shell__header-actions'>
+                            <Dropdown
+                                open={accountMenuOpen}
+                                trigger={['click']}
+                                placement='bottomRight'
+                                classNames={{root: 'athena-account-menu'}}
+                                destroyOnHidden={true}
+                                menu={{items: accountMenuItems, onClick: onAccountMenuClick, selectable: false}}
+                                onOpenChange={setAccountMenuOpen}>
+                                <button className='athena-account-trigger' type='button' aria-label='Open account menu' aria-haspopup='menu' aria-expanded={accountMenuOpen}>
+                                    <AccountAvatar className='athena-account-avatar' profile={access.user.profile} username={access.user.username} size={28} />
+                                    <span className='athena-account-trigger__copy'>
+                                        <strong>{access.user.profile.displayName || access.user.username}</strong>
+                                        <small>@{access.user.username}</small>
+                                    </span>
+                                    <span className='athena-account-trigger__more' aria-hidden='true'>
+                                        •••
+                                    </span>
+                                </button>
+                            </Dropdown>
+                        </div>
+                    )}
                 </AntLayout.Header>
                 <AntLayout.Content className='athena-shell__content' id='athena-main' tabIndex={-1}>
                     {routes}
