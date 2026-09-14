@@ -25,6 +25,7 @@ export interface ModalApi {
         width?: number | string;
         okText?: string;
         cancelText?: string;
+        autoFocusButton?: 'ok' | 'cancel' | null;
         okButtonProps?: {danger?: boolean};
         onOk?: () => void | Promise<void>;
         onCancel?: () => void;

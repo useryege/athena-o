@@ -2,7 +2,6 @@ import {Alert, Button, Card, Typography} from 'antd';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 import googleMark from '../../assets/images/google-g.svg';
-import {BrandMark} from '../components';
 import {readAdminLoginReturnTo} from '../shared/login-navigation';
 import {deploymentPath} from '../shared/runtime-base';
 import {APPLICATION_REALM_QUERY} from '../shared/services/requests';
@@ -33,12 +32,17 @@ export const AdminLoginPage = () => {
 
     return (
         <main className='login-screen admin-login-screen'>
+            <div className='identity-brand'>
+                <svg className='identity-brand-symbol' viewBox='0 0 28 28' aria-hidden='true'>
+                    <path d='m4 23 10-19 10 19M8 17h12M11 23h6' />
+                </svg>
+                <span>ATHENA</span>
+            </div>
             <Card className='login-panel'>
-                <div className='login-panel__brand'>
-                    <BrandMark size='large' />
+                <header className='identity-panel-heading'>
                     <Typography.Title level={1}>Athena Admin</Typography.Title>
-                    <Typography.Text type='secondary'>Administration Console</Typography.Text>
-                </div>
+                    <Typography.Paragraph type='secondary'>Sign in to the administration console.</Typography.Paragraph>
+                </header>
                 <div className='login-panel__alerts' aria-live='polite' aria-atomic='true'>
                     {alert && <Alert type={alert.type} title={alert.message} showIcon={true} />}
                 </div>

@@ -132,7 +132,11 @@ test('theme:harness records writes and rejects undeclared methods instead of fab
     const ledger = await openThemeCase(page, 'member-login');
     const response = await page.evaluate(async () => {
         const target = `${location.pathname.replace(/\/login$/, '')}/api/v1/app/bootstrap?source=contract`;
-        const result = await fetch(target, {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Athena-Application-Realm': 'member'}, body: JSON.stringify({write: true})});
+        const result = await fetch(target, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-Athena-Application-Realm': 'member'},
+            body: JSON.stringify({write: true})
+        });
         return {status: result.status, body: await result.json()};
     });
     expect(response.status).toBe(500);
@@ -173,9 +177,9 @@ test('theme:core shell typography and account portal follow 200% root text sizin
     const account = page.getByRole('button', {name: 'Open account menu'});
     await account.click();
     await expect(page.locator('.athena-account-menu .ant-dropdown-menu-item').filter({hasText: 'Profile'})).toHaveCSS('font-size', '28px');
-    const identityClipping = await page.locator('.athena-account-menu__summary strong, .athena-account-menu__summary small').evaluateAll(nodes =>
-        nodes.map(node => ({clientWidth: node.clientWidth, scrollWidth: node.scrollWidth}))
-    );
+    const identityClipping = await page
+        .locator('.athena-account-menu__summary strong, .athena-account-menu__summary small')
+        .evaluateAll(nodes => nodes.map(node => ({clientWidth: node.clientWidth, scrollWidth: node.scrollWidth})));
     expect(identityClipping.every(item => item.scrollWidth <= item.clientWidth + 1)).toBe(true);
     await page.keyboard.press('Escape');
     await expect(page.locator('.athena-account-menu')).toBeHidden();
@@ -189,5 +193,254 @@ test('theme:core shell typography and account portal follow 200% root text sizin
     const screenshot = info.outputPath('member-shell-root-200.png');
     await page.screenshot({path: screenshot, fullPage: true});
     await info.attach('member-shell-root-200', {path: screenshot, contentType: 'image/png'});
+    assertThemeLedger(ledger);
+});
+
+for (const viewport of [
+    {name: 'desktop', width: 1440, height: 900},
+    {name: 'mobile', width: 390, height: 844}
+]) {
+    for (const id of [
+        'member-login',
+        'admin-login',
+        'member-register',
+        'admin-register',
+        'member-profile',
+        'admin-profile',
+        'member-security',
+        'member-access',
+        'admin-access',
+        'member-notifications',
+        'member-help',
+        'admin-help'
+    ]) {
+        test(`theme:identity ${id} ${viewport.name}`, async ({page}, info) => {
+            await page.setViewportSize(viewport);
+            const ledger = await openThemeCase(page, id);
+            if (id.endsWith('-profile')) {
+                await expect(page.getByLabel('Username', {exact: true})).toHaveAttribute('readonly', '');
+                await expect(page.getByLabel('Display name', {exact: true})).toHaveValue(id.startsWith('admin') ? 'Fixture Admin' : 'Fixture Member');
+                await expect(page.locator('.account-profile-avatar .ant-avatar')).toHaveCount(1);
+                await expect(page.locator('.account-center-hero')).toHaveCount(0);
+            }
+            if (id.endsWith('-access')) {
+                const modules = page.getByRole('heading', {name: 'Module access', exact: true});
+                const session = page.getByRole('heading', {name: 'Current session', exact: true});
+                expect((await modules.boundingBox())!.y).toBeLessThan((await session.boundingBox())!.y);
+                await expect(page.getByText('Access revision', {exact: true})).toBeHidden();
+                await page.getByText('Times, revisions & versions', {exact: true}).click();
+                await expect(page.getByText('Access revision', {exact: true})).toBeVisible();
+                await page.getByText('Times, revisions & versions', {exact: true}).click();
+            }
+            if (id.endsWith('-help')) await expect(page.getByRole('region', {name: 'Help resources'})).toBeVisible();
+            if (id === 'member-security') await expect(page.getByText('automation-client', {exact: true}).filter({visible: true})).toBeVisible();
+            if (id === 'member-notifications') await expect(page.getByText('Alex Chen (@alex_demo)', {exact: true})).toBeVisible();
+            await page.evaluate(() => window.scrollTo(0, 0));
+            await assertThemeLayout(page);
+            await page.mouse.move(0, 0);
+            const screenshot = info.outputPath(`${id}-${viewport.name}.png`);
+            await page.screenshot({path: screenshot, fullPage: true, animations: 'disabled'});
+            await info.attach(`${id}-${viewport.name}`, {path: screenshot, contentType: 'image/png'});
+            assertThemeLedger(ledger);
+        });
+    }
+}
+
+test('theme:identity profile draft survives conflict and leave dialog compares saved and draft', async ({page}) => {
+    const {themeCases} = await import('./theme-refactor/cases');
+    const {installThemeCase} = await import('./theme-refactor/routes');
+    const scenario = structuredClone(themeCases.find(item => item.id === 'member-profile')!);
+    scenario.replies.push({
+        method: 'PUT',
+        path: '/api/v1/account/11111111-1111-4111-8111-111111111111/profile',
+        realm: 'member',
+        status: 409,
+        json: {message: 'Profile revision conflict'}
+    });
+    const ledger = await installThemeCase(page, scenario);
+    await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/account/profile`);
+    const input = page.getByLabel('Display name', {exact: true});
+    await input.fill('My unsaved draft');
+    const refreshedUser = scenario.replies.find(item => item.path === '/api/v1/session/userinfo')!.json as any;
+    refreshedUser.profile = {...refreshedUser.profile, displayName: 'Latest saved name', revision: 5};
+    await page.getByRole('button', {name: 'Save profile'}).click();
+    await expect(page.getByText('Profile changed elsewhere', {exact: true})).toBeVisible();
+    await expect(input).toHaveValue('My unsaved draft');
+    expect(ledger.requests.filter(item => item.method === 'PUT').map(item => item.body)).toEqual([{displayName: 'My unsaved draft', expectedRevision: 4}]);
+    await page.getByRole('button', {name: 'Access & session Permissions and versions'}).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText('Latest saved name', {exact: true})).toBeVisible();
+    await expect(dialog.getByText('My unsaved draft', {exact: true})).toBeVisible();
+    await expect(dialog.getByRole('button', {name: 'Keep editing'})).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(input).toHaveValue('My unsaved draft');
+    await page.getByRole('button', {name: 'Reset', exact: true}).click();
+    await expect(input).toHaveValue('Latest saved name');
+    assertThemeLedger(ledger);
+});
+
+test('theme:identity key creation stays single-flight and clipboard rejection leaves the full secret selectable', async ({page}) => {
+    await page.addInitScript(() =>
+        Object.defineProperty(navigator, 'clipboard', {
+            configurable: true,
+            value: {
+                writeText: async () => {
+                    throw new Error('Clipboard denied');
+                }
+            }
+        })
+    );
+    const ledger = await openThemeCase(page, 'member-security');
+    await page.getByRole('button', {name: 'Create API key', exact: true}).click();
+    const creation = page.getByRole('dialog', {name: 'Create API key', exact: true});
+    await creation.getByLabel('Key ID', {exact: true}).fill('identity-test');
+    await creation.getByRole('button', {name: 'Create key', exact: true}).click();
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Escape');
+    await expect(creation).toBeVisible();
+    await expect(creation.getByRole('button', {name: 'Cancel', exact: true})).toBeDisabled();
+    const result = page.getByRole('dialog', {name: 'Copy your API key now'});
+    await expect(result).toBeVisible();
+    expect(ledger.requests.filter(item => item.method === 'POST').map(item => item.body)).toEqual([{expiresIn: 7776000, id: 'identity-test'}]);
+    await result.getByRole('button', {name: 'Copy API key', exact: true}).click();
+    await expect(page.getByText('Could not copy API key', {exact: true})).toBeVisible();
+    const secret = result.getByRole('textbox');
+    await expect(secret).toHaveValue('fixture-once-only-secret-full-value');
+    await secret.selectText();
+    expect(await secret.evaluate((node: HTMLTextAreaElement) => node.value.slice(node.selectionStart, node.selectionEnd))).toBe('fixture-once-only-secret-full-value');
+    await page.keyboard.press('Escape');
+    await expect(result).toBeVisible();
+    await result.getByRole('button', {name: 'Done', exact: true}).click();
+    await expect(result).toBeHidden();
+    assertThemeLedger(ledger);
+});
+
+test('theme:identity failed replacement preserves Connected and sends one empty attempt body', async ({page}) => {
+    const ledger = await openThemeCase(page, 'member-notifications');
+    await page.getByRole('button', {name: 'Reconnect', exact: true}).click();
+    await expect(page.getByText('Replacement setup unavailable', {exact: true})).toBeVisible();
+    await expect(page.getByText('Connected', {exact: true}).filter({visible: true})).toHaveCount(2);
+    await expect(page.getByText('Alex Chen (@alex_demo)', {exact: true})).toBeVisible();
+    expect(ledger.requests.filter(item => item.method === 'POST').map(item => item.body)).toEqual([{}]);
+    assertThemeLedger(ledger);
+});
+
+for (const realm of ['member', 'admin']) {
+    test(`theme:identity ${realm} Help shows only configured resources and deployment links`, async ({page}) => {
+        for (const configured of [false, true]) {
+            const ledger = await openThemeCase(page, `${realm}-help${configured ? '-configured' : ''}`);
+            const prefix = process.env.ATHENA_UI_E2E_PATH_PREFIX || '';
+            await expect(page.getByRole('link', {name: /LLM discovery/})).toHaveAttribute('href', `${prefix}/llms.txt`);
+            await expect(page.getByRole('link', {name: /Full-Account AI Access/})).toHaveAttribute('href', `${prefix}/docs/ai/safety.md`);
+            await expect(page.getByRole('link', {name: /Swagger UI/})).toHaveAttribute('href', `${prefix}/swagger-ui`);
+            await expect(page.getByRole('link', {name: 'Team chat'})).toHaveCount(configured ? 1 : 0);
+            await expect(page.getByRole('link', {name: 'Desktop download'})).toHaveCount(configured ? 1 : 0);
+            await expect(page.getByRole('button', {name: 'Connect an AI'})).toHaveCount(realm === 'member' ? 1 : 0);
+            assertThemeLedger(ledger);
+        }
+    });
+}
+
+test('theme:identity missing Phantom and expired Google ticket retain recovery', async ({page}) => {
+    const ledger = await openThemeCase(page, 'member-login');
+    await page.getByRole('button', {name: 'Continue with Phantom'}).click();
+    await expect(page.getByText('Phantom is not installed in this browser.', {exact: true})).toBeVisible();
+    expect(ledger.requests.filter(item => item.method !== 'GET')).toEqual([]);
+    assertThemeLedger(ledger);
+    const {themeCases} = await import('./theme-refactor/cases');
+    const {installThemeCase} = await import('./theme-refactor/routes');
+    const scenario = structuredClone(themeCases.find(item => item.id === 'member-register')!);
+    scenario.replies[0] = {...scenario.replies[0], status: 410, json: {reason: 'registration_expired'}};
+    const expiredLedger = await installThemeCase(page, scenario);
+    await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}${scenario.route}`);
+    await expect(page.getByText('Your registration session has expired. Return to sign in and try again.', {exact: true})).toBeVisible();
+    await expect(page.getByRole('button', {name: 'Return to sign in'})).toBeEnabled();
+    assertThemeLedger(expiredLedger);
+});
+
+for (const viewport of [{name: 'narrow', width: 320, height: 844, rootSize: 16}, {name: 'root-200', width: 720, height: 1000, rootSize: 32}]) {
+    for (const id of ['member-profile', 'member-security', 'member-notifications', 'admin-help']) {
+        test(`theme:identity ${id} ${viewport.name} text and boundaries`, async ({page}, info) => {
+            await page.setViewportSize(viewport);
+            const ledger = await openThemeCase(page, id);
+            if (viewport.rootSize === 32) {
+                const before = await page.locator('.app-page h1').evaluate(node => Number.parseFloat(getComputedStyle(node).fontSize));
+                await page.evaluate(() => {document.documentElement.style.fontSize = '32px';});
+                await expect(page.locator('.app-page h1')).toHaveCSS('font-size', `${before * 2}px`);
+                await expect(page.locator('.app-page__heading > .ant-typography-secondary')).toHaveCSS('font-size', '32px');
+            }
+            await assertThemeLayout(page);
+            await page.mouse.move(0, 0);
+            const screenshot = info.outputPath(`${id}-${viewport.name}.png`);
+            await page.screenshot({path: screenshot, fullPage: true, animations: 'disabled'});
+            await info.attach(`${id}-${viewport.name}`, {path: screenshot, contentType: 'image/png'});
+            assertThemeLedger(ledger);
+        });
+    }
+}
+
+test('theme:identity avatar rejects unsupported content before sending a write', async ({page}) => {
+    const ledger = await openThemeCase(page, 'member-profile');
+    await page.locator('input[type=file]').setInputFiles({name: 'avatar.txt', mimeType: 'text/plain', buffer: Buffer.from('not an image')});
+    await expect(page.getByText('Unsupported avatar format', {exact: true})).toBeVisible();
+    expect(ledger.requests.filter(item => item.method !== 'GET')).toEqual([]);
+    assertThemeLedger(ledger);
+});
+
+test('theme:identity Access uses semantic success and neutral disabled capabilities', async ({page}) => {
+    const memberLedger = await openThemeCase(page, 'member-access');
+    await expect(page.locator('.account-access-flags .ant-tag').first()).toHaveCSS('color', 'rgb(85, 217, 161)');
+    await expect(page.locator('.account-center-content .section-panel__extra .ant-tag').last()).toHaveCSS('color', 'rgb(85, 217, 161)');
+    await expect(page.locator('.account-module-summary .ant-tag').filter({hasText: 'Read & write'})).toHaveCSS('color', 'rgb(85, 217, 161)');
+    await expect(page.locator('.account-module-summary .ant-tag').filter({hasText: 'Read only'})).toBeVisible();
+    await expect(page.locator('.account-module-summary .ant-tag').filter({hasText: 'No access'}).first()).toBeVisible();
+    assertThemeLedger(memberLedger);
+    const adminLedger = await openThemeCase(page, 'admin-access');
+    for (const tag of await page.locator('.account-access-flags .ant-tag').all()) {
+        await expect(tag).toHaveText('No');
+        await expect(tag).not.toHaveClass(/ant-tag-error|ant-tag-red/);
+    }
+    assertThemeLedger(adminLedger);
+});
+
+test('theme:identity mobile AI instructions retain a visible action footer while the body scrolls', async ({page}, info) => {
+    await page.setViewportSize({width: 390, height: 844});
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    const ledger = await openThemeCase(page, 'member-security');
+    let credentialChecks = 0;
+    // Credential verification intentionally omits the session realm and cookie; verify this bearer boundary explicitly.
+    await page.route('**/api/v1/session/userinfo', async route => {
+        const request = route.request();
+        expect(request.url()).toBe(`${process.env.ATHENA_UI_E2E_BASE_URL}${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/api/v1/session/userinfo`);
+        expect(request.method()).toBe('GET');
+        expect(request.headers().authorization).toBe('Bearer fixture-once-only-secret-full-value');
+        expect(request.headers()['x-athena-application-realm']).toBeUndefined();
+        credentialChecks++;
+        await route.fulfill({status: 200, json: {loggedIn: true, accountId: '11111111-1111-4111-8111-111111111111'}});
+    });
+    await page.getByRole('button', {name: 'Connect AI', exact: true}).click();
+    const creation = page.getByRole('dialog', {name: 'Connect AI', exact: true});
+    await creation.getByLabel('Connection name', {exact: true}).fill('identity-ai');
+    await creation.getByRole('button', {name: 'Create connection', exact: true}).click();
+    const result = page.getByRole('dialog', {name: 'AI connection instructions ready'});
+    await expect(result.getByText('Credential ready', {exact: true})).toBeVisible();
+    await page.getByRole('alert').filter({hasText: 'Connection instructions ready'}).getByRole('button', {name: 'Close', exact: true}).click();
+    await page.evaluate(() => Promise.all(document.getAnimations().filter(animation => animation.effect?.getTiming().iterations !== Infinity).map(animation => animation.finished.catch(() => undefined))));
+    const body = result.locator('.ant-modal-body');
+    const footer = result.locator('.ant-modal-footer');
+    const before = await footer.boundingBox();
+    expect(before!.y + before!.height).toBeLessThanOrEqual(844);
+    expect(await body.evaluate(node => node.scrollHeight > node.clientHeight)).toBe(true);
+    await body.evaluate(node => node.scrollTop = node.scrollHeight);
+    expect((await footer.boundingBox())!.y).toBeCloseTo(before!.y, 0);
+    await expect(result.getByRole('textbox')).toHaveValue(/fixture-once-only-secret-full-value/);
+    expect(ledger.requests.filter(item => item.method === 'POST').map(item => item.body)).toEqual([{expiresIn: 7776000, id: 'identity-ai'}]);
+    await page.mouse.move(0, 0);
+    await page.screenshot({path: info.outputPath('member-ai-instructions-mobile.png'), animations: 'disabled'});
+    await result.getByRole('button', {name: 'Done', exact: true}).click();
+    await expect(result).toBeHidden();
+    expect(errors).toEqual([]);
+    expect(credentialChecks).toBe(1);
     assertThemeLedger(ledger);
 });

@@ -1,0 +1,1020 @@
+[
+  {
+    "id": "member-login",
+    "route": "/login",
+    "realm": "member",
+    "heading": "Welcome to Athena",
+    "replies": [
+      {
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_ANONYMOUS"
+          }
+        },
+        "status": 200,
+        "method": "GET"
+      }
+    ]
+  },
+  {
+    "id": "member-register",
+    "route": "/register?realm=member",
+    "realm": "member",
+    "heading": "Choose a username",
+    "replies": [
+      {
+        "path": "/auth/registration",
+        "realm": "member",
+        "json": {
+          "provider": "google",
+          "verifiedEmail": "member@example.invalid",
+          "solanaAddress": "",
+          "administrator": false,
+          "expiresAt": 4102444800,
+          "csrfToken": "member-fixture-csrf"
+        },
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/auth/registration/username-availability",
+        "realm": "member",
+        "json": {
+          "status": "available"
+        },
+        "status": 200,
+        "method": "GET"
+      }
+    ]
+  },
+  {
+    "id": "member-profile",
+    "route": "/account/profile",
+    "realm": "member",
+    "heading": "Account Center",
+    "replies": [
+      {
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "fixture.member",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Fixture Member",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": 4
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "member@example.invalid",
+                "solanaAddress": "",
+                "createdAt": 1783999440,
+                "lastLoginAt": 1789351200
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": false,
+                "revision": 7,
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/session/userinfo",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "loggedIn": true,
+          "accountId": "11111111-1111-4111-8111-111111111111",
+          "username": "fixture.member",
+          "iss": "fixture",
+          "administrator": false,
+          "profile": {
+            "displayName": "Fixture Member",
+            "tier": "ACCOUNT_TIER_STANDARD",
+            "avatarUrl": "",
+            "revision": 4
+          },
+          "identity": {
+            "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+            "verifiedEmail": "member@example.invalid",
+            "solanaAddress": "",
+            "createdAt": 1783999440,
+            "lastLoginAt": 1789351200
+          },
+          "access": {
+            "loginEnabled": true,
+            "apiKeyEnabled": true,
+            "profitSharingEnabled": false,
+            "revision": 7,
+            "moduleAccess": [
+              {
+                "module": "ACCOUNT_DATA_MODULE_WALLET",
+                "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "member-access",
+    "route": "/account/access",
+    "realm": "member",
+    "heading": "Account Center",
+    "replies": [
+      {
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "fixture.member",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Fixture Member",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": 4
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "member@example.invalid",
+                "solanaAddress": "",
+                "createdAt": 1783999440,
+                "lastLoginAt": 1789351200
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": false,
+                "revision": 7,
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/api/version",
+        "realm": "member",
+        "json": {
+          "Version": "fixture-v1"
+        },
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/session/userinfo",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "loggedIn": true,
+          "accountId": "11111111-1111-4111-8111-111111111111",
+          "username": "fixture.member",
+          "iss": "fixture",
+          "administrator": false,
+          "profile": {
+            "displayName": "Fixture Member",
+            "tier": "ACCOUNT_TIER_STANDARD",
+            "avatarUrl": "",
+            "revision": 4
+          },
+          "identity": {
+            "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+            "verifiedEmail": "member@example.invalid",
+            "solanaAddress": "",
+            "createdAt": 1783999440,
+            "lastLoginAt": 1789351200
+          },
+          "access": {
+            "loginEnabled": true,
+            "apiKeyEnabled": true,
+            "profitSharingEnabled": false,
+            "revision": 7,
+            "moduleAccess": [
+              {
+                "module": "ACCOUNT_DATA_MODULE_WALLET",
+                "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+              },
+              {
+                "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "member-help",
+    "route": "/help",
+    "realm": "member",
+    "heading": "Help",
+    "replies": [
+      {
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "fixture.member",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Fixture Member",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": 4
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "member@example.invalid",
+                "solanaAddress": "",
+                "createdAt": 1783999440,
+                "lastLoginAt": 1789351200
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": false,
+                "revision": 7,
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "status": 200,
+        "method": "GET"
+      }
+    ]
+  },
+  {
+    "id": "member-help-configured",
+    "route": "/help",
+    "realm": "member",
+    "heading": "Help",
+    "replies": [
+      {
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "https://support.example.invalid",
+              "chatText": "Team chat",
+              "binaryUrls": {
+                "Desktop download": "https://downloads.example.invalid/athena"
+              }
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "fixture.member",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Fixture Member",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": 4
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "member@example.invalid",
+                "solanaAddress": "",
+                "createdAt": 1783999440,
+                "lastLoginAt": 1789351200
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": false,
+                "revision": 7,
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "status": 200,
+        "method": "GET"
+      }
+    ]
+  },
+  {
+    "id": "admin-login",
+    "route": "/admin/login",
+    "realm": "admin",
+    "heading": "Athena Admin",
+    "replies": [
+      {
+        "path": "/api/v1/app/bootstrap",
+        "realm": "admin",
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_ANONYMOUS"
+          }
+        },
+        "status": 200,
+        "method": "GET"
+      }
+    ]
+  },
+  {
+    "id": "admin-register",
+    "route": "/register?realm=admin",
+    "realm": "admin",
+    "heading": "Choose a username",
+    "replies": [
+      {
+        "path": "/auth/registration",
+        "realm": "admin",
+        "json": {
+          "provider": "google",
+          "verifiedEmail": "admin@example.invalid",
+          "solanaAddress": "",
+          "administrator": true,
+          "expiresAt": 4102444800,
+          "csrfToken": "admin-fixture-csrf"
+        },
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/auth/registration/username-availability",
+        "realm": "admin",
+        "json": {
+          "status": "available"
+        },
+        "status": 200,
+        "method": "GET"
+      }
+    ]
+  },
+  {
+    "id": "admin-profile",
+    "route": "/admin/account/profile",
+    "realm": "admin",
+    "heading": "Account Center",
+    "replies": [
+      {
+        "path": "/api/v1/app/bootstrap",
+        "realm": "admin",
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "22222222-2222-4222-8222-222222222222",
+              "username": "fixture.admin",
+              "iss": "fixture",
+              "administrator": true,
+              "profile": {
+                "displayName": "Fixture Admin",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": 4
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "admin@example.invalid",
+                "solanaAddress": "",
+                "createdAt": 1783999440,
+                "lastLoginAt": 1789351200
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": false,
+                "profitSharingEnabled": false,
+                "revision": 7,
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/session/userinfo",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "loggedIn": true,
+          "accountId": "22222222-2222-4222-8222-222222222222",
+          "username": "fixture.admin",
+          "iss": "fixture",
+          "administrator": true,
+          "profile": {
+            "displayName": "Fixture Admin",
+            "tier": "ACCOUNT_TIER_STANDARD",
+            "avatarUrl": "",
+            "revision": 4
+          },
+          "identity": {
+            "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+            "verifiedEmail": "admin@example.invalid",
+            "solanaAddress": "",
+            "createdAt": 1783999440,
+            "lastLoginAt": 1789351200
+          },
+          "access": {
+            "loginEnabled": true,
+            "apiKeyEnabled": false,
+            "profitSharingEnabled": false,
+            "revision": 7,
+            "moduleAccess": [
+              {
+                "module": "ACCOUNT_DATA_MODULE_WALLET",
+                "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "admin-access",
+    "route": "/admin/account/access",
+    "realm": "admin",
+    "heading": "Account Center",
+    "replies": [
+      {
+        "path": "/api/v1/app/bootstrap",
+        "realm": "admin",
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "22222222-2222-4222-8222-222222222222",
+              "username": "fixture.admin",
+              "iss": "fixture",
+              "administrator": true,
+              "profile": {
+                "displayName": "Fixture Admin",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": 4
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "admin@example.invalid",
+                "solanaAddress": "",
+                "createdAt": 1783999440,
+                "lastLoginAt": 1789351200
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": false,
+                "profitSharingEnabled": false,
+                "revision": 7,
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/api/version",
+        "realm": "admin",
+        "json": {
+          "Version": "fixture-v1"
+        },
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/session/userinfo",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "loggedIn": true,
+          "accountId": "22222222-2222-4222-8222-222222222222",
+          "username": "fixture.admin",
+          "iss": "fixture",
+          "administrator": true,
+          "profile": {
+            "displayName": "Fixture Admin",
+            "tier": "ACCOUNT_TIER_STANDARD",
+            "avatarUrl": "",
+            "revision": 4
+          },
+          "identity": {
+            "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+            "verifiedEmail": "admin@example.invalid",
+            "solanaAddress": "",
+            "createdAt": 1783999440,
+            "lastLoginAt": 1789351200
+          },
+          "access": {
+            "loginEnabled": true,
+            "apiKeyEnabled": false,
+            "profitSharingEnabled": false,
+            "revision": 7,
+            "moduleAccess": [
+              {
+                "module": "ACCOUNT_DATA_MODULE_WALLET",
+                "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "admin-help",
+    "route": "/admin/help",
+    "realm": "admin",
+    "heading": "Help",
+    "replies": [
+      {
+        "path": "/api/v1/app/bootstrap",
+        "realm": "admin",
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "22222222-2222-4222-8222-222222222222",
+              "username": "fixture.admin",
+              "iss": "fixture",
+              "administrator": true,
+              "profile": {
+                "displayName": "Fixture Admin",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": 4
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "admin@example.invalid",
+                "solanaAddress": "",
+                "createdAt": 1783999440,
+                "lastLoginAt": 1789351200
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": false,
+                "profitSharingEnabled": false,
+                "revision": 7,
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "status": 200,
+        "method": "GET"
+      }
+    ]
+  },
+  {
+    "id": "admin-help-configured",
+    "route": "/admin/help",
+    "realm": "admin",
+    "heading": "Help",
+    "replies": [
+      {
+        "path": "/api/v1/app/bootstrap",
+        "realm": "admin",
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "https://support.example.invalid",
+              "chatText": "Team chat",
+              "binaryUrls": {
+                "Desktop download": "https://downloads.example.invalid/athena"
+              }
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "22222222-2222-4222-8222-222222222222",
+              "username": "fixture.admin",
+              "iss": "fixture",
+              "administrator": true,
+              "profile": {
+                "displayName": "Fixture Admin",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": 4
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "admin@example.invalid",
+                "solanaAddress": "",
+                "createdAt": 1783999440,
+                "lastLoginAt": 1789351200
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": false,
+                "profitSharingEnabled": false,
+                "revision": 7,
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "status": 200,
+        "method": "GET"
+      }
+    ]
+  },
+  {
+    "id": "member-security",
+    "route": "/account/security",
+    "realm": "member",
+    "heading": "Account Center",
+    "replies": [
+      {
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "fixture.member",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Fixture Member",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": 4
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "member@example.invalid",
+                "solanaAddress": "",
+                "createdAt": 1783999440,
+                "lastLoginAt": 1789351200
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": false,
+                "revision": 7,
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/account/security/tokens",
+        "realm": "member",
+        "json": {
+          "items": [
+            {
+              "id": "automation-client",
+              "issuedAt": 1789176600,
+              "expiresAt": 1796952600
+            },
+            {
+              "id": "research-cli",
+              "issuedAt": 1788249600,
+              "expiresAt": 0
+            }
+          ]
+        },
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/account/security/tokens",
+        "realm": "member",
+        "json": {
+          "token": "fixture-once-only-secret-full-value"
+        },
+        "status": 200,
+        "method": "POST",
+        "delayMs": 1200
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/session/userinfo",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "loggedIn": true,
+          "accountId": "11111111-1111-4111-8111-111111111111",
+          "username": "fixture.member",
+          "iss": "fixture",
+          "administrator": false,
+          "profile": {
+            "displayName": "Fixture Member",
+            "tier": "ACCOUNT_TIER_STANDARD",
+            "avatarUrl": "",
+            "revision": 4
+          },
+          "identity": {
+            "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+            "verifiedEmail": "member@example.invalid",
+            "solanaAddress": "",
+            "createdAt": 1783999440,
+            "lastLoginAt": 1789351200
+          },
+          "access": {
+            "loginEnabled": true,
+            "apiKeyEnabled": true,
+            "profitSharingEnabled": false,
+            "revision": 7,
+            "moduleAccess": [
+              {
+                "module": "ACCOUNT_DATA_MODULE_WALLET",
+                "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "member-notifications",
+    "route": "/notifications",
+    "realm": "member",
+    "heading": "Notifications",
+    "replies": [
+      {
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "fixture.member",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Fixture Member",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": 4
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "member@example.invalid",
+                "solanaAddress": "",
+                "createdAt": 1783999440,
+                "lastLoginAt": 1789351200
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": false,
+                "revision": 7,
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/notification-bindings/telegram",
+        "realm": "member",
+        "json": {
+          "botAvailable": true,
+          "botUsername": "athena_demo_bot",
+          "binding": {
+            "status": "connected",
+            "telegramDisplayName": "Alex Chen",
+            "telegramUsername": "alex_demo",
+            "boundAt": "2026-09-12T01:00:00Z",
+            "revision": 4
+          }
+        },
+        "status": 200,
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/notification-bindings/telegram/attempt",
+        "realm": "member",
+        "json": {
+          "message": "Replacement setup unavailable"
+        },
+        "status": 503,
+        "method": "POST"
+      }
+    ]
+  }
+]

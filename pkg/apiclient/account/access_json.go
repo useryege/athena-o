@@ -79,13 +79,17 @@ func (a AccountAccess) MarshalJSON() ([]byte, error) {
 		revision = strconv.FormatUint(a.Revision, 10)
 	}
 	return json.Marshal(struct {
-		LoginEnabled bool                   `json:"loginEnabled,omitempty"`
-		Revision     string                 `json:"revision,omitempty"`
-		ModuleAccess []*AccountModuleAccess `json:"moduleAccess,omitempty"`
+		LoginEnabled         bool                   `json:"loginEnabled,omitempty"`
+		ApiKeyEnabled        bool                   `json:"apiKeyEnabled,omitempty"`
+		ProfitSharingEnabled bool                   `json:"profitSharingEnabled,omitempty"`
+		Revision             string                 `json:"revision,omitempty"`
+		ModuleAccess         []*AccountModuleAccess `json:"moduleAccess,omitempty"`
 	}{
-		LoginEnabled: a.LoginEnabled,
-		Revision:     revision,
-		ModuleAccess: a.ModuleAccess,
+		LoginEnabled:         a.LoginEnabled,
+		ApiKeyEnabled:        a.ApiKeyEnabled,
+		ProfitSharingEnabled: a.ProfitSharingEnabled,
+		Revision:             revision,
+		ModuleAccess:         a.ModuleAccess,
 	})
 }
 
@@ -93,9 +97,11 @@ func (a AccountAccess) MarshalJSON() ([]byte, error) {
 // numeric value used by older handwritten HTTP clients.
 func (a *AccountAccess) UnmarshalJSON(data []byte) error {
 	var value struct {
-		LoginEnabled bool                   `json:"loginEnabled,omitempty"`
-		Revision     json.RawMessage        `json:"revision,omitempty"`
-		ModuleAccess []*AccountModuleAccess `json:"moduleAccess,omitempty"`
+		LoginEnabled         bool                   `json:"loginEnabled,omitempty"`
+		ApiKeyEnabled        bool                   `json:"apiKeyEnabled,omitempty"`
+		ProfitSharingEnabled bool                   `json:"profitSharingEnabled,omitempty"`
+		Revision             json.RawMessage        `json:"revision,omitempty"`
+		ModuleAccess         []*AccountModuleAccess `json:"moduleAccess,omitempty"`
 	}
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
@@ -106,9 +112,11 @@ func (a *AccountAccess) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("invalid account access revision: %w", err)
 	}
 	*a = AccountAccess{
-		LoginEnabled: value.LoginEnabled,
-		Revision:     revision,
-		ModuleAccess: value.ModuleAccess,
+		LoginEnabled:         value.LoginEnabled,
+		ApiKeyEnabled:        value.ApiKeyEnabled,
+		ProfitSharingEnabled: value.ProfitSharingEnabled,
+		Revision:             revision,
+		ModuleAccess:         value.ModuleAccess,
 	}
 	return nil
 }

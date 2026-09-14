@@ -1,3 +1,4 @@
+import identityCases from './fixtures/identity.json';
 import type {ThemeCase, ThemeReply} from './contracts';
 
 const settings = {
@@ -51,30 +52,13 @@ const bootstrap = (realm: 'member' | 'admin', session: unknown, status = 200): T
     json: status === 200 ? {settings, session} : session
 });
 
-const anonymous = {status: 'APP_BOOTSTRAP_SESSION_STATUS_ANONYMOUS'};
 const authenticated = (options: {administrator?: boolean; active?: boolean} = {}) => ({
     status: 'APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED',
     userInfo: user(options)
 });
 
 export const themeCases: ThemeCase[] = [
-    {id: 'member-login', route: '/login', realm: 'member', heading: 'Athena', replies: [bootstrap('member', anonymous)]},
-    {id: 'admin-login', route: '/admin/login', realm: 'admin', heading: 'Athena Admin', replies: [bootstrap('admin', anonymous)]},
-    {
-        id: 'member-register',
-        route: '/register?realm=member',
-        realm: 'member',
-        heading: 'Choose a username',
-        replies: [
-            {
-                method: 'GET',
-                path: '/auth/registration',
-                realm: 'member',
-                status: 200,
-                json: {provider: 'google', verifiedEmail: 'member@example.invalid', solanaAddress: '', administrator: false, expiresAt: 1789366800, csrfToken: 'fixture-csrf'}
-            }
-        ]
-    },
+    ...(identityCases as ThemeCase[]),
     {
         id: 'member-bootstrap-error',
         route: '/login',

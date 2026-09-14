@@ -4,7 +4,3 @@
 .athena-admin-shell .athena-brand__copy strong {
     color: var(--athena-accent);
 }
-
-.admin-login-screen .login-panel {
-    border-top: 3px solid var(--athena-accent);
-}

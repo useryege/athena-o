@@ -6,8 +6,9 @@ import {assertThemeLayout, assertThemeLedger, openThemeCase} from './theme-refac
 
 const tags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
-for (const scenario of themeCases.filter(item => ['member-login', 'admin-login', 'member-register', 'member-bootstrap-error', 'member-pending', 'admin-forbidden'].includes(item.id))) {
+for (const scenario of themeCases.filter(item => ['member-login', 'admin-login', 'member-register', 'admin-register', 'member-profile', 'admin-profile', 'member-access', 'admin-access', 'member-security', 'member-notifications', 'member-help', 'admin-help', 'member-bootstrap-error', 'member-pending', 'admin-forbidden'].includes(item.id))) {
     test(`theme:a11y ${scenario.id}`, async ({page}, info) => {
+        await page.setViewportSize({width: 390, height: 844});
         const ledger = await openThemeCase(page, scenario.id);
         await assertThemeLayout(page);
         const results = await new AxeBuilder({page}).withTags(tags).analyze();

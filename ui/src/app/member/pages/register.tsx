@@ -1,7 +1,6 @@
 import {CheckCircleFilled, CloseCircleFilled, SafetyCertificateOutlined} from '@ant-design/icons';
 import {Alert, Button, Card, Input, Spin, Tag, Typography} from 'antd';
 import * as React from 'react';
-import {BrandMark} from '../../components';
 import {Registration, registrationService, RegistrationRequestError, UsernameAvailability} from '../../shared/services/registration-service';
 import requests, {ACCOUNT_MAINTENANCE_MESSAGE, APPLICATION_REALM_QUERY} from '../../shared/services/requests';
 
@@ -227,14 +226,19 @@ export const RegisterPage = () => {
 
     return (
         <main className='registration-screen' aria-labelledby='registration-title'>
+            <div className='identity-brand'>
+                <svg className='identity-brand-symbol' viewBox='0 0 28 28' aria-hidden='true'>
+                    <path d='m4 23 10-19 10 19M8 17h12M11 23h6' />
+                </svg>
+                <span>ATHENA</span>
+            </div>
             <Card className='registration-panel'>
                 <header className='registration-panel__header'>
-                    <BrandMark size='large' />
                     <div>
                         <Typography.Title id='registration-title' level={1}>
                             Choose a username
                         </Typography.Title>
-                        <Typography.Paragraph type='secondary'>Your permanent public name in Athena</Typography.Paragraph>
+                        <Typography.Paragraph type='secondary'>Your permanent public name in Athena.</Typography.Paragraph>
                     </div>
                 </header>
 
@@ -266,7 +270,7 @@ export const RegisterPage = () => {
                                 </Typography.Text>
                             </div>
                             {registration.administrator && (
-                                <Tag className='registration-identity__administrator' icon={<SafetyCertificateOutlined />} color='gold'>
+                                <Tag className='registration-identity__administrator' icon={<SafetyCertificateOutlined />} color='success'>
                                     Administrator account
                                 </Tag>
                             )}
@@ -309,6 +313,11 @@ export const RegisterPage = () => {
                     </>
                 )}
             </Card>
+            {!registration?.administrator && (
+                <Typography.Paragraph className='identity-access-note' type='secondary'>
+                    Business access is granted separately by an Athena administrator.
+                </Typography.Paragraph>
+            )}
         </main>
     );
 };

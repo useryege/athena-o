@@ -1,9 +1,9 @@
+import {SafetyCertificateOutlined} from '@ant-design/icons';
 import {Alert, Button, Card, Typography} from 'antd';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 import googleMark from '../../../assets/images/google-g.svg';
 import phantomMark from '../../../assets/images/phantom-mark.svg';
-import {BrandMark} from '../../components';
 import {readLoginReturnTo} from '../../shared/login-navigation';
 import requests, {ACCOUNT_MAINTENANCE_MESSAGE, APPLICATION_REALM_HEADER, APPLICATION_REALM_QUERY} from '../../shared/services/requests';
 
@@ -220,12 +220,17 @@ export const LoginPage = () => {
 
     return (
         <main className='login-screen'>
+            <div className='identity-brand'>
+                <svg className='identity-brand-symbol' viewBox='0 0 28 28' aria-hidden='true'>
+                    <path d='m4 23 10-19 10 19M8 17h12M11 23h6' />
+                </svg>
+                <span>ATHENA</span>
+            </div>
             <Card className='login-panel'>
-                <div className='login-panel__brand'>
-                    <BrandMark size='large' />
-                    <Typography.Title level={1}>Athena</Typography.Title>
-                    <Typography.Text type='secondary'>Operations Console</Typography.Text>
-                </div>
+                <header className='identity-panel-heading'>
+                    <Typography.Title level={1}>Welcome to Athena</Typography.Title>
+                    <Typography.Paragraph type='secondary'>Sign in with your verified identity.</Typography.Paragraph>
+                </header>
                 <div className='login-panel__alerts' aria-live='polite' aria-atomic='true'>
                     {alert && (
                         <Alert
@@ -268,14 +273,23 @@ export const LoginPage = () => {
                     <div className='login-panel__status' aria-live='polite' aria-atomic='true'>
                         {phantomStage}
                     </div>
-                    <Typography.Paragraph className='login-panel__hint' type='secondary'>
-                        Sign in with a verified Google account or prove ownership of a Phantom wallet. Business access is granted separately by an Athena administrator.
-                    </Typography.Paragraph>
                     <Typography.Paragraph className='login-panel__wallet-note' type='secondary'>
-                        Phantom signs only this login message. It does not create a transaction or charge a network fee.
+                        <SafetyCertificateOutlined aria-hidden='true' />
+                        <span>
+                            Phantom signs only this login message.
+                            <br />
+                            No transaction or network fee.
+                        </span>
                     </Typography.Paragraph>
+                    <div className='login-panel__new-account'>
+                        <Typography.Text strong={true}>New to Athena?</Typography.Text>
+                        <Typography.Paragraph type='secondary'>Verify your identity first, then choose a username to create your account.</Typography.Paragraph>
+                    </div>
                 </div>
             </Card>
+            <Typography.Paragraph className='identity-access-note' type='secondary'>
+                Business access is granted separately by an Athena administrator.
+            </Typography.Paragraph>
         </main>
     );
 };

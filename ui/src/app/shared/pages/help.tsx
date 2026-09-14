@@ -1,5 +1,5 @@
-import {ApiOutlined, DownloadOutlined, FileTextOutlined, MessageOutlined, SafetyCertificateOutlined} from '@ant-design/icons';
-import {Button, Space, Typography} from 'antd';
+import {ApiOutlined, ExportOutlined, RightOutlined} from '@ant-design/icons';
+import {Button, Typography} from 'antd';
 import {useNavigate} from 'react-router-dom';
 import {AppPage, Section} from '../../components';
 import {useAuthorization} from '../context';
@@ -13,35 +13,56 @@ export const HelpPage = (props: {help: AuthSettings['help']}) => {
 
     return (
         <AppPage title='Help' subtitle='Operational reference links'>
-            <Section title='Resources'>
-                <Space className='help-resource-list' orientation='vertical'>
-                    {mayConnectAI && (
-                        <Button className='help-connect-ai-action' type='primary' icon={<ApiOutlined />} onClick={() => navigate('/account/security')}>
-                            Connect an AI
-                        </Button>
-                    )}
-                    {props.help?.chatUrl && (
-                        <Button type='link' icon={<MessageOutlined />} href={props.help.chatUrl} target='_blank' rel='noreferrer'>
-                            {props.help.chatText || 'Contact support'}
-                        </Button>
-                    )}
-                    <Button type='link' icon={<FileTextOutlined />} href={deploymentPath('llms.txt')} target='_blank' rel='noreferrer'>
-                        LLM discovery (llms.txt)
-                    </Button>
-                    <Button type='link' icon={<SafetyCertificateOutlined />} href={deploymentPath('docs/ai/safety.md')} target='_blank' rel='noreferrer'>
-                        Full-Account AI Access
-                    </Button>
-                    <Button type='link' href={deploymentPath('swagger-ui')}>
-                        Swagger UI
-                    </Button>
-                    {Object.entries(props.help?.binaryUrls || {}).map(([label, url]) => (
-                        <Button key={label} type='link' icon={<DownloadOutlined />} href={url}>
-                            {label}
-                        </Button>
-                    ))}
-                    <Typography.Text type='secondary'>ATHENA desktop UI is optimized for browsing, search, detail inspection, and operational workflows.</Typography.Text>
-                </Space>
-            </Section>
+            <div className='athena-help-panel'>
+                <Section title='Resources'>
+                    <section className='athena-help-resources' aria-label='Help resources'>
+                        {mayConnectAI && (
+                            <div className='athena-help-connect'>
+                                <Typography.Text type='secondary'>Manage AI connections and API keys in Account Center.</Typography.Text>
+                                <Button className='help-connect-ai-action' type='primary' icon={<ApiOutlined />} onClick={() => navigate('/account/security')}>
+                                    Connect an AI
+                                </Button>
+                            </div>
+                        )}
+                        {props.help?.chatUrl && (
+                            <a className='athena-help-resource' href={props.help.chatUrl} target='_blank' rel='noreferrer'>
+                                <strong>{props.help.chatText || 'Contact support'}</strong>
+                                <ExportOutlined />
+                            </a>
+                        )}
+                        <a className='athena-help-resource' href={deploymentPath('llms.txt')} target='_blank' rel='noreferrer'>
+                            <span>
+                                <strong>LLM discovery (llms.txt)</strong>
+                                <small>Discover Athena resources for AI clients.</small>
+                            </span>
+                            <ExportOutlined />
+                        </a>
+                        <a className='athena-help-resource' href={deploymentPath('docs/ai/safety.md')} target='_blank' rel='noreferrer'>
+                            <span>
+                                <strong>Full-Account AI Access</strong>
+                                <small>Read the scope and responsibilities of AI access.</small>
+                            </span>
+                            <ExportOutlined />
+                        </a>
+                        <a className='athena-help-resource' href={deploymentPath('swagger-ui')}>
+                            <span>
+                                <strong>Swagger UI</strong>
+                                <small>Browse the available API reference.</small>
+                            </span>
+                            <RightOutlined />
+                        </a>
+                        {Object.entries(props.help?.binaryUrls || {}).map(([label, url]) => (
+                            <a className='athena-help-resource' key={label} href={url}>
+                                <strong>{label}</strong>
+                                <ExportOutlined />
+                            </a>
+                        ))}
+                        <Typography.Paragraph className='athena-help-note' type='secondary'>
+                            ATHENA desktop UI is optimized for browsing, search, detail inspection, and operational workflows.
+                        </Typography.Paragraph>
+                    </section>
+                </Section>
+            </div>
         </AppPage>
     );
 };
