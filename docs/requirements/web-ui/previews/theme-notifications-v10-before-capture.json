@@ -1,0 +1,196 @@
+{
+  "task": "ATHENA Notifications v10 current React visual comparison",
+  "result": "passed",
+  "capturedAt": "2026-09-14T01:33:12.097350+00:00",
+  "evidenceClassification": "ui-fixtures",
+  "scope": {
+    "route": "/notifications",
+    "theme": "dark",
+    "screenshots": "Connected and first pending setup, desktop and mobile",
+    "fullSystemSmokeRequired": false,
+    "externalAPIsUsed": false,
+    "mutationRequestsObserved": false,
+    "productionUIChanged": false
+  },
+  "repository": {
+    "root": "/home/yege/work/athena",
+    "branch": "rf4",
+    "head": "7c6e4839f8ee9323bc6d84c7565b44577d88eda4"
+  },
+  "sourceHashesSha256": {
+    "ui/src/app/member/pages/notifications.tsx": "7c55197f70f95c6cb6b92648b2e3ccdd3079d8da16c06d83a47da4edeb91d40e",
+    "ui/src/app/member/notification-service.ts": "3e1a5a73ebab4bc125a36cd6b77e06b49ab6ab7607a6a1658f5c7beb416c610c",
+    "ui/src/app/member/notification-storage.ts": "ef01d424b540f35819101d2fbe6b50d6650d3114c972fa2c1be375ca101cfd18",
+    "ui/e2e/trader-sync-fixtures.ts": "b1b44efdc8c6d294f4c08e778cda3be9b63683ca92c948e420b52b9f0810bbdc",
+    ".superpowers/v10-current-capture.spec.ts": "521ef21c7e5af426ba4adfe5c47215786920e5b68901d14087a68710ef0d48aa",
+    ".superpowers/v10-current.playwright.config.ts": "eb9b565927e95df13814d3dbc78452d3125bbb077b410a14fef0b5d45005eaf7"
+  },
+  "data": {
+    "path": "theme-notifications-v10-data.json",
+    "sha256": "1a73f8f27820ea8e8d54afea4c55bf28bb52d6d3253302e7c0956b1f0e2951c1",
+    "synthetic": true,
+    "sameDataUsedInPrototype": true,
+    "asOf": "2026-09-14T07:00:00Z"
+  },
+  "capture": {
+    "command": "cd ui && yarn playwright test --config ../.superpowers/v10-current.playwright.config.ts",
+    "testResult": "1 passed (3.5s); test loop captures four combinations",
+    "node": "v24.14.1",
+    "screenshots": [
+      {
+        "path": "theme-notifications-v10-before-desktop.png",
+        "sha256": "a2524b7729c126b1c790ea983fca1f48bbfbc35f3feb7d0cec1a18e5f2006cbe",
+        "name": "desktop",
+        "state": "connected",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 900
+        },
+        "overflowX": false,
+        "theme": "dark",
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/notification-bindings/telegram"
+        ],
+        "pageErrors": [],
+        "writesSubmitted": false,
+        "linksOpened": false
+      },
+      {
+        "path": "theme-notifications-v10-before-desktop-pending.png",
+        "sha256": "690bb8c7686dd25d27fd14b18ccb3e0b82b99de4fb36c1356b4685cf2c033eda",
+        "name": "desktop",
+        "state": "pending",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 956
+        },
+        "overflowX": false,
+        "theme": "dark",
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/notification-bindings/telegram"
+        ],
+        "pageErrors": [],
+        "writesSubmitted": false,
+        "linksOpened": false
+      },
+      {
+        "path": "theme-notifications-v10-before-mobile.png",
+        "sha256": "d21807c2648a2ef77c0f259b5779edb56cfd198bae5d2f5ae1601ddbdb2de2be",
+        "name": "mobile",
+        "state": "connected",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 965
+        },
+        "overflowX": false,
+        "theme": "dark",
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/notification-bindings/telegram"
+        ],
+        "pageErrors": [],
+        "writesSubmitted": false,
+        "linksOpened": false
+      },
+      {
+        "path": "theme-notifications-v10-before-mobile-pending.png",
+        "sha256": "205682f3c0be16b9402e13366d4704976a38918e313b27967b48e11cb4b342e2",
+        "name": "mobile",
+        "state": "pending",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 1783
+        },
+        "overflowX": false,
+        "theme": "dark",
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/notification-bindings/telegram"
+        ],
+        "pageErrors": [],
+        "writesSubmitted": false,
+        "linksOpened": false
+      }
+    ],
+    "assertions": [
+      "same identity and binding timestamp",
+      "connected ready status and enabled Reconnect",
+      "full pending manual command, reserved demonstration link and fixed 8:32 expiry",
+      "no horizontal page overflow",
+      "zero page errors",
+      "GET fixture API requests only"
+    ]
+  },
+  "evidenceCorrections": [
+    "Initial capture assertion expected exact Reconnect accessible name; current Ant Design button includes icon accessible name reload. Capture selector was corrected to match action suffix. No product code changed."
+  ],
+  "environment": {
+    "preExistingRetained": [
+      {
+        "kind": "shared root runtime supervisor",
+        "pid": 307846,
+        "repository": "/home/yege/work/athena",
+        "status": "retained; not owned or used by this task"
+      },
+      {
+        "kind": "shared root Vite",
+        "pid": 308228,
+        "address": "http://127.0.0.1:4000",
+        "repository": "/home/yege/work/athena/ui",
+        "status": "retained; not owned or used by this task"
+      },
+      {
+        "kind": "shared root API",
+        "pid": 3950976,
+        "address": "http://127.0.0.1:8080",
+        "status": "retained; not owned or used by intercepted fixture APIs"
+      },
+      {
+        "kind": "independent worktree Vite",
+        "pid": 1053295,
+        "address": "http://127.0.0.1:24000",
+        "repository": "/home/yege/work/athena/.worktrees/trader-sync-independent/ui",
+        "status": "retained; not owned or used by this task"
+      }
+    ],
+    "temporary": {
+      "repository": "/home/yege/work/athena/ui",
+      "address": "http://127.0.0.1:5620",
+      "command": "yarn vite --host 127.0.0.1 --port 5620 --strictPort",
+      "ownedProcesses": [
+        3070738,
+        3070749,
+        3070750
+      ],
+      "log": ".superpowers/v10-before-vite.log",
+      "stopped": true,
+      "stopMethod": "SIGINT to Vite PID 3070750 after verifying cwd and port in command line",
+      "verification": [
+        "owned yarn, shell and Vite PIDs exited",
+        "port 5620 no listener"
+      ],
+      "retainedTaskEnvironment": false
+    }
+  },
+  "limitations": [
+    "Visual fixture capture is not production API, polling, permission, concurrency, recovery or mutation acceptance."
+  ]
+}

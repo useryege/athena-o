@@ -1,0 +1,132 @@
+{
+  "version": "v19-trader",
+  "result": "passed",
+  "capturedAt": "2026-09-14T07:45:57.666580+00:00",
+  "scope": {
+    "mode": "ui-fixtures",
+    "description": "Current React administrator Trader Sync list and subscription summary with intercepted synthetic GET fixtures. No write requests.",
+    "productionUIChanged": false
+  },
+  "environment": {
+    "url": "http://localhost:4000",
+    "repository": "/home/yege/work/athena",
+    "processWorkingDirectory": "/home/yege/work/athena/ui",
+    "vitePID": 308228,
+    "supervisorPID": 307846,
+    "instance": "athena-local-runtime (legacy shared existing environment)",
+    "ownerState": ".run/athena-local-runtime/supervisor.state",
+    "logs": ".run/athena-local-runtime/",
+    "captureLogs": ".superpowers/v19-trader-current-playwright-artifacts/",
+    "taskStartedServices": [],
+    "taskCleanup": "All task browser contexts closed. Borrowed root environment preserved.",
+    "ownerStopCommand": "cd /home/yege/work/athena && make stop",
+    "ownerStopCommandExecuted": false
+  },
+  "capture": {
+    "command": "PATH=/home/yege/.nvm/versions/node/v24.14.1/bin:$PATH node ui/node_modules/@playwright/test/cli.js test --config .superpowers/v19-trader-current.playwright.config.ts",
+    "result": "1 passed (3.4s), case 2.8s",
+    "screenshots": [
+      {
+        "name": "list-desktop",
+        "route": "/admin/trader-sync/subscriptions",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 1008
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/admin/trader-sync/subscriptions"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-admin-trader-sync-v19-before-list-desktop.png",
+        "sha256": "9e5a263932b5642ae59afb20d01ceead652e4ad81ab93014f1fb88342d9e2804"
+      },
+      {
+        "name": "detail-desktop",
+        "route": "/admin/trader-sync/subscriptions/70000000-0000-4000-8000-000000000001",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 1102
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/admin/trader-sync/subscriptions/70000000-0000-4000-8000-000000000001"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-admin-trader-sync-v19-before-detail-desktop.png",
+        "sha256": "b23d724eb3ab44c1f27bd9db56db82b54b4510f08b81d165a8cc6f5f0b186d98"
+      },
+      {
+        "name": "list-mobile",
+        "route": "/admin/trader-sync/subscriptions",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 2903
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/admin/trader-sync/subscriptions"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-admin-trader-sync-v19-before-list-mobile.png",
+        "sha256": "1982fa9a4c0b36f9d896a08f45c9bbed6e162df959f4950f92aaab74a671be9f"
+      },
+      {
+        "name": "detail-mobile",
+        "route": "/admin/trader-sync/subscriptions/70000000-0000-4000-8000-000000000001",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 1955
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/admin/trader-sync/subscriptions/70000000-0000-4000-8000-000000000001"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-admin-trader-sync-v19-before-detail-mobile.png",
+        "sha256": "bd12f0a713e272aca286482dc1b43abf367db3dd3fb1d1e4df568f2810d6edb6"
+      }
+    ]
+  },
+  "sourceHashesSha256": {
+    "ui/src/app/admin/pages/trader-sync/subscriptions.tsx": "3fff0b62b3a82a3a358e5df6111b8fb1d4bdb2918db421484cc384fa96959bc6",
+    "ui/src/app/admin/pages/trader-sync/subscription-detail.tsx": "c615c112c6931f73fd78c6b777d490d5329026e76bcc10cdf07ef29b45d489f9",
+    "ui/src/app/admin/trader-sync-models.ts": "6b9dc183bf7b2b2c4b3cf5ff78316f6b2709f548f38027d56ad42af7643c39f0",
+    "ui/src/app/admin/trader-sync-service.ts": "c432d13dee482e52daf2761c9bcb997aeefd1c1353e314bfbea33f73317de85c",
+    "ui/src/app/admin/app.tsx": "98d44ab834f8c7b25f358e31665ae01fe0dd5856e2eb26b211e697de3a9bacea",
+    "ui/src/app/styles/admin.css": "a2b18f0fc785f9d0f4184bfc88f8176d6e5e8f7aea6a4e66e65aaa35ef3d8767"
+  },
+  "observations": [
+    "Current React uses six desktop columns and stacked mobile facts. The proposal groups five scan columns with auxiliary identity/lifecycle/counts collapsed.",
+    "Detail separates current coverage, historical interruption and lifetime activity/distinct associated delivery counts. Unknown historical endpoints do not imply current interruption.",
+    "No subscription writes, private notes, activity bodies or per-delivery histories are exposed."
+  ]
+}

@@ -1,0 +1,169 @@
+{
+  "status": "awaiting_user_review",
+  "created_date": "2026-09-14",
+  "scope": "现有 /trader-sync/subscriptions 在已确认 v1–v7 主题中的视觉提案；保留业务及权限/分页语义，正式 ui/ 未修改。",
+  "direction_contract": ".impeccable/surfaces/eviews-theme-trader-subscriptions-v8-html-b94dc50b.md",
+  "verification": {
+    "before_mode": "actual_react_with_ui_fixtures",
+    "before_tests_passed": 2,
+    "before_api_methods": [
+      "GET"
+    ],
+    "before_mutations": 0,
+    "prototype_mode": "standalone_local_file",
+    "viewports": [
+      "1440x900",
+      "390x844",
+      "320x844",
+      "720x900 at 200% root font size"
+    ],
+    "states": [
+      "current",
+      "cancelled",
+      "stale",
+      "empty-current",
+      "empty-cancelled",
+      "loading",
+      "error"
+    ],
+    "axe_violations": 0,
+    "horizontal_overflow": false,
+    "page_errors": 0,
+    "external_http_requests_from_prototype": 0,
+    "interactions": [
+      "共享数据完全一致",
+      "身份优先级与完整钱包",
+      "完整复制payload",
+      "六项队列原始计数",
+      "Current/Cancelled及各自滚动位置",
+      "当前配额与取消历史分开",
+      "无游标时禁用Previous/Next",
+      "本地Latest/Retry/路由提示",
+      "空/首次失败/保留旧页分开",
+      "手机导航及焦点恢复"
+    ],
+    "first_round_adjustments": [
+      "Cancelled 使用独立取消图标，与 Paused 区分"
+    ],
+    "final_round": "第二轮完整检查通过，最终新主题10张截图已逐张打开复核；当前React3张截图已打开核对。",
+    "limitations": [
+      "根字号放大不是原生浏览器缩放",
+      "clipboard检查替换了浏览器接口，仅验证原值payload",
+      "自动无障碍检查不能代替完整人工或跨浏览器验收",
+      "未模拟生产计时/网络/权限/异步竞争/游标请求/写操作"
+    ],
+    "production_ui_diff": "empty",
+    "browser_closed_after_checks": true,
+    "prototype_services_started": 0,
+    "temporary_before_vite_stopped": true,
+    "temporary_port": 5618,
+    "pre_existing_environment": "保留原有共享环境及独立worktree实例，详见 before-capture.json"
+  },
+  "detector": {
+    "raw_findings": [
+      "overused-font: inter"
+    ],
+    "resolution": "使用 CLI 登记仅限本 v8 HTML 的 Inter 例外，依据用户已确认字体；其他规则保持有效。"
+  },
+  "documenter_scope": "现有视觉系统扩展；文档仅维护本页提案及全站索引，未创建 DESIGN.md 或 sidecar。",
+  "pending_user_decisions": [
+    "桌面四列信息层级与密度",
+    "Current/Cancelled、配额及更新时间位置",
+    "监控状态与六项旧通知的视觉分层",
+    "手机逐交易员分组和详情入口"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-trader-subscriptions-v8.html",
+      "sha256": "a08ff01508617e8b1e1c20312eb28173812137ccb19471428c8e37b9034b3557"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-before-cancelled.png",
+      "sha256": "2810248cd582d27502b3ed35ad04223856fe9811dc268207be5bee6c57824ffd"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-before-desktop.png",
+      "sha256": "482f88859f0831ce94c2c620cd0652ef5cbffab656335d158d91eba6308b9f2e"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-before-mobile.png",
+      "sha256": "5d918a67e09a145ed8d0605339986b4fc80c14fb8b3cd8663c71cbbc2fdcf88d"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-desktop-cancelled.png",
+      "sha256": "db46fee1106722180f2075197106b5c79e077acda76bc4020f03b0a8e4135262"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-desktop-first-screen.png",
+      "sha256": "97983a2b119d623ea3abd6bdb524d7ef87d450ce29d86c4ddb9402b66240a650"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-desktop.png",
+      "sha256": "e441a8eb9894cb2b5687a79a0f6ae2dbe2d5cfc7eca4ab56e0b0f94281cc2361"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-loading.png",
+      "sha256": "09131839c6dcbf3dd011c16ca867882afc8ec2774e7c45adcd173141dbb51c5f"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-mobile-cancelled.png",
+      "sha256": "375ac8b40313fc7d4d8e725c6572535e1dd0d74205668fe6aa973f9b33f7d03f"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-mobile-empty.png",
+      "sha256": "114496fd8890442a3312f596f48183af3a86a6d4355735e5a383415e98400050"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-mobile-error.png",
+      "sha256": "406e274863933151f5017b53a3ecb1180a154a7241084a9c638fd9e2c5a35287"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-mobile-first-screen.png",
+      "sha256": "8a4a3e53df302f3934783125c506e92aacf34ae26a1bdbb25bc642a13184788c"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-mobile.png",
+      "sha256": "2107958cbbfe813f2bb1c93d69ca8bba2834eda761e5fa3c8a2f83cea533a864"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-stale.png",
+      "sha256": "cb2bf09c2c5139b09fc420533e7b9aa51683fe4cc976353325bf50aeee452a48"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-data.json",
+      "sha256": "c0f0936e587a30b24f9001190def7e719f51e6d994f123ce2aa9519f0406c291"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-before-capture.json",
+      "sha256": "9c5d10501c48e3156561fcd060e14e6540e633721c4f573ca01159274c33b13f"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-checks.json",
+      "sha256": "b8cbcc005a2c22bb2e67977e59d4c23a1d7d04a4f08e6a28c0908229af62bd1e"
+    }
+  ],
+  "independent_review": {
+    "reviewer": "v8_finish_review",
+    "disposition": "ship",
+    "meaning": "ready for user visual review；不表示用户已批准、正式 ui/ 已实现或已完成生产验收。",
+    "direction": "v1–v7近黑/深色面板/青绿/Inter/JetBrains Mono及应用壳一致，桌面四列与手机分组服务订阅核对。",
+    "capture_validity": "逐张打开指定13张截图；before与源码和相同synthetic fixture一致；新主题完整页/首屏/取消/保留旧页/空/加载/失败无明显裁切错误、错位或横向溢出。",
+    "business": "完整钱包、身份资料、查询时间、两项监控时间、六项通知计数及队列说明保留；当前配额与取消历史区分，失败与空态区分，无游标时禁用翻页。",
+    "material_fixes": [],
+    "reviewed_screenshots": [
+      "theme-trader-subscriptions-v8-before-cancelled.png",
+      "theme-trader-subscriptions-v8-before-desktop.png",
+      "theme-trader-subscriptions-v8-before-mobile.png",
+      "theme-trader-subscriptions-v8-desktop-cancelled.png",
+      "theme-trader-subscriptions-v8-desktop-first-screen.png",
+      "theme-trader-subscriptions-v8-desktop.png",
+      "theme-trader-subscriptions-v8-loading.png",
+      "theme-trader-subscriptions-v8-mobile-cancelled.png",
+      "theme-trader-subscriptions-v8-mobile-empty.png",
+      "theme-trader-subscriptions-v8-mobile-error.png",
+      "theme-trader-subscriptions-v8-mobile-first-screen.png",
+      "theme-trader-subscriptions-v8-mobile.png",
+      "theme-trader-subscriptions-v8-stale.png"
+    ]
+  }
+}

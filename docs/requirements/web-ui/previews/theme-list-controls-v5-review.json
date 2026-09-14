@@ -1,0 +1,83 @@
+{
+  "status": "awaiting_user_review",
+  "created_date": "2026-09-14",
+  "scope": "独立的下拉菜单、完整合约地址筛选及加载更多样板；仅本轮组件视觉提案，不是正式产品实现或用户批准",
+  "independent_review": {
+    "disposition": "ship",
+    "meaning": "可以提交本轮样板供用户确认；不表示用户已经批准",
+    "material_fixes": [],
+    "reviewed_screenshots": [
+      "theme-list-controls-v5-desktop.png",
+      "theme-list-controls-v5-mobile.png",
+      "theme-list-controls-v5-desktop-menu.png",
+      "theme-list-controls-v5-mobile-menu.png",
+      "theme-list-controls-v5-desktop-filtered.png",
+      "theme-list-controls-v5-mobile-filtered.png"
+    ]
+  },
+  "detector": {
+    "raw_findings": [
+      "overused-font: inter"
+    ],
+    "resolution": "依据用户已确认的 v2 字体，通过 hooks ignore-value 登记仅限本 v5 HTML 的 Inter 例外；没有其他检测项"
+  },
+  "verification": {
+    "mode": "standalone_local_file",
+    "viewports": [
+      "1440x1050",
+      "390x844",
+      "320x844",
+      "720x900 at 200% root font size"
+    ],
+    "axe_states": [
+      "initial",
+      "menu",
+      "filtered",
+      "empty"
+    ],
+    "axe_violations": 0,
+    "external_requests": 0,
+    "temporary_services_started": 0,
+    "browser_closed_after_checks": true
+  },
+  "not_confirmed_by_this_proposal": [
+    "正式页面与生产组件实现",
+    "全部逐币字段布局、业务精度和供应商数据范围",
+    "分页失败等完整网络状态、跨浏览器原生缩放与完整手动无障碍验收",
+    "未展示的其他控件和全部业务页面"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-list-controls-v5.html",
+      "sha256": "229b9bfe73a59d7bb175a7de9b13cc682ce74728a75b40549f5a2028b77a2920"
+    },
+    {
+      "path": "theme-list-controls-v5-desktop.png",
+      "sha256": "55c0e0c609741256359ccb3aae02ba2cac8b305e8dfb7c3f703176c535d78624"
+    },
+    {
+      "path": "theme-list-controls-v5-mobile.png",
+      "sha256": "3b2269889113cda18df9fa863810ad06a1672052c7fd602ff92c92a5a72517e6"
+    },
+    {
+      "path": "theme-list-controls-v5-desktop-menu.png",
+      "sha256": "a8db57e6cc2d53543763b45f0dfe394cdd5edac34d8a8e6052fd8303564f0dc3"
+    },
+    {
+      "path": "theme-list-controls-v5-mobile-menu.png",
+      "sha256": "8b20e0a35c74cfe949c2a17cd5f36b6270b970162b5fce7da1cd881dbc447dc8"
+    },
+    {
+      "path": "theme-list-controls-v5-desktop-filtered.png",
+      "sha256": "3050b6657bf080005599030dc7af5655616115fbe0edcb8966642491d5581988"
+    },
+    {
+      "path": "theme-list-controls-v5-mobile-filtered.png",
+      "sha256": "de9c6e2c365ede96f56bf85229fc8fcf2d2dcbd16bf3b1fa54aa04b1864ec1a4"
+    },
+    {
+      "path": "theme-list-controls-v5-checks.json",
+      "sha256": "7d2dd7c2477eba9feebf3ad282577eb2d273ea353a6ef07a3a8e8d3ca05ca789"
+    }
+  ]
+}

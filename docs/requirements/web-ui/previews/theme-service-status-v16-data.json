@@ -1,0 +1,218 @@
+{
+  "synthetic": true,
+  "notice": "Visual preview \u00b7 Synthetic runtime data. No live service requests.",
+  "admin": {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "username": "alex.admin",
+    "administrator": true,
+    "access": {
+      "loginEnabled": true,
+      "apiKeyEnabled": true,
+      "profitSharingEnabled": false,
+      "revision": "7",
+      "moduleAccess": [
+        {
+          "module": 1,
+          "dataAccess": 1
+        },
+        {
+          "module": 2,
+          "dataAccess": 1
+        },
+        {
+          "module": 3,
+          "dataAccess": 0
+        },
+        {
+          "module": 4,
+          "dataAccess": 0
+        },
+        {
+          "module": 5,
+          "dataAccess": 0
+        },
+        {
+          "module": 11,
+          "dataAccess": 0
+        },
+        {
+          "module": 7,
+          "dataAccess": 0
+        },
+        {
+          "module": 8,
+          "dataAccess": 1
+        },
+        {
+          "module": 13,
+          "dataAccess": 1
+        },
+        {
+          "module": 9,
+          "dataAccess": 1
+        },
+        {
+          "module": 12,
+          "dataAccess": 2
+        }
+      ]
+    },
+    "profile": {
+      "displayName": "Alex Morgan",
+      "tier": "ACCOUNT_TIER_STANDARD",
+      "avatarUrl": "",
+      "revision": "4"
+    },
+    "identity": {
+      "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+      "verifiedEmail": "alex.admin@example.invalid",
+      "solanaAddress": "",
+      "createdAt": 1783999440,
+      "lastLoginAt": 1789351200
+    },
+    "status": "ACCOUNT_STATUS_ACTIVE",
+    "loggedIn": true,
+    "accountId": "44444444-4444-4444-8444-444444444444",
+    "iss": "athena",
+    "preferences": {
+      "theme": "ACCOUNT_THEME_DARK",
+      "revision": "2"
+    }
+  },
+  "receivedAt": "2026-09-14T05:20:04Z",
+  "services": {
+    "checkedAt": 1789363202,
+    "items": [
+      {
+        "name": "notification",
+        "status": "SERVING",
+        "errorMessage": ""
+      },
+      {
+        "name": "wallet",
+        "status": "SERVING",
+        "errorMessage": ""
+      },
+      {
+        "name": "market-radar",
+        "status": "SERVING",
+        "errorMessage": ""
+      },
+      {
+        "name": "sports-live",
+        "status": "UNREACHABLE",
+        "errorMessage": "Health check timed out after 5 seconds."
+      },
+      {
+        "name": "sports-history",
+        "status": "SERVING",
+        "errorMessage": ""
+      },
+      {
+        "name": "managed-oo",
+        "status": "SERVING",
+        "errorMessage": ""
+      },
+      {
+        "name": "worm-markets",
+        "status": "SERVING",
+        "errorMessage": ""
+      },
+      {
+        "name": "worm-trading",
+        "status": "SERVING",
+        "errorMessage": ""
+      },
+      {
+        "name": "profit-sharing",
+        "status": "SERVING",
+        "errorMessage": ""
+      },
+      {
+        "name": "token-api",
+        "status": "SERVING",
+        "errorMessage": ""
+      }
+    ]
+  },
+  "notification": {
+    "started": true,
+    "status": "running",
+    "botAvailable": true,
+    "botId": 7135024601,
+    "botUsername": "athena_demo_bot",
+    "pollerActive": true,
+    "lastPollAt": "2026-09-14T05:20:01Z",
+    "lastUpdateAt": "2026-09-14T05:19:48Z",
+    "systemPendingCount": 12,
+    "systemRetryCount": 2,
+    "systemFailedCount": 0,
+    "systemSendingCount": 0,
+    "systemUnknownCount": 0,
+    "accountPendingCount": 7,
+    "accountRetryCount": 1,
+    "accountFailedCount": 1,
+    "accountSendingCount": 0,
+    "accountUnknownCount": 0,
+    "unreachableBindingCount": 1,
+    "recovery": {
+      "state": "waiting",
+      "reason": "non_first_start_barrier",
+      "startedAt": "2026-09-14T05:19:59Z",
+      "remainingMillis": "55000",
+      "elapsedMillis": "5000",
+      "clockSource": "sender_monotonic"
+    }
+  },
+  "trader": {
+    "collectorConnected": true,
+    "collectorEpoch": "collector-demo-07",
+    "filterRevision": "42",
+    "asOf": "2026-09-14T05:20:03Z",
+    "metrics": [
+      {
+        "name": "raw_observation_available",
+        "value": "0",
+        "unit": "boolean",
+        "kind": "gauge"
+      },
+      {
+        "name": "raw_queue_depth",
+        "unit": "raw_logs",
+        "kind": "gauge"
+      },
+      {
+        "name": "raw_persist_in_flight",
+        "unit": "raw_logs",
+        "kind": "gauge"
+      },
+      {
+        "name": "confirmation_backlog",
+        "value": "4",
+        "unit": "source_records",
+        "kind": "gauge"
+      },
+      {
+        "name": "delivery_pending",
+        "value": "12",
+        "unit": "deliveries",
+        "kind": "gauge"
+      },
+      {
+        "name": "projector_candidate_transaction_elapsed_ns_total",
+        "value": "9007199254740993",
+        "unit": "nanoseconds_sender_independent_monotonic",
+        "kind": "epoch",
+        "serviceEpoch": "projector-demo-a7"
+      },
+      {
+        "name": "synthetic_window",
+        "value": "36",
+        "unit": "activities",
+        "kind": "window",
+        "windowStart": "2026-09-14T05:19:00Z",
+        "windowEnd": "2026-09-14T05:20:00Z"
+      }
+    ]
+  }
+}

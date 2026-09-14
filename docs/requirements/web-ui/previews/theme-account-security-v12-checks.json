@@ -1,0 +1,553 @@
+{
+  "result": "passed",
+  "evidence": "Local HTML visual prototype with synthetic credentials; no issuance, revocation, service verification or external AI calls",
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "textScale": 1,
+      "geometry": {
+        "width": 1440,
+        "documentWidth": 1440,
+        "rootFont": "16px",
+        "inter": true,
+        "mono": true
+      },
+      "modals": [
+        {
+          "label": "create-key",
+          "x": 460,
+          "y": 245.96875,
+          "width": 520,
+          "height": 408.046875,
+          "scrollWidth": 518,
+          "clientWidth": 518,
+          "scrollHeight": 406,
+          "clientHeight": 406
+        },
+        {
+          "label": "key-result",
+          "x": 460,
+          "y": 211.09375,
+          "width": 520,
+          "height": 477.8125,
+          "scrollWidth": 518,
+          "clientWidth": 518,
+          "scrollHeight": 476,
+          "clientHeight": 476
+        },
+        {
+          "label": "create-ai",
+          "x": 460,
+          "y": 186.34375,
+          "width": 520,
+          "height": 527.3125,
+          "scrollWidth": 518,
+          "clientWidth": 518,
+          "scrollHeight": 525,
+          "clientHeight": 525
+        },
+        {
+          "label": "ai-ready",
+          "x": 340,
+          "y": 88.40625,
+          "width": 760,
+          "height": 723.171875,
+          "scrollWidth": 758,
+          "clientWidth": 758,
+          "scrollHeight": 721,
+          "clientHeight": 721
+        },
+        {
+          "label": "ai-failed",
+          "x": 340,
+          "y": 88.40625,
+          "width": 760,
+          "height": 723.171875,
+          "scrollWidth": 758,
+          "clientWidth": 758,
+          "scrollHeight": 721,
+          "clientHeight": 721
+        },
+        {
+          "label": "revoke",
+          "x": 460,
+          "y": 304.65625,
+          "width": 520,
+          "height": 290.6875,
+          "scrollWidth": 518,
+          "clientWidth": 518,
+          "scrollHeight": 289,
+          "clientHeight": 289
+        }
+      ],
+      "axes": [
+        "Empty, loading, error and retained-metadata refresh error",
+        "Name required/pattern/64-character rules, exact expiry choices, one-time secret, complete copy, explicit Done and focus restoration",
+        "AI ready/checking/failed meanings, failure retains copy, retry demo sends no request, copy failure preserves full visible payload",
+        "Exact revocation ID/consequence, safe focus, Tab loops, Escape/focus return, no real deletion"
+      ],
+      "contrast": [
+        {
+          "fg": "#9FA0A1",
+          "bg": "#0F1114",
+          "ratio": 7.218804157993069
+        },
+        {
+          "fg": "#9FA0A1",
+          "bg": "#181D22",
+          "ratio": 6.477549085274277
+        },
+        {
+          "fg": "#FFFFFF",
+          "bg": "#06080B",
+          "ratio": 20.051385440481855
+        },
+        {
+          "fg": "#00FFA7",
+          "bg": "#102C24",
+          "ratio": 11.267391393146381
+        },
+        {
+          "fg": "#E6BF72",
+          "bg": "#272115",
+          "ratio": 9.173551230691643
+        },
+        {
+          "fg": "#F58C9B",
+          "bg": "#2B171C",
+          "ratio": 7.3322962397310985
+        },
+        {
+          "fg": "#ADD9D6",
+          "bg": "#142225",
+          "ratio": 10.638231056158972
+        },
+        {
+          "fg": "#9AE7C7",
+          "bg": "#102C24",
+          "ratio": 10.391594264514435
+        }
+      ],
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-account-security-v12-desktop.png",
+        "theme-account-security-v12-desktop-create-key.png",
+        "theme-account-security-v12-desktop-ai-ready.png",
+        "theme-account-security-v12-desktop-ai-failed.png"
+      ]
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 390,
+        "documentWidth": 390,
+        "rootFont": "16px",
+        "inter": true,
+        "mono": true
+      },
+      "modals": [
+        {
+          "label": "create-key",
+          "x": 20,
+          "y": 185.25,
+          "width": 350,
+          "height": 473.484375,
+          "scrollWidth": 348,
+          "clientWidth": 348,
+          "scrollHeight": 471,
+          "clientHeight": 471
+        },
+        {
+          "label": "key-result",
+          "x": 20,
+          "y": 141.78125,
+          "width": 350,
+          "height": 560.4375,
+          "scrollWidth": 348,
+          "clientWidth": 348,
+          "scrollHeight": 558,
+          "clientHeight": 558
+        },
+        {
+          "label": "create-ai",
+          "x": 20,
+          "y": 117.90625,
+          "width": 350,
+          "height": 608.1875,
+          "scrollWidth": 348,
+          "clientWidth": 348,
+          "scrollHeight": 606,
+          "clientHeight": 606
+        },
+        {
+          "label": "ai-ready",
+          "x": 20,
+          "y": 20,
+          "width": 350,
+          "height": 804,
+          "scrollWidth": 348,
+          "clientWidth": 348,
+          "scrollHeight": 802,
+          "clientHeight": 802
+        },
+        {
+          "label": "ai-failed",
+          "x": 20,
+          "y": 20,
+          "width": 350,
+          "height": 804,
+          "scrollWidth": 348,
+          "clientWidth": 348,
+          "scrollHeight": 802,
+          "clientHeight": 802
+        },
+        {
+          "label": "revoke",
+          "x": 20,
+          "y": 240.75,
+          "width": 350,
+          "height": 362.484375,
+          "scrollWidth": 348,
+          "clientWidth": 348,
+          "scrollHeight": 360,
+          "clientHeight": 360
+        }
+      ],
+      "axes": [
+        "Empty, loading, error and retained-metadata refresh error",
+        "Name required/pattern/64-character rules, exact expiry choices, one-time secret, complete copy, explicit Done and focus restoration",
+        "AI ready/checking/failed meanings, failure retains copy, retry demo sends no request, copy failure preserves full visible payload",
+        "Exact revocation ID/consequence, safe focus, Tab loops, Escape/focus return, no real deletion"
+      ],
+      "contrast": [
+        {
+          "fg": "#9FA0A1",
+          "bg": "#0F1114",
+          "ratio": 7.218804157993069
+        },
+        {
+          "fg": "#9FA0A1",
+          "bg": "#181D22",
+          "ratio": 6.477549085274277
+        },
+        {
+          "fg": "#FFFFFF",
+          "bg": "#06080B",
+          "ratio": 20.051385440481855
+        },
+        {
+          "fg": "#00FFA7",
+          "bg": "#102C24",
+          "ratio": 11.267391393146381
+        },
+        {
+          "fg": "#E6BF72",
+          "bg": "#272115",
+          "ratio": 9.173551230691643
+        },
+        {
+          "fg": "#F58C9B",
+          "bg": "#2B171C",
+          "ratio": 7.3322962397310985
+        },
+        {
+          "fg": "#ADD9D6",
+          "bg": "#142225",
+          "ratio": 10.638231056158972
+        },
+        {
+          "fg": "#9AE7C7",
+          "bg": "#102C24",
+          "ratio": 10.391594264514435
+        }
+      ],
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-account-security-v12-mobile.png",
+        "theme-account-security-v12-mobile-key-result.png",
+        "theme-account-security-v12-mobile-create-ai.png",
+        "theme-account-security-v12-mobile-ai-ready.png",
+        "theme-account-security-v12-mobile-revoke.png"
+      ]
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 320,
+        "documentWidth": 320,
+        "rootFont": "16px",
+        "inter": true,
+        "mono": true
+      },
+      "modals": [
+        {
+          "label": "create-key",
+          "x": 20,
+          "y": 189.25,
+          "width": 280,
+          "height": 465.484375,
+          "scrollWidth": 278,
+          "clientWidth": 278,
+          "scrollHeight": 463,
+          "clientHeight": 463
+        },
+        {
+          "label": "key-result",
+          "x": 20,
+          "y": 123.859375,
+          "width": 280,
+          "height": 596.265625,
+          "scrollWidth": 278,
+          "clientWidth": 278,
+          "scrollHeight": 594,
+          "clientHeight": 594
+        },
+        {
+          "label": "create-ai",
+          "x": 20,
+          "y": 111.1875,
+          "width": 280,
+          "height": 621.625,
+          "scrollWidth": 278,
+          "clientWidth": 278,
+          "scrollHeight": 620,
+          "clientHeight": 620
+        },
+        {
+          "label": "ai-ready",
+          "x": 20,
+          "y": 20,
+          "width": 280,
+          "height": 804,
+          "scrollWidth": 278,
+          "clientWidth": 278,
+          "scrollHeight": 802,
+          "clientHeight": 802
+        },
+        {
+          "label": "ai-failed",
+          "x": 20,
+          "y": 20,
+          "width": 280,
+          "height": 804,
+          "scrollWidth": 278,
+          "clientWidth": 278,
+          "scrollHeight": 802,
+          "clientHeight": 802
+        },
+        {
+          "label": "revoke",
+          "x": 20,
+          "y": 230.25,
+          "width": 280,
+          "height": 383.484375,
+          "scrollWidth": 278,
+          "clientWidth": 278,
+          "scrollHeight": 381,
+          "clientHeight": 381
+        }
+      ],
+      "axes": [
+        "Empty, loading, error and retained-metadata refresh error",
+        "Name required/pattern/64-character rules, exact expiry choices, one-time secret, complete copy, explicit Done and focus restoration",
+        "AI ready/checking/failed meanings, failure retains copy, retry demo sends no request, copy failure preserves full visible payload",
+        "Exact revocation ID/consequence, safe focus, Tab loops, Escape/focus return, no real deletion"
+      ],
+      "contrast": [
+        {
+          "fg": "#9FA0A1",
+          "bg": "#0F1114",
+          "ratio": 7.218804157993069
+        },
+        {
+          "fg": "#9FA0A1",
+          "bg": "#181D22",
+          "ratio": 6.477549085274277
+        },
+        {
+          "fg": "#FFFFFF",
+          "bg": "#06080B",
+          "ratio": 20.051385440481855
+        },
+        {
+          "fg": "#00FFA7",
+          "bg": "#102C24",
+          "ratio": 11.267391393146381
+        },
+        {
+          "fg": "#E6BF72",
+          "bg": "#272115",
+          "ratio": 9.173551230691643
+        },
+        {
+          "fg": "#F58C9B",
+          "bg": "#2B171C",
+          "ratio": 7.3322962397310985
+        },
+        {
+          "fg": "#ADD9D6",
+          "bg": "#142225",
+          "ratio": 10.638231056158972
+        },
+        {
+          "fg": "#9AE7C7",
+          "bg": "#102C24",
+          "ratio": 10.391594264514435
+        }
+      ],
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-account-security-v12-narrow.png"
+      ]
+    },
+    {
+      "name": "text-200",
+      "width": 720,
+      "height": 900,
+      "textScale": 2,
+      "geometry": {
+        "width": 720,
+        "documentWidth": 720,
+        "rootFont": "32px",
+        "inter": true,
+        "mono": true
+      },
+      "modals": [
+        {
+          "label": "create-key",
+          "x": 100,
+          "y": 139.375,
+          "width": 520,
+          "height": 621.25,
+          "scrollWidth": 518,
+          "clientWidth": 518,
+          "scrollHeight": 619,
+          "clientHeight": 619
+        },
+        {
+          "label": "key-result",
+          "x": 100,
+          "y": 106.828125,
+          "width": 520,
+          "height": 686.34375,
+          "scrollWidth": 518,
+          "clientWidth": 518,
+          "scrollHeight": 684,
+          "clientHeight": 684
+        },
+        {
+          "label": "create-ai",
+          "x": 100,
+          "y": 25.640625,
+          "width": 520,
+          "height": 848.71875,
+          "scrollWidth": 518,
+          "clientWidth": 518,
+          "scrollHeight": 847,
+          "clientHeight": 847
+        },
+        {
+          "label": "ai-ready",
+          "x": 20,
+          "y": 20,
+          "width": 680,
+          "height": 860,
+          "scrollWidth": 678,
+          "clientWidth": 678,
+          "scrollHeight": 858,
+          "clientHeight": 858
+        },
+        {
+          "label": "ai-failed",
+          "x": 20,
+          "y": 20,
+          "width": 680,
+          "height": 860,
+          "scrollWidth": 678,
+          "clientWidth": 678,
+          "scrollHeight": 858,
+          "clientHeight": 858
+        },
+        {
+          "label": "revoke",
+          "x": 100,
+          "y": 193.921875,
+          "width": 520,
+          "height": 512.15625,
+          "scrollWidth": 518,
+          "clientWidth": 518,
+          "scrollHeight": 510,
+          "clientHeight": 510
+        }
+      ],
+      "axes": [
+        "Empty, loading, error and retained-metadata refresh error",
+        "Name required/pattern/64-character rules, exact expiry choices, one-time secret, complete copy, explicit Done and focus restoration",
+        "AI ready/checking/failed meanings, failure retains copy, retry demo sends no request, copy failure preserves full visible payload",
+        "Exact revocation ID/consequence, safe focus, Tab loops, Escape/focus return, no real deletion"
+      ],
+      "contrast": [
+        {
+          "fg": "#9FA0A1",
+          "bg": "#0F1114",
+          "ratio": 7.218804157993069
+        },
+        {
+          "fg": "#9FA0A1",
+          "bg": "#181D22",
+          "ratio": 6.477549085274277
+        },
+        {
+          "fg": "#FFFFFF",
+          "bg": "#06080B",
+          "ratio": 20.051385440481855
+        },
+        {
+          "fg": "#00FFA7",
+          "bg": "#102C24",
+          "ratio": 11.267391393146381
+        },
+        {
+          "fg": "#E6BF72",
+          "bg": "#272115",
+          "ratio": 9.173551230691643
+        },
+        {
+          "fg": "#F58C9B",
+          "bg": "#2B171C",
+          "ratio": 7.3322962397310985
+        },
+        {
+          "fg": "#ADD9D6",
+          "bg": "#142225",
+          "ratio": 10.638231056158972
+        },
+        {
+          "fg": "#9AE7C7",
+          "bg": "#102C24",
+          "ratio": 10.391594264514435
+        }
+      ],
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-account-security-v12-text-200.png"
+      ]
+    }
+  ]
+}

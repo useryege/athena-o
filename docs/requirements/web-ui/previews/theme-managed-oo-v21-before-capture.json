@@ -1,0 +1,100 @@
+{
+  "result": "capture_complete",
+  "mode": "current React with intercepted synthetic GET responses",
+  "captures": [
+    {
+      "kind": "proposals",
+      "size": "desktop",
+      "filename": "theme-managed-oo-v21-before-proposals-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 900,
+      "overflow": false,
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/managed-oo/proposals"
+      ],
+      "pageErrors": [],
+      "unexpected": [],
+      "writesSubmitted": false
+    },
+    {
+      "kind": "proposals",
+      "size": "mobile",
+      "filename": "theme-managed-oo-v21-before-proposals-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 860,
+      "documentHeight": 936,
+      "overflow": true,
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/managed-oo/proposals"
+      ],
+      "pageErrors": [],
+      "unexpected": [],
+      "writesSubmitted": false
+    },
+    {
+      "kind": "disputes",
+      "size": "desktop",
+      "filename": "theme-managed-oo-v21-before-disputes-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 900,
+      "overflow": false,
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/managed-oo/disputes"
+      ],
+      "pageErrors": [],
+      "unexpected": [],
+      "writesSubmitted": false
+    },
+    {
+      "kind": "disputes",
+      "size": "mobile",
+      "filename": "theme-managed-oo-v21-before-disputes-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 856,
+      "documentHeight": 875,
+      "overflow": true,
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/managed-oo/disputes"
+      ],
+      "pageErrors": [],
+      "unexpected": [],
+      "writesSubmitted": false
+    }
+  ],
+  "observedIssues": [
+    {
+      "kind": "proposals",
+      "size": "mobile",
+      "issue": "Incumbent page overflows horizontally; source left intact."
+    },
+    {
+      "kind": "disputes",
+      "size": "mobile",
+      "issue": "Incumbent page overflows horizontally; source left intact."
+    }
+  ],
+  "notVerified": [
+    "real backend",
+    "Polygon scan",
+    "identity or permissions enforcement",
+    "full-stack smoke"
+  ]
+}

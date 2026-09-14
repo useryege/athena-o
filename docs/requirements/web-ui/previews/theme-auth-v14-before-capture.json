@@ -1,0 +1,132 @@
+{
+  "version": "v14",
+  "result": "passed",
+  "capturedAt": "2026-09-14T03:43:55.108868+00:00",
+  "scope": {
+    "mode": "ui-fixtures",
+    "description": "Current React member login and registration using GET response fixtures, compared with a separate static visual proposal. No live authentication, provider authorization, or account writes.",
+    "productionUIChanged": false
+  },
+  "environment": {
+    "url": "http://localhost:4000",
+    "repository": "/home/yege/work/athena",
+    "processWorkingDirectory": "/home/yege/work/athena/ui",
+    "vitePID": 308228,
+    "supervisorPID": 307846,
+    "instance": "athena-local-runtime (legacy shared existing environment)",
+    "ownerState": ".run/athena-local-runtime/supervisor.state",
+    "logs": ".run/athena-local-runtime/",
+    "captureLogs": ".superpowers/v14-current-playwright-artifacts/",
+    "taskStartedServices": [],
+    "taskCleanup": "All task browser contexts closed. No task-started service. Borrowed environment preserved.",
+    "ownerStopCommand": "cd /home/yege/work/athena && make stop",
+    "ownerStopCommandExecuted": false
+  },
+  "capture": {
+    "command": "cd ui && yarn playwright test --config ../.superpowers/v14-current.playwright.config.ts",
+    "result": "1 passed (4.5s)",
+    "screenshots": [
+      {
+        "name": "login-desktop",
+        "route": "/login",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 900
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-auth-v14-before-login-desktop.png",
+        "sha256": "3362206dbc515b5a06412c3be02dc8f75daad32e004b18bfd808a3ade9f5de75"
+      },
+      {
+        "name": "login-mobile",
+        "route": "/login",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 844
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-auth-v14-before-login-mobile.png",
+        "sha256": "1a70c1746760e8634e98153c2d6910d78537679de2bcd96fae041d740372d849"
+      },
+      {
+        "name": "register-desktop",
+        "route": "/register",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 900
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /auth/registration",
+          "GET /auth/registration/username-availability"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-auth-v14-before-register-desktop.png",
+        "sha256": "0c0bb94bbc5d4129cad0db24399a5ee4afaca226c300e2181f4c22246f61f873"
+      },
+      {
+        "name": "register-mobile",
+        "route": "/register",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 844
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /auth/registration",
+          "GET /auth/registration/username-availability"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-auth-v14-before-register-mobile.png",
+        "sha256": "dc31d20aeca2573224c34baf3f797931b88a82cfd8988ce2476aec37fbeff172"
+      }
+    ]
+  },
+  "sourceHashesSha256": {
+    "ui/src/app/member/pages/login.tsx": "2b44f4c8d8a6364e468360c4577d9f46c811558e93b1b6cf5fb318d2f1d351cc",
+    "ui/src/app/member/pages/register.tsx": "c6360394f7511039791b4208215a4e775504b5f0f23ee520bfb937768fa2cbe5",
+    "ui/src/app/member/app.tsx": "a780e77cf79e1fb7c225a92edefeafd1207a9d8cf83ca44a68440cac8c6519d0",
+    "ui/src/app/shared/services/registration-service.ts": "0d45e5f699ffc07e38e0ba602fba08d2075e6324fb19f62b65b4580fc53a7258",
+    "ui/src/app/shared/models.ts": "c506d918df4e16ebeb1952aeeaf7416857e3aaa14ff782262348e6102b871320",
+    "ui/src/app/session/bootstrap.tsx": "98db45ff2994e9e1f03ebe45478460486b688a880ae48a074a72a7314ae81888",
+    "ui/src/app/styles/shared.css": "91a578a60b0224c6c9ae54b0f22182b4581d81c52fb5418ea572876e1f5e7a54",
+    "ui/src/assets/images/google-g.svg": "3d8113310f2b1fbbaab9633fae5cfb87b1f95f3f948f3788064e62501053d4e5",
+    "ui/src/assets/images/phantom-mark.svg": "e1786b296e24c347e3bbda97d6d0ac9836f885e868c60e15955d2cc9e4836e5e"
+  },
+  "observations": [
+    "Current registration bootstrap uses a plain ConfigProvider; its captured dark page has low-contrast helper/input text and blue/white buttons. v14 proposal uses the approved theme tokens; production code remains unchanged.",
+    "Current and proposed Google registration use the same synthetic email and username. The Phantom screenshot is an independent alternative provider identity, not account linking."
+  ]
+}

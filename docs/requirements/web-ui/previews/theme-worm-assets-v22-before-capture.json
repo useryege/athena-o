@@ -1,0 +1,57 @@
+{
+  "result": "capture_complete",
+  "mode": "current React with intercepted synthetic GET responses",
+  "captures": [
+    {
+      "size": "desktop",
+      "filename": "theme-worm-assets-v22-before-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflow": false,
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/worm-trading/wallet-selection",
+        "GET /api/v1/worm-trading/status",
+        "GET /api/v1/worm-trading/wallet-balances",
+        "GET /api/v1/worm-trading/wallet-activity",
+        "GET /api/v1/worm-trading/wallet-connections",
+        "GET /api/v1/worm-trading/position-cash-out-batches/active"
+      ],
+      "pageErrors": [],
+      "unexpected": [],
+      "writesSubmitted": false
+    },
+    {
+      "size": "mobile",
+      "filename": "theme-worm-assets-v22-before-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "overflow": false,
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/worm-trading/wallet-selection",
+        "GET /api/v1/worm-trading/status",
+        "GET /api/v1/worm-trading/wallet-balances",
+        "GET /api/v1/worm-trading/wallet-activity",
+        "GET /api/v1/worm-trading/wallet-connections",
+        "GET /api/v1/worm-trading/position-cash-out-batches/active"
+      ],
+      "pageErrors": [],
+      "unexpected": [],
+      "writesSubmitted": false
+    }
+  ],
+  "notVerified": [
+    "real backend",
+    "authentication",
+    "Worm provider",
+    "trading",
+    "full-stack smoke"
+  ]
+}

@@ -1,0 +1,693 @@
+{
+  "round": "finish named fixes round 1 (items 1 and 3); not autonomous QA",
+  "reviewSource": ".superpowers/v22-finish-review-initial.txt",
+  "namedCorrections": [
+    "item 1: Save disabled only while current items retain the unavailable market; remove Ethereum restores saving Bitcoin",
+    "item 3: rebuild HTML from root-updated shared avatar rem sizing and line-height"
+  ],
+  "priorAuthorCorrections": [
+    "exact complementary decimal cents; selected-side/order price binding",
+    "replace unavailable sprite icons",
+    "withhold unavailable building/failed totals",
+    "initial new editor and wallet subset empty; explicit select-all/clear/remove",
+    "mandatory guards and SOL trust disclosure",
+    "responsive checkbox and workflow sizing"
+  ],
+  "captures": [
+    {
+      "view": "list",
+      "size": "desktop",
+      "width": 1440,
+      "height": 900,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-list-desktop.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "list",
+      "size": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-list-mobile.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "list",
+      "size": "narrow",
+      "width": 320,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-list-narrow.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 320,
+      "viewport": 320,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "list",
+      "size": "zoom",
+      "width": 720,
+      "height": 900,
+      "zoom": 2,
+      "filename": "theme-worm-combinations-v22-list-zoom.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 720,
+      "viewport": 720,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 56,
+        "height": 56,
+        "fontSize": "26px",
+        "lineHeight": "26px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "editor",
+      "size": "desktop",
+      "width": 1440,
+      "height": 900,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-editor-desktop.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "editor",
+      "size": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-editor-mobile.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "editor",
+      "size": "narrow",
+      "width": 320,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-editor-narrow.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 320,
+      "viewport": 320,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "editor",
+      "size": "zoom",
+      "width": 720,
+      "height": 900,
+      "zoom": 2,
+      "filename": "theme-worm-combinations-v22-editor-zoom.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 720,
+      "viewport": 720,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 56,
+        "height": 56,
+        "fontSize": "26px",
+        "lineHeight": "26px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "preview",
+      "size": "desktop",
+      "width": 1440,
+      "height": 900,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-preview-desktop.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "preview",
+      "size": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-preview-mobile.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "preview",
+      "size": "narrow",
+      "width": 320,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-preview-narrow.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 320,
+      "viewport": 320,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "preview",
+      "size": "zoom",
+      "width": 720,
+      "height": 900,
+      "zoom": 2,
+      "filename": "theme-worm-combinations-v22-preview-zoom.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 720,
+      "viewport": 720,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 56,
+        "height": 56,
+        "fontSize": "26px",
+        "lineHeight": "26px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "list",
+      "state": "delete",
+      "extra": "",
+      "size": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-list-delete-mobile.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": true,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": false
+    },
+    {
+      "view": "editor",
+      "state": "name-error",
+      "extra": "",
+      "size": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-editor-name-error-mobile.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": true,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": false
+    },
+    {
+      "view": "editor",
+      "state": "dirty",
+      "extra": "",
+      "size": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-editor-dirty-mobile.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": true,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": false
+    },
+    {
+      "view": "editor",
+      "state": "unavailable",
+      "extra": "",
+      "size": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-editor-unavailable-mobile.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "editor",
+      "state": "unavailable-recovered",
+      "extra": "",
+      "size": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-editor-unavailable-recovered-mobile.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "editor",
+      "state": "new",
+      "extra": "&mode=new",
+      "size": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-editor-new-mobile.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "preview",
+      "state": "wallets",
+      "extra": "&step=wallets",
+      "size": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-preview-wallets-mobile.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "preview",
+      "state": "guards",
+      "extra": "&step=checks",
+      "size": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-preview-guards-mobile.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "preview",
+      "state": "expired",
+      "extra": "",
+      "size": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-preview-expired-mobile.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    },
+    {
+      "view": "preview",
+      "state": "building",
+      "extra": "",
+      "size": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "filename": "theme-worm-combinations-v22-preview-building-mobile.png",
+      "errors": [],
+      "external": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogOpen": false,
+      "bodyScrollY": 0,
+      "avatar": {
+        "width": 28,
+        "height": 28,
+        "fontSize": "13px",
+        "lineHeight": "13px"
+      },
+      "fullPage": true
+    }
+  ],
+  "checks": [
+    {
+      "name": "finish item 1: invalid selection removed restores save",
+      "pass": true,
+      "evidence": {
+        "route": "?view=editor&case=unavailable",
+        "operation": "Remove market 2 (closed Ethereum); retain Bitcoin",
+        "before": "Save disabled, 2 selections",
+        "after": "Save enabled, 1 valid selection"
+      }
+    },
+    {
+      "name": "finish item 1: recovered save responds without real write",
+      "pass": true
+    },
+    {
+      "name": "one side per market",
+      "pass": true
+    },
+    {
+      "name": "order controls and focus restored",
+      "pass": true
+    },
+    {
+      "name": "dirty navigation protected",
+      "pass": true
+    },
+    {
+      "name": "native Escape closes confirmation",
+      "pass": true
+    },
+    {
+      "name": "duplicate name inline feedback",
+      "pass": true
+    },
+    {
+      "name": "80 character bound",
+      "pass": true
+    },
+    {
+      "name": "read-only cannot prepare Run",
+      "pass": true
+    },
+    {
+      "name": "expired plan cannot prepare",
+      "pass": true
+    },
+    {
+      "name": "at least one wallet required",
+      "pass": true
+    },
+    {
+      "name": "clipboard failure exposes full address",
+      "pass": true
+    },
+    {
+      "name": "state empty",
+      "pass": true
+    },
+    {
+      "name": "state loading",
+      "pass": true
+    },
+    {
+      "name": "state error",
+      "pass": true
+    },
+    {
+      "name": "state selection-changed",
+      "pass": true
+    },
+    {
+      "name": "state failed",
+      "pass": true
+    },
+    {
+      "name": "state no-actionable",
+      "pass": true
+    },
+    {
+      "name": "state readonly",
+      "pass": true
+    },
+    {
+      "name": "building totals unavailable",
+      "pass": true
+    },
+    {
+      "name": "complementary price display is exact",
+      "pass": true
+    },
+    {
+      "name": "new execution wallet subset starts empty",
+      "pass": true
+    }
+  ],
+  "passed": true,
+  "notVerified": [
+    "backend enforcement",
+    "live API",
+    "real plan creation",
+    "real Run creation",
+    "real authorization, signatures, orders",
+    "full stack smoke"
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "result": "capture_complete",
+  "mode": "current React with intercepted synthetic GET responses",
+  "captures": [
+    {
+      "view": "list",
+      "size": "desktop",
+      "filename": "theme-worm-executions-v22-before-list-desktop.png",
+      "width": 1440,
+      "documentWidth": 1440,
+      "overflow": false,
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/worm-trading/executions"
+      ],
+      "errors": [],
+      "unexpected": []
+    },
+    {
+      "view": "list",
+      "size": "mobile",
+      "filename": "theme-worm-executions-v22-before-list-mobile.png",
+      "width": 390,
+      "documentWidth": 390,
+      "overflow": false,
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/worm-trading/executions"
+      ],
+      "errors": [],
+      "unexpected": []
+    },
+    {
+      "view": "detail",
+      "size": "desktop",
+      "filename": "theme-worm-executions-v22-before-detail-desktop.png",
+      "width": 1440,
+      "documentWidth": 1614,
+      "overflow": true,
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/worm-trading/executions/22000000-0000-4000-8000-000000000003",
+        "GET /api/v1/worm-trading/executions/22000000-0000-4000-8000-000000000003/steps"
+      ],
+      "errors": [],
+      "unexpected": []
+    },
+    {
+      "view": "detail",
+      "size": "mobile",
+      "filename": "theme-worm-executions-v22-before-detail-mobile.png",
+      "width": 390,
+      "documentWidth": 390,
+      "overflow": false,
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/worm-trading/executions/22000000-0000-4000-8000-000000000003",
+        "GET /api/v1/worm-trading/executions/22000000-0000-4000-8000-000000000003/steps"
+      ],
+      "errors": [],
+      "unexpected": []
+    }
+  ],
+  "writesSubmitted": false,
+  "notVerified": [
+    "live backend",
+    "provider",
+    "authorization",
+    "full stack smoke"
+  ]
+}

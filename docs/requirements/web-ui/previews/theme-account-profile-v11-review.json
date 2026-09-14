@@ -1,0 +1,135 @@
+{
+  "version": "v11",
+  "surface": "Account Center / Profile",
+  "status": "awaiting_user_review",
+  "production_ui_changed": false,
+  "scope": "Existing member /account/profile visual redesign; local demonstration only; admin realm not covered",
+  "direction": ".superpowers/v11-direction.md",
+  "inspection": {
+    "rounds": 2,
+    "final_checks": "theme-account-profile-v11-checks.json",
+    "four_viewports": [
+      "1440×900",
+      "390×844",
+      "320×844",
+      "720×900 with 200% root font"
+    ],
+    "prototype_screenshots": 12,
+    "before_screenshots": 2,
+    "first_round_corrections": [
+      "Native dialog close dispatches asynchronously. Event tracing confirmed trigger focus returns after close; focus assertion now awaits that event outcome. No prototype source change was needed."
+    ],
+    "final_round_visual_confirmation": "Eleven prototype captures remained pixel-identical; mobile-leave was reopened and confirmed. Both current React captures were inspected.",
+    "reviewer_fix_batches": 0
+  },
+  "independent_review": {
+    "reviewer": "/root/v11_finish_review",
+    "disposition": "ship",
+    "scope": "All 14 supplied screenshots, prototype source, approved visual direction, current source contracts and recorded browser evidence; file-only review without a reviewer browser. Visual proposal and local demo behavior only, not user approval or production acceptance.",
+    "sections": {
+      "persistence": "The shippable artifact is the documentation-only member Account Center / Profile prototype at docs/requirements/web-ui/previews/theme-account-profile-v11.html, backed by its shared synthetic data, four-viewport check record, current-React comparison record, and all 14 required PNGs. The review copies in .impeccable/review/v11 are byte-identical to the documented PNGs, and the provenance scan reports 14 rasters with none missing. This disposition covers the visual proposal and its local demo behavior only; production ui/ remains unchanged.",
+      "fidelity": "The result is a faithful ordinary extension of the approved v1-v10 world: near-black page and deep panel surfaces, restrained borders, Inter hierarchy, JetBrains Mono reserved for technical identifiers, and green, amber, and pink used with the established action and feedback semantics. Compared with the current React page, it removes the duplicated identity/avatar presentation and consolidates saved identity, tier, member role, avatar fallback, upload affordance, immutable username, display-name form, revision state, and actions into one readable panel. It preserves the actual trim, 1-80 Unicode-character, no-control-character, revision-conflict, error, and 2 MiB JPEG/PNG/WebP contracts without claiming live mutations. Appearance is absent consistently with the approved single-dark objective. Security is shown only for the synthetic member fixture whose apiKeyEnabled value is true; administrator visuals remain outside this approval.",
+      "ceiling": "The bounded finish cycle is complete. All required desktop, mobile, narrow, 200%-text, edited, invalid, conflict, save-error, upload-error, and leave-dialog captures were inspected; the second-round mobile leave result is settled and needs no third capture. The check record reports no horizontal overflow, duplicate IDs, page errors, external requests, or listed issues at 1440x900, 390x844, 320x844, and 720x900 with a 200% root font. Contrast samples pass, fonts load, and the native dialog fits each checked viewport. The one file-scoped Inter detector exception is supported by the user's v2 approval and does not justify changing the visual direction.",
+      "material_fixes": "None. No material defect in hierarchy, responsive composition, form clarity, feedback states, or dialog safety warrants another design or capture round. Conditional Remove for an account that already has an avatar, real profile/avatar requests, CAS concurrency against the service, identity switching, authorization behavior, and administrator realm presentation remain explicit future implementation/documentation acceptance items rather than missing prototype states.",
+      "keep": "Keep the merged identity row and single profile panel, the real initial-avatar fallback, the visually distinct read-only username field, saved-name-versus-draft separation, persistent draft after conflict/error/local save demo, local Reset behavior, and disabled/enabled action hierarchy. Keep the mobile Account section selector, the 320px stacking, the readable 200% text composition, and the native leave dialog with saved/draft comparison, safe autofocus on Keep editing, Tab/Escape containment, draft retention, destructive-action color, and focus return. Keep the explicit footer and notices that state the data is synthetic and that navigation, saving, and uploading are visual demonstrations."
+    }
+  },
+  "detector": {
+    "runs": 1,
+    "findings": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "resolution": "User-approved v2 font; single-file ignore-value persisted using CLI in .impeccable/config.json",
+        "file": "docs/requirements/web-ui/previews/theme-account-profile-v11.html"
+      }
+    ]
+  },
+  "asset_provenance": {
+    "screenshots": "Playwright Chromium screenshots with embedded origins, not AI-generated or retouched",
+    "scan": ".superpowers/v11-raster-provenance-scan.txt",
+    "rasters": 14,
+    "missing": 0
+  },
+  "documentation": "account-profile-proposal.md and indices; ordinary extension, no global DESIGN.md or sidecar changes",
+  "limitations": [
+    "User visual approval is pending; only directly presented and subsequently approved views become a confirmed baseline.",
+    "Synthetic captures and local demonstrations do not verify service writes, avatar upload/delete, permissions, identity switching, CAS concurrency or real router/beforeunload behavior.",
+    "The with-avatar Remove state and administrator realm were not shown.",
+    "Current React visual comparison uses GET fixtures, not full-system acceptance."
+  ],
+  "artifacts": [
+    {
+      "path": "theme-account-profile-v11-before-capture.json",
+      "sha256": "1d9fb7f382953e4c2678a331d785ecb45223748f4218f8a59ff5375534e6b585"
+    },
+    {
+      "path": "theme-account-profile-v11-before-desktop.png",
+      "sha256": "4b75b8e738f608e848e86626d732cc4caeb83ac290d10b659fa08c8e31cafd2b"
+    },
+    {
+      "path": "theme-account-profile-v11-before-mobile.png",
+      "sha256": "e828956ca9abf01c1ca243a9848d311be48b2b8342ea297a13455ba0d177ed67"
+    },
+    {
+      "path": "theme-account-profile-v11-checks.json",
+      "sha256": "12665317c7f775c303915bf9824fd4d4aae69d4de7e3c2f7b93b091b677e2b80"
+    },
+    {
+      "path": "theme-account-profile-v11-data.json",
+      "sha256": "c5dd9550579dda59cb6a9c36b521262f6e296351da96b2268158a0fb34a70bb0"
+    },
+    {
+      "path": "theme-account-profile-v11-desktop-conflict.png",
+      "sha256": "605b5fe0b112ba8b72fad61821fe72f154b80d20bfcca253c60f00a072c7c5e4"
+    },
+    {
+      "path": "theme-account-profile-v11-desktop-edited.png",
+      "sha256": "a7b6907a398aede74ee6c7320cd129c777147f023199f12555ee9af6bbd49426"
+    },
+    {
+      "path": "theme-account-profile-v11-desktop-error.png",
+      "sha256": "802bd3b27da28b5a776d5703c69b17f7844e9d4091ed0f4d6329f12ef6ba47ef"
+    },
+    {
+      "path": "theme-account-profile-v11-desktop-leave.png",
+      "sha256": "4cdd902be441fb01a1576a7bb905f1e26445e430f865436b013b9881879c19c3"
+    },
+    {
+      "path": "theme-account-profile-v11-desktop.png",
+      "sha256": "f9ef263185208fe163d3e90018e49132667f01f71c93d4137d652a81a1d1c36d"
+    },
+    {
+      "path": "theme-account-profile-v11-mobile-edited.png",
+      "sha256": "3115d52474eaf62322bc20d7934a08f67f0eeec735fcfb7362da9c39a06158c1"
+    },
+    {
+      "path": "theme-account-profile-v11-mobile-invalid.png",
+      "sha256": "40e33446813c5535f60bb7d70887b5c7f049d2f5832231cb0e7596cecb9e3d91"
+    },
+    {
+      "path": "theme-account-profile-v11-mobile-leave.png",
+      "sha256": "a59c49271841957a0ae83f784c5df0cc9c7d47aa3c6af8eeb7f82d1ab6af2bfb"
+    },
+    {
+      "path": "theme-account-profile-v11-mobile-upload-error.png",
+      "sha256": "5b50fde2904ae8019f3ad8c4076d0b6555571190fd012f93fc02f3e61cdb0075"
+    },
+    {
+      "path": "theme-account-profile-v11-mobile.png",
+      "sha256": "a93361f781f77c9ee5f7a48d02f4cdceb0a5429cf0536784d0d79aea9c898137"
+    },
+    {
+      "path": "theme-account-profile-v11-narrow.png",
+      "sha256": "03ca40f27ada06b5c4a156d1983344d7eb52d40943ff04011bbb3c7f2175f9e5"
+    },
+    {
+      "path": "theme-account-profile-v11-text-200.png",
+      "sha256": "562f4b1ad94204c8be9d0d2353ee65f5e6be97ba26d92a43f13665a13cf2aa12"
+    },
+    {
+      "path": "theme-account-profile-v11.html",
+      "sha256": "a9ffcedea97fd1f4e70dfa5c4b85f434c3a6de8e34bceec364ee12186c37122c"
+    }
+  ]
+}

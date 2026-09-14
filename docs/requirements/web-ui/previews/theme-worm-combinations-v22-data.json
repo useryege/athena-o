@@ -1,0 +1,194 @@
+{
+  "identity": {
+    "synthetic": true,
+    "observedAt": "2026-09-14T08:00:00Z",
+    "combinationId": "22000000-0000-4000-8000-000000000001",
+    "combinationName": "September market basket",
+    "planId": "22000000-0000-4000-8000-000000000002",
+    "runId": "22000000-0000-4000-8000-000000000003",
+    "wallets": [
+      {
+        "id": "101",
+        "name": "Atlas",
+        "address": "3vbqPKB1JYbeuh1Bwdcu1unwhWhmxZ5HYBFUJ7qFNVM1"
+      },
+      {
+        "id": "102",
+        "name": "Orion",
+        "address": "6jRQNiUuT8TCSCCCgqaimnXxzKRzxVShYKMunN4q1oG5"
+      },
+      {
+        "id": "103",
+        "name": "Vega",
+        "address": "CP6wuVS9qffyeeemHKN9R9UbbWgSynXUni1GEyZSYn3R"
+      }
+    ]
+  },
+  "user": {
+    "loggedIn": true,
+    "accountId": "11111111-1111-4111-8111-111111111111",
+    "username": "alexchen",
+    "iss": "fixture",
+    "administrator": false,
+    "profile": {
+      "displayName": "Alex Chen",
+      "tier": "ACCOUNT_TIER_STANDARD",
+      "avatarUrl": "",
+      "revision": "4"
+    },
+    "preferences": {
+      "theme": "ACCOUNT_THEME_DARK",
+      "revision": "2"
+    },
+    "access": {
+      "loginEnabled": true,
+      "apiKeyEnabled": true,
+      "profitSharingEnabled": true,
+      "revision": "1",
+      "moduleAccess": [
+        {
+          "module": "ACCOUNT_DATA_MODULE_WALLET",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SOLANA",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        }
+      ]
+    }
+  },
+  "event": {
+    "eventConditionId": "7YttLkHDoNj9wyDur5VvxRV6cJrPCGF6Da8VtmZGhAaB",
+    "title": "September crypto milestones",
+    "logo": "",
+    "fetchedAt": 1789372800,
+    "markets": [
+      {
+        "marketConditionId": "9QttLkHDoNj9wyDur5VvxRV6cJrPCGF6Da8VtmZGhAaB",
+        "title": "Will Bitcoin reach $120,000 by September 30?",
+        "logo": "",
+        "state": "OPEN",
+        "marginEnabled": false,
+        "backend": "POLYMARKET",
+        "unavailableCode": "",
+        "outcomes": [
+          {
+            "side": "YES",
+            "label": "Yes",
+            "maxLeverage": "1",
+            "lastTradePrice": "0.684",
+            "selectable": true,
+            "unavailableCode": ""
+          },
+          {
+            "side": "NO",
+            "label": "No",
+            "maxLeverage": "1",
+            "lastTradePrice": "0.316",
+            "selectable": true,
+            "unavailableCode": ""
+          }
+        ]
+      },
+      {
+        "marketConditionId": "8QttLkHDoNj9wyDur5VvxRV6cJrPCGF6Da8VtmZGhAaB",
+        "title": "Will Ethereum exceed $5,000 in September?",
+        "logo": "",
+        "state": "OPEN",
+        "marginEnabled": false,
+        "backend": "POLYMARKET",
+        "unavailableCode": "",
+        "outcomes": [
+          {
+            "side": "YES",
+            "label": "Yes",
+            "maxLeverage": "1",
+            "lastTradePrice": "0.418",
+            "selectable": true,
+            "unavailableCode": ""
+          },
+          {
+            "side": "NO",
+            "label": "No",
+            "maxLeverage": "1",
+            "lastTradePrice": "0.582",
+            "selectable": true,
+            "unavailableCode": ""
+          }
+        ]
+      }
+    ]
+  },
+  "combination": {
+    "id": "22000000-0000-4000-8000-000000000001",
+    "name": "September market basket",
+    "revision": 7,
+    "createdAt": 1789286400,
+    "updatedAt": 1789372800,
+    "items": [
+      {
+        "ordinal": 1,
+        "eventConditionId": "7YttLkHDoNj9wyDur5VvxRV6cJrPCGF6Da8VtmZGhAaB",
+        "eventTitle": "September crypto milestones",
+        "eventLogo": "",
+        "marketConditionId": "9QttLkHDoNj9wyDur5VvxRV6cJrPCGF6Da8VtmZGhAaB",
+        "marketTitle": "Will Bitcoin reach $120,000 by September 30?",
+        "marketLogo": "",
+        "side": "YES",
+        "outcomeLabel": "Yes"
+      },
+      {
+        "ordinal": 2,
+        "eventConditionId": "7YttLkHDoNj9wyDur5VvxRV6cJrPCGF6Da8VtmZGhAaB",
+        "eventTitle": "September crypto milestones",
+        "eventLogo": "",
+        "marketConditionId": "8QttLkHDoNj9wyDur5VvxRV6cJrPCGF6Da8VtmZGhAaB",
+        "marketTitle": "Will Ethereum exceed $5,000 in September?",
+        "marketLogo": "",
+        "side": "NO",
+        "outcomeLabel": "No"
+      }
+    ]
+  },
+  "semanticContract": {
+    "walletSelectionRevision": 4,
+    "combinationRevision": 7,
+    "walletMajor": true,
+    "readySteps": 4,
+    "skippedSteps": 2,
+    "skipReason": "MARKET_POSITION_EXISTS",
+    "mandatoryGuardScope": "matching step and every remaining step for that wallet",
+    "maximumCollateral": "20.000000",
+    "openingFeeEstimate": "0.040000",
+    "totalUSDCNeeded": "20.040000",
+    "noRealActions": true
+  }
+}

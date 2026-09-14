@@ -1,0 +1,222 @@
+{
+  "scope": "Standalone local prototype with synthetic data. Clipboard verified through intercepted payload. Root font scaling is not native browser zoom. No production network or mutations.",
+  "results": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "textScale": 1,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "axes": [
+        {
+          "state": "current",
+          "violations": []
+        },
+        {
+          "state": "cancelled",
+          "violations": []
+        },
+        {
+          "state": "stale",
+          "violations": []
+        },
+        {
+          "state": "empty-current",
+          "violations": []
+        },
+        {
+          "state": "empty-cancelled",
+          "violations": []
+        },
+        {
+          "state": "loading",
+          "violations": []
+        },
+        {
+          "state": "error",
+          "violations": []
+        }
+      ],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Shared fixture; complete wallets and copy payload; identity priority; six queue counts; Current/Cancelled; retained quota; absent cursors disabled; local links/latest/retry; empty/loading/initial and stale failure; mobile navigation."
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "axes": [
+        {
+          "state": "current",
+          "violations": []
+        },
+        {
+          "state": "cancelled",
+          "violations": []
+        },
+        {
+          "state": "stale",
+          "violations": []
+        },
+        {
+          "state": "empty-current",
+          "violations": []
+        },
+        {
+          "state": "empty-cancelled",
+          "violations": []
+        },
+        {
+          "state": "loading",
+          "violations": []
+        },
+        {
+          "state": "error",
+          "violations": []
+        }
+      ],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Shared fixture; complete wallets and copy payload; identity priority; six queue counts; Current/Cancelled; retained quota; absent cursors disabled; local links/latest/retry; empty/loading/initial and stale failure; mobile navigation."
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "axes": [
+        {
+          "state": "current",
+          "violations": []
+        },
+        {
+          "state": "cancelled",
+          "violations": []
+        },
+        {
+          "state": "stale",
+          "violations": []
+        },
+        {
+          "state": "empty-current",
+          "violations": []
+        },
+        {
+          "state": "empty-cancelled",
+          "violations": []
+        },
+        {
+          "state": "loading",
+          "violations": []
+        },
+        {
+          "state": "error",
+          "violations": []
+        }
+      ],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Shared fixture; complete wallets and copy payload; identity priority; six queue counts; Current/Cancelled; retained quota; absent cursors disabled; local links/latest/retry; empty/loading/initial and stale failure; mobile navigation."
+    },
+    {
+      "name": "text-200",
+      "width": 720,
+      "height": 900,
+      "textScale": 2,
+      "geometry": {
+        "width": 720,
+        "scroll": 720,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "axes": [
+        {
+          "state": "current",
+          "violations": []
+        },
+        {
+          "state": "cancelled",
+          "violations": []
+        },
+        {
+          "state": "stale",
+          "violations": []
+        },
+        {
+          "state": "empty-current",
+          "violations": []
+        },
+        {
+          "state": "empty-cancelled",
+          "violations": []
+        },
+        {
+          "state": "loading",
+          "violations": []
+        },
+        {
+          "state": "error",
+          "violations": []
+        }
+      ],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Shared fixture; complete wallets and copy payload; identity priority; six queue counts; Current/Cancelled; retained quota; absent cursors disabled; local links/latest/retry; empty/loading/initial and stale failure; mobile navigation."
+    }
+  ],
+  "temporaryServicesStarted": 0
+}

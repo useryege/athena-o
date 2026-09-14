@@ -1,0 +1,138 @@
+{
+  "scope": "Standalone file-based visual prototype; local illustrative data only; 200% is root font scaling, not native browser zoom or product acceptance",
+  "temporaryServicesStarted": 0,
+  "results": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 1050,
+      "textScale": 1,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "menuGeometry": {
+        "left": 1176,
+        "right": 1408,
+        "width": 1440
+      },
+      "initialAxe": [],
+      "menuAxe": [],
+      "filteredAxe": [],
+      "emptyAxe": [],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Exact address validation and search over entire fixture, draft preservation, clear/no-match/row selection, dropdown keyboard/Escape/outside close, PnL sort and batch reset, append to last batch passed"
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "menuGeometry": {
+        "left": 20,
+        "right": 370,
+        "width": 390
+      },
+      "initialAxe": [],
+      "menuAxe": [],
+      "filteredAxe": [],
+      "emptyAxe": [],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Exact address validation and search over entire fixture, draft preservation, clear/no-match/row selection, dropdown keyboard/Escape/outside close, PnL sort and batch reset, append to last batch passed"
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "menuGeometry": {
+        "left": 20,
+        "right": 300,
+        "width": 320
+      },
+      "initialAxe": [],
+      "menuAxe": [],
+      "filteredAxe": [],
+      "emptyAxe": [],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Exact address validation and search over entire fixture, draft preservation, clear/no-match/row selection, dropdown keyboard/Escape/outside close, PnL sort and batch reset, append to last batch passed"
+    },
+    {
+      "name": "text-200",
+      "width": 720,
+      "height": 900,
+      "textScale": 2,
+      "geometry": {
+        "width": 720,
+        "scroll": 720,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "menuGeometry": {
+        "left": 24,
+        "right": 696,
+        "width": 720
+      },
+      "initialAxe": [],
+      "menuAxe": [],
+      "filteredAxe": [],
+      "emptyAxe": [],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Exact address validation and search over entire fixture, draft preservation, clear/no-match/row selection, dropdown keyboard/Escape/outside close, PnL sort and batch reset, append to last batch passed"
+    }
+  ]
+}

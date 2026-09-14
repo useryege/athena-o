@@ -1,0 +1,8 @@
+{
+  "synthetic": true,
+  "username": "mira.chen",
+  "verifiedEmail": "mira.chen@example.com",
+  "solanaAddress": "7YttLkHDoNj9wyDur5Ls5EfVRxpdeJtyY6SdcFzyuLqE",
+  "scope": "Member visual proposal only. Separate Google and Phantom identities; no account linking or live authentication.",
+  "usernameAvailability": "400ms local simulation; unavailable samples mira/admin/athena; network.error simulates failed check. This is not the complete server safety list."
+}

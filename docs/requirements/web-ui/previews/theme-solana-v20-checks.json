@@ -1,0 +1,479 @@
+{
+  "mode": "local static visual prototype",
+  "result": "passed",
+  "captures": [
+    {
+      "name": "desktop",
+      "state": "default",
+      "zoom": 1,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "doc": {
+        "width": 1440,
+        "height": 1788
+      },
+      "overflow": false,
+      "duplicateIds": [],
+      "font": true,
+      "h1": "28px",
+      "mainPadding": "32px",
+      "dialog": null,
+      "actionTargets": [
+        {
+          "name": "Copy mint 7VX2WcS4Ny1RoH3KvCAZkTx95ezMmDiFSUuPYjEGmqLp",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy mint GnHzuGaGUMQWPoxdkHwZyEuNmLBMnmFVvTxHHMbprSYL",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy mint Bdr4vv8MBGEVGehSgUZyaAhxbSCNNYR3DpUVbkKeAkmX",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy mint FaGYULvqCYzgHYNahFiEZmjNbbZZ8RQ76MJLz2wgQbAe",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Previous page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Next page",
+          "width": 44,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "name": "mobile",
+      "state": "default",
+      "zoom": 1,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "doc": {
+        "width": 390,
+        "height": 2847
+      },
+      "overflow": false,
+      "duplicateIds": [],
+      "font": true,
+      "h1": "24px",
+      "mainPadding": "24px 20px",
+      "dialog": null,
+      "actionTargets": [
+        {
+          "name": "Copy mint 7VX2WcS4Ny1RoH3KvCAZkTx95ezMmDiFSUuPYjEGmqLp",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy mint GnHzuGaGUMQWPoxdkHwZyEuNmLBMnmFVvTxHHMbprSYL",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy mint Bdr4vv8MBGEVGehSgUZyaAhxbSCNNYR3DpUVbkKeAkmX",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy mint FaGYULvqCYzgHYNahFiEZmjNbbZZ8RQ76MJLz2wgQbAe",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Previous page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Next page",
+          "width": 44,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "name": "narrow",
+      "state": "default",
+      "zoom": 1,
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "doc": {
+        "width": 320,
+        "height": 2909
+      },
+      "overflow": false,
+      "duplicateIds": [],
+      "font": true,
+      "h1": "24px",
+      "mainPadding": "24px 20px",
+      "dialog": null,
+      "actionTargets": [
+        {
+          "name": "Copy mint 7VX2WcS4Ny1RoH3KvCAZkTx95ezMmDiFSUuPYjEGmqLp",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy mint GnHzuGaGUMQWPoxdkHwZyEuNmLBMnmFVvTxHHMbprSYL",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy mint Bdr4vv8MBGEVGehSgUZyaAhxbSCNNYR3DpUVbkKeAkmX",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy mint FaGYULvqCYzgHYNahFiEZmjNbbZZ8RQ76MJLz2wgQbAe",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Previous page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Next page",
+          "width": 44,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "name": "zoom",
+      "state": "default",
+      "zoom": 2,
+      "viewport": {
+        "width": 720,
+        "height": 900
+      },
+      "doc": {
+        "width": 720,
+        "height": 4206
+      },
+      "overflow": false,
+      "duplicateIds": [],
+      "font": true,
+      "h1": "48px",
+      "mainPadding": "24px 20px",
+      "dialog": null,
+      "actionTargets": [
+        {
+          "name": "Copy mint 7VX2WcS4Ny1RoH3KvCAZkTx95ezMmDiFSUuPYjEGmqLp",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy mint GnHzuGaGUMQWPoxdkHwZyEuNmLBMnmFVvTxHHMbprSYL",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy mint Bdr4vv8MBGEVGehSgUZyaAhxbSCNNYR3DpUVbkKeAkmX",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy mint FaGYULvqCYzgHYNahFiEZmjNbbZZ8RQ76MJLz2wgQbAe",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Previous page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Next page",
+          "width": 44,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "name": "evidence-mobile",
+      "state": "expanded",
+      "zoom": 1,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "doc": {
+        "width": 390,
+        "height": 3948
+      },
+      "overflow": false,
+      "duplicateIds": [],
+      "font": true,
+      "h1": "24px",
+      "mainPadding": "24px 20px",
+      "dialog": null,
+      "actionTargets": [
+        {
+          "name": "Copy mint 7VX2WcS4Ny1RoH3KvCAZkTx95ezMmDiFSUuPYjEGmqLp",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy mint GnHzuGaGUMQWPoxdkHwZyEuNmLBMnmFVvTxHHMbprSYL",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy mint Bdr4vv8MBGEVGehSgUZyaAhxbSCNNYR3DpUVbkKeAkmX",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy mint FaGYULvqCYzgHYNahFiEZmjNbbZZ8RQ76MJLz2wgQbAe",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy issuance transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Open issuance transaction in Solscan",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Previous page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Next page",
+          "width": 44,
+          "height": 44
+        }
+      ]
+    }
+  ],
+  "checks": {
+    "navigationFocusReturned": true,
+    "caseInsensitiveNames": true,
+    "mintCasePreserved": true,
+    "missingAndSourceStates": true,
+    "exactSlotStrings": true,
+    "independentStatusFailure": true,
+    "retry": true,
+    "manualCopyFallback": true
+  },
+  "pageErrors": [],
+  "externalRequests": [],
+  "notVerified": [
+    "real API mutations",
+    "wallet identity checks or key custody",
+    "scanner operation",
+    "full-stack smoke"
+  ]
+}

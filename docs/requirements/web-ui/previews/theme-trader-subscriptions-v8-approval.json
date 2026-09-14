@@ -1,0 +1,107 @@
+{
+  "status": "approved_for_subscriptions_presented_current_page_visuals",
+  "confirmed_by": "user",
+  "feedback": "舒服",
+  "confirmed_date": "2026-09-14",
+  "review_context": "用户查看新主题桌面与手机 Current 完整截图后，对信息密度、状态区分和手机排版的明确提问回答“舒服”。当前版桌面／手机通过链接提供对照。",
+  "directly_presented_artifacts": [
+    "theme-trader-subscriptions-v8-desktop.png",
+    "theme-trader-subscriptions-v8-mobile.png"
+  ],
+  "linked_comparison_artifacts": [
+    "theme-trader-subscriptions-v8-before-desktop.png",
+    "theme-trader-subscriptions-v8-before-mobile.png"
+  ],
+  "approved_scope": [
+    "已展示 Current 页的整页信息密度与阅读层级",
+    "桌面 Trader、Monitoring、Old notifications、Manage 四列对齐",
+    "手机按交易员分组，依次展示身份、监控、旧通知和详情入口",
+    "已展示的 Current/Cancelled 控件、3 / 10 当前配额、更新时间与 Add trader 操作层级",
+    "完整钱包、备注与公开身份、资料缺失原因和查询时间的排版",
+    "正常监控、暂停与中断，以及 Effective、Last reliable observation 的视觉区分",
+    "六类旧通知计数、失败／未知状态与队列保留说明的视觉层级",
+    "已展示的 View subscription 与底部分页／Latest subscriptions 入口外观"
+  ],
+  "not_approved_by_this_feedback": [
+    "未直接展示的辅助截图，不据本次反馈声明所有状态均已逐图确认",
+    "Cancelled 订阅列表、空态、首次加载、首次失败、更新失败保留旧页等最终页面外观",
+    "完整视图切换、滚动恢复、复制、真实游标翻页与跨浏览器无障碍验收",
+    "业务/API/配额/通知/权限/数据范围变更及详情页写操作",
+    "其他会员或管理员页面、正式 ui/ 主题实现或真实环境验收"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-trader-subscriptions-v8.html",
+      "sha256": "a08ff01508617e8b1e1c20312eb28173812137ccb19471428c8e37b9034b3557"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-before-cancelled.png",
+      "sha256": "2810248cd582d27502b3ed35ad04223856fe9811dc268207be5bee6c57824ffd"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-before-desktop.png",
+      "sha256": "482f88859f0831ce94c2c620cd0652ef5cbffab656335d158d91eba6308b9f2e"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-before-mobile.png",
+      "sha256": "5d918a67e09a145ed8d0605339986b4fc80c14fb8b3cd8663c71cbbc2fdcf88d"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-desktop-cancelled.png",
+      "sha256": "db46fee1106722180f2075197106b5c79e077acda76bc4020f03b0a8e4135262"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-desktop-first-screen.png",
+      "sha256": "97983a2b119d623ea3abd6bdb524d7ef87d450ce29d86c4ddb9402b66240a650"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-desktop.png",
+      "sha256": "e441a8eb9894cb2b5687a79a0f6ae2dbe2d5cfc7eca4ab56e0b0f94281cc2361"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-loading.png",
+      "sha256": "09131839c6dcbf3dd011c16ca867882afc8ec2774e7c45adcd173141dbb51c5f"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-mobile-cancelled.png",
+      "sha256": "375ac8b40313fc7d4d8e725c6572535e1dd0d74205668fe6aa973f9b33f7d03f"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-mobile-empty.png",
+      "sha256": "114496fd8890442a3312f596f48183af3a86a6d4355735e5a383415e98400050"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-mobile-error.png",
+      "sha256": "406e274863933151f5017b53a3ecb1180a154a7241084a9c638fd9e2c5a35287"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-mobile-first-screen.png",
+      "sha256": "8a4a3e53df302f3934783125c506e92aacf34ae26a1bdbb25bc642a13184788c"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-mobile.png",
+      "sha256": "2107958cbbfe813f2bb1c93d69ca8bba2834eda761e5fa3c8a2f83cea533a864"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-stale.png",
+      "sha256": "cb2bf09c2c5139b09fc420533e7b9aa51683fe4cc976353325bf50aeee452a48"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-data.json",
+      "sha256": "c0f0936e587a30b24f9001190def7e719f51e6d994f123ce2aa9519f0406c291"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-before-capture.json",
+      "sha256": "9c5d10501c48e3156561fcd060e14e6540e633721c4f573ca01159274c33b13f"
+    },
+    {
+      "path": "theme-trader-subscriptions-v8-checks.json",
+      "sha256": "b8cbcc005a2c22bb2e67977e59d4c23a1d7d04a4f08e6a28c0908229af62bd1e"
+    }
+  ],
+  "original_review": {
+    "path": "theme-trader-subscriptions-v8-review.json",
+    "sha256": "9df892a12d5a810cd01caabcb3b67d3c9186cabf0a09817b231df881102e76f4"
+  },
+  "note": "原型、截图、演示数据、检查及原始审阅记录保留提交时的待确认标记；当前确认范围以本记录与订阅列表视觉基准为准。当前版仅供对照，不表示继续使用旧主题。"
+}

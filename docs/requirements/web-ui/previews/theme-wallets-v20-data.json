@@ -1,0 +1,122 @@
+{
+  "synthetic": true,
+  "asOf": "2026-09-14T06:30:00Z",
+  "user": {
+    "loggedIn": true,
+    "accountId": "11111111-1111-4111-8111-111111111111",
+    "username": "alexchen",
+    "iss": "fixture",
+    "administrator": false,
+    "profile": {
+      "displayName": "Alex Chen",
+      "tier": "ACCOUNT_TIER_STANDARD",
+      "avatarUrl": "",
+      "revision": "4"
+    },
+    "preferences": {
+      "theme": "ACCOUNT_THEME_DARK",
+      "revision": "2"
+    },
+    "access": {
+      "loginEnabled": true,
+      "apiKeyEnabled": true,
+      "profitSharingEnabled": true,
+      "revision": "1",
+      "moduleAccess": [
+        {
+          "module": "ACCOUNT_DATA_MODULE_WALLET",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SOLANA",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        }
+      ]
+    }
+  },
+  "items": [
+    {
+      "id": 1,
+      "remark": "Research wallet",
+      "walletType": "EVM",
+      "address": "0x14fBE31a86579D941fa03808FE9BB43234c7ed73",
+      "source": "created",
+      "avatarKind": "default",
+      "avatarPresetId": "",
+      "avatarUrl": "",
+      "revision": 1,
+      "createdAt": "2026-09-12T07:20:00Z",
+      "updatedAt": "2026-09-14T04:10:00Z"
+    },
+    {
+      "id": 2,
+      "remark": "Solana operations",
+      "walletType": "SOLANA",
+      "address": "8pRDMVk5ZjBSFZSzBy33HV5VhDMLb2yZwGRBLaZHqTAr",
+      "source": "imported",
+      "avatarKind": "default",
+      "avatarPresetId": "",
+      "avatarUrl": "",
+      "revision": 1,
+      "createdAt": "2026-09-12T07:20:00Z",
+      "updatedAt": "2026-09-14T04:10:00Z"
+    },
+    {
+      "id": 3,
+      "remark": "Execution wallet",
+      "walletType": "EVM",
+      "address": "0x9c8Fb130f90207d739599f92F803d88D6CaF5507",
+      "source": "imported",
+      "avatarKind": "default",
+      "avatarPresetId": "",
+      "avatarUrl": "",
+      "revision": 1,
+      "createdAt": "2026-09-12T07:20:00Z",
+      "updatedAt": "2026-09-14T04:10:00Z"
+    },
+    {
+      "id": 4,
+      "remark": "SOL-2",
+      "walletType": "SOLANA",
+      "address": "5WL6zr3zjJ1NszP63pXp9pSmwGXoQLCdGMvhPHreW5Na",
+      "source": "created",
+      "avatarKind": "default",
+      "avatarPresetId": "",
+      "avatarUrl": "",
+      "revision": 1,
+      "createdAt": "2026-09-12T07:20:00Z",
+      "updatedAt": "2026-09-14T04:10:00Z"
+    }
+  ],
+  "total": 4,
+  "page": 1,
+  "pageSize": 12
+}

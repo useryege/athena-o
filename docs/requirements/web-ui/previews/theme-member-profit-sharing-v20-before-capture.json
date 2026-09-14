@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T08:47:52.683Z",
+  "captureKind": "current-react-get-fixture",
+  "synthetic": true,
+  "scope": {
+    "routes": [
+      "/profit-sharing",
+      "/profit-sharing/research-operations-q3"
+    ],
+    "realm": "member",
+    "externalAPIsUsed": false,
+    "mutationRequestsObserved": false,
+    "productionUIChanged": false
+  },
+  "repository": {
+    "root": "/home/yege/work/athena",
+    "branch": "rf4",
+    "head": "7c6e4839f8ee9323bc6d84c7565b44577d88eda4"
+  },
+  "sourceHashesSha256": {
+    "ui/src/app/member/pages/profit-sharing.tsx": "3e267b0bd5db8ecc7fc9f2becb3e02597f908234f2bd0ca275d7cea215d198ec",
+    "ui/src/app/member/profit-sharing-service.ts": "433a261af275f5109173b6187f8e6cf5f5ea595222e77dd20189202d1d4969b7",
+    "ui/src/app/shared/pages/profit-sharing-shared.tsx": "f2b58a94294656031b8edef3080e357f16ffe39677234116c150318164b95019",
+    "ui/src/app/shared/services/profit-sharing-service.ts": "dbc8ceaa2e544c8cec675b7dc5e33f1118cf7e2b2e1eaebc3cca159d1bf6925a",
+    "docs/design/governance/profit-sharing.md": "b21fe31ccfdb6121b912b69939fa9fe7d12c4d9d253fb4c5ed69647f887f0f77",
+    "ui/src/app/member/app.tsx": "a780e77cf79e1fb7c225a92edefeafd1207a9d8cf83ca44a68440cac8c6519d0"
+  },
+  "data": {
+    "path": "theme-member-profit-sharing-v20-data.json",
+    "sha256": "3eb22b38010a5b27a50961ac5c1f5fc9093fdfe13c5ea95ec24c71b8def57c26",
+    "synthetic": true,
+    "sameRoundAndMemberUsedInPrototype": true
+  },
+  "capture": {
+    "command": "cd ui && yarn playwright test --config ../.superpowers/member-profit-v20-current.playwright.config.ts",
+    "testResult": "1 passed (3.6s); four viewports",
+    "node": "v24.14.1",
+    "locale": "en-US",
+    "timezone": "Asia/Shanghai",
+    "screenshots": [
+      {
+        "name": "list-desktop",
+        "route": "/profit-sharing",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 900
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/profit-sharing/rounds"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-member-profit-sharing-v20-before-list-desktop.png",
+        "sha256": "a68ad9aeef815e28535d094b0240eea3f4ef1cade10c58bf9bc4b856c6d542a6"
+      },
+      {
+        "name": "detail-desktop",
+        "route": "/profit-sharing/research-operations-q3",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 1183
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/profit-sharing/rounds/research-operations-q3"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-member-profit-sharing-v20-before-detail-desktop.png",
+        "sha256": "b4d4e311ef92ce047c5e926d634bc30641386148ba5ba3c239b8eb822f5f9455"
+      },
+      {
+        "name": "list-mobile",
+        "route": "/profit-sharing",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 1021
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/profit-sharing/rounds"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-member-profit-sharing-v20-before-list-mobile.png",
+        "sha256": "dc599ef3f50a713c3e00cfcbad2659c0c34093058fe3b187cd6e87adc8a8b1a8"
+      },
+      {
+        "name": "detail-mobile",
+        "route": "/profit-sharing/research-operations-q3",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 2349
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/profit-sharing/rounds/research-operations-q3"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-member-profit-sharing-v20-before-detail-mobile.png",
+        "sha256": "4e0d6762c6ed4e7c1ec1b0c97f79df057a291fc702a5932fd4c133380ab5771e"
+      }
+    ],
+    "assertions": [
+      "list and collecting detail render from one synthetic member fixture",
+      "all API calls intercepted; non-GET rejected",
+      "no horizontal overflow, page errors, unexpected requests, or submitted writes",
+      "fonts settled before capture; page top, pointer at 0,0, focus blurred, reduced motion enabled"
+    ]
+  },
+  "environment": {
+    "taskStartedServices": [],
+    "browserContexts": "All task-created browser contexts and Chromium processes closed by finally blocks",
+    "borrowed": [
+      {
+        "kind": "pre-existing root Vite",
+        "repository": "/home/yege/work/athena/ui",
+        "address": "http://localhost:4000",
+        "pid": 308228,
+        "status": "retained unchanged because it existed before this task",
+        "ownershipEvidence": "/proc/308228/cwd equals root/ui"
+      }
+    ]
+  },
+  "limitations": [
+    "GET fixtures are visual evidence, not live proposal save/submit/reopen/vote, authorization, membership, race, or conflict acceptance.",
+    "Current React capture covers list and one participant Collecting detail; other phases and visitor states are local prototype checks."
+  ]
+}

@@ -1,0 +1,695 @@
+{
+  "version": "v17",
+  "result": "passed",
+  "scope": "Local static visual proposal only. No production polling, permissions, backend execution, quota or service health verification.",
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "zoom": 1,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-etherscan-gateways-v17-gateways-desktop.png",
+        "theme-etherscan-gateways-v17-probe-desktop.png",
+        "theme-etherscan-gateways-v17-keys-desktop.png"
+      ],
+      "contracts": [
+        "Three full gateway records retained",
+        "All SVG references resolve",
+        "IDs unique",
+        "Checked time, latency and full error retained",
+        "Base URL disclosures start collapsed",
+        "Runtime status stays inside its column",
+        "Full URL available on expansion",
+        "Full URL copied",
+        "Keyboard source tab activation",
+        "Source tab focus retained",
+        "Runtime status remains independent beside probe tab",
+        "Overall counts, rate and required margin match backend result",
+        "Input text fits at normal and enlarged font sizes",
+        "All seven failure categories including zeros",
+        "All gateway result rows",
+        "Failure samples visible by default",
+        "Timing details initially collapsed",
+        "Sampled text contrast >=4.5:1",
+        "Local Inter and JetBrains Mono loaded",
+        "Timing and full run ID retained",
+        "Keyboard switches breakdown dimension",
+        "Key counts and percentages retained",
+        "Full error sample copied",
+        "Draft parameters do not rewrite previous result",
+        "Request count max enforced",
+        "Request count min enforced",
+        "Integer count enforced",
+        "Interval upper bound enforced",
+        "Interval lower bound enforced",
+        "Running locks parameters and duplicate submit",
+        "Running publishes no invented live counts",
+        "No unsupported live progress meter",
+        "Gateway refresh does not alter probe state",
+        "Start error distinguished from completed failure",
+        "Start failure retains previous result",
+        "Preview submit prevents duplicates",
+        "Simulated total is keys × requests, threshold rounds up",
+        "Overall result honors backend result even with severe row failure",
+        "Severe row failure retains needs-check semantics",
+        "Execution error exposes returned message",
+        "Read failure has no fabricated results",
+        "Probe read retry restores local sample",
+        "No-run state explicit",
+        "Gateway read failure does not fabricate unreachable records",
+        "Gateway retry restores sample",
+        "Loading skeleton is explicit",
+        "Gateway empty state explicit",
+        "Account menu Escape closes",
+        "No browser script errors",
+        "No external or live API requests"
+      ],
+      "geometry": [
+        {
+          "state": "gateways-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1108
+        },
+        {
+          "state": "connection-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1211
+        },
+        {
+          "state": "probe-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1766
+        },
+        {
+          "state": "keys-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1956
+        },
+        {
+          "state": "running-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1121
+        },
+        {
+          "state": "start-error-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1946
+        },
+        {
+          "state": "severe-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1683
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": "#tab-probe .tab-name",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": "#status-gateways",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 8.695656105300058
+        },
+        {
+          "selector": ".source-time",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": "#run-probe",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(0, 255, 167)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": ".threshold",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".threshold .negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".failure-grid dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".failure-grid .warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      }
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-etherscan-gateways-v17-gateways-mobile.png",
+        "theme-etherscan-gateways-v17-connection-mobile.png",
+        "theme-etherscan-gateways-v17-probe-mobile.png",
+        "theme-etherscan-gateways-v17-running-mobile.png",
+        "theme-etherscan-gateways-v17-start-error-mobile.png"
+      ],
+      "contracts": [
+        "Three full gateway records retained",
+        "All SVG references resolve",
+        "IDs unique",
+        "Checked time, latency and full error retained",
+        "Base URL disclosures start collapsed",
+        "Runtime status stays inside its column",
+        "Full URL available on expansion",
+        "Full URL copied",
+        "Keyboard source tab activation",
+        "Source tab focus retained",
+        "Runtime status remains independent beside probe tab",
+        "Overall counts, rate and required margin match backend result",
+        "Input text fits at normal and enlarged font sizes",
+        "All seven failure categories including zeros",
+        "All gateway result rows",
+        "Failure samples visible by default",
+        "Timing details initially collapsed",
+        "Sampled text contrast >=4.5:1",
+        "Local Inter and JetBrains Mono loaded",
+        "Timing and full run ID retained",
+        "Keyboard switches breakdown dimension",
+        "Key counts and percentages retained",
+        "Full error sample copied",
+        "Draft parameters do not rewrite previous result",
+        "Request count max enforced",
+        "Request count min enforced",
+        "Integer count enforced",
+        "Interval upper bound enforced",
+        "Interval lower bound enforced",
+        "Running locks parameters and duplicate submit",
+        "Running publishes no invented live counts",
+        "No unsupported live progress meter",
+        "Gateway refresh does not alter probe state",
+        "Start error distinguished from completed failure",
+        "Start failure retains previous result",
+        "Preview submit prevents duplicates",
+        "Simulated total is keys × requests, threshold rounds up",
+        "Overall result honors backend result even with severe row failure",
+        "Severe row failure retains needs-check semantics",
+        "Execution error exposes returned message",
+        "Read failure has no fabricated results",
+        "Probe read retry restores local sample",
+        "No-run state explicit",
+        "Gateway read failure does not fabricate unreachable records",
+        "Gateway retry restores sample",
+        "Loading skeleton is explicit",
+        "Gateway empty state explicit",
+        "Approved mobile drawer width retained",
+        "Drawer Escape restores focus",
+        "Account menu Escape closes",
+        "No browser script errors",
+        "No external or live API requests"
+      ],
+      "geometry": [
+        {
+          "state": "gateways-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 1443
+        },
+        {
+          "state": "connection-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 1547
+        },
+        {
+          "state": "probe-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 2645
+        },
+        {
+          "state": "keys-details-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 3112
+        },
+        {
+          "state": "running-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 1439
+        },
+        {
+          "state": "start-error-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 2863
+        },
+        {
+          "state": "severe-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 2552
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": "#tab-probe .tab-name",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": "#status-gateways",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 8.695656105300058
+        },
+        {
+          "selector": ".source-time",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": "#run-probe",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(0, 255, 167)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": ".threshold",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".threshold .negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".failure-grid dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".failure-grid .warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      },
+      "drawer": {
+        "width": 280,
+        "max": "calc(100% - 48px)"
+      }
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "zoom": 1,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-etherscan-gateways-v17-narrow.png"
+      ],
+      "contracts": [
+        "Three full gateway records retained",
+        "All SVG references resolve",
+        "IDs unique",
+        "Checked time, latency and full error retained",
+        "Base URL disclosures start collapsed",
+        "Runtime status stays inside its column",
+        "Full URL available on expansion",
+        "Full URL copied",
+        "Keyboard source tab activation",
+        "Source tab focus retained",
+        "Runtime status remains independent beside probe tab",
+        "Overall counts, rate and required margin match backend result",
+        "Input text fits at normal and enlarged font sizes",
+        "All seven failure categories including zeros",
+        "All gateway result rows",
+        "Failure samples visible by default",
+        "Timing details initially collapsed",
+        "Sampled text contrast >=4.5:1",
+        "Local Inter and JetBrains Mono loaded",
+        "Timing and full run ID retained",
+        "Keyboard switches breakdown dimension",
+        "Key counts and percentages retained",
+        "Full error sample copied",
+        "Draft parameters do not rewrite previous result",
+        "Request count max enforced",
+        "Request count min enforced",
+        "Integer count enforced",
+        "Interval upper bound enforced",
+        "Interval lower bound enforced",
+        "Running locks parameters and duplicate submit",
+        "Running publishes no invented live counts",
+        "No unsupported live progress meter",
+        "Gateway refresh does not alter probe state",
+        "Start error distinguished from completed failure",
+        "Start failure retains previous result",
+        "Preview submit prevents duplicates",
+        "Simulated total is keys × requests, threshold rounds up",
+        "Overall result honors backend result even with severe row failure",
+        "Severe row failure retains needs-check semantics",
+        "Execution error exposes returned message",
+        "Read failure has no fabricated results",
+        "Probe read retry restores local sample",
+        "No-run state explicit",
+        "Gateway read failure does not fabricate unreachable records",
+        "Gateway retry restores sample",
+        "Loading skeleton is explicit",
+        "Gateway empty state explicit",
+        "Account menu Escape closes",
+        "No browser script errors",
+        "No external or live API requests"
+      ],
+      "geometry": [
+        {
+          "state": "narrow",
+          "viewport": 320,
+          "document": 320,
+          "height": 1776
+        },
+        {
+          "state": "connection-narrow",
+          "viewport": 320,
+          "document": 320,
+          "height": 1879
+        },
+        {
+          "state": "probe-narrow",
+          "viewport": 320,
+          "document": 320,
+          "height": 2891
+        },
+        {
+          "state": "keys-details-narrow",
+          "viewport": 320,
+          "document": 320,
+          "height": 3381
+        },
+        {
+          "state": "running-narrow",
+          "viewport": 320,
+          "document": 320,
+          "height": 1501
+        },
+        {
+          "state": "start-error-narrow",
+          "viewport": 320,
+          "document": 320,
+          "height": 3131
+        },
+        {
+          "state": "severe-narrow",
+          "viewport": 320,
+          "document": 320,
+          "height": 2763
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": "#tab-probe .tab-name",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": "#status-gateways",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 8.695656105300058
+        },
+        {
+          "selector": ".source-time",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": "#run-probe",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(0, 255, 167)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": ".threshold",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".threshold .negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".failure-grid dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".failure-grid .warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      }
+    },
+    {
+      "name": "zoom",
+      "width": 720,
+      "height": 900,
+      "zoom": 2,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-etherscan-gateways-v17-zoom.png"
+      ],
+      "contracts": [
+        "Three full gateway records retained",
+        "All SVG references resolve",
+        "IDs unique",
+        "Checked time, latency and full error retained",
+        "Base URL disclosures start collapsed",
+        "Runtime status stays inside its column",
+        "Full URL available on expansion",
+        "Full URL copied",
+        "Keyboard source tab activation",
+        "Source tab focus retained",
+        "Runtime status remains independent beside probe tab",
+        "Overall counts, rate and required margin match backend result",
+        "Input text fits at normal and enlarged font sizes",
+        "All seven failure categories including zeros",
+        "All gateway result rows",
+        "Failure samples visible by default",
+        "Timing details initially collapsed",
+        "Sampled text contrast >=4.5:1",
+        "Local Inter and JetBrains Mono loaded",
+        "Timing and full run ID retained",
+        "Keyboard switches breakdown dimension",
+        "Key counts and percentages retained",
+        "Full error sample copied",
+        "Draft parameters do not rewrite previous result",
+        "Request count max enforced",
+        "Request count min enforced",
+        "Integer count enforced",
+        "Interval upper bound enforced",
+        "Interval lower bound enforced",
+        "Running locks parameters and duplicate submit",
+        "Running publishes no invented live counts",
+        "No unsupported live progress meter",
+        "Gateway refresh does not alter probe state",
+        "Start error distinguished from completed failure",
+        "Start failure retains previous result",
+        "Preview submit prevents duplicates",
+        "Simulated total is keys × requests, threshold rounds up",
+        "Overall result honors backend result even with severe row failure",
+        "Severe row failure retains needs-check semantics",
+        "Execution error exposes returned message",
+        "Read failure has no fabricated results",
+        "Probe read retry restores local sample",
+        "No-run state explicit",
+        "Gateway read failure does not fabricate unreachable records",
+        "Gateway retry restores sample",
+        "Loading skeleton is explicit",
+        "Gateway empty state explicit",
+        "Account menu Escape closes",
+        "No browser script errors",
+        "No external or live API requests"
+      ],
+      "geometry": [
+        {
+          "state": "gateways-zoom",
+          "viewport": 720,
+          "document": 720,
+          "height": 2227
+        },
+        {
+          "state": "connection-zoom",
+          "viewport": 720,
+          "document": 720,
+          "height": 2376
+        },
+        {
+          "state": "zoom",
+          "viewport": 720,
+          "document": 720,
+          "height": 3633
+        },
+        {
+          "state": "keys-details-zoom",
+          "viewport": 720,
+          "document": 720,
+          "height": 4155
+        },
+        {
+          "state": "running-zoom",
+          "viewport": 720,
+          "document": 720,
+          "height": 1749
+        },
+        {
+          "state": "start-error-zoom",
+          "viewport": 720,
+          "document": 720,
+          "height": 3939
+        },
+        {
+          "state": "severe-zoom",
+          "viewport": 720,
+          "document": 720,
+          "height": 3383
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": "#tab-probe .tab-name",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": "#status-gateways",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 8.695656105300058
+        },
+        {
+          "selector": ".source-time",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": "#run-probe",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(0, 255, 167)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": ".threshold",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".threshold .negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".failure-grid dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".failure-grid .warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      }
+    }
+  ]
+}

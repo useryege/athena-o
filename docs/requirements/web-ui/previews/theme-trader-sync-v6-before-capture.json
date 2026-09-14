@@ -1,0 +1,133 @@
+{
+  "task": "ATHENA Trader Sync v6 before-state screenshots",
+  "result": "passed",
+  "evidenceClassification": "ui-fixtures",
+  "evidenceLabel": "当前组件 + 演示数据",
+  "scope": {
+    "route": "/trader-sync",
+    "theme": "dark",
+    "application": "member",
+    "fullSystemSmokeRequired": false,
+    "externalAccountsUsed": false,
+    "externalAPIsUsed": false,
+    "productionUIChanged": false
+  },
+  "repository": {
+    "root": "/home/yege/work/athena",
+    "branch": "rf4",
+    "head": "7c6e4839f8ee9323bc6d84c7565b44577d88eda4",
+    "productionUIDiffAtVerification": "empty"
+  },
+  "source": {
+    "routeDeclaration": "ui/src/app/member/routes.tsx",
+    "page": "ui/src/app/member/pages/trader-sync/home.tsx",
+    "activityRows": "ui/src/app/member/pages/trader-sync/activity-feed.tsx",
+    "targetSidebar": "ui/src/app/member/pages/trader-sync/target-sidebar.tsx",
+    "pageStyles": "ui/src/app/member/pages/trader-sync/trader-sync.css",
+    "memberShell": "ui/src/app/member/app.tsx",
+    "fixtureRouter": "ui/e2e/trader-sync-fixtures.ts",
+    "sourceHashesSha256": {
+      "ui/src/app/member/pages/trader-sync/home.tsx": "424d664289e885b33acc22b2b1d9c2e023d819b18218b58d6d2838ca950e459c",
+      "ui/src/app/member/pages/trader-sync/activity-feed.tsx": "3a39c6c1291ef7aa8db9f6210120242a43ac397d9d357de1014451d4bb468051",
+      "ui/src/app/member/pages/trader-sync/target-sidebar.tsx": "5bfec4c554ddc2fdec13ce3f5e116d704e964d1a5a381a73d5bd9dcf3dc76d35",
+      "ui/src/app/member/pages/trader-sync/trader-sync.css": "16ef9f7fc9d649065b468a1f3c3efe842fde9f273033698aaf2a00e6438c242c",
+      "ui/src/app/member/app.tsx": "a780e77cf79e1fb7c225a92edefeafd1207a9d8cf83ca44a68440cac8c6519d0",
+      "ui/e2e/trader-sync-fixtures.ts": "b1b44efdc8c6d294f4c08e778cda3be9b63683ca92c948e420b52b9f0810bbdc"
+    }
+  },
+  "data": {
+    "source": "docs/requirements/web-ui/previews/theme-trader-sync-v6-data.json",
+    "sha256": "81b1856405162248525825c606fdaef4c406840b144b860ca10074d7be9b6b5e",
+    "description": "Three controlled trader targets and three controlled activities rendered by the current React components. All three profile snapshots use the renderer query time 2026-09-14T06:42:00Z, matching the screenshots. This is demonstration data, not live account or trading data.",
+    "ordering": "activity formation id descending: 303, 302, 301",
+    "quota": "3 / 10",
+    "pageAsOf": "2026-09-14T06:42:00Z",
+    "hasNewer": false,
+    "telegram": "connected fixture binding; per-activity states are sent, in_app_only, and unknown",
+    "originalTemporarySource": ".superpowers/v6-demo-data.json"
+  },
+  "capture": {
+    "runner": "Playwright 1.60.0 paired Chromium via channel=chromium",
+    "node": "v24.14.1",
+    "command": "cd ui && ./node_modules/.bin/playwright test --config=../.superpowers/v6-current.playwright.config.ts",
+    "testResult": "1 passed (2.3s)",
+    "assertions": [
+      "Trader Sync level-1 heading visible",
+      "html data-theme is dark",
+      "three activity articles rendered",
+      "note and public display-name identities rendered",
+      "finality anomaly rendered"
+    ],
+    "screenshots": [
+      {
+        "path": "docs/requirements/web-ui/previews/theme-trader-sync-v6-before-desktop.png",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 1693
+        },
+        "overflowX": false,
+        "sha256": "8749f807510534c815e26f1d9cbb5a99a230f7775c4bd62376c069beb8039fa0"
+      },
+      {
+        "path": "docs/requirements/web-ui/previews/theme-trader-sync-v6-before-mobile.png",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 2759
+        },
+        "overflowX": false,
+        "currentMobileBehavior": "Target details are collapsed behind the Targets toggle at initial load; the activity feed remains fully rendered.",
+        "sha256": "aaa5ba9dfa9d8aa9bfb903daabd3d82b715f60c67ab8834e0f612202a4d16bd4"
+      }
+    ]
+  },
+  "environment": {
+    "preExisting": [
+      {
+        "kind": "shared root runtime supervisor",
+        "pid": 307846,
+        "repository": "/home/yege/work/athena",
+        "status": "retained; not owned by this task"
+      },
+      {
+        "kind": "shared root Vite process",
+        "pid": 308228,
+        "repository": "/home/yege/work/athena/ui",
+        "configuredPort": 5600,
+        "healthAtInspection": "process present but no listening socket; not used for capture",
+        "status": "retained; not owned by this task"
+      },
+      {
+        "kind": "shared root API",
+        "pid": 3950976,
+        "address": "http://127.0.0.1:8080",
+        "healthAtInspection": "GET /api/v1/app/bootstrap with member realm returned HTTP 200",
+        "status": "retained; not owned by this task and not used by captured fixture APIs"
+      }
+    ],
+    "temporary": {
+      "kind": "Vite page server",
+      "address": "http://127.0.0.1:5616",
+      "repository": "/home/yege/work/athena/ui",
+      "command": "/home/yege/.nvm/versions/node/v24.14.1/bin/node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5616 --strictPort",
+      "apiBoundary": "All /api/v1 requests used by the screenshot were intercepted by the Playwright fixture router.",
+      "stopped": true,
+      "stopMethod": "SIGINT through owned persistent execution session",
+      "verification": [
+        "ss showed no listener on port 5616",
+        "process listing showed no vite process with port 5616"
+      ]
+    }
+  },
+  "temporaryScripts": [
+    ".superpowers/v6-current.playwright.config.ts",
+    ".superpowers/v6-current-capture.spec.ts"
+  ]
+}

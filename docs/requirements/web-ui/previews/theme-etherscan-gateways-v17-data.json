@@ -1,0 +1,231 @@
+{
+  "synthetic": true,
+  "notice": "Visual preview \u00b7 Synthetic gateways and probe results. No API requests.",
+  "admin": {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "username": "alex.admin",
+    "administrator": true,
+    "access": {
+      "loginEnabled": true,
+      "apiKeyEnabled": true,
+      "profitSharingEnabled": false,
+      "revision": "7",
+      "moduleAccess": [
+        {
+          "module": 1,
+          "dataAccess": 1
+        },
+        {
+          "module": 2,
+          "dataAccess": 1
+        },
+        {
+          "module": 3,
+          "dataAccess": 0
+        },
+        {
+          "module": 4,
+          "dataAccess": 0
+        },
+        {
+          "module": 5,
+          "dataAccess": 0
+        },
+        {
+          "module": 11,
+          "dataAccess": 0
+        },
+        {
+          "module": 7,
+          "dataAccess": 0
+        },
+        {
+          "module": 8,
+          "dataAccess": 1
+        },
+        {
+          "module": 13,
+          "dataAccess": 1
+        },
+        {
+          "module": 9,
+          "dataAccess": 1
+        },
+        {
+          "module": 12,
+          "dataAccess": 2
+        }
+      ]
+    },
+    "profile": {
+      "displayName": "Alex Morgan",
+      "tier": "ACCOUNT_TIER_STANDARD",
+      "avatarUrl": "",
+      "revision": "4"
+    },
+    "identity": {
+      "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+      "verifiedEmail": "alex.admin@example.invalid",
+      "solanaAddress": "",
+      "createdAt": 1783999440,
+      "lastLoginAt": 1789351200
+    },
+    "status": "ACCOUNT_STATUS_ACTIVE",
+    "loggedIn": true,
+    "accountId": "44444444-4444-4444-8444-444444444444",
+    "iss": "athena",
+    "preferences": {
+      "theme": "ACCOUNT_THEME_DARK",
+      "revision": "2"
+    }
+  },
+  "asOf": "2026-09-14T05:50:06Z",
+  "gateways": {
+    "checkedAt": 1789365005,
+    "items": [
+      {
+        "address": "192.0.2.11:8099",
+        "reachable": true,
+        "started": true,
+        "status": "running",
+        "latencyMS": 42,
+        "etherscanBaseURL": "https://api.etherscan.io/v2/api",
+        "checkedAt": 1789365005,
+        "errorMessage": ""
+      },
+      {
+        "address": "192.0.2.12:8099",
+        "reachable": true,
+        "started": true,
+        "status": "running",
+        "latencyMS": 57,
+        "etherscanBaseURL": "https://api.etherscan.io/v2/api",
+        "checkedAt": 1789365005,
+        "errorMessage": ""
+      },
+      {
+        "address": "192.0.2.13:8099",
+        "reachable": false,
+        "started": false,
+        "status": "unreachable",
+        "latencyMS": 5000,
+        "etherscanBaseURL": "",
+        "checkedAt": 1789365005,
+        "errorMessage": "rpc error: code = DeadlineExceeded desc = context deadline exceeded"
+      }
+    ]
+  },
+  "run": {
+    "runID": "55555555-5555-4555-8555-555555555555",
+    "status": "completed",
+    "result": "fail",
+    "createdAt": 1789364880,
+    "startedAt": 1789364880,
+    "finishedAt": 1789364882,
+    "intervalMS": 10,
+    "requestsPerKey": 6,
+    "keyCount": 3,
+    "gatewayCount": 3,
+    "total": 18,
+    "requiredSuccess": 17,
+    "counts": {
+      "success": 16,
+      "rateLimit": 2,
+      "authentication": 0,
+      "plan": 0,
+      "invalidRequest": 0,
+      "malformed": 0,
+      "upstream": 0,
+      "other": 0
+    },
+    "elapsedMS": 1184,
+    "startSpreadMS": 170,
+    "gatewaySummaries": [
+      {
+        "gateway": "192.0.2.11:8099",
+        "counts": {
+          "success": 6,
+          "rateLimit": 0,
+          "authentication": 0,
+          "plan": 0,
+          "invalidRequest": 0,
+          "malformed": 0,
+          "upstream": 0,
+          "other": 0
+        }
+      },
+      {
+        "gateway": "192.0.2.12:8099",
+        "counts": {
+          "success": 6,
+          "rateLimit": 0,
+          "authentication": 0,
+          "plan": 0,
+          "invalidRequest": 0,
+          "malformed": 0,
+          "upstream": 0,
+          "other": 0
+        }
+      },
+      {
+        "gateway": "192.0.2.13:8099",
+        "counts": {
+          "success": 4,
+          "rateLimit": 2,
+          "authentication": 0,
+          "plan": 0,
+          "invalidRequest": 0,
+          "malformed": 0,
+          "upstream": 0,
+          "other": 0
+        }
+      }
+    ],
+    "keySummaries": [
+      {
+        "keyLabel": "key-01",
+        "counts": {
+          "success": 6,
+          "rateLimit": 0,
+          "authentication": 0,
+          "plan": 0,
+          "invalidRequest": 0,
+          "malformed": 0,
+          "upstream": 0,
+          "other": 0
+        }
+      },
+      {
+        "keyLabel": "key-02",
+        "counts": {
+          "success": 5,
+          "rateLimit": 1,
+          "authentication": 0,
+          "plan": 0,
+          "invalidRequest": 0,
+          "malformed": 0,
+          "upstream": 0,
+          "other": 0
+        }
+      },
+      {
+        "keyLabel": "key-03",
+        "counts": {
+          "success": 5,
+          "rateLimit": 1,
+          "authentication": 0,
+          "plan": 0,
+          "invalidRequest": 0,
+          "malformed": 0,
+          "upstream": 0,
+          "other": 0
+        }
+      }
+    ],
+    "samples": [
+      "gateway=192.0.2.13:8099 key=key-02 category=rate_limit: Max rate limit reached",
+      "gateway=192.0.2.13:8099 key=key-03 category=rate_limit: Max rate limit reached"
+    ],
+    "errorMessage": ""
+  }
+}

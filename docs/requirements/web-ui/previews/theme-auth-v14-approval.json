@@ -1,0 +1,106 @@
+{
+  "status": "approved_for_member_auth_presented_visuals",
+  "confirmed_by": "user",
+  "feedback": "没问题",
+  "confirmed_date": "2026-09-14",
+  "review_context": "用户查看登录页桌面、手机及 Google 注册页桌面、手机四张截图后，在模板 Inter 字体例外处理且页面与截图未改动的说明后反馈“没问题”。本次按已展示四张页面效果记录确认，其他截图与检查证据的存在不代表逐图批准。",
+  "directly_presented_artifacts": [
+    "theme-auth-v14-login-desktop.png",
+    "theme-auth-v14-login-mobile.png",
+    "theme-auth-v14-register-desktop.png",
+    "theme-auth-v14-register-mobile.png"
+  ],
+  "approved_scope": [
+    "所展示桌面与手机页面的居中单列面板、品牌标识位置、主题配色、字体层级、留白和信息密度",
+    "登录页 Google 与 Phantom 同级入口、登录签名说明、新用户提示及面板外业务访问说明的视觉层级",
+    "Google 注册页已验证邮箱、用户名输入与可用状态、永久名称提示，以及创建账户和切换 Google 身份的阅读顺序与按钮主次"
+  ],
+  "not_approved_by_this_feedback": [
+    "未直接展示的 Phantom 注册、provider 缺失、注册过期、320px、200% 字号及其他辅助状态未逐图确认",
+    "真实 Google／Phantom 授权、注册与取消写入、服务端用户名规则、ticket／CSRF、returnTo、部署路径、复制、异步竞态及完整错误码验收",
+    "管理员登录与注册、其他业务页面、移动钱包深链或账户身份关联能力",
+    "当前 React 对照图作为新主题目标、正式 ui/ 实现、全站设计完成或生产行为变更"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-auth-v14-before-capture.json",
+      "sha256": "6b93faba29a6128422e593f6c10afaf1f702548fdb02ff505c99d9073a8b3d6e"
+    },
+    {
+      "path": "theme-auth-v14-before-login-desktop.png",
+      "sha256": "3362206dbc515b5a06412c3be02dc8f75daad32e004b18bfd808a3ade9f5de75"
+    },
+    {
+      "path": "theme-auth-v14-before-login-mobile.png",
+      "sha256": "1a70c1746760e8634e98153c2d6910d78537679de2bcd96fae041d740372d849"
+    },
+    {
+      "path": "theme-auth-v14-before-register-desktop.png",
+      "sha256": "0c0bb94bbc5d4129cad0db24399a5ee4afaca226c300e2181f4c22246f61f873"
+    },
+    {
+      "path": "theme-auth-v14-before-register-mobile.png",
+      "sha256": "dc31d20aeca2573224c34baf3f797931b88a82cfd8988ce2476aec37fbeff172"
+    },
+    {
+      "path": "theme-auth-v14-checks.json",
+      "sha256": "1fca071965b040ae041e41d66db4b2f1f10dd548ab1ab4081f55746087eb5356"
+    },
+    {
+      "path": "theme-auth-v14-data.json",
+      "sha256": "1ef61741dbfd95e022d0ed99f7c5694c5dc75d0490568bde722b915bd247fa3c"
+    },
+    {
+      "path": "theme-auth-v14-login-desktop.png",
+      "sha256": "e7d6f03777c018c7e90d5032f5752c5da2d0c87960cb87eab90898fcd4eea4a2"
+    },
+    {
+      "path": "theme-auth-v14-login-mobile-missing.png",
+      "sha256": "3144613d05ddde404f5d50467959250ebb08f0ac3c80281c5c7f7104d8575aac"
+    },
+    {
+      "path": "theme-auth-v14-login-mobile.png",
+      "sha256": "0bb59c997fcc6776e4edab1e53d165c56d1948ca33406f9ee53baebed3304694"
+    },
+    {
+      "path": "theme-auth-v14-login-narrow.png",
+      "sha256": "23fb2c94d323c4326e9841c639f1bd32929b9d25020c904b6694e3ede96543fc"
+    },
+    {
+      "path": "theme-auth-v14-login-text-200.png",
+      "sha256": "8f379b607a8cdf4eee5a56f5f80d0cf06c19664e3a51fd6e8c90a23775021054"
+    },
+    {
+      "path": "theme-auth-v14-register-desktop.png",
+      "sha256": "2f5619afc2523d02a14775ef7e35b3d8a027d8a04e16d651d4e3ccc566a35fca"
+    },
+    {
+      "path": "theme-auth-v14-register-mobile-expired.png",
+      "sha256": "ee72faf3251cfb4a9800a097dd01b02105876c29dfda25fbfb45a26ac7b07bd9"
+    },
+    {
+      "path": "theme-auth-v14-register-mobile-wallet.png",
+      "sha256": "410de655baf9a2e24eae77803e3bb0662d0894c3e059694e3664b6cc5c457e04"
+    },
+    {
+      "path": "theme-auth-v14-register-mobile.png",
+      "sha256": "2f29b35d4469702bfb4c11d5fef84c1d64d668e2500d652d6766fe3f000cf769"
+    },
+    {
+      "path": "theme-auth-v14-register-narrow.png",
+      "sha256": "6624ff0fd229b2617627c833474f5c34acf2a6855d10ba36e7627052aad0efe7"
+    },
+    {
+      "path": "theme-auth-v14-register-text-200.png",
+      "sha256": "52e0aeb44fbe15519101549ebfe0e284350184d9cf12a4cf77ca537df7d53847"
+    },
+    {
+      "path": "theme-auth-v14.html",
+      "sha256": "22457ab2eaa1a4a6b3b656e693f44c8ec30a1e3bc09f745d3b40b9420bc9b6a7"
+    },
+    {
+      "path": "theme-auth-v14-review.json",
+      "sha256": "11994bb08585c82181acdd4cdd60ce9202f9951acf5f018b44b659fca7a97807"
+    }
+  ]
+}

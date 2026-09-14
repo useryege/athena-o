@@ -1,0 +1,82 @@
+{
+  "status": "approved_for_trader_sync_home_visuals_and_default_disclosure",
+  "confirmed_by": "user",
+  "feedback": "认可",
+  "confirmed_date": "2026-09-14",
+  "review_context": "用户查看当前桌面、新主题桌面与手机完整截图后，对首页整页布局及辅助信息默认折叠的明确提问回答“认可”。",
+  "directly_presented_artifacts": [
+    "theme-trader-sync-v6-before-desktop.png",
+    "theme-trader-sync-v6-desktop.png",
+    "theme-trader-sync-v6-mobile.png"
+  ],
+  "approved_scope": [
+    "已展示的新主题桌面活动主区与右侧目标区布局",
+    "市场名称、Outcome、买卖方向、金额和份额的阅读层级",
+    "手机默认折叠的目标区与活动重排、阅读体验",
+    "身份快照、Position ID 和来源入口默认放入 Identity & position、按需展开",
+    "已展示的完整钱包、备注/公开名、时间以及 Telegram、监控中断与 finality 异常的视觉分层"
+  ],
+  "not_approved_by_this_feedback": [
+    "未直接展示的辅助截图，不据本次反馈声明全部细节均已逐图确认",
+    "首次加载、读取失败、保留旧页、无订阅/无活动/筛选空态与新活动提示的最终页面外观",
+    "未展示的 Telegram 未绑定/加载/不可用/重试、目标和活动投递状态",
+    "完整键盘/复制/异步查询/游标恢复/轮询/权限流程与跨浏览器验收",
+    "业务/API/金额精度/数据范围变更，以及其他会员或管理员页面",
+    "正式 ui/ 主题改版实现或真实环境验收"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-trader-sync-v6.html",
+      "sha256": "404146936d93d9b65ddede7dd918bc903488147e7e16ed8a0f0e067001d70a71"
+    },
+    {
+      "path": "theme-trader-sync-v6-before-desktop.png",
+      "sha256": "8749f807510534c815e26f1d9cbb5a99a230f7775c4bd62376c069beb8039fa0"
+    },
+    {
+      "path": "theme-trader-sync-v6-before-mobile.png",
+      "sha256": "aaa5ba9dfa9d8aa9bfb903daabd3d82b715f60c67ab8834e0f612202a4d16bd4"
+    },
+    {
+      "path": "theme-trader-sync-v6-desktop.png",
+      "sha256": "45b2c12f774f2d711abb9d52ac855aaa4d9f3ccf199e734b1f18cd1bfc85d07e"
+    },
+    {
+      "path": "theme-trader-sync-v6-mobile.png",
+      "sha256": "375489096ef0d25da609ce7effa3a27bd0be6ae168f6ce84ce55a39e6a870503"
+    },
+    {
+      "path": "theme-trader-sync-v6-desktop-first-screen.png",
+      "sha256": "7666b34a7afbab98c8008a6a59c922bbf33bc738f3e30b963c3c2eed02ff05df"
+    },
+    {
+      "path": "theme-trader-sync-v6-mobile-first-screen.png",
+      "sha256": "6058ab4dfab6aa9144ac9a3c922421f89bfdf4448574d6e5b97a02e3cd6ce160"
+    },
+    {
+      "path": "theme-trader-sync-v6-mobile-targets.png",
+      "sha256": "7ee5c0f13d012da685e681c4c484131946862075748abc36675c8a91f66695f6"
+    },
+    {
+      "path": "theme-trader-sync-v6-evidence.png",
+      "sha256": "25a08a6f80b7a7ae35a0a366bf6a7b3d5fb0ca8303e62e660217211cbcf57bbd"
+    },
+    {
+      "path": "theme-trader-sync-v6-checks.json",
+      "sha256": "a4e96339411b5a007bd98157386e0373afd27bc0352af3c149b4fe150adadb61"
+    },
+    {
+      "path": "theme-trader-sync-v6-data.json",
+      "sha256": "81b1856405162248525825c606fdaef4c406840b144b860ca10074d7be9b6b5e"
+    },
+    {
+      "path": "theme-trader-sync-v6-before-capture.json",
+      "sha256": "4a6cb39b0da5dc86920a8190cbb2810831c1c85e9925f9b41c359583dbd30af4"
+    }
+  ],
+  "original_review": {
+    "path": "theme-trader-sync-v6-review.json",
+    "sha256": "330e7b5964258e03f10ac12522ffe8f74137d1ce079d011078798708cb9f840c"
+  },
+  "note": "保留原型、截图、数据、检查及原始审阅记录提交时的待确认标记；当前确认范围以本记录与首页视觉基准为准。当前界面截图仅用于前后对照，不表示继续采用旧主题。"
+}

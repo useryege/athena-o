@@ -1,0 +1,99 @@
+{
+  "status": "approved_for_service_status_presented_visuals",
+  "confirmed_by": "user",
+  "feedback": "舒服 继续推进",
+  "confirmed_date": "2026-09-14",
+  "review_context": "用户查看上一回复展示的 Services 桌面、Notifications 桌面、Services 手机和 Trader Sync 手机四张截图后反馈“舒服 继续推进”。按直接展示范围确认视觉，并继续下一管理员页面设计。",
+  "directly_presented_artifacts": [
+    "theme-service-status-v16-services-desktop.png",
+    "theme-service-status-v16-notification-desktop.png",
+    "theme-service-status-v16-services-mobile.png",
+    "theme-service-status-v16-trader-mobile.png"
+  ],
+  "approved_scope": [
+    "所展示三来源页签及其独立状态的视觉层级，管理员导航、配色、字体、留白和信息密度",
+    "所展示 Services 桌面三列表格与手机分隔记录，以及状态、错误和来源时间的阅读顺序",
+    "所展示 Notifications 桌面恢复提示、默认收起的恢复详情入口、System／Account 队列比较和运行信息层级",
+    "所展示 Trader Sync 手机采集器、raw 可观测性及逐条指标的值、单位、范围布局"
+  ],
+  "not_approved_by_this_feedback": [
+    "Notifications 手机、Trader Sync 桌面、stale、首次失败、导航展开、320px、200% 字号及其他辅助状态未由此次反馈逐图确认",
+    "真实服务健康、轮询、独立请求、缓存、错误、取消、realm 与授权边界的实现或生产验收",
+    "其他管理员页面、正式 ui/ 已改版、全站设计完成或新增业务能力",
+    "当前 React 对照截图作为新主题目标"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-service-status-v16-before-capture.json",
+      "sha256": "f002b877cff32f2e9541c16e23d0e49c99de1cf01998d3b50abb705b3506fb00"
+    },
+    {
+      "path": "theme-service-status-v16-before-desktop.png",
+      "sha256": "f9f7398bd3a9622ed303b7f0418fc80d6dc0d666b43f9c921d54717e13694a11"
+    },
+    {
+      "path": "theme-service-status-v16-before-mobile.png",
+      "sha256": "c612095c0b885b78efab71f878aa34562c6abe705b7f9e74ecf94b022fb90d93"
+    },
+    {
+      "path": "theme-service-status-v16-checks.json",
+      "sha256": "898c2a56671f11a5cd3486922b6e2ccb481452a463bbfbcaaf555463fce82435"
+    },
+    {
+      "path": "theme-service-status-v16-data.json",
+      "sha256": "019c81a5c5d06e34f8b6810186bef3789040931e9fb5e5a3e69d1aa6fdbb2a1c"
+    },
+    {
+      "path": "theme-service-status-v16-narrow.png",
+      "sha256": "f80691598e87f3981507ad6ef0cf17a1cef39a38aa88782387b69d028b5a3a8c"
+    },
+    {
+      "path": "theme-service-status-v16-navigation-mobile.png",
+      "sha256": "159a551be2aa6e3ac632830b85292bef251f0ef73d32063290b5b3957efa776e"
+    },
+    {
+      "path": "theme-service-status-v16-notification-desktop.png",
+      "sha256": "51adfe7252401bba2b154e688881cc70a8061a6932fd2bb1bef8dcbe096c15f4"
+    },
+    {
+      "path": "theme-service-status-v16-notification-mobile.png",
+      "sha256": "a2a831ebb3e10ac17d35a80668fce68608a50d55465ddb7776dddf0db480c79a"
+    },
+    {
+      "path": "theme-service-status-v16-services-desktop.png",
+      "sha256": "12ad491b5b450a8b070c510ae00150fa38706ae081aea6605bf116d941e609f5"
+    },
+    {
+      "path": "theme-service-status-v16-services-mobile.png",
+      "sha256": "f29164b7353b2964376152a75cebc1e92957d07a053427b7145268a8747a67af"
+    },
+    {
+      "path": "theme-service-status-v16-stale-desktop.png",
+      "sha256": "3128646364ad09fe3be498c996009421d8ef5268a910d8ccb36ef2db2d4059f7"
+    },
+    {
+      "path": "theme-service-status-v16-trader-desktop.png",
+      "sha256": "0399f7ebc0bf4c84e3895cc97830109f2c59e134640f3e6dfa37e195453dda21"
+    },
+    {
+      "path": "theme-service-status-v16-trader-mobile.png",
+      "sha256": "73db9bb58d310372355d41fbbf231036461367ae840680a16c12797f60b43cc7"
+    },
+    {
+      "path": "theme-service-status-v16-unavailable-mobile.png",
+      "sha256": "efa5c7340070fa0ec8ad5c0f8a4a66dcb4687b5fb2cbcb6e64819f9879ffab9b"
+    },
+    {
+      "path": "theme-service-status-v16-zoom.png",
+      "sha256": "8bba38ce722d58d95a41884439ca057d6e41fe4ccd59be6b07b28d83730f3eae"
+    },
+    {
+      "path": "theme-service-status-v16.html",
+      "sha256": "a07197cc676538a855891e3004f45f4beb593cb8cd6ce98d835bda2e581a2712"
+    },
+    {
+      "path": "theme-service-status-v16-review.json",
+      "sha256": "e41735853211d7d946237b309f5531a8717f141e3b0abd8820310ce27dfbe884"
+    }
+  ]
+}

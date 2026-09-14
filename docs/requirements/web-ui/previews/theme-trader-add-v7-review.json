@@ -1,0 +1,165 @@
+{
+  "status": "awaiting_user_review",
+  "created_date": "2026-09-14",
+  "scope": "现有 /trader-sync/add 页面在已确认 Nansen 参考主题中的视觉提案；保留现有业务流程，未修改正式 ui/。",
+  "independent_review": {
+    "reviewer": "v7_finish_review",
+    "disposition": "ship",
+    "meaning": "仅表示当前截图和原型可提交用户视觉确认，不表示用户已认可 v7、正式实现或生产验收。",
+    "direction": "沿用 v1–v6 近黑/青绿/Inter/JetBrains Mono、应用壳、表单和反馈体系。",
+    "capture_validity": "独立查看全部13张指定截图，前后使用相同fixture；桌面确认区与手机纵向阅读关系清楚，长数值和完整钱包无可见溢出。",
+    "business": "完整保留身份、验证false、缺失原因、资料零值/超大整数、20 Unicode备注、六周期、供应商货币符号和精确值；创建与恢复仅本地提示。",
+    "material_fixes": [],
+    "reviewed_screenshots": [
+      "theme-trader-add-v7-before-desktop.png",
+      "theme-trader-add-v7-before-mobile.png",
+      "theme-trader-add-v7-before-input.png",
+      "theme-trader-add-v7-desktop.png",
+      "theme-trader-add-v7-mobile.png",
+      "theme-trader-add-v7-desktop-first-screen.png",
+      "theme-trader-add-v7-mobile-first-screen.png",
+      "theme-trader-add-v7-curve-values.png",
+      "theme-trader-add-v7-unavailable.png",
+      "theme-trader-add-v7-desktop-expired.png",
+      "theme-trader-add-v7-mobile-expired.png",
+      "theme-trader-add-v7-desktop-input.png",
+      "theme-trader-add-v7-mobile-input.png"
+    ],
+    "note": "审阅时 review.json 尚未生成，现将该结论归档；不构成视觉返工项。"
+  },
+  "direction_contract": ".impeccable/surfaces/web-ui-previews-theme-trader-add-v7-html-2f02da5c.md",
+  "detector": {
+    "raw_findings": [
+      "overused-font: inter"
+    ],
+    "resolution": "用户v2明确确认字体，使用 hooks ignore-value 登记仅本v7 HTML 的Inter例外，其他规则保留。"
+  },
+  "verification": {
+    "before_mode": "actual_react_with_ui_fixtures",
+    "prototype_mode": "standalone_local_file",
+    "viewports": [
+      "1440x900",
+      "390x844",
+      "320x844",
+      "720x900 at 200% root font size"
+    ],
+    "axe_states": [
+      "review",
+      "exact",
+      "unavailable",
+      "expired",
+      "unknown",
+      "input"
+    ],
+    "axe_violations": 0,
+    "page_errors": 0,
+    "external_http_requests_from_prototype": 0,
+    "interactions": [
+      "精确共享数据与大整数/零值显示",
+      "六周期与缺失状态",
+      "曲线明细与复制payload",
+      "20/21 Unicode字符边界",
+      "本地确认提示",
+      "过期/重新查询",
+      "未绑定仍可订阅",
+      "已达配额/已有订阅禁止新建",
+      "未知结果恢复与资料冻结",
+      "输入校验和恢复"
+    ],
+    "first_round_adjustments": [
+      "演示场景切换清除残留提示条",
+      "收紧确认区留白",
+      "补充曲线轴的无障碍说明"
+    ],
+    "final_round": "完整检查重新通过，同版截图已逐张打开复核。",
+    "browser_closed_after_checks": true,
+    "prototype_services_started": 0,
+    "temporary_before_vite_stopped": true,
+    "temporary_port": 5617,
+    "pre_existing_environment": "保持原样，详见 before-capture.json",
+    "production_ui_diff": "empty",
+    "limitations": [
+      "根字号缩放不是原生浏览器缩放",
+      "自动检查不是完整手动无障碍验收",
+      "原型不模拟真实计时/网络/幂等/权限/跨路由草稿",
+      "本地按钮提示不证明创建或恢复成功"
+    ]
+  },
+  "pending_user_decisions": [
+    "Find trader、资料核对与确认操作的整页布局",
+    "桌面316px确认区与手机阅读顺序",
+    "已有结果时查询按钮转次要、确认按钮为主要",
+    "有效期、P/L及所展示异常状态的外观"
+  ],
+  "documenter_scope": "既有世界中的页面扩展；按用户设计确认流程维护长期提案，现无DESIGN.md/sidecar，未新建或重设全局系统。",
+  "artifacts": [
+    {
+      "path": "theme-trader-add-v7.html",
+      "sha256": "a471e37b811d07fdc0d35012e0c65680cbccb3fc5b885766c54b246713d5ec33"
+    },
+    {
+      "path": "theme-trader-add-v7-before-desktop.png",
+      "sha256": "cd53fa78703b30e49cc4a9ff4607420f3de885c0c6f6ecb855bb3f8558419d3b"
+    },
+    {
+      "path": "theme-trader-add-v7-before-mobile.png",
+      "sha256": "e5a842cbd471898c4a8d7f2afc8d3c0e74ea1e766194840206ced5d70165d66c"
+    },
+    {
+      "path": "theme-trader-add-v7-before-input.png",
+      "sha256": "10de191649a3bf6af55bf17c2e335a489c207f73f604742d584687ded2ec196e"
+    },
+    {
+      "path": "theme-trader-add-v7-desktop.png",
+      "sha256": "0ca42948c884512144bacb4038d6168411cb121fe01d793cd452a98de04948fd"
+    },
+    {
+      "path": "theme-trader-add-v7-mobile.png",
+      "sha256": "94f663fca511736e6a9c46707552d0c07328fc35b5e14c9dc1583e1c3018b5fd"
+    },
+    {
+      "path": "theme-trader-add-v7-desktop-first-screen.png",
+      "sha256": "1c0074fe03408c6275a44007e405dca0416f19e8dbb4817aaf4845e77072b3e7"
+    },
+    {
+      "path": "theme-trader-add-v7-mobile-first-screen.png",
+      "sha256": "b1b1274316bce8c05fedb1d7e54007ee86d245f2a83101eaadd3775080e7839b"
+    },
+    {
+      "path": "theme-trader-add-v7-curve-values.png",
+      "sha256": "ce996773a59091844475d3fe5187f52fb67762dc06f39be709e50002e0bbc69c"
+    },
+    {
+      "path": "theme-trader-add-v7-unavailable.png",
+      "sha256": "26be1899646c5d8e69353c71e344e74abb5930dfcf4eb609126ab1021505144f"
+    },
+    {
+      "path": "theme-trader-add-v7-desktop-expired.png",
+      "sha256": "3e2db506db810f123c4e3463da64df97f5025382c2d2988744c5d4025fa700dc"
+    },
+    {
+      "path": "theme-trader-add-v7-mobile-expired.png",
+      "sha256": "297bce2e251da858df4ca1d66dd2f5ba64c36d1a817845bcd538fa6bfb988a8b"
+    },
+    {
+      "path": "theme-trader-add-v7-desktop-input.png",
+      "sha256": "5a3b6574f8210cdbd835de754da648803b1db98037a7e8ccf7c7cb40e46d1904"
+    },
+    {
+      "path": "theme-trader-add-v7-mobile-input.png",
+      "sha256": "0f5b267ade0ffae9d48abbc32ee448d9c330598ead94ef3de4016b13d23a7162"
+    },
+    {
+      "path": "theme-trader-add-v7-data.json",
+      "sha256": "d029509bbc189b9a3ca3ab470c724a9747089aa9b48985e697cd4bad8124229a"
+    },
+    {
+      "path": "theme-trader-add-v7-before-capture.json",
+      "sha256": "ee4b5cc978d69ec88b0d3c4cd00962fc53f458ef2c1971c76ada7c47a2088b0c"
+    },
+    {
+      "path": "theme-trader-add-v7-checks.json",
+      "sha256": "4f536a29ab901b36e49edddadf5b75510e7edb5e7bb5767bc391d773c8cd419f"
+    }
+  ]
+}

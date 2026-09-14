@@ -1,0 +1,183 @@
+{
+  "synthetic": true,
+  "notice": "Visual preview · Synthetic delivery records. No messages will be sent.",
+  "asOf": "2026-09-14T06:00:00Z",
+  "admin": {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "username": "alex.admin",
+    "administrator": true,
+    "access": {
+      "loginEnabled": true,
+      "apiKeyEnabled": true,
+      "profitSharingEnabled": false,
+      "revision": "7",
+      "moduleAccess": [
+        {
+          "module": 1,
+          "dataAccess": 1
+        },
+        {
+          "module": 2,
+          "dataAccess": 1
+        },
+        {
+          "module": 3,
+          "dataAccess": 0
+        },
+        {
+          "module": 4,
+          "dataAccess": 0
+        },
+        {
+          "module": 5,
+          "dataAccess": 0
+        },
+        {
+          "module": 11,
+          "dataAccess": 0
+        },
+        {
+          "module": 7,
+          "dataAccess": 0
+        },
+        {
+          "module": 8,
+          "dataAccess": 1
+        },
+        {
+          "module": 13,
+          "dataAccess": 1
+        },
+        {
+          "module": 9,
+          "dataAccess": 1
+        },
+        {
+          "module": 12,
+          "dataAccess": 2
+        }
+      ]
+    },
+    "profile": {
+      "displayName": "Alex Morgan",
+      "tier": "ACCOUNT_TIER_STANDARD",
+      "avatarUrl": "",
+      "revision": "4"
+    },
+    "identity": {
+      "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+      "verifiedEmail": "alex.admin@example.invalid",
+      "solanaAddress": "",
+      "createdAt": 1783999440,
+      "lastLoginAt": 1789351200
+    },
+    "status": "ACCOUNT_STATUS_ACTIVE",
+    "loggedIn": true,
+    "accountId": "44444444-4444-4444-8444-444444444444",
+    "iss": "athena",
+    "preferences": {
+      "theme": "ACCOUNT_THEME_DARK",
+      "revision": "2"
+    }
+  },
+  "items": [
+    {
+      "id": 1048,
+      "source": "market-radar",
+      "severity": "warning",
+      "topicLabel": "Market Radar",
+      "title": "Market movement threshold reached",
+      "body": "Market: Example market A\nObserved move: +8.4 percentage points\nWindow: 5 minutes\nThreshold: 5 percentage points",
+      "link": "https://example.invalid/markets/demo-a",
+      "channel": "telegram",
+      "status": "unknown",
+      "telegramChat": "prod",
+      "providerMessageId": "",
+      "errorMessage": "response_lost: Telegram response was not recorded.",
+      "createdAt": "2026-09-14T05:58:00Z",
+      "authorizedAt": "2026-09-14T05:58:02Z",
+      "startedAt": "",
+      "resultAt": "2026-09-14T05:58:10Z",
+      "sentAt": ""
+    },
+    {
+      "id": 1047,
+      "source": "system-monitor",
+      "severity": "error",
+      "topicLabel": "Operations",
+      "title": "Service health check failed",
+      "body": "Service: example-worker\nThe health check did not return a successful response.",
+      "link": "",
+      "channel": "telegram",
+      "status": "failed",
+      "telegramChat": "prod",
+      "providerMessageId": "",
+      "errorMessage": "Forbidden: bot was removed from the group chat",
+      "createdAt": "2026-09-14T05:42:00Z",
+      "authorizedAt": "2026-09-14T05:42:01Z",
+      "startedAt": "2026-09-14T05:42:02Z",
+      "resultAt": "2026-09-14T05:42:03Z",
+      "sentAt": ""
+    },
+    {
+      "id": 1046,
+      "source": "trader-sync",
+      "severity": "info",
+      "topicLabel": "Trader Sync",
+      "title": "Trader activity detected",
+      "body": "Trader: Example trader\nA new activity record is available.",
+      "link": "",
+      "channel": "telegram",
+      "status": "sending",
+      "telegramChat": "prod",
+      "providerMessageId": "",
+      "errorMessage": "",
+      "createdAt": "2026-09-14T05:35:00Z",
+      "authorizedAt": "2026-09-14T05:35:01Z",
+      "startedAt": "2026-09-14T05:35:02Z",
+      "resultAt": "",
+      "sentAt": ""
+    },
+    {
+      "id": 1045,
+      "source": "admin-ui",
+      "severity": "info",
+      "topicLabel": "Connectivity test",
+      "title": "System notification test",
+      "body": "Operational connectivity test from the administrator interface.",
+      "link": "",
+      "channel": "telegram",
+      "status": "pending",
+      "telegramChat": "test",
+      "providerMessageId": "",
+      "errorMessage": "",
+      "createdAt": "2026-09-14T05:20:00Z",
+      "authorizedAt": "",
+      "startedAt": "",
+      "resultAt": "",
+      "sentAt": ""
+    },
+    {
+      "id": 1044,
+      "source": "system-monitor",
+      "severity": "info",
+      "topicLabel": "Operations",
+      "title": "Service health restored",
+      "body": "Service: example-worker\nThe latest health check completed successfully.",
+      "link": "",
+      "channel": "telegram",
+      "status": "sent",
+      "telegramChat": "prod",
+      "providerMessageId": "18421",
+      "errorMessage": "",
+      "createdAt": "2026-09-14T04:48:00Z",
+      "authorizedAt": "2026-09-14T04:48:01Z",
+      "startedAt": "2026-09-14T04:48:02Z",
+      "resultAt": "2026-09-14T04:48:03Z",
+      "sentAt": "2026-09-14T04:48:03Z"
+    }
+  ],
+  "total": 5,
+  "page": 1,
+  "pageSize": 50
+}

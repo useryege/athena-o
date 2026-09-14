@@ -1,0 +1,463 @@
+{
+  "result": "pass",
+  "captures": [
+    {
+      "filename": "theme-common-adaptations-v22-login-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "width": 1440,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-login-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "width": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-login-narrow.png",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "width": 320,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-login-text-200.png",
+      "viewport": {
+        "width": 720,
+        "height": 1000
+      },
+      "width": 720,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-register-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "width": 1440,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-register-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "width": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-register-narrow.png",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "width": 320,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-register-text-200.png",
+      "viewport": {
+        "width": 720,
+        "height": 1000
+      },
+      "width": 720,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-profile-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "width": 1440,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-profile-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "width": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-profile-narrow.png",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "width": 320,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-profile-text-200.png",
+      "viewport": {
+        "width": 720,
+        "height": 1000
+      },
+      "width": 720,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-access-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "width": 1440,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-access-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "width": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-access-narrow.png",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "width": 320,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-access-text-200.png",
+      "viewport": {
+        "width": 720,
+        "height": 1000
+      },
+      "width": 720,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-member-help-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "width": 1440,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-member-help-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "width": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-member-help-narrow.png",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "width": 320,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-member-help-text-200.png",
+      "viewport": {
+        "width": 720,
+        "height": 1000
+      },
+      "width": 720,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-admin-help-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "width": 1440,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-admin-help-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "width": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-admin-help-narrow.png",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "width": 320,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-admin-help-text-200.png",
+      "viewport": {
+        "width": 720,
+        "height": 1000
+      },
+      "width": 720,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-feedback-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "width": 1440,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-feedback-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "width": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-feedback-narrow.png",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "width": 320,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-feedback-text-200.png",
+      "viewport": {
+        "width": 720,
+        "height": 1000
+      },
+      "width": 720,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-login-not-allowed-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "width": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-register-expired-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "width": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-profile-edited-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "width": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-access-expanded-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "width": 1440,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-profile-leave-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "width": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-common-adaptations-v22-access-copy-error-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "width": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    }
+  ],
+  "checks": [
+    "Registration validation and simulated submit",
+    "Profile draft, leave dialog, Escape, reset and validation",
+    "Copy fallback preserves entire email",
+    "Mobile navigation and account menu focus restoration",
+    "Help realm/API entitlement and local-only links",
+    "All login and feedback states render"
+  ],
+  "issues": [],
+  "notVerified": [
+    "Real Google auth",
+    "registration/session enforcement",
+    "actual writes",
+    "backend/Help endpoints",
+    "live smoke"
+  ]
+}

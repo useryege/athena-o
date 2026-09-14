@@ -1,0 +1,91 @@
+{
+  "method": "GET",
+  "url": "https://polymarket.com/@timetowander",
+  "final_url": "https://polymarket.com/@timetowander",
+  "status": 200,
+  "checked_at": "2026-09-14T12:34:06.516971+00:00",
+  "sha256": "d9a7b92b2f3cdb55bc3b8a58f1747fa76eef68bec091b8e303a623cbe9a6e62e",
+  "bytes": 554576,
+  "headers": {
+    "Date": "Mon, 14 Sep 2026 12:34:06 GMT",
+    "Age": "187",
+    "Cache-Control": "public, s-maxage=300, stale-while-revalidate=21600",
+    "x-vercel-cache": "STALE"
+  },
+  "canonical": "https://polymarket.com/@timetowander",
+  "wallet": "0x58b3380f71bd6c706dd398a5e60bde55fa3a653c",
+  "identity_queries": [
+    {
+      "dehydratedAt": 1789389059047,
+      "state": {
+        "data": {
+          "id": "2911652",
+          "createdAt": "2025-04-24T19:10:49.089231Z",
+          "proxyWallet": "0x58b3380f71bd6c706dd398a5e60bde55fa3a653c",
+          "displayUsernamePublic": true,
+          "pseudonym": "Moist-Dame",
+          "name": "timetowander",
+          "users": [
+            {
+              "id": "2806590",
+              "creator": false,
+              "mod": false
+            }
+          ],
+          "verifiedBadge": false,
+          "takerTier": 4,
+          "takerTierName": "Platinum"
+        },
+        "dataUpdateCount": 1,
+        "dataUpdatedAt": 1789389059041,
+        "error": null,
+        "errorUpdateCount": 0,
+        "errorUpdatedAt": 0,
+        "fetchFailureCount": 0,
+        "fetchFailureReason": null,
+        "fetchMeta": null,
+        "isInvalidated": false,
+        "status": "success",
+        "fetchStatus": "idle"
+      },
+      "queryKey": [
+        "/api/profile/userData",
+        "0x58b3380f71bd6c706dd398a5e60bde55fa3a653c"
+      ],
+      "queryHash": "[\"/api/profile/userData\",\"0x58b3380f71bd6c706dd398a5e60bde55fa3a653c\"]"
+    }
+  ],
+  "query_keys": [
+    [
+      "user-stats",
+      "0x58b3380f71bd6c706dd398a5e60bde55fa3a653c"
+    ],
+    [
+      "profile",
+      "positions",
+      "0x58b3380f71bd6c706dd398a5e60bde55fa3a653c",
+      "CURRENT_VALUE",
+      "DESC",
+      ""
+    ],
+    [
+      "portfolio-pnl",
+      "0x58b3380f71bd6c706dd398a5e60bde55fa3a653c",
+      "1D"
+    ],
+    [
+      "portfolio-pnl",
+      "0x58b3380f71bd6c706dd398a5e60bde55fa3a653c",
+      "ALL"
+    ],
+    [
+      "positions",
+      "value",
+      "0x58b3380f71bd6c706dd398a5e60bde55fa3a653c"
+    ],
+    [
+      "/api/profile/userData",
+      "0x58b3380f71bd6c706dd398a5e60bde55fa3a653c"
+    ]
+  ]
+}

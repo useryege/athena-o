@@ -1,0 +1,248 @@
+{
+  "result": "passed",
+  "evidence": "Local static visual prototype with synthetic governance records; no create/open/publish/close requests",
+  "viewports": [
+    {
+      "name": "list-desktop",
+      "width": 1440,
+      "height": 900,
+      "textScale": 1,
+      "geometry": {
+        "width": 1440,
+        "documentWidth": 1440,
+        "documentHeight": 900,
+        "rootFont": "16px",
+        "inter": true,
+        "mono": true,
+        "overflowX": false,
+        "duplicateIDs": []
+      },
+      "modal": null,
+      "pageErrors": [],
+      "externalRequests": []
+    },
+    {
+      "name": "detail-desktop",
+      "width": 1440,
+      "height": 900,
+      "textScale": 1,
+      "geometry": {
+        "width": 1440,
+        "documentWidth": 1440,
+        "documentHeight": 1271,
+        "rootFont": "16px",
+        "inter": true,
+        "mono": true,
+        "overflowX": false,
+        "duplicateIDs": []
+      },
+      "modal": null,
+      "pageErrors": [],
+      "externalRequests": []
+    },
+    {
+      "name": "list-mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 390,
+        "documentWidth": 390,
+        "documentHeight": 1496,
+        "rootFont": "16px",
+        "inter": true,
+        "mono": true,
+        "overflowX": false,
+        "duplicateIDs": []
+      },
+      "modal": null,
+      "pageErrors": [],
+      "externalRequests": []
+    },
+    {
+      "name": "detail-mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 390,
+        "documentWidth": 390,
+        "documentHeight": 1984,
+        "rootFont": "16px",
+        "inter": true,
+        "mono": true,
+        "overflowX": false,
+        "duplicateIDs": []
+      },
+      "modal": null,
+      "pageErrors": [],
+      "externalRequests": []
+    },
+    {
+      "name": "create-mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 390,
+        "documentWidth": 390,
+        "documentHeight": 844,
+        "rootFont": "16px",
+        "inter": true,
+        "mono": true,
+        "overflowX": false,
+        "duplicateIDs": []
+      },
+      "modal": {
+        "open": true,
+        "x": 20,
+        "y": 20,
+        "width": 350,
+        "height": 804,
+        "scrollWidth": 348,
+        "clientWidth": 348,
+        "scrollHeight": 802,
+        "clientHeight": 802,
+        "bodyScrollTop": 206,
+        "captureFraming": "viewport top; modal body scrolled to roster controls"
+      },
+      "pageErrors": [],
+      "externalRequests": []
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 320,
+        "documentWidth": 320,
+        "documentHeight": 2211,
+        "rootFont": "16px",
+        "inter": true,
+        "mono": true,
+        "overflowX": false,
+        "duplicateIDs": []
+      },
+      "modal": null,
+      "pageErrors": [],
+      "externalRequests": []
+    },
+    {
+      "name": "zoom",
+      "width": 720,
+      "height": 900,
+      "textScale": 2,
+      "geometry": {
+        "width": 720,
+        "documentWidth": 720,
+        "documentHeight": 2931,
+        "rootFont": "32px",
+        "inter": true,
+        "mono": true,
+        "overflowX": false,
+        "duplicateIDs": []
+      },
+      "modal": null,
+      "pageErrors": [],
+      "externalRequests": []
+    }
+  ],
+  "behavior": {
+    "keyboardRoundOpen": true,
+    "draft": {
+      "participants": 4,
+      "draftStatuses": 4,
+      "draftRosterCopy": true,
+      "openDisabled": true,
+      "editorVisible": true,
+      "slugReadOnly": true,
+      "initialRosterRows": 4,
+      "addedCount": 5,
+      "maxDisablesAdd": true,
+      "unsavedKeepsOpenDisabled": true,
+      "requiredError": true,
+      "identitySnapshotReadOnly": true,
+      "savedFiveEnablesOpen": true,
+      "removeReturnsFour": true,
+      "incompleteSaveAllowed": true
+    },
+    "create": {
+      "initialRows": 1,
+      "identitySnapshotReadOnly": true,
+      "addedRows": 2,
+      "duplicateError": true,
+      "requiredError": true,
+      "maximumFive": true,
+      "removeWorks": true,
+      "zeroParticipantDraftAllowed": true
+    },
+    "collecting": {
+      "publishEnabled": true,
+      "sealed": true
+    },
+    "voting": {
+      "closeDisabled": true,
+      "anonymousCount": 2,
+      "authorNamesVisible": 0
+    },
+    "closed": {
+      "complete": true,
+      "winner": true,
+      "authorVisible": 1
+    },
+    "confirm": {
+      "publishTitle": true,
+      "notice": true,
+      "openTitle": true,
+      "closeTitle": true,
+      "runoffCopy": true
+    },
+    "conflict": true,
+    "externalRequests": []
+  },
+  "contrast": [
+    {
+      "label": "muted/panel",
+      "fg": "#9FA0A1",
+      "bg": "#0F1114",
+      "ratio": 7.218804157993069
+    },
+    {
+      "label": "text/page",
+      "fg": "#FFFFFF",
+      "bg": "#06080B",
+      "ratio": 20.051385440481855
+    },
+    {
+      "label": "accent/selected",
+      "fg": "#00FFA7",
+      "bg": "#102C24",
+      "ratio": 11.267391393146381
+    },
+    {
+      "label": "positive/panel",
+      "fg": "#55D9A1",
+      "bg": "#0F1114",
+      "ratio": 10.64840833554489
+    },
+    {
+      "label": "warning/panel",
+      "fg": "#E6BF72",
+      "bg": "#0F1114",
+      "ratio": 10.858978907199512
+    },
+    {
+      "label": "negative/panel",
+      "fg": "#F58C9B",
+      "bg": "#0F1114",
+      "ratio": 8.200163825921814
+    },
+    {
+      "label": "info/panel",
+      "fg": "#9BC6F3",
+      "bg": "#0F1114",
+      "ratio": 10.59394763930342
+    }
+  ]
+}

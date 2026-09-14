@@ -1,0 +1,1391 @@
+{
+  "synthetic": true,
+  "scenarioTime": "14 Sept 2026, 14:30:00 UTC+8",
+  "user": {
+    "loggedIn": true,
+    "accountId": "11111111-1111-4111-8111-111111111111",
+    "username": "alexchen",
+    "iss": "fixture",
+    "administrator": false,
+    "profile": {
+      "displayName": "Alex Chen",
+      "tier": "ACCOUNT_TIER_STANDARD",
+      "avatarUrl": "",
+      "revision": "4"
+    },
+    "preferences": {
+      "theme": "ACCOUNT_THEME_DARK",
+      "revision": "2"
+    },
+    "access": {
+      "loginEnabled": true,
+      "apiKeyEnabled": true,
+      "profitSharingEnabled": true,
+      "revision": "1",
+      "moduleAccess": [
+        {
+          "module": "ACCOUNT_DATA_MODULE_WALLET",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SOLANA",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        }
+      ]
+    }
+  },
+  "hot": {
+    "fetchedAt": 1789367400,
+    "stale": false,
+    "candidateCount": 650,
+    "monitoredMarkets": 500,
+    "monitoredTokens": 1000,
+    "subscribedMarkets": 500,
+    "subscribedTokens": 1000,
+    "connected": true,
+    "lastEventAt": 1789367388,
+    "items": [
+      {
+        "conditionId": "0x0000000000000000000000000000000000000000000000000000000000000065",
+        "marketSlug": "bitcoin-september-2026",
+        "eventSlug": "bitcoin-september-2026",
+        "question": "Will Bitcoin reach $120,000 by September 30?",
+        "volume24hr": 2481920.52,
+        "volumeNum": 14188921.78,
+        "liquidityNum": 481240.23,
+        "spread": 0.008,
+        "bestBid": 0.68,
+        "bestAsk": 0.688,
+        "lastTradePrice": 0.684,
+        "updatedAt": "2026-09-14T06:29:48Z",
+        "tokens": [
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000000",
+            "outcome": "Yes",
+            "price": 0.684,
+            "bestBid": 0.68,
+            "bestAsk": 0.688,
+            "spread": 0.008,
+            "lastTradePrice": 0.684,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": 1.2,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": 2.4,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 3.8,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 3.78,
+            "direction": "up"
+          },
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000001",
+            "outcome": "No",
+            "price": 0.316,
+            "bestBid": 0.312,
+            "bestAsk": 0.32,
+            "spread": 0.008,
+            "lastTradePrice": 0.316,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": -1.2,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": -2.4,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": -3.8,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 3.78,
+            "direction": "down"
+          }
+        ],
+        "leader": {
+          "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000000",
+          "outcome": "Yes",
+          "price": 0.684,
+          "bestBid": 0.68,
+          "bestAsk": 0.688,
+          "spread": 0.008,
+          "lastTradePrice": 0.684,
+          "lastEventAt": 1789367388,
+          "windows": [
+            {
+              "window": "1m",
+              "priceChangePp": 1.2,
+              "warmup": false,
+              "sampleCount": 2
+            },
+            {
+              "window": "5m",
+              "priceChangePp": 2.4,
+              "warmup": false,
+              "sampleCount": 6
+            },
+            {
+              "window": "15m",
+              "priceChangePp": 3.8,
+              "warmup": false,
+              "sampleCount": 16
+            }
+          ],
+          "warmup": false,
+          "score": 3.78,
+          "direction": "up"
+        },
+        "score": 3.78,
+        "direction": "up"
+      },
+      {
+        "conditionId": "0x0000000000000000000000000000000000000000000000000000000000000066",
+        "marketSlug": "fed-september-decision",
+        "eventSlug": "fed-september-decision",
+        "question": "Will the Fed cut rates at its September meeting?",
+        "volume24hr": 1964372.15,
+        "volumeNum": 12290180.3,
+        "liquidityNum": 605800.18,
+        "spread": 0.008,
+        "bestBid": 0.731,
+        "bestAsk": 0.739,
+        "lastTradePrice": 0.735,
+        "updatedAt": "2026-09-14T06:29:48Z",
+        "tokens": [
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000010",
+            "outcome": "Yes",
+            "price": 0.735,
+            "bestBid": 0.731,
+            "bestAsk": 0.739,
+            "spread": 0.008,
+            "lastTradePrice": 0.735,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": -1.5,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": -2.1,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": -3.2,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 3.72,
+            "direction": "down"
+          },
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000011",
+            "outcome": "No",
+            "price": 0.265,
+            "bestBid": 0.261,
+            "bestAsk": 0.269,
+            "spread": 0.008,
+            "lastTradePrice": 0.265,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": 1.5,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": 2.1,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 3.2,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 3.72,
+            "direction": "up"
+          }
+        ],
+        "leader": {
+          "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000010",
+          "outcome": "Yes",
+          "price": 0.735,
+          "bestBid": 0.731,
+          "bestAsk": 0.739,
+          "spread": 0.008,
+          "lastTradePrice": 0.735,
+          "lastEventAt": 1789367388,
+          "windows": [
+            {
+              "window": "1m",
+              "priceChangePp": -1.5,
+              "warmup": false,
+              "sampleCount": 2
+            },
+            {
+              "window": "5m",
+              "priceChangePp": -2.1,
+              "warmup": false,
+              "sampleCount": 6
+            },
+            {
+              "window": "15m",
+              "priceChangePp": -3.2,
+              "warmup": false,
+              "sampleCount": 16
+            }
+          ],
+          "warmup": false,
+          "score": 3.72,
+          "direction": "down"
+        },
+        "score": 3.72,
+        "direction": "down"
+      },
+      {
+        "conditionId": "0x0000000000000000000000000000000000000000000000000000000000000067",
+        "marketSlug": "ethereum-september-2026",
+        "eventSlug": "ethereum-september-2026",
+        "question": "Will Ethereum exceed $5,000 in September?",
+        "volume24hr": 875400.5,
+        "volumeNum": 6499230.99,
+        "liquidityNum": null,
+        "spread": 0.008,
+        "bestBid": 0.414,
+        "bestAsk": 0.422,
+        "lastTradePrice": 0.418,
+        "updatedAt": "2026-09-14T06:29:48Z",
+        "tokens": [
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000020",
+            "outcome": "Yes",
+            "price": 0.418,
+            "bestBid": 0.414,
+            "bestAsk": 0.422,
+            "spread": 0.008,
+            "lastTradePrice": 0.418,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": 0.2,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": 0.8,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 0,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 0.68,
+            "direction": "up"
+          },
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000021",
+            "outcome": "No",
+            "price": 0.582,
+            "bestBid": 0.578,
+            "bestAsk": 0.586,
+            "spread": 0.008,
+            "lastTradePrice": 0.582,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": -0.2,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": -0.8,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 0,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 0.68,
+            "direction": "down"
+          }
+        ],
+        "leader": {
+          "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000020",
+          "outcome": "Yes",
+          "price": 0.418,
+          "bestBid": 0.414,
+          "bestAsk": 0.422,
+          "spread": 0.008,
+          "lastTradePrice": 0.418,
+          "lastEventAt": 1789367388,
+          "windows": [
+            {
+              "window": "1m",
+              "priceChangePp": 0.2,
+              "warmup": false,
+              "sampleCount": 2
+            },
+            {
+              "window": "5m",
+              "priceChangePp": 0.8,
+              "warmup": false,
+              "sampleCount": 6
+            },
+            {
+              "window": "15m",
+              "priceChangePp": 0,
+              "warmup": false,
+              "sampleCount": 16
+            }
+          ],
+          "warmup": false,
+          "score": 0.68,
+          "direction": "up"
+        },
+        "score": 0.68,
+        "direction": "up"
+      },
+      {
+        "conditionId": "0x0000000000000000000000000000000000000000000000000000000000000068",
+        "marketSlug": "sp500-september-close",
+        "eventSlug": "sp500-september-close",
+        "question": "Will the S&P 500 close above 6,800 this month?",
+        "volume24hr": 643220.0,
+        "volumeNum": 3332100.23,
+        "liquidityNum": 315280.1,
+        "spread": 0.008,
+        "bestBid": 0.522,
+        "bestAsk": 0.53,
+        "lastTradePrice": 0.526,
+        "updatedAt": "2026-09-14T06:29:48Z",
+        "tokens": [
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000030",
+            "outcome": "Yes",
+            "price": 0.526,
+            "bestBid": 0.522,
+            "bestAsk": 0.53,
+            "spread": 0.008,
+            "lastTradePrice": 0.526,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": 0.1,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": 0,
+                "warmup": true,
+                "sampleCount": 2
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 0,
+                "warmup": true,
+                "sampleCount": 2
+              }
+            ],
+            "warmup": true,
+            "score": 0.1,
+            "direction": "up"
+          },
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000031",
+            "outcome": "No",
+            "price": 0.474,
+            "bestBid": 0.47,
+            "bestAsk": 0.478,
+            "spread": 0.008,
+            "lastTradePrice": 0.474,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": -0.1,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": 0,
+                "warmup": true,
+                "sampleCount": 2
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 0,
+                "warmup": true,
+                "sampleCount": 2
+              }
+            ],
+            "warmup": true,
+            "score": 0.1,
+            "direction": "down"
+          }
+        ],
+        "leader": {
+          "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000030",
+          "outcome": "Yes",
+          "price": 0.526,
+          "bestBid": 0.522,
+          "bestAsk": 0.53,
+          "spread": 0.008,
+          "lastTradePrice": 0.526,
+          "lastEventAt": 1789367388,
+          "windows": [
+            {
+              "window": "1m",
+              "priceChangePp": 0.1,
+              "warmup": false,
+              "sampleCount": 2
+            },
+            {
+              "window": "5m",
+              "priceChangePp": 0,
+              "warmup": true,
+              "sampleCount": 2
+            },
+            {
+              "window": "15m",
+              "priceChangePp": 0,
+              "warmup": true,
+              "sampleCount": 2
+            }
+          ],
+          "warmup": true,
+          "score": 0.1,
+          "direction": "up"
+        },
+        "score": 0.1,
+        "direction": "up"
+      }
+    ]
+  },
+  "realtime": {
+    "fetchedAt": 1789367400,
+    "stale": false,
+    "candidateCount": 650,
+    "monitoredMarkets": 500,
+    "monitoredTokens": 1000,
+    "subscribedMarkets": 500,
+    "subscribedTokens": 1000,
+    "connected": true,
+    "lastEventAt": 1789367388,
+    "items": [
+      {
+        "conditionId": "0x0000000000000000000000000000000000000000000000000000000000000065",
+        "marketSlug": "bitcoin-september-2026",
+        "eventSlug": "bitcoin-september-2026",
+        "question": "Will Bitcoin reach $120,000 by September 30?",
+        "volume24hr": 2481920.52,
+        "volumeNum": 14188921.78,
+        "liquidityNum": 481240.23,
+        "spread": 0.008,
+        "bestBid": 0.68,
+        "bestAsk": 0.688,
+        "lastTradePrice": 0.684,
+        "updatedAt": "2026-09-14T06:29:48Z",
+        "tokens": [
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000000",
+            "outcome": "Yes",
+            "price": 0.684,
+            "bestBid": 0.68,
+            "bestAsk": 0.688,
+            "spread": 0.008,
+            "lastTradePrice": 0.684,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": 1.2,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": 2.4,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 3.8,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 3.78,
+            "direction": "up"
+          },
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000001",
+            "outcome": "No",
+            "price": 0.316,
+            "bestBid": 0.312,
+            "bestAsk": 0.32,
+            "spread": 0.008,
+            "lastTradePrice": 0.316,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": -1.2,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": -2.4,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": -3.8,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 3.78,
+            "direction": "down"
+          }
+        ],
+        "leader": {
+          "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000000",
+          "outcome": "Yes",
+          "price": 0.684,
+          "bestBid": 0.68,
+          "bestAsk": 0.688,
+          "spread": 0.008,
+          "lastTradePrice": 0.684,
+          "lastEventAt": 1789367388,
+          "windows": [
+            {
+              "window": "1m",
+              "priceChangePp": 1.2,
+              "warmup": false,
+              "sampleCount": 2
+            },
+            {
+              "window": "5m",
+              "priceChangePp": 2.4,
+              "warmup": false,
+              "sampleCount": 6
+            },
+            {
+              "window": "15m",
+              "priceChangePp": 3.8,
+              "warmup": false,
+              "sampleCount": 16
+            }
+          ],
+          "warmup": false,
+          "score": 3.78,
+          "direction": "up"
+        },
+        "score": 3.78,
+        "direction": "up"
+      },
+      {
+        "conditionId": "0x0000000000000000000000000000000000000000000000000000000000000066",
+        "marketSlug": "fed-september-decision",
+        "eventSlug": "fed-september-decision",
+        "question": "Will the Fed cut rates at its September meeting?",
+        "volume24hr": 1964372.15,
+        "volumeNum": 12290180.3,
+        "liquidityNum": 605800.18,
+        "spread": 0.008,
+        "bestBid": 0.731,
+        "bestAsk": 0.739,
+        "lastTradePrice": 0.735,
+        "updatedAt": "2026-09-14T06:29:48Z",
+        "tokens": [
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000010",
+            "outcome": "Yes",
+            "price": 0.735,
+            "bestBid": 0.731,
+            "bestAsk": 0.739,
+            "spread": 0.008,
+            "lastTradePrice": 0.735,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": -1.5,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": -2.1,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": -3.2,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 3.72,
+            "direction": "down"
+          },
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000011",
+            "outcome": "No",
+            "price": 0.265,
+            "bestBid": 0.261,
+            "bestAsk": 0.269,
+            "spread": 0.008,
+            "lastTradePrice": 0.265,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": 1.5,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": 2.1,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 3.2,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 3.72,
+            "direction": "up"
+          }
+        ],
+        "leader": {
+          "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000010",
+          "outcome": "Yes",
+          "price": 0.735,
+          "bestBid": 0.731,
+          "bestAsk": 0.739,
+          "spread": 0.008,
+          "lastTradePrice": 0.735,
+          "lastEventAt": 1789367388,
+          "windows": [
+            {
+              "window": "1m",
+              "priceChangePp": -1.5,
+              "warmup": false,
+              "sampleCount": 2
+            },
+            {
+              "window": "5m",
+              "priceChangePp": -2.1,
+              "warmup": false,
+              "sampleCount": 6
+            },
+            {
+              "window": "15m",
+              "priceChangePp": -3.2,
+              "warmup": false,
+              "sampleCount": 16
+            }
+          ],
+          "warmup": false,
+          "score": 3.72,
+          "direction": "down"
+        },
+        "score": 3.72,
+        "direction": "down"
+      },
+      {
+        "conditionId": "0x0000000000000000000000000000000000000000000000000000000000000067",
+        "marketSlug": "ethereum-september-2026",
+        "eventSlug": "ethereum-september-2026",
+        "question": "Will Ethereum exceed $5,000 in September?",
+        "volume24hr": 875400.5,
+        "volumeNum": 6499230.99,
+        "liquidityNum": null,
+        "spread": 0.008,
+        "bestBid": 0.414,
+        "bestAsk": 0.422,
+        "lastTradePrice": 0.418,
+        "updatedAt": "2026-09-14T06:29:48Z",
+        "tokens": [
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000020",
+            "outcome": "Yes",
+            "price": 0.418,
+            "bestBid": 0.414,
+            "bestAsk": 0.422,
+            "spread": 0.008,
+            "lastTradePrice": 0.418,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": 0.2,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": 0.8,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 0,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 0.68,
+            "direction": "up"
+          },
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000021",
+            "outcome": "No",
+            "price": 0.582,
+            "bestBid": 0.578,
+            "bestAsk": 0.586,
+            "spread": 0.008,
+            "lastTradePrice": 0.582,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": -0.2,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": -0.8,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 0,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 0.68,
+            "direction": "down"
+          }
+        ],
+        "leader": {
+          "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000020",
+          "outcome": "Yes",
+          "price": 0.418,
+          "bestBid": 0.414,
+          "bestAsk": 0.422,
+          "spread": 0.008,
+          "lastTradePrice": 0.418,
+          "lastEventAt": 1789367388,
+          "windows": [
+            {
+              "window": "1m",
+              "priceChangePp": 0.2,
+              "warmup": false,
+              "sampleCount": 2
+            },
+            {
+              "window": "5m",
+              "priceChangePp": 0.8,
+              "warmup": false,
+              "sampleCount": 6
+            },
+            {
+              "window": "15m",
+              "priceChangePp": 0,
+              "warmup": false,
+              "sampleCount": 16
+            }
+          ],
+          "warmup": false,
+          "score": 0.68,
+          "direction": "up"
+        },
+        "score": 0.68,
+        "direction": "up"
+      },
+      {
+        "conditionId": "0x0000000000000000000000000000000000000000000000000000000000000068",
+        "marketSlug": "sp500-september-close",
+        "eventSlug": "sp500-september-close",
+        "question": "Will the S&P 500 close above 6,800 this month?",
+        "volume24hr": 643220.0,
+        "volumeNum": 3332100.23,
+        "liquidityNum": 315280.1,
+        "spread": 0.008,
+        "bestBid": 0.522,
+        "bestAsk": 0.53,
+        "lastTradePrice": 0.526,
+        "updatedAt": "2026-09-14T06:29:48Z",
+        "tokens": [
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000030",
+            "outcome": "Yes",
+            "price": 0.526,
+            "bestBid": 0.522,
+            "bestAsk": 0.53,
+            "spread": 0.008,
+            "lastTradePrice": 0.526,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": 0.1,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": 0,
+                "warmup": true,
+                "sampleCount": 2
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 0,
+                "warmup": true,
+                "sampleCount": 2
+              }
+            ],
+            "warmup": true,
+            "score": 0.1,
+            "direction": "up"
+          },
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000031",
+            "outcome": "No",
+            "price": 0.474,
+            "bestBid": 0.47,
+            "bestAsk": 0.478,
+            "spread": 0.008,
+            "lastTradePrice": 0.474,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": -0.1,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": 0,
+                "warmup": true,
+                "sampleCount": 2
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 0,
+                "warmup": true,
+                "sampleCount": 2
+              }
+            ],
+            "warmup": true,
+            "score": 0.1,
+            "direction": "down"
+          }
+        ],
+        "leader": {
+          "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000030",
+          "outcome": "Yes",
+          "price": 0.526,
+          "bestBid": 0.522,
+          "bestAsk": 0.53,
+          "spread": 0.008,
+          "lastTradePrice": 0.526,
+          "lastEventAt": 1789367388,
+          "windows": [
+            {
+              "window": "1m",
+              "priceChangePp": 0.1,
+              "warmup": false,
+              "sampleCount": 2
+            },
+            {
+              "window": "5m",
+              "priceChangePp": 0,
+              "warmup": true,
+              "sampleCount": 2
+            },
+            {
+              "window": "15m",
+              "priceChangePp": 0,
+              "warmup": true,
+              "sampleCount": 2
+            }
+          ],
+          "warmup": true,
+          "score": 0.1,
+          "direction": "up"
+        },
+        "score": 0.1,
+        "direction": "up"
+      }
+    ]
+  },
+  "movers": {
+    "fetchedAt": 1789367400,
+    "stale": false,
+    "candidateCount": 650,
+    "monitoredMarkets": 500,
+    "monitoredTokens": 1000,
+    "subscribedMarkets": 500,
+    "subscribedTokens": 1000,
+    "connected": true,
+    "lastEventAt": 1789367388,
+    "items": [
+      {
+        "conditionId": "0x0000000000000000000000000000000000000000000000000000000000000065",
+        "marketSlug": "bitcoin-september-2026",
+        "eventSlug": "bitcoin-september-2026",
+        "question": "Will Bitcoin reach $120,000 by September 30?",
+        "volume24hr": 2481920.52,
+        "volumeNum": 14188921.78,
+        "liquidityNum": 481240.23,
+        "spread": 0.008,
+        "bestBid": 0.68,
+        "bestAsk": 0.688,
+        "lastTradePrice": 0.684,
+        "updatedAt": "2026-09-14T06:29:48Z",
+        "tokens": [
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000000",
+            "outcome": "Yes",
+            "price": 0.684,
+            "bestBid": 0.68,
+            "bestAsk": 0.688,
+            "spread": 0.008,
+            "lastTradePrice": 0.684,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": 1.2,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": 2.4,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 3.8,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 3.78,
+            "direction": "up"
+          },
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000001",
+            "outcome": "No",
+            "price": 0.316,
+            "bestBid": 0.312,
+            "bestAsk": 0.32,
+            "spread": 0.008,
+            "lastTradePrice": 0.316,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": -1.2,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": -2.4,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": -3.8,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 3.78,
+            "direction": "down"
+          }
+        ],
+        "leader": {
+          "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000000",
+          "outcome": "Yes",
+          "price": 0.684,
+          "bestBid": 0.68,
+          "bestAsk": 0.688,
+          "spread": 0.008,
+          "lastTradePrice": 0.684,
+          "lastEventAt": 1789367388,
+          "windows": [
+            {
+              "window": "1m",
+              "priceChangePp": 1.2,
+              "warmup": false,
+              "sampleCount": 2
+            },
+            {
+              "window": "5m",
+              "priceChangePp": 2.4,
+              "warmup": false,
+              "sampleCount": 6
+            },
+            {
+              "window": "15m",
+              "priceChangePp": 3.8,
+              "warmup": false,
+              "sampleCount": 16
+            }
+          ],
+          "warmup": false,
+          "score": 3.78,
+          "direction": "up"
+        },
+        "score": 3.78,
+        "direction": "up"
+      },
+      {
+        "conditionId": "0x0000000000000000000000000000000000000000000000000000000000000066",
+        "marketSlug": "fed-september-decision",
+        "eventSlug": "fed-september-decision",
+        "question": "Will the Fed cut rates at its September meeting?",
+        "volume24hr": 1964372.15,
+        "volumeNum": 12290180.3,
+        "liquidityNum": 605800.18,
+        "spread": 0.008,
+        "bestBid": 0.731,
+        "bestAsk": 0.739,
+        "lastTradePrice": 0.735,
+        "updatedAt": "2026-09-14T06:29:48Z",
+        "tokens": [
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000010",
+            "outcome": "Yes",
+            "price": 0.735,
+            "bestBid": 0.731,
+            "bestAsk": 0.739,
+            "spread": 0.008,
+            "lastTradePrice": 0.735,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": -1.5,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": -2.1,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": -3.2,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 3.72,
+            "direction": "down"
+          },
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000011",
+            "outcome": "No",
+            "price": 0.265,
+            "bestBid": 0.261,
+            "bestAsk": 0.269,
+            "spread": 0.008,
+            "lastTradePrice": 0.265,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": 1.5,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": 2.1,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 3.2,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 3.72,
+            "direction": "up"
+          }
+        ],
+        "leader": {
+          "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000010",
+          "outcome": "Yes",
+          "price": 0.735,
+          "bestBid": 0.731,
+          "bestAsk": 0.739,
+          "spread": 0.008,
+          "lastTradePrice": 0.735,
+          "lastEventAt": 1789367388,
+          "windows": [
+            {
+              "window": "1m",
+              "priceChangePp": -1.5,
+              "warmup": false,
+              "sampleCount": 2
+            },
+            {
+              "window": "5m",
+              "priceChangePp": -2.1,
+              "warmup": false,
+              "sampleCount": 6
+            },
+            {
+              "window": "15m",
+              "priceChangePp": -3.2,
+              "warmup": false,
+              "sampleCount": 16
+            }
+          ],
+          "warmup": false,
+          "score": 3.72,
+          "direction": "down"
+        },
+        "score": 3.72,
+        "direction": "down"
+      },
+      {
+        "conditionId": "0x0000000000000000000000000000000000000000000000000000000000000067",
+        "marketSlug": "ethereum-september-2026",
+        "eventSlug": "ethereum-september-2026",
+        "question": "Will Ethereum exceed $5,000 in September?",
+        "volume24hr": 875400.5,
+        "volumeNum": 6499230.99,
+        "liquidityNum": null,
+        "spread": 0.008,
+        "bestBid": 0.414,
+        "bestAsk": 0.422,
+        "lastTradePrice": 0.418,
+        "updatedAt": "2026-09-14T06:29:48Z",
+        "tokens": [
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000020",
+            "outcome": "Yes",
+            "price": 0.418,
+            "bestBid": 0.414,
+            "bestAsk": 0.422,
+            "spread": 0.008,
+            "lastTradePrice": 0.418,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": 0.2,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": 0.8,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 0,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 0.68,
+            "direction": "up"
+          },
+          {
+            "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000021",
+            "outcome": "No",
+            "price": 0.582,
+            "bestBid": 0.578,
+            "bestAsk": 0.586,
+            "spread": 0.008,
+            "lastTradePrice": 0.582,
+            "lastEventAt": 1789367388,
+            "windows": [
+              {
+                "window": "1m",
+                "priceChangePp": -0.2,
+                "warmup": false,
+                "sampleCount": 2
+              },
+              {
+                "window": "5m",
+                "priceChangePp": -0.8,
+                "warmup": false,
+                "sampleCount": 6
+              },
+              {
+                "window": "15m",
+                "priceChangePp": 0,
+                "warmup": false,
+                "sampleCount": 16
+              }
+            ],
+            "warmup": false,
+            "score": 0.68,
+            "direction": "down"
+          }
+        ],
+        "leader": {
+          "tokenId": "10000000000000000000000000000000000000000000000000000000000000000000020",
+          "outcome": "Yes",
+          "price": 0.418,
+          "bestBid": 0.414,
+          "bestAsk": 0.422,
+          "spread": 0.008,
+          "lastTradePrice": 0.418,
+          "lastEventAt": 1789367388,
+          "windows": [
+            {
+              "window": "1m",
+              "priceChangePp": 0.2,
+              "warmup": false,
+              "sampleCount": 2
+            },
+            {
+              "window": "5m",
+              "priceChangePp": 0.8,
+              "warmup": false,
+              "sampleCount": 6
+            },
+            {
+              "window": "15m",
+              "priceChangePp": 0,
+              "warmup": false,
+              "sampleCount": 16
+            }
+          ],
+          "warmup": false,
+          "score": 0.68,
+          "direction": "up"
+        },
+        "score": 0.68,
+        "direction": "up"
+      }
+    ]
+  }
+}

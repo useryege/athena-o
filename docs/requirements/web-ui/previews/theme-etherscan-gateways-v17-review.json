@@ -1,0 +1,251 @@
+{
+  "version": "v17",
+  "surface": "Administrator Etherscan Gateways",
+  "status": "awaiting_user_review",
+  "production_ui_changed": false,
+  "scope": "Static visual proposal for the existing administrator Etherscan Gateways using local synthetic demonstrations only.",
+  "direction": ".superpowers/v17-direction.md",
+  "primary_screenshots": [
+    "theme-etherscan-gateways-v17-gateways-desktop.png",
+    "theme-etherscan-gateways-v17-probe-desktop.png",
+    "theme-etherscan-gateways-v17-gateways-mobile.png",
+    "theme-etherscan-gateways-v17-probe-mobile.png"
+  ],
+  "inspection": {
+    "own_rounds": 2,
+    "prototype_screenshots": 10,
+    "before_screenshots": 2,
+    "viewports": [
+      "1440x900",
+      "390x844",
+      "320x844",
+      "720x900 with root font at 200%"
+    ],
+    "corrections": [
+      "Resolve copy icon to the existing authored i-v8-copy symbol.",
+      "Reflow gateway facts to two columns at widths <=360px to prevent runtime/latency collision.",
+      "Use minimum input height with content sizing so enlarged text fits."
+    ],
+    "reviewer_fix_batches": 0,
+    "capture_policy": "All captures are full-page from document top with fonts settled, focus blurred, pointer at 0,0 and animation disabled. No overlays in the capture set."
+  },
+  "independent_review": {
+    "reviewer": "/root/v17_finish_reviewer",
+    "disposition": "ship",
+    "scope": "Full independent review of 10 prototype screenshots, 2 current React comparisons, source contracts and recorded browser evidence. Static design review only, not user approval or production acceptance.",
+    "report": ".superpowers/v17-finish-review.txt",
+    "sections": {
+      "persistence": "pass — PRODUCT.md exists and the code-led extension records `seed key: not-applicable`; no comp, build state, measured spec, hero gate, or comp-diff is required. DESIGN.md and `.impeccable/design.json` were already absent and remain a disclosed documentation follow-up rather than a static-proposal defect. All 10 required target captures are valid and complete, the two incumbent captures and three approved v16 references are available, and the provenance scan reports 12 shipping rasters with 0 missing. The file-scoped Inter and low-contrast ignores are explicit: Inter is user-approved, and the alleged white-on-mint hover does not render; measured Run Probe hover contrast is 15.70:1 and all 12 checked hover styles are at least 4.5:1.",
+      "fidelity": "| Salient element / promise | Verdict | Evidence |\n| --- | --- | --- |\n| TYPE | match | Inter carries headings, body, controls, and tabular numerals at the approved 28/24px page-title hierarchy; JetBrains Mono is restricted to gateway addresses, run IDs, URLs, and error samples. |\n| MATERIAL | match | Near-black page, discrete dark panels, low-intensity 1px dividers, solid mint actions, and semantic status colors extend the established flat financial-terminal material without fake physical effects. |\n| GROUND | match | The rendered field uses the named `#06080B` ground with `#0F1114` panels, `#181D22` raised states, and `#252A30` lines; no warm or blue-slate drift is visible. |\n| THESIS | match | Gateways and Live Probe are separate source tabs, each retaining its own status summary; runtime health is explicitly described as separate from request-test results. |\n| OWN-WORLD | match | The 224px desktop admin shell, 64px top bar, Inter/JB Mono pairing, mint selection/action, and success/warning/failure semantics visibly continue the approved v15/v16 world. |\n| STORY | match | Gateway reachability, runtime, latency, checked time, error, and expandable connection details precede the independent probe form, overall result, gateway/key breakdown, timing, and samples. |\n| FIRST VIEWPORT | match | Desktop uses the promised shell and 32px content inset; mobile uses 20px margins, full-width primary action, stacked records, and readable disclosures. The 320px and 200% captures preserve reading order without a miniature wide table or overflow. |\n| FORM | match | Source tabs, disclosure controls, gateway/key switch, 1–1000ms and 1–20 inputs, and running locks are present; the CSS limits feedback to short 160ms color transitions and honors reduced motion. |\n| Responsive record/table adaptation | acceptable adaptation | FIRST VIEWPORT and QUALITY BAR require mobile vertical reflow and readable full identifiers; desktop columns become labeled mobile fact rows while preserving all values and copy actions. |\n| Static-preview disclosure and state controls | acceptable adaptation | The prototype boundary requires synthetic fixtures and no API use; the footer labels both facts, while preview-only state controls sit outside the product surface. |\n| Truth and floor | match | Demonstration data is visibly labeled synthetic, the form says no requests will be sent, and no unsupported commercial claim or capability is added. No banned kicker, gradient text, hard offset shadow, decorative glass, side stripe, glyph icon, system display face, fake material, or organic clip path appears. |",
+      "ceiling": "reached — the page uses the world's native devices fully: restrained bordered frames and tonal depth, approved Inter/JB Mono lettering, sparse line/icon ornament, semantic color only where it carries state, and short functional feedback rather than decorative motion. The dense probe result remains calm and scannable across desktop, 390px, 320px, running/error states, and 200% text.",
+      "material_fixes": "none at static proposal scope.",
+      "keep": "Keep the explicit separation between gateway runtime health and probe outcome, together with the mobile labeled-row reflow and full copyable addresses, URLs, run IDs, and error samples; these are the proposal's clearest operational advantages and must not be diluted during documentation or later production implementation."
+    }
+  },
+  "detector": {
+    "manual_runs": 1,
+    "findings": [
+      {
+        "antipattern": "low-contrast",
+        "name": "Low contrast text",
+        "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+        "severity": "warning",
+        "category": "quality",
+        "file": "/home/yege/work/athena/docs/requirements/web-ui/previews/theme-etherscan-gateways-v17.html",
+        "line": 0,
+        "snippet": ":hover state 1.3:1 (need 4.5:1) — text #ffffff on #00ffa7"
+      },
+      {
+        "antipattern": "overused-font",
+        "name": "Overused font",
+        "description": "Inter, Roboto, Fraunces, Geist, Plus Jakarta Sans, and Space Grotesk are used on so many sites they no longer feel distinctive. Each new wave of AI-generated UIs converges on the same handful of faces. Choose a face that gives your interface personality.",
+        "severity": "warning",
+        "category": "slop",
+        "file": "/home/yege/work/athena/docs/requirements/web-ui/previews/theme-etherscan-gateways-v17.html",
+        "line": 0,
+        "snippet": "Primary font: inter"
+      }
+    ],
+    "file_scoped_exceptions": [
+      "overused-font=inter: explicit user-approved v2 typography.",
+      "low-contrast=*: verified false positive; actual Run Probe hover uses #06080B on #51FFC3 at 15.70:1, and all12 recorded hover samples exceed4.5:1."
+    ]
+  },
+  "hover_contrast": {
+    "result": "passed",
+    "records": [
+      {
+        "state": "default",
+        "selector": "#run-probe",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "state": "default",
+        "selector": "#refresh",
+        "fg": "rgb(255, 255, 255)",
+        "bg": "rgb(24, 29, 34)",
+        "ratio": 16.967193438998866
+      },
+      {
+        "state": "default",
+        "selector": "#tab-probe",
+        "fg": "rgb(255, 255, 255)",
+        "bg": "rgb(15, 17, 20)",
+        "ratio": 18.90882568923543
+      },
+      {
+        "state": "default",
+        "selector": "#group-key",
+        "fg": "rgb(255, 255, 255)",
+        "bg": "rgb(15, 17, 20)",
+        "ratio": 18.90882568923543
+      },
+      {
+        "state": "start-error",
+        "selector": "#run-probe",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "state": "start-error",
+        "selector": "#refresh",
+        "fg": "rgb(255, 255, 255)",
+        "bg": "rgb(24, 29, 34)",
+        "ratio": 16.967193438998866
+      },
+      {
+        "state": "start-error",
+        "selector": "#tab-probe",
+        "fg": "rgb(255, 255, 255)",
+        "bg": "rgb(15, 17, 20)",
+        "ratio": 18.90882568923543
+      },
+      {
+        "state": "start-error",
+        "selector": "#group-key",
+        "fg": "rgb(255, 255, 255)",
+        "bg": "rgb(15, 17, 20)",
+        "ratio": 18.90882568923543
+      },
+      {
+        "state": "start-error",
+        "selector": "#probe-message [data-retry]",
+        "fg": "rgb(245, 140, 155)",
+        "bg": "rgb(24, 29, 34)",
+        "ratio": 7.3581389004555495
+      },
+      {
+        "state": "running",
+        "selector": "#run-probe",
+        "fg": "rgb(159, 160, 161)",
+        "bg": "rgb(24, 29, 34)",
+        "ratio": 6.477549085274277
+      },
+      {
+        "state": "running",
+        "selector": "#refresh",
+        "fg": "rgb(255, 255, 255)",
+        "bg": "rgb(24, 29, 34)",
+        "ratio": 16.967193438998866
+      },
+      {
+        "state": "running",
+        "selector": "#tab-probe",
+        "fg": "rgb(255, 255, 255)",
+        "bg": "rgb(15, 17, 20)",
+        "ratio": 18.90882568923543
+      }
+    ],
+    "scope": "Targeted verification of detector hover contrast claim only; no screenshot polishing round."
+  },
+  "asset_provenance": {
+    "rasters": 12,
+    "proposal_rasters": 10,
+    "incumbent_rasters": 2,
+    "missing": 0,
+    "method": "Playwright Chromium screenshots with embedded origins and byte-identical review copies; no generated or retouched pixels.",
+    "scan": ".superpowers/v17-raster-provenance-scan.txt"
+  },
+  "documentation": "etherscan-gateways-proposal.md, visual-theme.md and three indexes. Ordinary extension preserves pre-existing absence of DESIGN.md and .impeccable/design.json.",
+  "limitations": [
+    "v17 awaits user review. Only directly presented and explicitly accepted scopes become approved visual baselines.",
+    "All gateways, API key labels, request counts and results are synthetic. Prototype Run Probe only simulates state transitions and does not consume Etherscan quota.",
+    "Current React baseline used intercepted synthetic GET responses. No probe POST, real authentication, backend health, production polling, races or full-stack acceptance were verified.",
+    "Gateway runtime and last probe remain independent sources with independent timestamps. Refresh gateways restores only synthetic gateway data.",
+    "Whole-run result and requiredSuccess follow server values; entity rows separately evaluate severe failures and the90% threshold. Total=keys×requestsPerKey, without multiplying by gateway count.",
+    "Production counts publish on completion. Prototype has no real streamed progress, cancellation, key configuration, gateway editing or restart capability.",
+    "Production administrator authorization,10-second gateway polling,1-second locally-started run polling and latest-running-run follow-up behavior require implementation verification.",
+    "Other administrator and account-menu destinations show local scope notices, without real navigation or logout.",
+    "No task services were started. Task browser contexts are closed; existing root Vite localhost4000 PID308228 remains preserved."
+  ],
+  "prior_approved_digests_unchanged": 232,
+  "artifacts": [
+    {
+      "path": "theme-etherscan-gateways-v17-before-capture.json",
+      "sha256": "2bf641c8b4ef2ffb7165595931d493eb82dc3384c950961e6f7235e886b14641"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-before-desktop.png",
+      "sha256": "4a189f122ae0340c0f5194238855d5ada0b7aed53598440cdf18930c69e52f56"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-before-mobile.png",
+      "sha256": "5f9fe45906bc439c945cf27a1447d82acce3c56e7563b3345d27e5ea4558e573"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-checks.json",
+      "sha256": "a679dff4da3a88e22cadd1fe85d48719ef5aebe0052258250b6f0c38b6efe14f"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-connection-mobile.png",
+      "sha256": "9a25317512ea322c13bbd0f65b2f6f10ab6d5d983e5929a0019656dd81143cf9"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-data.json",
+      "sha256": "e316329e5f67bb2348588de3b72fc9c4e138f668ef7d306aa95ffe708493406a"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-gateways-desktop.png",
+      "sha256": "c54917f05f1fab73af5c9ce0dbfea8765bf24dbe868e1f34896329447f091f8c"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-gateways-mobile.png",
+      "sha256": "05f08586549d52d76f429d7c4228706e7a0cacd19f75fe5b1080c4e1ee083bc4"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-keys-desktop.png",
+      "sha256": "875107f35003c50bc66ac4c95418e3828f71848a4d4682adb4891991d22d0ec0"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-narrow.png",
+      "sha256": "79e4ea26d238438f41a8b07eed790f94580c18f4e37b6c9fbbf58fb54ebd45a2"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-probe-desktop.png",
+      "sha256": "1c3895eea2827375eee3febed4c4c625352f81ce1675099ca046f6db0cd2b804"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-probe-mobile.png",
+      "sha256": "f16caffffb9ed08f637b44efa895e41b36e4ae3448b54331c1cf5c81c3b37954"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-running-mobile.png",
+      "sha256": "51ca7b67c37670ed8e62da778a1d7607c00db583061f59280fe7415433e259e5"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-start-error-mobile.png",
+      "sha256": "203bf2573de8b6a511bc49c296f261100d67e2caae6a9f4983d98a1445ed7515"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-zoom.png",
+      "sha256": "f13bd3f47e5c3d21b2a82ab785b972ecab54c586694289276ef2e9cd7f57bbbf"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17.html",
+      "sha256": "9d4b1c9e9c140baffae1a79ce67ec116de7082ec48c59fcd61280d9ab3a9b4b4"
+    }
+  ]
+}

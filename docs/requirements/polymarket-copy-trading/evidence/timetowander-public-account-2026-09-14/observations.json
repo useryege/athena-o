@@ -1,0 +1,210 @@
+{
+  "checked_at": "2026-09-14T12:41:04.575613+00:00",
+  "identity": {
+    "profile_url": "https://polymarket.com/@timetowander",
+    "wallet": "0x58b3380f71bd6c706dd398a5e60bde55fa3a653c",
+    "public_profile_matches": true,
+    "profile_created_at": "2025-04-24T19:10:49.089231Z",
+    "account_type_verified": false,
+    "signer_verified": false,
+    "solana_association_verified": false,
+    "ownership_authorization": "Public read only; this is the friend account supplied by the user, not an ATHENA-owned test wallet."
+  },
+  "http": {
+    "attempts_including_profile": 27,
+    "http_200_including_profile": 25,
+    "transport_errors": [
+      {
+        "name": "recent-24h-all-roles",
+        "url": "https://data-api.polymarket.com/v2/trades?user=0x58b3380f71bd6c706dd398a5e60bde55fa3a653c&limit=1000&start=1789302797&end=1789389197&taker_only=false&filter_type=TOKENS&filter_amount=0.000001",
+        "error": "<urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)>"
+      },
+      {
+        "name": "recent-24h-activity",
+        "url": "https://data-api.polymarket.com/v2/activity?user=0x58b3380f71bd6c706dd398a5e60bde55fa3a653c&limit=1000&start=1789302797&end=1789389197&type=TRADE",
+        "error": "<urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)>"
+      }
+    ],
+    "same_url_retries_succeeded": true
+  },
+  "positions": {
+    "open_query_count": 889,
+    "statuses": {
+      "OPEN": 15,
+      "REDEEMABLE": 874
+    },
+    "normal": 508,
+    "negative_risk": 381,
+    "redeemable_flag": 874,
+    "redeemable_with_zero_current_value": 874,
+    "positive_current_value_rows": 15,
+    "archived_rows": 0,
+    "all_pages_exhausted": true,
+    "default_zero_micro_floor_same_token_set": true,
+    "closed_query_count": 769,
+    "closed_zero_size_rows": 504,
+    "closed_positive_size_rows": 265,
+    "closed_positive_size_range": [
+      "0.0001",
+      "0.091"
+    ],
+    "closed_positive_value_rows": 104,
+    "closed_positive_token_overlap_open": 0,
+    "small_pages_first_six_match": true,
+    "dust_example": {
+      "proxy_wallet": "0x58b3380f71bd6c706dd398a5e60bde55fa3a653c",
+      "token_id": "114350083305515876605975857295292847572608542141507135338338719165921048222327",
+      "condition_id": "0x257b18205f908aef01ef2d1d50e6fea7d29cf5486fe04031d8b101394476faed",
+      "current_size": "0.001",
+      "avg_price": "0.003",
+      "entry_cost_usdc": "0.0",
+      "entry_fees_usdc": "0.0",
+      "total_cost_usdc": "0.0",
+      "current_price": "0.0",
+      "current_value": "0.0",
+      "total_size": "1868674.2755",
+      "realized_pnl": "1217741.57",
+      "unrealized_pnl": "0.0",
+      "total_pnl": "1217741.57",
+      "percent_pnl": "0.0",
+      "percent_realized_pnl": "21722.0231",
+      "status": "CLOSED",
+      "redeemable": true,
+      "mergeable": false,
+      "negative_risk": true,
+      "archived": false,
+      "title": "Will there be no change in Fed interest rates after the March 2026 meeting?",
+      "slug": "will-there-be-no-change-in-fed-interest-rates-after-the-march-2026-meeting",
+      "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/jerome+powell+glasses1.png",
+      "event_id": "67284",
+      "event_slug": "fed-decision-in-march-885",
+      "outcome": "No",
+      "outcome_index": 1,
+      "opposite_outcome": "Yes",
+      "opposite_token_id": "102559817034631022221500208641784929295731053857601013029449249654006364919935",
+      "end_date": "2026-03-18",
+      "last_event_at": 1773868033,
+      "name": "timetowander",
+      "profile_image": "",
+      "verified": false
+    },
+    "redeemable_zero_example": {
+      "proxy_wallet": "0x58b3380f71bd6c706dd398a5e60bde55fa3a653c",
+      "token_id": "100208760979006815700821365554623989048585541964271047036444923380678560443951",
+      "condition_id": "0x69e0442186b71c5cac4fa6304311e39101ed048983a200fc8e376a9dadd7de13",
+      "current_size": "11160.35",
+      "avg_price": "0.0149",
+      "entry_cost_usdc": "166.5682",
+      "entry_fees_usdc": "0.0",
+      "total_cost_usdc": "166.5682",
+      "current_price": "0.0",
+      "current_value": "0.0",
+      "total_size": "25000.0",
+      "realized_pnl": "-174.8215",
+      "unrealized_pnl": "-166.5682",
+      "total_pnl": "-341.3897",
+      "percent_pnl": "-99.9999",
+      "percent_realized_pnl": "-100.0",
+      "status": "REDEEMABLE",
+      "redeemable": true,
+      "mergeable": false,
+      "negative_risk": true,
+      "archived": false,
+      "title": "Will Donna Vekic win the 2026 Women’s US Open?",
+      "slug": "will-donna-vekic-win-the-2026-womens-us-open",
+      "icon": "https://polymarket-upload.s3.us-east-2.amazonaws.com/2026-mens-us-open-winner-tennis-oSTkkDpgQu-b.png",
+      "event_id": "139255",
+      "event_slug": "2026-womens-us-open-winner-tennis",
+      "outcome": "Yes",
+      "outcome_index": 0,
+      "opposite_outcome": "No",
+      "opposite_token_id": "43437917871736289675135437047499696002273396903387531260510673476203211904981",
+      "end_date": "2026-09-13",
+      "last_event_at": 1788939894,
+      "name": "timetowander",
+      "profile_image": "",
+      "verified": false
+    }
+  },
+  "history": {
+    "recent_window": {
+      "start": "2026-09-13T12:33:17+00:00",
+      "end": "2026-09-14T12:33:17+00:00"
+    },
+    "recent_all_roles_count": 740,
+    "recent_all_roles_sides": {
+      "SELL": 153,
+      "BUY": 587
+    },
+    "recent_taker_only_count": 34,
+    "recent_activity_count": 740,
+    "recent_three_queries_exhausted": true,
+    "recent_multiset_matches": true,
+    "taker_subset_of_all_roles": true,
+    "paginated_sample_count": 2000,
+    "paginated_sample_range": [
+      "2026-09-11T20:56:21+00:00",
+      "2026-09-14T12:31:27+00:00"
+    ],
+    "two_pages_match_activity": true,
+    "observed_cross_page_overlap": 0,
+    "has_more_history": true,
+    "oldest_returned_trade": "2025-04-24T20:34:20+00:00",
+    "comparison_key_for_sample_only": [
+      "transaction_hash",
+      "token_id",
+      "side",
+      "size",
+      "price",
+      "timestamp"
+    ],
+    "redeem_activity_sample_count": 10
+  },
+  "combos": {
+    "held_listing_count": 26,
+    "statuses": {
+      "RESOLVED_LOSS": 26
+    },
+    "positive_size_rows": 26,
+    "activity_count": 35,
+    "activity_types": {
+      "SPLIT": 34,
+      "REDEEM": 1
+    },
+    "matched_leg_comparison_differences": 132,
+    "unique_differing_leg_keys": 103,
+    "repeat_differing_leg_keys": 14,
+    "positions_leg_condition_string_lengths": {
+      "64": 132
+    },
+    "activity_leg_condition_string_lengths": {
+      "66": 132
+    },
+    "example": {
+      "combo_position_id": "1772499827366976622676719897464701864866906399041062331640349604130712453120",
+      "leg_position_id": "489187112074459289648393331968787631425592555173291014927025836681334882305",
+      "positions_condition": "0x0114debe730e3d1317aec5cf071d430ebd0000000000000000000000000000",
+      "activity_condition": "0x09ce36db9ba15107e04b0608a12c8a0914debe730e3d1317aec5cf071d430ebd",
+      "positions_label": "Arthur Fils",
+      "activity_label": "No",
+      "market_id": "3945919"
+    },
+    "gamma_example": {
+      "id": "3945919",
+      "conditionId": "0x09ce36db9ba15107e04b0608a12c8a0914debe730e3d1317aec5cf071d430ebd",
+      "outcomes": "[\"Stefanos Tsitsipas\", \"Arthur Fils\"]",
+      "clobTokenIds": "[\"59254536579625015540030323677769214760574790618429779107501117374415193981715\", \"54957327611719165558673665837606006255742342262735247505956873520640259736019\"]"
+    },
+    "gamma_example_matches_activity_condition": true,
+    "gamma_example_differs_positions_condition": true,
+    "all_buy_sell_history_proven": false
+  },
+  "limitations": [
+    "Read-only API evidence, no chain balance, allowance, account type, signer, login, order, fee debit, claim or funding operation verified.",
+    "Current public query exhaustion is not complete lifetime chain coverage. Two ordinary trade pages were sampled; more history remains.",
+    "Tiny holdings were observed in CLOSED; OPEN with 0 and 0.000001 still omitted them in this snapshot.",
+    "No archived sample; inactive-market completeness and broader history/Combo-trade coverage remain unproved.",
+    "Provider field disagreement is reproducible; its internal cause is not established.",
+    "SSR cache and independently timed API reads are not an atomic portfolio snapshot."
+  ]
+}

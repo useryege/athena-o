@@ -1,0 +1,151 @@
+{
+  "task": "ATHENA Account Center Access v13 current React visual comparison",
+  "result": "passed",
+  "capturedAt": "2026-09-14T03:11:17.447936+00:00",
+  "evidenceClassification": "ui-fixtures",
+  "scope": {
+    "route": "/account/access",
+    "realm": "member",
+    "theme": "dark",
+    "fullSystemSmokeRequired": false,
+    "externalAPIsUsed": false,
+    "mutationRequestsObserved": false,
+    "productionUIChanged": false
+  },
+  "repository": {
+    "root": "/home/yege/work/athena",
+    "branch": "rf4",
+    "head": "7c6e4839f8ee9323bc6d84c7565b44577d88eda4"
+  },
+  "sourceHashesSha256": {
+    "ui/src/app/shared/pages/account-center.tsx": "122ce56af41ced666108993480053f70f9170ec4336047d81e6f6959087d6abf",
+    "ui/src/app/shared/access-modules.ts": "f54000b2af724dee3062b5c9360cdb32e7844be05621ccb4aeed75dfcebb0f18",
+    "ui/src/app/shared/account-access.ts": "1bc469aea86e00e3d2ffffd2819999ce5c7513c766acd9b24d102ba52c0a2101",
+    "ui/src/app/shared/models.ts": "c506d918df4e16ebeb1952aeeaf7416857e3aaa14ff782262348e6102b871320",
+    "ui/src/app/shared/account-presentation.tsx": "a35621389b1d9a247f9246358eee55ba58285c2e550cafc1c5ea79857ae4c29f",
+    "ui/src/app/member/app.tsx": "a780e77cf79e1fb7c225a92edefeafd1207a9d8cf83ca44a68440cac8c6519d0",
+    "ui/src/app/shared/services/version-service.ts": "7624cd650e13e2fc6a4a18675d0f7d404a2d34d6263539147aec224f2d36b9be",
+    ".superpowers/v13-current-capture.spec.ts": "f6d846d550ca263417f8b14d461fc9b8f7d68e5c303a8d0c33a84637955b6573",
+    ".superpowers/v13-current.playwright.config.ts": "85d9a57de1c4a5207932ca293f546c32df9802018803486968379a085c6a3868",
+    ".superpowers/v13-fixture.cjs": "2a4afba2caf11dbd17ecc931bdd87dbe0cc7a6dee0d243959d2daba8f83dae63"
+  },
+  "data": {
+    "path": "theme-account-access-v13-data.json",
+    "sha256": "7186c56c2b72377ff0deaa6e364332decd48cd9dabd79501f12154f4f724d429",
+    "synthetic": true,
+    "sameIdentityAndGrantsUsedInPrototype": true,
+    "moduleDefinitions": "Generated directly from current access-modules.ts accountAccessDisplayModules (10); full source model remains 11 modules"
+  },
+  "capture": {
+    "command": "cd ui && yarn playwright test --config ../.superpowers/v13-current.playwright.config.ts",
+    "testResult": "1 passed (3.0s); 3 screenshots, test body 2.2s",
+    "node": "v24.14.1",
+    "locale": "en-US",
+    "timezone": "Asia/Shanghai",
+    "screenshots": [
+      {
+        "path": "theme-account-access-v13-before-desktop.png",
+        "sha256": "36a4a2ec69c41c8bc8a881079967ee3b83be02844b5b5c31babb38fbb58af356",
+        "name": "desktop",
+        "state": "user",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 1449
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/version"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false
+      },
+      {
+        "path": "theme-account-access-v13-before-mobile.png",
+        "sha256": "d19a23ae94b55eb6eeafe9690ac38998d2a6ff3c98f6f50676af70c85a3aeb63",
+        "name": "mobile",
+        "state": "user",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 2523
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/version"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false
+      },
+      {
+        "path": "theme-account-access-v13-before-mobile-pending.png",
+        "sha256": "75f13e1f38dce046aeb4a717162c4fb0181fa6438894ee52761e3d3a546a0907",
+        "name": "mobile-pending",
+        "state": "pending",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 1042
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false
+      }
+    ],
+    "assertions": [
+      "Active Current session and pending Refresh permissions are visible",
+      "all ten display-module rows and matched UI/API versions in active state",
+      "no horizontal overflow, page errors or unexpected requests",
+      "all observed API traffic intercepted GET; no writes"
+    ]
+  },
+  "environment": {
+    "taskStartedServices": [],
+    "taskRetainedServices": [],
+    "browserContexts": "All task-created browser contexts and Chromium processes closed by finally blocks",
+    "borrowed": [
+      {
+        "kind": "pre-existing root Vite",
+        "repository": "/home/yege/work/athena/ui",
+        "address": "http://localhost:4000",
+        "pid": 308228,
+        "parentSupervisorPID": 307846,
+        "instance": "legacy athena-local-runtime",
+        "ownershipEvidence": "/proc/308228/cwd equals root/ui; listener is the same root Vite; browser fixture capture passed",
+        "configurationAndOwnerState": [
+          ".run/athena-local-runtime/Procfile",
+          ".run/athena-local-runtime/supervisor.state"
+        ],
+        "captureLogs": [
+          ".superpowers/v13-before-desktop-metrics.json",
+          ".superpowers/v13-before-mobile-metrics.json",
+          ".superpowers/v13-before-mobile-pending-metrics.json"
+        ],
+        "status": "retained unchanged because it existed before this task",
+        "ownerStopCommand": "make stop (from /home/yege/work/athena; stops the owner-managed legacy stack, not executed by this task)"
+      }
+    ]
+  },
+  "limitations": [
+    "Visual fixture evidence only, not live authentication, authorization refresh, 15-second polling, focus refresh, logout, account switching or permission-race acceptance.",
+    "Google/Phantom identities and API version are synthetic. The source UI build version was verified as latest.",
+    "Current React last-checked timestamp follows capture runtime; prototype uses fixed 10:00:00. Other identity times are the shared fixture. UTC+8 describes capture context, not a new product timezone policy."
+  ]
+}

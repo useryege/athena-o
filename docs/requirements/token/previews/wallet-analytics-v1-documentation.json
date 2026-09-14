@@ -1,0 +1,408 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-14T03:01:32.640355+00:00",
+  "role": "impeccable_documenter",
+  "role_definition": ".agents/skills/impeccable/agents/impeccable_documenter.toml",
+  "operating_spec": ".agents/skills/impeccable/reference/document.md",
+  "workflow": "ordinary_extension_comparison",
+  "scope": {
+    "project_root": "/home/yege/work/athena",
+    "artifact": "docs/requirements/token/previews/wallet-analytics-v1.html",
+    "artifact_sha256": "7262c2ece8d5b7298a217dfa0740d970ad2b2c61b191046c4e93ad744be05153",
+    "proposal": "docs/requirements/token/wallet-analytics-page-proposal.md",
+    "direction_contract": ".impeccable/surfaces/s-token-previews-wallet-analytics-v1-html-408bb2e2.md",
+    "mode": "Operate",
+    "status": "本页文档预览可供用户审阅；本页视觉尚待用户确认，正式功能未实现。",
+    "write_boundary": [
+      "docs/requirements/token/previews/wallet-analytics-v1-documentation.json"
+    ],
+    "inspection": "读取 HTML 内联 CSS、组件标记与现有文档；核对后续覆盖和媒体查询。未运行浏览器、Nansen 请求或 detector。",
+    "limitations": "尺寸由源 CSS 在默认根字号 16px 下换算，不冒充本次浏览器计算样式测量；交互与截图结论引用已有检查和独立审阅。"
+  },
+  "checked_against": [
+    {
+      "path": "PRODUCT.md",
+      "scope": "品牌承诺与既有 v1–v5 视觉依据"
+    },
+    {
+      "path": "docs/requirements/web-ui/visual-theme.md",
+      "scope": "已确认 v1 基础配色、单一深色与确认范围"
+    },
+    {
+      "path": "docs/requirements/web-ui/typography-proposal.md",
+      "scope": "v2 字体、字号、字重、行高及数字与地址角色"
+    },
+    {
+      "path": "docs/requirements/web-ui/layout-proposal.md",
+      "scope": "v3 应用壳、内容边距、手机导航和布局边界"
+    },
+    {
+      "path": "docs/requirements/web-ui/components-proposal.md",
+      "scope": "v4 表单、反馈、静态加载与确认弹窗"
+    },
+    {
+      "path": "docs/requirements/web-ui/list-controls-proposal.md",
+      "scope": "v5 筛选、两种已实现盈亏排序和加载更多的层次"
+    },
+    {
+      "path": "docs/requirements/token/wallet-analytics-page-proposal.md",
+      "scope": "本页页面组织、尺寸说明、样本与正式实现边界"
+    },
+    {
+      "path": ".impeccable/surfaces/s-token-previews-wallet-analytics-v1-html-408bb2e2.md",
+      "scope": "精确扩展方向契约，不建立新视觉世界"
+    },
+    {
+      "path": "docs/requirements/token/previews/wallet-analytics-v1-checks.json",
+      "scope": "既有浏览器、资源与样本检查记录；本次重新核对 HTML 和全部 14 张 PNG 摘要"
+    },
+    {
+      "path": "docs/requirements/token/previews/wallet-analytics-v1-review.json",
+      "scope": "独立 finish review 的 ship 结论；不扩大为用户确认或正式验收"
+    },
+    {
+      "path": "docs/requirements/web-ui/previews/files/typography-v2-font-sources.json",
+      "scope": "借用字体来源与 SHA256"
+    }
+  ],
+  "global_design_system": {
+    "changed": false,
+    "design_md_exists": false,
+    "design_json_exists": false,
+    "created_files": [],
+    "reason": "本任务是已确认世界中的普通页面扩展。按指定边界保留 DESIGN.md 与 .impeccable/design.json 的缺失状态，不补建全站系统，不将本页局部取值升级为全站规范。",
+    "incumbent_drift": "全站正式 UI 尚未按新主题实施是既有文档已声明的状态；本次未检查或修理生产实现。"
+  },
+  "observed_matches": [
+    {
+      "area": "基础配色",
+      "source_lines": [
+        4,
+        11,
+        16
+      ],
+      "values": {
+        "page": "#06080B",
+        "panel": "#0F1114",
+        "raised": "#181D22",
+        "divider": "#252A30",
+        "text": "#FFFFFF",
+        "muted": "#9FA0A1",
+        "accent": "#00FFA7",
+        "primary_button_text": "#06080B"
+      },
+      "result": "与已确认 v1 八个用途一致；主按钮为青绿色实心，次要按钮为透明深色背景和灰色边界。"
+    },
+    {
+      "area": "字体与数字",
+      "source_lines": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        16,
+        18,
+        20,
+        24,
+        37,
+        54,
+        56,
+        58
+      ],
+      "values": {
+        "body_and_numeric": "Inter",
+        "addresses_and_hashes": "JetBrains Mono Regular",
+        "cjk_fallback": "Noto Sans CJK SC → PingFang SC → Microsoft YaHei → sans-serif",
+        "title_desktop": "28px / 1.3 / 600",
+        "title_mobile": "24px / 1.35 / 600",
+        "section_title": "20px / 1.4 / 600",
+        "body": "16px / 1.6 / 400",
+        "controls": "14px / 1.4 / 500",
+        "table_numbers": "14px / 1.5 / 500",
+        "metadata": "13px / 1.55 / 400",
+        "address": "13px / 1.7 / 400",
+        "main_amount_desktop": "40px / 1.2 / 600",
+        "main_amount_medium": "36px / 1.2 / 600",
+        "main_amount_mobile": "32px / 1.2 / 600",
+        "secondary_metric": "24px / 1.3 / 500"
+      },
+      "result": "核心角色对应 v2；金额采用 tabular-nums lining-nums 和右对齐，地址关闭连字。360px 以下金额例外另列。"
+    },
+    {
+      "area": "应用壳与页面留白",
+      "source_lines": [
+        11,
+        14,
+        15,
+        16,
+        21,
+        23,
+        24
+      ],
+      "values": {
+        "sidebar": "224px",
+        "collapsed_sidebar": "76px（既有样板未单独确认状态）",
+        "topbar": "64px",
+        "content_max_width": "1360px",
+        "wide_padding": "32px",
+        "medium_padding": "28px 24px，1150px 及以下",
+        "mobile_padding": "24px 20px，600px 及以下",
+        "navigation_breakpoint": "900px",
+        "drawer_width": "280px，最大视口宽度减 48px"
+      },
+      "result": "与 v3 及本页提案明确列出的 224px、64px、32px、20px 参数一致；单一双指标面板和两段列表保持任务阅读顺序。"
+    },
+    {
+      "area": "控件与轻量反馈",
+      "source_lines": [
+        12,
+        16,
+        17,
+        41,
+        42,
+        43,
+        49,
+        55,
+        59
+      ],
+      "values": {
+        "regular_button_and_input_min_height": "44px",
+        "input_and_button_radius": "10px",
+        "control_edge": "#61717B",
+        "focus_outline": "2px #00FFA7",
+        "selected_background": "#102C24",
+        "selected_foreground": "#00FFA7",
+        "menu_radius": "12px",
+        "main_panel_radius": "16px",
+        "button_transition": "background-color 160ms ease-out"
+      },
+      "result": "筛选标签、两种 Realized PnL 排序、已加载数量和手机纵向加载按钮保持 v5 层次；reduced motion 关闭过渡。本记录不将 160ms 变成全站已确认动效参数。"
+    }
+  ],
+  "local_differences_not_canonized": [
+    {
+      "area": "反馈框",
+      "source_lines": [
+        52
+      ],
+      "baseline": "v4 的警告为 #E6BF72 / #211C13 / #665231，错误为 #F58C9B / #24171C / #673B47；普通反馈 12px 圆角、桌面 16px 内边距，反馈含图标与文字。",
+      "observed": "本页保留警告 #E6BF72 和错误 #F58C9B 文字色，但反馈框统一用 #0F1114 背景、#252A30 边框、10px 圆角及 14px 16px 内边距。当前反馈标记使用明确正文，未加入 v4 状态图标。",
+      "classification": "本页实际组件差异",
+      "action": "只记录；未将“沿用 v4 状态”解释为反馈组件逐像素一致，未修改已审阅 HTML 或 v4 原件。"
+    },
+    {
+      "area": "窄屏主金额",
+      "source_lines": [
+        58
+      ],
+      "baseline": "v2 手机主金额 32px，空间不足优先重排。",
+      "observed": "本页在 360px 及以下将主金额设为 1.75rem（默认 28px）；390px 保持 32px。",
+      "classification": "本页窄屏例外，未获独立全站确认",
+      "action": "保留为本页检查事实，不改写 v2 字号基准。"
+    },
+    {
+      "area": "完整列表的响应式布局与密度",
+      "source_lines": [
+        44,
+        49,
+        50,
+        54,
+        55,
+        56,
+        57
+      ],
+      "baseline": "v3 逐币摘要在 600px 切换，手机交易保留表内滚动；不同区域间距 24–28px，完整交易结构留待具体页面设计。",
+      "observed": "本页两份完整列表均在 760px 及以下改为分组记录；手机持仓占整行。桌面逐币表最小宽度 990px（1200px 及以下为 950px），交易表 940px；桌面区域间距 30px，600px 及以下为 28px。完整字段与展开详情使行高不同于 v3 简化样板。",
+      "classification": "本页新增字段对应的页面扩展",
+      "action": "记录实际取值与适用范围，不用旧简化样板约 70px / 50px 行高反推本页应相同，也不提高为全站规则。"
+    },
+    {
+      "area": "复制失败的全文回退弹窗",
+      "source_lines": [
+        53
+      ],
+      "baseline": "v4 放弃草稿确认弹窗为最大 480px、28px 内边距、16px 圆角、72% 遮罩，正文 16px。",
+      "observed": "本页复制回退 dialog 宽 480px、最大视口减 40px、24px 内边距、14px 圆角、65% 遮罩，说明 14px，全文 textarea 用 JetBrains Mono 13px。",
+      "classification": "不同用途的本页辅助弹窗，非 v4 放弃草稿确认",
+      "action": "不将本页复制回退取值写成已确认通用弹窗规范。"
+    }
+  ],
+  "content_and_asset_boundaries": {
+    "product_language": "英文",
+    "review_controls_language": "简体中文，使用 lang=\"zh-CN\" 标记",
+    "data_origin": "已保存的 2026-09-13 Nansen 样本；本页提取数据内嵌到 HTML，非实时结果。",
+    "api_requests_in_existing_browser_record": 0,
+    "csp_disallows_data_requests": true,
+    "formal_backend_cache_and_ui_implemented": false,
+    "font_source_record": "docs/requirements/web-ui/previews/files/typography-v2-font-sources.json",
+    "fonts": [
+      {
+        "path": "docs/requirements/web-ui/previews/files/InterVariable.woff2",
+        "sha256": "693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3",
+        "matches_saved_source_record": true
+      },
+      {
+        "path": "docs/requirements/web-ui/previews/files/JetBrainsMono-Regular.woff2",
+        "sha256": "f1a7a03672cdd494ce0d5543fac6e4360fe22403c6de297fdc2e55a815f7baff",
+        "matches_saved_source_record": true
+      }
+    ],
+    "new_product_raster_assets": 0,
+    "html_raster_image_elements": 0,
+    "generated_images": 0,
+    "raster_provenance": "以下 14 张 PNG 均为浏览器证据，包括完整页面和元素区域截图；没有生成式图片、生成提示词或新产品位图资产。本记录及 checks.json 提供文件级来源和摘要；原 PNG 不含文本来源块，未改写已审阅图片。",
+    "rasters": [
+      {
+        "path": "docs/requirements/token/previews/wallet-analytics-v1-desktop-filtered.png",
+        "width": 1440,
+        "height": 1050,
+        "sha256": "35972a47dd814cd859c3aad9f96490e3d89dc82e5f6269b57cef7249b4f81499",
+        "kind": "browser_evidence",
+        "origin": "本地 wallet-analytics-v1.html 的浏览器截图或元素区域截图；来源与检查记录按 SHA256 关联。",
+        "hash_matches_browser_record": true
+      },
+      {
+        "path": "docs/requirements/token/previews/wallet-analytics-v1-desktop-full.png",
+        "width": 1440,
+        "height": 3552,
+        "sha256": "a58b90ca0e44685928e653a0a32a89550798d651cfe0f9cc57d840282fbc3bf8",
+        "kind": "browser_evidence",
+        "origin": "本地 wallet-analytics-v1.html 的浏览器截图或元素区域截图；来源与检查记录按 SHA256 关联。",
+        "hash_matches_browser_record": true
+      },
+      {
+        "path": "docs/requirements/token/previews/wallet-analytics-v1-desktop-initial.png",
+        "width": 1440,
+        "height": 1050,
+        "sha256": "9b4960da53720fe9dbe07c709ff65907d7925e86321f37a6c443b144ec650510",
+        "kind": "browser_evidence",
+        "origin": "本地 wallet-analytics-v1.html 的浏览器截图或元素区域截图；来源与检查记录按 SHA256 关联。",
+        "hash_matches_browser_record": true
+      },
+      {
+        "path": "docs/requirements/token/previews/wallet-analytics-v1-desktop-loading.png",
+        "width": 1440,
+        "height": 1050,
+        "sha256": "71ccae40b24503a3fb843b66578ae7e40929b4446a04b97890284f0abb8405cc",
+        "kind": "browser_evidence",
+        "origin": "本地 wallet-analytics-v1.html 的浏览器截图或元素区域截图；来源与检查记录按 SHA256 关联。",
+        "hash_matches_browser_record": true
+      },
+      {
+        "path": "docs/requirements/token/previews/wallet-analytics-v1-desktop-section-error.png",
+        "width": 1440,
+        "height": 1050,
+        "sha256": "19935eb224bcc3a86c7387c22eda9eb211209b7d01eb9c14ccf7d470650c08d5",
+        "kind": "browser_evidence",
+        "origin": "本地 wallet-analytics-v1.html 的浏览器截图或元素区域截图；来源与检查记录按 SHA256 关联。",
+        "hash_matches_browser_record": true
+      },
+      {
+        "path": "docs/requirements/token/previews/wallet-analytics-v1-desktop-stale.png",
+        "width": 1440,
+        "height": 1050,
+        "sha256": "1b4a2af7d3855dbe1fc83c8ccbc72953a4e029189218b3235cc23646e43bb1c6",
+        "kind": "browser_evidence",
+        "origin": "本地 wallet-analytics-v1.html 的浏览器截图或元素区域截图；来源与检查记录按 SHA256 关联。",
+        "hash_matches_browser_record": true
+      },
+      {
+        "path": "docs/requirements/token/previews/wallet-analytics-v1-desktop-transactions.png",
+        "width": 1440,
+        "height": 1050,
+        "sha256": "684bf0f62a8225adea8d63b0d793e953c895bc05441f68d0496ac97e7e8fe2e9",
+        "kind": "browser_evidence",
+        "origin": "本地 wallet-analytics-v1.html 的浏览器截图或元素区域截图；来源与检查记录按 SHA256 关联。",
+        "hash_matches_browser_record": true
+      },
+      {
+        "path": "docs/requirements/token/previews/wallet-analytics-v1-desktop.png",
+        "width": 1440,
+        "height": 1050,
+        "sha256": "b4454fd6ceb89765d011c09e29b3cd1e1ac5d1e850ad99cd58569dd03c2a339f",
+        "kind": "browser_evidence",
+        "origin": "本地 wallet-analytics-v1.html 的浏览器截图或元素区域截图；来源与检查记录按 SHA256 关联。",
+        "hash_matches_browser_record": true
+      },
+      {
+        "path": "docs/requirements/token/previews/wallet-analytics-v1-mobile-full.png",
+        "width": 390,
+        "height": 7808,
+        "sha256": "8205e3fc9e306618430f20a5f49b63ea7e3b47dc45ff98a52f56cbe59f34e425",
+        "kind": "browser_evidence",
+        "origin": "本地 wallet-analytics-v1.html 的浏览器截图或元素区域截图；来源与检查记录按 SHA256 关联。",
+        "hash_matches_browser_record": true
+      },
+      {
+        "path": "docs/requirements/token/previews/wallet-analytics-v1-mobile-tokens.png",
+        "width": 350,
+        "height": 1072,
+        "sha256": "89c81af177f9455e03e604dd094859766ca939da24d5ac144b6a97633fc2918e",
+        "kind": "browser_evidence",
+        "origin": "本地 wallet-analytics-v1.html 的浏览器截图或元素区域截图；来源与检查记录按 SHA256 关联。",
+        "hash_matches_browser_record": true
+      },
+      {
+        "path": "docs/requirements/token/previews/wallet-analytics-v1-mobile-transaction.png",
+        "width": 348,
+        "height": 248,
+        "sha256": "b5ce4080a97eba523b42f91b75e00e3a6b5ad1cbd6179afc28e11886b5597742",
+        "kind": "browser_evidence",
+        "origin": "本地 wallet-analytics-v1.html 的浏览器截图或元素区域截图；来源与检查记录按 SHA256 关联。",
+        "hash_matches_browser_record": true
+      },
+      {
+        "path": "docs/requirements/token/previews/wallet-analytics-v1-mobile.png",
+        "width": 390,
+        "height": 844,
+        "sha256": "d30787f1ef48abb85ef83993826cf485909e4cff21e93d1230d4442782f986a8",
+        "kind": "browser_evidence",
+        "origin": "本地 wallet-analytics-v1.html 的浏览器截图或元素区域截图；来源与检查记录按 SHA256 关联。",
+        "hash_matches_browser_record": true
+      },
+      {
+        "path": "docs/requirements/token/previews/wallet-analytics-v1-narrow.png",
+        "width": 320,
+        "height": 844,
+        "sha256": "e47352b132258ba997a3a7b0bd73ffe21fb2402fabee3b33629217b7790892b0",
+        "kind": "browser_evidence",
+        "origin": "本地 wallet-analytics-v1.html 的浏览器截图或元素区域截图；来源与检查记录按 SHA256 关联。",
+        "hash_matches_browser_record": true
+      },
+      {
+        "path": "docs/requirements/token/previews/wallet-analytics-v1-text-200.png",
+        "width": 720,
+        "height": 1000,
+        "sha256": "162c179afcd675a196649c7a00f5ac22f674b15d1d90fbcd7dd0a9ff90e5e30b",
+        "kind": "browser_evidence",
+        "origin": "本地 wallet-analytics-v1.html 的浏览器截图或元素区域截图；来源与检查记录按 SHA256 关联。",
+        "hash_matches_browser_record": true
+      }
+    ]
+  },
+  "verification": {
+    "performed_now": [
+      "HTML 摘要与已有浏览器检查一致",
+      "14 张 PNG 摘要与已有浏览器检查逐一一致",
+      "两份本地字体存在且摘要与保存来源记录一致",
+      "确认 DESIGN.md 与 .impeccable/design.json 仍不存在",
+      "确认 HTML CSP connect-src 为 none，未使用 img 元素"
+    ],
+    "browser_rerun": false,
+    "detector_rerun": false,
+    "nansen_requests": 0,
+    "environments_started": 0,
+    "environment_cleanup": "本子任务未启动环境，无需停服。",
+    "review_disposition": "ship",
+    "review_scope": "引用既有独立 finish review；仅文档预览提交审阅范围。"
+  },
+  "system_summary": [
+    "配色：近黑 #06080B、深色面板 #0F1114、白灰文字及 #00FFA7 青绿色强调，保留 v1 关系。",
+    "字体：Inter 承载标题正文和数字，JetBrains Mono 承载地址与哈希，借用已保存字体。",
+    "字号：标题 28/24px、区块 20px、正文 16px、控件数据 14px、辅助 13px，金额 40/36/32px；极窄屏 28px 单列记录。",
+    "布局：224px 侧栏、64px 顶栏、32px 桌面和 20px 手机水平边距，单一总览加两份列表。",
+    "规则：颜色与正文共同表达状态，金额等宽数字，完整地址与数值按需展开；本页例外不成为全站规则。"
+  ],
+  "result": "文档核对完成；核心视觉与本页明确尺寸一致，真实组件和响应式差异已列出。保留全站设计系统缺失状态，未改动生产代码、已确认样板或已有漂移。"
+}

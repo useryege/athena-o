@@ -1,0 +1,138 @@
+{
+  "version": "v12",
+  "surface": "Account Center / Security",
+  "status": "awaiting_user_review",
+  "production_ui_changed": false,
+  "scope": "Existing member /account/security visual redesign; local demonstration of ATHENA account API keys and AI connection instructions only; administrator realm and Nansen platform credentials are outside this surface",
+  "direction": ".superpowers/v12-direction.md",
+  "inspection": {
+    "rounds": 2,
+    "final_checks": "theme-account-security-v12-checks.json",
+    "four_viewports": [
+      "1440×900",
+      "390×844",
+      "320×844",
+      "720×900 with 200% root font"
+    ],
+    "prototype_screenshots": 11,
+    "before_screenshots": 2,
+    "first_round_corrections": [
+      "Load the approved Mono font explicitly before checking its availability because it is only used after opening a result dialog.",
+      "Switch metadata to compact rows at 800px and remove table minimum widths so 200% text remains readable without horizontal overflow.",
+      "Restore the accessible-only caption and action-label helper without changing accessible names.",
+      "Reference the existing copy symbol and check modal SVG references.",
+      "Keep one-time AI result titles and actions visible while the long body scrolls independently; reset body scroll before captures.",
+      "Scale account identity and allow its heading to wrap with enlarged text."
+    ],
+    "final_round_visual_confirmation": "All 13 required PNGs inspected. Eight changed prototype captures were reopened after the single correction batch; the other five were pixel-identical to inspected captures.",
+    "reviewer_fix_batches": 0
+  },
+  "independent_review": {
+    "reviewer": "/root/v12_finish_review",
+    "disposition": "ship",
+    "scope": "All 13 supplied screenshots, prototype source, approved visual direction, current source contracts and recorded browser evidence. Visual proposal and local demo behavior only, not user approval or production acceptance.",
+    "sections": {
+      "persistence": "The shippable artifact is the documentation-only member Account Center / Security prototype at docs/requirements/web-ui/previews/theme-account-security-v12.html, backed by its shared synthetic fixture, four-viewport check record, current-React comparison record, and all 13 required PNGs. The review copies in .impeccable/review/v12 are byte-identical to the documented PNGs, and the provenance scan reports 13 rasters with none missing. This disposition covers the visual proposal and its local demo behavior only; production ui/ remains unchanged, and it is neither user screenshot approval nor production acceptance.",
+      "fidelity": "The result is a faithful ordinary extension of the approved v1-v11 visual world: near-black page, deep gray panels, restrained borders, Inter hierarchy, JetBrains Mono for credential payloads, mint primary actions, and the established amber, pink, and green feedback tones. It preserves the compact current-account identity, desktop account navigation, mobile section selector, Connect AI before API keys, and the exact ID / Issued / Expires / Revoke metadata model. Connect AI is presented as issuance of the same account API key with complete connection instructions, never as OAuth or external-AI connection status; the ready state explicitly says Athena accepted the credential for the expected account and does not claim an external AI connected. Names, expiry choices, one-time disclosure, complete and key-only copy, full revocation consequence, and the current generated instruction text remain aligned with source contracts. UTC+8 is visibly scoped to the synthetic capture and does not establish a new product time policy.",
+      "ceiling": "The bounded finish cycle is complete. All 11 final prototype captures and both current-React baselines were inspected at desktop, mobile, 320px narrow, and 200% text conditions. The check record reports no horizontal overflow, page errors, external requests, listed issues, or modal geometry failures at 1440x900, 390x844, 320x844, and 720x900 with a 200% root font; contrast samples pass and both approved fonts load. The mobile AI result keeps its long instructions in a bounded scroll region while the complete-copy, key-only-copy, and explicit Done actions remain visible in a clearly separated fixed action area. Its initial copy-action focus indicator is visible against the dark footer, and the create and revoke dialogs show equally clear focus treatment, with revocation initially focused on Keep key. The one file-scoped Inter detector exception follows the approved v2 typography and does not justify changing direction or adding another capture round.",
+      "material_fixes": "None. No material defect in hierarchy, responsive composition, one-time-result safety, focus treatment, metadata readability, feedback semantics, or modal boundaries warrants a fix or recapture. Real issue, revoke, verification, permission, identity-change, and async guard behavior remain future implementation acceptance work rather than missing visual-prototype states.",
+      "keep": "Keep the Connect AI / API keys reading order, compact owner identity, desktop navigation and mobile selector, calm two-panel hierarchy, exact metadata labels, compact key rows below 800px, and mono treatment limited to credential payloads and identifiers. Keep the full-authority, one-time-display, and one-copy-one-paste cues without inventing scopes, usage, provider, or connection telemetry. Keep the ready/checking/failed credential meanings, retained copy actions after verification failure, explicit Done-only dismissal for one-time results, safe Keep key focus in revocation, Tab containment, focus return, and the visible synthetic-demo disclosures that no key is issued, revoked, or verified and no external AI is contacted."
+    }
+  },
+  "detector": {
+    "runs": 1,
+    "findings": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "resolution": "User-approved v2 font; single-file ignore-value persisted using CLI in .impeccable/config.json",
+        "file": "docs/requirements/web-ui/previews/theme-account-security-v12.html"
+      }
+    ]
+  },
+  "asset_provenance": {
+    "screenshots": "Playwright Chromium screenshots with embedded origins, not AI-generated or retouched",
+    "scan": ".superpowers/v12-raster-provenance-scan.txt",
+    "rasters": 13,
+    "missing": 0
+  },
+  "documentation": "account-security-proposal.md and indices; ordinary extension, no global DESIGN.md or sidecar changes",
+  "limitations": [
+    "User visual approval is pending; only directly presented and subsequently approved views become a confirmed baseline.",
+    "Synthetic captures and local demonstrations do not verify real issuance, revocation, service verification, identity switching, permission changes or asynchronous guards.",
+    "The ready state means ATHENA accepted the credential for the expected account; it never means an external AI connected.",
+    "Administrator, API-key-disabled member and additional unshown request/error states remain outside this visual approval.",
+    "Nansen platform API credentials remain environment-variable configuration with a shared platform quota and are not edited here.",
+    "Current React comparison uses intercepted GET fixtures, not full-system acceptance. No service was started; the pre-existing root Vite was borrowed and preserved."
+  ],
+  "artifacts": [
+    {
+      "path": "theme-account-security-v12-before-capture.json",
+      "sha256": "fa73ea96898f0d35d44fd58b545c0fb46f4d46ef88e2886e200871a5886bb491"
+    },
+    {
+      "path": "theme-account-security-v12-before-desktop.png",
+      "sha256": "d0e50cfd91deb01f03fef7a7c3fb81a27197443902efe11e9f2ca048b87b3147"
+    },
+    {
+      "path": "theme-account-security-v12-before-mobile.png",
+      "sha256": "801b34005f05c354c05afe7e69a9b46e385c6be483e88e7a531dc2d8acd41ac8"
+    },
+    {
+      "path": "theme-account-security-v12-checks.json",
+      "sha256": "6fee32a0ebbe43ba6806bac4873d2fa30be3df047875b5a711f005134fea3ac5"
+    },
+    {
+      "path": "theme-account-security-v12-data.json",
+      "sha256": "2ee2730b7ff1de1ab6b49d0acf8b52ee82cb95ca383d3c67f8bae5d506d0bb41"
+    },
+    {
+      "path": "theme-account-security-v12-desktop-ai-failed.png",
+      "sha256": "bf88180b9c70eb4789eae804a7817b04c59607e544f31fbdf520f0d26b394ba6"
+    },
+    {
+      "path": "theme-account-security-v12-desktop-ai-ready.png",
+      "sha256": "4cc47cb7f0450dcf9a7fcb89c752344bfd54987df97646d1d0ae1c11b800fa21"
+    },
+    {
+      "path": "theme-account-security-v12-desktop-create-key.png",
+      "sha256": "d0cc2a43c8eb85d9e16dea45d631ed795f43afb07e92fe654962238e3ca7dcd5"
+    },
+    {
+      "path": "theme-account-security-v12-desktop.png",
+      "sha256": "22bddc1c4cbd9ecbae07125422e5a8855b99630cb602dc373573a243626e2934"
+    },
+    {
+      "path": "theme-account-security-v12-mobile-ai-ready.png",
+      "sha256": "3a981e3f9e1e1869754f42b8be49af5aa1a5ad85a341ebbae79a007750832635"
+    },
+    {
+      "path": "theme-account-security-v12-mobile-create-ai.png",
+      "sha256": "f4a920dce9d4121bf351b0cc30c67d2176cb868a5c857839a44b34248ecec5c4"
+    },
+    {
+      "path": "theme-account-security-v12-mobile-key-result.png",
+      "sha256": "ad315a73f5e2e207f5227522b0f05cc4a2bd9504eb195b3524fd22fe5bfa004d"
+    },
+    {
+      "path": "theme-account-security-v12-mobile-revoke.png",
+      "sha256": "404936c75c3f8da19701a9f21231826c68c85f471ed61e4dd2efedbe6a083130"
+    },
+    {
+      "path": "theme-account-security-v12-mobile.png",
+      "sha256": "b3e16a30029649b55d24c2fec195403206974f7f086baa04f9f7c63e5a180e88"
+    },
+    {
+      "path": "theme-account-security-v12-narrow.png",
+      "sha256": "9702afea2dbb749db62840e9f6a765296521ceaaeb92c61cf5edb38ef8be871d"
+    },
+    {
+      "path": "theme-account-security-v12-text-200.png",
+      "sha256": "a32a9e30e6701fc305114b76c966e9d6777c5c87a452feaf9c1044b636436747"
+    },
+    {
+      "path": "theme-account-security-v12.html",
+      "sha256": "add39e9c8619dbff6b0a5760e6f2ff343be0746e456c257ffdc80bec15dbfe1a"
+    }
+  ]
+}

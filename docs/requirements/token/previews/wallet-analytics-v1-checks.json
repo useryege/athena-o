@@ -1,0 +1,251 @@
+{
+  "mode": "documentation-preview",
+  "target": "file:///home/yege/work/athena/docs/requirements/token/previews/wallet-analytics-v1.html",
+  "apiRequests": 0,
+  "startedAt": "2026-09-14T02:45:45.448Z",
+  "screens": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 1050,
+      "textScale": false,
+      "metrics": {
+        "width": 1440,
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": [],
+        "summary": {
+          "width": 255,
+          "available": 416,
+          "clipped": false
+        }
+      },
+      "violations": [],
+      "image": "wallet-analytics-v1-desktop.png"
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": false,
+      "metrics": {
+        "width": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": [],
+        "summary": {
+          "width": 204,
+          "available": 308,
+          "clipped": false
+        }
+      },
+      "violations": [],
+      "image": "wallet-analytics-v1-mobile.png"
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "textScale": false,
+      "metrics": {
+        "width": 320,
+        "documentWidth": 320,
+        "bodyWidth": 320,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": [],
+        "summary": {
+          "width": 178,
+          "available": 238,
+          "clipped": false
+        }
+      },
+      "violations": [],
+      "image": "wallet-analytics-v1-narrow.png"
+    },
+    {
+      "name": "text-200",
+      "width": 720,
+      "height": 1000,
+      "textScale": true,
+      "metrics": {
+        "width": 720,
+        "documentWidth": 720,
+        "bodyWidth": 720,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": [],
+        "summary": {
+          "width": 454,
+          "available": 622,
+          "clipped": false
+        }
+      },
+      "violations": [],
+      "image": "wallet-analytics-v1-text-200.png"
+    }
+  ],
+  "checks": [
+    {
+      "name": "30-day summary matches recorded values",
+      "passed": true
+    },
+    {
+      "name": "Complete saved token set sorts numerically; keyboard selection returns focus",
+      "passed": true
+    },
+    {
+      "name": "Token selection filters both lists and leaves wallet overview unchanged; clear preserves wallet and period",
+      "passed": true
+    },
+    {
+      "name": "Micro holdings stay nonzero, full precision available, zero holding does not hide realized PnL",
+      "passed": true
+    },
+    {
+      "name": "Records keep provider asset relationships, original signed quantities, null USD values and labeled timezone",
+      "passed": true
+    },
+    {
+      "name": "7-day zero and 90-day negative are real samples; unrecorded or incomplete areas explicitly labeled",
+      "passed": true
+    },
+    {
+      "name": "Invalid wallet and valid unrecorded wallet receive distinct feedback",
+      "passed": true
+    },
+    {
+      "name": "Sample A loads its actual second page; no saved third page is fetched or claimed complete",
+      "passed": true
+    },
+    {
+      "name": "Exact CATE filter uses recorded provider filtered response, preserving 30m incoming amount and null USD",
+      "passed": true
+    },
+    {
+      "name": "Empty full token selection is distinguished from no match in a partial transaction sample",
+      "passed": true
+    },
+    {
+      "name": "Explicit simulated states cover section failure/retry, retained old data, loading, first visit and credit exhaustion",
+      "passed": true
+    },
+    {
+      "name": "Demo refresh reuses saved data and preserves original request time",
+      "passed": true
+    },
+    {
+      "name": "Clipboard rejection reveals and selects full value in an accessible native dialog",
+      "passed": true
+    },
+    {
+      "name": "Mobile navigation traps focus, makes background inert, closes on Escape and returns focus",
+      "passed": true
+    },
+    {
+      "name": "All viewport layouts, loaded local fonts, duplicate IDs, axe scans and zero external requests verified",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "passed": true,
+  "finishedAt": "2026-09-14T02:45:54.179Z",
+  "scope": "独立文档 HTML，非 ui-fixtures/live/smoke 或正式平台无障碍验收",
+  "source_integrity": {
+    "raw_files_unchanged": true,
+    "extracted_numeric_representation": "decimal strings; no binary floating-point conversion",
+    "api_key_in_browser_artifact": false
+  },
+  "artifacts": {
+    "docs/requirements/token/previews/wallet-analytics-v1-data.json": "2e674e8b03e9559859cb4e6a65c9a5fb74ce8f16cb4fd3dd3ee43e94559c2b71",
+    "docs/requirements/token/previews/wallet-analytics-v1-desktop-filtered.png": "35972a47dd814cd859c3aad9f96490e3d89dc82e5f6269b57cef7249b4f81499",
+    "docs/requirements/token/previews/wallet-analytics-v1-desktop-full.png": "a58b90ca0e44685928e653a0a32a89550798d651cfe0f9cc57d840282fbc3bf8",
+    "docs/requirements/token/previews/wallet-analytics-v1-desktop-initial.png": "9b4960da53720fe9dbe07c709ff65907d7925e86321f37a6c443b144ec650510",
+    "docs/requirements/token/previews/wallet-analytics-v1-desktop-loading.png": "71ccae40b24503a3fb843b66578ae7e40929b4446a04b97890284f0abb8405cc",
+    "docs/requirements/token/previews/wallet-analytics-v1-desktop-section-error.png": "19935eb224bcc3a86c7387c22eda9eb211209b7d01eb9c14ccf7d470650c08d5",
+    "docs/requirements/token/previews/wallet-analytics-v1-desktop-stale.png": "1b4a2af7d3855dbe1fc83c8ccbc72953a4e029189218b3235cc23646e43bb1c6",
+    "docs/requirements/token/previews/wallet-analytics-v1-desktop-transactions.png": "684bf0f62a8225adea8d63b0d793e953c895bc05441f68d0496ac97e7e8fe2e9",
+    "docs/requirements/token/previews/wallet-analytics-v1-desktop.png": "b4454fd6ceb89765d011c09e29b3cd1e1ac5d1e850ad99cd58569dd03c2a339f",
+    "docs/requirements/token/previews/wallet-analytics-v1-mobile-full.png": "8205e3fc9e306618430f20a5f49b63ea7e3b47dc45ff98a52f56cbe59f34e425",
+    "docs/requirements/token/previews/wallet-analytics-v1-mobile-tokens.png": "89c81af177f9455e03e604dd094859766ca939da24d5ac144b6a97633fc2918e",
+    "docs/requirements/token/previews/wallet-analytics-v1-mobile-transaction.png": "b5ce4080a97eba523b42f91b75e00e3a6b5ad1cbd6179afc28e11886b5597742",
+    "docs/requirements/token/previews/wallet-analytics-v1-mobile.png": "d30787f1ef48abb85ef83993826cf485909e4cff21e93d1230d4442782f986a8",
+    "docs/requirements/token/previews/wallet-analytics-v1-narrow.png": "e47352b132258ba997a3a7b0bd73ffe21fb2402fabee3b33629217b7790892b0",
+    "docs/requirements/token/previews/wallet-analytics-v1-text-200.png": "162c179afcd675a196649c7a00f5ac22f674b15d1d90fbcd7dd0a9ff90e5e30b",
+    "docs/requirements/token/previews/wallet-analytics-v1.html": "7262c2ece8d5b7298a217dfa0740d970ad2b2c61b191046c4e93ad744be05153"
+  },
+  "cleanup": {
+    "temporary_server_started": false,
+    "browser_closed": true,
+    "preexisting_environments": "untouched"
+  },
+  "integrity": {
+    "mapped_fields_checked": 1140,
+    "distinct_source_files_checked": 14,
+    "original_research_files_unchanged": 39,
+    "embedded_data_matches_json": true,
+    "unselected_metrics_and_api_keys_absent": true,
+    "csp_disallows_network_data_requests": true,
+    "filtered_response_fields_checked": 20,
+    "filtered_source_files_checked": [
+      "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-cate-filter.json",
+      "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-usdt-filter.json"
+    ]
+  },
+  "detector": {
+    "findings": [
+      "overused-font: Inter"
+    ],
+    "decision": "Preserved user-approved Inter font; no global detector configuration changed."
+  },
+  "capture_notes": [
+    "初次交互检查的 SHIB 预期小数位与原型四位有效数字不符，已修正检查预期；原始值未改变。",
+    "检查脚本的样本 B 选择器同时匹配隐藏入口，已限定到预览设置区域。",
+    "首轮截图显示手机持仓数量换行；改为独占一行后完成第二轮视口与交互复验。",
+    "部分状态截图在前一条提示消失后重新采集，过滤截图对齐区域标题。"
+  ],
+  "state_capture_verification_finished_at": "2026-09-14T02:47:51.709Z",
+  "state_capture_checks_passed": true,
+  "review": {
+    "disposition": "ship",
+    "record": "wallet-analytics-v1-review.json",
+    "scope": "documentation preview only"
+  }
+}

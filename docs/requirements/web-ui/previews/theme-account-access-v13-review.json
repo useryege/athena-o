@@ -1,0 +1,130 @@
+{
+  "version": "v13",
+  "surface": "Account Center / Access & session",
+  "status": "awaiting_user_review",
+  "production_ui_changed": false,
+  "scope": "Existing member /account/access visual redesign and local demonstration; administrator realm and real authentication/authorization behavior are outside this visual acceptance",
+  "direction": ".superpowers/v13-direction.md",
+  "inspection": {
+    "rounds": 2,
+    "final_checks": "theme-account-access-v13-checks.json",
+    "four_viewports": [
+      "1440×900",
+      "390×844",
+      "320×844",
+      "720×900 with 200% root font"
+    ],
+    "prototype_screenshots": 9,
+    "before_screenshots": 3,
+    "first_round_corrections": [
+      "Consolidated the duplicate Logged in field into the current-session heading, retaining the Yes value.",
+      "Stacked independent API Key and Profit Sharing flags by 800px to keep enlarged text separated."
+    ],
+    "final_round_visual_confirmation": "All 12 required captures inspected; five changed captures reopened after the single correction batch, and the other seven retained identical PNG image-data chunks.",
+    "reviewer_fix_batches": 0
+  },
+  "independent_review": {
+    "reviewer": "/root/v13_finish_review",
+    "disposition": "ship",
+    "scope": "All 12 supplied screenshots, approved theme, prototype source, actual source contracts and recorded browser evidence. Visual proposal/local demo only, not user approval or production acceptance.",
+    "sections": {
+      "persistence": "- The v13 Account Center / Access & session proposal is persisted as docs/requirements/web-ui/previews/theme-account-access-v13.html with its synthetic fixture, checks, current-React comparison manifest, and raster provenance evidence.\n- All 12 required PNGs were opened and reviewed. Each copy under docs/requirements/web-ui/previews/ is byte-identical to its counterpart under .impeccable/review/v13/, and the provenance scan records 12 rasters with 0 missing.\n- The current React source hashes still match the hashes recorded by theme-account-access-v13-before-capture.json. DESIGN.md and .impeccable/design.json remain absent as required for this ordinary code-led extension.\n- This ship disposition covers the visual proposal and local demo only. It is not user visual approval and is not production implementation or acceptance.",
+      "fidelity": "- The active proposal preserves the ten accountAccessDisplayModules in source order, intentionally omits presentation-only Token while retaining the eleven-module source model, and shows the exact 2 full / 3 read / 5 none summary with the exact Read & write, Read only, and No access labels.\n- All 15 current-session facts from ActiveAccessPage remain findable across the module summary, independent API Key / Profit Sharing flags, session header, session grid, and the default-collapsed Times, revisions & versions disclosure. Logged in is consolidated once as “Logged in Yes” without losing meaning.\n- Pending remains a verified Google or Phantom identity awaiting business access. It does not imply a login failure or blocked account, does not expose Security or business navigation in the supplied fixture, retains full copyable provider identity, and keeps profile access, permission refresh, and logout actions.\n- The activation rule is faithful to accountStatusForAccess: tier does not grant access, apiKeyEnabled alone does not make an account active, while profitSharingEnabled or any non-none module grant can. The proposal introduces no grants, editing, admin surface, Nansen key settings, or terminate-all-sessions flow.\n- Prototype behavior is honestly bounded: refresh and logout are local demonstrations, the 650 ms busy state disables both actions, failure preserves identity and permissions, and the footer states that no live checks or sign-out occur. Real polling/focus refresh, requestErrorMessage content, realm and identity guards, account switching, races, and authorization writes remain production obligations rather than claimed evidence.",
+      "ceiling": "- The v13 screen extends the approved v11/v12 Account Center world cleanly: identical near-black hierarchy, restrained borders, Inter typography, JetBrains Mono only for the wallet address, cyan-green primary action, and distinct amber/error semantics.\n- The permission-first composition materially improves scanability over the current React table. Desktop keeps the dense ten-module inventory legible; mobile converts it to a clear vertical reading order; the session disclosure prevents secondary time/version data from competing with access decisions.\n- The 1440x900, 390x844, 320x844, and 720x900 at 200% text captures show no clipping or horizontal overflow. The Phantom address wraps completely, the error recovery remains adjacent to its action, and independent account flags stack before the 800 px threshold.\n- Recorded contrast ratios exceed the stated floor, keyboard focus is visible on the expanded disclosure, and the final capture set contains no visual regression that justifies exceeding the completed two-round polish ceiling.",
+      "material_fixes": "- None.",
+      "keep": "- Keep the “Module access” summary and ten-row inventory before “Current session”; this matches the page's main decision and is the strongest improvement over the current implementation.\n- Keep the compact 2 full / 3 read / 5 none summary, the restrained three permission badges, and the separately named API Key and Profit Sharing flags.\n- Keep the single “Logged in Yes” treatment in the session header and the default-collapsed Times, revisions & versions disclosure with all six secondary facts reachable.\n- Keep the pending headline and amber Awaiting access marker, the explicit verified-identity copy, the full-width mobile action hierarchy, and the persistent identity/permission context in the error state.\n- Keep the v12 Account Center shell, palette, typography, spacing rhythm, border strength, owner summary, desktop local navigation, and mobile Account section selector unchanged as v13 moves to user visual review."
+    }
+  },
+  "detector": {
+    "runs": 1,
+    "findings": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "resolution": "User-approved v2 font; single-file ignore-value persisted via CLI in .impeccable/config.json",
+        "file": "docs/requirements/web-ui/previews/theme-account-access-v13.html"
+      }
+    ]
+  },
+  "asset_provenance": {
+    "screenshots": "Playwright Chromium screenshots with embedded origins; no generated or retouched pixels",
+    "scan": ".superpowers/v13-raster-provenance-scan.txt",
+    "rasters": 12,
+    "missing": 0
+  },
+  "documentation": "account-access-proposal.md and indices; ordinary extension, no global DESIGN.md or sidecar changes",
+  "limitations": [
+    "User visual approval is pending; only directly presented and subsequently approved views become confirmed.",
+    "The ten display modules follow the current source presentation filter, which excludes Token. Authorization and Active/Pending/Blocked classification retain the complete eleven-module model.",
+    "Google and Phantom identities, grants, API version and prototype last-check time are synthetic. The current React UI build version was verified as latest; its last-check timestamp follows capture runtime.",
+    "Current source automatic 15-second/focus refresh, real manual refresh, logout, identity/role guards and permission races are future implementation acceptance. The prototype sends no API calls and performs no logout.",
+    "Tier is presentation only. API Key alone does not make an account active; API-key-enabled pending, blocked accounts, administrator and other unshown states are not visually approved by this proposal.",
+    "GET-fixture screenshots are not full-system smoke. No task service was started; pre-existing root Vite was borrowed and preserved."
+  ],
+  "artifacts": [
+    {
+      "path": "theme-account-access-v13-before-capture.json",
+      "sha256": "531db4c4895a16ca8ed17fdc326afd3be688e90106ef3e92b261c812ca2de4b9"
+    },
+    {
+      "path": "theme-account-access-v13-before-desktop.png",
+      "sha256": "36a4a2ec69c41c8bc8a881079967ee3b83be02844b5b5c31babb38fbb58af356"
+    },
+    {
+      "path": "theme-account-access-v13-before-mobile-pending.png",
+      "sha256": "75f13e1f38dce046aeb4a717162c4fb0181fa6438894ee52761e3d3a546a0907"
+    },
+    {
+      "path": "theme-account-access-v13-before-mobile.png",
+      "sha256": "d19a23ae94b55eb6eeafe9690ac38998d2a6ff3c98f6f50676af70c85a3aeb63"
+    },
+    {
+      "path": "theme-account-access-v13-checks.json",
+      "sha256": "e59005569f6602cf6f25747c5bfb3f68363c480dd714211c321755f4516c00eb"
+    },
+    {
+      "path": "theme-account-access-v13-data.json",
+      "sha256": "7186c56c2b72377ff0deaa6e364332decd48cd9dabd79501f12154f4f724d429"
+    },
+    {
+      "path": "theme-account-access-v13-desktop-expanded.png",
+      "sha256": "b560ce02806dc64636f4def47eddbbaf1a8e3c3d0dab2e845584779d7646eccc"
+    },
+    {
+      "path": "theme-account-access-v13-desktop-pending.png",
+      "sha256": "b365be09bca45c913d4f7da641328b62f2fbe31c93c58150fb320fcfd6af0392"
+    },
+    {
+      "path": "theme-account-access-v13-desktop.png",
+      "sha256": "5aa0a219cd07d77738234fa113ec96031c95064dbd1b7515d139c1cde586d000"
+    },
+    {
+      "path": "theme-account-access-v13-mobile-error.png",
+      "sha256": "8e5e71c2c5416f3369aeb6d26b65b04771723e8c92c3b7ee6548aac8648bcd15"
+    },
+    {
+      "path": "theme-account-access-v13-mobile-pending.png",
+      "sha256": "ea4b7f9a594e68c82874b29025c7f16b54dee41ac18b06f5a0fb25f6e77d705e"
+    },
+    {
+      "path": "theme-account-access-v13-mobile-phantom.png",
+      "sha256": "f6632c7c4e98f1a04905188f812b816b44fda0b86a739c600f9f969a9afff34d"
+    },
+    {
+      "path": "theme-account-access-v13-mobile.png",
+      "sha256": "90d43307a48f179c55043ce329051c71053ba82d6447b6d3d91d64149a637b5d"
+    },
+    {
+      "path": "theme-account-access-v13-narrow.png",
+      "sha256": "8873c71c2666f3400b9e35b1d61f6b8ef524c57e9520033d6e37a4ae3b9acc98"
+    },
+    {
+      "path": "theme-account-access-v13-text-200.png",
+      "sha256": "2ea16536ff0e3df2d3ca6bd8312f54cf0c646f8740c8fba5b4f85ebcecc1d471"
+    },
+    {
+      "path": "theme-account-access-v13.html",
+      "sha256": "2fe8bb38e7da9f86562b1045a0fd57a17136d77eb0bce76bec86227f459a1b34"
+    }
+  ]
+}

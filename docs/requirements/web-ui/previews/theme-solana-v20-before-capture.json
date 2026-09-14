@@ -1,0 +1,46 @@
+{
+  "mode": "current React with intercepted synthetic GET responses",
+  "results": [
+    {
+      "kind": "solana",
+      "size": "desktop",
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440,
+      "documentHeight": 1042,
+      "overflow": false,
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/solana/projects",
+        "GET /api/v1/solana/status"
+      ],
+      "pageErrors": [],
+      "unexpected": [],
+      "writesSubmitted": false
+    },
+    {
+      "kind": "solana",
+      "size": "mobile",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 1301,
+      "overflow": false,
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/solana/projects",
+        "GET /api/v1/solana/status"
+      ],
+      "pageErrors": [],
+      "unexpected": [],
+      "writesSubmitted": false
+    }
+  ],
+  "result": "passed",
+  "notVerified": [
+    "real backend",
+    "write operations",
+    "authentication",
+    "full-stack smoke"
+  ]
+}

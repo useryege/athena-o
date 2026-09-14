@@ -1,0 +1,241 @@
+{
+  "result": "passed",
+  "evidence": "Local static member prototype with synthetic round data; no proposal or vote requests",
+  "viewports": [
+    {
+      "name": "list-desktop",
+      "width": 1440,
+      "height": 900,
+      "textScale": 1,
+      "geometry": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "documentHeight": 900,
+        "rootFont": "16px",
+        "overflowX": false,
+        "duplicateIDs": []
+      },
+      "pageErrors": [],
+      "externalRequests": []
+    },
+    {
+      "name": "detail-desktop",
+      "width": 1440,
+      "height": 900,
+      "textScale": 1,
+      "geometry": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "documentHeight": 1373,
+        "rootFont": "16px",
+        "overflowX": false,
+        "duplicateIDs": []
+      },
+      "pageErrors": [],
+      "externalRequests": []
+    },
+    {
+      "name": "list-mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390,
+        "documentHeight": 1337,
+        "rootFont": "16px",
+        "overflowX": false,
+        "duplicateIDs": []
+      },
+      "pageErrors": [],
+      "externalRequests": []
+    },
+    {
+      "name": "detail-mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390,
+        "documentHeight": 2699,
+        "rootFont": "16px",
+        "overflowX": false,
+        "duplicateIDs": []
+      },
+      "pageErrors": [],
+      "externalRequests": []
+    },
+    {
+      "name": "voting-mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390,
+        "documentHeight": 5026,
+        "rootFont": "16px",
+        "overflowX": false,
+        "duplicateIDs": []
+      },
+      "pageErrors": [],
+      "externalRequests": []
+    },
+    {
+      "name": "closed-desktop",
+      "width": 1440,
+      "height": 900,
+      "textScale": 1,
+      "geometry": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "documentHeight": 1986,
+        "rootFont": "16px",
+        "overflowX": false,
+        "duplicateIDs": []
+      },
+      "pageErrors": [],
+      "externalRequests": []
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 320,
+        "height": 844,
+        "documentWidth": 320,
+        "documentHeight": 2793,
+        "rootFont": "16px",
+        "overflowX": false,
+        "duplicateIDs": []
+      },
+      "pageErrors": [],
+      "externalRequests": []
+    },
+    {
+      "name": "zoom",
+      "width": 720,
+      "height": 900,
+      "textScale": 2,
+      "geometry": {
+        "width": 720,
+        "height": 900,
+        "documentWidth": 720,
+        "documentHeight": 3896,
+        "rootFont": "32px",
+        "overflowX": false,
+        "duplicateIDs": []
+      },
+      "pageErrors": [],
+      "externalRequests": []
+    }
+  ],
+  "behavior": {
+    "navigation": {
+      "groups": [
+        "Operations"
+      ],
+      "items": [
+        "Profit Sharing",
+        "Notifications"
+      ],
+      "current": "Profit Sharing",
+      "breadcrumb": [
+        "Operations",
+        "Profit Sharing"
+      ]
+    },
+    "mobileDrawer": {
+      "open": true,
+      "groups": [
+        "Operations"
+      ],
+      "currentVisible": true,
+      "expanded": "true",
+      "closed": true
+    },
+    "keyboardRoundOpen": true,
+    "collecting": {
+      "rows": 5,
+      "total": "100.00%",
+      "submitEnabled": true,
+      "saveEnabled": true,
+      "incompleteDisablesSubmit": true,
+      "incompleteDraftSaved": true
+    },
+    "submitConfirm": true,
+    "submittedSealed": true,
+    "reopenConfirm": true,
+    "reopenedDraft": true,
+    "voting": {
+      "proposals": 5,
+      "ownDisabled": true,
+      "authorsVisible": 0,
+      "selected": true
+    },
+    "voteConfirm": true,
+    "voteRecorded": true,
+    "closed": {
+      "winner": true,
+      "authorVisible": 1,
+      "proposalCount": 5
+    },
+    "collectingVisitor": true,
+    "votingVisitor": true,
+    "draftPrepared": true,
+    "externalRequests": []
+  },
+  "contrast": [
+    {
+      "label": "muted/panel",
+      "fg": "#9FA0A1",
+      "bg": "#0F1114",
+      "ratio": 7.218804157993069
+    },
+    {
+      "label": "text/page",
+      "fg": "#FFFFFF",
+      "bg": "#06080B",
+      "ratio": 20.051385440481855
+    },
+    {
+      "label": "accent/selected",
+      "fg": "#00FFA7",
+      "bg": "#102C24",
+      "ratio": 11.267391393146381
+    },
+    {
+      "label": "positive/panel",
+      "fg": "#55D9A1",
+      "bg": "#0F1114",
+      "ratio": 10.64840833554489
+    },
+    {
+      "label": "warning/panel",
+      "fg": "#E6BF72",
+      "bg": "#0F1114",
+      "ratio": 10.858978907199512
+    },
+    {
+      "label": "negative/panel",
+      "fg": "#F58C9B",
+      "bg": "#0F1114",
+      "ratio": 8.200163825921814
+    },
+    {
+      "label": "info/panel",
+      "fg": "#9BC6F3",
+      "bg": "#0F1114",
+      "ratio": 10.59394763930342
+    }
+  ]
+}

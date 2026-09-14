@@ -1,0 +1,44 @@
+{
+  "mode": "current React with intercepted synthetic GET responses",
+  "results": [
+    {
+      "kind": "wallets",
+      "size": "desktop",
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440,
+      "documentHeight": 900,
+      "overflow": false,
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/wallets"
+      ],
+      "pageErrors": [],
+      "unexpected": [],
+      "writesSubmitted": false
+    },
+    {
+      "kind": "wallets",
+      "size": "mobile",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 1302,
+      "overflow": false,
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/wallets"
+      ],
+      "pageErrors": [],
+      "unexpected": [],
+      "writesSubmitted": false
+    }
+  ],
+  "result": "passed",
+  "notVerified": [
+    "real backend",
+    "write operations",
+    "authentication",
+    "full-stack smoke"
+  ]
+}

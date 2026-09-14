@@ -1,0 +1,93 @@
+{
+  "version": "v16",
+  "result": "passed",
+  "capturedAt": "2026-09-14T05:26:46.514528+00:00",
+  "scope": {
+    "mode": "ui-fixtures",
+    "description": "Current React Service Status with synthetic GET response fixtures. No live service status or authentication validated.",
+    "productionUIChanged": false
+  },
+  "environment": {
+    "url": "http://localhost:4000",
+    "repository": "/home/yege/work/athena",
+    "processWorkingDirectory": "/home/yege/work/athena/ui",
+    "vitePID": 308228,
+    "supervisorPID": 307846,
+    "instance": "athena-local-runtime (legacy shared existing environment)",
+    "ownerState": ".run/athena-local-runtime/supervisor.state",
+    "logs": ".run/athena-local-runtime/",
+    "captureLogs": ".superpowers/v16-current-playwright-artifacts/",
+    "taskStartedServices": [],
+    "taskCleanup": "All task browser contexts closed. Borrowed root environment preserved.",
+    "ownerStopCommand": "cd /home/yege/work/athena && make stop",
+    "ownerStopCommandExecuted": false
+  },
+  "capture": {
+    "command": "cd ui && yarn playwright test --config ../.superpowers/v16-current.playwright.config.ts",
+    "result": "1 passed (2.5s)",
+    "screenshots": [
+      {
+        "name": "desktop",
+        "route": "/admin/service-status",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 1965
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/service-statuses",
+          "GET /api/v1/admin/notification-runtime/status",
+          "GET /api/v1/admin/trader-sync/status"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-service-status-v16-before-desktop.png",
+        "sha256": "f9f7398bd3a9622ed303b7f0418fc80d6dc0d666b43f9c921d54717e13694a11"
+      },
+      {
+        "name": "mobile",
+        "route": "/admin/service-status",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 4564
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/service-statuses",
+          "GET /api/v1/admin/notification-runtime/status",
+          "GET /api/v1/admin/trader-sync/status"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-service-status-v16-before-mobile.png",
+        "sha256": "c612095c0b885b78efab71f878aa34562c6abe705b7f9e74ecf94b022fb90d93"
+      }
+    ]
+  },
+  "sourceHashesSha256": {
+    "ui/src/app/admin/pages/service-status.tsx": "918d66eabc9c3c8d15245e64b4a23b6bdf923f7031b432f903efcd65d6d9f8d1",
+    "ui/src/app/shared/services/service-status-service.ts": "7d7439b08522cc0bbb29acc519a5ffeae84566c4dadba606e9da9b9d56456af3",
+    "ui/src/app/admin/notification-service.ts": "334c12894278d26a4961d07d8012f898102c2fb79131bc352d713acc1b653aa1",
+    "ui/src/app/admin/trader-sync-models.ts": "6b9dc183bf7b2b2c4b3cf5ff78316f6b2709f548f38027d56ad42af7643c39f0",
+    "ui/src/app/admin/trader-sync-service.ts": "c432d13dee482e52daf2761c9bcb997aeefd1c1353e314bfbea33f73317de85c",
+    "ui/src/app/admin/app.tsx": "98d44ab834f8c7b25f358e31665ae01fe0dd5856e2eb26b211e697de3a9bacea",
+    "ui/src/app/styles/admin.css": "a2b18f0fc785f9d0f4184bfc88f8176d6e5e8f7aea6a4e66e65aaa35ef3d8767"
+  },
+  "observations": [
+    "Current React stacks all three sources vertically; mobile is one long table-heavy page.",
+    "The proposal uses source tabs retaining each source status, rearranges delivery counts into a System/Account comparison, and displays mobile services/metrics as records.",
+    "All existing fields remain in the proposal, and three source timestamp meanings are preserved."
+  ]
+}

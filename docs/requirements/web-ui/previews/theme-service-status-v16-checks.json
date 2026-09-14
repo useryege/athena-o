@@ -1,0 +1,552 @@
+{
+  "version": "v16",
+  "result": "passed",
+  "scope": "Local visual proposal; does not validate real polling, authentication, backend health or production UI.",
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "zoom": 1,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-service-status-v16-services-desktop.png",
+        "theme-service-status-v16-notification-desktop.png",
+        "theme-service-status-v16-trader-desktop.png",
+        "theme-service-status-v16-stale-desktop.png"
+      ],
+      "contracts": [
+        "All 10 service rows retained",
+        "All SVG references resolve to authored icons",
+        "IDs are unique",
+        "Services keeps server Last checked",
+        "Keyboard moves between source tabs",
+        "Tab switching preserves keyboard focus",
+        "Service issue remains visible outside its panel",
+        "Recovery overrides running status",
+        "System and Account retain all five delivery states",
+        "Notification retains independent Last received",
+        "Recovery timing displayed as exact milliseconds",
+        "Sampled interface and recovery text contrast >= 4.5:1",
+        "Recovery reason, started and clock can expand",
+        "Recovery diagnostics preserved",
+        "All supplied metrics displayed",
+        "Trader keeps server As of",
+        "Metric larger than safe integer preserves exact string",
+        "Unavailable raw values remain explicit",
+        "Metric scopes are distinct",
+        "Opaque epoch and window boundaries retained",
+        "Raw summary does not turn missing values into zero",
+        "Local Inter and JetBrains Mono loaded at consumers",
+        "Stale source retains its prior values and receipt time",
+        "First failure does not display invented zero counts",
+        "A failed source does not hide other source states",
+        "Refresh has a busy state and prevents duplicate preview actions",
+        "Retry restores local sample values",
+        "Runtime failure takes priority over recovery",
+        "Failure retains recovery snapshot",
+        "Zero and large recovery milliseconds are exact",
+        "Missing recovery time is unavailable",
+        "Loading uses source-local static skeletons",
+        "Empty service read has an explicit empty state",
+        "No browser script errors",
+        "No network or live service requests"
+      ],
+      "geometry": [
+        {
+          "state": "services-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1187
+        },
+        {
+          "state": "notification-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1472
+        },
+        {
+          "state": "recovery-details",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1600
+        },
+        {
+          "state": "trader-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1379
+        },
+        {
+          "state": "stale-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1656
+        },
+        {
+          "state": "large-recovery",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1472
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": "#tab-notification .tab-name",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": "#tab-notification .source-status",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 11.515129238420938
+        },
+        {
+          "selector": "#panel-notification .source-time",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": "#panel-notification .callout p",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(33, 29, 22)",
+          "ratio": 9.632523621729302
+        },
+        {
+          "selector": "#panel-notification .recovery-grid dd",
+          "fg": "rgb(255, 225, 168)",
+          "bg": "rgb(33, 29, 22)",
+          "ratio": 13.248835713708429
+        },
+        {
+          "selector": "#panel-notification .kv-grid dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      }
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-service-status-v16-services-mobile.png",
+        "theme-service-status-v16-notification-mobile.png",
+        "theme-service-status-v16-trader-mobile.png",
+        "theme-service-status-v16-unavailable-mobile.png",
+        "theme-service-status-v16-navigation-mobile.png"
+      ],
+      "contracts": [
+        "All 10 service rows retained",
+        "All SVG references resolve to authored icons",
+        "IDs are unique",
+        "Services keeps server Last checked",
+        "Keyboard moves between source tabs",
+        "Tab switching preserves keyboard focus",
+        "Service issue remains visible outside its panel",
+        "Recovery overrides running status",
+        "System and Account retain all five delivery states",
+        "Notification retains independent Last received",
+        "Recovery timing displayed as exact milliseconds",
+        "Sampled interface and recovery text contrast >= 4.5:1",
+        "Recovery reason, started and clock can expand",
+        "Recovery diagnostics preserved",
+        "All supplied metrics displayed",
+        "Trader keeps server As of",
+        "Metric larger than safe integer preserves exact string",
+        "Unavailable raw values remain explicit",
+        "Metric scopes are distinct",
+        "Opaque epoch and window boundaries retained",
+        "Raw summary does not turn missing values into zero",
+        "Local Inter and JetBrains Mono loaded at consumers",
+        "Stale source retains its prior values and receipt time",
+        "First failure does not display invented zero counts",
+        "A failed source does not hide other source states",
+        "Refresh has a busy state and prevents duplicate preview actions",
+        "Retry restores local sample values",
+        "Runtime failure takes priority over recovery",
+        "Failure retains recovery snapshot",
+        "Zero and large recovery milliseconds are exact",
+        "Missing recovery time is unavailable",
+        "Loading uses source-local static skeletons",
+        "Empty service read has an explicit empty state",
+        "Mobile navigation retains approved 280px width",
+        "Escape closes drawer and restores focus",
+        "No browser script errors",
+        "No network or live service requests"
+      ],
+      "geometry": [
+        {
+          "state": "services-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 1297
+        },
+        {
+          "state": "notification-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 1618
+        },
+        {
+          "state": "recovery-details",
+          "viewport": 390,
+          "document": 390,
+          "height": 1804
+        },
+        {
+          "state": "trader-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 2398
+        },
+        {
+          "state": "unavailable-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 844
+        },
+        {
+          "state": "large-recovery",
+          "viewport": 390,
+          "document": 390,
+          "height": 1640
+        },
+        {
+          "state": "navigation-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 844
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": "#tab-notification .tab-name",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": "#tab-notification .source-status",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 11.515129238420938
+        },
+        {
+          "selector": "#panel-notification .source-time",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": "#panel-notification .callout p",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(33, 29, 22)",
+          "ratio": 9.632523621729302
+        },
+        {
+          "selector": "#panel-notification .recovery-grid dd",
+          "fg": "rgb(255, 225, 168)",
+          "bg": "rgb(33, 29, 22)",
+          "ratio": 13.248835713708429
+        },
+        {
+          "selector": "#panel-notification .kv-grid dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      },
+      "drawer": {
+        "width": 280,
+        "max": "calc(100% - 48px)"
+      }
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "zoom": 1,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-service-status-v16-narrow.png"
+      ],
+      "contracts": [
+        "All 10 service rows retained",
+        "All SVG references resolve to authored icons",
+        "IDs are unique",
+        "Services keeps server Last checked",
+        "Keyboard moves between source tabs",
+        "Tab switching preserves keyboard focus",
+        "Service issue remains visible outside its panel",
+        "Recovery overrides running status",
+        "System and Account retain all five delivery states",
+        "Notification retains independent Last received",
+        "Recovery timing displayed as exact milliseconds",
+        "Sampled interface and recovery text contrast >= 4.5:1",
+        "Recovery reason, started and clock can expand",
+        "Recovery diagnostics preserved",
+        "All supplied metrics displayed",
+        "Trader keeps server As of",
+        "Metric larger than safe integer preserves exact string",
+        "Unavailable raw values remain explicit",
+        "Metric scopes are distinct",
+        "Opaque epoch and window boundaries retained",
+        "Raw summary does not turn missing values into zero",
+        "Local Inter and JetBrains Mono loaded at consumers",
+        "Stale source retains its prior values and receipt time",
+        "First failure does not display invented zero counts",
+        "A failed source does not hide other source states",
+        "Refresh has a busy state and prevents duplicate preview actions",
+        "Retry restores local sample values",
+        "Runtime failure takes priority over recovery",
+        "Failure retains recovery snapshot",
+        "Zero and large recovery milliseconds are exact",
+        "Missing recovery time is unavailable",
+        "Loading uses source-local static skeletons",
+        "Empty service read has an explicit empty state",
+        "No browser script errors",
+        "No network or live service requests"
+      ],
+      "geometry": [
+        {
+          "state": "narrow",
+          "viewport": 320,
+          "document": 320,
+          "height": 1376
+        },
+        {
+          "state": "notification-narrow",
+          "viewport": 320,
+          "document": 320,
+          "height": 1741
+        },
+        {
+          "state": "recovery-details",
+          "viewport": 320,
+          "document": 320,
+          "height": 1949
+        },
+        {
+          "state": "trader-narrow",
+          "viewport": 320,
+          "document": 320,
+          "height": 2481
+        },
+        {
+          "state": "large-recovery",
+          "viewport": 320,
+          "document": 320,
+          "height": 1763
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": "#tab-notification .tab-name",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": "#tab-notification .source-status",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 11.515129238420938
+        },
+        {
+          "selector": "#panel-notification .source-time",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": "#panel-notification .callout p",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(33, 29, 22)",
+          "ratio": 9.632523621729302
+        },
+        {
+          "selector": "#panel-notification .recovery-grid dd",
+          "fg": "rgb(255, 225, 168)",
+          "bg": "rgb(33, 29, 22)",
+          "ratio": 13.248835713708429
+        },
+        {
+          "selector": "#panel-notification .kv-grid dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      }
+    },
+    {
+      "name": "zoom",
+      "width": 720,
+      "height": 900,
+      "zoom": 2,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-service-status-v16-zoom.png"
+      ],
+      "contracts": [
+        "All 10 service rows retained",
+        "All SVG references resolve to authored icons",
+        "IDs are unique",
+        "Services keeps server Last checked",
+        "Keyboard moves between source tabs",
+        "Tab switching preserves keyboard focus",
+        "Service issue remains visible outside its panel",
+        "Recovery overrides running status",
+        "System and Account retain all five delivery states",
+        "Notification retains independent Last received",
+        "Recovery timing displayed as exact milliseconds",
+        "Sampled interface and recovery text contrast >= 4.5:1",
+        "Recovery reason, started and clock can expand",
+        "Recovery diagnostics preserved",
+        "All supplied metrics displayed",
+        "Trader keeps server As of",
+        "Metric larger than safe integer preserves exact string",
+        "Unavailable raw values remain explicit",
+        "Metric scopes are distinct",
+        "Opaque epoch and window boundaries retained",
+        "Raw summary does not turn missing values into zero",
+        "Local Inter and JetBrains Mono loaded at consumers",
+        "Stale source retains its prior values and receipt time",
+        "First failure does not display invented zero counts",
+        "A failed source does not hide other source states",
+        "Refresh has a busy state and prevents duplicate preview actions",
+        "Retry restores local sample values",
+        "Runtime failure takes priority over recovery",
+        "Failure retains recovery snapshot",
+        "Zero and large recovery milliseconds are exact",
+        "Missing recovery time is unavailable",
+        "Loading uses source-local static skeletons",
+        "Empty service read has an explicit empty state",
+        "No browser script errors",
+        "No network or live service requests"
+      ],
+      "geometry": [
+        {
+          "state": "zoom",
+          "viewport": 720,
+          "document": 720,
+          "height": 2427
+        },
+        {
+          "state": "recovery-details",
+          "viewport": 720,
+          "document": 720,
+          "height": 2694
+        },
+        {
+          "state": "trader-zoom",
+          "viewport": 720,
+          "document": 720,
+          "height": 3696
+        },
+        {
+          "state": "large-recovery",
+          "viewport": 720,
+          "document": 720,
+          "height": 2473
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": "#tab-notification .tab-name",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": "#tab-notification .source-status",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 11.515129238420938
+        },
+        {
+          "selector": "#panel-notification .source-time",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": "#panel-notification .callout p",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(33, 29, 22)",
+          "ratio": 9.632523621729302
+        },
+        {
+          "selector": "#panel-notification .recovery-grid dd",
+          "fg": "rgb(255, 225, 168)",
+          "bg": "rgb(33, 29, 22)",
+          "ratio": 13.248835713708429
+        },
+        {
+          "selector": "#panel-notification .kv-grid dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      }
+    }
+  ]
+}

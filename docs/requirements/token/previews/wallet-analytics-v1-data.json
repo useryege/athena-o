@@ -1,0 +1,2249 @@
+{
+  "kind": "recorded Nansen validation samples; not live data",
+  "sample_date": "2026-09-13",
+  "default_wallet": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+  "wallets": [
+    {
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "name": "Sample B",
+      "periods": {
+        "30": {
+          "summary": {
+            "values": {
+              "realized_pnl_usd": "64430.54885516991",
+              "traded_token_count": 3
+            },
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-summary.json",
+                "sha256": "c4f1b27224ad705670e5fe5b316900b50dfea6744153386b622bf307b1e06696",
+                "request_started_at": "2026-09-13T13:23:22.033754+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "tokens": {
+            "rows": [
+              {
+                "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                "token_symbol": "PEPE",
+                "bought_usd": "1178762.37812079",
+                "sold_usd": "573682.7677887044",
+                "holding_amount": "166004034009.59995",
+                "holding_usd": "563264.3948222192",
+                "pnl_usd_realised": "53399.356282457564",
+                "pnl_usd_unrealised": "-95214.57179232404"
+              },
+              {
+                "token_address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                "token_symbol": "WETH",
+                "bought_usd": "0.0",
+                "sold_usd": "602005.1357167771",
+                "holding_amount": "0.0",
+                "holding_usd": "0.0",
+                "pnl_usd_realised": "8216.039858283058",
+                "pnl_usd_unrealised": "0.0"
+              },
+              {
+                "token_address": "0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce",
+                "token_symbol": "SHIB",
+                "bought_usd": "83908.15766643375",
+                "sold_usd": "86723.31038086304",
+                "holding_amount": "0.00000181579280252",
+                "holding_usd": "0.000000000009450538427733932",
+                "pnl_usd_realised": "2815.152714429288",
+                "pnl_usd_unrealised": "0.0000000000008181834517910908"
+              }
+            ],
+            "complete": true,
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-pnl-true.json",
+                "sha256": "d0467c28dba2bfed34d2bdde1f57634bfd2450a17da53dac261fc63d24c0606e",
+                "request_started_at": "2026-09-13T13:23:19.755354+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              },
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-pnl-false.json",
+                "sha256": "1be09737eadbad32fa1c1d4ec27384f52674d26ee34f7e4119508eb1b6b6c2a0",
+                "request_started_at": "2026-09-13T13:23:21.321281+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "transactions": {
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-31T15:05:59",
+                    "transaction_hash": "0x83e6c89e048a3bf7b5ccb14ef6bd5fb0f1cfed0d0ad2428c9070ef886ad660ed",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SUPRA",
+                        "token_amount": "100.0",
+                        "token_address": "0xdc7404100a092c898e93708ef73f3322a7acc213",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:17:23",
+                    "transaction_hash": "0xc3aa921eb0a0cf365fec51b5f5b795097deb62e35fb9e23862cebcd466b246b4",
+                    "volume_usd": "18654.83358212071",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-18695.369808714993",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "4697756034.516492",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:14:47",
+                    "transaction_hash": "0x34dabde8490de7c8cb740261ff9690d9aba186213b22cb948f5d21a80940301c",
+                    "volume_usd": "31956.178914744665",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-32025.618446535347",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "8048108154.188779",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:05:47",
+                    "transaction_hash": "0x619cbcf4bfd613571c83df61d4bddfb18842d7c9a64a7d7539b5bbad1206b053",
+                    "volume_usd": "226.25353824348988",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-226.74517836740858",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.08933698700218218",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:05:11",
+                    "transaction_hash": "0xdfe97366186407a3df533ca38150a292b98cd2ad481d66d94f878d16c24998cd",
+                    "volume_usd": "7263.229031035693",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-7279.011744749656",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "1831572400.9807167",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:03:35",
+                    "transaction_hash": "0x189af586c3f4c065d95d259a14c35636e499101885019557ed64937a56be6329",
+                    "volume_usd": "11973.981005772635",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-12000.0",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "3015075376.884422",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:02:59",
+                    "transaction_hash": "0x21f640e901dcd896d1bbf4191ddcc879a70db2b3c2cbd9eaad2d9379a353d7ee",
+                    "volume_usd": "57884.770858696174",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-58010.552210620706",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "14619792406.430883",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:01:47",
+                    "transaction_hash": "0xa3faf60b596507ad5460f7b2939e783ae63375f85586ac4836a472877ffb2b8c",
+                    "volume_usd": "2368.7968940330557",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-2373.944197397069",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "596884855.9392626",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:01:23",
+                    "transaction_hash": "0x53ca0088e21d29c2b4c64c6380425920a77929c16636c94ed8513c9bf345d0e8",
+                    "volume_usd": "90703.70881503876",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-90900.80444053885",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "22839398100.6379",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:59:47",
+                    "transaction_hash": "0x502bad734be97fe46b35814fad39a4dbcc9e651eeb58c93a4898de0669a911bf",
+                    "volume_usd": "90706.10491719845",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-90903.20574933519",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "22889816993.654716",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:58:59",
+                    "transaction_hash": "0x6380b4bd1a4cca64e3c3bfa23d63520651fdca79a541ae866c9c398ffc5e77b6",
+                    "volume_usd": "53259.71232782167",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-53375.44360774775",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "13464276034.397987",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:57:35",
+                    "transaction_hash": "0x130c6bd1bae6e866bebbf3fd3913458723b9c9f330033c4fdc26485ee7d50e7f",
+                    "volume_usd": "60594.88856730814",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-60726.55889942913",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "15263001901.044098",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:56:35",
+                    "transaction_hash": "0xf7f151b837afd9ba1dc15cedd33dc2293f90fc3571188661abd244bbb1457f96",
+                    "volume_usd": "5212.7429368047",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-5224.070024121446",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "1312696731.062646",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:55:11",
+                    "transaction_hash": "0x355e7ce2c875da511b403a172fbefa51036968b8290315daf30d5bf575329f53",
+                    "volume_usd": "39913.27001924212",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-40000.0",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "10055260018.076946",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:51:35",
+                    "transaction_hash": "0xb6983e102781cfd1be66234c1378274780ed6fc6da17ad7b9a5e86a61cf67fe6",
+                    "volume_usd": "57466.442520413606",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-57591.31486115683",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "14474706168.79077",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:39:11",
+                    "transaction_hash": "0x89d8d34a71d2ee09e8a38dd74ce8c5865e51c9a6759c466bb793c1dfad22ec46",
+                    "volume_usd": "75245.48723661719",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-75408.9927488692",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "18976298061.794025",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:38:35",
+                    "transaction_hash": "0x40b9792491201b8794ea0d0cc0c4199ffbf43b1dc25d756976b4a8ab2bc15f0d",
+                    "volume_usd": "9936.544520100098",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-9958.13624422124",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "2502670838.2722535",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:37:11",
+                    "transaction_hash": "0x82f18cfcd14cba76a25131df98ce1bec8c6ffb6f91e063207a35649542908dbc",
+                    "volume_usd": "8587.555177382335",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-8606.215600217462",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "2162371206.266285",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:36:47",
+                    "transaction_hash": "0xedec9bc61ac530eab6f3e6306029e5620c635e41e775cb4000310d4df0f47a93",
+                    "volume_usd": "7838.592119818164",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-7855.625075108295",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "1973775144.4995716",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:34:47",
+                    "transaction_hash": "0xaf0ed7eb3bb19a256169d43d34f448150895aa17d80fe63b64dcb7236d2a77b4",
+                    "volume_usd": "8327.567850651943",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-8345.663331155014",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "2096986342.4028342",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  }
+                ],
+                "is_last_page": false,
+                "source": {
+                  "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-transactions.json",
+                  "sha256": "361cccce70f08ebb0b319658a1a35db9c1912fd5c2f043cb5e17547ae329c3e6",
+                  "request_started_at": "2026-09-13T13:23:24.004727+00:00",
+                  "date": {
+                    "from": "2026-08-14T13:03:28Z",
+                    "to": "2026-09-13T13:03:28Z"
+                  }
+                }
+              }
+            ],
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-transactions.json",
+                "sha256": "361cccce70f08ebb0b319658a1a35db9c1912fd5c2f043cb5e17547ae329c3e6",
+                "request_started_at": "2026-09-13T13:23:24.004727+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          }
+        },
+        "7": {
+          "summary": {
+            "values": {
+              "realized_pnl_usd": "0.0",
+              "traded_token_count": 0
+            },
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-summary-7d.json",
+                "sha256": "6ce7c5c9ef59837cb1ee9074b6d118dec8631b41d4cff5ddd7add441c16171af",
+                "request_started_at": "2026-09-13T13:24:53.724992+00:00",
+                "date": {
+                  "from": "2026-09-06T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "tokens": null,
+          "transactions": null
+        },
+        "90": {
+          "summary": {
+            "values": {
+              "realized_pnl_usd": "-164453.51478110344",
+              "traded_token_count": 3
+            },
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-summary-90d.json",
+                "sha256": "027ddda8e8899b804ea681ab507645a096e6d38ec82050f552ce5cbf8c8b267c",
+                "request_started_at": "2026-09-13T13:24:57.186210+00:00",
+                "date": {
+                  "from": "2026-06-15T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "tokens": {
+            "rows": [
+              {
+                "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                "token_symbol": "PEPE",
+                "bought_usd": "1747016.37401855",
+                "sold_usd": "1157409.0770281386",
+                "holding_amount": "166004034009.59995",
+                "holding_usd": "562664.1507378542",
+                "pnl_usd_realised": "68871.66962413142",
+                "pnl_usd_unrealised": "-95814.815876689"
+              },
+              {
+                "token_address": "0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce",
+                "token_symbol": "SHIB",
+                "bought_usd": "123906.77829450491",
+                "sold_usd": "127102.48347536047",
+                "holding_amount": "0.00000181579280252",
+                "holding_usd": "0.000000000009450538427733932",
+                "pnl_usd_realised": "3195.7051808555548",
+                "pnl_usd_unrealised": "0.0000000000008181834517910908"
+              },
+              {
+                "token_address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                "token_symbol": "WETH",
+                "bought_usd": "1734624.4633112652",
+                "sold_usd": "2318914.0701668803",
+                "holding_amount": "0.0",
+                "holding_usd": "0.0",
+                "pnl_usd_realised": "-236520.88958609043",
+                "pnl_usd_unrealised": "0.0"
+              }
+            ],
+            "complete": false,
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-pnl-90d.json",
+                "sha256": "eb973bf73999f3eb25671abe493e5427b023fd1151ca1bd95ebfb3830ba10a8b",
+                "request_started_at": "2026-09-13T13:24:58.404271+00:00",
+                "date": {
+                  "from": "2026-06-15T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "transactions": null
+        }
+      }
+    },
+    {
+      "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+      "name": "Sample A",
+      "periods": {
+        "30": {
+          "summary": {
+            "values": {
+              "realized_pnl_usd": "0.0",
+              "traded_token_count": 10
+            },
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-integration-sample-130328/pnl-summary.json",
+                "sha256": "984c5fc6c267b4204d2184832540d483ba43db2c5c8326ee4293fbd8593a8834",
+                "request_started_at": "2026-09-13T13:03:29.361218+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "tokens": {
+            "rows": [
+              {
+                "token_address": "0x712f3378cd1a0476b53f0e29b1a9586e00d78683",
+                "token_symbol": "CATE",
+                "bought_usd": "540.1799619831451",
+                "sold_usd": "-0.0",
+                "holding_amount": "30000000.0",
+                "holding_usd": "16634.26260190761",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "16094.082639924465"
+              },
+              {
+                "token_address": "0xe172e9b6cfbeeb5593bdce3f077356fdb33af904",
+                "token_symbol": "FOLD",
+                "bought_usd": "0.0",
+                "sold_usd": "-0.0",
+                "holding_amount": "240000.0",
+                "holding_usd": "11654.746764549673",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "11654.746764549673"
+              },
+              {
+                "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                "token_symbol": "ETH",
+                "bought_usd": "190.36024231971697",
+                "sold_usd": "-0.0",
+                "holding_amount": "6.712345973092495",
+                "holding_usd": "16625.768922597203",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "1792.4941800697595"
+              },
+              {
+                "token_address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                "token_symbol": "WETH",
+                "bought_usd": "0.000024856850000000006",
+                "sold_usd": "-0.0",
+                "holding_amount": "1.4618981740190888",
+                "holding_usd": "3621.2825858444253",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "224.50905245575473"
+              },
+              {
+                "token_address": "0x63696fc66795b51d02c1590b536484a41fbddf9a",
+                "token_symbol": "WELL",
+                "bought_usd": "0.07769118569192635",
+                "sold_usd": "-0.0",
+                "holding_amount": "7450.70286824714",
+                "holding_usd": "0.09282072774916317",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "0.015129542057236826"
+              },
+              {
+                "token_address": "0xdfa208bb0b811cfbb5fa3ea98ec37aa86180e668",
+                "token_symbol": "W🍖",
+                "bought_usd": "0.07226905667089309",
+                "sold_usd": "-0.0",
+                "holding_amount": "10.0",
+                "holding_usd": "0.07482102050196479",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "0.0025519638310717106"
+              },
+              {
+                "token_address": "0x3845badade8e6dff049820680d1f14bd3903a5d0",
+                "token_symbol": "SAND",
+                "bought_usd": "0.010000000157717763",
+                "sold_usd": "-0.0",
+                "holding_amount": "0.25007549",
+                "holding_usd": "0.008973622931704109",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "-0.0010263772260136552"
+              },
+              {
+                "token_address": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+                "token_symbol": "STETH",
+                "bought_usd": "0.0000000000000024414807402474",
+                "sold_usd": "-0.0",
+                "holding_amount": "0.000010179828756122",
+                "holding_usd": "0.025192772997798388",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "-0.016913976286615583"
+              },
+              {
+                "token_address": "0x7fd4d7737597e7b4ee22acbf8d94362343ae0a79",
+                "token_symbol": "WMC",
+                "bought_usd": "2.30760272983045",
+                "sold_usd": "-0.0",
+                "holding_amount": "3.68",
+                "holding_usd": "9.066092902953509",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "-18.361424641152343"
+              },
+              {
+                "token_address": "0x777777780838c00038ecd48f63f3c37669322bc8",
+                "token_symbol": "ETHCAT",
+                "bought_usd": "121.96789686549216",
+                "sold_usd": "-0.0",
+                "holding_amount": "344281.510705851",
+                "holding_usd": "83.60043086249816",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "-38.36746600299401"
+              }
+            ],
+            "complete": true,
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-integration-sample-130328/pnl.json",
+                "sha256": "4ec10723b3ce12b2180420c6a4b8c0eef846a16dcf49a06b3087e8e7a5afb3a0",
+                "request_started_at": "2026-09-13T13:03:30.095748+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              },
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-integration-sample-130328/pnl-show-realized-false.json",
+                "sha256": "19dffe50b7f4ee01bfb7673c75e5767ab0b7b1a8273bed8505bd0aa525a486ad",
+                "request_started_at": "2026-09-13T13:04:25.747908+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "transactions": {
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T08:50:35",
+                    "transaction_hash": "0xb6b79ae93ccd350787da71427605c58b8e57a709de3b87c4488396a512a112a8",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T07:54:47",
+                    "transaction_hash": "0x2489ee592d29826e6ec4f75857543eb861420d2190b374dcf788ef60fa9eb11e",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T02:05:59",
+                    "transaction_hash": "0xcb803aa0220c7a87054aef0fdddbd6c1e0931f19e008477a7ab204753af3bc8d",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "🌱 BOT",
+                        "token_amount": "1289261.7048681723",
+                        "token_address": "0x6af9e8b574ff773b9e2f87690e477add5c9d0991",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T20:31:59",
+                    "transaction_hash": "0x6fb7ecc59484bb9ff748461c4f298f9e24d2e7f0d61d4e82c8f9097c8700354e",
+                    "volume_usd": "0.009759458670677021",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000003944975481977",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T15:38:35",
+                    "transaction_hash": "0x0bdff62df6a5c82bfb22b1430c9cd04d922289d74253c5b65c5e74023142c536",
+                    "volume_usd": "0.2473895900054144",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.0001",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T15:29:47",
+                    "transaction_hash": "0xa8586a060bc258089808fb0f5062f674795be0fb4556f4f506aec1b3a510acb8",
+                    "volume_usd": "0.2473895900054144",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.0001",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T15:35:59",
+                    "transaction_hash": "0xd85b88efd929ef59acfd8c03d4418d0dd854ee6b120f0b4499c59aec01eacad0",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "CHA-SAN",
+                        "token_amount": "12620700000.0",
+                        "token_address": "0xafba15b33e986f533090ca9494d69e9f0e799799",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T10:54:11",
+                    "transaction_hash": "0xbf854b8299ae4b3f755ca347f469bc8db743381d677f39e858d394ed66b94d66",
+                    "volume_usd": "0.000024938800000000003",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WETH",
+                        "token_amount": "0.00000001",
+                        "token_address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T07:57:11",
+                    "transaction_hash": "0x7d2c9b4576dc487b5a7b58a0ca083239b90011535d83dae9158c5521ddf37cc9",
+                    "volume_usd": "0.0009979883744675943",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000000400107228737",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-06T12:46:47",
+                    "transaction_hash": "0x6a2f9a508d110bd2d2c7b1dfdfbad28ea99ec8ca11d34cbae1f82ad19b9c2ff5",
+                    "volume_usd": "0.07226905667089309",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "W🍖",
+                        "token_amount": "10.0",
+                        "token_address": "0xdfa208bb0b811cfbb5fa3ea98ec37aa86180e668",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-06T12:46:23",
+                    "transaction_hash": "0xa7d1599827d89e6556c7354faea3bf8c4c66f42c996dfb3816bd4aa553ff292c",
+                    "volume_usd": "2.30760272983045",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WMC",
+                        "token_amount": "1.0",
+                        "token_address": "0x7fd4d7737597e7b4ee22acbf8d94362343ae0a79",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-05T21:40:35",
+                    "transaction_hash": "0x17a4ef8c79f69df16626ea43f5d7710a714ee9b882d608819704fb4178f6110b",
+                    "volume_usd": "0.009895867331882796",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SAND",
+                        "token_amount": "0.25007549",
+                        "token_address": "0x3845badade8e6dff049820680d1f14bd3903a5d0",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-02T09:23:59",
+                    "transaction_hash": "0x57b7db530069df7cc29ea116de89c3a1c0794c795e5812d9bc8cab366bd97217",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-01T19:25:47",
+                    "transaction_hash": "0x83e84fbbc97feb90fd52ceca9f8a054a37198307b0f144bebce491f57d1f8e06",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-01T15:38:59",
+                    "transaction_hash": "0xa71c96d61902046b9b854657fcc9f5018a731a2ec78fa367db802e1f65b00380",
+                    "volume_usd": "0.09981742384351311",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "USDT",
+                        "token_amount": "0.1",
+                        "token_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-01T11:04:47",
+                    "transaction_hash": "0x3eee526656db0494b3934a82d6dbe2a134e4ea7be7250528637af0ea11181f33",
+                    "volume_usd": "171.5027803092994",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.06997199661012063",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-31T23:48:47",
+                    "transaction_hash": "0x1982d576004a9ed419ffc4639f1133dc956ec856f9e9b2a11d59a664d67d2699",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-31T17:41:11",
+                    "transaction_hash": "0x0bbad83b805464ee1fe830f2825754b0bc2696bb52f00b41bb40ca7b056b7297",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-30T19:14:11",
+                    "transaction_hash": "0x989b37eb89c045efc34b8c77ea1f54eb7de2eb98a913ff630aef96b6e7cfa4b2",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SHRUB",
+                        "token_amount": "4000000000.0",
+                        "token_address": "0xd5aaa4ae36a51347a056bbba2744b566f16e6f9c",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-30T11:36:23",
+                    "transaction_hash": "0xf27d57ae947ac12c2bc86a782b042c887b39e27a9d77e6e310a22211322093b1",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SUPRA",
+                        "token_amount": "10.0",
+                        "token_address": "0xdc7404100a092c898e93708ef73f3322a7acc213",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  }
+                ],
+                "is_last_page": false,
+                "source": {
+                  "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-integration-sample-130328/transactions.json",
+                  "sha256": "7472ec3efb0f7aec67b4af5c1b831af917c14716240615af88b06bf3d14350ed",
+                  "request_started_at": "2026-09-13T13:03:33.430948+00:00",
+                  "date": {
+                    "from": "2026-08-14T13:03:28Z",
+                    "to": "2026-09-13T13:03:28Z"
+                  }
+                }
+              },
+              {
+                "rows": [
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-30T08:50:11",
+                    "transaction_hash": "0x69a15ebf826f9cbab7421850756dfc6452d6e47cc6d44249baaebef3336b95db",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-30T02:22:23",
+                    "transaction_hash": "0x9c18bc7fc0ded0c6b75d848a306584b14801db2ff340170024d82785201186e9",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SWABY",
+                        "token_amount": "60000000.0",
+                        "token_address": "0x4508850185d9dec2b29a8f066af730bb2050d85d",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-26T09:39:11",
+                    "transaction_hash": "0xaa1d3aacf92edeccba9ada1af72a5f23da27f572572d6f2282c61276afa60789",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "AWF",
+                        "token_amount": "980.0",
+                        "token_address": "0x12a77658112cf42914cb614d13653ed5852da1e5",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-26T05:37:23",
+                    "transaction_hash": "0xb46b005f4587765476fa2c4092ea47d617dab1c6fe2447ca25a41d2b2b951d9e",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "DOGDOIN",
+                        "token_amount": "209514.37377194196",
+                        "token_address": "0x6a88e16566eddab7e3756c82d80096129a8e8276",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-25T19:34:47",
+                    "transaction_hash": "0x9e614e2ccc3d8e9829261eb53b0a99e32f19390041889f65c9e7cb9d1d41fab8",
+                    "volume_usd": "0.1649486714956595",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.0000666",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-25T06:32:23",
+                    "transaction_hash": "0x2a6b0fd28b548a4843a2c7ae0ed8e9c6fe263d5498f8dcfae8f7c380429437ba",
+                    "volume_usd": "1.0137683048594863",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000409321084501238",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-24T16:48:11",
+                    "transaction_hash": "0x16fce9bf941b09771992bc8f566ac034fe621afb0a7320d052e9de53f33d4a27",
+                    "volume_usd": null,
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "VITALIK",
+                        "token_amount": "-107705.11558637",
+                        "token_address": "0x6390ee51738652b4f22c20f0fd02275cbd5ff685",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": []
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-24T16:21:23",
+                    "transaction_hash": "0x31cef54f91370935f303aa66a8e3cd6081fcd6e905811a128bfbb0853e252930",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETHDOG",
+                        "token_amount": "30000000.0",
+                        "token_address": "0x0b0564726fd4d02eea762ffa28ec975ff71a14fa",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-24T07:53:11",
+                    "transaction_hash": "0xff3d62e0f231a98db040a34b85f23752c0b66fdb4b815bdfb65fcd28e81abc1b",
+                    "volume_usd": "1.010500805072284",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000409321084501238",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-24T07:52:35",
+                    "transaction_hash": "0x16c744b5839afe4392cba2259e465529c5b2aa81850327c8e1cba6618a8d33cc",
+                    "volume_usd": "1.010500805072284",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000409321084501238",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-23T23:29:11",
+                    "transaction_hash": "0x4a244aa9a826fcb68e6b467226788f3766f9d3bcb073df4cc3ada52a90e955c8",
+                    "volume_usd": "0.009863512048160075",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WEBCAT",
+                        "token_amount": "69420.0",
+                        "token_address": "0x7c5b840084e403b1c2918396bfff40000ae82f0c",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-23T23:22:35",
+                    "transaction_hash": "0x9c7dbaa54fcb40bdba0d2080ef90f65ae8e9dcda09ca90cfe8e1d6736ec959d7",
+                    "volume_usd": "0.9863512048160097",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WEBCAT",
+                        "token_amount": "6942000.000000016",
+                        "token_address": "0x7c5b840084e403b1c2918396bfff40000ae82f0c",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-23T20:03:47",
+                    "transaction_hash": "0x970dc061f31f568f3fbe256761e71512b1c4f5d075b7f7d1c23086f278a03247",
+                    "volume_usd": "0.9937910864121913",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000409321084501238",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-23T11:03:47",
+                    "transaction_hash": "0x9c0807a414cef03654ed8fb62234577db919dd25e0378a85abb675db1c07136e",
+                    "volume_usd": "77.25892312196352",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETHCAT",
+                        "token_amount": "126588.187709472",
+                        "token_address": "0x777777780838c00038ecd48f63f3c37669322bc8",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-23T07:53:11",
+                    "transaction_hash": "0x3c1817548e7c0d2350bf2c7bb37552f7037bf7c148b59f66c21cc98cc22198e2",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ECAT",
+                        "token_amount": "100000000.0",
+                        "token_address": "0x6f97a626fd3a28768c7d7a4cd170a1214c539caa",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-22T18:24:59",
+                    "transaction_hash": "0xd8e1a3814618779e1a053f0994e6c537294db79913ab801cc7f245b3eb2c9f39",
+                    "volume_usd": "78.93644199975645",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETHCAT",
+                        "token_amount": "217693.322996379",
+                        "token_address": "0x777777780838c00038ecd48f63f3c37669322bc8",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-22T16:49:23",
+                    "transaction_hash": "0xa835cabfb16e141bae7e2cac3f157b4c17ade53f33cb1c5609efdcde2a7d3a10",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ECAT",
+                        "token_amount": "900000000.0",
+                        "token_address": "0x6f97a626fd3a28768c7d7a4cd170a1214c539caa",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-22T03:08:23",
+                    "transaction_hash": "0x732fbfe549bfafa7f57b399cc9670a1face3a5394afb0622534ad965b444eeb8",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "CATE",
+                        "token_amount": "30000000.0",
+                        "token_address": "0x712f3378cd1a0476b53f0e29b1a9586e00d78683",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-22T02:37:47",
+                    "transaction_hash": "0x939d0846a407d6ff92d298e36e816803e4ec62b0385aaec52ce15d052054e490",
+                    "volume_usd": "0.11315628348668631",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WELL",
+                        "token_amount": "7450.70286824714",
+                        "token_address": "0x63696fc66795b51d02c1590b536484a41fbddf9a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-21T21:54:23",
+                    "transaction_hash": "0xb9aa8ef42c18923543e94f11c30b5c98f956929d78e271c5fb5d30a0510a7ea5",
+                    "volume_usd": "0.9067073284797114",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000379393620112634",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  }
+                ],
+                "is_last_page": false,
+                "source": {
+                  "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-page2.json",
+                  "sha256": "f652a0f0fb6b5e08378fce1a00e389f69ef0a528c3ae6fa59bebbef50c941de6",
+                  "request_started_at": "2026-09-13T13:21:35.677093+00:00",
+                  "date": {
+                    "from": "2026-08-14T13:03:28Z",
+                    "to": "2026-09-13T13:03:28Z"
+                  }
+                }
+              }
+            ],
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-integration-sample-130328/transactions.json",
+                "sha256": "7472ec3efb0f7aec67b4af5c1b831af917c14716240615af88b06bf3d14350ed",
+                "request_started_at": "2026-09-13T13:03:33.430948+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              },
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-page2.json",
+                "sha256": "f652a0f0fb6b5e08378fce1a00e389f69ef0a528c3ae6fa59bebbef50c941de6",
+                "request_started_at": "2026-09-13T13:21:35.677093+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "filtered_transactions": {
+            "0x712f3378cd1a0476b53f0e29b1a9586e00d78683": {
+              "pages": [
+                {
+                  "rows": [
+                    {
+                      "chain": "ethereum",
+                      "block_timestamp": "2026-08-22T03:08:23",
+                      "transaction_hash": "0x732fbfe549bfafa7f57b399cc9670a1face3a5394afb0622534ad965b444eeb8",
+                      "volume_usd": null,
+                      "tokens_sent": [],
+                      "tokens_received": [
+                        {
+                          "token_symbol": "CATE",
+                          "token_amount": "30000000.0",
+                          "token_address": "0x712f3378cd1a0476b53f0e29b1a9586e00d78683",
+                          "chain": "ethereum",
+                          "price_usd": null,
+                          "value_usd": null
+                        }
+                      ]
+                    }
+                  ],
+                  "is_last_page": true,
+                  "source": {
+                    "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-cate-filter.json",
+                    "sha256": "d27a0bb75d1641960a7331d2ec8257b3c5d58a42a9d73815f4c10d1556060f1f",
+                    "request_started_at": "2026-09-13T13:21:41.676837+00:00",
+                    "date": {
+                      "from": "2026-08-14T13:03:28Z",
+                      "to": "2026-09-13T13:03:28Z"
+                    }
+                  }
+                }
+              ],
+              "sources": [
+                {
+                  "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-cate-filter.json",
+                  "sha256": "d27a0bb75d1641960a7331d2ec8257b3c5d58a42a9d73815f4c10d1556060f1f",
+                  "request_started_at": "2026-09-13T13:21:41.676837+00:00",
+                  "date": {
+                    "from": "2026-08-14T13:03:28Z",
+                    "to": "2026-09-13T13:03:28Z"
+                  }
+                }
+              ]
+            },
+            "0xdac17f958d2ee523a2206206994597c13d831ec7": {
+              "pages": [
+                {
+                  "rows": [
+                    {
+                      "chain": "ethereum",
+                      "block_timestamp": "2026-09-01T15:38:59",
+                      "transaction_hash": "0xa71c96d61902046b9b854657fcc9f5018a731a2ec78fa367db802e1f65b00380",
+                      "volume_usd": "0.09981742384351311",
+                      "tokens_sent": [],
+                      "tokens_received": [
+                        {
+                          "token_symbol": "USDT",
+                          "token_amount": "0.1",
+                          "token_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                          "chain": "ethereum",
+                          "price_usd": null,
+                          "value_usd": null
+                        }
+                      ]
+                    }
+                  ],
+                  "is_last_page": true,
+                  "source": {
+                    "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-usdt-filter.json",
+                    "sha256": "5bdaec6df73ddd11f3e40a10e396ce35fa7b9db05eece6bc4652542ee7447656",
+                    "request_started_at": "2026-09-13T13:21:39.963086+00:00",
+                    "date": {
+                      "from": "2026-08-14T13:03:28Z",
+                      "to": "2026-09-13T13:03:28Z"
+                    }
+                  }
+                }
+              ],
+              "sources": [
+                {
+                  "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-usdt-filter.json",
+                  "sha256": "5bdaec6df73ddd11f3e40a10e396ce35fa7b9db05eece6bc4652542ee7447656",
+                  "request_started_at": "2026-09-13T13:21:39.963086+00:00",
+                  "date": {
+                    "from": "2026-08-14T13:03:28Z",
+                    "to": "2026-09-13T13:03:28Z"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "7": {
+          "summary": null,
+          "tokens": null,
+          "transactions": {
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T08:50:35",
+                    "transaction_hash": "0xb6b79ae93ccd350787da71427605c58b8e57a709de3b87c4488396a512a112a8",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T07:54:47",
+                    "transaction_hash": "0x2489ee592d29826e6ec4f75857543eb861420d2190b374dcf788ef60fa9eb11e",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T02:05:59",
+                    "transaction_hash": "0xcb803aa0220c7a87054aef0fdddbd6c1e0931f19e008477a7ab204753af3bc8d",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "🌱 BOT",
+                        "token_amount": "1289261.7048681723",
+                        "token_address": "0x6af9e8b574ff773b9e2f87690e477add5c9d0991",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T20:31:59",
+                    "transaction_hash": "0x6fb7ecc59484bb9ff748461c4f298f9e24d2e7f0d61d4e82c8f9097c8700354e",
+                    "volume_usd": "0.009759458670677021",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000003944975481977",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T15:38:35",
+                    "transaction_hash": "0x0bdff62df6a5c82bfb22b1430c9cd04d922289d74253c5b65c5e74023142c536",
+                    "volume_usd": "0.2473895900054144",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.0001",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T15:29:47",
+                    "transaction_hash": "0xa8586a060bc258089808fb0f5062f674795be0fb4556f4f506aec1b3a510acb8",
+                    "volume_usd": "0.2473895900054144",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.0001",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T15:35:59",
+                    "transaction_hash": "0xd85b88efd929ef59acfd8c03d4418d0dd854ee6b120f0b4499c59aec01eacad0",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "CHA-SAN",
+                        "token_amount": "12620700000.0",
+                        "token_address": "0xafba15b33e986f533090ca9494d69e9f0e799799",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T10:54:11",
+                    "transaction_hash": "0xbf854b8299ae4b3f755ca347f469bc8db743381d677f39e858d394ed66b94d66",
+                    "volume_usd": "0.000024938800000000003",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WETH",
+                        "token_amount": "0.00000001",
+                        "token_address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T07:57:11",
+                    "transaction_hash": "0x7d2c9b4576dc487b5a7b58a0ca083239b90011535d83dae9158c5521ddf37cc9",
+                    "volume_usd": "0.0009979883744675943",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000000400107228737",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  }
+                ],
+                "is_last_page": true,
+                "source": {
+                  "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-7d.json",
+                  "sha256": "e5c6929b015dbf51d3d8eab95e71239f77d2dc518b357ad13def7dbcb81881ee",
+                  "request_started_at": "2026-09-13T13:24:55.444737+00:00",
+                  "date": {
+                    "from": "2026-09-06T13:03:28Z",
+                    "to": "2026-09-13T13:03:28Z"
+                  }
+                }
+              }
+            ],
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-7d.json",
+                "sha256": "e5c6929b015dbf51d3d8eab95e71239f77d2dc518b357ad13def7dbcb81881ee",
+                "request_started_at": "2026-09-13T13:24:55.444737+00:00",
+                "date": {
+                  "from": "2026-09-06T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          }
+        },
+        "90": {
+          "summary": null,
+          "tokens": null,
+          "transactions": {
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T08:50:35",
+                    "transaction_hash": "0xb6b79ae93ccd350787da71427605c58b8e57a709de3b87c4488396a512a112a8",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T07:54:47",
+                    "transaction_hash": "0x2489ee592d29826e6ec4f75857543eb861420d2190b374dcf788ef60fa9eb11e",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T02:05:59",
+                    "transaction_hash": "0xcb803aa0220c7a87054aef0fdddbd6c1e0931f19e008477a7ab204753af3bc8d",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "🌱 BOT",
+                        "token_amount": "1289261.7048681723",
+                        "token_address": "0x6af9e8b574ff773b9e2f87690e477add5c9d0991",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T20:31:59",
+                    "transaction_hash": "0x6fb7ecc59484bb9ff748461c4f298f9e24d2e7f0d61d4e82c8f9097c8700354e",
+                    "volume_usd": "0.009759458670677021",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000003944975481977",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T15:38:35",
+                    "transaction_hash": "0x0bdff62df6a5c82bfb22b1430c9cd04d922289d74253c5b65c5e74023142c536",
+                    "volume_usd": "0.2473895900054144",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.0001",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T15:29:47",
+                    "transaction_hash": "0xa8586a060bc258089808fb0f5062f674795be0fb4556f4f506aec1b3a510acb8",
+                    "volume_usd": "0.2473895900054144",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.0001",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T15:35:59",
+                    "transaction_hash": "0xd85b88efd929ef59acfd8c03d4418d0dd854ee6b120f0b4499c59aec01eacad0",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "CHA-SAN",
+                        "token_amount": "12620700000.0",
+                        "token_address": "0xafba15b33e986f533090ca9494d69e9f0e799799",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T10:54:11",
+                    "transaction_hash": "0xbf854b8299ae4b3f755ca347f469bc8db743381d677f39e858d394ed66b94d66",
+                    "volume_usd": "0.000024938800000000003",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WETH",
+                        "token_amount": "0.00000001",
+                        "token_address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T07:57:11",
+                    "transaction_hash": "0x7d2c9b4576dc487b5a7b58a0ca083239b90011535d83dae9158c5521ddf37cc9",
+                    "volume_usd": "0.0009979883744675943",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000000400107228737",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-06T12:46:47",
+                    "transaction_hash": "0x6a2f9a508d110bd2d2c7b1dfdfbad28ea99ec8ca11d34cbae1f82ad19b9c2ff5",
+                    "volume_usd": "0.07226905667089309",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "W🍖",
+                        "token_amount": "10.0",
+                        "token_address": "0xdfa208bb0b811cfbb5fa3ea98ec37aa86180e668",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-06T12:46:23",
+                    "transaction_hash": "0xa7d1599827d89e6556c7354faea3bf8c4c66f42c996dfb3816bd4aa553ff292c",
+                    "volume_usd": "2.30760272983045",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WMC",
+                        "token_amount": "1.0",
+                        "token_address": "0x7fd4d7737597e7b4ee22acbf8d94362343ae0a79",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-05T21:40:35",
+                    "transaction_hash": "0x17a4ef8c79f69df16626ea43f5d7710a714ee9b882d608819704fb4178f6110b",
+                    "volume_usd": "0.009895867331882796",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SAND",
+                        "token_amount": "0.25007549",
+                        "token_address": "0x3845badade8e6dff049820680d1f14bd3903a5d0",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-02T09:23:59",
+                    "transaction_hash": "0x57b7db530069df7cc29ea116de89c3a1c0794c795e5812d9bc8cab366bd97217",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-01T19:25:47",
+                    "transaction_hash": "0x83e84fbbc97feb90fd52ceca9f8a054a37198307b0f144bebce491f57d1f8e06",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-01T15:38:59",
+                    "transaction_hash": "0xa71c96d61902046b9b854657fcc9f5018a731a2ec78fa367db802e1f65b00380",
+                    "volume_usd": "0.09981742384351311",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "USDT",
+                        "token_amount": "0.1",
+                        "token_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-01T11:04:47",
+                    "transaction_hash": "0x3eee526656db0494b3934a82d6dbe2a134e4ea7be7250528637af0ea11181f33",
+                    "volume_usd": "171.5027803092994",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.06997199661012063",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-31T23:48:47",
+                    "transaction_hash": "0x1982d576004a9ed419ffc4639f1133dc956ec856f9e9b2a11d59a664d67d2699",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-31T17:41:11",
+                    "transaction_hash": "0x0bbad83b805464ee1fe830f2825754b0bc2696bb52f00b41bb40ca7b056b7297",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-30T19:14:11",
+                    "transaction_hash": "0x989b37eb89c045efc34b8c77ea1f54eb7de2eb98a913ff630aef96b6e7cfa4b2",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SHRUB",
+                        "token_amount": "4000000000.0",
+                        "token_address": "0xd5aaa4ae36a51347a056bbba2744b566f16e6f9c",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-30T11:36:23",
+                    "transaction_hash": "0xf27d57ae947ac12c2bc86a782b042c887b39e27a9d77e6e310a22211322093b1",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SUPRA",
+                        "token_amount": "10.0",
+                        "token_address": "0xdc7404100a092c898e93708ef73f3322a7acc213",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  }
+                ],
+                "is_last_page": false,
+                "source": {
+                  "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-90d.json",
+                  "sha256": "e60b6e612062b876926b8f2fe049f2c48ce2c07bfcc173737e635c46a0f43fa6",
+                  "request_started_at": "2026-09-13T13:24:59.932525+00:00",
+                  "date": {
+                    "from": "2026-06-15T13:03:28Z",
+                    "to": "2026-09-13T13:03:28Z"
+                  }
+                }
+              }
+            ],
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-90d.json",
+                "sha256": "e60b6e612062b876926b8f2fe049f2c48ce2c07bfcc173737e635c46a0f43fa6",
+                "request_started_at": "2026-09-13T13:24:59.932525+00:00",
+                "date": {
+                  "from": "2026-06-15T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

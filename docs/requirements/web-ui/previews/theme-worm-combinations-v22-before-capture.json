@@ -1,0 +1,105 @@
+{
+  "result": "capture_complete",
+  "mode": "current React with intercepted synthetic GET fixtures",
+  "captures": [
+    {
+      "view": "list",
+      "size": "desktop",
+      "file": "theme-worm-combinations-v22-before-list-desktop.png",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/worm-trading/combinations"
+      ],
+      "errors": [],
+      "unexpected": [],
+      "overflow": false,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "writesSubmitted": false
+    },
+    {
+      "view": "list",
+      "size": "mobile",
+      "file": "theme-worm-combinations-v22-before-list-mobile.png",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/worm-trading/combinations"
+      ],
+      "errors": [],
+      "unexpected": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "writesSubmitted": false
+    },
+    {
+      "view": "editor",
+      "size": "desktop",
+      "file": "theme-worm-combinations-v22-before-editor-desktop.png",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/worm-trading/combinations/22000000-0000-4000-8000-000000000001",
+        "GET /api/v1/worm-trading/events/7YttLkHDoNj9wyDur5VvxRV6cJrPCGF6Da8VtmZGhAaB"
+      ],
+      "errors": [],
+      "unexpected": [],
+      "overflow": false,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "writesSubmitted": false
+    },
+    {
+      "view": "editor",
+      "size": "mobile",
+      "file": "theme-worm-combinations-v22-before-editor-mobile.png",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/worm-trading/combinations/22000000-0000-4000-8000-000000000001",
+        "GET /api/v1/worm-trading/events/7YttLkHDoNj9wyDur5VvxRV6cJrPCGF6Da8VtmZGhAaB"
+      ],
+      "errors": [],
+      "unexpected": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "writesSubmitted": false
+    },
+    {
+      "view": "preview",
+      "size": "desktop",
+      "file": "theme-worm-combinations-v22-before-preview-desktop.png",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/worm-trading/combinations/22000000-0000-4000-8000-000000000001",
+        "GET /api/v1/worm-trading/wallet-selection"
+      ],
+      "errors": [],
+      "unexpected": [],
+      "overflow": false,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "writesSubmitted": false
+    },
+    {
+      "view": "preview",
+      "size": "mobile",
+      "file": "theme-worm-combinations-v22-before-preview-mobile.png",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/worm-trading/combinations/22000000-0000-4000-8000-000000000001",
+        "GET /api/v1/worm-trading/wallet-selection"
+      ],
+      "errors": [],
+      "unexpected": [],
+      "overflow": false,
+      "documentWidth": 390,
+      "viewport": 390,
+      "writesSubmitted": false
+    }
+  ],
+  "notVerified": [
+    "real API",
+    "full stack smoke",
+    "wallet eligibility in initial combination step"
+  ]
+}

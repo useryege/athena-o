@@ -1,0 +1,369 @@
+{
+  "mode": "local static visual prototype",
+  "result": "passed",
+  "captures": [
+    {
+      "name": "desktop",
+      "state": "default",
+      "zoom": 1,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "doc": {
+        "width": 1440,
+        "height": 1113
+      },
+      "overflow": false,
+      "duplicateIds": [],
+      "font": true,
+      "h1": "28px",
+      "mainPadding": "32px",
+      "dialog": null,
+      "actionTargets": [
+        {
+          "name": "All",
+          "width": 47,
+          "height": 44
+        },
+        {
+          "name": "EVM",
+          "width": 62,
+          "height": 44
+        },
+        {
+          "name": "Solana",
+          "width": 77,
+          "height": 44
+        },
+        {
+          "name": "Copy Research wallet address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy Solana operations address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy Execution wallet address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy SOL-2 address",
+          "width": 44,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "name": "mobile",
+      "state": "default",
+      "zoom": 1,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "doc": {
+        "width": 390,
+        "height": 1774
+      },
+      "overflow": false,
+      "duplicateIds": [],
+      "font": true,
+      "h1": "24px",
+      "mainPadding": "24px 20px",
+      "dialog": null,
+      "actionTargets": [
+        {
+          "name": "All",
+          "width": 98,
+          "height": 44
+        },
+        {
+          "name": "EVM",
+          "width": 98,
+          "height": 44
+        },
+        {
+          "name": "Solana",
+          "width": 98,
+          "height": 44
+        },
+        {
+          "name": "Copy Research wallet address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy Solana operations address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy Execution wallet address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy SOL-2 address",
+          "width": 44,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "name": "narrow",
+      "state": "default",
+      "zoom": 1,
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "doc": {
+        "width": 320,
+        "height": 1931
+      },
+      "overflow": false,
+      "duplicateIds": [],
+      "font": true,
+      "h1": "24px",
+      "mainPadding": "24px 20px",
+      "dialog": null,
+      "actionTargets": [
+        {
+          "name": "All",
+          "width": 77.328125,
+          "height": 44
+        },
+        {
+          "name": "EVM",
+          "width": 77.34375,
+          "height": 44
+        },
+        {
+          "name": "Solana",
+          "width": 77.328125,
+          "height": 44
+        },
+        {
+          "name": "Copy Research wallet address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy Solana operations address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy Execution wallet address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy SOL-2 address",
+          "width": 44,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "name": "zoom",
+      "state": "default",
+      "zoom": 2,
+      "viewport": {
+        "width": 720,
+        "height": 900
+      },
+      "doc": {
+        "width": 720,
+        "height": 2536
+      },
+      "overflow": false,
+      "duplicateIds": [],
+      "font": true,
+      "h1": "48px",
+      "mainPadding": "24px 20px",
+      "dialog": null,
+      "actionTargets": [
+        {
+          "name": "All",
+          "width": 208,
+          "height": 58.796875
+        },
+        {
+          "name": "EVM",
+          "width": 208,
+          "height": 58.796875
+        },
+        {
+          "name": "Solana",
+          "width": 208,
+          "height": 58.796875
+        },
+        {
+          "name": "Copy Research wallet address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy Solana operations address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy Execution wallet address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy SOL-2 address",
+          "width": 44,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "name": "detail-mobile",
+      "state": "detail",
+      "zoom": 1,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "doc": {
+        "width": 390,
+        "height": 1774
+      },
+      "overflow": false,
+      "duplicateIds": [],
+      "font": true,
+      "h1": "24px",
+      "mainPadding": "24px 20px",
+      "dialog": {
+        "bodyHeight": 664,
+        "bodyScroll": 1294,
+        "actionsBottom": 831
+      },
+      "actionTargets": [
+        {
+          "name": "All",
+          "width": 98,
+          "height": 44
+        },
+        {
+          "name": "EVM",
+          "width": 98,
+          "height": 44
+        },
+        {
+          "name": "Solana",
+          "width": 98,
+          "height": 44
+        },
+        {
+          "name": "Copy Research wallet address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy Solana operations address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy Execution wallet address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy SOL-2 address",
+          "width": 44,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "name": "create-mobile",
+      "state": "create",
+      "zoom": 1,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "doc": {
+        "width": 390,
+        "height": 1774
+      },
+      "overflow": false,
+      "duplicateIds": [],
+      "font": true,
+      "h1": "24px",
+      "mainPadding": "24px 20px",
+      "dialog": {
+        "bodyHeight": 584,
+        "bodyScroll": 620,
+        "actionsBottom": 819
+      },
+      "actionTargets": [
+        {
+          "name": "All",
+          "width": 98,
+          "height": 44
+        },
+        {
+          "name": "EVM",
+          "width": 98,
+          "height": 44
+        },
+        {
+          "name": "Solana",
+          "width": 98,
+          "height": 44
+        },
+        {
+          "name": "Copy Research wallet address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy Solana operations address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy Execution wallet address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "name": "Copy SOL-2 address",
+          "width": 44,
+          "height": 44
+        }
+      ]
+    }
+  ],
+  "checks": {
+    "navigationFocusReturned": true,
+    "filters": true,
+    "unicodeRemarkValidation": true,
+    "batchCreateAndBackup": true,
+    "importLimitsAndNoImport": true,
+    "readOnly": true,
+    "pagination": true,
+    "retry": true,
+    "manualCopyFallback": true
+  },
+  "pageErrors": [],
+  "externalRequests": [],
+  "notVerified": [
+    "real API mutations",
+    "wallet identity checks or key custody",
+    "scanner operation",
+    "full-stack smoke"
+  ]
+}

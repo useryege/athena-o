@@ -1,0 +1,534 @@
+{
+  "scope": "Standalone local prototype, synthetic data. Clipboard checked through intercepted payload. Root font scaling is not native browser zoom. All writes and navigation are local demonstrations.",
+  "results": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "textScale": 1,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "height": 1798,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "order": [
+        {
+          "title": "Trader",
+          "x": 256,
+          "y": 189.984375
+        },
+        {
+          "title": "Current monitoring state",
+          "x": 256,
+          "y": 451.625
+        },
+        {
+          "title": "Note and subscription actions",
+          "x": 1068,
+          "y": 189.984375
+        },
+        {
+          "title": "Observation history",
+          "x": 256,
+          "y": 736.4375
+        },
+        {
+          "title": "Activities and old notifications",
+          "x": 1068,
+          "y": 736.4375
+        }
+      ],
+      "modal": {
+        "width": 480,
+        "height": 484.0625,
+        "scroll": 478,
+        "client": 478,
+        "x": 480,
+        "y": 207.96875
+      },
+      "axes": [
+        {
+          "state": "healthy",
+          "violations": []
+        },
+        {
+          "state": "history-expanded",
+          "violations": []
+        },
+        {
+          "state": "note-invalid",
+          "violations": []
+        },
+        {
+          "state": "cancel-dialog",
+          "violations": []
+        },
+        {
+          "state": "healthy",
+          "violations": []
+        },
+        {
+          "state": "paused",
+          "violations": []
+        },
+        {
+          "state": "interrupted",
+          "violations": []
+        },
+        {
+          "state": "cancelled",
+          "violations": []
+        },
+        {
+          "state": "pending_baseline",
+          "violations": []
+        },
+        {
+          "state": "permission_disabled",
+          "violations": []
+        },
+        {
+          "state": "unknown",
+          "violations": []
+        },
+        {
+          "state": "history-error",
+          "violations": []
+        },
+        {
+          "state": "history-empty",
+          "violations": []
+        },
+        {
+          "state": "loading",
+          "violations": []
+        },
+        {
+          "state": "error",
+          "violations": []
+        },
+        {
+          "state": "stale",
+          "violations": []
+        }
+      ],
+      "issues": [],
+      "errors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-trader-detail-v9-desktop.png",
+        "theme-trader-detail-v9-desktop-first-screen.png",
+        "theme-trader-detail-v9-history-expanded.png",
+        "theme-trader-detail-v9-desktop-cancel.png",
+        "theme-trader-detail-v9-cancelled.png",
+        "theme-trader-detail-v9-history-error.png",
+        "theme-trader-detail-v9-loading.png",
+        "theme-trader-detail-v9-stale.png"
+      ]
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "height": 3307,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "order": [
+        {
+          "title": "Trader",
+          "x": 20,
+          "y": 263.578125
+        },
+        {
+          "title": "Current monitoring state",
+          "x": 20,
+          "y": 571.265625
+        },
+        {
+          "title": "Note and subscription actions",
+          "x": 20,
+          "y": 995.703125
+        },
+        {
+          "title": "Observation history",
+          "x": 20,
+          "y": 1587.34375
+        },
+        {
+          "title": "Activities and old notifications",
+          "x": 20,
+          "y": 2555.53125
+        }
+      ],
+      "modal": {
+        "width": 350,
+        "height": 584.96875,
+        "scroll": 348,
+        "client": 348,
+        "x": 20,
+        "y": 129.515625
+      },
+      "axes": [
+        {
+          "state": "healthy",
+          "violations": []
+        },
+        {
+          "state": "history-expanded",
+          "violations": []
+        },
+        {
+          "state": "note-invalid",
+          "violations": []
+        },
+        {
+          "state": "cancel-dialog",
+          "violations": []
+        },
+        {
+          "state": "healthy",
+          "violations": []
+        },
+        {
+          "state": "paused",
+          "violations": []
+        },
+        {
+          "state": "interrupted",
+          "violations": []
+        },
+        {
+          "state": "cancelled",
+          "violations": []
+        },
+        {
+          "state": "pending_baseline",
+          "violations": []
+        },
+        {
+          "state": "permission_disabled",
+          "violations": []
+        },
+        {
+          "state": "unknown",
+          "violations": []
+        },
+        {
+          "state": "history-error",
+          "violations": []
+        },
+        {
+          "state": "history-empty",
+          "violations": []
+        },
+        {
+          "state": "loading",
+          "violations": []
+        },
+        {
+          "state": "error",
+          "violations": []
+        },
+        {
+          "state": "stale",
+          "violations": []
+        }
+      ],
+      "issues": [],
+      "errors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-trader-detail-v9-mobile.png",
+        "theme-trader-detail-v9-mobile-first-screen.png",
+        "theme-trader-detail-v9-mobile-cancel.png",
+        "theme-trader-detail-v9-mobile-paused.png",
+        "theme-trader-detail-v9-mobile-unknown.png",
+        "theme-trader-detail-v9-mobile-error.png"
+      ]
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "height": 3653,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "order": [
+        {
+          "title": "Trader",
+          "x": 20,
+          "y": 263.578125
+        },
+        {
+          "title": "Current monitoring state",
+          "x": 20,
+          "y": 563.265625
+        },
+        {
+          "title": "Note and subscription actions",
+          "x": 20,
+          "y": 1021.9375
+        },
+        {
+          "title": "Observation history",
+          "x": 20,
+          "y": 1673.640625
+        },
+        {
+          "title": "Activities and old notifications",
+          "x": 20,
+          "y": 2781.453125
+        }
+      ],
+      "modal": {
+        "width": 280,
+        "height": 657.15625,
+        "scroll": 278,
+        "client": 278,
+        "x": 20,
+        "y": 93.421875
+      },
+      "axes": [
+        {
+          "state": "healthy",
+          "violations": []
+        },
+        {
+          "state": "history-expanded",
+          "violations": []
+        },
+        {
+          "state": "note-invalid",
+          "violations": []
+        },
+        {
+          "state": "cancel-dialog",
+          "violations": []
+        },
+        {
+          "state": "healthy",
+          "violations": []
+        },
+        {
+          "state": "paused",
+          "violations": []
+        },
+        {
+          "state": "interrupted",
+          "violations": []
+        },
+        {
+          "state": "cancelled",
+          "violations": []
+        },
+        {
+          "state": "pending_baseline",
+          "violations": []
+        },
+        {
+          "state": "permission_disabled",
+          "violations": []
+        },
+        {
+          "state": "unknown",
+          "violations": []
+        },
+        {
+          "state": "history-error",
+          "violations": []
+        },
+        {
+          "state": "history-empty",
+          "violations": []
+        },
+        {
+          "state": "loading",
+          "violations": []
+        },
+        {
+          "state": "error",
+          "violations": []
+        },
+        {
+          "state": "stale",
+          "violations": []
+        }
+      ],
+      "issues": [],
+      "errors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-trader-detail-v9-narrow.png"
+      ]
+    },
+    {
+      "name": "text-200",
+      "width": 720,
+      "height": 900,
+      "textScale": 2,
+      "geometry": {
+        "width": 720,
+        "scroll": 720,
+        "height": 4654,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "order": [
+        {
+          "title": "Trader",
+          "x": 24,
+          "y": 350.359375
+        },
+        {
+          "title": "Current monitoring state",
+          "x": 24,
+          "y": 854.703125
+        },
+        {
+          "title": "Note and subscription actions",
+          "x": 24,
+          "y": 1366.140625
+        },
+        {
+          "title": "Observation history",
+          "x": 24,
+          "y": 2185.75
+        },
+        {
+          "title": "Activities and old notifications",
+          "x": 24,
+          "y": 3632.78125
+        }
+      ],
+      "modal": {
+        "width": 480,
+        "height": 860,
+        "scroll": 478,
+        "client": 478,
+        "x": 120,
+        "y": 20
+      },
+      "axes": [
+        {
+          "state": "healthy",
+          "violations": []
+        },
+        {
+          "state": "history-expanded",
+          "violations": []
+        },
+        {
+          "state": "note-invalid",
+          "violations": []
+        },
+        {
+          "state": "cancel-dialog",
+          "violations": []
+        },
+        {
+          "state": "healthy",
+          "violations": []
+        },
+        {
+          "state": "paused",
+          "violations": []
+        },
+        {
+          "state": "interrupted",
+          "violations": []
+        },
+        {
+          "state": "cancelled",
+          "violations": []
+        },
+        {
+          "state": "pending_baseline",
+          "violations": []
+        },
+        {
+          "state": "permission_disabled",
+          "violations": []
+        },
+        {
+          "state": "unknown",
+          "violations": []
+        },
+        {
+          "state": "history-error",
+          "violations": []
+        },
+        {
+          "state": "history-empty",
+          "violations": []
+        },
+        {
+          "state": "loading",
+          "violations": []
+        },
+        {
+          "state": "error",
+          "violations": []
+        },
+        {
+          "state": "stale",
+          "violations": []
+        }
+      ],
+      "issues": [],
+      "errors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-trader-detail-v9-text-200.png"
+      ]
+    }
+  ],
+  "temporaryServicesStarted": 0
+}

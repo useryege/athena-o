@@ -1,0 +1,124 @@
+{
+  "label": "Trader Sync v6 visual comparison demo data",
+  "evidenceMode": "ui-fixtures",
+  "quota": {
+    "used": 3,
+    "limit": 10
+  },
+  "page": {
+    "snapshot": "v6-demo-snapshot",
+    "refreshCursor": "v6-demo-refresh",
+    "asOf": "2026-09-14T06:42:00Z",
+    "hasNewer": false
+  },
+  "telegram": {
+    "botAvailable": true,
+    "botUsername": "athena_alerts_demo_bot",
+    "binding": {
+      "status": "connected",
+      "telegramUsername": "athena_demo",
+      "telegramDisplayName": "ATHENA Demo",
+      "boundAt": "2026-09-14T01:00:00Z",
+      "revision": 7
+    }
+  },
+  "targets": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "wallet": "0x11111111111111111111111111111111111111A1",
+      "note": "Election desk",
+      "displayName": "signal_works",
+      "profileSnapshotAt": "2026-09-14T06:42:00Z",
+      "monitoringFrom": "2026-09-12T01:00:00Z",
+      "status": "healthy",
+      "observation": {
+        "state": "healthy",
+        "reason": "",
+        "lastReliableAt": "2026-09-14T06:42:00Z",
+        "interruptionCount": "0"
+      }
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "wallet": "0x22222222222222222222222222222222222222B2",
+      "note": "",
+      "displayName": "macroedge",
+      "profileSnapshotAt": "2026-09-14T06:42:00Z",
+      "monitoringFrom": "2026-09-12T02:30:00Z",
+      "status": "healthy",
+      "observation": {
+        "state": "healthy",
+        "reason": "",
+        "lastReliableAt": "2026-09-14T06:41:30Z",
+        "interruptionCount": "0"
+      }
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333333",
+      "wallet": "0x33333333333333333333333333333333333333C3",
+      "note": "High-conviction desk",
+      "displayName": "northstar",
+      "profileSnapshotAt": "2026-09-14T06:42:00Z",
+      "monitoringFrom": "2026-09-13T08:15:00Z",
+      "status": "interrupted",
+      "observation": {
+        "state": "interrupted",
+        "reason": "WebSocket disconnected; activity may be missing.",
+        "lastReliableAt": "2026-09-14T06:35:00Z",
+        "interruptionCount": "1"
+      }
+    }
+  ],
+  "activities": [
+    {
+      "id": "303",
+      "subscriptionId": "11111111-1111-4111-8111-111111111111",
+      "side": "BUY",
+      "marketTitle": "Will the Democrats win the 2026 House popular vote?",
+      "outcome": "Yes",
+      "positionId": "9001",
+      "tradeValue": "1240.50",
+      "collateralSymbol": "pUSD",
+      "shares": "2481.00",
+      "settledAt": "2026-09-14T06:41:52Z",
+      "notificationMode": "ordinary",
+      "delivery": {
+        "status": "sent",
+        "reason": ""
+      },
+      "finalityAnomaly": false
+    },
+    {
+      "id": "302",
+      "subscriptionId": "22222222-2222-4222-8222-222222222222",
+      "side": "SELL",
+      "marketTitle": "Fed cuts rates by at least 50 bps in 2026?",
+      "outcome": "No",
+      "positionId": "9002",
+      "tradeValue": "875.25",
+      "collateralSymbol": "pUSD",
+      "shares": "1094.06",
+      "settledAt": "2026-09-14T06:39:18Z",
+      "notificationMode": "in_app_only",
+      "finalityAnomaly": false
+    },
+    {
+      "id": "301",
+      "subscriptionId": "33333333-3333-4333-8333-333333333333",
+      "side": "BUY",
+      "marketTitle": "BTC above $150k before 2027?",
+      "outcome": "Yes",
+      "positionId": "9003",
+      "tradeValue": "540.00",
+      "collateralSymbol": "pUSD",
+      "shares": "720.00",
+      "settledAt": "2026-09-14T06:34:41Z",
+      "notificationMode": "ordinary",
+      "delivery": {
+        "status": "unknown",
+        "reason": "response_lost"
+      },
+      "finalityAnomaly": true
+    }
+  ]
+}

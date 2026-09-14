@@ -1,0 +1,63 @@
+{
+  "status": "approved_for_list_control_visuals_as_presented",
+  "confirmed_by": "user",
+  "feedback": "可以。",
+  "confirmed_date": "2026-09-14",
+  "review_context": "用户认可已展示的桌面菜单展开、手机菜单展开和手机筛选结果，并再次明确总目标是重构现有全站前端 UI。",
+  "directly_presented_artifacts": [
+    "theme-list-controls-v5-desktop-menu.png",
+    "theme-list-controls-v5-mobile-menu.png",
+    "theme-list-controls-v5-mobile-filtered.png"
+  ],
+  "approved_scope": [
+    "已展示的菜单触发器、灰边深色浮层、深青底与青绿选中标记",
+    "搜索与排序控件层级、手机完整地址筛选标签及清除入口",
+    "已加载数量、加载更多及手机筛选后的全部加载状态",
+    "已展示的桌面列表和手机重排视觉"
+  ],
+  "not_approved_by_this_feedback": [
+    "仅链接的其余截图或未展示的交互状态，不据此声明逐项审阅",
+    "键盘、异步请求、分页失败、业务精度与供应商范围的完整契约",
+    "追加加载全过程、所有设备/浏览器组合与其他页面",
+    "正式 UI 实现、Nansen 接入、重写业务功能或更换技术栈"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-list-controls-v5.html",
+      "sha256": "229b9bfe73a59d7bb175a7de9b13cc682ce74728a75b40549f5a2028b77a2920"
+    },
+    {
+      "path": "theme-list-controls-v5-desktop.png",
+      "sha256": "55c0e0c609741256359ccb3aae02ba2cac8b305e8dfb7c3f703176c535d78624"
+    },
+    {
+      "path": "theme-list-controls-v5-mobile.png",
+      "sha256": "3b2269889113cda18df9fa863810ad06a1672052c7fd602ff92c92a5a72517e6"
+    },
+    {
+      "path": "theme-list-controls-v5-desktop-menu.png",
+      "sha256": "a8db57e6cc2d53543763b45f0dfe394cdd5edac34d8a8e6052fd8303564f0dc3"
+    },
+    {
+      "path": "theme-list-controls-v5-mobile-menu.png",
+      "sha256": "8b20e0a35c74cfe949c2a17cd5f36b6270b970162b5fce7da1cd881dbc447dc8"
+    },
+    {
+      "path": "theme-list-controls-v5-desktop-filtered.png",
+      "sha256": "3050b6657bf080005599030dc7af5655616115fbe0edcb8966642491d5581988"
+    },
+    {
+      "path": "theme-list-controls-v5-mobile-filtered.png",
+      "sha256": "de9c6e2c365ede96f56bf85229fc8fcf2d2dcbd16bf3b1fa54aa04b1864ec1a4"
+    },
+    {
+      "path": "theme-list-controls-v5-checks.json",
+      "sha256": "7d2dd7c2477eba9feebf3ad282577eb2d273ea353a6ef07a3a8e8d3ca05ca789"
+    }
+  ],
+  "original_review": {
+    "path": "theme-list-controls-v5-review.json",
+    "sha256": "81d33cd8bd5c5d6639f4941fc0dd931476f7f799f489d9e671769199a566ac2a"
+  },
+  "note": "原型与原始审阅证据保留提交时状态；后续页面设计服务于现有全站前端改版。"
+}

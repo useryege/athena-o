@@ -1,0 +1,206 @@
+{
+  "scope": "Standalone visual prototype only; no production API or real subscription. Root text scaling is not native browser zoom.",
+  "results": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "textScale": 1,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "axes": [
+        {
+          "state": "review",
+          "violations": []
+        },
+        {
+          "state": "exact",
+          "violations": []
+        },
+        {
+          "state": "unavailable",
+          "violations": []
+        },
+        {
+          "state": "expired",
+          "violations": []
+        },
+        {
+          "state": "unknown",
+          "violations": []
+        },
+        {
+          "state": "input",
+          "violations": []
+        }
+      ],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Shared fixture, original decimal strings, 6 periods, missing data, exact values, Unicode note limit, local confirmation, expired renewal, unbound, quota, existing and unknown states, input validation passed."
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "axes": [
+        {
+          "state": "review",
+          "violations": []
+        },
+        {
+          "state": "exact",
+          "violations": []
+        },
+        {
+          "state": "unavailable",
+          "violations": []
+        },
+        {
+          "state": "expired",
+          "violations": []
+        },
+        {
+          "state": "unknown",
+          "violations": []
+        },
+        {
+          "state": "input",
+          "violations": []
+        }
+      ],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Shared fixture, original decimal strings, 6 periods, missing data, exact values, Unicode note limit, local confirmation, expired renewal, unbound, quota, existing and unknown states, input validation passed."
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "axes": [
+        {
+          "state": "review",
+          "violations": []
+        },
+        {
+          "state": "exact",
+          "violations": []
+        },
+        {
+          "state": "unavailable",
+          "violations": []
+        },
+        {
+          "state": "expired",
+          "violations": []
+        },
+        {
+          "state": "unknown",
+          "violations": []
+        },
+        {
+          "state": "input",
+          "violations": []
+        }
+      ],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Shared fixture, original decimal strings, 6 periods, missing data, exact values, Unicode note limit, local confirmation, expired renewal, unbound, quota, existing and unknown states, input validation passed."
+    },
+    {
+      "name": "text-200",
+      "width": 720,
+      "height": 900,
+      "textScale": 2,
+      "geometry": {
+        "width": 720,
+        "scroll": 720,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "axes": [
+        {
+          "state": "review",
+          "violations": []
+        },
+        {
+          "state": "exact",
+          "violations": []
+        },
+        {
+          "state": "unavailable",
+          "violations": []
+        },
+        {
+          "state": "expired",
+          "violations": []
+        },
+        {
+          "state": "unknown",
+          "violations": []
+        },
+        {
+          "state": "input",
+          "violations": []
+        }
+      ],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Shared fixture, original decimal strings, 6 periods, missing data, exact values, Unicode note limit, local confirmation, expired renewal, unbound, quota, existing and unknown states, input validation passed."
+    }
+  ],
+  "temporaryServicesStarted": 0
+}

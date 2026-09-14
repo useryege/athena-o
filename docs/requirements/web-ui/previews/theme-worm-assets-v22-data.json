@@ -1,0 +1,537 @@
+{
+  "synthetic": true,
+  "identity": {
+    "synthetic": true,
+    "observedAt": "2026-09-14T08:00:00Z",
+    "combinationId": "22000000-0000-4000-8000-000000000001",
+    "combinationName": "September market basket",
+    "planId": "22000000-0000-4000-8000-000000000002",
+    "runId": "22000000-0000-4000-8000-000000000003",
+    "wallets": [
+      {
+        "id": "101",
+        "name": "Atlas",
+        "address": "3vbqPKB1JYbeuh1Bwdcu1unwhWhmxZ5HYBFUJ7qFNVM1"
+      },
+      {
+        "id": "102",
+        "name": "Orion",
+        "address": "6jRQNiUuT8TCSCCCgqaimnXxzKRzxVShYKMunN4q1oG5"
+      },
+      {
+        "id": "103",
+        "name": "Vega",
+        "address": "CP6wuVS9qffyeeemHKN9R9UbbWgSynXUni1GEyZSYn3R"
+      }
+    ]
+  },
+  "user": {
+    "loggedIn": true,
+    "accountId": "11111111-1111-4111-8111-111111111111",
+    "username": "alexchen",
+    "iss": "fixture",
+    "administrator": false,
+    "profile": {
+      "displayName": "Alex Chen",
+      "tier": "ACCOUNT_TIER_STANDARD",
+      "avatarUrl": "",
+      "revision": "4"
+    },
+    "preferences": {
+      "theme": "ACCOUNT_THEME_DARK",
+      "revision": "2"
+    },
+    "access": {
+      "loginEnabled": true,
+      "apiKeyEnabled": true,
+      "profitSharingEnabled": true,
+      "revision": "1",
+      "moduleAccess": [
+        {
+          "module": "ACCOUNT_DATA_MODULE_WALLET",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SOLANA",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        }
+      ]
+    }
+  },
+  "status": {
+    "started": true,
+    "status": "running",
+    "network": "mainnet-beta",
+    "commitment": "confirmed",
+    "rpcReachable": true,
+    "batchSupported": true,
+    "genesisVerified": true,
+    "genesisHash": "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+    "usdcMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "usdcVerified": true,
+    "latestConfirmedSlot": "365210800",
+    "lastProbeAt": 1789372800,
+    "lastSuccessAt": 1789372800,
+    "latencyMs": 86,
+    "consecutiveFailures": 0,
+    "lastErrorCategory": "",
+    "credentialStoreReady": true,
+    "wormApiStatus": "running",
+    "wormApiLastSuccessAt": 1789372800,
+    "wormApiLastErrorCategory": ""
+  },
+  "selection": {
+    "configured": true,
+    "revision": 4,
+    "selectedItems": [
+      {
+        "ordinal": 1,
+        "walletId": 101,
+        "address": "3vbqPKB1JYbeuh1Bwdcu1unwhWhmxZ5HYBFUJ7qFNVM1"
+      },
+      {
+        "ordinal": 2,
+        "walletId": 102,
+        "address": "6jRQNiUuT8TCSCCCgqaimnXxzKRzxVShYKMunN4q1oG5"
+      },
+      {
+        "ordinal": 3,
+        "walletId": 103,
+        "address": "CP6wuVS9qffyeeemHKN9R9UbbWgSynXUni1GEyZSYn3R"
+      }
+    ],
+    "retirements": [],
+    "updatedAt": 1789369200,
+    "maximumWallets": 20
+  },
+  "selectionSummary": {
+    "configured": true,
+    "revision": 4,
+    "updatedAt": 1789369200,
+    "maximumWallets": 20,
+    "selectedCount": 3
+  },
+  "wallets": [
+    {
+      "walletId": 101,
+      "address": "3vbqPKB1JYbeuh1Bwdcu1unwhWhmxZ5HYBFUJ7qFNVM1",
+      "remark": "Atlas",
+      "avatarKind": "PRESET",
+      "avatarPresetId": "orbit",
+      "avatarUrl": ""
+    },
+    {
+      "walletId": 102,
+      "address": "6jRQNiUuT8TCSCCCgqaimnXxzKRzxVShYKMunN4q1oG5",
+      "remark": "Orion",
+      "avatarKind": "PRESET",
+      "avatarPresetId": "orbit",
+      "avatarUrl": ""
+    },
+    {
+      "walletId": 103,
+      "address": "CP6wuVS9qffyeeemHKN9R9UbbWgSynXUni1GEyZSYn3R",
+      "remark": "Vega",
+      "avatarKind": "PRESET",
+      "avatarPresetId": "orbit",
+      "avatarUrl": ""
+    }
+  ],
+  "balances": {
+    "items": [
+      {
+        "wallet": {
+          "walletId": 101,
+          "address": "3vbqPKB1JYbeuh1Bwdcu1unwhWhmxZ5HYBFUJ7qFNVM1",
+          "remark": "Atlas",
+          "avatarKind": "PRESET",
+          "avatarPresetId": "orbit",
+          "avatarUrl": ""
+        },
+        "sol": {
+          "atomicAmount": "1284500000",
+          "amount": "1.284500000",
+          "decimals": 9,
+          "observedSlot": "365210800",
+          "availability": "AVAILABLE",
+          "errorCode": ""
+        },
+        "usdc": {
+          "atomicAmount": "248320000",
+          "amount": "248.320000",
+          "decimals": 6,
+          "observedSlot": "365210800",
+          "availability": "AVAILABLE",
+          "errorCode": "",
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "tokenAccountCount": 1
+        },
+        "status": "COMPLETE"
+      },
+      {
+        "wallet": {
+          "walletId": 102,
+          "address": "6jRQNiUuT8TCSCCCgqaimnXxzKRzxVShYKMunN4q1oG5",
+          "remark": "Orion",
+          "avatarKind": "PRESET",
+          "avatarPresetId": "orbit",
+          "avatarUrl": ""
+        },
+        "sol": {
+          "atomicAmount": "620000000",
+          "amount": "0.620000000",
+          "decimals": 9,
+          "observedSlot": "365210800",
+          "availability": "AVAILABLE",
+          "errorCode": ""
+        },
+        "usdc": {
+          "atomicAmount": "105000000",
+          "amount": "105.000000",
+          "decimals": 6,
+          "observedSlot": "365210800",
+          "availability": "AVAILABLE",
+          "errorCode": "",
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "tokenAccountCount": 1
+        },
+        "status": "COMPLETE"
+      },
+      {
+        "wallet": {
+          "walletId": 103,
+          "address": "CP6wuVS9qffyeeemHKN9R9UbbWgSynXUni1GEyZSYn3R",
+          "remark": "Vega",
+          "avatarKind": "PRESET",
+          "avatarPresetId": "orbit",
+          "avatarUrl": ""
+        },
+        "sol": {
+          "atomicAmount": "150000000",
+          "amount": "0.150000000",
+          "decimals": 9,
+          "observedSlot": "365210800",
+          "availability": "AVAILABLE",
+          "errorCode": ""
+        },
+        "usdc": {
+          "atomicAmount": "52760000",
+          "amount": "52.760000",
+          "decimals": 6,
+          "observedSlot": "365210800",
+          "availability": "AVAILABLE",
+          "errorCode": "",
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "tokenAccountCount": 1
+        },
+        "status": "COMPLETE"
+      }
+    ],
+    "total": 3,
+    "page": 1,
+    "pageSize": 20,
+    "network": "mainnet-beta",
+    "commitment": "confirmed",
+    "fetchedAt": 1789372800,
+    "walletSelection": {
+      "configured": true,
+      "revision": 4,
+      "updatedAt": 1789369200,
+      "maximumWallets": 20,
+      "selectedCount": 3
+    }
+  },
+  "activity": {
+    "items": [
+      {
+        "wallet": {
+          "walletId": 101,
+          "address": "3vbqPKB1JYbeuh1Bwdcu1unwhWhmxZ5HYBFUJ7qFNVM1",
+          "remark": "Atlas",
+          "avatarKind": "PRESET",
+          "avatarPresetId": "orbit",
+          "avatarUrl": ""
+        },
+        "connection": {
+          "state": "CONNECTED",
+          "warningCode": "",
+          "connectedAt": 1789286400
+        },
+        "positions": {
+          "availability": "AVAILABLE",
+          "errorCode": "",
+          "truncated": false
+        },
+        "requests": {
+          "availability": "AVAILABLE",
+          "errorCode": "",
+          "truncated": false
+        },
+        "openPositions": [
+          {
+            "pubkey": "6jRQNiUuT8TCSCCCgqaimnXxzKRzxVShYKMunN4q1oG5",
+            "positionRequestPubkey": "3vbqPKB1JYbeuh1Bwdcu1unwhWhmxZ5HYBFUJ7qFNVM1",
+            "market": {
+              "conditionId": "demo-market-2201",
+              "title": "Example: Will the policy review finish by 30 September?",
+              "eventConditionId": "demo-event-2201",
+              "eventTitle": "September policy review",
+              "logo": "",
+              "eventLogo": "",
+              "lastTradePrice": "0.62"
+            },
+            "side": "YES",
+            "leverage": "1",
+            "totalShares": "24.000000",
+            "averageEntryPrice": "0.50",
+            "userLiquidity": "12.000000",
+            "totalLiquidity": "12.000000",
+            "liquidationPrice": "",
+            "unrealizedPnl": "2.880000",
+            "realizedPnl": "0",
+            "isClosed": false,
+            "isLiquidated": false,
+            "isClaimed": false,
+            "createdAt": 1789372200,
+            "cashOut": {
+              "allowedAction": "CASH_OUT"
+            }
+          }
+        ],
+        "inFlightRequests": [],
+        "status": "COMPLETE",
+        "observedAt": 1789372800
+      },
+      {
+        "wallet": {
+          "walletId": 102,
+          "address": "6jRQNiUuT8TCSCCCgqaimnXxzKRzxVShYKMunN4q1oG5",
+          "remark": "Orion",
+          "avatarKind": "PRESET",
+          "avatarPresetId": "orbit",
+          "avatarUrl": ""
+        },
+        "connection": {
+          "state": "CONNECTED",
+          "warningCode": "",
+          "connectedAt": 1789286400
+        },
+        "positions": {
+          "availability": "AVAILABLE",
+          "errorCode": "",
+          "truncated": false
+        },
+        "requests": {
+          "availability": "AVAILABLE",
+          "errorCode": "",
+          "truncated": false
+        },
+        "openPositions": [
+          {
+            "pubkey": "CP6wuVS9qffyeeemHKN9R9UbbWgSynXUni1GEyZSYn3R",
+            "positionRequestPubkey": "6jRQNiUuT8TCSCCCgqaimnXxzKRzxVShYKMunN4q1oG5",
+            "market": {
+              "conditionId": "demo-market-2202",
+              "title": "Example: Will the network upgrade be released this month?",
+              "eventConditionId": "demo-event-2202",
+              "eventTitle": "September network upgrade",
+              "logo": "",
+              "eventLogo": "",
+              "lastTradePrice": "0.41"
+            },
+            "side": "NO",
+            "leverage": "1",
+            "totalShares": "10.000000",
+            "averageEntryPrice": "0.60",
+            "userLiquidity": "6.000000",
+            "totalLiquidity": "6.000000",
+            "liquidationPrice": "",
+            "unrealizedPnl": "",
+            "realizedPnl": "0",
+            "isClosed": false,
+            "isLiquidated": false,
+            "isClaimed": false,
+            "createdAt": 1789371900,
+            "cashOut": {
+              "allowedAction": "CASH_OUT"
+            }
+          }
+        ],
+        "inFlightRequests": [
+          {
+            "pubkey": "CP6wuVS9qffyeeemHKN9R9UbbWgSynXUni1GEyZSYn3R",
+            "type": "limit",
+            "state": "open",
+            "orderState": "open",
+            "market": {
+              "conditionId": "demo-market-2202",
+              "title": "Example: Will the network upgrade be released this month?",
+              "eventConditionId": "demo-event-2202",
+              "eventTitle": "September network upgrade",
+              "logo": "",
+              "eventLogo": "",
+              "lastTradePrice": "0.41"
+            },
+            "side": "YES",
+            "leverage": "1",
+            "funds": "5.000000",
+            "price": "0.40",
+            "shares": "12.500000",
+            "createdAt": 1789372680
+          }
+        ],
+        "status": "COMPLETE",
+        "observedAt": 1789372800
+      },
+      {
+        "wallet": {
+          "walletId": 103,
+          "address": "CP6wuVS9qffyeeemHKN9R9UbbWgSynXUni1GEyZSYn3R",
+          "remark": "Vega",
+          "avatarKind": "PRESET",
+          "avatarPresetId": "orbit",
+          "avatarUrl": ""
+        },
+        "connection": {
+          "state": "CONNECTED",
+          "warningCode": "",
+          "connectedAt": 1789286400
+        },
+        "positions": {
+          "availability": "AVAILABLE",
+          "errorCode": "",
+          "truncated": false
+        },
+        "requests": {
+          "availability": "AVAILABLE",
+          "errorCode": "",
+          "truncated": false
+        },
+        "openPositions": [],
+        "inFlightRequests": [],
+        "status": "COMPLETE",
+        "observedAt": 1789372800
+      }
+    ],
+    "total": 3,
+    "page": 1,
+    "pageSize": 20,
+    "fetchedAt": 1789372800,
+    "openPositionCount": 2,
+    "inFlightRequestCount": 1,
+    "status": "COMPLETE",
+    "walletSelection": {
+      "configured": true,
+      "revision": 4,
+      "updatedAt": 1789369200,
+      "maximumWallets": 20,
+      "selectedCount": 3
+    }
+  },
+  "inventory": {
+    "items": [
+      {
+        "wallet": {
+          "walletId": 101,
+          "address": "3vbqPKB1JYbeuh1Bwdcu1unwhWhmxZ5HYBFUJ7qFNVM1",
+          "remark": "Atlas",
+          "avatarKind": "PRESET",
+          "avatarPresetId": "orbit",
+          "avatarUrl": ""
+        },
+        "connection": {
+          "state": "CONNECTED",
+          "warningCode": "",
+          "connectedAt": 1789286400
+        },
+        "selected": true,
+        "selectionOrdinal": 1,
+        "retirementPending": false,
+        "removalAllowed": false,
+        "removalReasonCode": "OPEN_POSITIONS_EXIST",
+        "pendingState": "",
+        "needsAttention": true
+      },
+      {
+        "wallet": {
+          "walletId": 102,
+          "address": "6jRQNiUuT8TCSCCCgqaimnXxzKRzxVShYKMunN4q1oG5",
+          "remark": "Orion",
+          "avatarKind": "PRESET",
+          "avatarPresetId": "orbit",
+          "avatarUrl": ""
+        },
+        "connection": {
+          "state": "CONNECTED",
+          "warningCode": "",
+          "connectedAt": 1789286400
+        },
+        "selected": true,
+        "selectionOrdinal": 2,
+        "retirementPending": false,
+        "removalAllowed": false,
+        "removalReasonCode": "OPEN_POSITIONS_EXIST",
+        "pendingState": "",
+        "needsAttention": true
+      },
+      {
+        "wallet": {
+          "walletId": 103,
+          "address": "CP6wuVS9qffyeeemHKN9R9UbbWgSynXUni1GEyZSYn3R",
+          "remark": "Vega",
+          "avatarKind": "PRESET",
+          "avatarPresetId": "orbit",
+          "avatarUrl": ""
+        },
+        "connection": {
+          "state": "CONNECTED",
+          "warningCode": "",
+          "connectedAt": 1789286400
+        },
+        "selected": true,
+        "selectionOrdinal": 3,
+        "retirementPending": false,
+        "removalAllowed": true,
+        "removalReasonCode": "",
+        "pendingState": "",
+        "needsAttention": false
+      }
+    ],
+    "total": 3,
+    "page": 1,
+    "pageSize": 100,
+    "fetchedAt": 1789372800,
+    "selectionConfigured": true,
+    "selectionRevision": 4,
+    "selectionUpdatedAt": 1789369200,
+    "maximumWallets": 20
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "version": "v18",
+  "result": "passed",
+  "capturedAt": "2026-09-14T07:02:35.039050+00:00",
+  "scope": {
+    "mode": "ui-fixtures",
+    "description": "Current React System Notifications list and detail with synthetic intercepted GET fixtures. No test POST or Telegram message.",
+    "productionUIChanged": false
+  },
+  "environment": {
+    "url": "http://localhost:4000",
+    "repository": "/home/yege/work/athena",
+    "processWorkingDirectory": "/home/yege/work/athena/ui",
+    "vitePID": 308228,
+    "supervisorPID": 307846,
+    "instance": "athena-local-runtime (legacy shared existing environment)",
+    "ownerState": ".run/athena-local-runtime/supervisor.state",
+    "logs": ".run/athena-local-runtime/",
+    "captureLogs": ".superpowers/v18-current-playwright-artifacts/",
+    "taskStartedServices": [],
+    "taskCleanup": "All task browser contexts closed. Borrowed root environment preserved.",
+    "ownerStopCommand": "cd /home/yege/work/athena && make stop",
+    "ownerStopCommandExecuted": false
+  },
+  "capture": {
+    "command": "PATH=/home/yege/.nvm/versions/node/v24.14.1/bin:$PATH node ui/node_modules/@playwright/test/cli.js test --config .superpowers/v18-current.playwright.config.ts",
+    "result": "1 passed (3.1s), case 2.5s",
+    "screenshots": [
+      {
+        "name": "list-desktop",
+        "route": "/admin/notifications",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 900
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/admin/system-notification-deliveries"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-system-notifications-v18-before-list-desktop.png",
+        "sha256": "4c1f4f8cb6dbde328b7839a53ab4de6651fe169e6a8b7339e8cdb33f00bf115e"
+      },
+      {
+        "name": "detail-desktop",
+        "route": "/admin/notifications/1048",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 900
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/admin/system-notification-deliveries/1048"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-system-notifications-v18-before-detail-desktop.png",
+        "sha256": "949a1b27d4aa6fe321a4124f42d3c849d1bce21aa2e34a614c8cd0608c4333d3"
+      },
+      {
+        "name": "list-mobile",
+        "route": "/admin/notifications",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 2036
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/admin/system-notification-deliveries"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-system-notifications-v18-before-list-mobile.png",
+        "sha256": "ff18c4d66ce2fd3741a06491a0e0151a165813aecb7c41c2f463020df235a650"
+      },
+      {
+        "name": "detail-mobile",
+        "route": "/admin/notifications/1048",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 1348
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/admin/system-notification-deliveries/1048"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-system-notifications-v18-before-detail-mobile.png",
+        "sha256": "b2bcbc6da0efbf56e14bddee8865f2a17a9c4a9bc4db54866a043fdacfb7ce19"
+      }
+    ]
+  },
+  "sourceHashesSha256": {
+    "ui/src/app/admin/pages/system-notifications.tsx": "521915bac24872bec0381f2db438f28e3b8c509fc663d723a48cdd6db8a79b6a",
+    "ui/src/app/admin/pages/system-notification-detail.tsx": "701221ade33e1012f1d849a45b4d9a7c3d262980c0d127f32ad50f6f11e5bf9e",
+    "ui/src/app/admin/notification-service.ts": "334c12894278d26a4961d07d8012f898102c2fb79131bc352d713acc1b653aa1",
+    "ui/src/app/admin/app.tsx": "98d44ab834f8c7b25f358e31665ae01fe0dd5856e2eb26b211e697de3a9bacea",
+    "ui/src/app/styles/admin.css": "a2b18f0fc785f9d0f4184bfc88f8176d6e5e8f7aea6a4e66e65aaa35ef3d8767",
+    "ui/src/app/shared/pagination.ts": "d1b2d970a05537beefc88f47f7c0c14acb16ecbbb612124787406498ce9b53af"
+  },
+  "observations": [
+    "Current React uses seven desktop columns with truncated titles and stacked compact cards on mobile.",
+    "Current detail renders all 17 fields as a single key-value grid; v18 separates message, delivery result, timestamps and collapsed identifiers.",
+    "Unknown may have reached Telegram and will not be resent automatically. Queueing a new test is a separate action and not delivery confirmation."
+  ]
+}

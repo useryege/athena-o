@@ -1,0 +1,93 @@
+{
+  "status": "approved_for_account_access_presented_visuals",
+  "confirmed_by": "user",
+  "feedback": "舒服",
+  "confirmed_date": "2026-09-14",
+  "review_context": "用户查看桌面默认权限与会话页、手机默认页及手机 Google 待授权页三张完整截图后，对阅读顺序和疏密反馈“舒服”。设计文档通过链接提供；其余截图与检查证据保留不等于逐图确认。",
+  "directly_presented_artifacts": [
+    "theme-account-access-v13-desktop.png",
+    "theme-account-access-v13-mobile.png",
+    "theme-account-access-v13-mobile-pending.png"
+  ],
+  "approved_scope": [
+    "所展示桌面与手机页的主题、账户导航、紧凑身份提示、模块权限在前及当前会话在后的阅读顺序和信息密度",
+    "所展示三种模块权限标签、权限摘要、独立 API Key／Profit Sharing 标志，以及会话辅助信息默认收起入口的视觉层级",
+    "所展示手机 Google 待授权页对已验证身份与未开通业务访问的区分、完整邮箱展示，以及刷新权限与退出登录的按钮层级"
+  ],
+  "not_approved_by_this_feedback": [
+    "未直接展示的桌面展开细节、桌面待授权、Phantom、刷新失败、窄屏与文字放大等辅助状态未逐图确认",
+    "真实登录、授权刷新、15 秒轮询、窗口聚焦刷新、剪贴板、退出、账户切换、权限竞态和管理员边界验收",
+    "未展示的 provider／时间／版本变体、API Key 已启用的待授权账户、被禁用账户、管理员及其他页面",
+    "正式 ui/ 主题实现、授权模型或生产行为变更"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-account-access-v13-before-capture.json",
+      "sha256": "531db4c4895a16ca8ed17fdc326afd3be688e90106ef3e92b261c812ca2de4b9"
+    },
+    {
+      "path": "theme-account-access-v13-before-desktop.png",
+      "sha256": "36a4a2ec69c41c8bc8a881079967ee3b83be02844b5b5c31babb38fbb58af356"
+    },
+    {
+      "path": "theme-account-access-v13-before-mobile-pending.png",
+      "sha256": "75f13e1f38dce046aeb4a717162c4fb0181fa6438894ee52761e3d3a546a0907"
+    },
+    {
+      "path": "theme-account-access-v13-before-mobile.png",
+      "sha256": "d19a23ae94b55eb6eeafe9690ac38998d2a6ff3c98f6f50676af70c85a3aeb63"
+    },
+    {
+      "path": "theme-account-access-v13-checks.json",
+      "sha256": "e59005569f6602cf6f25747c5bfb3f68363c480dd714211c321755f4516c00eb"
+    },
+    {
+      "path": "theme-account-access-v13-data.json",
+      "sha256": "7186c56c2b72377ff0deaa6e364332decd48cd9dabd79501f12154f4f724d429"
+    },
+    {
+      "path": "theme-account-access-v13-desktop-expanded.png",
+      "sha256": "b560ce02806dc64636f4def47eddbbaf1a8e3c3d0dab2e845584779d7646eccc"
+    },
+    {
+      "path": "theme-account-access-v13-desktop-pending.png",
+      "sha256": "b365be09bca45c913d4f7da641328b62f2fbe31c93c58150fb320fcfd6af0392"
+    },
+    {
+      "path": "theme-account-access-v13-desktop.png",
+      "sha256": "5aa0a219cd07d77738234fa113ec96031c95064dbd1b7515d139c1cde586d000"
+    },
+    {
+      "path": "theme-account-access-v13-mobile-error.png",
+      "sha256": "8e5e71c2c5416f3369aeb6d26b65b04771723e8c92c3b7ee6548aac8648bcd15"
+    },
+    {
+      "path": "theme-account-access-v13-mobile-pending.png",
+      "sha256": "ea4b7f9a594e68c82874b29025c7f16b54dee41ac18b06f5a0fb25f6e77d705e"
+    },
+    {
+      "path": "theme-account-access-v13-mobile-phantom.png",
+      "sha256": "f6632c7c4e98f1a04905188f812b816b44fda0b86a739c600f9f969a9afff34d"
+    },
+    {
+      "path": "theme-account-access-v13-mobile.png",
+      "sha256": "90d43307a48f179c55043ce329051c71053ba82d6447b6d3d91d64149a637b5d"
+    },
+    {
+      "path": "theme-account-access-v13-narrow.png",
+      "sha256": "8873c71c2666f3400b9e35b1d61f6b8ef524c57e9520033d6e37a4ae3b9acc98"
+    },
+    {
+      "path": "theme-account-access-v13-text-200.png",
+      "sha256": "2ea16536ff0e3df2d3ca6bd8312f54cf0c646f8740c8fba5b4f85ebcecc1d471"
+    },
+    {
+      "path": "theme-account-access-v13.html",
+      "sha256": "2fe8bb38e7da9f86562b1045a0fd57a17136d77eb0bce76bec86227f459a1b34"
+    },
+    {
+      "path": "theme-account-access-v13-review.json",
+      "sha256": "13a0396ef345e0f11b9990d5951084183cf4a1b6e4417abd50580160108ddf89"
+    }
+  ]
+}

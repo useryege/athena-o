@@ -1,0 +1,1183 @@
+{
+  "checked_at": "2026-09-14T12:01:09.320070+00:00",
+  "scope": "Independent decimal arithmetic only, no product/SDK implementation or exchange acceptance test",
+  "price_cases": 144,
+  "checks": [
+    {
+      "tick": "0.1",
+      "reference": "0.0001",
+      "deviation_percent": "0",
+      "buy_bound": null,
+      "sell_bound": "0.1",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.0001",
+      "deviation_percent": "0.01",
+      "buy_bound": null,
+      "sell_bound": "0.1",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.0001",
+      "deviation_percent": "2",
+      "buy_bound": null,
+      "sell_bound": "0.1",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.0001",
+      "deviation_percent": "99.99",
+      "buy_bound": null,
+      "sell_bound": "0.1",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.01",
+      "deviation_percent": "0",
+      "buy_bound": null,
+      "sell_bound": "0.1",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.01",
+      "deviation_percent": "0.01",
+      "buy_bound": null,
+      "sell_bound": "0.1",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.01",
+      "deviation_percent": "2",
+      "buy_bound": null,
+      "sell_bound": "0.1",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.01",
+      "deviation_percent": "99.99",
+      "buy_bound": null,
+      "sell_bound": "0.1",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.31",
+      "deviation_percent": "0",
+      "buy_bound": "0.3",
+      "sell_bound": "0.4",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.31",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.3",
+      "sell_bound": "0.4",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.31",
+      "deviation_percent": "2",
+      "buy_bound": "0.3",
+      "sell_bound": "0.4",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.31",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.6",
+      "sell_bound": "0.1",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.53",
+      "deviation_percent": "0",
+      "buy_bound": "0.5",
+      "sell_bound": "0.6",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.53",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.5",
+      "sell_bound": "0.6",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.53",
+      "deviation_percent": "2",
+      "buy_bound": "0.5",
+      "sell_bound": "0.6",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.53",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.9",
+      "sell_bound": "0.1",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.99",
+      "deviation_percent": "0",
+      "buy_bound": "0.9",
+      "sell_bound": null,
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.99",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.9",
+      "sell_bound": null,
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.99",
+      "deviation_percent": "2",
+      "buy_bound": "0.9",
+      "sell_bound": null,
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.99",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.9",
+      "sell_bound": "0.1",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.9999",
+      "deviation_percent": "0",
+      "buy_bound": "0.9",
+      "sell_bound": null,
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.9999",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.9",
+      "sell_bound": null,
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.9999",
+      "deviation_percent": "2",
+      "buy_bound": "0.9",
+      "sell_bound": null,
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.1",
+      "reference": "0.9999",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.9",
+      "sell_bound": "0.1",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.0001",
+      "deviation_percent": "0",
+      "buy_bound": null,
+      "sell_bound": "0.01",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.0001",
+      "deviation_percent": "0.01",
+      "buy_bound": null,
+      "sell_bound": "0.01",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.0001",
+      "deviation_percent": "2",
+      "buy_bound": null,
+      "sell_bound": "0.01",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.0001",
+      "deviation_percent": "99.99",
+      "buy_bound": null,
+      "sell_bound": "0.01",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.01",
+      "deviation_percent": "0",
+      "buy_bound": "0.01",
+      "sell_bound": "0.01",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.01",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.01",
+      "sell_bound": "0.01",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.01",
+      "deviation_percent": "2",
+      "buy_bound": "0.01",
+      "sell_bound": "0.01",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.01",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.01",
+      "sell_bound": "0.01",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.31",
+      "deviation_percent": "0",
+      "buy_bound": "0.31",
+      "sell_bound": "0.31",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.31",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.31",
+      "sell_bound": "0.31",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.31",
+      "deviation_percent": "2",
+      "buy_bound": "0.31",
+      "sell_bound": "0.31",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.31",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.61",
+      "sell_bound": "0.01",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.53",
+      "deviation_percent": "0",
+      "buy_bound": "0.53",
+      "sell_bound": "0.53",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.53",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.53",
+      "sell_bound": "0.53",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.53",
+      "deviation_percent": "2",
+      "buy_bound": "0.54",
+      "sell_bound": "0.52",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.53",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.99",
+      "sell_bound": "0.01",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.99",
+      "deviation_percent": "0",
+      "buy_bound": "0.99",
+      "sell_bound": "0.99",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.99",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.99",
+      "sell_bound": "0.99",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.99",
+      "deviation_percent": "2",
+      "buy_bound": "0.99",
+      "sell_bound": "0.98",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.99",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.99",
+      "sell_bound": "0.01",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.9999",
+      "deviation_percent": "0",
+      "buy_bound": "0.99",
+      "sell_bound": null,
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.9999",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.99",
+      "sell_bound": null,
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.9999",
+      "deviation_percent": "2",
+      "buy_bound": "0.99",
+      "sell_bound": "0.98",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.01",
+      "reference": "0.9999",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.99",
+      "sell_bound": "0.01",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.0001",
+      "deviation_percent": "0",
+      "buy_bound": null,
+      "sell_bound": "0.005",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.0001",
+      "deviation_percent": "0.01",
+      "buy_bound": null,
+      "sell_bound": "0.005",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.0001",
+      "deviation_percent": "2",
+      "buy_bound": null,
+      "sell_bound": "0.005",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.0001",
+      "deviation_percent": "99.99",
+      "buy_bound": null,
+      "sell_bound": "0.005",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.01",
+      "deviation_percent": "0",
+      "buy_bound": "0.010",
+      "sell_bound": "0.010",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.01",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.010",
+      "sell_bound": "0.010",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.01",
+      "deviation_percent": "2",
+      "buy_bound": "0.010",
+      "sell_bound": "0.010",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.01",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.015",
+      "sell_bound": "0.005",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.31",
+      "deviation_percent": "0",
+      "buy_bound": "0.310",
+      "sell_bound": "0.310",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.31",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.310",
+      "sell_bound": "0.310",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.31",
+      "deviation_percent": "2",
+      "buy_bound": "0.315",
+      "sell_bound": "0.305",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.31",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.615",
+      "sell_bound": "0.005",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.53",
+      "deviation_percent": "0",
+      "buy_bound": "0.530",
+      "sell_bound": "0.530",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.53",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.530",
+      "sell_bound": "0.530",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.53",
+      "deviation_percent": "2",
+      "buy_bound": "0.540",
+      "sell_bound": "0.520",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.53",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.995",
+      "sell_bound": "0.005",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.99",
+      "deviation_percent": "0",
+      "buy_bound": "0.990",
+      "sell_bound": "0.990",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.99",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.990",
+      "sell_bound": "0.990",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.99",
+      "deviation_percent": "2",
+      "buy_bound": "0.995",
+      "sell_bound": "0.975",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.99",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.995",
+      "sell_bound": "0.005",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.9999",
+      "deviation_percent": "0",
+      "buy_bound": "0.995",
+      "sell_bound": null,
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.9999",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.995",
+      "sell_bound": null,
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.9999",
+      "deviation_percent": "2",
+      "buy_bound": "0.995",
+      "sell_bound": "0.980",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.005",
+      "reference": "0.9999",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.995",
+      "sell_bound": "0.005",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.0001",
+      "deviation_percent": "0",
+      "buy_bound": null,
+      "sell_bound": "0.0025",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.0001",
+      "deviation_percent": "0.01",
+      "buy_bound": null,
+      "sell_bound": "0.0025",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.0001",
+      "deviation_percent": "2",
+      "buy_bound": null,
+      "sell_bound": "0.0025",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.0001",
+      "deviation_percent": "99.99",
+      "buy_bound": null,
+      "sell_bound": "0.0025",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.01",
+      "deviation_percent": "0",
+      "buy_bound": "0.0100",
+      "sell_bound": "0.0100",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.01",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.0100",
+      "sell_bound": "0.0100",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.01",
+      "deviation_percent": "2",
+      "buy_bound": "0.0100",
+      "sell_bound": "0.0100",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.01",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.0175",
+      "sell_bound": "0.0025",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.31",
+      "deviation_percent": "0",
+      "buy_bound": "0.3100",
+      "sell_bound": "0.3100",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.31",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.3100",
+      "sell_bound": "0.3100",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.31",
+      "deviation_percent": "2",
+      "buy_bound": "0.3150",
+      "sell_bound": "0.3050",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.31",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.6175",
+      "sell_bound": "0.0025",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.53",
+      "deviation_percent": "0",
+      "buy_bound": "0.5300",
+      "sell_bound": "0.5300",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.53",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.5300",
+      "sell_bound": "0.5300",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.53",
+      "deviation_percent": "2",
+      "buy_bound": "0.5400",
+      "sell_bound": "0.5200",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.53",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.9975",
+      "sell_bound": "0.0025",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.99",
+      "deviation_percent": "0",
+      "buy_bound": "0.9900",
+      "sell_bound": "0.9900",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.99",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.9900",
+      "sell_bound": "0.9900",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.99",
+      "deviation_percent": "2",
+      "buy_bound": "0.9975",
+      "sell_bound": "0.9725",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.99",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.9975",
+      "sell_bound": "0.0025",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.9999",
+      "deviation_percent": "0",
+      "buy_bound": "0.9975",
+      "sell_bound": null,
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.9999",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.9975",
+      "sell_bound": null,
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.9999",
+      "deviation_percent": "2",
+      "buy_bound": "0.9975",
+      "sell_bound": "0.9800",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0025",
+      "reference": "0.9999",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.9975",
+      "sell_bound": "0.0025",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.0001",
+      "deviation_percent": "0",
+      "buy_bound": null,
+      "sell_bound": "0.001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.0001",
+      "deviation_percent": "0.01",
+      "buy_bound": null,
+      "sell_bound": "0.001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.0001",
+      "deviation_percent": "2",
+      "buy_bound": null,
+      "sell_bound": "0.001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.0001",
+      "deviation_percent": "99.99",
+      "buy_bound": null,
+      "sell_bound": "0.001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.01",
+      "deviation_percent": "0",
+      "buy_bound": "0.01",
+      "sell_bound": "0.01",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.01",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.010",
+      "sell_bound": "0.010",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.01",
+      "deviation_percent": "2",
+      "buy_bound": "0.010",
+      "sell_bound": "0.010",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.01",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.019",
+      "sell_bound": "0.001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.31",
+      "deviation_percent": "0",
+      "buy_bound": "0.31",
+      "sell_bound": "0.31",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.31",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.310",
+      "sell_bound": "0.310",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.31",
+      "deviation_percent": "2",
+      "buy_bound": "0.316",
+      "sell_bound": "0.304",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.31",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.619",
+      "sell_bound": "0.001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.53",
+      "deviation_percent": "0",
+      "buy_bound": "0.53",
+      "sell_bound": "0.53",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.53",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.530",
+      "sell_bound": "0.530",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.53",
+      "deviation_percent": "2",
+      "buy_bound": "0.540",
+      "sell_bound": "0.520",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.53",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.999",
+      "sell_bound": "0.001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.99",
+      "deviation_percent": "0",
+      "buy_bound": "0.99",
+      "sell_bound": "0.99",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.99",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.990",
+      "sell_bound": "0.990",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.99",
+      "deviation_percent": "2",
+      "buy_bound": "0.999",
+      "sell_bound": "0.971",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.99",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.999",
+      "sell_bound": "0.001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.9999",
+      "deviation_percent": "0",
+      "buy_bound": "0.999",
+      "sell_bound": null,
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.9999",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.999",
+      "sell_bound": null,
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.9999",
+      "deviation_percent": "2",
+      "buy_bound": "0.999",
+      "sell_bound": "0.980",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.001",
+      "reference": "0.9999",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.999",
+      "sell_bound": "0.001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.0001",
+      "deviation_percent": "0",
+      "buy_bound": "0.0001",
+      "sell_bound": "0.0001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.0001",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.0001",
+      "sell_bound": "0.0001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.0001",
+      "deviation_percent": "2",
+      "buy_bound": "0.0001",
+      "sell_bound": "0.0001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.0001",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.0001",
+      "sell_bound": "0.0001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.01",
+      "deviation_percent": "0",
+      "buy_bound": "0.01",
+      "sell_bound": "0.01",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.01",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.0100",
+      "sell_bound": "0.0100",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.01",
+      "deviation_percent": "2",
+      "buy_bound": "0.0102",
+      "sell_bound": "0.0098",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.01",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.0199",
+      "sell_bound": "0.0001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.31",
+      "deviation_percent": "0",
+      "buy_bound": "0.31",
+      "sell_bound": "0.31",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.31",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.3100",
+      "sell_bound": "0.3100",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.31",
+      "deviation_percent": "2",
+      "buy_bound": "0.3162",
+      "sell_bound": "0.3038",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.31",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.6199",
+      "sell_bound": "0.0001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.53",
+      "deviation_percent": "0",
+      "buy_bound": "0.53",
+      "sell_bound": "0.53",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.53",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.5300",
+      "sell_bound": "0.5300",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.53",
+      "deviation_percent": "2",
+      "buy_bound": "0.5406",
+      "sell_bound": "0.5194",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.53",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.9999",
+      "sell_bound": "0.0001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.99",
+      "deviation_percent": "0",
+      "buy_bound": "0.99",
+      "sell_bound": "0.99",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.99",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.9900",
+      "sell_bound": "0.9900",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.99",
+      "deviation_percent": "2",
+      "buy_bound": "0.9999",
+      "sell_bound": "0.9702",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.99",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.9999",
+      "sell_bound": "0.0001",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.9999",
+      "deviation_percent": "0",
+      "buy_bound": "0.9999",
+      "sell_bound": "0.9999",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.9999",
+      "deviation_percent": "0.01",
+      "buy_bound": "0.9999",
+      "sell_bound": "0.9999",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.9999",
+      "deviation_percent": "2",
+      "buy_bound": "0.9999",
+      "sell_bound": "0.9800",
+      "protection_preserved": true
+    },
+    {
+      "tick": "0.0001",
+      "reference": "0.9999",
+      "deviation_percent": "99.99",
+      "buy_bound": "0.9999",
+      "sell_bound": "0.0001",
+      "protection_preserved": true
+    }
+  ],
+  "illustrations": {
+    "rounding": {
+      "reference": "0.53",
+      "deviation_percent": "2",
+      "tick": "0.01",
+      "buy_maximum": "0.54",
+      "sell_minimum": "0.52"
+    },
+    "sell_100_percent": {
+      "position": "5.123456",
+      "sell_size": "5.12",
+      "remaining_precision_dust": "0.003456"
+    },
+    "fee_example": {
+      "principal": "10",
+      "single_fill_price": "0.50",
+      "fee_rate": "0.05",
+      "shares": "20",
+      "platform_fee": "0.2500",
+      "total": "10.25",
+      "builder_fee": "0",
+      "assumption": "Illustrative single-price fill at exponent=1, no rebates; not an actual executed order"
+    }
+  }
+}

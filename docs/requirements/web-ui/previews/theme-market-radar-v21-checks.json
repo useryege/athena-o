@@ -1,0 +1,575 @@
+{
+  "scope": "local visual prototype; synthetic data only",
+  "round": "detector-named-shadow-correction",
+  "assertions": [
+    {
+      "name": "hot desktop no horizontal overflow",
+      "passed": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "small": [],
+        "duplicateIds": [],
+        "font": "loaded"
+      }
+    },
+    {
+      "name": "hot desktop controls at least 44px",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "hot desktop unique IDs",
+      "passed": true
+    },
+    {
+      "name": "hot desktop fonts loaded",
+      "passed": true
+    },
+    {
+      "name": "hot desktop rendered records",
+      "passed": true
+    },
+    {
+      "name": "hot desktop default 50 rows",
+      "passed": true
+    },
+    {
+      "name": "hot mobile no horizontal overflow",
+      "passed": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "small": [],
+        "duplicateIds": [],
+        "font": "loaded"
+      }
+    },
+    {
+      "name": "hot mobile controls at least 44px",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "hot mobile unique IDs",
+      "passed": true
+    },
+    {
+      "name": "hot mobile fonts loaded",
+      "passed": true
+    },
+    {
+      "name": "hot mobile rendered records",
+      "passed": true
+    },
+    {
+      "name": "hot mobile default 50 rows",
+      "passed": true
+    },
+    {
+      "name": "hot narrow no horizontal overflow",
+      "passed": true,
+      "details": {
+        "width": 320,
+        "scrollWidth": 320,
+        "small": [],
+        "duplicateIds": [],
+        "font": "loaded"
+      }
+    },
+    {
+      "name": "hot narrow controls at least 44px",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "hot narrow unique IDs",
+      "passed": true
+    },
+    {
+      "name": "hot narrow fonts loaded",
+      "passed": true
+    },
+    {
+      "name": "hot narrow rendered records",
+      "passed": true
+    },
+    {
+      "name": "hot narrow default 50 rows",
+      "passed": true
+    },
+    {
+      "name": "hot zoom no horizontal overflow",
+      "passed": true,
+      "details": {
+        "width": 720,
+        "scrollWidth": 720,
+        "small": [],
+        "duplicateIds": [],
+        "font": "loaded"
+      }
+    },
+    {
+      "name": "hot zoom controls at least 44px",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "hot zoom unique IDs",
+      "passed": true
+    },
+    {
+      "name": "hot zoom fonts loaded",
+      "passed": true
+    },
+    {
+      "name": "hot zoom rendered records",
+      "passed": true
+    },
+    {
+      "name": "hot zoom default 50 rows",
+      "passed": true
+    },
+    {
+      "name": "realtime desktop no horizontal overflow",
+      "passed": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "small": [],
+        "duplicateIds": [],
+        "font": "loaded"
+      }
+    },
+    {
+      "name": "realtime desktop controls at least 44px",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "realtime desktop unique IDs",
+      "passed": true
+    },
+    {
+      "name": "realtime desktop fonts loaded",
+      "passed": true
+    },
+    {
+      "name": "realtime desktop rendered records",
+      "passed": true
+    },
+    {
+      "name": "realtime desktop default 50 rows",
+      "passed": true
+    },
+    {
+      "name": "realtime mobile no horizontal overflow",
+      "passed": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "small": [],
+        "duplicateIds": [],
+        "font": "loaded"
+      }
+    },
+    {
+      "name": "realtime mobile controls at least 44px",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "realtime mobile unique IDs",
+      "passed": true
+    },
+    {
+      "name": "realtime mobile fonts loaded",
+      "passed": true
+    },
+    {
+      "name": "realtime mobile rendered records",
+      "passed": true
+    },
+    {
+      "name": "realtime mobile default 50 rows",
+      "passed": true
+    },
+    {
+      "name": "realtime narrow no horizontal overflow",
+      "passed": true,
+      "details": {
+        "width": 320,
+        "scrollWidth": 320,
+        "small": [],
+        "duplicateIds": [],
+        "font": "loaded"
+      }
+    },
+    {
+      "name": "realtime narrow controls at least 44px",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "realtime narrow unique IDs",
+      "passed": true
+    },
+    {
+      "name": "realtime narrow fonts loaded",
+      "passed": true
+    },
+    {
+      "name": "realtime narrow rendered records",
+      "passed": true
+    },
+    {
+      "name": "realtime narrow default 50 rows",
+      "passed": true
+    },
+    {
+      "name": "realtime zoom no horizontal overflow",
+      "passed": true,
+      "details": {
+        "width": 720,
+        "scrollWidth": 720,
+        "small": [],
+        "duplicateIds": [],
+        "font": "loaded"
+      }
+    },
+    {
+      "name": "realtime zoom controls at least 44px",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "realtime zoom unique IDs",
+      "passed": true
+    },
+    {
+      "name": "realtime zoom fonts loaded",
+      "passed": true
+    },
+    {
+      "name": "realtime zoom rendered records",
+      "passed": true
+    },
+    {
+      "name": "realtime zoom default 50 rows",
+      "passed": true
+    },
+    {
+      "name": "movers desktop no horizontal overflow",
+      "passed": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "small": [],
+        "duplicateIds": [],
+        "font": "loaded"
+      }
+    },
+    {
+      "name": "movers desktop controls at least 44px",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "movers desktop unique IDs",
+      "passed": true
+    },
+    {
+      "name": "movers desktop fonts loaded",
+      "passed": true
+    },
+    {
+      "name": "movers desktop rendered records",
+      "passed": true
+    },
+    {
+      "name": "movers desktop default 50 rows",
+      "passed": true
+    },
+    {
+      "name": "movers mobile no horizontal overflow",
+      "passed": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "small": [],
+        "duplicateIds": [],
+        "font": "loaded"
+      }
+    },
+    {
+      "name": "movers mobile controls at least 44px",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "movers mobile unique IDs",
+      "passed": true
+    },
+    {
+      "name": "movers mobile fonts loaded",
+      "passed": true
+    },
+    {
+      "name": "movers mobile rendered records",
+      "passed": true
+    },
+    {
+      "name": "movers mobile default 50 rows",
+      "passed": true
+    },
+    {
+      "name": "movers narrow no horizontal overflow",
+      "passed": true,
+      "details": {
+        "width": 320,
+        "scrollWidth": 320,
+        "small": [],
+        "duplicateIds": [],
+        "font": "loaded"
+      }
+    },
+    {
+      "name": "movers narrow controls at least 44px",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "movers narrow unique IDs",
+      "passed": true
+    },
+    {
+      "name": "movers narrow fonts loaded",
+      "passed": true
+    },
+    {
+      "name": "movers narrow rendered records",
+      "passed": true
+    },
+    {
+      "name": "movers narrow default 50 rows",
+      "passed": true
+    },
+    {
+      "name": "movers zoom no horizontal overflow",
+      "passed": true,
+      "details": {
+        "width": 720,
+        "scrollWidth": 720,
+        "small": [],
+        "duplicateIds": [],
+        "font": "loaded"
+      }
+    },
+    {
+      "name": "movers zoom controls at least 44px",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "movers zoom unique IDs",
+      "passed": true
+    },
+    {
+      "name": "movers zoom fonts loaded",
+      "passed": true
+    },
+    {
+      "name": "movers zoom rendered records",
+      "passed": true
+    },
+    {
+      "name": "movers zoom default 50 rows",
+      "passed": true
+    },
+    {
+      "name": "Full condition ID visible",
+      "passed": true
+    },
+    {
+      "name": "realtime expanded no horizontal overflow",
+      "passed": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "small": [],
+        "duplicateIds": [],
+        "font": "loaded"
+      }
+    },
+    {
+      "name": "realtime expanded controls at least 44px",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "realtime expanded unique IDs",
+      "passed": true
+    },
+    {
+      "name": "realtime expanded fonts loaded",
+      "passed": true
+    },
+    {
+      "name": "empty state rendered",
+      "passed": true
+    },
+    {
+      "name": "error state rendered",
+      "passed": true
+    },
+    {
+      "name": "stale state rendered",
+      "passed": true
+    },
+    {
+      "name": "stale mobile no horizontal overflow",
+      "passed": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "small": [],
+        "duplicateIds": [],
+        "font": "loaded"
+      }
+    },
+    {
+      "name": "stale mobile controls at least 44px",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "stale mobile unique IDs",
+      "passed": true
+    },
+    {
+      "name": "stale mobile fonts loaded",
+      "passed": true
+    },
+    {
+      "name": "loading state rendered",
+      "passed": true
+    },
+    {
+      "name": "denied state rendered",
+      "passed": true
+    },
+    {
+      "name": "Denied state removes market records",
+      "passed": true
+    },
+    {
+      "name": "Pagination 50 mounted of60",
+      "passed": true
+    },
+    {
+      "name": "Pagination last10 mounted",
+      "passed": true
+    },
+    {
+      "name": "Manual refresh preserves page2",
+      "passed": true
+    },
+    {
+      "name": "Page size100 clamps page1",
+      "passed": true
+    },
+    {
+      "name": "Page size10 mounts10",
+      "passed": true
+    },
+    {
+      "name": "Keyboard opens facts",
+      "passed": true
+    },
+    {
+      "name": "Copy failure opens manual-copy dialog",
+      "passed": true
+    },
+    {
+      "name": "Copy fallback contains complete value",
+      "passed": true
+    },
+    {
+      "name": "Escape closes copy dialog",
+      "passed": true
+    },
+    {
+      "name": "No JS exceptions",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "No external requests",
+      "passed": true,
+      "details": []
+    }
+  ],
+  "screenshots": [
+    "theme-market-radar-v21-hot-desktop.png",
+    "theme-market-radar-v21-hot-mobile.png",
+    "theme-market-radar-v21-hot-narrow.png",
+    "theme-market-radar-v21-hot-zoom.png",
+    "theme-market-radar-v21-realtime-desktop.png",
+    "theme-market-radar-v21-realtime-mobile.png",
+    "theme-market-radar-v21-realtime-narrow.png",
+    "theme-market-radar-v21-realtime-zoom.png",
+    "theme-market-radar-v21-movers-desktop.png",
+    "theme-market-radar-v21-movers-mobile.png",
+    "theme-market-radar-v21-movers-narrow.png",
+    "theme-market-radar-v21-movers-zoom.png",
+    "theme-market-radar-v21-realtime-facts-mobile.png",
+    "theme-market-radar-v21-realtime-stale-mobile.png",
+    "theme-market-radar-v21-realtime-copy-fallback-mobile.png"
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "pass": true,
+  "count": 98,
+  "verificationCommand": "/home/yege/.nvm/versions/node/v24.14.1/bin/node .superpowers/v21-market-radar-check.cjs detector-named-shadow-correction",
+  "authorVisualInspection": {
+    "initialAndConfirmationRounds": 2,
+    "initialImagesOpened": 15,
+    "confirmationImagesOpened": 15,
+    "beforeImagesOpened": 6,
+    "directedCorrectionImagesOpened": 15,
+    "remainingObservedIssues": []
+  },
+  "directedCorrection": {
+    "source": "Parent task single combined detector",
+    "namedFinding": "gpt-thin-border-wide-shadow: inherited .account-menu 30px shadow",
+    "action": "Mechanically rebuilt with corrected parent v21-common.css and current v21_shell.py. Existing 15 prototype screenshots overwritten at the same paths and opened. No additional visual changes or detector run.",
+    "htmlAccountMenu30pxShadowAbsent": true,
+    "surfaceBriefHeadings": [
+      "THESIS",
+      "OWN-WORLD",
+      "STORY",
+      "FIRST VIEWPORT",
+      "FORM",
+      "FINISH",
+      "QUALITY BAR"
+    ],
+    "surfaceBriefChange": "Renamed and reordered existing alias blocks without changing visual direction.",
+    "incumbentCapturesChanged": false
+  },
+  "captureConvention": {
+    "desktop": "1440x900 full document",
+    "mobile": "390x844 full document",
+    "narrow": "320x844 full document",
+    "zoom": "720x900 root font 200%; full document",
+    "copyFallback": "390x844 viewport with modal body at top",
+    "fontsReady": true,
+    "animationsDisabled": true,
+    "documentStartsAtTop": true
+  },
+  "limitations": [
+    "Synthetic market and user fixtures, not live data or real authentication.",
+    "Only local preview interactions and intercepted GET React comparisons were exercised.",
+    "No actual provider, WebSocket, notifications, permissions backend, trade or full-stack acceptance verified.",
+    "No services were started or stopped by this subtask; borrowed localhost:4000 Vite belongs to parent task."
+  ]
+}

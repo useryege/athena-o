@@ -1,0 +1,111 @@
+{
+  "version": "v15",
+  "result": "passed",
+  "capturedAt": "2026-09-14T04:52:44.206330+00:00",
+  "scope": {
+    "mode": "ui-fixtures",
+    "description": "Current React administrator account directory and details using synthetic GET response fixtures. No live account writes.",
+    "productionUIChanged": false
+  },
+  "environment": {
+    "url": "http://localhost:4000",
+    "repository": "/home/yege/work/athena",
+    "processWorkingDirectory": "/home/yege/work/athena/ui",
+    "vitePID": 308228,
+    "supervisorPID": 307846,
+    "instance": "athena-local-runtime (legacy shared existing environment)",
+    "ownerState": ".run/athena-local-runtime/supervisor.state",
+    "logs": ".run/athena-local-runtime/",
+    "captureLogs": ".superpowers/v15-current-playwright-artifacts/",
+    "taskStartedServices": [],
+    "taskCleanup": "All task browser contexts closed. No task-started service. Borrowed environment preserved.",
+    "ownerStopCommand": "cd /home/yege/work/athena && make stop",
+    "ownerStopCommandExecuted": false
+  },
+  "capture": {
+    "command": "cd ui && yarn playwright test --config ../.superpowers/v15-current.playwright.config.ts",
+    "result": "1 passed (2.9s)",
+    "screenshots": [
+      {
+        "name": "desktop",
+        "route": "/admin/accounts",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 2393
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/account"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-admin-accounts-v15-before-desktop.png",
+        "sha256": "2afa58aab4b1a84063e3278cd8509399e7961d4f016084226693ac31685849c9"
+      },
+      {
+        "name": "mobile-list",
+        "route": "/admin/accounts",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 944
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/account"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-admin-accounts-v15-before-mobile-list.png",
+        "sha256": "78bedc45c4d4214c980bc516bc9875832f13dad9c6624732c86ea8c1139377d7"
+      },
+      {
+        "name": "mobile-detail",
+        "route": "/admin/accounts",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 3835
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/account"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false,
+        "path": "theme-admin-accounts-v15-before-mobile-detail.png",
+        "sha256": "cca2fd3a330cd622750e425d6a045444f362b50348effdec5cbde6ab397f2b0d"
+      }
+    ]
+  },
+  "sourceHashesSha256": {
+    "ui/src/app/admin/pages/admin-accounts.tsx": "1dbc1a1bb9c5c8463ae79017bab3fc08ba3901ee4fc08c7b41f8d1816f3e1ce0",
+    "ui/src/app/admin/accounts-service.ts": "e9c1f5363039c8e84358a31818b7f7eb5d3bec11a6698e78ba62beb862ca87ba",
+    "ui/src/app/admin/app.tsx": "98d44ab834f8c7b25f358e31665ae01fe0dd5856e2eb26b211e697de3a9bacea",
+    "ui/src/app/shared/access-modules.ts": "f54000b2af724dee3062b5c9360cdb32e7844be05621ccb4aeed75dfcebb0f18",
+    "ui/src/app/shared/models.ts": "c506d918df4e16ebeb1952aeeaf7416857e3aaa14ff782262348e6102b871320",
+    "ui/src/app/shared/account-presentation.tsx": "a35621389b1d9a247f9246358eee55ba58285c2e550cafc1c5ea79857ae4c29f",
+    "ui/src/app/styles/admin.css": "a2b18f0fc785f9d0f4184bfc88f8176d6e5e8f7aea6a4e66e65aaa35ef3d8767"
+  },
+  "observations": [
+    "Current desktop keeps a left directory and stacks Identity, Profile and Authorization vertically. The proposal keeps the directory, uses Access/Profile/Identity tabs and places Access first.",
+    "Current mobile stacks all detail regions into one long page. The proposal keeps list/detail navigation and adds detail tabs.",
+    "Current source is authoritative: 11-module aggregate, 10 displayed entries, hidden Token preserved, Trader Sync only None/ReadWrite, Solana only None/Read. Production source remains unchanged."
+  ]
+}

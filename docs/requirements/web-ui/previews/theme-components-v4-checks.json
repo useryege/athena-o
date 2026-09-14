@@ -1,0 +1,161 @@
+{
+  "scope": "Standalone component prototype; root font enlargement is text-scaling simulation, not native browser zoom or product acceptance",
+  "results": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 1180,
+      "textScale": 1,
+      "viewport": 1440,
+      "scroll": 1440,
+      "fonts": [
+        {
+          "family": "Inter",
+          "status": "loaded"
+        },
+        {
+          "family": "JetBrains Mono",
+          "status": "loaded"
+        }
+      ],
+      "duplicates": [],
+      "initialAxeViolations": [],
+      "dialogAxeViolations": [],
+      "dialogGeometry": {
+        "left": 480,
+        "right": 960,
+        "top": 455.5,
+        "bottom": 724.484375,
+        "viewport": 1440,
+        "viewportHeight": 1180,
+        "scrollWidth": 478,
+        "clientWidth": 478
+      },
+      "keyboardFocus": {
+        "focused": true,
+        "style": "solid",
+        "width": "2px"
+      },
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Address validation/correction, keyboard focus, modal default focus/Escape/keep/discard/return focus, local messages and unchanged saved timestamp passed"
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "viewport": 390,
+      "scroll": 390,
+      "fonts": [
+        {
+          "family": "Inter",
+          "status": "loaded"
+        },
+        {
+          "family": "JetBrains Mono",
+          "status": "loaded"
+        }
+      ],
+      "duplicates": [],
+      "initialAxeViolations": [],
+      "dialogAxeViolations": [],
+      "dialogGeometry": {
+        "left": 20,
+        "right": 370,
+        "top": 255.109375,
+        "bottom": 588.890625,
+        "viewport": 390,
+        "viewportHeight": 844,
+        "scrollWidth": 348,
+        "clientWidth": 348
+      },
+      "keyboardFocus": {
+        "focused": true,
+        "style": "solid",
+        "width": "2px"
+      },
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Address validation/correction, keyboard focus, modal default focus/Escape/keep/discard/return focus, local messages and unchanged saved timestamp passed"
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "textScale": 1,
+      "viewport": 320,
+      "scroll": 320,
+      "fonts": [
+        {
+          "family": "Inter",
+          "status": "loaded"
+        },
+        {
+          "family": "JetBrains Mono",
+          "status": "loaded"
+        }
+      ],
+      "duplicates": [],
+      "initialAxeViolations": [],
+      "dialogAxeViolations": [],
+      "dialogGeometry": {
+        "left": 20,
+        "right": 300,
+        "top": 242.3125,
+        "bottom": 601.6875,
+        "viewport": 320,
+        "viewportHeight": 844,
+        "scrollWidth": 278,
+        "clientWidth": 278
+      },
+      "keyboardFocus": {
+        "focused": true,
+        "style": "solid",
+        "width": "2px"
+      },
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Address validation/correction, keyboard focus, modal default focus/Escape/keep/discard/return focus, local messages and unchanged saved timestamp passed"
+    },
+    {
+      "name": "text-200",
+      "width": 720,
+      "height": 900,
+      "textScale": 2,
+      "viewport": 720,
+      "scroll": 720,
+      "fonts": [
+        {
+          "family": "Inter",
+          "status": "loaded"
+        },
+        {
+          "family": "JetBrains Mono",
+          "status": "loaded"
+        }
+      ],
+      "duplicates": [],
+      "initialAxeViolations": [],
+      "dialogAxeViolations": [],
+      "dialogGeometry": {
+        "left": 120,
+        "right": 600,
+        "top": 210.53125,
+        "bottom": 689.46875,
+        "viewport": 720,
+        "viewportHeight": 900,
+        "scrollWidth": 478,
+        "clientWidth": 478
+      },
+      "keyboardFocus": {
+        "focused": true,
+        "style": "solid",
+        "width": "2px"
+      },
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Address validation/correction, keyboard focus, modal default focus/Escape/keep/discard/return focus, local messages and unchanged saved timestamp passed"
+    }
+  ]
+}

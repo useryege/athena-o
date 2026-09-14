@@ -65,6 +65,429 @@
         ],
         "createdAt": "2026-09-13T14:30:11.896Z",
         "reason": "Codex visual review: data-panel is a table shell; its header/data cells have 14px vertical padding, table-scroll has 24px horizontal padding, and the footer has 12px/24px padding. Mobile list rows have 16px/20px padding. Text is inset by children while separators intentionally meet the shell. Exception applies only to this layout sample."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-components-v4.html"
+        ],
+        "createdAt": "2026-09-13T15:56:25.976Z",
+        "reason": "User confirmed the Inter typography baseline in v2. This component-state proposal intentionally preserves that typeface and the Nansen reference direction."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-list-controls-v5.html"
+        ],
+        "createdAt": "2026-09-13T16:16:46.423Z",
+        "reason": "User confirmed Inter in the v2 typography baseline. This v5 list-control preview preserves the approved Nansen-inspired theme and typeface."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-trader-sync-v6.html"
+        ],
+        "createdAt": "2026-09-13T16:54:29.098Z",
+        "reason": "用户已在 v2 确认 Inter；本轮 Trader Sync 提案沿用已批准字体与 Nansen 参考方向。"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          ".superpowers/trader-sync-v6.css"
+        ],
+        "createdAt": "2026-09-13T17:00:43.234Z",
+        "reason": "用户已在 v2 截图确认 Inter，AGENTS.md 与字体基准要求后续沿用；此 CSS 是 v6 样板的同源样式。"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-trader-add-v7.html"
+        ],
+        "createdAt": "2026-09-13T17:28:53.561Z",
+        "reason": "用户已在 v2 确认 Inter，v7 现有添加页面改版沿用 v1–v6 视觉基准与 Nansen 参考。"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-trader-subscriptions-v8.html"
+        ],
+        "createdAt": "2026-09-14T00:22:22.008Z",
+        "reason": "用户已在 v2 确认 Inter，v8 订阅列表沿用 v1–v7 已批准的 Nansen 参考主题与字体。"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-trader-detail-v9.html"
+        ],
+        "createdAt": "2026-09-14T00:52:13.070Z",
+        "reason": "用户已在 v2 确认 Inter；v9 订阅详情沿用 v1–v8 已批准的 Nansen 参考主题与字体。"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-notifications-v10.html"
+        ],
+        "createdAt": "2026-09-14T01:27:39.006Z",
+        "reason": "用户已在 v2 确认 Inter；v10 通知设置沿用已批准的 Nansen 参考主题与字体。"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-account-profile-v11.html"
+        ],
+        "createdAt": "2026-09-14T01:59:02.349Z",
+        "reason": "用户已在 v2 确认 Inter；v11 个人资料沿用已批准的 Nansen 参考主题与字体。"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-account-security-v12.html"
+        ],
+        "createdAt": "2026-09-14T02:31:42.570Z",
+        "reason": "用户已在 v2 确认 Inter；v12 安全设置沿用已批准的 Nansen 参考主题与字体。"
+      },
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          ".superpowers/wallet-analytics-preview/page.html"
+        ],
+        "createdAt": "2026-09-14T03:05:18.728Z",
+        "reason": "Agent review: page.html is a build template with BASE_STYLE and PAGE_STYLE placeholders; build.py injects the approved styles into docs/requirements/token/previews/wallet-analytics-v1.html. Browser measurements show desktop heading/section/body 28/20/16px and mobile 24/20/16px, matching the user-confirmed v2 typography. The template-only scanner reported 16/16/16px because the styles are not present until generation. Suppression applies only to this rule in this source template."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-account-access-v13.html"
+        ],
+        "createdAt": "2026-09-14T03:10:11.480Z",
+        "reason": "用户已在 v2 确认 Inter；v13 权限与会话页沿用已批准的 Nansen 参考主题与字体。"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-auth-v14.html"
+        ],
+        "createdAt": "2026-09-14T03:42:43.102Z",
+        "reason": "用户已在 v2 确认 Inter；v14 登录与注册页沿用已批准的 Nansen 参考主题与字体。"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          ".superpowers/auth-v14.template.html"
+        ],
+        "createdAt": "2026-09-14T04:06:51.539Z",
+        "reason": "用户已在 v2 字体与数字排版确认 Inter；本模板生成 v14 登录与注册提案，沿用已确认字体，见 docs/requirements/web-ui/typography-proposal.md。"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-admin-accounts-v15.html"
+        ],
+        "createdAt": "2026-09-14T04:43:57.857Z",
+        "reason": "User confirmed: v2 typography uses Inter; AGENTS.md and visual-theme.md preserve this approved choice."
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-admin-accounts-v15.html"
+        ],
+        "createdAt": "2026-09-14T04:44:55.818Z",
+        "reason": "Agent verified in Chromium: the reported white-on-mint hover pair does not render. Save/Apply use #06080B on #00FFA7 (15.15:1); five relevant hover states meet 11.27:1 or better. Evidence: .superpowers/v15-hover-contrast.json."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-service-status-v16.html"
+        ],
+        "createdAt": "2026-09-14T05:25:58.319Z",
+        "reason": "Inter was explicitly approved by the user in v2 and retained by AGENTS.md and visual-theme.md. v16 extends the confirmed system."
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-service-status-v16.html"
+        ],
+        "createdAt": "2026-09-14T05:25:58.325Z",
+        "reason": "Verified detector false positive: no primary button is rendered; inherited white and unused mint CSS were combined. Actual hover contrasts are at least 7.2188:1, and sampled text meets 4.5:1. Evidence: .superpowers/v16-hover-contrast.json and theme-service-status-v16-checks.json."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-etherscan-gateways-v17.html"
+        ],
+        "createdAt": "2026-09-14T06:03:13.809Z",
+        "reason": "Inter is explicitly approved for ATHENA interface and numeric typography in v2; retained under visual-theme.md."
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-etherscan-gateways-v17.html"
+        ],
+        "createdAt": "2026-09-14T06:03:13.905Z",
+        "reason": "Verified false positive: actual Run Probe hover foreground is #06080B on #51FFC3, 15.70:1. All 12 targeted hover states exceed 4.5:1; evidence .superpowers/v17-hover-contrast.json. This exception is scoped to this static proposal only."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-system-notifications-v18.html"
+        ],
+        "createdAt": "2026-09-14T07:02:34.874Z",
+        "reason": "User-approved v2 Inter typography, retained across Nansen-themed UI proposals."
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-system-notifications-v18.html"
+        ],
+        "createdAt": "2026-09-14T07:02:34.880Z",
+        "reason": "False positive: both primary controls render near-black text; recorded normal/hover contrast exceeds 15:1 across four viewports. See .superpowers/v18-detector-triage.json and v18-checks.json."
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-system-notifications-v18.html"
+        ],
+        "createdAt": "2026-09-14T07:02:34.886Z",
+        "reason": "False positive: test-dialog delegates padding to modal-actions; measured bottom text/button inset is 20px, horizontal inset 20px mobile / 24px desktop. See .superpowers/v18-detector-triage.json."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-admin-trader-sync-v19.html"
+        ],
+        "createdAt": "2026-09-14T07:56:04.052Z",
+        "reason": "Explicit user-approved v2 Inter typography, retained in the Nansen-inspired single dark theme."
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-admin-trader-sync-v19.html"
+        ],
+        "createdAt": "2026-09-14T07:56:04.059Z",
+        "reason": "False positive: browser-computed hovered primary controls render near-black #06080B on #51FFC3 at15.70:1. Twenty samples across both v19 surfaces and four viewport conditions. See .superpowers/v19-detector-triage.json."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-admin-profit-sharing-v19.html"
+        ],
+        "createdAt": "2026-09-14T07:56:04.066Z",
+        "reason": "Explicit user-approved v2 Inter typography, retained in the Nansen-inspired single dark theme."
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-admin-profit-sharing-v19.html"
+        ],
+        "createdAt": "2026-09-14T07:56:04.073Z",
+        "reason": "False positive: browser-computed hovered primary controls render near-black #06080B on #51FFC3 at15.70:1. Twenty samples across both v19 surfaces and four viewport conditions. See .superpowers/v19-detector-triage.json."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-wallets-v20.html"
+        ],
+        "createdAt": "2026-09-14T09:02:26.982Z",
+        "reason": "User explicitly approved Inter as the site-wide font in v2; v20 extends that approved system."
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-wallets-v20.html"
+        ],
+        "createdAt": "2026-09-14T09:02:26.992Z",
+        "reason": "Static hover inference is not present in the rendered UI. Wallets hover is #06080B on #51FFC3 (15.70:1); Solana has no rendered primary button. Evidence: .superpowers/v20-detector-triage.json."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-solana-v20.html"
+        ],
+        "createdAt": "2026-09-14T09:02:27.000Z",
+        "reason": "User explicitly approved Inter as the site-wide font in v2; v20 extends that approved system."
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-solana-v20.html"
+        ],
+        "createdAt": "2026-09-14T09:02:27.008Z",
+        "reason": "Static hover inference is not present in the rendered UI. Wallets hover is #06080B on #51FFC3 (15.70:1); Solana has no rendered primary button. Evidence: .superpowers/v20-detector-triage.json."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-member-profit-sharing-v20.html"
+        ],
+        "createdAt": "2026-09-14T09:02:27.015Z",
+        "reason": "User explicitly approved Inter as the site-wide font in v2; v20 extends that approved system."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-market-radar-v21.html"
+        ],
+        "createdAt": "2026-09-14T10:06:20.319Z",
+        "reason": "User explicitly approved Inter in v2 and retained it across the Nansen-inspired single dark theme; v21 is an ordinary extension."
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-market-radar-v21.html"
+        ],
+        "createdAt": "2026-09-14T10:06:20.325Z",
+        "reason": "False positive: 12 settled computed default/hover samples across desktop/mobile use near-black foreground on mint, minimum 15.145:1. Market Radar renders no primary buttons. See .superpowers/v21-detector-triage.json; only this HTML is exempted."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-sports-v21.html"
+        ],
+        "createdAt": "2026-09-14T10:06:20.332Z",
+        "reason": "User explicitly approved Inter in v2 and retained it across the Nansen-inspired single dark theme; v21 is an ordinary extension."
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-sports-v21.html"
+        ],
+        "createdAt": "2026-09-14T10:06:20.338Z",
+        "reason": "False positive: 12 settled computed default/hover samples across desktop/mobile use near-black foreground on mint, minimum 15.145:1. Market Radar renders no primary buttons. See .superpowers/v21-detector-triage.json; only this HTML is exempted."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-managed-oo-v21.html"
+        ],
+        "createdAt": "2026-09-14T10:06:20.345Z",
+        "reason": "User explicitly approved Inter in v2 and retained it across the Nansen-inspired single dark theme; v21 is an ordinary extension."
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-managed-oo-v21.html"
+        ],
+        "createdAt": "2026-09-14T10:06:20.351Z",
+        "reason": "False positive: 12 settled computed default/hover samples across desktop/mobile use near-black foreground on mint, minimum 15.145:1. Market Radar renders no primary buttons. See .superpowers/v21-detector-triage.json; only this HTML is exempted."
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-worm-assets-v22.html"
+        ],
+        "createdAt": "2026-09-14T11:19:47.017Z",
+        "reason": "本静态HTML仅报告white-on-mint hover误判；实际28个启用default/hover稳定态深字/mint样本最低15.145:1，证据.superpowers/v22-contrast-evidence.json。CLI此规则仅支持*，限当前版本单一HTML。"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-worm-assets-v22.html"
+        ],
+        "createdAt": "2026-09-14T11:19:47.028Z",
+        "reason": "用户明确批准 v2 Inter UI/数字字体，v22沿用既定品牌，不重新选择。"
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-worm-combinations-v22.html"
+        ],
+        "createdAt": "2026-09-14T11:19:47.043Z",
+        "reason": "本静态HTML仅报告white-on-mint hover误判；实际28个启用default/hover稳定态深字/mint样本最低15.145:1，证据.superpowers/v22-contrast-evidence.json。CLI此规则仅支持*，限当前版本单一HTML。"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-worm-combinations-v22.html"
+        ],
+        "createdAt": "2026-09-14T11:19:47.055Z",
+        "reason": "用户明确批准 v2 Inter UI/数字字体，v22沿用既定品牌，不重新选择。"
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-worm-executions-v22.html"
+        ],
+        "createdAt": "2026-09-14T11:19:47.071Z",
+        "reason": "本静态HTML仅报告white-on-mint hover误判；实际28个启用default/hover稳定态深字/mint样本最低15.145:1，证据.superpowers/v22-contrast-evidence.json。CLI此规则仅支持*，限当前版本单一HTML。"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-worm-executions-v22.html"
+        ],
+        "createdAt": "2026-09-14T11:19:47.087Z",
+        "reason": "用户明确批准 v2 Inter UI/数字字体，v22沿用既定品牌，不重新选择。"
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-common-adaptations-v22.html"
+        ],
+        "createdAt": "2026-09-14T11:19:47.095Z",
+        "reason": "本静态HTML仅报告white-on-mint hover误判；实际28个启用default/hover稳定态深字/mint样本最低15.145:1，证据.superpowers/v22-contrast-evidence.json。CLI此规则仅支持*，限当前版本单一HTML。"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-common-adaptations-v22.html"
+        ],
+        "createdAt": "2026-09-14T11:19:47.102Z",
+        "reason": "用户明确批准 v2 Inter UI/数字字体，v22沿用既定品牌，不重新选择。"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/token/previews/wallet-analytics-v1.html"
+        ],
+        "createdAt": "2026-09-14T13:02:06.298Z",
+        "reason": "User confirmed Nansen single-dark visual direction and Inter in typography v2; Token wallet analytics v1 explicitly inherits that font choice and was approved on 2026-09-14. Preserve this file-scoped brand exception; do not suppress other fonts or rules."
       }
     ]
   }

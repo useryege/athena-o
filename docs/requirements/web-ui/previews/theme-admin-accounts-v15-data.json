@@ -1,0 +1,506 @@
+{
+  "synthetic": true,
+  "notice": "Visual preview · Fictional accounts. All changes stay in this page.",
+  "asOf": "2026-09-14T02:00:00Z",
+  "admin": {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "username": "alex.admin",
+    "administrator": true,
+    "access": {
+      "loginEnabled": true,
+      "apiKeyEnabled": true,
+      "profitSharingEnabled": false,
+      "revision": "7",
+      "moduleAccess": [
+        {
+          "module": 1,
+          "dataAccess": 1
+        },
+        {
+          "module": 2,
+          "dataAccess": 1
+        },
+        {
+          "module": 3,
+          "dataAccess": 0
+        },
+        {
+          "module": 4,
+          "dataAccess": 0
+        },
+        {
+          "module": 5,
+          "dataAccess": 0
+        },
+        {
+          "module": 11,
+          "dataAccess": 0
+        },
+        {
+          "module": 7,
+          "dataAccess": 0
+        },
+        {
+          "module": 8,
+          "dataAccess": 1
+        },
+        {
+          "module": 13,
+          "dataAccess": 1
+        },
+        {
+          "module": 9,
+          "dataAccess": 1
+        },
+        {
+          "module": 12,
+          "dataAccess": 2
+        }
+      ]
+    },
+    "profile": {
+      "displayName": "Alex Morgan",
+      "tier": "ACCOUNT_TIER_STANDARD",
+      "avatarUrl": "",
+      "revision": "4"
+    },
+    "identity": {
+      "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+      "verifiedEmail": "alex.admin@example.invalid",
+      "solanaAddress": "",
+      "createdAt": 1783999440,
+      "lastLoginAt": 1789351200
+    },
+    "status": "ACCOUNT_STATUS_ACTIVE",
+    "loggedIn": true,
+    "accountId": "44444444-4444-4444-8444-444444444444",
+    "iss": "athena",
+    "preferences": {
+      "theme": "ACCOUNT_THEME_DARK",
+      "revision": "2"
+    }
+  },
+  "accounts": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "username": "mira.chen",
+      "administrator": false,
+      "access": {
+        "loginEnabled": true,
+        "apiKeyEnabled": true,
+        "profitSharingEnabled": false,
+        "revision": "7",
+        "moduleAccess": [
+          {
+            "module": 1,
+            "dataAccess": 1
+          },
+          {
+            "module": 2,
+            "dataAccess": 1
+          },
+          {
+            "module": 3,
+            "dataAccess": 0
+          },
+          {
+            "module": 4,
+            "dataAccess": 0
+          },
+          {
+            "module": 5,
+            "dataAccess": 0
+          },
+          {
+            "module": 11,
+            "dataAccess": 0
+          },
+          {
+            "module": 7,
+            "dataAccess": 0
+          },
+          {
+            "module": 8,
+            "dataAccess": 1
+          },
+          {
+            "module": 13,
+            "dataAccess": 1
+          },
+          {
+            "module": 9,
+            "dataAccess": 1
+          },
+          {
+            "module": 12,
+            "dataAccess": 2
+          }
+        ]
+      },
+      "profile": {
+        "displayName": "Mira Chen",
+        "tier": "ACCOUNT_TIER_STANDARD",
+        "avatarUrl": "",
+        "revision": "4"
+      },
+      "identity": {
+        "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+        "verifiedEmail": "mira.chen@example.invalid",
+        "solanaAddress": "",
+        "createdAt": 1783999440,
+        "lastLoginAt": 1789351200
+      },
+      "status": "ACCOUNT_STATUS_ACTIVE"
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "username": "noah.park",
+      "administrator": false,
+      "access": {
+        "loginEnabled": true,
+        "apiKeyEnabled": false,
+        "profitSharingEnabled": false,
+        "revision": "7",
+        "moduleAccess": [
+          {
+            "module": 1,
+            "dataAccess": 0
+          },
+          {
+            "module": 2,
+            "dataAccess": 0
+          },
+          {
+            "module": 3,
+            "dataAccess": 0
+          },
+          {
+            "module": 4,
+            "dataAccess": 0
+          },
+          {
+            "module": 5,
+            "dataAccess": 0
+          },
+          {
+            "module": 11,
+            "dataAccess": 0
+          },
+          {
+            "module": 7,
+            "dataAccess": 0
+          },
+          {
+            "module": 8,
+            "dataAccess": 0
+          },
+          {
+            "module": 13,
+            "dataAccess": 0
+          },
+          {
+            "module": 9,
+            "dataAccess": 0
+          },
+          {
+            "module": 12,
+            "dataAccess": 0
+          }
+        ]
+      },
+      "profile": {
+        "displayName": "Noah Park",
+        "tier": "ACCOUNT_TIER_STANDARD",
+        "avatarUrl": "",
+        "revision": "4"
+      },
+      "identity": {
+        "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+        "verifiedEmail": "noah.park@example.invalid",
+        "solanaAddress": "",
+        "createdAt": 1783999440,
+        "lastLoginAt": 0
+      },
+      "status": "ACCOUNT_STATUS_PENDING"
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333333",
+      "username": "river",
+      "administrator": false,
+      "access": {
+        "loginEnabled": false,
+        "apiKeyEnabled": false,
+        "profitSharingEnabled": false,
+        "revision": "7",
+        "moduleAccess": [
+          {
+            "module": 1,
+            "dataAccess": 1
+          },
+          {
+            "module": 2,
+            "dataAccess": 1
+          },
+          {
+            "module": 3,
+            "dataAccess": 0
+          },
+          {
+            "module": 4,
+            "dataAccess": 0
+          },
+          {
+            "module": 5,
+            "dataAccess": 0
+          },
+          {
+            "module": 11,
+            "dataAccess": 0
+          },
+          {
+            "module": 7,
+            "dataAccess": 0
+          },
+          {
+            "module": 8,
+            "dataAccess": 1
+          },
+          {
+            "module": 13,
+            "dataAccess": 1
+          },
+          {
+            "module": 9,
+            "dataAccess": 1
+          },
+          {
+            "module": 12,
+            "dataAccess": 2
+          }
+        ]
+      },
+      "profile": {
+        "displayName": "River",
+        "tier": "ACCOUNT_TIER_STANDARD",
+        "avatarUrl": "",
+        "revision": "4"
+      },
+      "identity": {
+        "provider": "ACCOUNT_IDENTITY_PROVIDER_SOLANA_WALLET",
+        "verifiedEmail": "",
+        "solanaAddress": "7fZdJmR6uFQ7kbKaojTcKVWHR3hyZiA8dCuYUBwXsMn2",
+        "createdAt": 1783999440,
+        "lastLoginAt": 1789351200
+      },
+      "status": "ACCOUNT_STATUS_BLOCKED"
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444444",
+      "username": "alex.admin",
+      "administrator": true,
+      "access": {
+        "loginEnabled": true,
+        "apiKeyEnabled": true,
+        "profitSharingEnabled": false,
+        "revision": "7",
+        "moduleAccess": [
+          {
+            "module": 1,
+            "dataAccess": 1
+          },
+          {
+            "module": 2,
+            "dataAccess": 1
+          },
+          {
+            "module": 3,
+            "dataAccess": 0
+          },
+          {
+            "module": 4,
+            "dataAccess": 0
+          },
+          {
+            "module": 5,
+            "dataAccess": 0
+          },
+          {
+            "module": 11,
+            "dataAccess": 0
+          },
+          {
+            "module": 7,
+            "dataAccess": 0
+          },
+          {
+            "module": 8,
+            "dataAccess": 1
+          },
+          {
+            "module": 13,
+            "dataAccess": 1
+          },
+          {
+            "module": 9,
+            "dataAccess": 1
+          },
+          {
+            "module": 12,
+            "dataAccess": 2
+          }
+        ]
+      },
+      "profile": {
+        "displayName": "Alex Morgan",
+        "tier": "ACCOUNT_TIER_STANDARD",
+        "avatarUrl": "",
+        "revision": "4"
+      },
+      "identity": {
+        "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+        "verifiedEmail": "alex.admin@example.invalid",
+        "solanaAddress": "",
+        "createdAt": 1783999440,
+        "lastLoginAt": 1789351200
+      },
+      "status": "ACCOUNT_STATUS_ACTIVE"
+    }
+  ],
+  "modules": [
+    {
+      "module": 1,
+      "id": "market_radar",
+      "label": "Market Radar",
+      "description": "Hot, realtime, and moving Polymarket discovery views.",
+      "group": "markets",
+      "maxAccess": 1,
+      "allowedLevels": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": 2,
+      "id": "sports_live",
+      "label": "Sports Live",
+      "description": "Current sports events and live price histories.",
+      "group": "markets",
+      "maxAccess": 1,
+      "allowedLevels": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": 3,
+      "id": "sports_history",
+      "label": "Sports History",
+      "description": "Completed sports history, sync state, and manual refresh.",
+      "group": "markets",
+      "maxAccess": 2,
+      "allowedLevels": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "module": 4,
+      "id": "managed_oo",
+      "label": "Managed OO",
+      "description": "Managed Optimistic Oracle proposals, disputes, and block parsing.",
+      "group": "markets",
+      "maxAccess": 2,
+      "allowedLevels": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "module": 5,
+      "id": "worm_markets",
+      "label": "Worm Markets",
+      "description": "Standalone Worm market data APIs.",
+      "group": "markets",
+      "maxAccess": 1,
+      "apiOnly": true,
+      "allowedLevels": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": 11,
+      "id": "worm_trading",
+      "label": "Worm Trading",
+      "description": "Owner-scoped Solana balances and Worm trading operations.",
+      "group": "markets",
+      "maxAccess": 2,
+      "allowedLevels": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "module": 7,
+      "id": "world_cup_corners",
+      "label": "World Cup Corners",
+      "description": "Protected World Cup corner and result dataset.",
+      "group": "markets",
+      "maxAccess": 1,
+      "allowedLevels": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": 13,
+      "id": "solana",
+      "label": "Solana",
+      "description": "Read-only discovery of newly initialized Solana token candidates.",
+      "group": "token-risk",
+      "maxAccess": 1,
+      "allowedLevels": [
+        0,
+        1
+      ]
+    },
+    {
+      "module": 9,
+      "id": "wallet",
+      "label": "Wallet",
+      "description": "Wallet inventory, creation, import, aliases, and sensitive secret access.",
+      "group": "token-risk",
+      "maxAccess": 2,
+      "allowedLevels": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "module": 12,
+      "id": "trader_sync",
+      "label": "Trader Sync",
+      "description": "Independent trader subscriptions and activity alerts.",
+      "group": "markets",
+      "maxAccess": 2,
+      "allowedLevels": [
+        0,
+        2
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "key": "markets",
+      "label": "Markets"
+    },
+    {
+      "key": "token-risk",
+      "label": "Token & Risk"
+    }
+  ]
+}

@@ -1,0 +1,290 @@
+{
+  "result": "passed",
+  "evidence": "Local HTML visual prototype; no real profile/avatar writes, bootstrap or concurrency acceptance",
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "textScale": 1,
+      "geometry": {
+        "width": 1440,
+        "docWidth": 1440,
+        "fontLoaded": true,
+        "rootFont": "16px",
+        "background": "rgb(6, 8, 11)"
+      },
+      "modal": {
+        "x": 480,
+        "y": 266.40625,
+        "w": 480,
+        "h": 367.171875,
+        "scrollable": false
+      },
+      "contrast": [
+        {
+          "fg": "#9FA0A1",
+          "bg": "#0F1114",
+          "ratio": 7.218804157993069
+        },
+        {
+          "fg": "#9FA0A1",
+          "bg": "#181D22",
+          "ratio": 6.477549085274277
+        },
+        {
+          "fg": "#FFFFFF",
+          "bg": "#06080B",
+          "ratio": 20.051385440481855
+        },
+        {
+          "fg": "#00FFA7",
+          "bg": "#102C24",
+          "ratio": 11.267391393146381
+        },
+        {
+          "fg": "#E6BF72",
+          "bg": "#272115",
+          "ratio": 9.173551230691643
+        },
+        {
+          "fg": "#F58C9B",
+          "bg": "#2B171C",
+          "ratio": 7.3322962397310985
+        }
+      ],
+      "axes": [
+        "edited: appropriate text/actions, no overflow or duplicate IDs",
+        "invalid: appropriate text/actions, no overflow or duplicate IDs",
+        "conflict: appropriate text/actions, no overflow or duplicate IDs",
+        "error: appropriate text/actions, no overflow or duplicate IDs",
+        "saving: appropriate text/actions, no overflow or duplicate IDs",
+        "upload-error: appropriate text/actions, no overflow or duplicate IDs",
+        "uploading: appropriate text/actions, no overflow or duplicate IDs",
+        "Required/81 Unicode/80 emoji/control character/trim validation; local save retains draft; reset restores baseline",
+        "Leave dialog draft/saved comparison; safe autofocus, forward/reverse loop, Escape, keep/discard and focus return"
+      ],
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-account-profile-v11-desktop.png",
+        "theme-account-profile-v11-desktop-edited.png",
+        "theme-account-profile-v11-desktop-conflict.png",
+        "theme-account-profile-v11-desktop-error.png",
+        "theme-account-profile-v11-desktop-leave.png"
+      ]
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 390,
+        "docWidth": 390,
+        "fontLoaded": true,
+        "rootFont": "16px",
+        "background": "rgb(6, 8, 11)"
+      },
+      "modal": {
+        "x": 20,
+        "y": 199.90625,
+        "w": 350,
+        "h": 444.171875,
+        "scrollable": false
+      },
+      "contrast": [
+        {
+          "fg": "#9FA0A1",
+          "bg": "#0F1114",
+          "ratio": 7.218804157993069
+        },
+        {
+          "fg": "#9FA0A1",
+          "bg": "#181D22",
+          "ratio": 6.477549085274277
+        },
+        {
+          "fg": "#FFFFFF",
+          "bg": "#06080B",
+          "ratio": 20.051385440481855
+        },
+        {
+          "fg": "#00FFA7",
+          "bg": "#102C24",
+          "ratio": 11.267391393146381
+        },
+        {
+          "fg": "#E6BF72",
+          "bg": "#272115",
+          "ratio": 9.173551230691643
+        },
+        {
+          "fg": "#F58C9B",
+          "bg": "#2B171C",
+          "ratio": 7.3322962397310985
+        }
+      ],
+      "axes": [
+        "edited: appropriate text/actions, no overflow or duplicate IDs",
+        "invalid: appropriate text/actions, no overflow or duplicate IDs",
+        "conflict: appropriate text/actions, no overflow or duplicate IDs",
+        "error: appropriate text/actions, no overflow or duplicate IDs",
+        "saving: appropriate text/actions, no overflow or duplicate IDs",
+        "upload-error: appropriate text/actions, no overflow or duplicate IDs",
+        "uploading: appropriate text/actions, no overflow or duplicate IDs",
+        "Required/81 Unicode/80 emoji/control character/trim validation; local save retains draft; reset restores baseline",
+        "Leave dialog draft/saved comparison; safe autofocus, forward/reverse loop, Escape, keep/discard and focus return"
+      ],
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-account-profile-v11-mobile.png",
+        "theme-account-profile-v11-mobile-edited.png",
+        "theme-account-profile-v11-mobile-invalid.png",
+        "theme-account-profile-v11-mobile-upload-error.png",
+        "theme-account-profile-v11-mobile-leave.png"
+      ]
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 320,
+        "docWidth": 320,
+        "fontLoaded": true,
+        "rootFont": "16px",
+        "background": "rgb(6, 8, 11)"
+      },
+      "modal": {
+        "x": 20,
+        "y": 188.015625,
+        "w": 280,
+        "h": 467.96875,
+        "scrollable": false
+      },
+      "contrast": [
+        {
+          "fg": "#9FA0A1",
+          "bg": "#0F1114",
+          "ratio": 7.218804157993069
+        },
+        {
+          "fg": "#9FA0A1",
+          "bg": "#181D22",
+          "ratio": 6.477549085274277
+        },
+        {
+          "fg": "#FFFFFF",
+          "bg": "#06080B",
+          "ratio": 20.051385440481855
+        },
+        {
+          "fg": "#00FFA7",
+          "bg": "#102C24",
+          "ratio": 11.267391393146381
+        },
+        {
+          "fg": "#E6BF72",
+          "bg": "#272115",
+          "ratio": 9.173551230691643
+        },
+        {
+          "fg": "#F58C9B",
+          "bg": "#2B171C",
+          "ratio": 7.3322962397310985
+        }
+      ],
+      "axes": [
+        "edited: appropriate text/actions, no overflow or duplicate IDs",
+        "invalid: appropriate text/actions, no overflow or duplicate IDs",
+        "conflict: appropriate text/actions, no overflow or duplicate IDs",
+        "error: appropriate text/actions, no overflow or duplicate IDs",
+        "saving: appropriate text/actions, no overflow or duplicate IDs",
+        "upload-error: appropriate text/actions, no overflow or duplicate IDs",
+        "uploading: appropriate text/actions, no overflow or duplicate IDs",
+        "Required/81 Unicode/80 emoji/control character/trim validation; local save retains draft; reset restores baseline",
+        "Leave dialog draft/saved comparison; safe autofocus, forward/reverse loop, Escape, keep/discard and focus return"
+      ],
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-account-profile-v11-narrow.png"
+      ]
+    },
+    {
+      "name": "text-200",
+      "width": 720,
+      "height": 900,
+      "textScale": 2,
+      "geometry": {
+        "width": 720,
+        "docWidth": 720,
+        "fontLoaded": true,
+        "rootFont": "32px",
+        "background": "rgb(6, 8, 11)"
+      },
+      "modal": {
+        "x": 120,
+        "y": 115.828125,
+        "w": 480,
+        "h": 668.34375,
+        "scrollable": false
+      },
+      "contrast": [
+        {
+          "fg": "#9FA0A1",
+          "bg": "#0F1114",
+          "ratio": 7.218804157993069
+        },
+        {
+          "fg": "#9FA0A1",
+          "bg": "#181D22",
+          "ratio": 6.477549085274277
+        },
+        {
+          "fg": "#FFFFFF",
+          "bg": "#06080B",
+          "ratio": 20.051385440481855
+        },
+        {
+          "fg": "#00FFA7",
+          "bg": "#102C24",
+          "ratio": 11.267391393146381
+        },
+        {
+          "fg": "#E6BF72",
+          "bg": "#272115",
+          "ratio": 9.173551230691643
+        },
+        {
+          "fg": "#F58C9B",
+          "bg": "#2B171C",
+          "ratio": 7.3322962397310985
+        }
+      ],
+      "axes": [
+        "edited: appropriate text/actions, no overflow or duplicate IDs",
+        "invalid: appropriate text/actions, no overflow or duplicate IDs",
+        "conflict: appropriate text/actions, no overflow or duplicate IDs",
+        "error: appropriate text/actions, no overflow or duplicate IDs",
+        "saving: appropriate text/actions, no overflow or duplicate IDs",
+        "upload-error: appropriate text/actions, no overflow or duplicate IDs",
+        "uploading: appropriate text/actions, no overflow or duplicate IDs",
+        "Required/81 Unicode/80 emoji/control character/trim validation; local save retains draft; reset restores baseline",
+        "Leave dialog draft/saved comparison; safe autofocus, forward/reverse loop, Escape, keep/discard and focus return"
+      ],
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-account-profile-v11-text-200.png"
+      ]
+    }
+  ]
+}

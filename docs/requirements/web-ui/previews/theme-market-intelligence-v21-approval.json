@@ -1,0 +1,341 @@
+{
+  "version": "v21",
+  "status": "approved_for_market_intelligence_batch_presented_visuals",
+  "confirmed_by": "user",
+  "feedback": "确认",
+  "confirmed_date": "2026-09-14",
+  "recorded_at": "2026-09-14T10:41:07.341571+00:00",
+  "review_context": "用户对上一回复集中展示的 Market Radar 热门／实时／涨跌榜、Sports Live／History、World Cup Corners 与 Managed OO 提案／争议八个实际页面的桌面／手机十六张主图反馈“确认”，整批确认所展示视觉。",
+  "directly_presented_artifacts": [
+    "theme-market-radar-v21-hot-desktop.png",
+    "theme-market-radar-v21-hot-mobile.png",
+    "theme-market-radar-v21-realtime-desktop.png",
+    "theme-market-radar-v21-realtime-mobile.png",
+    "theme-market-radar-v21-movers-desktop.png",
+    "theme-market-radar-v21-movers-mobile.png",
+    "theme-sports-v21-live-desktop.png",
+    "theme-sports-v21-live-mobile.png",
+    "theme-sports-v21-history-desktop.png",
+    "theme-sports-v21-history-mobile.png",
+    "theme-sports-v21-corners-desktop.png",
+    "theme-sports-v21-corners-mobile.png",
+    "theme-managed-oo-v21-proposals-desktop.png",
+    "theme-managed-oo-v21-proposals-mobile.png",
+    "theme-managed-oo-v21-disputes-desktop.png",
+    "theme-managed-oo-v21-disputes-mobile.png"
+  ],
+  "approved_scope": [
+    "本批八个实际页面所展示的桌面／手机布局、信息密度、阅读顺序与操作层级",
+    "沿用 Nansen 单一深色主题、整套配色、Inter／JetBrains Mono 字体分工及会员应用壳",
+    "Market Radar 热门市场的活动指标、实时市场的价格与百分点窗口、涨跌榜的 leader／方向／score，以及所展示的快照与来源层级、桌面记录和手机分组",
+    "Sports Live／History 的赛事事实与价格图分区、比分与快照价格的区分、所展示的来源入口及 Scratch／同步操作层级",
+    "World Cup Corners 的统计口径、样本与阶段比例、筛选与比赛记录，以及手机阅读顺序",
+    "Managed OO 提案／争议的页签、区块解析区域、原始 proposed price、完整参与地址与证据入口，保留两类事件角色的区分",
+    "上述八页作为一个批次定稿，后续前端重构沿用本批视觉基准，不重复索取相同决定"
+  ],
+  "not_approved_by_this_feedback": [
+    "未直接展示的29张辅助图不补写成用户逐图看过；窄屏、字号放大、弹窗、异常和只读等状态继续沿既定规则覆盖与验证，不新增逐图审批",
+    "16张当前 React 对照图不是目标视觉；合成数据及本地模拟操作不代表真实业务结果",
+    "正式 ui/ 已完成重构、真实供应商／扫描／同步／权限／并发或全栈已验收，及第三批六页与共用适配已全部设计完成",
+    "本轮排除的 Trader Sync 和已独立确认的 Nansen 钱包战绩不因本次反馈改变范围"
+  ],
+  "artifact_preservation": "保留交付原型、截图、数据、检查与交付时审阅 JSON 原字节；审阅 JSON 的 awaiting_user_review 是交付时历史状态，本文件记录后续用户批准。",
+  "artifacts": [
+    {
+      "path": "theme-managed-oo-v21-before-capture.json",
+      "sha256": "49d24b46b164ae9ea0778af7a6e5f4b70627f0f2d7e4703af4777a0bab14a8f2"
+    },
+    {
+      "path": "theme-managed-oo-v21-before-disputes-desktop.png",
+      "sha256": "3968cc8cf0dba7a0c0dd65308a6a8b88e726f5fe2a8d90a946c9745722f9456b"
+    },
+    {
+      "path": "theme-managed-oo-v21-before-disputes-mobile.png",
+      "sha256": "78c30d2dc8cf1622a1447523ba475095d8e07a4b8988803093bb2ed631b60c4b"
+    },
+    {
+      "path": "theme-managed-oo-v21-before-proposals-desktop.png",
+      "sha256": "6deb4bfa07683b1ea7273b4615d2245ecc41a5590d51842420e99d107d083a9d"
+    },
+    {
+      "path": "theme-managed-oo-v21-before-proposals-mobile.png",
+      "sha256": "3fbf7bc0430951d16f83ecb45608ac015483d11c692fc7dca403ea73c4d3591f"
+    },
+    {
+      "path": "theme-managed-oo-v21-checks.json",
+      "sha256": "90c587c49d7955cc8c3d97524ae90ca5931dea8e01ec23c6dd95e01379956552"
+    },
+    {
+      "path": "theme-managed-oo-v21-data.json",
+      "sha256": "66a41106b4b8c7d03856d8f4268562df9fa293723e15e4148080517cbe59eb27"
+    },
+    {
+      "path": "theme-managed-oo-v21-disputes-desktop.png",
+      "sha256": "e46fba650ae8af094bced695fba515f7bbb5e57fcb7db169284775c0526a60ae"
+    },
+    {
+      "path": "theme-managed-oo-v21-disputes-mobile.png",
+      "sha256": "2f7d07f839758e1b6cf103230fd1cfed6b091678cd53862fbf11f194eecee44e"
+    },
+    {
+      "path": "theme-managed-oo-v21-disputes-narrow.png",
+      "sha256": "2ed0bad5d59b3a2ce88012e7d8f516bb8eddae86cfdcda1de971e95d566b85de"
+    },
+    {
+      "path": "theme-managed-oo-v21-disputes-read-only-mobile.png",
+      "sha256": "a3c3f16257674a51f272bfd09af3124b311979045363d2021fafde916e80c0e9"
+    },
+    {
+      "path": "theme-managed-oo-v21-disputes-zoom.png",
+      "sha256": "d300b565f4b48e5940ddd01a40f2e756b35af2afa9a9424362f2e0b7027f699c"
+    },
+    {
+      "path": "theme-managed-oo-v21-proposals-desktop.png",
+      "sha256": "264acdf9689379d35675df1b1129b33a94f8efe605629e4dca3f9f4b107dd40a"
+    },
+    {
+      "path": "theme-managed-oo-v21-proposals-evidence-mobile.png",
+      "sha256": "290db31aed93841d47daf18bc6d4e4cc6701258f2ec09d7600cce9bb43431903"
+    },
+    {
+      "path": "theme-managed-oo-v21-proposals-mobile.png",
+      "sha256": "f3a512030fc0cde0e89b1c738f4706eadda5c524e132f8f4d05b706fb435f311"
+    },
+    {
+      "path": "theme-managed-oo-v21-proposals-narrow.png",
+      "sha256": "fdce099b72bebe227c164a07ebaef628afa1645b264421f93e4220d568aab6c5"
+    },
+    {
+      "path": "theme-managed-oo-v21-proposals-zoom.png",
+      "sha256": "eb7da9e005bb4bc97119b70b44105672b32cac0174f028a13e103c6c2c188f06"
+    },
+    {
+      "path": "theme-managed-oo-v21.html",
+      "sha256": "d5c847d10db58223df1d4707f874c4935ec50fa3cbe61406df0f3144ff20daea"
+    },
+    {
+      "path": "theme-market-intelligence-v21-review.json",
+      "sha256": "a7307deb35cc9ed8d88145311dbce7a2d6aabafd7f1f49bc7259a34f46ec149e"
+    },
+    {
+      "path": "theme-market-radar-v21-before-capture.json",
+      "sha256": "4c2ddb4b7775891623464ce97c743273253768e90028637571a74a49e6fc9db9"
+    },
+    {
+      "path": "theme-market-radar-v21-before-hot-desktop.png",
+      "sha256": "7040e5bc09d898ad14080410390fcaf52fdc765fb2c004838a4e897831000579"
+    },
+    {
+      "path": "theme-market-radar-v21-before-hot-mobile.png",
+      "sha256": "b1a21cf66d3e4272eec6709f5d40b61df386f6e019a2af58aa6b9e61bd821cbe"
+    },
+    {
+      "path": "theme-market-radar-v21-before-movers-desktop.png",
+      "sha256": "172eb77caaf3366844edb02884f2610eedf0746214c6e57e423bebf5e9b5b85e"
+    },
+    {
+      "path": "theme-market-radar-v21-before-movers-mobile.png",
+      "sha256": "26e347b1de12fade4235e290abe03cb87a98292d0ecd56375ad34c3cc805a0b3"
+    },
+    {
+      "path": "theme-market-radar-v21-before-realtime-desktop.png",
+      "sha256": "4157e9bd8d68bfea7f51d930204f13fe93a3f70fc178ac635d99cb82f18d678e"
+    },
+    {
+      "path": "theme-market-radar-v21-before-realtime-mobile.png",
+      "sha256": "e7a47e88ad0e8565be9333b9721448798af6eb88cc55de34256f800e3eee57b0"
+    },
+    {
+      "path": "theme-market-radar-v21-checks.json",
+      "sha256": "9c938d13c5f00a7e1c6aa897668b90eee3fc683ff35efb40887380baba22c330"
+    },
+    {
+      "path": "theme-market-radar-v21-data.json",
+      "sha256": "081fb9e28310ceafc706fafb4b87e029ed5a2df177cc4c1247436a6478340623"
+    },
+    {
+      "path": "theme-market-radar-v21-hot-desktop.png",
+      "sha256": "5a8bc16c43110ad950908ed24ed9d7cd1abbe0a2d38c059e4dc4f3537b7b67d0"
+    },
+    {
+      "path": "theme-market-radar-v21-hot-mobile.png",
+      "sha256": "d5ee4f552678acd416b6081a443519213e99ca9cb9a83e1e58e5146e2e7b32e9"
+    },
+    {
+      "path": "theme-market-radar-v21-hot-narrow.png",
+      "sha256": "87b8384d47c39ed6ec87353e41835d8a8c7c88a21b443f756a3cb37060e147ed"
+    },
+    {
+      "path": "theme-market-radar-v21-hot-zoom.png",
+      "sha256": "0f4fd33305b98d84325ac81546b7e46204b4c6b389ba8c0eee7613d2a2056b98"
+    },
+    {
+      "path": "theme-market-radar-v21-movers-desktop.png",
+      "sha256": "7dbc0b3702dd3929440303359e6927744b0415d8dc6a0e4315aa88fa278c6d0c"
+    },
+    {
+      "path": "theme-market-radar-v21-movers-mobile.png",
+      "sha256": "7fc4dbf618b50e950780c3bc52c25822f0218808fa97c025f9cae88884a2b047"
+    },
+    {
+      "path": "theme-market-radar-v21-movers-narrow.png",
+      "sha256": "7aeab3f37acc4a8c11b59fef19258cccb8c7a5047e47f7f9305cdadbdcf4de20"
+    },
+    {
+      "path": "theme-market-radar-v21-movers-zoom.png",
+      "sha256": "d55ea95e8e5749ff5c99854f8431fb38b0abcfa1cf075a79c190550595b72ef0"
+    },
+    {
+      "path": "theme-market-radar-v21-realtime-copy-fallback-mobile.png",
+      "sha256": "d577c9b289ee779acddef710988540acceecd87fc461294e2683412b8bab4916"
+    },
+    {
+      "path": "theme-market-radar-v21-realtime-desktop.png",
+      "sha256": "ee78c187e23672a111966d423d62e9f60d4baefe72c0349417d0982ebfbdc198"
+    },
+    {
+      "path": "theme-market-radar-v21-realtime-facts-mobile.png",
+      "sha256": "f867dc1ac68433c1974fe71a4dc71ca6d4d23596b2cae6e5131603963d29cf68"
+    },
+    {
+      "path": "theme-market-radar-v21-realtime-mobile.png",
+      "sha256": "d078861161a44f357c019363021db571202114ccd0e75a4451ebaeab6f038e22"
+    },
+    {
+      "path": "theme-market-radar-v21-realtime-narrow.png",
+      "sha256": "24005d939dcafd3b93bc33307273e623c9de50f2826418b30716d18f6ec7378e"
+    },
+    {
+      "path": "theme-market-radar-v21-realtime-stale-mobile.png",
+      "sha256": "da26c6aeb64b3c1043d0e76e7b96f19e645b4dab462fb0d8896ac16c6d8340dc"
+    },
+    {
+      "path": "theme-market-radar-v21-realtime-zoom.png",
+      "sha256": "e1bd20ab0f94b839839ba7be2464ad7e6ebc58a091a16d001584eb95ef2c8e58"
+    },
+    {
+      "path": "theme-market-radar-v21.html",
+      "sha256": "c78ebd5a5febd2aa385ff9d5bb4fa867a3a21fd87d9ecfc93d462b57802600eb"
+    },
+    {
+      "path": "theme-sports-v21-before-capture.json",
+      "sha256": "331cde363dea407d021309455709d29a9a1eda35e99769bbf8eebbb69f6b0570"
+    },
+    {
+      "path": "theme-sports-v21-before-corners-desktop.png",
+      "sha256": "789501b2d0c88fd5ca97a905480021aa8e8db26c6e9f6ae8aea8b3446ddb4676"
+    },
+    {
+      "path": "theme-sports-v21-before-corners-mobile.png",
+      "sha256": "682378aee80fbe4d9d47163448976d1d7b7bd70f95de1d1c85bb0c0a7546d02e"
+    },
+    {
+      "path": "theme-sports-v21-before-history-desktop.png",
+      "sha256": "0a0050a449cf759a52100973494385c3ab8a3b5d3f434162513b9a0569107fec"
+    },
+    {
+      "path": "theme-sports-v21-before-history-mobile.png",
+      "sha256": "bbc2b46248eb42d12175d24184f16e37de1ff6081c480859c634177f7a28fa70"
+    },
+    {
+      "path": "theme-sports-v21-before-live-desktop.png",
+      "sha256": "a5aa0fede4b98d82a6390e15d8eadd134c5061621ca157bc8436b67ad50cbd91"
+    },
+    {
+      "path": "theme-sports-v21-before-live-mobile.png",
+      "sha256": "b1fdf31535172ee1dad4de6b7d1c2d32d342d95d7330d95b9cdba645de7fc81a"
+    },
+    {
+      "path": "theme-sports-v21-checks.json",
+      "sha256": "2e605485198223d49ab47ced1df501f0a590856bbf0a2b74e20cb0d0a652517b"
+    },
+    {
+      "path": "theme-sports-v21-corners-desktop.png",
+      "sha256": "dd9a826ac9deaf31b3bf2cdf014283338801f307dd848be109b8df97fbc206de"
+    },
+    {
+      "path": "theme-sports-v21-corners-filtered-mobile.png",
+      "sha256": "944d43c7595ce44fac6c9db45d7724c7c05087bb4125b7ef3ce8350f17b6b3c0"
+    },
+    {
+      "path": "theme-sports-v21-corners-method-mobile.png",
+      "sha256": "d5a9b42a4314a88b6812780216107a99c48d0d8fefa5375f53c32125eb574076"
+    },
+    {
+      "path": "theme-sports-v21-corners-mobile.png",
+      "sha256": "3011d037986c4da137dfb593a557cea0a834dcb7a2230d1effe65088f070284f"
+    },
+    {
+      "path": "theme-sports-v21-corners-narrow.png",
+      "sha256": "b2955fda46caca177b18b44488d517fe9aec67febdafb710a141c7091be6c3f9"
+    },
+    {
+      "path": "theme-sports-v21-corners-zoom.png",
+      "sha256": "42d0c539b7683ff1ede03bac9b725be7015968baf1b39b94800b6e2f35741188"
+    },
+    {
+      "path": "theme-sports-v21-data.json",
+      "sha256": "b9f2e7b621fd4b78d095cef05ba51412a44210f1c8a3cb200dfcd0c4fd0bc4b1"
+    },
+    {
+      "path": "theme-sports-v21-history-desktop.png",
+      "sha256": "05d0692f2c6ec25ea6a7bd83f7b05341a69c7b43b2c67a07199ff7a5858a71cd"
+    },
+    {
+      "path": "theme-sports-v21-history-failed-mobile.png",
+      "sha256": "7b4af25c61288aa526263a11ce88001b55fc1784a44a6ef49db090d4eb428fe9"
+    },
+    {
+      "path": "theme-sports-v21-history-mobile.png",
+      "sha256": "0fed611b4cb30964dc8b5b67cf0f5129af653ad7edfd0e09d886fda89640027a"
+    },
+    {
+      "path": "theme-sports-v21-history-narrow.png",
+      "sha256": "1f11087165fe19e5f8bd87a8a7d06fc6ad9ef03336cc818097977a015baecc18"
+    },
+    {
+      "path": "theme-sports-v21-history-scratch-mobile.png",
+      "sha256": "6d70333cd6c014ace03ff2547b82954a97aad0236d8f41a1eee3d88d8bf8d915"
+    },
+    {
+      "path": "theme-sports-v21-history-syncing-mobile.png",
+      "sha256": "a54308127d2ae515a45a9904c3104d1332ef0d789f121a9b889eea138f1b3bb4"
+    },
+    {
+      "path": "theme-sports-v21-history-zoom.png",
+      "sha256": "b121a909b17238c5e8162b42fe1838594fce70b8bd6c508d735dc2946401cf5f"
+    },
+    {
+      "path": "theme-sports-v21-live-copy-fallback-mobile.png",
+      "sha256": "fb710fa851fb8816299bef01abdd43aebbb9b08d52e8cb7fa495e97c39d1b6a0"
+    },
+    {
+      "path": "theme-sports-v21-live-desktop.png",
+      "sha256": "2f1146db8f5ffc12dd960d28759f8e563106ffdab199cb2fa4706032cbde9b04"
+    },
+    {
+      "path": "theme-sports-v21-live-mobile.png",
+      "sha256": "9173ee276bb2d4b41b88be5664fcdccae7431ff6d41aaae8cb931dbd3496ae88"
+    },
+    {
+      "path": "theme-sports-v21-live-narrow.png",
+      "sha256": "d25026a35bc0a2d641c3a32039be28569460be248f13488ce3e98e31d193aa0b"
+    },
+    {
+      "path": "theme-sports-v21-live-no-history-mobile.png",
+      "sha256": "2beacda25854d0054ff3c599edf5a22be16a003749b1f6e4de7c871280c70030"
+    },
+    {
+      "path": "theme-sports-v21-live-stale-mobile.png",
+      "sha256": "21ad284676c8f07574fd825094ac7ce29493079bfb852e7423c9eaa7f51a0c96"
+    },
+    {
+      "path": "theme-sports-v21-live-zoom.png",
+      "sha256": "b99f15e1c088e0819c6fefaa219f9c83c988e0af26b661f7d737113867d297d0"
+    },
+    {
+      "path": "theme-sports-v21.html",
+      "sha256": "1bb4baceb51c6d07d5f01ce9ab254b52445dff88babad9cdda49ed1ab583fb1c"
+    }
+  ]
+}

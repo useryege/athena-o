@@ -1,0 +1,227 @@
+[
+  {
+    "name": "index",
+    "url": "https://docs.polymarket.com/llms.txt",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:53:12.224859+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/llms.txt",
+    "bytes": 13222,
+    "sha256": "ff3cd36dcd3efeb6f7ac6a74fead70e40fe53c63e7f535d1fc6a99ad2f358345"
+  },
+  {
+    "name": "orders",
+    "url": "https://docs.polymarket.com/trading/place-orders.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:53:12.225275+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/trading/place-orders.md",
+    "bytes": 61459,
+    "sha256": "a3426c3ac3c04c96a4e988009cd6e603d22622a31e1b3c02a453ce3ac22d7563"
+  },
+  {
+    "name": "wallets",
+    "url": "https://docs.polymarket.com/trading/wallets-auth.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:53:12.225562+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/trading/wallets-auth.md",
+    "bytes": 54438,
+    "sha256": "bd16933a33ff6d3999cc551e6b3e3663480e7064f8e5eec86e72772907596e44"
+  },
+  {
+    "name": "fees",
+    "url": "https://docs.polymarket.com/trading/fees.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:53:12.225865+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/trading/fees.md",
+    "bytes": 8128,
+    "sha256": "8e246189f6ca85b8b8782e1d76a769cf98672a98c4c63d8bbe6150d659db8d7c"
+  },
+  {
+    "name": "positions",
+    "url": "https://docs.polymarket.com/api-reference/wallet/list-positions-for-a-user-or-market.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:53:12.226135+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/api-reference/wallet/list-positions-for-a-user-or-market.md",
+    "bytes": 25592,
+    "sha256": "0b10fd605be3aedff5dc5c3d3f2edf55e7cf98fcf2354e5b3659d5a58f633d82"
+  },
+  {
+    "name": "clob-trades",
+    "url": "https://docs.polymarket.com/api-reference/trade/get-trades.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:53:13.204181+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/api-reference/trade/get-trades.md",
+    "bytes": 11928,
+    "sha256": "a7b88859fbca99a55bb5c2d43fc21dedf1a44701dba9abc5383478df8883e3fb"
+  },
+  {
+    "name": "clob-orders",
+    "url": "https://docs.polymarket.com/api-reference/trade/get-user-orders.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:53:13.498841+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/api-reference/trade/get-user-orders.md",
+    "bytes": 10492,
+    "sha256": "4456f60afb17e00cd67f253235567a881c1da1d57006039489c139063fcc6199"
+  },
+  {
+    "name": "position-operations",
+    "url": "https://docs.polymarket.com/trading/positions/manage.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:53:13.558861+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/trading/positions/manage.md",
+    "bytes": 26770,
+    "sha256": "5afcfb094e4199a4ab2157deaeabd038b2e688c353273e8ccc78005b2341964d"
+  },
+  {
+    "name": "combo-positions",
+    "url": "https://docs.polymarket.com/api-reference/core/get-user-combo-positions.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:53:13.576370+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/api-reference/core/get-user-combo-positions.md",
+    "bytes": 12912,
+    "sha256": "7e476fbb6738b65feb4f97a8a4147af572c51a500f949012a1894c9bee3d0255"
+  },
+  {
+    "name": "combo-activity",
+    "url": "https://docs.polymarket.com/api-reference/core/get-user-combo-activity.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:53:13.641445+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/api-reference/core/get-user-combo-activity.md",
+    "bytes": 9035,
+    "sha256": "aa8ea4393d3be49272f6169d1f2faf5ed4002e8b87e4ad72029d8d4170136bf4"
+  },
+  {
+    "name": "data-v2-schema",
+    "url": "https://data-api.polymarket.com/v2/openapi.json",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:54:09.324559+00:00",
+    "status": 200,
+    "final_url": "https://data-api.polymarket.com/v2/openapi.json",
+    "bytes": 143821,
+    "sha256": "20bc5c035e4c0474c7654ae2cf1257c59cddbd88d9a3ce44487686a2ca04b625"
+  },
+  {
+    "name": "wallet-activity",
+    "url": "https://docs.polymarket.com/trading/wallet-activity.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:54:09.324961+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/trading/wallet-activity.md",
+    "bytes": 31820,
+    "sha256": "b58635973e1ec07e97e6738e314affe24e27b5b9c3398d05a47bb68f7995c67e"
+  },
+  {
+    "name": "manage-orders",
+    "url": "https://docs.polymarket.com/trading/manage-orders.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:54:09.325241+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/trading/manage-orders.md",
+    "bytes": 52788,
+    "sha256": "e6e3b7443d8bdaa1158574afb1035f1d1aad858d88ce091454bdef18520f3024"
+  },
+  {
+    "name": "market-details",
+    "url": "https://docs.polymarket.com/market-data/market-details.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:54:09.325480+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/market-data/market-details.md",
+    "bytes": 31237,
+    "sha256": "6996afeeb98c76da4f983cca1d0256708600d213fbad41a62a17e3bef5f74e90"
+  },
+  {
+    "name": "lifecycle",
+    "url": "https://docs.polymarket.com/concepts/order-lifecycle.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:54:09.325799+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/concepts/order-lifecycle.md",
+    "bytes": 8341,
+    "sha256": "854236c2602d4268c72d61f3c568f85ffb3f5e58071486abe8c88cecde9d8e76"
+  },
+  {
+    "name": "negative-risk",
+    "url": "https://docs.polymarket.com/concepts/negative-risk.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:54:10.082000+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/concepts/negative-risk.md",
+    "bytes": 3788,
+    "sha256": "23f3a2fd0a81bcbdb3ba7ac17b450c7f197aa514a09c00a187a231bf21cde106"
+  },
+  {
+    "name": "pUSD",
+    "url": "https://docs.polymarket.com/concepts/pusd.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:54:10.516839+00:00",
+    "status": 200,
+    "final_url": "https://docs.polymarket.com/concepts/pusd.md",
+    "bytes": 5551,
+    "sha256": "251904563e9fa977844a99400fca72754564ddcf27a765b97deeaf446c3cf613"
+  },
+  {
+    "name": "seed-markets",
+    "url": "https://gamma-api.polymarket.com/markets?active=true&closed=false&limit=12&order=volume24hr&ascending=false",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:54:10.724672+00:00",
+    "status": 200,
+    "final_url": "https://gamma-api.polymarket.com/markets?active=true&closed=false&limit=12&order=volume24hr&ascending=false",
+    "bytes": 90365,
+    "sha256": "b246b7341eae507ac69569abd08b3fa3cafe28d711c676023b6fae2efab979e7"
+  },
+  {
+    "name": "errors",
+    "url": "https://docs.polymarket.com/resources/error-codes.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:59:30.787031+00:00",
+    "status": 200,
+    "bytes": 19541,
+    "sha256": "a0a93df3e5644349748692815cc9833319ccae3c829d218312df1a6771d08af3"
+  },
+  {
+    "name": "list-trades",
+    "url": "https://docs.polymarket.com/api-reference/feeds/list-trades.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:59:30.787287+00:00",
+    "status": 200,
+    "bytes": 16824,
+    "sha256": "0402f0c3b3507ce671c3e622f2449d7411e36fb45aea1688aa130a829735d13f"
+  },
+  {
+    "name": "list-activity",
+    "url": "https://docs.polymarket.com/api-reference/feeds/list-account-activity.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:59:30.787560+00:00",
+    "status": 200,
+    "bytes": 18429,
+    "sha256": "0728c220657b28d9239fc9a828efbb5a8a2d7061e07f5e9ae567b8a67b8c9b82"
+  },
+  {
+    "name": "combo-positions-v2",
+    "url": "https://docs.polymarket.com/api-reference/wallet/list-combo-positions.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:59:30.787789+00:00",
+    "status": 200,
+    "bytes": 27296,
+    "sha256": "8b96d853f1d099f338acfe0ecef94a500cb2031d3c1641dc2d7a9d1bddb08156"
+  },
+  {
+    "name": "combo-activity-v2",
+    "url": "https://docs.polymarket.com/api-reference/feeds/list-combo-activity.md",
+    "method": "GET",
+    "checked_at": "2026-09-14T11:59:30.787976+00:00",
+    "status": 200,
+    "bytes": 19144,
+    "sha256": "80bd9989262d831f4fa8b1fcdd5b7f740a010534997e693771375e6b9b966a4c"
+  }
+]

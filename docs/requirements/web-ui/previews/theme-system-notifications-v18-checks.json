@@ -1,0 +1,827 @@
+{
+  "version": "v18",
+  "result": "passed",
+  "scope": "Local static visual proposal only. Synthetic delivery records and queue outcomes. No Telegram sends, production UI, API integration, authorization or real delivery acceptance.",
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "zoom": 1,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-system-notifications-v18-list-desktop.png",
+        "theme-system-notifications-v18-detail-desktop.png"
+      ],
+      "contracts": [
+        "Five actual system status samples, no synthetic cancelled record",
+        "All SVG references resolve",
+        "IDs unique",
+        "All current status filter options preserved",
+        "Actual UI default page size 50",
+        "Actual page size options preserved",
+        "Single page has disabled previous/next",
+        "List text and primary hover contrast >=4.5:1",
+        "Status filter selects exact unknown record",
+        "Combined incompatible filters show explicit empty state",
+        "Keyword search submits",
+        "List entry opens detail",
+        "Local return retains list filters",
+        "All 17 delivery fields retained and findable",
+        "Unknown explicitly may be delivered and not auto-resent",
+        "Missing HTTP started / Sent are never inferred",
+        "Independent result time shown in UTC+8",
+        "Technical identifiers start collapsed",
+        "Message line breaks preserved",
+        "HTTP(S) link retains safe new-tab relation",
+        "Detail text and warning contrast >=4.5:1",
+        "Local approved Inter and JetBrains Mono loaded",
+        "Expanded delivery ID copied exactly",
+        "Unsupported link is readable plain text",
+        "Sent uses recorded time without unknown alert",
+        "Failed preserves provider original",
+        "No unsupported delivery actions",
+        "Long raw error wraps within detail panel",
+        "Test modal focuses topic label",
+        "Whitespace-only topic rejected",
+        "Pending locks input and all modal actions",
+        "Pending Escape cannot close modal",
+        "Duplicate submit while pending ignored",
+        "Queue failure retains trimmed input",
+        "Queue success closes test modal",
+        "Queue success copy never claims delivered",
+        "Queued local test is pending, test chat, admin-ui source",
+        "Idle modal Escape closes and restores focus",
+        "Read error displays local recovery",
+        "Read retry restores synthetic list",
+        "Detail read failure distinct from failed delivery",
+        "Loading explicitly marked busy",
+        "No records has specific empty copy",
+        "Pagination selects actual next slice",
+        "Filter change resets page",
+        "Account menu closes with Escape",
+        "No browser errors",
+        "No real API or external requests"
+      ],
+      "geometry": [
+        {
+          "state": "list-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1097
+        },
+        {
+          "state": "detail-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1197
+        },
+        {
+          "state": "long-details",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1493
+        },
+        {
+          "state": "test-dialog",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 900
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": "#open-test",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(0, 255, 167)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": ".field label",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".list-summary",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".record-title",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".tag.warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        },
+        {
+          "selector": ".tag.negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".tag.info",
+          "fg": "rgb(155, 198, 243)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.59394763930342
+        },
+        {
+          "selector": ".tag.positive",
+          "fg": "rgb(85, 217, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.64840833554489
+        },
+        {
+          "selector": ".tag.sending",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 14.282470031142926
+        },
+        {
+          "selector": ".delivery-date .clock",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": "#open-test",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(81, 255, 195)",
+          "ratio": 15.699177034827596
+        },
+        {
+          "selector": ".callout",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(38, 31, 20)",
+          "ratio": 9.359572464312533
+        },
+        {
+          "selector": ".message-body",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".message-topic",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".message-link a",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 14.282470031142926
+        },
+        {
+          "selector": ".error-original",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".timing-list dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      }
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-system-notifications-v18-list-mobile.png",
+        "theme-system-notifications-v18-detail-mobile.png",
+        "theme-system-notifications-v18-test-mobile.png"
+      ],
+      "contracts": [
+        "Five actual system status samples, no synthetic cancelled record",
+        "All SVG references resolve",
+        "IDs unique",
+        "All current status filter options preserved",
+        "Actual UI default page size 50",
+        "Actual page size options preserved",
+        "Single page has disabled previous/next",
+        "List text and primary hover contrast >=4.5:1",
+        "Status filter selects exact unknown record",
+        "Combined incompatible filters show explicit empty state",
+        "Keyword search submits",
+        "List entry opens detail",
+        "Local return retains list filters",
+        "All 17 delivery fields retained and findable",
+        "Unknown explicitly may be delivered and not auto-resent",
+        "Missing HTTP started / Sent are never inferred",
+        "Independent result time shown in UTC+8",
+        "Technical identifiers start collapsed",
+        "Message line breaks preserved",
+        "HTTP(S) link retains safe new-tab relation",
+        "Detail text and warning contrast >=4.5:1",
+        "Local approved Inter and JetBrains Mono loaded",
+        "Expanded delivery ID copied exactly",
+        "Unsupported link is readable plain text",
+        "Sent uses recorded time without unknown alert",
+        "Failed preserves provider original",
+        "No unsupported delivery actions",
+        "Long raw error wraps within detail panel",
+        "Test modal focuses topic label",
+        "Whitespace-only topic rejected",
+        "Pending locks input and all modal actions",
+        "Pending Escape cannot close modal",
+        "Duplicate submit while pending ignored",
+        "Queue failure retains trimmed input",
+        "Queue success closes test modal",
+        "Queue success copy never claims delivered",
+        "Queued local test is pending, test chat, admin-ui source",
+        "Idle modal Escape closes and restores focus",
+        "Read error displays local recovery",
+        "Read retry restores synthetic list",
+        "Detail read failure distinct from failed delivery",
+        "Loading explicitly marked busy",
+        "No records has specific empty copy",
+        "Pagination selects actual next slice",
+        "Filter change resets page",
+        "Approved drawer width",
+        "Drawer restores trigger focus",
+        "Account menu closes with Escape",
+        "No browser errors",
+        "No real API or external requests"
+      ],
+      "geometry": [
+        {
+          "state": "list-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 1969
+        },
+        {
+          "state": "detail-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 1747
+        },
+        {
+          "state": "long-details",
+          "viewport": 390,
+          "document": 390,
+          "height": 2623
+        },
+        {
+          "state": "test-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 844
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": "#open-test",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(0, 255, 167)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": ".field label",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".list-summary",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".record-title",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".tag.warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        },
+        {
+          "selector": ".tag.negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".tag.info",
+          "fg": "rgb(155, 198, 243)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.59394763930342
+        },
+        {
+          "selector": ".tag.positive",
+          "fg": "rgb(85, 217, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.64840833554489
+        },
+        {
+          "selector": ".tag.sending",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 14.282470031142926
+        },
+        {
+          "selector": ".delivery-date .clock",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": "#open-test",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(81, 255, 195)",
+          "ratio": 15.699177034827596
+        },
+        {
+          "selector": ".callout",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(38, 31, 20)",
+          "ratio": 9.359572464312533
+        },
+        {
+          "selector": ".message-body",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".message-topic",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".message-link a",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 14.282470031142926
+        },
+        {
+          "selector": ".error-original",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".timing-list dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      },
+      "drawer": {
+        "width": 280
+      }
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "zoom": 1,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-system-notifications-v18-narrow.png"
+      ],
+      "contracts": [
+        "Five actual system status samples, no synthetic cancelled record",
+        "All SVG references resolve",
+        "IDs unique",
+        "All current status filter options preserved",
+        "Actual UI default page size 50",
+        "Actual page size options preserved",
+        "Single page has disabled previous/next",
+        "List text and primary hover contrast >=4.5:1",
+        "Status filter selects exact unknown record",
+        "Combined incompatible filters show explicit empty state",
+        "Keyword search submits",
+        "List entry opens detail",
+        "Local return retains list filters",
+        "All 17 delivery fields retained and findable",
+        "Unknown explicitly may be delivered and not auto-resent",
+        "Missing HTTP started / Sent are never inferred",
+        "Independent result time shown in UTC+8",
+        "Technical identifiers start collapsed",
+        "Message line breaks preserved",
+        "HTTP(S) link retains safe new-tab relation",
+        "Detail text and warning contrast >=4.5:1",
+        "Local approved Inter and JetBrains Mono loaded",
+        "Expanded delivery ID copied exactly",
+        "Unsupported link is readable plain text",
+        "Sent uses recorded time without unknown alert",
+        "Failed preserves provider original",
+        "No unsupported delivery actions",
+        "Long raw error wraps within detail panel",
+        "Test modal focuses topic label",
+        "Whitespace-only topic rejected",
+        "Pending locks input and all modal actions",
+        "Pending Escape cannot close modal",
+        "Duplicate submit while pending ignored",
+        "Queue failure retains trimmed input",
+        "Queue success closes test modal",
+        "Queue success copy never claims delivered",
+        "Queued local test is pending, test chat, admin-ui source",
+        "Idle modal Escape closes and restores focus",
+        "Read error displays local recovery",
+        "Read retry restores synthetic list",
+        "Detail read failure distinct from failed delivery",
+        "Loading explicitly marked busy",
+        "No records has specific empty copy",
+        "Pagination selects actual next slice",
+        "Filter change resets page",
+        "Account menu closes with Escape",
+        "No browser errors",
+        "No real API or external requests"
+      ],
+      "geometry": [
+        {
+          "state": "list-narrow",
+          "viewport": 320,
+          "document": 320,
+          "height": 2107
+        },
+        {
+          "state": "narrow",
+          "viewport": 320,
+          "document": 320,
+          "height": 1831
+        },
+        {
+          "state": "long-details",
+          "viewport": 320,
+          "document": 320,
+          "height": 2889
+        },
+        {
+          "state": "test-dialog",
+          "viewport": 320,
+          "document": 320,
+          "height": 844
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": "#open-test",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(0, 255, 167)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": ".field label",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".list-summary",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".record-title",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".tag.warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        },
+        {
+          "selector": ".tag.negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".tag.info",
+          "fg": "rgb(155, 198, 243)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.59394763930342
+        },
+        {
+          "selector": ".tag.positive",
+          "fg": "rgb(85, 217, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.64840833554489
+        },
+        {
+          "selector": ".tag.sending",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 14.282470031142926
+        },
+        {
+          "selector": ".delivery-date .clock",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": "#open-test",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(81, 255, 195)",
+          "ratio": 15.699177034827596
+        },
+        {
+          "selector": ".callout",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(38, 31, 20)",
+          "ratio": 9.359572464312533
+        },
+        {
+          "selector": ".message-body",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".message-topic",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".message-link a",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 14.282470031142926
+        },
+        {
+          "selector": ".error-original",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".timing-list dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      }
+    },
+    {
+      "name": "zoom",
+      "width": 720,
+      "height": 900,
+      "zoom": 2,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-system-notifications-v18-zoom.png"
+      ],
+      "contracts": [
+        "Five actual system status samples, no synthetic cancelled record",
+        "All SVG references resolve",
+        "IDs unique",
+        "All current status filter options preserved",
+        "Actual UI default page size 50",
+        "Actual page size options preserved",
+        "Single page has disabled previous/next",
+        "List text and primary hover contrast >=4.5:1",
+        "Status filter selects exact unknown record",
+        "Combined incompatible filters show explicit empty state",
+        "Keyword search submits",
+        "List entry opens detail",
+        "Local return retains list filters",
+        "All 17 delivery fields retained and findable",
+        "Unknown explicitly may be delivered and not auto-resent",
+        "Missing HTTP started / Sent are never inferred",
+        "Independent result time shown in UTC+8",
+        "Technical identifiers start collapsed",
+        "Message line breaks preserved",
+        "HTTP(S) link retains safe new-tab relation",
+        "Detail text and warning contrast >=4.5:1",
+        "Local approved Inter and JetBrains Mono loaded",
+        "Expanded delivery ID copied exactly",
+        "Unsupported link is readable plain text",
+        "Sent uses recorded time without unknown alert",
+        "Failed preserves provider original",
+        "No unsupported delivery actions",
+        "Long raw error wraps within detail panel",
+        "Test modal focuses topic label",
+        "Whitespace-only topic rejected",
+        "Pending locks input and all modal actions",
+        "Pending Escape cannot close modal",
+        "Duplicate submit while pending ignored",
+        "Queue failure retains trimmed input",
+        "Queue success closes test modal",
+        "Queue success copy never claims delivered",
+        "Queued local test is pending, test chat, admin-ui source",
+        "Idle modal Escape closes and restores focus",
+        "Read error displays local recovery",
+        "Read retry restores synthetic list",
+        "Detail read failure distinct from failed delivery",
+        "Loading explicitly marked busy",
+        "No records has specific empty copy",
+        "Pagination selects actual next slice",
+        "Filter change resets page",
+        "Account menu closes with Escape",
+        "No browser errors",
+        "No real API or external requests"
+      ],
+      "geometry": [
+        {
+          "state": "zoom",
+          "viewport": 720,
+          "document": 720,
+          "height": 2810
+        },
+        {
+          "state": "detail-zoom",
+          "viewport": 720,
+          "document": 720,
+          "height": 2533
+        },
+        {
+          "state": "long-details",
+          "viewport": 720,
+          "document": 720,
+          "height": 4026
+        },
+        {
+          "state": "test-dialog",
+          "viewport": 720,
+          "document": 720,
+          "height": 900
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": "#open-test",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(0, 255, 167)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": ".field label",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".list-summary",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".record-title",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".tag.warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        },
+        {
+          "selector": ".tag.negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".tag.info",
+          "fg": "rgb(155, 198, 243)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.59394763930342
+        },
+        {
+          "selector": ".tag.positive",
+          "fg": "rgb(85, 217, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.64840833554489
+        },
+        {
+          "selector": ".tag.sending",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 14.282470031142926
+        },
+        {
+          "selector": ".delivery-date .clock",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": "#open-test",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(81, 255, 195)",
+          "ratio": 15.699177034827596
+        },
+        {
+          "selector": ".callout",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(38, 31, 20)",
+          "ratio": 9.359572464312533
+        },
+        {
+          "selector": ".message-body",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".message-topic",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".message-link a",
+          "fg": "rgb(0, 255, 167)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 14.282470031142926
+        },
+        {
+          "selector": ".error-original",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".timing-list dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      }
+    }
+  ]
+}

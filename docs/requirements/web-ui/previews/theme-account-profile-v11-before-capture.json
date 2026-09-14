@@ -1,0 +1,142 @@
+{
+  "task": "ATHENA Account Center Profile v11 current React visual comparison",
+  "result": "passed",
+  "capturedAt": "2026-09-14T01:59:57.078929+00:00",
+  "evidenceClassification": "ui-fixtures",
+  "scope": {
+    "route": "/account/profile",
+    "realm": "member",
+    "theme": "dark",
+    "screenshots": "Saved default profile, desktop and mobile",
+    "fullSystemSmokeRequired": false,
+    "externalAPIsUsed": false,
+    "mutationRequestsObserved": false,
+    "productionUIChanged": false
+  },
+  "repository": {
+    "root": "/home/yege/work/athena",
+    "branch": "rf4",
+    "head": "7c6e4839f8ee9323bc6d84c7565b44577d88eda4"
+  },
+  "sourceHashesSha256": {
+    "ui/src/app/shared/pages/account-center.tsx": "122ce56af41ced666108993480053f70f9170ec4336047d81e6f6959087d6abf",
+    "ui/src/app/shared/account-presentation.tsx": "a35621389b1d9a247f9246358eee55ba58285c2e550cafc1c5ea79857ae4c29f",
+    "ui/src/app/shared/validation.ts": "fc7de420f58cb648dff2f00119d56b6a603b6c8a37e9e6210d01b74b3681c187",
+    ".superpowers/v11-current-capture.spec.ts": "0abc594449654c061288843ead152e9d0df384516a735ca2cda1304081ce3d15",
+    ".superpowers/v11-current.playwright.config.ts": "e017591b73a6b14c37f5b1483137a4e179d527a765af08fcbe937b30a01fe608"
+  },
+  "data": {
+    "path": "theme-account-profile-v11-data.json",
+    "sha256": "c5dd9550579dda59cb6a9c36b521262f6e296351da96b2268158a0fb34a70bb0",
+    "synthetic": true,
+    "sameDataUsedInPrototype": true
+  },
+  "capture": {
+    "command": "cd ui && yarn playwright test --config ../.superpowers/v11-current.playwright.config.ts",
+    "testResult": "1 passed (1.9s); test loop captures two viewports",
+    "node": "v24.14.1",
+    "screenshots": [
+      {
+        "path": "theme-account-profile-v11-before-desktop.png",
+        "sha256": "4b75b8e738f608e848e86626d732cc4caeb83ac290d10b659fa08c8e31cafd2b",
+        "name": "desktop",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 900
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false
+      },
+      {
+        "path": "theme-account-profile-v11-before-mobile.png",
+        "sha256": "e828956ca9abf01c1ca243a9848d311be48b2b8342ea297a13455ba0d177ed67",
+        "name": "mobile",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 1163
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false
+      }
+    ],
+    "assertions": [
+      "same identity and saved display name",
+      "unchanged profile has disabled Save",
+      "no horizontal page overflow",
+      "zero page errors and unexpected requests",
+      "GET fixture API requests only"
+    ]
+  },
+  "evidenceCorrections": [
+    "Current React form does not associate the visible Display name text with its input; comparison capture uses the actual second textbox. An intermediate input selector included the hidden file input and was corrected. Product source was not changed.",
+    "Prototype Escape focus check initially read before the native dialog close event. Event tracing confirmed focus returns after close; final check awaits focus with a bounded auto-retry. Prototype source was unchanged."
+  ],
+  "environment": {
+    "preExistingRetained": [
+      {
+        "kind": "shared root runtime supervisor",
+        "pid": 307846,
+        "repository": "/home/yege/work/athena",
+        "status": "retained; not owned or used by this task"
+      },
+      {
+        "kind": "shared root Vite",
+        "pid": 308228,
+        "address": "http://127.0.0.1:4000",
+        "repository": "/home/yege/work/athena/ui",
+        "status": "retained; not owned or used by this task"
+      },
+      {
+        "kind": "shared root API",
+        "pid": 3950976,
+        "address": "http://127.0.0.1:8080",
+        "status": "retained; not owned or used by intercepted fixture APIs"
+      },
+      {
+        "kind": "independent worktree Vite",
+        "pid": 1053295,
+        "address": "http://127.0.0.1:24000",
+        "repository": "/home/yege/work/athena/.worktrees/trader-sync-independent/ui",
+        "status": "retained; not owned or used by this task"
+      }
+    ],
+    "temporary": {
+      "repository": "/home/yege/work/athena/ui",
+      "address": "http://127.0.0.1:5621",
+      "command": "yarn vite --host 127.0.0.1 --port 5621 --strictPort",
+      "ownedVitePID": 3628576,
+      "execSession": 38406,
+      "log": ".superpowers/v11-before-vite.log",
+      "stopped": true,
+      "stopMethod": "Ctrl+C to owned exec session 38406 after successful capture",
+      "verification": [
+        "session exited after SIGINT",
+        "Vite PID 3628576 exited",
+        "port 5621 has no listener"
+      ],
+      "retainedTaskEnvironment": false
+    }
+  },
+  "limitations": [
+    "Visual fixture capture is not production API, profile/avatar mutation, permission, identity switching, concurrency or full-system acceptance.",
+    "Admin Profile uses shared source but is outside this member-page visual confirmation."
+  ]
+}

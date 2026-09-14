@@ -1,0 +1,156 @@
+{
+  "version": "v19",
+  "status": "approved_for_admin_business_batch_presented_visuals",
+  "confirmed_by": "user",
+  "feedback": "没有需要调整的地方，确认通过。",
+  "confirmed_date": "2026-09-14",
+  "review_context": "用户对上一回复作为同一批展示的管理员 Trader Sync 订阅列表、订阅概要、Profit Sharing 轮次列表、轮次详情及各自桌面／手机八张主图明确确认通过，无需调整。",
+  "directly_presented_artifacts": [
+    "theme-admin-trader-sync-v19-list-desktop.png",
+    "theme-admin-trader-sync-v19-detail-desktop.png",
+    "theme-admin-trader-sync-v19-list-mobile.png",
+    "theme-admin-trader-sync-v19-detail-mobile.png",
+    "theme-admin-profit-sharing-v19-list-desktop.png",
+    "theme-admin-profit-sharing-v19-detail-desktop.png",
+    "theme-admin-profit-sharing-v19-list-mobile.png",
+    "theme-admin-profit-sharing-v19-detail-mobile.png"
+  ],
+  "approved_scope": [
+    "本批四个实际页面所展示的桌面／手机布局、信息密度、阅读顺序与操作层级",
+    "沿用 Nansen 单一深色主题、整套配色、Inter／JetBrains Mono 字体分工和管理员应用壳",
+    "Trader Sync 列表筛选、五列组织、完整钱包、状态与计数，以及概要中当前观察／历史中断分区和辅助信息折叠入口",
+    "Profit Sharing 轮次列表、阶段与进度表达，以及所展示 Collecting 详情的发布操作、sealed 说明和参与人状态",
+    "作为一个批次确认上述四页，后续重构沿用这一视觉基准，不重复索取同一决定"
+  ],
+  "not_approved_by_this_feedback": [
+    "未直接展示的创建弹窗、身份展开、320px、200% 文字和其他辅助状态不补写成用户逐图看过；继续沿既定规则覆盖与验证，不增加逐图审批",
+    "当前 React 对照图作为新主题目标，或把原型的合成数据与本地操作视为真实业务结果",
+    "正式 ui/ 已完成重构、真实接口／权限／并发／治理执行已验收，或未纳入本批的全站页面已全部完成设计"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-admin-trader-sync-v19-before-capture.json",
+      "sha256": "68da692147dd2f1a93355fccd824049558ecd7e8c79a44fd6a6b8bb5b9dfe915"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-before-detail-desktop.png",
+      "sha256": "b23d724eb3ab44c1f27bd9db56db82b54b4510f08b81d165a8cc6f5f0b186d98"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-before-detail-mobile.png",
+      "sha256": "bd12f0a713e272aca286482dc1b43abf367db3dd3fb1d1e4df568f2810d6edb6"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-before-list-desktop.png",
+      "sha256": "9e5a263932b5642ae59afb20d01ceead652e4ad81ab93014f1fb88342d9e2804"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-before-list-mobile.png",
+      "sha256": "1982fa9a4c0b36f9d896a08f45c9bbed6e162df959f4950f92aaab74a671be9f"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-checks.json",
+      "sha256": "40b9c0e97df1fc5cdc87b0cb59907abcc715d560d8ba511015ce91157abb331a"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-data.json",
+      "sha256": "48f5709a08ed7ac64cce4dffd80b003b161c613a65894a464a9a961b200f1148"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-detail-desktop.png",
+      "sha256": "9137c4d5226f4c82ad8775df0bab12343dc9f0c10696b533c65183f78c62e52c"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-detail-mobile.png",
+      "sha256": "c4f8e4884cf09c42be919f7c2ce860a731264adb6473d1da8c0d4bb91dbbece0"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-identity-mobile.png",
+      "sha256": "ed037c0b244e1706c87589648f1a25c7e142017d671f018464a11b0a7f0e703c"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-list-desktop.png",
+      "sha256": "559bd2e43b923aad905c7473196f5d09d630ec4ca4d686e552f8ad4d64a5edf9"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-list-mobile.png",
+      "sha256": "3e53782c97bdcd1c28882452d46967d58ebb704237260086187b36c7e7da74d8"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-narrow.png",
+      "sha256": "8eea8ec57c70a95c78cc7f1a6af8f3e895292b6919afb5e9ce62ab0743baef04"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-zoom.png",
+      "sha256": "23c6d18115ee2d4e6166351411389d0fc650e323e098e64d4d200fb98ef78882"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19.html",
+      "sha256": "703d03518768c2202cf1dc002ca95607d54800c72909cfbb36fc53a34e651719"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-before-capture.json",
+      "sha256": "f65b3689041fa858fa57fd0537c0733ba9a1826b71be6d6d7013755b1a9559ed"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-before-detail-desktop.png",
+      "sha256": "d41e288042ebc15dcff8c154a2d4e7b4c7e5fc24e8bb0a25ecc89be7f02ca6c5"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-before-detail-mobile.png",
+      "sha256": "3259c82fd31f6bc4aee8bef093129cebd773f4d6ce6850719bf3f7cb602dcdbb"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-before-list-desktop.png",
+      "sha256": "d6de1edaf2b12ba780bd05be48702d201d640aaed2d4d55bd78f9a386c7ed01d"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-before-list-mobile.png",
+      "sha256": "61cb86416b6b3af61081ab9a971a049e842c2a84a645dddbaddaa596c4bca04b"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-checks.json",
+      "sha256": "4d458e1eb64700becd4aefa3cdeb8a29361c16e4cee7fdcca2e94640867de8b8"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-create-mobile.png",
+      "sha256": "e54817e5abc2f240d30ea54bf7c6331a38c5aef3aef7f398688d66ad0c5573d7"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-data.json",
+      "sha256": "ec0ee558e80a6da3f5e0eadd250018fc7ce9b00385c05951584527421f0373e8"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-detail-desktop.png",
+      "sha256": "6a45eb75b490018ae2a4b7b6b00e39d51b13570140f10d8d23316b7d7cf43d8c"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-detail-mobile.png",
+      "sha256": "fae04b2b1096f1f9b2668cac46d630b1f5063081bfeed026d4ad41fc5063cc61"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-list-desktop.png",
+      "sha256": "d18b77165c727fc1c75f409a6f33cb0393e35f9ffc5e657cf4d02ed3dc5e1f77"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-list-mobile.png",
+      "sha256": "1262751af94494fc3e2b0e605752d123342fdb0f15beb3650f451a7c9df3864a"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-narrow.png",
+      "sha256": "a1a5bef20e439b06478a95a7c9653adc2394ada9c528f8d8cf53d4b08e365b02"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-zoom.png",
+      "sha256": "1b7a3773a0d9c6fc345fb1431f3c3581a682b862ee614dc396d0039ee941289c"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19.html",
+      "sha256": "b67833c66fee5773d3498524a8bb994b4f2a73583e53296dd0a8806c470d990a"
+    },
+    {
+      "path": "theme-admin-batch-v19-review.json",
+      "sha256": "d46a24573fc944c5f9544f24fc32a8261761441cd860cd529f8045da8bbf19b3"
+    }
+  ]
+}

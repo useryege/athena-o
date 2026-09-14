@@ -1,0 +1,52 @@
+{
+  "checked_at": "2026-09-14T12:06:20.224251+00:00",
+  "repository_head": "7c6e4839f8ee9323bc6d84c7565b44577d88eda4",
+  "note": "Hashes describe actual working-tree files; unrelated pre-existing changes are present. No source code was modified for this verification.",
+  "files": [
+    {
+      "path": "internal/wallet/wallet.proto",
+      "sha256": "6a5bc116f190d0c15affdc1a4016551e618908eae8a5c405388d10f0bd41523e",
+      "finding": "Wallet 管理及 Worm 专用签名契约；没有 Polymarket 账户启用或订单签名方法。"
+    },
+    {
+      "path": "internal/wallet/service.go",
+      "sha256": "d1eaa80473ab2f21f315fc66a840b41559eb3f2ea64ff1dc3dd29908e82974db",
+      "finding": "按 owner 校验的 Wallet 读取与 Worm challenge 专用签名实现。"
+    },
+    {
+      "path": "internal/wallet/worm_execution_signer.go",
+      "sha256": "d41b0d9e83aaa04acefe98482731b7a1090406b39cdec1f4dc6975cbca9d0a6c",
+      "finding": "Worm 受限执行签名实现，不可视为 Polymarket EIP-712 签名接口。"
+    },
+    {
+      "path": "internal/tradersync/apiclient/trader_sync.proto",
+      "sha256": "a0f6d3679006413de8b2d28cd374f0a03ace329afe8716f7a4419e35240c2162",
+      "finding": "现有 Trader Sync 服务只有目标、订阅、活动和运行状态相关契约。"
+    },
+    {
+      "path": "internal/server/tradersync/tradersync.proto",
+      "sha256": "e4883f47903ede6407be5bd0213230d5a4621af41cedc1081d1cea8e1728232d",
+      "finding": "现有会员 HTTP/gRPC façade，无手动交易提交入口。"
+    },
+    {
+      "path": "util/polymarket/data.go",
+      "sha256": "e1995e831dcc7abaf4074f563eff151aa69d2fe901697369282cd8bbbde55fcd",
+      "finding": "旧版公开 Data API；数组响应、limit/offset，没有 v2 包装与游标。"
+    },
+    {
+      "path": "util/polymarket/clob_market_data.go",
+      "sha256": "45c81fc2d3743c657c1c8454119e9c96df25c96c3c92555988a297f2cb7a4153",
+      "finding": "只读 CLOB 市场数据接口；没有认证下单方法。"
+    },
+    {
+      "path": "util/polymarket/clob_markets.go",
+      "sha256": "4dc600039537cc44a577f8fc27cb1cd88feb1d5b8ad4b919dc55839924ee9eba",
+      "finding": "现有市场与费率查询实现。"
+    },
+    {
+      "path": "docs/design/identity-access/wallet-ownership.md",
+      "sha256": "65eecc1f1d61d7c0b6de7fa51c54c8a569ceeedf0866cbe580ed36629ab89f2e",
+      "finding": "Wallet 归属、托管及专用签名边界。"
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "status": "approved_for_account_security_presented_visuals",
+  "confirmed_by": "user",
+  "feedback": "舒服，继续",
+  "confirmed_date": "2026-09-14",
+  "review_context": "用户查看桌面默认页、手机默认页和手机 AI 连接说明弹窗三张截图后反馈“舒服，继续”。文档通过链接提供；其余截图保留不等于逐图确认。",
+  "directly_presented_artifacts": [
+    "theme-account-security-v12-desktop.png",
+    "theme-account-security-v12-mobile.png",
+    "theme-account-security-v12-mobile-ai-ready.png"
+  ],
+  "approved_scope": [
+    "所展示桌面和手机安全设置页的主题、账户导航、紧凑身份信息、Connect AI 与 API keys 的阅读顺序和信息密度",
+    "桌面密钥表格与手机分隔行的展示，以及 Connect AI 和 Create API key 的操作层级",
+    "所展示手机 AI 连接说明弹窗的标题、状态提示、滚动正文与固定复制／Done 操作区的视觉效果"
+  ],
+  "not_approved_by_this_feedback": [
+    "未直接展示的创建表单、桌面结果、验证失败、API Key 一次性结果、撤销、加载／空态／错误、窄屏与文字放大等辅助状态未逐图确认",
+    "真实凭据签发／撤销／验证、剪贴板、权限变化、账户切换、异步竞态和外部 AI 接入验收",
+    "管理员及其他页面、Nansen 平台配置、正式 ui/ 主题实现或生产行为变更"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-account-security-v12-before-capture.json",
+      "sha256": "fa73ea96898f0d35d44fd58b545c0fb46f4d46ef88e2886e200871a5886bb491"
+    },
+    {
+      "path": "theme-account-security-v12-before-desktop.png",
+      "sha256": "d0e50cfd91deb01f03fef7a7c3fb81a27197443902efe11e9f2ca048b87b3147"
+    },
+    {
+      "path": "theme-account-security-v12-before-mobile.png",
+      "sha256": "801b34005f05c354c05afe7e69a9b46e385c6be483e88e7a531dc2d8acd41ac8"
+    },
+    {
+      "path": "theme-account-security-v12-checks.json",
+      "sha256": "6fee32a0ebbe43ba6806bac4873d2fa30be3df047875b5a711f005134fea3ac5"
+    },
+    {
+      "path": "theme-account-security-v12-data.json",
+      "sha256": "2ee2730b7ff1de1ab6b49d0acf8b52ee82cb95ca383d3c67f8bae5d506d0bb41"
+    },
+    {
+      "path": "theme-account-security-v12-desktop-ai-failed.png",
+      "sha256": "bf88180b9c70eb4789eae804a7817b04c59607e544f31fbdf520f0d26b394ba6"
+    },
+    {
+      "path": "theme-account-security-v12-desktop-ai-ready.png",
+      "sha256": "4cc47cb7f0450dcf9a7fcb89c752344bfd54987df97646d1d0ae1c11b800fa21"
+    },
+    {
+      "path": "theme-account-security-v12-desktop-create-key.png",
+      "sha256": "d0cc2a43c8eb85d9e16dea45d631ed795f43afb07e92fe654962238e3ca7dcd5"
+    },
+    {
+      "path": "theme-account-security-v12-desktop.png",
+      "sha256": "22bddc1c4cbd9ecbae07125422e5a8855b99630cb602dc373573a243626e2934"
+    },
+    {
+      "path": "theme-account-security-v12-mobile-ai-ready.png",
+      "sha256": "3a981e3f9e1e1869754f42b8be49af5aa1a5ad85a341ebbae79a007750832635"
+    },
+    {
+      "path": "theme-account-security-v12-mobile-create-ai.png",
+      "sha256": "f4a920dce9d4121bf351b0cc30c67d2176cb868a5c857839a44b34248ecec5c4"
+    },
+    {
+      "path": "theme-account-security-v12-mobile-key-result.png",
+      "sha256": "ad315a73f5e2e207f5227522b0f05cc4a2bd9504eb195b3524fd22fe5bfa004d"
+    },
+    {
+      "path": "theme-account-security-v12-mobile-revoke.png",
+      "sha256": "404936c75c3f8da19701a9f21231826c68c85f471ed61e4dd2efedbe6a083130"
+    },
+    {
+      "path": "theme-account-security-v12-mobile.png",
+      "sha256": "b3e16a30029649b55d24c2fec195403206974f7f086baa04f9f7c63e5a180e88"
+    },
+    {
+      "path": "theme-account-security-v12-narrow.png",
+      "sha256": "9702afea2dbb749db62840e9f6a765296521ceaaeb92c61cf5edb38ef8be871d"
+    },
+    {
+      "path": "theme-account-security-v12-text-200.png",
+      "sha256": "a32a9e30e6701fc305114b76c966e9d6777c5c87a452feaf9c1044b636436747"
+    },
+    {
+      "path": "theme-account-security-v12.html",
+      "sha256": "add39e9c8619dbff6b0a5760e6f2ff343be0746e456c257ffdc80bec15dbfe1a"
+    },
+    {
+      "path": "theme-account-security-v12-review.json",
+      "sha256": "f09f0cea9d1a245deeae7b2c5fca9a0eb95e0d169fcab27ebf09c6366bd15591"
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "task": "ATHENA Account Center Security v12 current React visual comparison",
+  "result": "passed",
+  "capturedAt": "2026-09-14T02:32:33.172455+00:00",
+  "evidenceClassification": "ui-fixtures",
+  "scope": {
+    "route": "/account/security",
+    "realm": "member",
+    "theme": "dark",
+    "fullSystemSmokeRequired": false,
+    "externalAPIsUsed": false,
+    "mutationRequestsObserved": false,
+    "productionUIChanged": false
+  },
+  "repository": {
+    "root": "/home/yege/work/athena",
+    "branch": "rf4",
+    "head": "7c6e4839f8ee9323bc6d84c7565b44577d88eda4"
+  },
+  "sourceHashesSha256": {
+    "ui/src/app/member/pages/account-security.tsx": "bf905e1bb8231661bf8665af160febfa1497164b8e4f93cc35e17d475c222818",
+    "ui/src/app/member/security-service.ts": "b61262ad05a58369b36fa54891704e5b7c9bc32d084e9c75a89bf0693818c4a6",
+    "ui/src/app/shared/ai-connection.ts": "de33d10571f31f6f4ac7f33b0907eb7b6cca9fa74fdb1f2c12f520740d42f6e9",
+    "ui/src/app/shared/pages/account-center.tsx": "122ce56af41ced666108993480053f70f9170ec4336047d81e6f6959087d6abf",
+    ".superpowers/v12-current-capture.spec.ts": "3e2ed06aa4eddd282018fb8f5c8009d0bff03b6b3542db55da89ca2143443923",
+    ".superpowers/v12-current.playwright.config.ts": "130de8676f062f8a053ae458956606af9b1de8fc157083b6e18f01417da23d1c"
+  },
+  "data": {
+    "path": "theme-account-security-v12-data.json",
+    "sha256": "2ee2730b7ff1de1ab6b49d0acf8b52ee82cb95ca383d3c67f8bae5d506d0bb41",
+    "synthetic": true,
+    "sameIdentityAndTokenMetadataUsedInPrototype": true,
+    "aiInstructionText": "Generated directly with current buildAIConnectionDetails using a reserved example.invalid baseURI and invalid synthetic secret"
+  },
+  "capture": {
+    "command": "cd ui && yarn playwright test --config ../.superpowers/v12-current.playwright.config.ts",
+    "testResult": "1 passed (2.1s); two viewports",
+    "node": "v24.14.1",
+    "locale": "en-US",
+    "timezone": "Asia/Shanghai",
+    "screenshots": [
+      {
+        "path": "theme-account-security-v12-before-desktop.png",
+        "sha256": "d0e50cfd91deb01f03fef7a7c3fb81a27197443902efe11e9f2ca048b87b3147",
+        "name": "desktop",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "document": {
+          "width": 1440,
+          "height": 900
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/account/security/tokens"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false
+      },
+      {
+        "path": "theme-account-security-v12-before-mobile.png",
+        "sha256": "801b34005f05c354c05afe7e69a9b46e385c6be483e88e7a531dc2d8acd41ac8",
+        "name": "mobile",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "document": {
+          "width": 390,
+          "height": 1578
+        },
+        "overflowX": false,
+        "apiRequests": [
+          "GET /api/v1/app/bootstrap",
+          "GET /api/v1/account/security/tokens"
+        ],
+        "pageErrors": [],
+        "unexpected": [],
+        "writesSubmitted": false
+      }
+    ],
+    "assertions": [
+      "Account Center and Connect AI visible",
+      "same three token metadata entries and revoke controls",
+      "no horizontal overflow, page errors or unexpected requests",
+      "only intercepted bootstrap and token-list GET requests"
+    ]
+  },
+  "evidenceCorrections": [
+    "Current ResourceTable keeps desktop and compact DOM representations. Initial text selector matched both; it was corrected to the visible representation. Product code was unchanged."
+  ],
+  "environment": {
+    "taskStartedServices": [],
+    "taskRetainedServices": [],
+    "browserContexts": "All task-created browser contexts and Chromium processes closed by finally blocks",
+    "borrowed": [
+      {
+        "kind": "pre-existing root Vite",
+        "repository": "/home/yege/work/athena/ui",
+        "address": "http://localhost:4000",
+        "pid": 308228,
+        "parentSupervisorPID": 307846,
+        "instance": "legacy athena-local-runtime",
+        "ownershipEvidence": "/proc/308228/cwd equals root/ui; listener is the same root Vite; browser fixture capture passed",
+        "configurationAndOwnerState": [
+          ".run/athena-local-runtime/Procfile",
+          ".run/athena-local-runtime/supervisor.state"
+        ],
+        "captureLogs": [
+          ".superpowers/v12-before-desktop-metrics.json",
+          ".superpowers/v12-before-mobile-metrics.json"
+        ],
+        "status": "retained unchanged because it existed before this task",
+        "ownerStopCommand": "make stop (from /home/yege/work/athena; stops the owner-managed legacy stack, not executed by this task)"
+      }
+    ]
+  },
+  "limitations": [
+    "Fixtures are visual evidence only, not live issuance/revocation/verification, full-stack smoke, permissions, identity-switching or external AI acceptance.",
+    "Current React timestamps use the browser locale/timezone; the fixture fixes Asia/Shanghai. Prototype UTC+8 labels describe that demo context, not a new business timezone policy."
+  ]
+}

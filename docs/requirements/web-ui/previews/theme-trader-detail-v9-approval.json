@@ -1,0 +1,123 @@
+{
+  "status": "approved_for_detail_presented_visuals_and_history_summary",
+  "confirmed_by": "user",
+  "feedback": "舒服，继续设计",
+  "confirmed_date": "2026-09-14",
+  "review_context": "用户查看桌面及手机正常详情完整截图、手机取消确认弹窗后，对布局、操作层级、历史默认摘要/按需展开的提问反馈“舒服，继续设计”。当前React桌面/手机和历史展开通过链接提供。",
+  "directly_presented_artifacts": [
+    "theme-trader-detail-v9-desktop.png",
+    "theme-trader-detail-v9-mobile.png",
+    "theme-trader-detail-v9-mobile-cancel.png"
+  ],
+  "linked_comparison_artifacts": [
+    "theme-trader-detail-v9-before-desktop.png",
+    "theme-trader-detail-v9-before-mobile.png",
+    "theme-trader-detail-v9-history-expanded.png"
+  ],
+  "approved_scope": [
+    "桌面左侧资料、当前监控与历史，右側备注管理及旧通知的分区、密度与操作层级",
+    "手机资料、当前监控、备注管理、历史、旧通知的阅读顺序",
+    "完整钱包、身份与查询时间、监控事实和六项通知计数的展示视觉",
+    "历史默认保留摘要与可能遗漏提示，按需展开完整记录的处理方式",
+    "已展示手机取消确认弹窗的身份、后果与按钮层级"
+  ],
+  "not_approved_by_this_feedback": [
+    "未直接展示的桌面取消弹窗、历史展开细节及其余辅助状态最终外观，不据此声明逐图确认",
+    "完整真实写入、轮询、权限、修订、幂等、异步竞争、游标及跨浏览器无障碍验收",
+    "其他会员或管理员页面、正式 ui/ 主题实现或生产行为变更"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-trader-detail-v9-before-capture.json",
+      "sha256": "a62aa4f2bc4ba0326b7066ca9e4ead16fd4f17c1c117c197467571b0a1bafbc9"
+    },
+    {
+      "path": "theme-trader-detail-v9-before-desktop.png",
+      "sha256": "40cf1db2d12773e7e7f6c27d49eb1fa77f6809ca7b0c4dea1d7cccb8224272ab"
+    },
+    {
+      "path": "theme-trader-detail-v9-before-mobile.png",
+      "sha256": "90165df8b90c89cedc76d501b1ddc56f06c8a726da44a6a879bc85c590f3fc9a"
+    },
+    {
+      "path": "theme-trader-detail-v9-cancelled.png",
+      "sha256": "9bee4c31af7938026450948050f6e2d48f9de87f3537a95d0ccf157cf3d05344"
+    },
+    {
+      "path": "theme-trader-detail-v9-checks.json",
+      "sha256": "b081590466252302469385d7d76a49f1651e94eba2b9f9368feebe164d026f1d"
+    },
+    {
+      "path": "theme-trader-detail-v9-data.json",
+      "sha256": "f26e9050d6ef47097de7e2fa6f01d5cbaeb952fa9337e866f3628b82971ee940"
+    },
+    {
+      "path": "theme-trader-detail-v9-desktop-cancel.png",
+      "sha256": "3a13c4b744e3212d7f680430e12477c7c8009d861076b573be551a54fe1cae83"
+    },
+    {
+      "path": "theme-trader-detail-v9-desktop-first-screen.png",
+      "sha256": "01fd0fa6304c060173906b57b442889a0fc58aad287ee1804a99f1de69a697e9"
+    },
+    {
+      "path": "theme-trader-detail-v9-desktop.png",
+      "sha256": "7bb07a4e40d2989eebdb92b386b4c9805f26db8036d11531b60088f8fc5af6f9"
+    },
+    {
+      "path": "theme-trader-detail-v9-history-error.png",
+      "sha256": "5a7b179a5d73a951c109147f09ad16a156cead60718485e34bab5617648d5087"
+    },
+    {
+      "path": "theme-trader-detail-v9-history-expanded.png",
+      "sha256": "1fae49ff48ea20e4f6cb63fda67e40c16d96324916f2ca14d9f4780a97570f60"
+    },
+    {
+      "path": "theme-trader-detail-v9-loading.png",
+      "sha256": "9bb4779fadd921fb13b83957d9e0aff990dc7d257ffdf6905adf84c44dd07443"
+    },
+    {
+      "path": "theme-trader-detail-v9-mobile-cancel.png",
+      "sha256": "86c25d504a3374ace15327e24d9d222fd3aa1c06eb1cf6698e2fc252257481fe"
+    },
+    {
+      "path": "theme-trader-detail-v9-mobile-error.png",
+      "sha256": "83e921be1f3e1bb558709d2b8a4e01ece9141bc8b5a6898c2556652291ca07ad"
+    },
+    {
+      "path": "theme-trader-detail-v9-mobile-first-screen.png",
+      "sha256": "2e285d77b175f049571b050de6660984e053e6ba9a1a264cfe27cc9be771a413"
+    },
+    {
+      "path": "theme-trader-detail-v9-mobile-paused.png",
+      "sha256": "3274792dca50079e4bcfc87da2918cb6808d8efa2091a9205052c28a5bbf9939"
+    },
+    {
+      "path": "theme-trader-detail-v9-mobile-unknown.png",
+      "sha256": "ef7e7e0e3a6d771fdced5a26fe1f9f8fdaa5548ea1941fab30d3478bcaaf532e"
+    },
+    {
+      "path": "theme-trader-detail-v9-mobile.png",
+      "sha256": "f6f4f068f3e0069ec18bb19d366c4c2e62897077032e3e8bfc9c2be99ee75c50"
+    },
+    {
+      "path": "theme-trader-detail-v9-narrow.png",
+      "sha256": "5b25062980e46681d33ed040f6b8376e46746c06d6ac457878cd5d6ecb5a6aad"
+    },
+    {
+      "path": "theme-trader-detail-v9-stale.png",
+      "sha256": "926af8f7490706f14a3fe23613f213bd17972c3569953000371f63ffe5ec4df0"
+    },
+    {
+      "path": "theme-trader-detail-v9-text-200.png",
+      "sha256": "2745dd4b575cee1ed1c0e109857066fe253af1ffb494aa0773ef03714e36975e"
+    },
+    {
+      "path": "theme-trader-detail-v9.html",
+      "sha256": "dadf64355cbd82735bc99ce70f6f9de9b9e844b9f1b6c28a8f5c251fffe47929"
+    },
+    {
+      "path": "theme-trader-detail-v9-review.json",
+      "sha256": "f7170fbdc423a805d3d98aa1e4fbdc31221fdc39cfc19acc1f70471b830f4613"
+    }
+  ]
+}

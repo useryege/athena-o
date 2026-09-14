@@ -1,0 +1,193 @@
+{
+  "version": "v15",
+  "surface": "Administrator navigation and Account Administration",
+  "status": "awaiting_user_review",
+  "production_ui_changed": false,
+  "scope": "Existing administrator navigation and /admin/accounts. Static visual proposal plus local demonstration only.",
+  "direction": ".superpowers/v15-direction.md",
+  "inspection": {
+    "rounds": 2,
+    "prototype_screenshots": 11,
+    "before_screenshots": 3,
+    "viewports": [
+      "1440×900",
+      "390×844",
+      "320×844",
+      "720×900 with root font at 200%"
+    ],
+    "corrections": [
+      "Use flexible/full-width fields to remove narrow input overflow and align profile forms.",
+      "Namespace SVG symbols to keep control IDs and accessible labels unique.",
+      "Hide the orphan mobile breadcrumb separator.",
+      "Lock background scrolling under native dialogs."
+    ],
+    "capture_correction": "Two fixed overlays recaptured at actual 390×844 viewport to remove invalid full-page extension below their backdrop. No UI changes in this recapture.",
+    "reviewer_fix_batches": 1,
+    "reviewer_fixes": [
+      "Restore v3 drawer width 280px and viewport-minus-48px limit.",
+      "Restore v4 stacked full-width mobile confirmation actions.",
+      "Use distinct pie and API outline icons for administrator destinations."
+    ]
+  },
+  "independent_review": {
+    "reviewer": "/root/v15_finish_review",
+    "disposition": "ship",
+    "scope": "Verdict pass scoring the three fixes from the initial full review. Proposal only, not user approval or production acceptance.",
+    "initial_scope": "Initial full review inspected all 14 PNGs, HTML, source contracts and recorded browser evidence.",
+    "initial_report": ".superpowers/v15-initial-finish-review.txt",
+    "fix_metrics": ".superpowers/v15-review-fix-metrics.json",
+    "image_comparison": ".superpowers/v15-review-fix-image-comparison.json",
+    "sections": {
+      "persistence": "pass — the correction batch preserves the code-led proposal artifacts, all four viewport checks pass with the same 119 contract assertions, all 14 delivery/review capture pairs remain byte-identical, and production ui/ remains unchanged. The desktop sidebar is 224px; the account directory beside the detail panel is 304px. DESIGN.md and .impeccable/design.json remain absent as the explicitly out-of-scope pre-existing drift.",
+      "fidelity": "- resolved — Mobile administrator drawer: the recapture visibly uses the approved narrower drawer; measured width is 280px, maximum width is viewport minus 48px, and the 390×844 frame remains valid.\n- resolved — Mobile confirmation actions: the recapture visibly stacks Cancel before Apply changes; both controls are full-width at 308px with a 12px vertical gap and remain inside the fixed 390×844 dialog frame.\n- resolved — Administrator navigation icons: desktop, profile-desktop, and mobile drawer recaptures visibly give Profit Sharing the pie glyph and Etherscan Gateways a distinct API/code outline at the established stroke weight.\n- regressions — none in the correction batch; only the four expected captures changed, while the other ten remain byte-identical.",
+      "ceiling": "reached — the corrected drawer, confirmation hierarchy, and semantic navigation icons now preserve the approved v3/v4 system across the reviewed desktop and mobile evidence.",
+      "material_fixes": "clear",
+      "keep": "Keep the direct directory-to-Access workflow, the Access/Profile/Identity tabs, the 11-module aggregate with 10 displayed modules, and the restrained Nansen-inspired dark hierarchy unchanged."
+    }
+  },
+  "detector": {
+    "manualRuns": 1,
+    "target": "docs/requirements/web-ui/previews/theme-admin-accounts-v15.html",
+    "findings": [
+      {
+        "rule": "low-contrast",
+        "snippet": ":hover state 1.3:1 (need 4.5:1) — text #ffffff on #00ffa7",
+        "resolution": "False positive: five relevant Chromium hover states measured at 11.27:1 or higher; actual mint buttons use #06080B text, 15.15:1. File-scoped ignore-value persisted through CLI.",
+        "evidence": ".superpowers/v15-hover-contrast.json"
+      },
+      {
+        "rule": "overused-font",
+        "snippet": "Primary font: inter",
+        "resolution": "User-approved v2 typography and AGENTS.md require Inter. File-scoped ignore-value persisted through CLI."
+      }
+    ]
+  },
+  "hover_contrast": {
+    "result": "passed",
+    "reason": "Resolve detector hover-state #ffffff on #00ffa7 claim against actual Chromium computed styles.",
+    "states": [
+      {
+        "label": "Save access",
+        "foreground": "rgb(6, 8, 11)",
+        "background": "rgb(0, 255, 167)",
+        "ratio": 15.145483719785531
+      },
+      {
+        "label": "Reset",
+        "foreground": "rgb(255, 255, 255)",
+        "background": "rgb(15, 17, 20)",
+        "ratio": 18.90882568923543
+      },
+      {
+        "label": "Accounts",
+        "foreground": "rgb(0, 255, 167)",
+        "background": "rgb(16, 44, 36)",
+        "ratio": 11.267391393146381
+      },
+      {
+        "label": "Access",
+        "foreground": "rgb(255, 255, 255)",
+        "background": "rgb(15, 17, 20)",
+        "ratio": 18.90882568923543
+      },
+      {
+        "label": "Apply changes",
+        "foreground": "rgb(6, 8, 11)",
+        "background": "rgb(0, 255, 167)",
+        "ratio": 15.145483719785531
+      }
+    ]
+  },
+  "asset_provenance": {
+    "rasters": 14,
+    "missing": 0,
+    "method": "Playwright Chromium screenshots with embedded origins; no generated or retouched pixels",
+    "scan": ".superpowers/v15-raster-provenance-scan.txt"
+  },
+  "documentation": "admin-accounts-proposal.md, visual-theme.md and indices. Ordinary extension; preserve pre-existing absence of DESIGN.md and .impeccable/design.json.",
+  "limitations": [
+    "Visual approval is pending. Only views directly presented and subsequently accepted enter the approved baseline.",
+    "Local accounts, status, revisions, permissions and avatar actions are synthetic. No server request is made.",
+    "Search and filters run against four fixtures on one page. Real directory pagination, persisted URL state, network races and complete profile/avatar concurrency handling remain implementation obligations.",
+    "Tabs, default Access and module-detail disclosures are proposed hierarchy changes, not previously approved behavior.",
+    "The full aggregate contains 11 module entries; Token stays hidden and preserved. Current source and tests are authoritative over older ten-module wording in implementation documentation.",
+    "Permission conflict and ordinary save-error demonstrations cover local Access state only. Real realm authorization, disabled-session effects and all mutation failure cases require production verification.",
+    "Other administrator destinations and Account Center are navigation placeholders that show scope notices, not implementations.",
+    "Current React baseline uses GET fixtures. No full-stack smoke or live account mutation was run.",
+    "No service was started. Existing root Vite was borrowed and preserved; all task browsers closed."
+  ],
+  "artifacts": [
+    {
+      "path": "theme-admin-accounts-v15-before-capture.json",
+      "sha256": "19372b08606917987cd68f2d885958e0b03f121fe01298daca6bdcc511a63ddf"
+    },
+    {
+      "path": "theme-admin-accounts-v15-before-desktop.png",
+      "sha256": "2afa58aab4b1a84063e3278cd8509399e7961d4f016084226693ac31685849c9"
+    },
+    {
+      "path": "theme-admin-accounts-v15-before-mobile-detail.png",
+      "sha256": "cca2fd3a330cd622750e425d6a045444f362b50348effdec5cbde6ab397f2b0d"
+    },
+    {
+      "path": "theme-admin-accounts-v15-before-mobile-list.png",
+      "sha256": "78bedc45c4d4214c980bc516bc9875832f13dad9c6624732c86ea8c1139377d7"
+    },
+    {
+      "path": "theme-admin-accounts-v15-checks.json",
+      "sha256": "e88d2f2c4876a1fca645f5e482eb6bc429b1b66a5f647f8fe2cc6b80c597e1fe"
+    },
+    {
+      "path": "theme-admin-accounts-v15-confirm-mobile.png",
+      "sha256": "d36a303a2296d5de9b542d499c0477d4fa9cc1b98510eba1defb88d9577cd875"
+    },
+    {
+      "path": "theme-admin-accounts-v15-data.json",
+      "sha256": "1af03e5cc0b5a17021c395deda1f61ae300492aebe925dabafec6867b63d5e9c"
+    },
+    {
+      "path": "theme-admin-accounts-v15-desktop.png",
+      "sha256": "a6dd8e17c8d94258176592580aa88f5d91e7a9b68165ce9a8d1adcf491c986d6"
+    },
+    {
+      "path": "theme-admin-accounts-v15-empty-mobile.png",
+      "sha256": "ff7799d38e0179684c8be7506c125f4ce883073df6b075fced6c1446c79862b1"
+    },
+    {
+      "path": "theme-admin-accounts-v15-identity-mobile.png",
+      "sha256": "c1562e493f57937f738337f5283d448c28d3bf508e50b2bde0cf5c0900bb92ff"
+    },
+    {
+      "path": "theme-admin-accounts-v15-mobile-access.png",
+      "sha256": "c25a0822e0c61e5854ad46be367f2fb71d16722d7de24a399bb78b09d87e71b4"
+    },
+    {
+      "path": "theme-admin-accounts-v15-mobile-list.png",
+      "sha256": "e55aebc01ae17cc53afb6405d267974382d4983cc3b0ec8a84d327e798a664a6"
+    },
+    {
+      "path": "theme-admin-accounts-v15-narrow.png",
+      "sha256": "69dc5e7189ed6f9d544e3cb8b6431acbed77347b3839bb252695ff47cdd682a0"
+    },
+    {
+      "path": "theme-admin-accounts-v15-navigation-mobile.png",
+      "sha256": "4b846563b337ee6a3155afee9b1f0d5c5a02984002f32eb689d48d1f569b9ff3"
+    },
+    {
+      "path": "theme-admin-accounts-v15-profile-desktop.png",
+      "sha256": "a450459f735b451ff05fe82defe9b533b68ff9a0e58215747ef56a38af0c835b"
+    },
+    {
+      "path": "theme-admin-accounts-v15-profile-mobile.png",
+      "sha256": "8c1664cd7de699d347e4d173b41341bebb9e92209a9ffc2b6ef322866907b17e"
+    },
+    {
+      "path": "theme-admin-accounts-v15-zoom.png",
+      "sha256": "f93b8a54d2002eee700c609a090b547162214cb74459f1a47cb718de3a750dcf"
+    },
+    {
+      "path": "theme-admin-accounts-v15.html",
+      "sha256": "55cbfdf79acf88299fcb9467d5f5309ab640c81a646dd1b60de3564095adb477"
+    }
+  ]
+}

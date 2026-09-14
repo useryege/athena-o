@@ -1,0 +1,196 @@
+{
+  "status": "awaiting_user_review",
+  "created_date": "2026-09-14",
+  "scope": "现有订阅详情在已确认 v1–v8 体系中的视觉提案；不修改正式 ui/。",
+  "direction_contract": ".impeccable/surfaces/b-ui-previews-theme-trader-detail-v9-html-b42673b9.md",
+  "verification": {
+    "before_mode": "actual_react_with_ui_fixtures",
+    "before_tests_passed": 1,
+    "before_viewports": 2,
+    "before_api_methods": [
+      "GET"
+    ],
+    "before_mutations": 0,
+    "prototype_mode": "standalone_local_file",
+    "viewports": [
+      "desktop",
+      "mobile",
+      "narrow",
+      "text-200"
+    ],
+    "states": [
+      "healthy",
+      "history-expanded",
+      "note-invalid",
+      "cancel-dialog",
+      "paused",
+      "interrupted",
+      "cancelled",
+      "pending_baseline",
+      "permission_disabled",
+      "unknown",
+      "history-error",
+      "history-empty",
+      "loading",
+      "error",
+      "stale"
+    ],
+    "axe_violations": 0,
+    "horizontal_overflow": false,
+    "page_errors": 0,
+    "external_http_requests_from_prototype": 0,
+    "first_round_adjustments": [
+      "取消弹窗增加首尾 Tab/Shift+Tab 焦点循环，ESC 和关闭后恢复触发按钮焦点。"
+    ],
+    "final_round": "第二轮完整检查退出0；16张新主题和2张当前React截图已逐张打开核对。",
+    "production_ui_diff": "empty",
+    "prototype_services_started": 0,
+    "temporary_before_vite_stopped": true,
+    "temporary_port": 5619,
+    "limitations": [
+      "使用合成数据；复制测试替换clipboard，仅校验完整payload",
+      "根字号200%不是原生浏览器缩放",
+      "原型写入与路由只本地提示；没有生产网络、轮询、权限、修订、幂等、异步竞争验收",
+      "辅助状态不代表用户逐项确认，暂停/取消展示时间可以晚于历史快照asOf"
+    ]
+  },
+  "detector": {
+    "raw_findings": [
+      "overused-font: inter"
+    ],
+    "resolution": "CLI只对本v9 HTML登记Inter例外，遵守已确认字体；其他规则不变。"
+  },
+  "pending_user_decisions": [
+    "桌面左右分区、阅读层级与密度",
+    "手机资料、当前监控、操作、历史、通知顺序",
+    "历史默认保留摘要、按需展开完整记录",
+    "取消确认弹窗身份与后果、按钮层级"
+  ],
+  "documenter_scope": "普通视觉系统扩展，仅维护页面提案与索引；不修复预先缺失的 DESIGN.md 或 sidecar。",
+  "independent_review": {
+    "reviewer": "v9_finish_review",
+    "disposition": "ship",
+    "meaning": "ready for user visual review；v9 尚未获得用户确认，正式 ui/ 尚未改造或生产验收。",
+    "direction": "延续 v1–v8 的近黑背景、深色面板、白灰字、青绿与克制边框，Inter/JetBrains Mono分工及会员壳一致。左右分区与手机阅读顺序符合方向。",
+    "capture_validity": "18张截图逐张打开，内容与命名相符，无空白、错页、未加载区域或明显截断；before源码和同fixture哈希吻合。旧弹窗不作为对比依据。",
+    "business_and_craft": "完整钱包和复制原值、备注20Unicode码点、资料时间、当前与历史分离、摘要未知/可能遗漏和展开详细边界均保留。六态操作与现有React一致，取消一次确认和全部后果齐全，未知写锁定编辑及原请求恢复保留；键盘/ESC/焦点返回、窄屏和文字放大证据有效。",
+    "material_fixes": [],
+    "reviewed_screenshots": [
+      "theme-trader-detail-v9-before-desktop.png",
+      "theme-trader-detail-v9-before-mobile.png",
+      "theme-trader-detail-v9-cancelled.png",
+      "theme-trader-detail-v9-desktop-cancel.png",
+      "theme-trader-detail-v9-desktop-first-screen.png",
+      "theme-trader-detail-v9-desktop.png",
+      "theme-trader-detail-v9-history-error.png",
+      "theme-trader-detail-v9-history-expanded.png",
+      "theme-trader-detail-v9-loading.png",
+      "theme-trader-detail-v9-mobile-cancel.png",
+      "theme-trader-detail-v9-mobile-error.png",
+      "theme-trader-detail-v9-mobile-first-screen.png",
+      "theme-trader-detail-v9-mobile-paused.png",
+      "theme-trader-detail-v9-mobile-unknown.png",
+      "theme-trader-detail-v9-mobile.png",
+      "theme-trader-detail-v9-narrow.png",
+      "theme-trader-detail-v9-stale.png",
+      "theme-trader-detail-v9-text-200.png"
+    ]
+  },
+  "documentation": {
+    "status": "complete",
+    "documenter": "v9_documenter",
+    "proposal": "docs/requirements/web-ui/trader-sync-subscription-detail-proposal.md",
+    "scope": "普通页面扩展：沿用已确认 v1–v8，不创建新的全局视觉规则或修复预先缺失的 DESIGN.md/sidecar。",
+    "verified": "父代理已读取提案；内容与实际检查一致，未把辅助状态或原型写入当成用户批准/生产验收；索引保持 v9 待视觉确认。"
+  },
+  "artifacts": [
+    {
+      "path": "theme-trader-detail-v9-before-capture.json",
+      "sha256": "a62aa4f2bc4ba0326b7066ca9e4ead16fd4f17c1c117c197467571b0a1bafbc9"
+    },
+    {
+      "path": "theme-trader-detail-v9-before-desktop.png",
+      "sha256": "40cf1db2d12773e7e7f6c27d49eb1fa77f6809ca7b0c4dea1d7cccb8224272ab"
+    },
+    {
+      "path": "theme-trader-detail-v9-before-mobile.png",
+      "sha256": "90165df8b90c89cedc76d501b1ddc56f06c8a726da44a6a879bc85c590f3fc9a"
+    },
+    {
+      "path": "theme-trader-detail-v9-cancelled.png",
+      "sha256": "9bee4c31af7938026450948050f6e2d48f9de87f3537a95d0ccf157cf3d05344"
+    },
+    {
+      "path": "theme-trader-detail-v9-checks.json",
+      "sha256": "b081590466252302469385d7d76a49f1651e94eba2b9f9368feebe164d026f1d"
+    },
+    {
+      "path": "theme-trader-detail-v9-data.json",
+      "sha256": "f26e9050d6ef47097de7e2fa6f01d5cbaeb952fa9337e866f3628b82971ee940"
+    },
+    {
+      "path": "theme-trader-detail-v9-desktop-cancel.png",
+      "sha256": "3a13c4b744e3212d7f680430e12477c7c8009d861076b573be551a54fe1cae83"
+    },
+    {
+      "path": "theme-trader-detail-v9-desktop-first-screen.png",
+      "sha256": "01fd0fa6304c060173906b57b442889a0fc58aad287ee1804a99f1de69a697e9"
+    },
+    {
+      "path": "theme-trader-detail-v9-desktop.png",
+      "sha256": "7bb07a4e40d2989eebdb92b386b4c9805f26db8036d11531b60088f8fc5af6f9"
+    },
+    {
+      "path": "theme-trader-detail-v9-history-error.png",
+      "sha256": "5a7b179a5d73a951c109147f09ad16a156cead60718485e34bab5617648d5087"
+    },
+    {
+      "path": "theme-trader-detail-v9-history-expanded.png",
+      "sha256": "1fae49ff48ea20e4f6cb63fda67e40c16d96324916f2ca14d9f4780a97570f60"
+    },
+    {
+      "path": "theme-trader-detail-v9-loading.png",
+      "sha256": "9bb4779fadd921fb13b83957d9e0aff990dc7d257ffdf6905adf84c44dd07443"
+    },
+    {
+      "path": "theme-trader-detail-v9-mobile-cancel.png",
+      "sha256": "86c25d504a3374ace15327e24d9d222fd3aa1c06eb1cf6698e2fc252257481fe"
+    },
+    {
+      "path": "theme-trader-detail-v9-mobile-error.png",
+      "sha256": "83e921be1f3e1bb558709d2b8a4e01ece9141bc8b5a6898c2556652291ca07ad"
+    },
+    {
+      "path": "theme-trader-detail-v9-mobile-first-screen.png",
+      "sha256": "2e285d77b175f049571b050de6660984e053e6ba9a1a264cfe27cc9be771a413"
+    },
+    {
+      "path": "theme-trader-detail-v9-mobile-paused.png",
+      "sha256": "3274792dca50079e4bcfc87da2918cb6808d8efa2091a9205052c28a5bbf9939"
+    },
+    {
+      "path": "theme-trader-detail-v9-mobile-unknown.png",
+      "sha256": "ef7e7e0e3a6d771fdced5a26fe1f9f8fdaa5548ea1941fab30d3478bcaaf532e"
+    },
+    {
+      "path": "theme-trader-detail-v9-mobile.png",
+      "sha256": "f6f4f068f3e0069ec18bb19d366c4c2e62897077032e3e8bfc9c2be99ee75c50"
+    },
+    {
+      "path": "theme-trader-detail-v9-narrow.png",
+      "sha256": "5b25062980e46681d33ed040f6b8376e46746c06d6ac457878cd5d6ecb5a6aad"
+    },
+    {
+      "path": "theme-trader-detail-v9-stale.png",
+      "sha256": "926af8f7490706f14a3fe23613f213bd17972c3569953000371f63ffe5ec4df0"
+    },
+    {
+      "path": "theme-trader-detail-v9-text-200.png",
+      "sha256": "2745dd4b575cee1ed1c0e109857066fe253af1ffb494aa0773ef03714e36975e"
+    },
+    {
+      "path": "theme-trader-detail-v9.html",
+      "sha256": "dadf64355cbd82735bc99ce70f6f9de9b9e844b9f1b6c28a8f5c251fffe47929"
+    }
+  ]
+}

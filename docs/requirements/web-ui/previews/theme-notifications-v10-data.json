@@ -1,0 +1,31 @@
+{
+  "synthetic": true,
+  "notice": "Synthetic visual sample. Fixed demonstration time. No Telegram account, setup link or delivery is real.",
+  "now": "2026-09-14T07:00:00Z",
+  "connected": {
+    "botAvailable": true,
+    "botUsername": "athena_demo_bot",
+    "binding": {
+      "status": "connected",
+      "telegramUsername": "alex_demo",
+      "telegramDisplayName": "Alex Chen",
+      "boundAt": "2026-09-12T01:00:00Z",
+      "revision": 3
+    }
+  },
+  "pending": {
+    "botAvailable": true,
+    "botUsername": "athena_demo_bot",
+    "attempt": {
+      "id": "10101010-1010-4010-8010-101010101010",
+      "status": "pending",
+      "expiresAt": "2026-09-14T07:08:32Z",
+      "failureReason": ""
+    }
+  },
+  "instructions": {
+    "attemptId": "10101010-1010-4010-8010-101010101010",
+    "deepLink": "https://example.invalid/athena/telegram-preview?start=QVRIRU5BX1ZJU1VBTF9QUkVWSUVXX09OTFlfVjEwX19f",
+    "fallbackCommand": "/start QVRIRU5BX1ZJU1VBTF9QUkVWSUVXX09OTFlfVjEwX19f"
+  }
+}

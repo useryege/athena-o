@@ -1,0 +1,290 @@
+{
+  "label": "Trader subscriptions v8 visual comparison demo data",
+  "evidenceMode": "ui-fixtures",
+  "synthetic": true,
+  "syntheticNotice": "Every account, wallet, profile, timestamp, count, and queue state in this file is fictional and exists only for the v8 visual comparison.",
+  "sourceFixture": "ui/src/app/member/testdata/trader-sync/01.json",
+  "evidenceSource": "synthetic_v8_visual_comparison_fixture",
+  "asOf": "2026-09-14T06:42:00Z",
+  "quota": {
+    "used": 3,
+    "limit": 10
+  },
+  "queueNotice": "已排队通知仍会继续发送，可能稍后收到",
+  "scenarioLabels": {
+    "11111111-1111-4111-8111-111111111111": "active",
+    "22222222-2222-4222-8222-222222222222": "paused",
+    "33333333-3333-4333-8333-333333333333": "interrupted",
+    "44444444-4444-4444-8444-444444444444": "cancelled"
+  },
+  "current": {
+    "subscriptions": [
+      {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "wallet": "0x11111111111111111111111111111111111111A1",
+        "status": "healthy",
+        "revision": "7",
+        "generation": "1",
+        "note": "Election desk",
+        "noteRevision": "3",
+        "createdAt": "2026-09-12T01:00:00Z",
+        "updatedAt": "2026-09-14T06:42:00Z",
+        "observation": {
+          "state": "healthy",
+          "reason": "",
+          "lastReliableAt": "2026-09-14T06:42:00Z",
+          "interruptionCount": "0"
+        },
+        "bindingStatus": "connected",
+        "queueNotice": "",
+        "queueCounts": {
+          "total": "12",
+          "pending": "1",
+          "sending": "1",
+          "sent": "7",
+          "failed": "1",
+          "unknown": "1",
+          "cancelled": "1"
+        },
+        "targetDisplay": {
+          "displayName": {
+            "evidence": {
+              "availability": "available",
+              "reasonCode": "",
+              "source": "synthetic_v8_visual_comparison_fixture",
+              "queriedAt": "2026-09-14T06:42:00Z"
+            },
+            "value": "signal_works"
+          },
+          "avatar": {
+            "evidence": {
+              "availability": "unavailable",
+              "reasonCode": "missing_or_invalid",
+              "source": "synthetic_v8_visual_comparison_fixture",
+              "queriedAt": "2026-09-14T06:42:00Z"
+            }
+          },
+          "profileURL": {
+            "evidence": {
+              "availability": "available",
+              "reasonCode": "",
+              "source": "synthetic_v8_visual_comparison_fixture",
+              "queriedAt": "2026-09-14T06:42:00Z"
+            },
+            "value": "https://polymarket.com/profile/signal_works"
+          }
+        },
+        "currentInterval": {
+          "effectiveAt": "2026-09-12T01:00:00Z",
+          "generation": "1",
+          "epoch": "1"
+        }
+      },
+      {
+        "id": "22222222-2222-4222-8222-222222222222",
+        "wallet": "0x22222222222222222222222222222222222222B2",
+        "status": "paused",
+        "revision": "7",
+        "generation": "1",
+        "note": "Macro hedge",
+        "noteRevision": "3",
+        "createdAt": "2026-09-12T01:00:00Z",
+        "updatedAt": "2026-09-14T06:10:00Z",
+        "observation": {
+          "state": "healthy",
+          "reason": "",
+          "lastReliableAt": "2026-09-14T05:58:30Z",
+          "interruptionCount": "0"
+        },
+        "bindingStatus": "connected",
+        "queueNotice": "已排队通知仍会继续发送，可能稍后收到",
+        "queueCounts": {
+          "total": "6",
+          "pending": "2",
+          "sending": "0",
+          "sent": "3",
+          "failed": "0",
+          "unknown": "1",
+          "cancelled": "0"
+        },
+        "targetDisplay": {
+          "displayName": {
+            "evidence": {
+              "availability": "available",
+              "reasonCode": "",
+              "source": "synthetic_v8_visual_comparison_fixture",
+              "queriedAt": "2026-09-14T06:42:00Z"
+            },
+            "value": "macroedge"
+          },
+          "avatar": {
+            "evidence": {
+              "availability": "unavailable",
+              "reasonCode": "missing_or_invalid",
+              "source": "synthetic_v8_visual_comparison_fixture",
+              "queriedAt": "2026-09-14T06:42:00Z"
+            }
+          },
+          "profileURL": {
+            "evidence": {
+              "availability": "unavailable",
+              "reasonCode": "canonical_profile_unavailable",
+              "source": "synthetic_v8_visual_comparison_fixture",
+              "queriedAt": "2026-09-14T06:42:00Z"
+            }
+          }
+        },
+        "pausedAt": "2026-09-14T06:10:00Z",
+        "currentInterval": {
+          "effectiveAt": "2026-09-12T02:30:00Z",
+          "endedAt": "2026-09-14T06:10:00Z",
+          "generation": "1",
+          "epoch": "1"
+        }
+      },
+      {
+        "id": "33333333-3333-4333-8333-333333333333",
+        "wallet": "0x33333333333333333333333333333333333333C3",
+        "status": "interrupted",
+        "revision": "7",
+        "generation": "1",
+        "note": "Risk watch",
+        "noteRevision": "3",
+        "createdAt": "2026-09-12T01:00:00Z",
+        "updatedAt": "2026-09-14T06:36:00Z",
+        "observation": {
+          "state": "interrupted",
+          "reason": "WebSocket disconnected; activity may be missing.",
+          "lastReliableAt": "2026-09-14T06:35:00Z",
+          "latestInterruption": {
+            "start": "2026-09-14T06:35:00Z",
+            "reason": "WebSocket disconnected; activity may be missing.",
+            "uncertainty": "unknown_end",
+            "possibleMissing": true
+          },
+          "interruptionCount": "1"
+        },
+        "bindingStatus": "unreachable",
+        "queueNotice": "",
+        "queueCounts": {
+          "total": "9",
+          "pending": "3",
+          "sending": "1",
+          "sent": "3",
+          "failed": "1",
+          "unknown": "1",
+          "cancelled": "0"
+        },
+        "targetDisplay": {
+          "displayName": {
+            "evidence": {
+              "availability": "unavailable",
+              "reasonCode": "profile_query_failed",
+              "source": "synthetic_v8_visual_comparison_fixture",
+              "queriedAt": "2026-09-14T06:42:00Z"
+            }
+          },
+          "avatar": {
+            "evidence": {
+              "availability": "unavailable",
+              "reasonCode": "missing_or_invalid",
+              "source": "synthetic_v8_visual_comparison_fixture",
+              "queriedAt": "2026-09-14T06:42:00Z"
+            }
+          },
+          "profileURL": {
+            "evidence": {
+              "availability": "unavailable",
+              "reasonCode": "canonical_profile_unavailable",
+              "source": "synthetic_v8_visual_comparison_fixture",
+              "queriedAt": "2026-09-14T06:42:00Z"
+            }
+          }
+        },
+        "currentInterval": {
+          "effectiveAt": "2026-09-13T08:15:00Z",
+          "generation": "1",
+          "epoch": "1"
+        }
+      }
+    ],
+    "page": {},
+    "quota": {
+      "used": 3,
+      "limit": 10
+    },
+    "asOf": "2026-09-14T06:42:00Z"
+  },
+  "cancelled": {
+    "subscriptions": [
+      {
+        "id": "44444444-4444-4444-8444-444444444444",
+        "wallet": "0x44444444444444444444444444444444444444D4",
+        "status": "cancelled",
+        "revision": "7",
+        "generation": "1",
+        "note": "Retired alpha",
+        "noteRevision": "3",
+        "createdAt": "2026-09-12T01:00:00Z",
+        "updatedAt": "2026-09-14T00:05:00Z",
+        "observation": {
+          "state": "healthy",
+          "reason": "",
+          "lastReliableAt": "2026-09-13T23:50:00Z",
+          "interruptionCount": "0"
+        },
+        "bindingStatus": "unbound",
+        "queueNotice": "已排队通知仍会继续发送，可能稍后收到",
+        "queueCounts": {
+          "total": "5",
+          "pending": "0",
+          "sending": "0",
+          "sent": "3",
+          "failed": "1",
+          "unknown": "0",
+          "cancelled": "1"
+        },
+        "targetDisplay": {
+          "displayName": {
+            "evidence": {
+              "availability": "available",
+              "reasonCode": "",
+              "source": "synthetic_v8_visual_comparison_fixture",
+              "queriedAt": "2026-09-14T06:42:00Z"
+            },
+            "value": "archivepilot"
+          },
+          "avatar": {
+            "evidence": {
+              "availability": "unavailable",
+              "reasonCode": "missing_or_invalid",
+              "source": "synthetic_v8_visual_comparison_fixture",
+              "queriedAt": "2026-09-14T06:42:00Z"
+            }
+          },
+          "profileURL": {
+            "evidence": {
+              "availability": "unavailable",
+              "reasonCode": "canonical_profile_unavailable",
+              "source": "synthetic_v8_visual_comparison_fixture",
+              "queriedAt": "2026-09-14T06:42:00Z"
+            }
+          }
+        },
+        "cancelledAt": "2026-09-14T00:05:00Z",
+        "currentInterval": {
+          "effectiveAt": "2026-09-10T03:20:00Z",
+          "endedAt": "2026-09-14T00:05:00Z",
+          "generation": "1",
+          "epoch": "1"
+        }
+      }
+    ],
+    "page": {},
+    "quota": {
+      "used": 3,
+      "limit": 10
+    },
+    "asOf": "2026-09-14T06:42:00Z"
+  }
+}

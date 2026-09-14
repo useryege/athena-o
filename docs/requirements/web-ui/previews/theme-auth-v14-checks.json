@@ -1,0 +1,714 @@
+{
+  "version": "v14",
+  "result": "passed",
+  "evidence": "Local static visual proposal; no real provider, registration, or authorization requests.",
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "textScale": 1,
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-auth-v14-login-desktop.png",
+        "theme-auth-v14-register-desktop.png"
+      ],
+      "states": [
+        "login-busy",
+        "register",
+        "register-wallet",
+        "register-empty",
+        "register-loading",
+        "register-expired"
+      ],
+      "contrast": [
+        {
+          "selector": "auth-title",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "lead",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "google",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "phantom",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "wallet-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "onboarding-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "access-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 7.65
+        },
+        {
+          "selector": "auth-title",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "lead",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "identity-label",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "verified-identity",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "field-label",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "username",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 20.05
+        },
+        {
+          "selector": "username-status",
+          "foreground": "rgb(85, 217, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 10.65
+        },
+        {
+          "selector": "permanence",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "create-account",
+          "foreground": "rgb(6, 8, 11)",
+          "background": "rgb(0, 255, 167)",
+          "ratio": 15.15
+        },
+        {
+          "selector": "switch-identity",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "access-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 7.65
+        }
+      ],
+      "geometry": {
+        "width": 1440,
+        "documentWidth": 1440,
+        "height": 900,
+        "inter": true,
+        "mono": true
+      },
+      "keyboard": "Tab reaches provider action with visible focus",
+      "behavior": "Login busy, unavailable provider, username local rules, availability failure, stale state fencing, disabled submit, switch busy, copy success/failure, loading and expired state checked."
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-auth-v14-login-mobile.png",
+        "theme-auth-v14-login-mobile-missing.png",
+        "theme-auth-v14-register-mobile.png",
+        "theme-auth-v14-register-mobile-wallet.png",
+        "theme-auth-v14-register-mobile-expired.png"
+      ],
+      "states": [
+        "login-busy",
+        "register",
+        "register-wallet",
+        "register-empty",
+        "register-loading",
+        "register-expired"
+      ],
+      "contrast": [
+        {
+          "selector": "auth-title",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "lead",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "google",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "phantom",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "wallet-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "onboarding-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "access-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 7.65
+        },
+        {
+          "selector": "auth-title",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "lead",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "feedback warning",
+          "foreground": "rgb(230, 191, 114)",
+          "background": "rgb(39, 33, 21)",
+          "ratio": 9.17
+        },
+        {
+          "selector": "google",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "phantom",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "wallet-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "onboarding-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "access-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 7.65
+        },
+        {
+          "selector": "auth-title",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "lead",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "identity-label",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "verified-identity",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "field-label",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "username",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 20.05
+        },
+        {
+          "selector": "username-status",
+          "foreground": "rgb(85, 217, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 10.65
+        },
+        {
+          "selector": "permanence",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "create-account",
+          "foreground": "rgb(6, 8, 11)",
+          "background": "rgb(0, 255, 167)",
+          "ratio": 15.15
+        },
+        {
+          "selector": "switch-identity",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "access-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 7.65
+        },
+        {
+          "selector": "auth-title",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "lead",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "identity-label",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "verified-identity",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "field-label",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "username",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 20.05
+        },
+        {
+          "selector": "username-status",
+          "foreground": "rgb(85, 217, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 10.65
+        },
+        {
+          "selector": "permanence",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "create-account",
+          "foreground": "rgb(6, 8, 11)",
+          "background": "rgb(0, 255, 167)",
+          "ratio": 15.15
+        },
+        {
+          "selector": "switch-identity",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "access-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 7.65
+        },
+        {
+          "selector": "auth-title",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "lead",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "feedback error",
+          "foreground": "rgb(245, 140, 155)",
+          "background": "rgb(43, 23, 28)",
+          "ratio": 7.33
+        },
+        {
+          "selector": "return-login",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "access-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 7.65
+        }
+      ],
+      "geometry": {
+        "width": 390,
+        "documentWidth": 390,
+        "height": 844,
+        "inter": true,
+        "mono": true
+      },
+      "keyboard": "Tab reaches provider action with visible focus",
+      "behavior": "Login busy, unavailable provider, username local rules, availability failure, stale state fencing, disabled submit, switch busy, copy success/failure, loading and expired state checked."
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "textScale": 1,
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-auth-v14-login-narrow.png",
+        "theme-auth-v14-register-narrow.png"
+      ],
+      "states": [
+        "login-busy",
+        "register",
+        "register-wallet",
+        "register-empty",
+        "register-loading",
+        "register-expired"
+      ],
+      "contrast": [
+        {
+          "selector": "auth-title",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "lead",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "google",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "phantom",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "wallet-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "onboarding-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "access-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 7.65
+        },
+        {
+          "selector": "auth-title",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "lead",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "identity-label",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "verified-identity",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "field-label",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "username",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 20.05
+        },
+        {
+          "selector": "username-status",
+          "foreground": "rgb(85, 217, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 10.65
+        },
+        {
+          "selector": "permanence",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "create-account",
+          "foreground": "rgb(6, 8, 11)",
+          "background": "rgb(0, 255, 167)",
+          "ratio": 15.15
+        },
+        {
+          "selector": "switch-identity",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "access-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 7.65
+        }
+      ],
+      "geometry": {
+        "width": 320,
+        "documentWidth": 320,
+        "height": 844,
+        "inter": true,
+        "mono": true
+      },
+      "keyboard": "Tab reaches provider action with visible focus",
+      "behavior": "Login busy, unavailable provider, username local rules, availability failure, stale state fencing, disabled submit, switch busy, copy success/failure, loading and expired state checked."
+    },
+    {
+      "name": "text-200",
+      "width": 720,
+      "height": 900,
+      "textScale": 2,
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-auth-v14-login-text-200.png",
+        "theme-auth-v14-register-text-200.png"
+      ],
+      "states": [
+        "login-busy",
+        "register",
+        "register-wallet",
+        "register-empty",
+        "register-loading",
+        "register-expired"
+      ],
+      "contrast": [
+        {
+          "selector": "auth-title",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "lead",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "google",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "phantom",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "wallet-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "onboarding-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "access-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 7.65
+        },
+        {
+          "selector": "auth-title",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "lead",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "identity-label",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "verified-identity",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "field-label",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "username",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 20.05
+        },
+        {
+          "selector": "username-status",
+          "foreground": "rgb(85, 217, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 10.65
+        },
+        {
+          "selector": "permanence",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.22
+        },
+        {
+          "selector": "create-account",
+          "foreground": "rgb(6, 8, 11)",
+          "background": "rgb(0, 255, 167)",
+          "ratio": 15.15
+        },
+        {
+          "selector": "switch-identity",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.91
+        },
+        {
+          "selector": "access-note",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 7.65
+        }
+      ],
+      "geometry": {
+        "width": 720,
+        "documentWidth": 720,
+        "height": 1287,
+        "inter": true,
+        "mono": false
+      },
+      "keyboard": "Tab reaches provider action with visible focus",
+      "behavior": "Login busy, unavailable provider, username local rules, availability failure, stale state fencing, disabled submit, switch busy, copy success/failure, loading and expired state checked."
+    }
+  ]
+}

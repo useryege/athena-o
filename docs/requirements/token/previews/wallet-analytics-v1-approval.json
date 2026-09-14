@@ -1,0 +1,100 @@
+{
+  "status": "approved_for_wallet_analytics_v1_page_design",
+  "confirmed_by": "user",
+  "feedback": "这一版本很好，通过",
+  "confirmed_date": "2026-09-14",
+  "review_context": "上一轮已澄清构建模板与完整交互预览的用途，并提供 wallet-analytics-v1.html 查看入口；用户随后明确通过这一版本。",
+  "review_entry": "wallet-analytics-v1.html",
+  "approved_scope": [
+    "v1 整体页面设计作为后续正式页面实现的视觉依据",
+    "查询区域、钱包总览、逐币表现与交易明细的组织、阅读层次和字段展示",
+    "当前版本对已确认 Nansen 深色主题、字体、数字排版和控件层级的运用"
+  ],
+  "evidence_limits": [
+    "不声称用户已逐图查看或操作全部手机、窄屏、放大、复制失败与模拟异常状态；辅助状态按既定需求实施和验证",
+    "预览使用保存样本，确认不代表实时 Nansen 请求、权限、缓存、额度控制或大集合分页已经验收",
+    "本页局部视觉适配不扩大为新的全站规则；正式 ui/ 与后端业务接入尚未实现",
+    "审批对象为生成后的完整交互预览，不包含 .superpowers/wallet-analytics-preview/page.html 构建模板"
+  ],
+  "next_step": "沿用既定顺序补齐实施计划，先完成 Nansen 后端接入及验证，再按已确认页面设计实现正式 UI 并进行真实环境验收。",
+  "implementation_status": "not_implemented",
+  "artifact_record_note": "以下为 v1 同版本文件与证据的摘要，不将列入文件清单解释为用户逐图确认；原浏览器、审阅及设计记录保持生成时内容。",
+  "artifacts": [
+    {
+      "path": "wallet-analytics-v1-checks.json",
+      "sha256": "45996e6677a9abc5eaa85fcaafd42c1684cb6c2b2bddb9f4b702d711c534f8b6"
+    },
+    {
+      "path": "wallet-analytics-v1-data.json",
+      "sha256": "2e674e8b03e9559859cb4e6a65c9a5fb74ce8f16cb4fd3dd3ee43e94559c2b71"
+    },
+    {
+      "path": "wallet-analytics-v1-desktop-filtered.png",
+      "sha256": "35972a47dd814cd859c3aad9f96490e3d89dc82e5f6269b57cef7249b4f81499"
+    },
+    {
+      "path": "wallet-analytics-v1-desktop-full.png",
+      "sha256": "a58b90ca0e44685928e653a0a32a89550798d651cfe0f9cc57d840282fbc3bf8"
+    },
+    {
+      "path": "wallet-analytics-v1-desktop-initial.png",
+      "sha256": "9b4960da53720fe9dbe07c709ff65907d7925e86321f37a6c443b144ec650510"
+    },
+    {
+      "path": "wallet-analytics-v1-desktop-loading.png",
+      "sha256": "71ccae40b24503a3fb843b66578ae7e40929b4446a04b97890284f0abb8405cc"
+    },
+    {
+      "path": "wallet-analytics-v1-desktop-section-error.png",
+      "sha256": "19935eb224bcc3a86c7387c22eda9eb211209b7d01eb9c14ccf7d470650c08d5"
+    },
+    {
+      "path": "wallet-analytics-v1-desktop-stale.png",
+      "sha256": "1b4a2af7d3855dbe1fc83c8ccbc72953a4e029189218b3235cc23646e43bb1c6"
+    },
+    {
+      "path": "wallet-analytics-v1-desktop-transactions.png",
+      "sha256": "684bf0f62a8225adea8d63b0d793e953c895bc05441f68d0496ac97e7e8fe2e9"
+    },
+    {
+      "path": "wallet-analytics-v1-desktop.png",
+      "sha256": "b4454fd6ceb89765d011c09e29b3cd1e1ac5d1e850ad99cd58569dd03c2a339f"
+    },
+    {
+      "path": "wallet-analytics-v1-documentation.json",
+      "sha256": "e9b3d97b62a23f87dfaaffc9c9b412fb6aded54d955cf338ca9b61d2fc57f7b9"
+    },
+    {
+      "path": "wallet-analytics-v1-mobile-full.png",
+      "sha256": "8205e3fc9e306618430f20a5f49b63ea7e3b47dc45ff98a52f56cbe59f34e425"
+    },
+    {
+      "path": "wallet-analytics-v1-mobile-tokens.png",
+      "sha256": "89c81af177f9455e03e604dd094859766ca939da24d5ac144b6a97633fc2918e"
+    },
+    {
+      "path": "wallet-analytics-v1-mobile-transaction.png",
+      "sha256": "b5ce4080a97eba523b42f91b75e00e3a6b5ad1cbd6179afc28e11886b5597742"
+    },
+    {
+      "path": "wallet-analytics-v1-mobile.png",
+      "sha256": "d30787f1ef48abb85ef83993826cf485909e4cff21e93d1230d4442782f986a8"
+    },
+    {
+      "path": "wallet-analytics-v1-narrow.png",
+      "sha256": "e47352b132258ba997a3a7b0bd73ffe21fb2402fabee3b33629217b7790892b0"
+    },
+    {
+      "path": "wallet-analytics-v1-review.json",
+      "sha256": "05e861df5df7142ead124dd743d01c4a62941b90f87e17991f62ba5a6aacc0c9"
+    },
+    {
+      "path": "wallet-analytics-v1-text-200.png",
+      "sha256": "162c179afcd675a196649c7a00f5ac22f674b15d1d90fbcd7dd0a9ff90e5e30b"
+    },
+    {
+      "path": "wallet-analytics-v1.html",
+      "sha256": "7262c2ece8d5b7298a217dfa0740d970ad2b2c61b191046c4e93ad744be05153"
+    }
+  ]
+}

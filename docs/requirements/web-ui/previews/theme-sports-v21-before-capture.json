@@ -1,0 +1,169 @@
+{
+  "scope": "Current React with synthetic GET and locally fulfilled read-only POST batchGet queries; all writes and unknown requests blocked; this is not fullstack acceptance. Corners current subtitle hardcodes 64, fixture contains 8 synthetic records.",
+  "captures": [
+    {
+      "view": "live",
+      "device": "desktop",
+      "url": "http://localhost:4000/sports-live",
+      "heading": [
+        "Sports Live"
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "url": "/api/v1/app/bootstrap",
+          "decision": "synthetic fulfill"
+        },
+        {
+          "method": "GET",
+          "url": "/api/v1/sports-live/events",
+          "decision": "synthetic fulfill"
+        },
+        {
+          "method": "POST",
+          "url": "/api/v1/sports-live/price-history:batchGet",
+          "decision": "synthetic read-only fulfill; never forwarded"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "view": "live",
+      "device": "mobile",
+      "url": "http://localhost:4000/sports-live",
+      "heading": [
+        "Sports Live"
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "url": "/api/v1/app/bootstrap",
+          "decision": "synthetic fulfill"
+        },
+        {
+          "method": "GET",
+          "url": "/api/v1/sports-live/events",
+          "decision": "synthetic fulfill"
+        },
+        {
+          "method": "POST",
+          "url": "/api/v1/sports-live/price-history:batchGet",
+          "decision": "synthetic read-only fulfill; never forwarded"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "view": "history",
+      "device": "desktop",
+      "url": "http://localhost:4000/sports-history",
+      "heading": [
+        "Sports History"
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "url": "/api/v1/app/bootstrap",
+          "decision": "synthetic fulfill"
+        },
+        {
+          "method": "GET",
+          "url": "/api/v1/sports-history/events",
+          "decision": "synthetic fulfill"
+        },
+        {
+          "method": "GET",
+          "url": "/api/v1/sports-history/sync-status",
+          "decision": "synthetic fulfill"
+        },
+        {
+          "method": "POST",
+          "url": "/api/v1/sports-history/price-history:batchGet",
+          "decision": "synthetic read-only fulfill; never forwarded"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "view": "history",
+      "device": "mobile",
+      "url": "http://localhost:4000/sports-history",
+      "heading": [
+        "Sports History"
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "url": "/api/v1/app/bootstrap",
+          "decision": "synthetic fulfill"
+        },
+        {
+          "method": "GET",
+          "url": "/api/v1/sports-history/events",
+          "decision": "synthetic fulfill"
+        },
+        {
+          "method": "GET",
+          "url": "/api/v1/sports-history/sync-status",
+          "decision": "synthetic fulfill"
+        },
+        {
+          "method": "POST",
+          "url": "/api/v1/sports-history/price-history:batchGet",
+          "decision": "synthetic read-only fulfill; never forwarded"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "view": "corners",
+      "device": "desktop",
+      "url": "http://localhost:4000/world-cup-corners",
+      "heading": [
+        "2022 World Cup Corner Analysis"
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "url": "/api/v1/app/bootstrap",
+          "decision": "synthetic fulfill"
+        },
+        {
+          "method": "GET",
+          "url": "/api/v1/world-cup-corners/dataset",
+          "decision": "synthetic fulfill"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "view": "corners",
+      "device": "mobile",
+      "url": "http://localhost:4000/world-cup-corners",
+      "heading": [
+        "2022 World Cup Corner Analysis"
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "url": "/api/v1/app/bootstrap",
+          "decision": "synthetic fulfill"
+        },
+        {
+          "method": "GET",
+          "url": "/api/v1/world-cup-corners/dataset",
+          "decision": "synthetic fulfill"
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "result": "capture_complete",
+  "authorOpenedAllSix": true,
+  "observedIssues": [
+    "Live and History current React mobile charts overflow document width.",
+    "Corners current mobile stage values are clipped and the table requires horizontal scrolling.",
+    "Current Corners subtitle hardcodes 64 although the local synthetic fixture intentionally contains 8 records."
+  ],
+  "prototypeChangedProductionUI": false
+}

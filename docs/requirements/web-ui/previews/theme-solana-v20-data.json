@@ -1,0 +1,167 @@
+{
+  "synthetic": true,
+  "asOf": "2026-09-14T06:30:00Z",
+  "user": {
+    "loggedIn": true,
+    "accountId": "11111111-1111-4111-8111-111111111111",
+    "username": "alexchen",
+    "iss": "fixture",
+    "administrator": false,
+    "profile": {
+      "displayName": "Alex Chen",
+      "tier": "ACCOUNT_TIER_STANDARD",
+      "avatarUrl": "",
+      "revision": "4"
+    },
+    "preferences": {
+      "theme": "ACCOUNT_THEME_DARK",
+      "revision": "2"
+    },
+    "access": {
+      "loginEnabled": true,
+      "apiKeyEnabled": true,
+      "profitSharingEnabled": true,
+      "revision": "1",
+      "moduleAccess": [
+        {
+          "module": "ACCOUNT_DATA_MODULE_WALLET",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SOLANA",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        }
+      ]
+    }
+  },
+  "items": [
+    {
+      "mint": "7VX2WcS4Ny1RoH3KvCAZkTx95ezMmDiFSUuPYjEGmqLp",
+      "tokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "signature": "3fGzP1Kka3gJHpFLPUZRMhfUihRmY9YX1RNZ5uFmWqNWkrxVPca82NY8w22DeJsmRQheSVFpGDzjvqY1LjFzSfBo",
+      "feePayer": "8pRDMVk5ZjBSFZSzBy33HV5VhDMLb2yZwGRBLaZHqTAr",
+      "mintAuthority": "",
+      "freezeAuthority": "",
+      "decimals": 6,
+      "slot": "390254180",
+      "blockTime": "1789367220",
+      "discoveredAt": "1789367240",
+      "name": "Lunar Current",
+      "symbol": "LUNAR",
+      "metadataStatus": "ready",
+      "metadataSource": "metaplex",
+      "metadataAccount": "9DVcW3CpUnAjFag88trMFbe62dFYrvvKDQ9xzmmYQY4M",
+      "metadataObservedSlot": "390254190",
+      "metadataUpdatedAt": "1789367246",
+      "issuanceSource": "pump_fun",
+      "issuanceProgram": "6EF8rrecthR5DkJzWmWsUQHrxtftJaMVXsNoKLCKtpqP",
+      "sourceStatus": "identified"
+    },
+    {
+      "mint": "GnHzuGaGUMQWPoxdkHwZyEuNmLBMnmFVvTxHHMbprSYL",
+      "tokenProgram": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+      "signature": "3fGzP1Kka3gJHpFLPUZRMhfUihRmY9YX1RNZ5uFmWqNWkrxVPca82NY8w22DeJsmRQheSVFpGDzjvqY1LjFzSfBo",
+      "feePayer": "8pRDMVk5ZjBSFZSzBy33HV5VhDMLb2yZwGRBLaZHqTAr",
+      "mintAuthority": "",
+      "freezeAuthority": "",
+      "decimals": 6,
+      "slot": "390254180",
+      "blockTime": "1789367220",
+      "discoveredAt": "1789367240",
+      "name": "Orbit Studio",
+      "symbol": "ORBIT",
+      "metadataStatus": "ready",
+      "metadataSource": "token2022_on_mint",
+      "metadataAccount": "9DVcW3CpUnAjFag88trMFbe62dFYrvvKDQ9xzmmYQY4M",
+      "metadataObservedSlot": "390254190",
+      "metadataUpdatedAt": "1789367246",
+      "issuanceSource": "raydium_launchlab",
+      "issuanceProgram": "",
+      "sourceStatus": "identified"
+    },
+    {
+      "mint": "Bdr4vv8MBGEVGehSgUZyaAhxbSCNNYR3DpUVbkKeAkmX",
+      "tokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "signature": "3fGzP1Kka3gJHpFLPUZRMhfUihRmY9YX1RNZ5uFmWqNWkrxVPca82NY8w22DeJsmRQheSVFpGDzjvqY1LjFzSfBo",
+      "feePayer": "8pRDMVk5ZjBSFZSzBy33HV5VhDMLb2yZwGRBLaZHqTAr",
+      "mintAuthority": "",
+      "freezeAuthority": "",
+      "decimals": 6,
+      "slot": "390254180",
+      "blockTime": "",
+      "discoveredAt": "1789367240",
+      "name": "",
+      "symbol": "",
+      "metadataStatus": "pending",
+      "metadataSource": "",
+      "metadataAccount": "",
+      "metadataObservedSlot": "0",
+      "metadataUpdatedAt": "",
+      "issuanceSource": "",
+      "issuanceProgram": "",
+      "sourceStatus": "unknown"
+    },
+    {
+      "mint": "FaGYULvqCYzgHYNahFiEZmjNbbZZ8RQ76MJLz2wgQbAe",
+      "tokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "signature": "3fGzP1Kka3gJHpFLPUZRMhfUihRmY9YX1RNZ5uFmWqNWkrxVPca82NY8w22DeJsmRQheSVFpGDzjvqY1LjFzSfBo",
+      "feePayer": "8pRDMVk5ZjBSFZSzBy33HV5VhDMLb2yZwGRBLaZHqTAr",
+      "mintAuthority": "",
+      "freezeAuthority": "",
+      "decimals": 6,
+      "slot": "390254180",
+      "blockTime": "1789367220",
+      "discoveredAt": "1789367240",
+      "name": "",
+      "symbol": "",
+      "metadataStatus": "error",
+      "metadataSource": "",
+      "metadataAccount": "",
+      "metadataObservedSlot": "0",
+      "metadataUpdatedAt": "",
+      "issuanceSource": "",
+      "issuanceProgram": "",
+      "sourceStatus": "error"
+    }
+  ],
+  "totalSize": 4,
+  "page": 1,
+  "pageSize": 25,
+  "status": {
+    "status": "current",
+    "startSlot": "390252100",
+    "lastProcessedSlot": "390254224",
+    "latestFinalizedSlot": "390254224",
+    "lastSuccessAt": "1789367400",
+    "totalProjects": "4",
+    "lastError": ""
+  }
+}

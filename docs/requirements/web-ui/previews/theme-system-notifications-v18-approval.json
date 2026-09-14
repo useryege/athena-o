@@ -1,0 +1,90 @@
+{
+  "status": "approved_for_system_notifications_presented_visuals",
+  "confirmed_by": "user",
+  "feedback": "舒服 我的意思是你可以一次多完成一些页面给我审阅",
+  "confirmed_date": "2026-09-14",
+  "review_context": "用户查看上一回复直接展示的系统通知列表、详情桌面与手机四张主图后反馈舒服，并明确要求后续每次先多完成一些页面，再集中审阅。",
+  "directly_presented_artifacts": [
+    "theme-system-notifications-v18-list-desktop.png",
+    "theme-system-notifications-v18-detail-desktop.png",
+    "theme-system-notifications-v18-list-mobile.png",
+    "theme-system-notifications-v18-detail-mobile.png"
+  ],
+  "approved_scope": [
+    "系统通知列表与详情所展示的桌面／手机整体布局、信息密度、配色、字体和管理员应用壳",
+    "列表筛选区与七字段合并五列、手机分隔记录、分页及操作层级",
+    "详情消息、投递结果、独立UTC+8时间的阅读顺序及技术标识默认折叠入口",
+    "未知结果可能已送达且不自动重发的说明展示"
+  ],
+  "not_approved_by_this_feedback": [
+    "未直接展示的测试弹窗、320px、200%字号和其他辅助状态未逐图确认；这些记录不自动成为新增审批关卡",
+    "真实API、权限、Telegram投递、异步和生产验收",
+    "当前React对照作为新主题目标、正式ui已改版或全站设计完成"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-system-notifications-v18-before-capture.json",
+      "sha256": "a4b8f2018b6ed7a6c921c48c5d6b80300a2d6e35c1b0c77f37d8592a2b0976c5"
+    },
+    {
+      "path": "theme-system-notifications-v18-before-detail-desktop.png",
+      "sha256": "949a1b27d4aa6fe321a4124f42d3c849d1bce21aa2e34a614c8cd0608c4333d3"
+    },
+    {
+      "path": "theme-system-notifications-v18-before-detail-mobile.png",
+      "sha256": "b2bcbc6da0efbf56e14bddee8865f2a17a9c4a9bc4db54866a043fdacfb7ce19"
+    },
+    {
+      "path": "theme-system-notifications-v18-before-list-desktop.png",
+      "sha256": "4c1f4f8cb6dbde328b7839a53ab4de6651fe169e6a8b7339e8cdb33f00bf115e"
+    },
+    {
+      "path": "theme-system-notifications-v18-before-list-mobile.png",
+      "sha256": "ff18c4d66ce2fd3741a06491a0e0151a165813aecb7c41c2f463020df235a650"
+    },
+    {
+      "path": "theme-system-notifications-v18-checks.json",
+      "sha256": "f1a5f03552fcb6cdf2b73199a311670142a0f4ee4b3ebdd30dcf591d86624392"
+    },
+    {
+      "path": "theme-system-notifications-v18-data.json",
+      "sha256": "03a24bf367012b0e38c621f19427095901fee8c7acd326f094bb8f158ee24e1e"
+    },
+    {
+      "path": "theme-system-notifications-v18-detail-desktop.png",
+      "sha256": "7e72029ddbaec7c48e8b9b606743ba87eb27d418d4503fd0c8fe55b250a2d75b"
+    },
+    {
+      "path": "theme-system-notifications-v18-detail-mobile.png",
+      "sha256": "68a0595c153b21ca79b3ed3a18ad25389a5cade5c2a9616b31dd56d0c1e78433"
+    },
+    {
+      "path": "theme-system-notifications-v18-list-desktop.png",
+      "sha256": "51501d7a537eb75574d52b7b05fbaef1c961c358a159881e963dfcbce6e509e6"
+    },
+    {
+      "path": "theme-system-notifications-v18-list-mobile.png",
+      "sha256": "4a564eca4e03a3f53fa4aeb6090b0704138bdde80948d07922a451f64edfe754"
+    },
+    {
+      "path": "theme-system-notifications-v18-narrow.png",
+      "sha256": "784575739a0bd769deb2894cc6ad985ba5b6b910d98a0d8b6021982d819b9e86"
+    },
+    {
+      "path": "theme-system-notifications-v18-test-mobile.png",
+      "sha256": "64e4b71eaa65fb5f32c89b82fd3e9ac48648e64aac6ed6e6b9293c2779e7bbcc"
+    },
+    {
+      "path": "theme-system-notifications-v18-zoom.png",
+      "sha256": "91f055ce9e9d7dd94f63d2432c6433941aa74b8ad1033b62e208d36f0dd856e4"
+    },
+    {
+      "path": "theme-system-notifications-v18.html",
+      "sha256": "43fcb98e2f3cfeb6310f4d1ab26ea9fef798d249afe89dd336da3b4d48e3d03b"
+    },
+    {
+      "path": "theme-system-notifications-v18-review.json",
+      "sha256": "9dae6be7737208c2a13bf94890469d5fd7d1da83538ad39cc6627d0c14565225"
+    }
+  ]
+}

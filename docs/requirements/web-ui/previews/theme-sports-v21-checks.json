@@ -1,0 +1,868 @@
+{
+  "mode": "local-visual-prototype",
+  "synthetic": true,
+  "source": "current React plus synthetic GET and locally fulfilled read-only batchGet POST comparison",
+  "round": "confirmation",
+  "views": [
+    {
+      "view": "live",
+      "kind": "desktop",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "heading": "Sports Live"
+    },
+    {
+      "view": "live",
+      "kind": "mobile",
+      "width": 390,
+      "scrollWidth": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "heading": "Sports Live"
+    },
+    {
+      "view": "live",
+      "kind": "narrow",
+      "width": 320,
+      "scrollWidth": 320,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "heading": "Sports Live"
+    },
+    {
+      "view": "live",
+      "kind": "zoom",
+      "width": 720,
+      "scrollWidth": 720,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "heading": "Sports Live"
+    },
+    {
+      "view": "history",
+      "kind": "desktop",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "heading": "Sports History"
+    },
+    {
+      "view": "history",
+      "kind": "mobile",
+      "width": 390,
+      "scrollWidth": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "heading": "Sports History"
+    },
+    {
+      "view": "history",
+      "kind": "narrow",
+      "width": 320,
+      "scrollWidth": 320,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "heading": "Sports History"
+    },
+    {
+      "view": "history",
+      "kind": "zoom",
+      "width": 720,
+      "scrollWidth": 720,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "heading": "Sports History"
+    },
+    {
+      "view": "corners",
+      "kind": "desktop",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "heading": "2022 World Cup Corner Analysis"
+    },
+    {
+      "view": "corners",
+      "kind": "mobile",
+      "width": 390,
+      "scrollWidth": 390,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "heading": "2022 World Cup Corner Analysis"
+    },
+    {
+      "view": "corners",
+      "kind": "narrow",
+      "width": 320,
+      "scrollWidth": 320,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "heading": "2022 World Cup Corner Analysis"
+    },
+    {
+      "view": "corners",
+      "kind": "zoom",
+      "width": 720,
+      "scrollWidth": 720,
+      "duplicateIds": [],
+      "smallControls": [],
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "heading": "2022 World Cup Corner Analysis"
+    }
+  ],
+  "interactions": [
+    {
+      "name": "Scratch keyboard reveal",
+      "value": "2",
+      "clip": "clip-path: inset(0px 81.8182% 0px 0px);"
+    },
+    {
+      "name": "Scratch reset",
+      "value": "0"
+    },
+    {
+      "name": "Manual sync preview does not execute request",
+      "disabled": true,
+      "visible": true
+    },
+    {
+      "name": "Read-only hides manual sync",
+      "hidden": true
+    },
+    {
+      "name": "Independent missing history",
+      "cards": 2,
+      "unavailable": 2
+    },
+    {
+      "name": "Clipboard denial fallback",
+      "visible": true
+    },
+    {
+      "name": "Navigation keyboard focus",
+      "inDialog": true
+    },
+    {
+      "name": "Navigation Escape restores focus",
+      "active": "open-nav"
+    },
+    {
+      "name": "Team and outcome filters",
+      "count": "Showing 2 of 8 sample matches"
+    },
+    {
+      "name": "Empty filter result",
+      "visible": true
+    },
+    {
+      "name": "Reset filters",
+      "count": "Showing 8 of 8 sample matches"
+    },
+    {
+      "name": "Methodology dialog focus",
+      "inDialog": true
+    },
+    {
+      "name": "live loading",
+      "metrics": {
+        "width": 390,
+        "scrollWidth": 390,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "Sports Live"
+      }
+    },
+    {
+      "name": "live empty",
+      "metrics": {
+        "width": 390,
+        "scrollWidth": 390,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "Sports Live"
+      }
+    },
+    {
+      "name": "live error",
+      "metrics": {
+        "width": 390,
+        "scrollWidth": 390,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "Sports Live"
+      }
+    },
+    {
+      "name": "live error recovery",
+      "heading": "Sports Live"
+    },
+    {
+      "name": "history loading",
+      "metrics": {
+        "width": 390,
+        "scrollWidth": 390,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "Sports History"
+      }
+    },
+    {
+      "name": "history empty",
+      "metrics": {
+        "width": 390,
+        "scrollWidth": 390,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "Sports History"
+      }
+    },
+    {
+      "name": "history error",
+      "metrics": {
+        "width": 390,
+        "scrollWidth": 390,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "Sports History"
+      }
+    },
+    {
+      "name": "history error recovery",
+      "heading": "Sports History"
+    },
+    {
+      "name": "corners loading",
+      "metrics": {
+        "width": 390,
+        "scrollWidth": 390,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "2022 World Cup Corner Analysis"
+      }
+    },
+    {
+      "name": "corners empty",
+      "metrics": {
+        "width": 390,
+        "scrollWidth": 390,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "2022 World Cup Corner Analysis"
+      }
+    },
+    {
+      "name": "corners error",
+      "metrics": {
+        "width": 390,
+        "scrollWidth": 390,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "2022 World Cup Corner Analysis"
+      }
+    },
+    {
+      "name": "corners error recovery",
+      "heading": "2022 World Cup Corner Analysis"
+    }
+  ],
+  "requests": [],
+  "errors": [],
+  "pass": true,
+  "authorOpenedScreenshots": [
+    "theme-sports-v21-corners-desktop.png",
+    "theme-sports-v21-live-mobile.png",
+    "theme-sports-v21-live-no-history-mobile.png",
+    "theme-sports-v21-live-zoom.png",
+    "theme-sports-v21-corners-method-mobile.png",
+    "theme-sports-v21-before-history-desktop.png",
+    "theme-sports-v21-history-syncing-mobile.png",
+    "theme-sports-v21-history-scratch-mobile.png",
+    "theme-sports-v21-corners-zoom.png",
+    "theme-sports-v21-history-desktop.png",
+    "theme-sports-v21-corners-mobile.png",
+    "theme-sports-v21-live-copy-fallback-mobile.png",
+    "theme-sports-v21-before-live-desktop.png",
+    "theme-sports-v21-live-narrow.png",
+    "theme-sports-v21-before-corners-mobile.png",
+    "theme-sports-v21-live-desktop.png",
+    "theme-sports-v21-before-history-mobile.png",
+    "theme-sports-v21-corners-filtered-mobile.png",
+    "theme-sports-v21-live-stale-mobile.png",
+    "theme-sports-v21-history-narrow.png",
+    "theme-sports-v21-before-live-mobile.png",
+    "theme-sports-v21-corners-narrow.png",
+    "theme-sports-v21-before-corners-desktop.png",
+    "theme-sports-v21-history-failed-mobile.png",
+    "theme-sports-v21-history-zoom.png",
+    "theme-sports-v21-history-mobile.png"
+  ],
+  "screenshotCount": 26,
+  "capturePosition": "Full-page captures start at document top; copy and methodology dialogs captured at 390x844 with body at top.",
+  "limitations": [
+    "Local HTML prototype and synthetic API intercepts only; no actual identity, backend, provider or fullstack acceptance.",
+    "Live polling is paused in the prototype. Synchronization is a local visual simulation and never executes a request.",
+    "No pagination was added: these three existing React routes have no pagination controls.",
+    "Shared shell review, combined detector and independent design review are owned by the parent task."
+  ],
+  "corrections": [
+    "Historical synthetic series now span event start to finish (14:00\u201315:45 UTC+8).",
+    "Manual sync display and click bind shared Sports History write permission.",
+    "Added direct pointer price selection alongside keyboard time slider.",
+    "Flattened missing-history feedback and separated methodology action from body copy."
+  ],
+  "reviewerCorrection": {
+    "mode": "local-visual-prototype",
+    "synthetic": true,
+    "source": "current React plus synthetic GET and locally fulfilled read-only batchGet POST comparison",
+    "round": "reviewer-disclosure-correction",
+    "replacedScreenshots": [
+      "theme-sports-v21-live-desktop.png",
+      "theme-sports-v21-live-mobile.png",
+      "theme-sports-v21-live-narrow.png",
+      "theme-sports-v21-live-zoom.png",
+      "theme-sports-v21-history-desktop.png",
+      "theme-sports-v21-history-mobile.png",
+      "theme-sports-v21-history-narrow.png",
+      "theme-sports-v21-history-zoom.png",
+      "theme-sports-v21-history-scratch-mobile.png",
+      "theme-sports-v21-history-syncing-mobile.png",
+      "theme-sports-v21-history-failed-mobile.png",
+      "theme-sports-v21-live-stale-mobile.png",
+      "theme-sports-v21-live-no-history-mobile.png",
+      "theme-sports-v21-live-copy-fallback-mobile.png"
+    ],
+    "disclosureChecks": [
+      {
+        "view": "live",
+        "kind": "desktop",
+        "collapsed": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(0, -1, 1, 0, 0, 0)",
+          "expanded": false,
+          "width": 1102,
+          "height": 44,
+          "documentWidth": 1440,
+          "viewport": 1440
+        },
+        "expanded": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(1, 0, 0, 1, 0, 0)",
+          "expanded": true,
+          "width": 1102,
+          "height": 44,
+          "documentWidth": 1440,
+          "viewport": 1440
+        },
+        "pass": true
+      },
+      {
+        "view": "live",
+        "kind": "mobile",
+        "collapsed": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(0, -1, 1, 0, 0, 0)",
+          "expanded": false,
+          "width": 308,
+          "height": 44,
+          "documentWidth": 390,
+          "viewport": 390
+        },
+        "expanded": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(1, 0, 0, 1, 0, 0)",
+          "expanded": true,
+          "width": 308,
+          "height": 44,
+          "documentWidth": 390,
+          "viewport": 390
+        },
+        "pass": true
+      },
+      {
+        "view": "live",
+        "kind": "narrow",
+        "collapsed": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(0, -1, 1, 0, 0, 0)",
+          "expanded": false,
+          "width": 238,
+          "height": 44,
+          "documentWidth": 320,
+          "viewport": 320
+        },
+        "expanded": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(1, 0, 0, 1, 0, 0)",
+          "expanded": true,
+          "width": 238,
+          "height": 44,
+          "documentWidth": 320,
+          "viewport": 320
+        },
+        "pass": true
+      },
+      {
+        "view": "live",
+        "kind": "zoom",
+        "collapsed": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(0, -1, 1, 0, 0, 0)",
+          "expanded": false,
+          "width": 630,
+          "height": 44,
+          "documentWidth": 720,
+          "viewport": 720
+        },
+        "expanded": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(1, 0, 0, 1, 0, 0)",
+          "expanded": true,
+          "width": 630,
+          "height": 44,
+          "documentWidth": 720,
+          "viewport": 720
+        },
+        "pass": true
+      },
+      {
+        "view": "history",
+        "kind": "desktop",
+        "collapsed": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(0, -1, 1, 0, 0, 0)",
+          "expanded": false,
+          "width": 1102,
+          "height": 44,
+          "documentWidth": 1440,
+          "viewport": 1440
+        },
+        "expanded": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(1, 0, 0, 1, 0, 0)",
+          "expanded": true,
+          "width": 1102,
+          "height": 44,
+          "documentWidth": 1440,
+          "viewport": 1440
+        },
+        "pass": true
+      },
+      {
+        "view": "history",
+        "kind": "mobile",
+        "collapsed": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(0, -1, 1, 0, 0, 0)",
+          "expanded": false,
+          "width": 308,
+          "height": 44,
+          "documentWidth": 390,
+          "viewport": 390
+        },
+        "expanded": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(1, 0, 0, 1, 0, 0)",
+          "expanded": true,
+          "width": 308,
+          "height": 44,
+          "documentWidth": 390,
+          "viewport": 390
+        },
+        "pass": true
+      },
+      {
+        "view": "history",
+        "kind": "narrow",
+        "collapsed": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(0, -1, 1, 0, 0, 0)",
+          "expanded": false,
+          "width": 238,
+          "height": 44,
+          "documentWidth": 320,
+          "viewport": 320
+        },
+        "expanded": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(1, 0, 0, 1, 0, 0)",
+          "expanded": true,
+          "width": 238,
+          "height": 44,
+          "documentWidth": 320,
+          "viewport": 320
+        },
+        "pass": true
+      },
+      {
+        "view": "history",
+        "kind": "zoom",
+        "collapsed": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(0, -1, 1, 0, 0, 0)",
+          "expanded": false,
+          "width": 630,
+          "height": 44,
+          "documentWidth": 720,
+          "viewport": 720
+        },
+        "expanded": {
+          "before": "none",
+          "svgCount": 1,
+          "transform": "matrix(1, 0, 0, 1, 0, 0)",
+          "expanded": true,
+          "width": 630,
+          "height": 44,
+          "documentWidth": 720,
+          "viewport": 720
+        },
+        "pass": true
+      }
+    ],
+    "views": [
+      {
+        "view": "live",
+        "kind": "desktop",
+        "width": 1440,
+        "scrollWidth": 1440,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "Sports Live"
+      },
+      {
+        "view": "live",
+        "kind": "mobile",
+        "width": 390,
+        "scrollWidth": 390,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "Sports Live"
+      },
+      {
+        "view": "live",
+        "kind": "narrow",
+        "width": 320,
+        "scrollWidth": 320,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "Sports Live"
+      },
+      {
+        "view": "live",
+        "kind": "zoom",
+        "width": 720,
+        "scrollWidth": 720,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "Sports Live"
+      },
+      {
+        "view": "history",
+        "kind": "desktop",
+        "width": 1440,
+        "scrollWidth": 1440,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "Sports History"
+      },
+      {
+        "view": "history",
+        "kind": "mobile",
+        "width": 390,
+        "scrollWidth": 390,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "Sports History"
+      },
+      {
+        "view": "history",
+        "kind": "narrow",
+        "width": 320,
+        "scrollWidth": 320,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "Sports History"
+      },
+      {
+        "view": "history",
+        "kind": "zoom",
+        "width": 720,
+        "scrollWidth": 720,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "Sports History"
+      },
+      {
+        "view": "corners",
+        "kind": "desktop",
+        "width": 1440,
+        "scrollWidth": 1440,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "2022 World Cup Corner Analysis"
+      },
+      {
+        "view": "corners",
+        "kind": "mobile",
+        "width": 390,
+        "scrollWidth": 390,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "2022 World Cup Corner Analysis"
+      },
+      {
+        "view": "corners",
+        "kind": "narrow",
+        "width": 320,
+        "scrollWidth": 320,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "2022 World Cup Corner Analysis"
+      },
+      {
+        "view": "corners",
+        "kind": "zoom",
+        "width": 720,
+        "scrollWidth": 720,
+        "duplicateIds": [],
+        "smallControls": [],
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "heading": "2022 World Cup Corner Analysis"
+      }
+    ],
+    "interactions": [
+      {
+        "name": "Scratch keyboard reveal",
+        "value": "2",
+        "clip": "clip-path: inset(0px 81.8182% 0px 0px);"
+      },
+      {
+        "name": "Scratch reset",
+        "value": "0"
+      },
+      {
+        "name": "Manual sync preview does not execute request",
+        "disabled": true,
+        "visible": true
+      },
+      {
+        "name": "Read-only hides manual sync",
+        "hidden": true
+      },
+      {
+        "name": "Independent missing history",
+        "cards": 2,
+        "unavailable": 2
+      },
+      {
+        "name": "Clipboard denial fallback",
+        "visible": true
+      },
+      {
+        "name": "Navigation keyboard focus",
+        "inDialog": true
+      },
+      {
+        "name": "Navigation Escape restores focus",
+        "active": "open-nav"
+      },
+      {
+        "name": "Team and outcome filters",
+        "count": "Showing 2 of 8 sample matches"
+      },
+      {
+        "name": "Empty filter result",
+        "visible": true
+      },
+      {
+        "name": "Reset filters",
+        "count": "Showing 8 of 8 sample matches"
+      },
+      {
+        "name": "Methodology dialog focus",
+        "inDialog": true
+      },
+      {
+        "name": "live loading",
+        "metrics": {
+          "width": 390,
+          "scrollWidth": 390,
+          "duplicateIds": [],
+          "smallControls": [],
+          "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+          "heading": "Sports Live"
+        }
+      },
+      {
+        "name": "live empty",
+        "metrics": {
+          "width": 390,
+          "scrollWidth": 390,
+          "duplicateIds": [],
+          "smallControls": [],
+          "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+          "heading": "Sports Live"
+        }
+      },
+      {
+        "name": "live error",
+        "metrics": {
+          "width": 390,
+          "scrollWidth": 390,
+          "duplicateIds": [],
+          "smallControls": [],
+          "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+          "heading": "Sports Live"
+        }
+      },
+      {
+        "name": "live error recovery",
+        "heading": "Sports Live"
+      },
+      {
+        "name": "history loading",
+        "metrics": {
+          "width": 390,
+          "scrollWidth": 390,
+          "duplicateIds": [],
+          "smallControls": [],
+          "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+          "heading": "Sports History"
+        }
+      },
+      {
+        "name": "history empty",
+        "metrics": {
+          "width": 390,
+          "scrollWidth": 390,
+          "duplicateIds": [],
+          "smallControls": [],
+          "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+          "heading": "Sports History"
+        }
+      },
+      {
+        "name": "history error",
+        "metrics": {
+          "width": 390,
+          "scrollWidth": 390,
+          "duplicateIds": [],
+          "smallControls": [],
+          "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+          "heading": "Sports History"
+        }
+      },
+      {
+        "name": "history error recovery",
+        "heading": "Sports History"
+      },
+      {
+        "name": "corners loading",
+        "metrics": {
+          "width": 390,
+          "scrollWidth": 390,
+          "duplicateIds": [],
+          "smallControls": [],
+          "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+          "heading": "2022 World Cup Corner Analysis"
+        }
+      },
+      {
+        "name": "corners empty",
+        "metrics": {
+          "width": 390,
+          "scrollWidth": 390,
+          "duplicateIds": [],
+          "smallControls": [],
+          "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+          "heading": "2022 World Cup Corner Analysis"
+        }
+      },
+      {
+        "name": "corners error",
+        "metrics": {
+          "width": 390,
+          "scrollWidth": 390,
+          "duplicateIds": [],
+          "smallControls": [],
+          "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+          "heading": "2022 World Cup Corner Analysis"
+        }
+      },
+      {
+        "name": "corners error recovery",
+        "heading": "2022 World Cup Corner Analysis"
+      }
+    ],
+    "requests": [],
+    "errors": [],
+    "pass": true,
+    "authorOpenedAll14": true,
+    "change": "Removed generated text arrow; exactly one existing SVG remains, pointing right when collapsed and down when expanded.",
+    "unchangedAssets": {
+      "theme-sports-v21-before-capture.json": true,
+      "theme-sports-v21-before-corners-desktop.png": true,
+      "theme-sports-v21-before-corners-mobile.png": true,
+      "theme-sports-v21-before-history-desktop.png": true,
+      "theme-sports-v21-before-history-mobile.png": true,
+      "theme-sports-v21-before-live-desktop.png": true,
+      "theme-sports-v21-before-live-mobile.png": true,
+      "theme-sports-v21-corners-desktop.png": true,
+      "theme-sports-v21-corners-filtered-mobile.png": true,
+      "theme-sports-v21-corners-method-mobile.png": true,
+      "theme-sports-v21-corners-mobile.png": true,
+      "theme-sports-v21-corners-narrow.png": true,
+      "theme-sports-v21-corners-zoom.png": true,
+      "theme-sports-v21-data.json": true
+    }
+  }
+}

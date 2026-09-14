@@ -1,0 +1,114 @@
+{
+  "mode": "ui-fixtures",
+  "identity": "synthetic",
+  "results": [
+    {
+      "view": "hot",
+      "size": "desktop",
+      "route": "/market-radar",
+      "file": "theme-market-radar-v21-before-hot-desktop.png",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/market-radar/hot-markets"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "writesSubmitted": false,
+      "metrics": {
+        "width": 1440,
+        "scrollWidth": 1440
+      }
+    },
+    {
+      "view": "hot",
+      "size": "mobile",
+      "route": "/market-radar",
+      "file": "theme-market-radar-v21-before-hot-mobile.png",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/market-radar/hot-markets"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "writesSubmitted": false,
+      "metrics": {
+        "width": 390,
+        "scrollWidth": 408
+      }
+    },
+    {
+      "view": "realtime",
+      "size": "desktop",
+      "route": "/market-radar/realtime",
+      "file": "theme-market-radar-v21-before-realtime-desktop.png",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/market-radar/realtime-markets"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "writesSubmitted": false,
+      "metrics": {
+        "width": 1440,
+        "scrollWidth": 1440
+      }
+    },
+    {
+      "view": "realtime",
+      "size": "mobile",
+      "route": "/market-radar/realtime",
+      "file": "theme-market-radar-v21-before-realtime-mobile.png",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/market-radar/realtime-markets"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "writesSubmitted": false,
+      "metrics": {
+        "width": 390,
+        "scrollWidth": 408
+      }
+    },
+    {
+      "view": "movers",
+      "size": "desktop",
+      "route": "/market-radar/movers",
+      "file": "theme-market-radar-v21-before-movers-desktop.png",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/market-radar/movers"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "writesSubmitted": false,
+      "metrics": {
+        "width": 1440,
+        "scrollWidth": 1440
+      }
+    },
+    {
+      "view": "movers",
+      "size": "mobile",
+      "route": "/market-radar/movers",
+      "file": "theme-market-radar-v21-before-movers-mobile.png",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/market-radar/movers"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "writesSubmitted": false,
+      "metrics": {
+        "width": 390,
+        "scrollWidth": 408
+      }
+    }
+  ],
+  "status": "capture_complete",
+  "currentReactFiles": "ui/src/app/member/pages/market-radar.tsx",
+  "observedIssues": [
+    "All three current React mobile captures have 408px document width at a 390px viewport. Existing table columns truncate market titles."
+  ],
+  "imagesOpenedByAuthor": 6
+}

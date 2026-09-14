@@ -1,0 +1,62 @@
+{
+  "synthetic": true,
+  "notice": "Synthetic visual sample. Invalid demonstration credential. No key is issued or revoked and no external AI is contacted.",
+  "asOf": "2026-09-14T02:00:00Z",
+  "user": {
+    "loggedIn": true,
+    "accountId": "11111111-1111-4111-8111-111111111111",
+    "username": "alexchen",
+    "iss": "fixture",
+    "administrator": false,
+    "profile": {
+      "displayName": "Alex Chen",
+      "tier": "ACCOUNT_TIER_STANDARD",
+      "avatarUrl": "",
+      "revision": "4"
+    },
+    "preferences": {
+      "theme": "ACCOUNT_THEME_DARK",
+      "revision": "2"
+    },
+    "access": {
+      "loginEnabled": true,
+      "apiKeyEnabled": true,
+      "profitSharingEnabled": false,
+      "revision": "1",
+      "moduleAccess": [
+        {
+          "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        }
+      ]
+    }
+  },
+  "tokens": [
+    {
+      "id": "automation-client",
+      "issuedAt": 1789176600,
+      "expiresAt": 1796952600
+    },
+    {
+      "id": "ai-20260913-060000-a1b2",
+      "issuedAt": 1789279200,
+      "expiresAt": 1797055200
+    },
+    {
+      "id": "research-cli",
+      "issuedAt": 1788220800,
+      "expiresAt": 0
+    }
+  ],
+  "newConnectionID": "ai-20260914-020000-c3d4",
+  "secret": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZW1vLW9ubHkiLCJhdGhlbmFUb2tlblZlcnNpb24iOjN9.demo-signature-not-valid",
+  "ai": {
+    "baseUrl": "https://athena.example.invalid",
+    "llmsUrl": "https://athena.example.invalid/llms.txt",
+    "swaggerUrl": "https://athena.example.invalid/swagger.json",
+    "verifyUrl": "https://athena.example.invalid/api/v1/session/userinfo",
+    "expectedAccountId": "11111111-1111-4111-8111-111111111111",
+    "authorizationHeader": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZW1vLW9ubHkiLCJhdGhlbmFUb2tlblZlcnNpb24iOjN9.demo-signature-not-valid",
+    "instructions": "Connect to this Athena instance and act as my account.\n\nAthena Base URL: https://athena.example.invalid\nAI discovery document: https://athena.example.invalid/llms.txt\nAPI contract (Swagger 2.0): https://athena.example.invalid/swagger.json\nCredential verification endpoint: https://athena.example.invalid/api/v1/session/userinfo\nExpected account ID: 11111111-1111-4111-8111-111111111111\nAuthorization header:\nAuthorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZW1vLW9ubHkiLCJhdGhlbmFUb2tlblZlcnNpb24iOjN9.demo-signature-not-valid\n\nConnection procedure:\n1. Read https://athena.example.invalid/llms.txt before selecting or calling Athena operations.\n2. Treat the Swagger 2.0 document at https://athena.example.invalid/swagger.json as the source of truth for paths, methods, parameters, request bodies, response schemas, and enum values.\n3. Send a GET request to https://athena.example.invalid/api/v1/session/userinfo with the Authorization header above and confirm that loggedIn is true and accountId equals 11111111-1111-4111-8111-111111111111.\n4. After verification, act with the full current authority of this ordinary Athena account, including all read and write operations the account is currently allowed to perform.\n\nAuthorization model:\n- This bearer credential represents the complete current API authority of the account.\n- Athena does not use OAuth delegation, API Key scopes, a read-only mode, or per-request approval for this connection.\n- Athena evaluates account permissions in real time. Permission changes, account suspension, API Key access changes, expiration, or revocation take effect on subsequent requests."
+  }
+}

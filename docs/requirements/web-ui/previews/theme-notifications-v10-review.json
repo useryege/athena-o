@@ -1,0 +1,206 @@
+{
+  "version": "v10",
+  "surface": "Notifications / Telegram connection settings",
+  "status": "awaiting_user_review",
+  "production_ui_changed": false,
+  "scope": "Existing member /notifications visual redesign; local demonstration only",
+  "direction": ".superpowers/v10-direction.md",
+  "inspection": {
+    "rounds": 2,
+    "final_checks": "theme-notifications-v10-checks.json",
+    "four_viewports": [
+      "1440×900",
+      "390×844",
+      "320×844",
+      "720×900 with 200% root font"
+    ],
+    "prototype_screenshots": 15,
+    "before_screenshots": 4,
+    "first_round_fixes": [
+      "Removed duplicate scrim inherited from shell",
+      "Scaled account avatar to enlarged type",
+      "Used information icon for informational feedback",
+      "Captured native modal within viewport to avoid full-document backdrop artifact"
+    ],
+    "reviewer_fix_batches": 1
+  },
+  "independent_review": {
+    "reviewer": "/root/v10_finish_review",
+    "initial_disposition": "fix",
+    "initial_scope": "All 19 provided screenshots (15 proposal, 4 current React comparisons), provided direction, source contracts, browser evidence and craft floor. File-only review; no reviewer browser.",
+    "initial_sections": {
+      "persistence": "Coherent Operate-mode extension of approved v1–v9 world. Preserve pre-existing absence of DESIGN.md and sidecar. Proceed after focused corrections.",
+      "fidelity": [
+        {
+          "element": "Nansen shell, palette, Inter hierarchy",
+          "verdict": "pass"
+        },
+        {
+          "element": "Current Telegram identity, binding time and status",
+          "verdict": "pass"
+        },
+        {
+          "element": "Three-step setup, manual command and synthetic QR",
+          "verdict": "pass"
+        },
+        {
+          "element": "Binding retained during reconnect",
+          "verdict": "pass"
+        },
+        {
+          "element": "Recovery states",
+          "verdict": "partial; duplicate primary and failed badge severity"
+        },
+        {
+          "element": "Safe disconnect confirmation",
+          "verdict": "pass"
+        },
+        {
+          "element": "Responsive hierarchy and text scaling",
+          "verdict": "pass"
+        }
+      ],
+      "ceiling": "All 19 supplied captures valid and match filenames. Browser evidence includes four viewports. Scope is visual proposal; polling/races/API/backends and user approval remain separate.",
+      "material_fixes": [
+        "Expired/failed states: remove duplicate primary Create new link from channel panel, retain one in setup recovery.",
+        "Use negative/error treatment for Setup failed badge; expiry/attention remain amber."
+      ],
+      "keep": "Connected-vs-pending separation, continuity message, recovery copy, QR/manual pairing, mobile steps, restrained panels, demo labeling, Beijing timestamps, consequences, Keep connection focus."
+    },
+    "disposition": "ship",
+    "verdict_scope": "Bounded verdict pass covering only the two listed fixes and batch regressions; not a new whole-surface review or user approval.",
+    "verdict": [
+      {
+        "finding": "Duplicate Create new link",
+        "score": "resolved",
+        "evidence": "Expired/failed channel panels have no action wrapper; setup recovery has one primary action."
+      },
+      {
+        "finding": "Failure badge warning color",
+        "score": "resolved",
+        "evidence": "#F58C9B on #2B171C with #804752 border, matching failure semantics."
+      }
+    ],
+    "batch_regressions": "None observed in three changed captures; four viewport checks passed.",
+    "remaining": "clear"
+  },
+  "detector": {
+    "runs": 1,
+    "findings": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "resolution": "User-approved v2 font; single-file ignore-value persisted with CLI in .impeccable/config.json",
+        "file": "docs/requirements/web-ui/previews/theme-notifications-v10.html"
+      }
+    ]
+  },
+  "asset_provenance": {
+    "screenshots": "Chromium captures; origins embedded with impeccable embed-prompt; not AI generated or retouched",
+    "qr": "files/notifications-v10-demo-qr.svg; code-native QR using local qrcodegen, encoded from the shared reserved example.invalid demonstration deepLink",
+    "scan": ".superpowers/v10-raster-provenance-scan.txt"
+  },
+  "documentation": "notifications-proposal.md and indices; no global DESIGN.md/sidecar changes",
+  "limitations": [
+    "Synthetic fixture display is not live API, polling, permission or mutation verification",
+    "Only displayed/approved visuals become user-approved scope; no v10 approval yet"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-notifications-v10-before-capture.json",
+      "sha256": "cf4cdc0feb02f3dea70b0e9bb84d255a9681d11f7340c51517f5f50d13b6f2d5"
+    },
+    {
+      "path": "theme-notifications-v10-before-desktop-pending.png",
+      "sha256": "690bb8c7686dd25d27fd14b18ccb3e0b82b99de4fb36c1356b4685cf2c033eda"
+    },
+    {
+      "path": "theme-notifications-v10-before-desktop.png",
+      "sha256": "a2524b7729c126b1c790ea983fca1f48bbfbc35f3feb7d0cec1a18e5f2006cbe"
+    },
+    {
+      "path": "theme-notifications-v10-before-mobile-pending.png",
+      "sha256": "205682f3c0be16b9402e13366d4704976a38918e313b27967b48e11cb4b342e2"
+    },
+    {
+      "path": "theme-notifications-v10-before-mobile.png",
+      "sha256": "d21807c2648a2ef77c0f259b5779edb56cfd198bae5d2f5ae1601ddbdb2de2be"
+    },
+    {
+      "path": "theme-notifications-v10-checks.json",
+      "sha256": "872f245b95f870d81497254a9aeb91e2a3ac4546bdadf129b7afcf282cf947f8"
+    },
+    {
+      "path": "theme-notifications-v10-data.json",
+      "sha256": "1a73f8f27820ea8e8d54afea4c55bf28bb52d6d3253302e7c0956b1f0e2951c1"
+    },
+    {
+      "path": "theme-notifications-v10-desktop-disconnect.png",
+      "sha256": "accd58eb0746ab56e86a064a6aa04d2641542f0d87841187782671eb2fa2bd7c"
+    },
+    {
+      "path": "theme-notifications-v10-desktop-expired.png",
+      "sha256": "72426af67e0efaece4708d3eff72edb946ea1201a9f45e14059b757dc463ea9c"
+    },
+    {
+      "path": "theme-notifications-v10-desktop-pending.png",
+      "sha256": "059e1d030882b90daf4d095f3140217cf429639d98f31ec6884c5a32118d2a37"
+    },
+    {
+      "path": "theme-notifications-v10-desktop-reconnect.png",
+      "sha256": "9c50e1af2b77f9dad788db5f610a435b235694039451f00c4a48755b8adb6143"
+    },
+    {
+      "path": "theme-notifications-v10-desktop-remote.png",
+      "sha256": "5697e5859e2cb25c4ae2ffde7b2236857b39d84bb869202476ca8ad67ec24139"
+    },
+    {
+      "path": "theme-notifications-v10-desktop-stale.png",
+      "sha256": "c1a160353f36f2d0fe9f86013c46808672ae1fcd71d817dddcf2291d196673a1"
+    },
+    {
+      "path": "theme-notifications-v10-desktop.png",
+      "sha256": "1ff08cf8fc745dd4613b8cb29f467ccea140181a40d29f1826acfca07e2bc3a1"
+    },
+    {
+      "path": "theme-notifications-v10-mobile-disconnect.png",
+      "sha256": "c3770244cddcb3b855fc5d9b318335d85960423519e3506115cb247e359abf38"
+    },
+    {
+      "path": "theme-notifications-v10-mobile-error.png",
+      "sha256": "1ddfe4ce962d68e2cb4d8c8e8ed3c759e0fe9c3b4d5bd2c8ed53ab70b0b82e8a"
+    },
+    {
+      "path": "theme-notifications-v10-mobile-failed.png",
+      "sha256": "c8c62e1e76465069e6d043ce08835ebea1eff4a30ad8dce35a65c88ab379230c"
+    },
+    {
+      "path": "theme-notifications-v10-mobile-pending.png",
+      "sha256": "8c42ca3bda52820d107a51f452b9ac128493876779c24598028aabb08eb82f0e"
+    },
+    {
+      "path": "theme-notifications-v10-mobile-unreachable.png",
+      "sha256": "25e9b80e863420a9209b5fed8b4b56926e0c7ecb99267d27921d904285d84a03"
+    },
+    {
+      "path": "theme-notifications-v10-mobile.png",
+      "sha256": "fb0185225314169e3cdabe7cb7c22a2b4cc126937a919d797a5601bcc2ff8252"
+    },
+    {
+      "path": "theme-notifications-v10-narrow.png",
+      "sha256": "0f7d0f8334ba53b0173a801734972455b36026cedc7a21c70f48525a87dc07af"
+    },
+    {
+      "path": "theme-notifications-v10-text-200.png",
+      "sha256": "1390917cb6cb51fe4e1d6f5eb5dde36eb9c6300e19f24064cab56ae36b8a4cf4"
+    },
+    {
+      "path": "theme-notifications-v10.html",
+      "sha256": "eaa4e2c5ac9dd9515cd3f542648618bbd3f60990127776da190345a8b85858e3"
+    },
+    {
+      "path": "files/notifications-v10-demo-qr.svg",
+      "sha256": "72e4996054d74cf9658aaf4220ff32cb9a90cfd2e0e46bfba4c1d4fdc0b2e0ed"
+    }
+  ]
+}

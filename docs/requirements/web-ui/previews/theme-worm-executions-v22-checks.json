@@ -1,0 +1,235 @@
+{
+  "result": "passed",
+  "mode": "static intercepted-free local prototype",
+  "round": "finish命名修正第一轮",
+  "captures": [
+    {
+      "filename": "theme-worm-executions-v22-list-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-worm-executions-v22-list-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-worm-executions-v22-list-narrow.png",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "documentWidth": 320,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-worm-executions-v22-list-zoom.png",
+      "viewport": {
+        "width": 720,
+        "height": 900
+      },
+      "documentWidth": 720,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-worm-executions-v22-detail-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-worm-executions-v22-detail-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-worm-executions-v22-detail-narrow.png",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "documentWidth": 320,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-worm-executions-v22-detail-zoom.png",
+      "viewport": {
+        "width": 720,
+        "height": 900
+      },
+      "documentWidth": 720,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-worm-executions-v22-authorize-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": [],
+      "dialogBodyScrollTop": 0
+    },
+    {
+      "filename": "theme-worm-executions-v22-terminate-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": [],
+      "dialogBodyScrollTop": 0
+    },
+    {
+      "filename": "theme-worm-executions-v22-unknown-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    },
+    {
+      "filename": "theme-worm-executions-v22-evidence-mobile.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "overflow": false,
+      "duplicateIds": [],
+      "smallTargets": [],
+      "errors": [],
+      "external": []
+    }
+  ],
+  "checks": [
+    {
+      "name": "authorize Escape and focus return",
+      "pass": true
+    },
+    {
+      "name": "terminate Escape and focus return",
+      "pass": true
+    },
+    {
+      "name": "Unknown step update <= Run update",
+      "pass": true
+    },
+    {
+      "name": "Unknown result read-only check preserves isolation",
+      "pass": true
+    },
+    {
+      "name": "Completed observation <= step update <= Run update",
+      "pass": true
+    },
+    {
+      "name": "Completed evidence has full position/wallet identity",
+      "pass": true
+    },
+    {
+      "name": "Independent authorization → explicit Start → active-step Pause requested",
+      "pass": true
+    },
+    {
+      "name": "Continue exposed only in paused fixture",
+      "pass": true
+    },
+    {
+      "name": "Clipboard failure presents complete manual-copy value",
+      "pass": true
+    },
+    {
+      "name": "read-only controls gated",
+      "pass": true
+    },
+    {
+      "name": "session-expired controls gated",
+      "pass": true
+    },
+    {
+      "name": "loading rendered without script errors",
+      "pass": true
+    },
+    {
+      "name": "empty rendered without script errors",
+      "pass": true
+    },
+    {
+      "name": "error rendered without script errors",
+      "pass": true
+    },
+    {
+      "name": "Terminated unknown Run retains reconciliation",
+      "pass": true
+    }
+  ],
+  "problems": [],
+  "notVerified": [
+    "real backend",
+    "provider requests",
+    "Google or Phantom proof",
+    "actual signing or execution",
+    "full-stack smoke"
+  ]
+}

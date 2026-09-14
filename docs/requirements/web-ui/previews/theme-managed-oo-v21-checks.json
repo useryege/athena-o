@@ -1,0 +1,1305 @@
+{
+  "result": "passed",
+  "mode": "standalone synthetic visual prototype",
+  "captures": [
+    {
+      "filename": "theme-managed-oo-v21-proposals-desktop.png",
+      "viewportOnly": false,
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440,
+      "documentHeight": 1499,
+      "overflow": false,
+      "scrollY": 0,
+      "fonts": "loaded",
+      "duplicateIds": [],
+      "controls": [
+        {
+          "label": "Refresh",
+          "width": 115,
+          "height": 44
+        },
+        {
+          "label": "scan-block",
+          "width": 260,
+          "height": 44
+        },
+        {
+          "label": "Parse block",
+          "width": 142,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the policy review finish by 30 September?",
+          "width": 341.015625,
+          "height": 44
+        },
+        {
+          "label": "Copy proposer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the network upgrade be published this month?",
+          "width": 341.015625,
+          "height": 44
+        },
+        {
+          "label": "Copy proposer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Market 910003",
+          "width": 109,
+          "height": 44
+        },
+        {
+          "label": "Copy proposer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Previous page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Next page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Records per page",
+          "width": 82,
+          "height": 44
+        },
+        {
+          "label": "Preview states",
+          "width": 1152,
+          "height": 44
+        },
+        {
+          "label": "Default",
+          "width": 71,
+          "height": 44
+        },
+        {
+          "label": "Read only",
+          "width": 88,
+          "height": 44
+        },
+        {
+          "label": "Loading",
+          "width": 76,
+          "height": 44
+        },
+        {
+          "label": "Empty",
+          "width": 63,
+          "height": 44
+        },
+        {
+          "label": "Load error",
+          "width": 92,
+          "height": 44
+        },
+        {
+          "label": "Parse failure",
+          "width": 106,
+          "height": 44
+        },
+        {
+          "label": "Pagination",
+          "width": 92,
+          "height": 44
+        }
+      ],
+      "colors": {
+        "--page": "#06080B",
+        "--panel": "#0F1114",
+        "--text": "#FFFFFF",
+        "--muted": "#9FA0A1",
+        "--accent": "#00FFA7"
+      },
+      "headingSize": "28px",
+      "bodyFont": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogScroll": 0
+    },
+    {
+      "filename": "theme-managed-oo-v21-proposals-mobile.png",
+      "viewportOnly": false,
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 2579,
+      "overflow": false,
+      "scrollY": 0,
+      "fonts": "loaded",
+      "duplicateIds": [],
+      "controls": [
+        {
+          "label": "Refresh",
+          "width": 115,
+          "height": 44
+        },
+        {
+          "label": "scan-block",
+          "width": 308,
+          "height": 44
+        },
+        {
+          "label": "Parse block",
+          "width": 308,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the policy review finish by 30 September?",
+          "width": 308,
+          "height": 49.59375
+        },
+        {
+          "label": "Copy proposer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the network upgrade be published this month?",
+          "width": 308,
+          "height": 49.59375
+        },
+        {
+          "label": "Copy proposer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Market 910003",
+          "width": 120,
+          "height": 44
+        },
+        {
+          "label": "Copy proposer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Previous page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Next page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Records per page",
+          "width": 82,
+          "height": 44
+        },
+        {
+          "label": "Preview states",
+          "width": 350,
+          "height": 44
+        },
+        {
+          "label": "Default",
+          "width": 71,
+          "height": 44
+        },
+        {
+          "label": "Read only",
+          "width": 88,
+          "height": 44
+        },
+        {
+          "label": "Loading",
+          "width": 76,
+          "height": 44
+        },
+        {
+          "label": "Empty",
+          "width": 63,
+          "height": 44
+        },
+        {
+          "label": "Load error",
+          "width": 92,
+          "height": 44
+        },
+        {
+          "label": "Parse failure",
+          "width": 106,
+          "height": 44
+        },
+        {
+          "label": "Pagination",
+          "width": 92,
+          "height": 44
+        }
+      ],
+      "colors": {
+        "--page": "#06080B",
+        "--panel": "#0F1114",
+        "--text": "#FFFFFF",
+        "--muted": "#9FA0A1",
+        "--accent": "#00FFA7"
+      },
+      "headingSize": "24px",
+      "bodyFont": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogScroll": 0
+    },
+    {
+      "filename": "theme-managed-oo-v21-proposals-narrow.png",
+      "viewportOnly": false,
+      "width": 320,
+      "height": 844,
+      "documentWidth": 320,
+      "documentHeight": 2644,
+      "overflow": false,
+      "scrollY": 0,
+      "fonts": "loaded",
+      "duplicateIds": [],
+      "controls": [
+        {
+          "label": "Refresh",
+          "width": 115,
+          "height": 44
+        },
+        {
+          "label": "scan-block",
+          "width": 246,
+          "height": 44
+        },
+        {
+          "label": "Parse block",
+          "width": 246,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the policy review finish by 30 September?",
+          "width": 246,
+          "height": 49.59375
+        },
+        {
+          "label": "Copy proposer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the network upgrade be published this month?",
+          "width": 246,
+          "height": 74.390625
+        },
+        {
+          "label": "Copy proposer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Market 910003",
+          "width": 120,
+          "height": 44
+        },
+        {
+          "label": "Copy proposer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Previous page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Next page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Records per page",
+          "width": 82,
+          "height": 44
+        },
+        {
+          "label": "Preview states",
+          "width": 280,
+          "height": 44
+        },
+        {
+          "label": "Default",
+          "width": 71,
+          "height": 44
+        },
+        {
+          "label": "Read only",
+          "width": 88,
+          "height": 44
+        },
+        {
+          "label": "Loading",
+          "width": 76,
+          "height": 44
+        },
+        {
+          "label": "Empty",
+          "width": 63,
+          "height": 44
+        },
+        {
+          "label": "Load error",
+          "width": 92,
+          "height": 44
+        },
+        {
+          "label": "Parse failure",
+          "width": 106,
+          "height": 44
+        },
+        {
+          "label": "Pagination",
+          "width": 92,
+          "height": 44
+        }
+      ],
+      "colors": {
+        "--page": "#06080B",
+        "--panel": "#0F1114",
+        "--text": "#FFFFFF",
+        "--muted": "#9FA0A1",
+        "--accent": "#00FFA7"
+      },
+      "headingSize": "24px",
+      "bodyFont": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogScroll": 0
+    },
+    {
+      "filename": "theme-managed-oo-v21-proposals-zoom.png",
+      "viewportOnly": false,
+      "width": 720,
+      "height": 900,
+      "documentWidth": 720,
+      "documentHeight": 3570,
+      "overflow": false,
+      "scrollY": 0,
+      "fonts": "loaded",
+      "duplicateIds": [],
+      "controls": [
+        {
+          "label": "Refresh",
+          "width": 160,
+          "height": 61.1875
+        },
+        {
+          "label": "scan-block",
+          "width": 638,
+          "height": 65.390625
+        },
+        {
+          "label": "Parse block",
+          "width": 638,
+          "height": 61.1875
+        },
+        {
+          "label": "Example: Will the policy review finish by 30 September?",
+          "width": 638,
+          "height": 99.1875
+        },
+        {
+          "label": "Copy proposer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 191,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the network upgrade be published this month?",
+          "width": 638,
+          "height": 99.1875
+        },
+        {
+          "label": "Copy proposer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 191,
+          "height": 44
+        },
+        {
+          "label": "Market 910003",
+          "width": 221,
+          "height": 49.59375
+        },
+        {
+          "label": "Copy proposer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 191,
+          "height": 44
+        },
+        {
+          "label": "Previous page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Next page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Records per page",
+          "width": 82,
+          "height": 58
+        },
+        {
+          "label": "Preview states",
+          "width": 680,
+          "height": 44
+        },
+        {
+          "label": "Default",
+          "width": 111,
+          "height": 59.59375
+        },
+        {
+          "label": "Read only",
+          "width": 142,
+          "height": 59.59375
+        },
+        {
+          "label": "Loading",
+          "width": 119,
+          "height": 59.59375
+        },
+        {
+          "label": "Empty",
+          "width": 102,
+          "height": 59.59375
+        },
+        {
+          "label": "Load error",
+          "width": 147,
+          "height": 59.59375
+        },
+        {
+          "label": "Parse failure",
+          "width": 170,
+          "height": 59.59375
+        },
+        {
+          "label": "Pagination",
+          "width": 149,
+          "height": 59.59375
+        }
+      ],
+      "colors": {
+        "--page": "#06080B",
+        "--panel": "#0F1114",
+        "--text": "#FFFFFF",
+        "--muted": "#9FA0A1",
+        "--accent": "#00FFA7"
+      },
+      "headingSize": "48px",
+      "bodyFont": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogScroll": 0
+    },
+    {
+      "filename": "theme-managed-oo-v21-disputes-desktop.png",
+      "viewportOnly": false,
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440,
+      "documentHeight": 1274,
+      "overflow": false,
+      "scrollY": 0,
+      "fonts": "loaded",
+      "duplicateIds": [],
+      "controls": [
+        {
+          "label": "Refresh",
+          "width": 115,
+          "height": 44
+        },
+        {
+          "label": "scan-block",
+          "width": 260,
+          "height": 44
+        },
+        {
+          "label": "Parse block",
+          "width": 142,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the policy review finish by 30 September?",
+          "width": 341.015625,
+          "height": 44
+        },
+        {
+          "label": "Copy disputer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the network upgrade be published this month?",
+          "width": 341.015625,
+          "height": 44
+        },
+        {
+          "label": "Copy disputer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Previous page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Next page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Records per page",
+          "width": 82,
+          "height": 44
+        },
+        {
+          "label": "Preview states",
+          "width": 1152,
+          "height": 44
+        },
+        {
+          "label": "Default",
+          "width": 71,
+          "height": 44
+        },
+        {
+          "label": "Read only",
+          "width": 88,
+          "height": 44
+        },
+        {
+          "label": "Loading",
+          "width": 76,
+          "height": 44
+        },
+        {
+          "label": "Empty",
+          "width": 63,
+          "height": 44
+        },
+        {
+          "label": "Load error",
+          "width": 92,
+          "height": 44
+        },
+        {
+          "label": "Parse failure",
+          "width": 106,
+          "height": 44
+        },
+        {
+          "label": "Pagination",
+          "width": 92,
+          "height": 44
+        }
+      ],
+      "colors": {
+        "--page": "#06080B",
+        "--panel": "#0F1114",
+        "--text": "#FFFFFF",
+        "--muted": "#9FA0A1",
+        "--accent": "#00FFA7"
+      },
+      "headingSize": "28px",
+      "bodyFont": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogScroll": 0
+    },
+    {
+      "filename": "theme-managed-oo-v21-disputes-mobile.png",
+      "viewportOnly": false,
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 2050,
+      "overflow": false,
+      "scrollY": 0,
+      "fonts": "loaded",
+      "duplicateIds": [],
+      "controls": [
+        {
+          "label": "Refresh",
+          "width": 115,
+          "height": 44
+        },
+        {
+          "label": "scan-block",
+          "width": 308,
+          "height": 44
+        },
+        {
+          "label": "Parse block",
+          "width": 308,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the policy review finish by 30 September?",
+          "width": 308,
+          "height": 49.59375
+        },
+        {
+          "label": "Copy disputer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the network upgrade be published this month?",
+          "width": 308,
+          "height": 49.59375
+        },
+        {
+          "label": "Copy disputer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Previous page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Next page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Records per page",
+          "width": 82,
+          "height": 44
+        },
+        {
+          "label": "Preview states",
+          "width": 350,
+          "height": 44
+        },
+        {
+          "label": "Default",
+          "width": 71,
+          "height": 44
+        },
+        {
+          "label": "Read only",
+          "width": 88,
+          "height": 44
+        },
+        {
+          "label": "Loading",
+          "width": 76,
+          "height": 44
+        },
+        {
+          "label": "Empty",
+          "width": 63,
+          "height": 44
+        },
+        {
+          "label": "Load error",
+          "width": 92,
+          "height": 44
+        },
+        {
+          "label": "Parse failure",
+          "width": 106,
+          "height": 44
+        },
+        {
+          "label": "Pagination",
+          "width": 92,
+          "height": 44
+        }
+      ],
+      "colors": {
+        "--page": "#06080B",
+        "--panel": "#0F1114",
+        "--text": "#FFFFFF",
+        "--muted": "#9FA0A1",
+        "--accent": "#00FFA7"
+      },
+      "headingSize": "24px",
+      "bodyFont": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogScroll": 0
+    },
+    {
+      "filename": "theme-managed-oo-v21-disputes-narrow.png",
+      "viewportOnly": false,
+      "width": 320,
+      "height": 844,
+      "documentWidth": 320,
+      "documentHeight": 2088,
+      "overflow": false,
+      "scrollY": 0,
+      "fonts": "loaded",
+      "duplicateIds": [],
+      "controls": [
+        {
+          "label": "Refresh",
+          "width": 115,
+          "height": 44
+        },
+        {
+          "label": "scan-block",
+          "width": 246,
+          "height": 44
+        },
+        {
+          "label": "Parse block",
+          "width": 246,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the policy review finish by 30 September?",
+          "width": 246,
+          "height": 49.59375
+        },
+        {
+          "label": "Copy disputer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the network upgrade be published this month?",
+          "width": 246,
+          "height": 74.390625
+        },
+        {
+          "label": "Copy disputer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Previous page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Next page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Records per page",
+          "width": 82,
+          "height": 44
+        },
+        {
+          "label": "Preview states",
+          "width": 280,
+          "height": 44
+        },
+        {
+          "label": "Default",
+          "width": 71,
+          "height": 44
+        },
+        {
+          "label": "Read only",
+          "width": 88,
+          "height": 44
+        },
+        {
+          "label": "Loading",
+          "width": 76,
+          "height": 44
+        },
+        {
+          "label": "Empty",
+          "width": 63,
+          "height": 44
+        },
+        {
+          "label": "Load error",
+          "width": 92,
+          "height": 44
+        },
+        {
+          "label": "Parse failure",
+          "width": 106,
+          "height": 44
+        },
+        {
+          "label": "Pagination",
+          "width": 92,
+          "height": 44
+        }
+      ],
+      "colors": {
+        "--page": "#06080B",
+        "--panel": "#0F1114",
+        "--text": "#FFFFFF",
+        "--muted": "#9FA0A1",
+        "--accent": "#00FFA7"
+      },
+      "headingSize": "24px",
+      "bodyFont": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogScroll": 0
+    },
+    {
+      "filename": "theme-managed-oo-v21-disputes-zoom.png",
+      "viewportOnly": false,
+      "width": 720,
+      "height": 900,
+      "documentWidth": 720,
+      "documentHeight": 2751,
+      "overflow": false,
+      "scrollY": 0,
+      "fonts": "loaded",
+      "duplicateIds": [],
+      "controls": [
+        {
+          "label": "Refresh",
+          "width": 160,
+          "height": 61.1875
+        },
+        {
+          "label": "scan-block",
+          "width": 638,
+          "height": 65.390625
+        },
+        {
+          "label": "Parse block",
+          "width": 638,
+          "height": 61.1875
+        },
+        {
+          "label": "Example: Will the policy review finish by 30 September?",
+          "width": 638,
+          "height": 99.1875
+        },
+        {
+          "label": "Copy disputer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 191,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the network upgrade be published this month?",
+          "width": 638,
+          "height": 99.1875
+        },
+        {
+          "label": "Copy disputer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 191,
+          "height": 44
+        },
+        {
+          "label": "Previous page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Next page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Records per page",
+          "width": 82,
+          "height": 58
+        },
+        {
+          "label": "Preview states",
+          "width": 680,
+          "height": 44
+        },
+        {
+          "label": "Default",
+          "width": 111,
+          "height": 59.59375
+        },
+        {
+          "label": "Read only",
+          "width": 142,
+          "height": 59.59375
+        },
+        {
+          "label": "Loading",
+          "width": 119,
+          "height": 59.59375
+        },
+        {
+          "label": "Empty",
+          "width": 102,
+          "height": 59.59375
+        },
+        {
+          "label": "Load error",
+          "width": 147,
+          "height": 59.59375
+        },
+        {
+          "label": "Parse failure",
+          "width": 170,
+          "height": 59.59375
+        },
+        {
+          "label": "Pagination",
+          "width": 149,
+          "height": 59.59375
+        }
+      ],
+      "colors": {
+        "--page": "#06080B",
+        "--panel": "#0F1114",
+        "--text": "#FFFFFF",
+        "--muted": "#9FA0A1",
+        "--accent": "#00FFA7"
+      },
+      "headingSize": "48px",
+      "bodyFont": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogScroll": 0
+    },
+    {
+      "filename": "theme-managed-oo-v21-proposals-evidence-mobile.png",
+      "viewportOnly": true,
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 2579,
+      "overflow": false,
+      "scrollY": 0,
+      "fonts": "loaded",
+      "duplicateIds": [],
+      "controls": [
+        {
+          "label": "Close dialog",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Copy Transaction",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Copy Requester",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Copy Proposer",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Copy Identifier",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Copy Currency",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Copy Market ID",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Copy Condition ID",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Copy Event slug",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Copy Market slug",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Raw chain data",
+          "width": 310,
+          "height": 44
+        },
+        {
+          "label": "Copy Contract",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Copy Topic",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Copy Ancillary data",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Copy Ancillary data hex",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Copy Raw topics",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Copy Raw data",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Close",
+          "width": 310,
+          "height": 44
+        }
+      ],
+      "colors": {
+        "--page": "#06080B",
+        "--panel": "#0F1114",
+        "--text": "#FFFFFF",
+        "--muted": "#9FA0A1",
+        "--accent": "#00FFA7"
+      },
+      "headingSize": "24px",
+      "bodyFont": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogScroll": 0
+    },
+    {
+      "filename": "theme-managed-oo-v21-disputes-read-only-mobile.png",
+      "viewportOnly": false,
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 1759,
+      "overflow": false,
+      "scrollY": 0,
+      "fonts": "loaded",
+      "duplicateIds": [],
+      "controls": [
+        {
+          "label": "Refresh",
+          "width": 115,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the policy review finish by 30 September?",
+          "width": 308,
+          "height": 49.59375
+        },
+        {
+          "label": "Copy disputer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Example: Will the network upgrade be published this month?",
+          "width": 308,
+          "height": 49.59375
+        },
+        {
+          "label": "Copy disputer address",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "View evidence",
+          "width": 117,
+          "height": 44
+        },
+        {
+          "label": "Previous page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Next page",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "label": "Records per page",
+          "width": 82,
+          "height": 44
+        },
+        {
+          "label": "Preview states",
+          "width": 350,
+          "height": 44
+        },
+        {
+          "label": "Default",
+          "width": 71,
+          "height": 44
+        },
+        {
+          "label": "Read only",
+          "width": 88,
+          "height": 44
+        },
+        {
+          "label": "Loading",
+          "width": 76,
+          "height": 44
+        },
+        {
+          "label": "Empty",
+          "width": 63,
+          "height": 44
+        },
+        {
+          "label": "Load error",
+          "width": 92,
+          "height": 44
+        },
+        {
+          "label": "Parse failure",
+          "width": 106,
+          "height": 44
+        },
+        {
+          "label": "Pagination",
+          "width": 92,
+          "height": 44
+        }
+      ],
+      "colors": {
+        "--page": "#06080B",
+        "--panel": "#0F1114",
+        "--text": "#FFFFFF",
+        "--muted": "#9FA0A1",
+        "--accent": "#00FFA7"
+      },
+      "headingSize": "24px",
+      "bodyFont": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "dialogScroll": 0
+    }
+  ],
+  "checks": {
+    "rawValuesAndRows": true,
+    "mobileNavigation": true,
+    "keyboardAndFullEvidence": true,
+    "readOnlyAndDistinctRoles": true,
+    "manualCopyFallback": true,
+    "blockValidationAndSimulatedFilter": true,
+    "scanFailurePreservesInput": true,
+    "pagination": true,
+    "errorEmptyLoading": true
+  },
+  "pageErrors": [],
+  "externalRequests": [],
+  "notVerified": [
+    "real Polygon parsing",
+    "real backend writes and alerts",
+    "identity and backend permissions",
+    "full-stack smoke"
+  ]
+}

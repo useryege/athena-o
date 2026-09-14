@@ -1,0 +1,118 @@
+{
+  "scope": "Standalone redesign prototype loaded from local file. Real React before-state is separately documented. Root text scaling is not native browser zoom or product acceptance.",
+  "results": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "textScale": 1,
+      "geometry": {
+        "width": 1440,
+        "scroll": 1440,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "initialAxe": [],
+      "targetsAxe": [],
+      "evidenceAxe": [],
+      "emptyAxe": [],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Target disclosure/filter/all; evidence details; invalid/valid/inclusive date filtering; empty recovery; page size; local route feedback; visible monitoring/delivery/finality distinctions passed"
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 390,
+        "scroll": 390,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "initialAxe": [],
+      "targetsAxe": [],
+      "evidenceAxe": [],
+      "emptyAxe": [],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Target disclosure/filter/all; evidence details; invalid/valid/inclusive date filtering; empty recovery; page size; local route feedback; visible monitoring/delivery/finality distinctions passed"
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 320,
+        "scroll": 320,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "initialAxe": [],
+      "targetsAxe": [],
+      "evidenceAxe": [],
+      "emptyAxe": [],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Target disclosure/filter/all; evidence details; invalid/valid/inclusive date filtering; empty recovery; page size; local route feedback; visible monitoring/delivery/finality distinctions passed"
+    },
+    {
+      "name": "text-200",
+      "width": 720,
+      "height": 900,
+      "textScale": 2,
+      "geometry": {
+        "width": 720,
+        "scroll": 720,
+        "fonts": [
+          {
+            "family": "Inter",
+            "status": "loaded"
+          },
+          {
+            "family": "JetBrains Mono",
+            "status": "loaded"
+          }
+        ],
+        "duplicateIds": []
+      },
+      "initialAxe": [],
+      "targetsAxe": [],
+      "evidenceAxe": [],
+      "emptyAxe": [],
+      "errors": [],
+      "externalRequests": [],
+      "interactions": "Target disclosure/filter/all; evidence details; invalid/valid/inclusive date filtering; empty recovery; page size; local route feedback; visible monitoring/delivery/finality distinctions passed"
+    }
+  ],
+  "temporaryServicesStarted": 0
+}

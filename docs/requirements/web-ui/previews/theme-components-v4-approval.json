@@ -1,0 +1,70 @@
+{
+  "status": "approved_for_first_component_state_visuals",
+  "confirmed_by": "user",
+  "confirmed_date": "2026-09-14",
+  "feedback": "舒服，可以。",
+  "review_context": "用户查看桌面状态总览、桌面确认弹窗和手机确认弹窗后表示认可。完整手机总览和交互预览提供了链接，专门的键盘焦点截图作为检查证据保存在文档中。",
+  "approved_scope": [
+    "桌面总览所展示的表单与主次按钮层级、只读、错误、加载和禁用状态外观",
+    "成功、警告、错误和信息反馈的语义配色、图标与文字层级",
+    "已展示的静态加载骨架与成功空态的结构及视觉层级",
+    "桌面和手机确认弹窗的尺寸、留白、遮罩与操作按钮层级"
+  ],
+  "not_approved_by_this_feedback": [
+    "未逐图展示的完整手机状态总览和专门的键盘焦点图，不据此声明完整跨设备状态覆盖",
+    "未展示的悬停、按下状态、加载动画及其他动效参数",
+    "下拉菜单、表格筛选、分页、复选与单选、日期与搜索等其余组件",
+    "未展示的导航收起态、二级与账户菜单、其他业务和管理员页面",
+    "全站校验或弹窗触发契约、API、权限、缓存、费用与业务展示语义",
+    "正式产品实现、全站验收或所有浏览器原生缩放覆盖"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-components-v4.html",
+      "sha256": "71ddff99073978a5555116c7bce1ddcea5dc1549a690dbb28ce0c0513a5847d8"
+    },
+    {
+      "path": "theme-components-v4-desktop.png",
+      "sha256": "8173139acf5660365833432c426aa6df79c02973549a22b3577488d3e31bc145"
+    },
+    {
+      "path": "theme-components-v4-mobile.png",
+      "sha256": "deafcfd84711d0ff28fe099b6c5bdc1e10bf4840e60f41e3e9d978dc44dc1a6c"
+    },
+    {
+      "path": "theme-components-v4-desktop-dialog.png",
+      "sha256": "e8f3618bd487d08b756ee6d7bc997373e70b371f8de6e48f56b73ef40bf761d0"
+    },
+    {
+      "path": "theme-components-v4-mobile-dialog.png",
+      "sha256": "2cd794da8152bf04d85ba09f1fd898348921f34ee6a2cb1aeeb8b3617d918576"
+    },
+    {
+      "path": "theme-components-v4-focus.png",
+      "sha256": "ad748d445ddec091c5361b0a37e8db47f5f7c6e7a609ed46582ee7410835d3af"
+    },
+    {
+      "path": "theme-components-v4-checks.json",
+      "sha256": "fb33d0e120a730608e20599c0b2994e3bb4cccfe2da37104ac5612a11bfa77b9"
+    }
+  ],
+  "original_review": {
+    "path": "theme-components-v4-review.json",
+    "sha256": "ee3f41d663618128bcbf889e7555be242c1ae8feba408c66a261af4f20e60ff3"
+  },
+  "note": "HTML、截图与原始审阅记录保留提交时状态。当前确认范围以本记录为准；后续样板另存版本并沿用已确认的 v1、v2、v3 和 v4 第一组视觉基准。",
+  "directly_presented_artifacts": [
+    "theme-components-v4-desktop.png",
+    "theme-components-v4-desktop-dialog.png",
+    "theme-components-v4-mobile-dialog.png"
+  ],
+  "linked_preview_artifacts": [
+    "theme-components-v4-mobile.png",
+    "theme-components-v4.html"
+  ],
+  "supporting_evidence_artifacts": [
+    "theme-components-v4-focus.png",
+    "theme-components-v4-checks.json",
+    "theme-components-v4-review.json"
+  ]
+}

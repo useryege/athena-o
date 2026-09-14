@@ -1,0 +1,105 @@
+{
+  "status": "approved_for_trader_add_presented_page_visuals",
+  "confirmed_by": "user",
+  "feedback": "舒服",
+  "confirmed_date": "2026-09-14",
+  "review_context": "用户查看新主题桌面与手机完整截图后，对页面布局、信息密度和操作层级的明确提问回答“舒服”。当前版桌面和手机截图以链接提供对照。",
+  "directly_presented_artifacts": [
+    "theme-trader-add-v7-desktop.png",
+    "theme-trader-add-v7-mobile.png"
+  ],
+  "linked_comparison_artifacts": [
+    "theme-trader-add-v7-before-desktop.png",
+    "theme-trader-add-v7-before-mobile.png"
+  ],
+  "approved_scope": [
+    "默认核对状态的整页布局、信息密度与操作层级",
+    "页头下方完整宽度的 Find trader 输入区，桌面左侧身份与 P/L 核对、右侧确认区",
+    "手机按输入、资料、P/L、确认排列的阅读顺序",
+    "已取得结果时 Resolve again 为次要操作、Confirm subscription 为主要操作",
+    "所展示的身份资料、私有备注、默认 1Y P/L 金额与曲线、六周期控件视觉",
+    "所展示的确认有效期、3 / 10 配额与已连接 Telegram 的视觉分层"
+  ],
+  "not_approved_by_this_feedback": [
+    "未直接展示的辅助截图，不据本次反馈声明全部细节均已逐图确认",
+    "初始输入、过期、缺失资料、精确曲线值展开、其他周期结果和其他异常状态的最终页面外观",
+    "真实计时、网络、owner 失效隔离、幂等恢复、跨路由草稿及完整交互与无障碍验收",
+    "业务/API/金额精度/数据范围变更，以及其他会员或管理员页面",
+    "正式 ui/ 主题改版实现或真实环境验收"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-trader-add-v7.html",
+      "sha256": "a471e37b811d07fdc0d35012e0c65680cbccb3fc5b885766c54b246713d5ec33"
+    },
+    {
+      "path": "theme-trader-add-v7-before-desktop.png",
+      "sha256": "cd53fa78703b30e49cc4a9ff4607420f3de885c0c6f6ecb855bb3f8558419d3b"
+    },
+    {
+      "path": "theme-trader-add-v7-before-mobile.png",
+      "sha256": "e5a842cbd471898c4a8d7f2afc8d3c0e74ea1e766194840206ced5d70165d66c"
+    },
+    {
+      "path": "theme-trader-add-v7-before-input.png",
+      "sha256": "10de191649a3bf6af55bf17c2e335a489c207f73f604742d584687ded2ec196e"
+    },
+    {
+      "path": "theme-trader-add-v7-desktop.png",
+      "sha256": "0ca42948c884512144bacb4038d6168411cb121fe01d793cd452a98de04948fd"
+    },
+    {
+      "path": "theme-trader-add-v7-mobile.png",
+      "sha256": "94f663fca511736e6a9c46707552d0c07328fc35b5e14c9dc1583e1c3018b5fd"
+    },
+    {
+      "path": "theme-trader-add-v7-desktop-first-screen.png",
+      "sha256": "1c0074fe03408c6275a44007e405dca0416f19e8dbb4817aaf4845e77072b3e7"
+    },
+    {
+      "path": "theme-trader-add-v7-mobile-first-screen.png",
+      "sha256": "b1b1274316bce8c05fedb1d7e54007ee86d245f2a83101eaadd3775080e7839b"
+    },
+    {
+      "path": "theme-trader-add-v7-curve-values.png",
+      "sha256": "ce996773a59091844475d3fe5187f52fb67762dc06f39be709e50002e0bbc69c"
+    },
+    {
+      "path": "theme-trader-add-v7-unavailable.png",
+      "sha256": "26be1899646c5d8e69353c71e344e74abb5930dfcf4eb609126ab1021505144f"
+    },
+    {
+      "path": "theme-trader-add-v7-desktop-expired.png",
+      "sha256": "3e2db506db810f123c4e3463da64df97f5025382c2d2988744c5d4025fa700dc"
+    },
+    {
+      "path": "theme-trader-add-v7-mobile-expired.png",
+      "sha256": "297bce2e251da858df4ca1d66dd2f5ba64c36d1a817845bcd538fa6bfb988a8b"
+    },
+    {
+      "path": "theme-trader-add-v7-desktop-input.png",
+      "sha256": "5a3b6574f8210cdbd835de754da648803b1db98037a7e8ccf7c7cb40e46d1904"
+    },
+    {
+      "path": "theme-trader-add-v7-mobile-input.png",
+      "sha256": "0f5b267ade0ffae9d48abbc32ee448d9c330598ead94ef3de4016b13d23a7162"
+    },
+    {
+      "path": "theme-trader-add-v7-data.json",
+      "sha256": "d029509bbc189b9a3ca3ab470c724a9747089aa9b48985e697cd4bad8124229a"
+    },
+    {
+      "path": "theme-trader-add-v7-before-capture.json",
+      "sha256": "ee4b5cc978d69ec88b0d3c4cd00962fc53f458ef2c1971c76ada7c47a2088b0c"
+    },
+    {
+      "path": "theme-trader-add-v7-checks.json",
+      "sha256": "4f536a29ab901b36e49edddadf5b75510e7edb5e7bb5767bc391d773c8cd419f"
+    }
+  ],
+  "original_review": {
+    "path": "theme-trader-add-v7-review.json",
+    "sha256": "5f8a6433aaeedcc9ab57c219a9f813d5296f301e6b8bf175e3439b943dfc1b8e"
+  },
+  "note": "保留原型、截图、演示数据、检查及原始审阅记录提交时的待确认标记；当前确认范围以本记录与添加页视觉基准为准。当前界面截图仅用于前后对照，不表示继续采用旧主题。"
+}

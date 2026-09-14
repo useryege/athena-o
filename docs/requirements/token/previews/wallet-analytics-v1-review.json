@@ -1,0 +1,100 @@
+{
+  "disposition": "ship",
+  "scope": "Token 钱包 Nansen 数据展示的独立文档预览，可提交用户审阅；非正式功能验收",
+  "user_visual_approval": false,
+  "reviewer": "独立子代理 impeccable_finish_reviewer；未继承主线程历史",
+  "review_method": "未找到独立 reviewer agent 定义，采用仓库 .agents/skills/impeccable/reference/degraded/finish-reviewer.md 的角色规范，由独立子代理完成；未重跑浏览器或 detector。",
+  "required_screens_viewed": [
+    "wallet-analytics-v1-desktop.png",
+    "wallet-analytics-v1-desktop-full.png",
+    "wallet-analytics-v1-desktop-transactions.png",
+    "wallet-analytics-v1-mobile.png",
+    "wallet-analytics-v1-mobile-tokens.png",
+    "wallet-analytics-v1-mobile-transaction.png",
+    "wallet-analytics-v1-narrow.png",
+    "wallet-analytics-v1-text-200.png",
+    "wallet-analytics-v1-desktop-section-error.png",
+    "wallet-analytics-v1-desktop-stale.png",
+    "wallet-analytics-v1-desktop-loading.png",
+    "wallet-analytics-v1-desktop-initial.png",
+    "wallet-analytics-v1-desktop-filtered.png"
+  ],
+  "optional_screens_not_viewed": [
+    "wallet-analytics-v1-mobile-full.png"
+  ],
+  "persistence": {
+    "result": "pass",
+    "evidence": "PRODUCT.md、方向契约、HTML、数据和检查记录齐备；内嵌数据与独立 JSON 一致。既有世界的精确代码扩展，不需概念抽签或 comp，保留 DESIGN.md 缺失状态。"
+  },
+  "fidelity": [
+    {
+      "element": "TYPE",
+      "result": "match",
+      "evidence": "Inter、地址与哈希用 JetBrains Mono、数字对齐和层级延续 v2／v5。"
+    },
+    {
+      "element": "MATERIAL",
+      "result": "match",
+      "evidence": "深色平面、细边框、SVG 图标与既有工作台一致。"
+    },
+    {
+      "element": "GROUND",
+      "result": "match",
+      "evidence": "近黑背景、深色面板与青绿强调符合已确认色值。"
+    },
+    {
+      "element": "阅读结构",
+      "result": "match",
+      "evidence": "查询、双指标总览、逐币、交易的层次与桌面导航符合方向契约。"
+    },
+    {
+      "element": "总览与数字",
+      "result": "match",
+      "evidence": "+64,430.55 和 3 与样本相符；零、缺失和微量余额区分；十进制字符串及 BigInt 格式化不新增盈亏。"
+    },
+    {
+      "element": "交易与筛选",
+      "result": "match",
+      "evidence": "保留响应资产关系、符号、记录 USD、时区和哈希，披露保存记录与完整历史的差别。"
+    },
+    {
+      "element": "手机及放大",
+      "result": "adaptation",
+      "evidence": "390、320 和 200% 字号截图未见主要内容遮挡或整页溢出。"
+    },
+    {
+      "element": "来源与状态",
+      "result": "match",
+      "evidence": "样本非实时、request started、样本缺失和模拟状态明确，必审截图与名称相符。"
+    }
+  ],
+  "ceiling": {
+    "result": "reached",
+    "evidence": "达到 Operate 文档预览的既有视觉基准；Inter detector 提示由已确认字体规则覆盖。"
+  },
+  "material_fixes": [],
+  "keep": [
+    "供应商原始语义",
+    "完整数值入口",
+    "零／缺失／微量区分",
+    "保存样本范围披露",
+    "筛选不改变总览",
+    "已确认的 Nansen 视觉规则"
+  ],
+  "artifact_sha256": {
+    "wallet-analytics-v1-desktop.png": "b4454fd6ceb89765d011c09e29b3cd1e1ac5d1e850ad99cd58569dd03c2a339f",
+    "wallet-analytics-v1-desktop-full.png": "a58b90ca0e44685928e653a0a32a89550798d651cfe0f9cc57d840282fbc3bf8",
+    "wallet-analytics-v1-desktop-transactions.png": "684bf0f62a8225adea8d63b0d793e953c895bc05441f68d0496ac97e7e8fe2e9",
+    "wallet-analytics-v1-mobile.png": "d30787f1ef48abb85ef83993826cf485909e4cff21e93d1230d4442782f986a8",
+    "wallet-analytics-v1-mobile-tokens.png": "89c81af177f9455e03e604dd094859766ca939da24d5ac144b6a97633fc2918e",
+    "wallet-analytics-v1-mobile-transaction.png": "b5ce4080a97eba523b42f91b75e00e3a6b5ad1cbd6179afc28e11886b5597742",
+    "wallet-analytics-v1-narrow.png": "e47352b132258ba997a3a7b0bd73ffe21fb2402fabee3b33629217b7790892b0",
+    "wallet-analytics-v1-text-200.png": "162c179afcd675a196649c7a00f5ac22f674b15d1d90fbcd7dd0a9ff90e5e30b",
+    "wallet-analytics-v1-desktop-section-error.png": "19935eb224bcc3a86c7387c22eda9eb211209b7d01eb9c14ccf7d470650c08d5",
+    "wallet-analytics-v1-desktop-stale.png": "1b4a2af7d3855dbe1fc83c8ccbc72953a4e029189218b3235cc23646e43bb1c6",
+    "wallet-analytics-v1-desktop-loading.png": "71ccae40b24503a3fb843b66578ae7e40929b4446a04b97890284f0abb8405cc",
+    "wallet-analytics-v1-desktop-initial.png": "9b4960da53720fe9dbe07c709ff65907d7925e86321f37a6c443b144ec650510",
+    "wallet-analytics-v1-desktop-filtered.png": "35972a47dd814cd859c3aad9f96490e3d89dc82e5f6269b57cef7249b4f81499",
+    "wallet-analytics-v1.html": "7262c2ece8d5b7298a217dfa0740d970ad2b2c61b191046c4e93ad744be05153"
+  }
+}

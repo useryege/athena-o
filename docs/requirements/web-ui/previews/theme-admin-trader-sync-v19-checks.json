@@ -1,0 +1,787 @@
+{
+  "version": "v19-trader",
+  "result": "passed",
+  "scope": "Static administrator summary prototype only, with synthetic local filters/cursors. No production API, authorization fence, polling, private activity or actual delivery verification.",
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "zoom": 1,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-admin-trader-sync-v19-list-desktop.png",
+        "theme-admin-trader-sync-v19-detail-desktop.png"
+      ],
+      "contracts": [
+        "Three current subscription summaries",
+        "All authored SVG refs resolve",
+        "IDs unique",
+        "All six lifecycle filters plus All",
+        "Cancelled excluded by default",
+        "Cursor bounds disable previous and absent next",
+        "No fabricated numbered pages or global total",
+        "Canonical wallet text complete",
+        "Auxiliary identity/lifecycle/counts start collapsed",
+        "Count scope and cross-row non-additivity explicit",
+        "Status text stays within column",
+        "List text and primary hover contrast >=4.5",
+        "Expanded list diagnostics retain IDs, lifecycle and all delivery counts",
+        "Copies full wallet",
+        "Editing draft does not apply filters",
+        "Apply trims and lowercases canonical wallet",
+        "List opens safe summary detail",
+        "Local return retains applied filters",
+        "Include cancelled with state exposes cancelled summary",
+        "Cancelled lifecycle timestamp retained",
+        "Detail as-of visible and UTC+8 explicit",
+        "Current observation uses reliable coverage, not last trade",
+        "Unknown historical endpoint not conflated with current interruption",
+        "Lifetime activity, total and six status counts retained",
+        "Detail technical IDs start collapsed",
+        "Detail text and status contrast >=4.5",
+        "Approved local Inter and JetBrains Mono loaded",
+        "Detail lifecycle and complete identifiers findable",
+        "Exact subscription ID copied",
+        "paused retains lifecycle time",
+        "permission-disabled retains lifecycle time",
+        "cancelled retains lifecycle time",
+        "Pending baseline does not invent checkpoint",
+        "Absent counts remain unavailable",
+        "Counts beyond safe integer remain exact strings",
+        "Stale read preserves last data with warning",
+        "Refresh is single-flight",
+        "Local successful retry clears stale marker",
+        "Read failure does not invent interrupted subscriptions",
+        "Local retry restores summary fixture",
+        "Loading has explicit busy state",
+        "Empty state has useful recovery",
+        "Next records opaque cursor",
+        "Previous uses visited cursor stack",
+        "Apply resets cursor stack",
+        "No administrator subscription write actions",
+        "No private activity or delivery links",
+        "Account menu Escape closes",
+        "No browser script errors",
+        "No live API or external requests"
+      ],
+      "geometry": [
+        {
+          "state": "list-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1383
+        },
+        {
+          "state": "detail-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1390
+        },
+        {
+          "state": "identity-desktop",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1658
+        },
+        {
+          "state": "large-exact-counts",
+          "viewport": 1440,
+          "document": 1440,
+          "height": 1390
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": ".owner-email",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".list-note",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".wallet-link",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".tag.positive",
+          "fg": "rgb(85, 217, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.64840833554489
+        },
+        {
+          "selector": ".tag.negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".tag.warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        },
+        {
+          "selector": "#apply-filters",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(0, 255, 167)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": "#apply-filters",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(81, 255, 195)",
+          "ratio": 15.699177034827596
+        },
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": ".muted-note",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".historical-status",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        },
+        {
+          "selector": ".associated-counts dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".associated-counts .positive",
+          "fg": "rgb(85, 217, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.64840833554489
+        },
+        {
+          "selector": ".associated-counts .negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".associated-counts .warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      }
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-admin-trader-sync-v19-list-mobile.png",
+        "theme-admin-trader-sync-v19-detail-mobile.png",
+        "theme-admin-trader-sync-v19-identity-mobile.png"
+      ],
+      "contracts": [
+        "Three current subscription summaries",
+        "All authored SVG refs resolve",
+        "IDs unique",
+        "All six lifecycle filters plus All",
+        "Cancelled excluded by default",
+        "Cursor bounds disable previous and absent next",
+        "No fabricated numbered pages or global total",
+        "Canonical wallet text complete",
+        "Auxiliary identity/lifecycle/counts start collapsed",
+        "Count scope and cross-row non-additivity explicit",
+        "Status text stays within column",
+        "List text and primary hover contrast >=4.5",
+        "Expanded list diagnostics retain IDs, lifecycle and all delivery counts",
+        "Copies full wallet",
+        "Editing draft does not apply filters",
+        "Apply trims and lowercases canonical wallet",
+        "List opens safe summary detail",
+        "Local return retains applied filters",
+        "Include cancelled with state exposes cancelled summary",
+        "Cancelled lifecycle timestamp retained",
+        "Detail as-of visible and UTC+8 explicit",
+        "Current observation uses reliable coverage, not last trade",
+        "Unknown historical endpoint not conflated with current interruption",
+        "Lifetime activity, total and six status counts retained",
+        "Detail technical IDs start collapsed",
+        "Detail text and status contrast >=4.5",
+        "Approved local Inter and JetBrains Mono loaded",
+        "Detail lifecycle and complete identifiers findable",
+        "Exact subscription ID copied",
+        "paused retains lifecycle time",
+        "permission-disabled retains lifecycle time",
+        "cancelled retains lifecycle time",
+        "Pending baseline does not invent checkpoint",
+        "Absent counts remain unavailable",
+        "Counts beyond safe integer remain exact strings",
+        "Stale read preserves last data with warning",
+        "Refresh is single-flight",
+        "Local successful retry clears stale marker",
+        "Read failure does not invent interrupted subscriptions",
+        "Local retry restores summary fixture",
+        "Loading has explicit busy state",
+        "Empty state has useful recovery",
+        "Next records opaque cursor",
+        "Previous uses visited cursor stack",
+        "Apply resets cursor stack",
+        "No administrator subscription write actions",
+        "No private activity or delivery links",
+        "Approved mobile drawer width",
+        "Drawer Escape restores focus",
+        "Account menu Escape closes",
+        "No browser script errors",
+        "No live API or external requests"
+      ],
+      "geometry": [
+        {
+          "state": "list-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 2526
+        },
+        {
+          "state": "detail-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 2228
+        },
+        {
+          "state": "identity-mobile",
+          "viewport": 390,
+          "document": 390,
+          "height": 2665
+        },
+        {
+          "state": "large-exact-counts",
+          "viewport": 390,
+          "document": 390,
+          "height": 2254
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": ".owner-email",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".list-note",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".wallet-link",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".tag.positive",
+          "fg": "rgb(85, 217, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.64840833554489
+        },
+        {
+          "selector": ".tag.negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".tag.warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        },
+        {
+          "selector": "#apply-filters",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(0, 255, 167)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": "#apply-filters",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(81, 255, 195)",
+          "ratio": 15.699177034827596
+        },
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": ".muted-note",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".historical-status",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        },
+        {
+          "selector": ".associated-counts dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".associated-counts .positive",
+          "fg": "rgb(85, 217, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.64840833554489
+        },
+        {
+          "selector": ".associated-counts .negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".associated-counts .warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      },
+      "drawer": {
+        "width": 280
+      }
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "zoom": 1,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-admin-trader-sync-v19-narrow.png"
+      ],
+      "contracts": [
+        "Three current subscription summaries",
+        "All authored SVG refs resolve",
+        "IDs unique",
+        "All six lifecycle filters plus All",
+        "Cancelled excluded by default",
+        "Cursor bounds disable previous and absent next",
+        "No fabricated numbered pages or global total",
+        "Canonical wallet text complete",
+        "Auxiliary identity/lifecycle/counts start collapsed",
+        "Count scope and cross-row non-additivity explicit",
+        "Status text stays within column",
+        "List text and primary hover contrast >=4.5",
+        "Expanded list diagnostics retain IDs, lifecycle and all delivery counts",
+        "Copies full wallet",
+        "Editing draft does not apply filters",
+        "Apply trims and lowercases canonical wallet",
+        "List opens safe summary detail",
+        "Local return retains applied filters",
+        "Include cancelled with state exposes cancelled summary",
+        "Cancelled lifecycle timestamp retained",
+        "Detail as-of visible and UTC+8 explicit",
+        "Current observation uses reliable coverage, not last trade",
+        "Unknown historical endpoint not conflated with current interruption",
+        "Lifetime activity, total and six status counts retained",
+        "Detail technical IDs start collapsed",
+        "Detail text and status contrast >=4.5",
+        "Approved local Inter and JetBrains Mono loaded",
+        "Detail lifecycle and complete identifiers findable",
+        "Exact subscription ID copied",
+        "paused retains lifecycle time",
+        "permission-disabled retains lifecycle time",
+        "cancelled retains lifecycle time",
+        "Pending baseline does not invent checkpoint",
+        "Absent counts remain unavailable",
+        "Counts beyond safe integer remain exact strings",
+        "Stale read preserves last data with warning",
+        "Refresh is single-flight",
+        "Local successful retry clears stale marker",
+        "Read failure does not invent interrupted subscriptions",
+        "Local retry restores summary fixture",
+        "Loading has explicit busy state",
+        "Empty state has useful recovery",
+        "Next records opaque cursor",
+        "Previous uses visited cursor stack",
+        "Apply resets cursor stack",
+        "No administrator subscription write actions",
+        "No private activity or delivery links",
+        "Account menu Escape closes",
+        "No browser script errors",
+        "No live API or external requests"
+      ],
+      "geometry": [
+        {
+          "state": "list-narrow",
+          "viewport": 320,
+          "document": 320,
+          "height": 2583
+        },
+        {
+          "state": "narrow",
+          "viewport": 320,
+          "document": 320,
+          "height": 2346
+        },
+        {
+          "state": "identity-narrow",
+          "viewport": 320,
+          "document": 320,
+          "height": 2783
+        },
+        {
+          "state": "large-exact-counts",
+          "viewport": 320,
+          "document": 320,
+          "height": 2417
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": ".owner-email",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".list-note",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".wallet-link",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".tag.positive",
+          "fg": "rgb(85, 217, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.64840833554489
+        },
+        {
+          "selector": ".tag.negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".tag.warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        },
+        {
+          "selector": "#apply-filters",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(0, 255, 167)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": "#apply-filters",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(81, 255, 195)",
+          "ratio": 15.699177034827596
+        },
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": ".muted-note",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".historical-status",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        },
+        {
+          "selector": ".associated-counts dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".associated-counts .positive",
+          "fg": "rgb(85, 217, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.64840833554489
+        },
+        {
+          "selector": ".associated-counts .negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".associated-counts .warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      }
+    },
+    {
+      "name": "zoom",
+      "width": 720,
+      "height": 900,
+      "zoom": 2,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-admin-trader-sync-v19-zoom.png"
+      ],
+      "contracts": [
+        "Three current subscription summaries",
+        "All authored SVG refs resolve",
+        "IDs unique",
+        "All six lifecycle filters plus All",
+        "Cancelled excluded by default",
+        "Cursor bounds disable previous and absent next",
+        "No fabricated numbered pages or global total",
+        "Canonical wallet text complete",
+        "Auxiliary identity/lifecycle/counts start collapsed",
+        "Count scope and cross-row non-additivity explicit",
+        "Status text stays within column",
+        "List text and primary hover contrast >=4.5",
+        "Expanded list diagnostics retain IDs, lifecycle and all delivery counts",
+        "Copies full wallet",
+        "Editing draft does not apply filters",
+        "Apply trims and lowercases canonical wallet",
+        "List opens safe summary detail",
+        "Local return retains applied filters",
+        "Include cancelled with state exposes cancelled summary",
+        "Cancelled lifecycle timestamp retained",
+        "Detail as-of visible and UTC+8 explicit",
+        "Current observation uses reliable coverage, not last trade",
+        "Unknown historical endpoint not conflated with current interruption",
+        "Lifetime activity, total and six status counts retained",
+        "Detail technical IDs start collapsed",
+        "Detail text and status contrast >=4.5",
+        "Approved local Inter and JetBrains Mono loaded",
+        "Detail lifecycle and complete identifiers findable",
+        "Exact subscription ID copied",
+        "paused retains lifecycle time",
+        "permission-disabled retains lifecycle time",
+        "cancelled retains lifecycle time",
+        "Pending baseline does not invent checkpoint",
+        "Absent counts remain unavailable",
+        "Counts beyond safe integer remain exact strings",
+        "Stale read preserves last data with warning",
+        "Refresh is single-flight",
+        "Local successful retry clears stale marker",
+        "Read failure does not invent interrupted subscriptions",
+        "Local retry restores summary fixture",
+        "Loading has explicit busy state",
+        "Empty state has useful recovery",
+        "Next records opaque cursor",
+        "Previous uses visited cursor stack",
+        "Apply resets cursor stack",
+        "No administrator subscription write actions",
+        "No private activity or delivery links",
+        "Account menu Escape closes",
+        "No browser script errors",
+        "No live API or external requests"
+      ],
+      "geometry": [
+        {
+          "state": "list-zoom",
+          "viewport": 720,
+          "document": 720,
+          "height": 3630
+        },
+        {
+          "state": "zoom",
+          "viewport": 720,
+          "document": 720,
+          "height": 2931
+        },
+        {
+          "state": "identity-zoom",
+          "viewport": 720,
+          "document": 720,
+          "height": 3587
+        },
+        {
+          "state": "large-exact-counts",
+          "viewport": 720,
+          "document": 720,
+          "height": 2970
+        }
+      ],
+      "contrast": [
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": ".owner-email",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".list-note",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".wallet-link",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".tag.positive",
+          "fg": "rgb(85, 217, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.64840833554489
+        },
+        {
+          "selector": ".tag.negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".tag.warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        },
+        {
+          "selector": "#apply-filters",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(0, 255, 167)",
+          "ratio": 15.145483719785531
+        },
+        {
+          "selector": "#apply-filters",
+          "fg": "rgb(6, 8, 11)",
+          "bg": "rgb(81, 255, 195)",
+          "ratio": 15.699177034827596
+        },
+        {
+          "selector": ".description",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": ".muted-note",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".historical-status",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        },
+        {
+          "selector": ".associated-counts dt",
+          "fg": "rgb(159, 160, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".associated-counts .positive",
+          "fg": "rgb(85, 217, 161)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.64840833554489
+        },
+        {
+          "selector": ".associated-counts .negative",
+          "fg": "rgb(245, 140, 155)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 8.200163825921814
+        },
+        {
+          "selector": ".associated-counts .warning",
+          "fg": "rgb(230, 191, 114)",
+          "bg": "rgb(15, 17, 20)",
+          "ratio": 10.858978907199512
+        }
+      ],
+      "fonts": {
+        "inter": true,
+        "mono": true,
+        "family": "\"JetBrains Mono\", ui-monospace, monospace"
+      }
+    }
+  ]
+}

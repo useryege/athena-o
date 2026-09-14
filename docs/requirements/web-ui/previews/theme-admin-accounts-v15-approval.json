@@ -1,0 +1,103 @@
+{
+  "status": "approved_for_admin_accounts_presented_visuals",
+  "confirmed_by": "user",
+  "feedback": "可以",
+  "confirmed_date": "2026-09-14",
+  "review_context": "用户在上一回复查看桌面账户管理、手机账户目录、手机权限详情与手机敏感变更确认四张截图后，对布局和疏密反馈“可以”。本次按这四张展示图记录确认，其他截图和检查证据的存在不代表逐图批准。",
+  "directly_presented_artifacts": [
+    "theme-admin-accounts-v15-desktop.png",
+    "theme-admin-accounts-v15-mobile-list.png",
+    "theme-admin-accounts-v15-mobile-access.png",
+    "theme-admin-accounts-v15-confirm-mobile.png"
+  ],
+  "approved_scope": [
+    "所展示的管理员桌面侧栏、顶部导航、搜索与状态筛选、左侧账户目录和右侧详情布局，以及主题、字体、留白和信息密度",
+    "所展示默认 Access 页的身份摘要、Access／Profile／Identity 导航、三项账户开关、分组模块权限及保存操作的视觉层级",
+    "所展示手机账户目录、详情返回入口和权限页的分步展示、完整身份换行及阅读顺序",
+    "所展示手机敏感变更确认的影响说明、纵向全宽按钮、Cancel 在前及 Apply changes 在后的操作层级"
+  ],
+  "not_approved_by_this_feedback": [
+    "Profile、Identity、手机导航展开、空态、320px、200% 字号及其他辅助截图未由本次反馈逐图确认",
+    "真实账户写入、授权生效、realm／session 边界、分页、URL 状态、修订冲突、异步竞态、头像上传和完整失败恢复的实现验收",
+    "其他管理员业务页面、账户创建、删除或管理员提升能力",
+    "当前 React 对照图作为新主题目标、正式 ui/ 实现、全站设计完成或生产行为变更"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-admin-accounts-v15-before-capture.json",
+      "sha256": "19372b08606917987cd68f2d885958e0b03f121fe01298daca6bdcc511a63ddf"
+    },
+    {
+      "path": "theme-admin-accounts-v15-before-desktop.png",
+      "sha256": "2afa58aab4b1a84063e3278cd8509399e7961d4f016084226693ac31685849c9"
+    },
+    {
+      "path": "theme-admin-accounts-v15-before-mobile-detail.png",
+      "sha256": "cca2fd3a330cd622750e425d6a045444f362b50348effdec5cbde6ab397f2b0d"
+    },
+    {
+      "path": "theme-admin-accounts-v15-before-mobile-list.png",
+      "sha256": "78bedc45c4d4214c980bc516bc9875832f13dad9c6624732c86ea8c1139377d7"
+    },
+    {
+      "path": "theme-admin-accounts-v15-checks.json",
+      "sha256": "e88d2f2c4876a1fca645f5e482eb6bc429b1b66a5f647f8fe2cc6b80c597e1fe"
+    },
+    {
+      "path": "theme-admin-accounts-v15-confirm-mobile.png",
+      "sha256": "d36a303a2296d5de9b542d499c0477d4fa9cc1b98510eba1defb88d9577cd875"
+    },
+    {
+      "path": "theme-admin-accounts-v15-data.json",
+      "sha256": "1af03e5cc0b5a17021c395deda1f61ae300492aebe925dabafec6867b63d5e9c"
+    },
+    {
+      "path": "theme-admin-accounts-v15-desktop.png",
+      "sha256": "a6dd8e17c8d94258176592580aa88f5d91e7a9b68165ce9a8d1adcf491c986d6"
+    },
+    {
+      "path": "theme-admin-accounts-v15-empty-mobile.png",
+      "sha256": "ff7799d38e0179684c8be7506c125f4ce883073df6b075fced6c1446c79862b1"
+    },
+    {
+      "path": "theme-admin-accounts-v15-identity-mobile.png",
+      "sha256": "c1562e493f57937f738337f5283d448c28d3bf508e50b2bde0cf5c0900bb92ff"
+    },
+    {
+      "path": "theme-admin-accounts-v15-mobile-access.png",
+      "sha256": "c25a0822e0c61e5854ad46be367f2fb71d16722d7de24a399bb78b09d87e71b4"
+    },
+    {
+      "path": "theme-admin-accounts-v15-mobile-list.png",
+      "sha256": "e55aebc01ae17cc53afb6405d267974382d4983cc3b0ec8a84d327e798a664a6"
+    },
+    {
+      "path": "theme-admin-accounts-v15-narrow.png",
+      "sha256": "69dc5e7189ed6f9d544e3cb8b6431acbed77347b3839bb252695ff47cdd682a0"
+    },
+    {
+      "path": "theme-admin-accounts-v15-navigation-mobile.png",
+      "sha256": "4b846563b337ee6a3155afee9b1f0d5c5a02984002f32eb689d48d1f569b9ff3"
+    },
+    {
+      "path": "theme-admin-accounts-v15-profile-desktop.png",
+      "sha256": "a450459f735b451ff05fe82defe9b533b68ff9a0e58215747ef56a38af0c835b"
+    },
+    {
+      "path": "theme-admin-accounts-v15-profile-mobile.png",
+      "sha256": "8c1664cd7de699d347e4d173b41341bebb9e92209a9ffc2b6ef322866907b17e"
+    },
+    {
+      "path": "theme-admin-accounts-v15-zoom.png",
+      "sha256": "f93b8a54d2002eee700c609a090b547162214cb74459f1a47cb718de3a750dcf"
+    },
+    {
+      "path": "theme-admin-accounts-v15.html",
+      "sha256": "55cbfdf79acf88299fcb9467d5f5309ab640c81a646dd1b60de3564095adb477"
+    },
+    {
+      "path": "theme-admin-accounts-v15-review.json",
+      "sha256": "3dcdf94a57b96286ecfe62d29a558bef63628f9bd0e5a7f76591169b14e07c08"
+    }
+  ]
+}

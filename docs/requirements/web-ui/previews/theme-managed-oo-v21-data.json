@@ -1,0 +1,202 @@
+{
+  "synthetic": true,
+  "asOf": "2026-09-14T08:30:00Z",
+  "user": {
+    "loggedIn": true,
+    "accountId": "11111111-1111-4111-8111-111111111111",
+    "username": "alexchen",
+    "iss": "fixture",
+    "administrator": false,
+    "profile": {
+      "displayName": "Alex Chen",
+      "tier": "ACCOUNT_TIER_STANDARD",
+      "avatarUrl": "",
+      "revision": "4"
+    },
+    "preferences": {
+      "theme": "ACCOUNT_THEME_DARK",
+      "revision": "2"
+    },
+    "access": {
+      "loginEnabled": true,
+      "apiKeyEnabled": true,
+      "profitSharingEnabled": true,
+      "revision": "1",
+      "moduleAccess": [
+        {
+          "module": "ACCOUNT_DATA_MODULE_WALLET",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SOLANA",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        }
+      ]
+    }
+  },
+  "proposals": [
+    {
+      "txHash": "0x000000000000000000000000000000000000000000000000000000000000019d",
+      "logIndex": 17,
+      "blockNumber": 70841621,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000305",
+      "txIndex": 21,
+      "contractAddress": "0x0000000000000000000000000000000000002207",
+      "topic": "0x0000000000000000000000000000000000000000000000000000000000002667",
+      "requester": "0x0000000000000000000000000000000000000349",
+      "proposer": "0x00000000000000000000000000000000000003b3",
+      "identifier": "YES_OR_NO_QUERY",
+      "requestTimestamp": 1789372800,
+      "ancillaryDataHex": "0x507265766965772073796e74686574696320616e63696c6c617279",
+      "ancillaryDataText": "Synthetic preview question. No real oracle request or market is represented.",
+      "marketId": "910001",
+      "proposedPrice": "1000000000000000000",
+      "rawTopics": "[\"0x0000000000000000000000000000000000000000000000000000000000002667\", \"0x0000000000000000000000000000000000000000000000000000000000000349\", \"0x00000000000000000000000000000000000000000000000000000000000003b3\"]",
+      "rawData": "0x000000000000000000000000000000000000000000000000000000000000006500000000000000000000000000000000000000000000000000000000000000ca",
+      "fetchedAt": "2026-09-14T08:30:00Z",
+      "conditionId": "0x00000000000000000000000000000000000000000000000000000000000002bd",
+      "eventSlug": "synthetic-event-1",
+      "marketSlug": "synthetic-market-1",
+      "question": "Example: Will the policy review finish by 30 September?",
+      "polymarketUrl": "https://polymarket.com/market/synthetic-market-1",
+      "expirationTimestamp": 1789378200,
+      "currency": "0x00000000000000000000000000000000000001f5"
+    },
+    {
+      "txHash": "0x000000000000000000000000000000000000000000000000000000000000019e",
+      "logIndex": 18,
+      "blockNumber": 70841620,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000306",
+      "txIndex": 22,
+      "contractAddress": "0x0000000000000000000000000000000000002207",
+      "topic": "0x0000000000000000000000000000000000000000000000000000000000002667",
+      "requester": "0x000000000000000000000000000000000000034a",
+      "proposer": "0x00000000000000000000000000000000000003b4",
+      "identifier": "YES_OR_NO_QUERY",
+      "requestTimestamp": 1789371000,
+      "ancillaryDataHex": "0x507265766965772073796e74686574696320616e63696c6c617279",
+      "ancillaryDataText": "Synthetic preview question. No real oracle request or market is represented.",
+      "marketId": "910002",
+      "proposedPrice": "0",
+      "rawTopics": "[\"0x0000000000000000000000000000000000000000000000000000000000002667\", \"0x000000000000000000000000000000000000000000000000000000000000034a\", \"0x00000000000000000000000000000000000000000000000000000000000003b4\"]",
+      "rawData": "0x000000000000000000000000000000000000000000000000000000000000006500000000000000000000000000000000000000000000000000000000000000ca",
+      "fetchedAt": "2026-09-14T08:30:00Z",
+      "conditionId": "0x00000000000000000000000000000000000000000000000000000000000002be",
+      "eventSlug": "synthetic-event-2",
+      "marketSlug": "synthetic-market-2",
+      "question": "Example: Will the network upgrade be published this month?",
+      "polymarketUrl": "https://polymarket.com/market/synthetic-market-2",
+      "expirationTimestamp": 1789381800,
+      "currency": "0x00000000000000000000000000000000000001f5"
+    },
+    {
+      "txHash": "0x000000000000000000000000000000000000000000000000000000000000019f",
+      "logIndex": 19,
+      "blockNumber": 70841619,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000307",
+      "txIndex": 23,
+      "contractAddress": "0x0000000000000000000000000000000000002207",
+      "topic": "0x0000000000000000000000000000000000000000000000000000000000002667",
+      "requester": "0x000000000000000000000000000000000000034b",
+      "proposer": "0x00000000000000000000000000000000000003b5",
+      "identifier": "YES_OR_NO_QUERY",
+      "requestTimestamp": 1789369200,
+      "ancillaryDataHex": "0x507265766965772073796e74686574696320616e63696c6c617279",
+      "ancillaryDataText": "Synthetic preview question. No real oracle request or market is represented.",
+      "marketId": "910003",
+      "proposedPrice": "-1000000000000000000",
+      "rawTopics": "[\"0x0000000000000000000000000000000000000000000000000000000000002667\", \"0x000000000000000000000000000000000000000000000000000000000000034b\", \"0x00000000000000000000000000000000000000000000000000000000000003b5\"]",
+      "rawData": "0x000000000000000000000000000000000000000000000000000000000000006500000000000000000000000000000000000000000000000000000000000000ca",
+      "fetchedAt": "2026-09-14T08:30:00Z",
+      "conditionId": "0x00000000000000000000000000000000000000000000000000000000000002bf",
+      "eventSlug": "synthetic-event-3",
+      "marketSlug": "synthetic-market-3",
+      "question": "",
+      "polymarketUrl": "",
+      "expirationTimestamp": 1789385400,
+      "currency": "0x00000000000000000000000000000000000001f5"
+    }
+  ],
+  "disputes": [
+    {
+      "txHash": "0x0000000000000000000000000000000000000000000000000000000000000213",
+      "logIndex": 28,
+      "blockNumber": 70841628,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000305",
+      "txIndex": 21,
+      "contractAddress": "0x0000000000000000000000000000000000002207",
+      "topic": "0x0000000000000000000000000000000000000000000000000000000000002667",
+      "requester": "0x0000000000000000000000000000000000000349",
+      "proposer": "0x00000000000000000000000000000000000003b3",
+      "identifier": "YES_OR_NO_QUERY",
+      "requestTimestamp": 1789372800,
+      "ancillaryDataHex": "0x507265766965772073796e74686574696320616e63696c6c617279",
+      "ancillaryDataText": "Synthetic preview question. No real oracle request or market is represented.",
+      "marketId": "910001",
+      "proposedPrice": "1000000000000000000",
+      "rawTopics": "[\"0x0000000000000000000000000000000000000000000000000000000000002667\", \"0x0000000000000000000000000000000000000000000000000000000000000349\", \"0x00000000000000000000000000000000000000000000000000000000000003b3\"]",
+      "rawData": "0x000000000000000000000000000000000000000000000000000000000000006500000000000000000000000000000000000000000000000000000000000000ca",
+      "fetchedAt": "2026-09-14T08:30:00Z",
+      "conditionId": "0x00000000000000000000000000000000000000000000000000000000000002bd",
+      "eventSlug": "synthetic-event-1",
+      "marketSlug": "synthetic-market-1",
+      "question": "Example: Will the policy review finish by 30 September?",
+      "polymarketUrl": "https://polymarket.com/market/synthetic-market-1",
+      "disputer": "0x000000000000000000000000000000000000041b"
+    },
+    {
+      "txHash": "0x0000000000000000000000000000000000000000000000000000000000000214",
+      "logIndex": 29,
+      "blockNumber": 70841627,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000306",
+      "txIndex": 22,
+      "contractAddress": "0x0000000000000000000000000000000000002207",
+      "topic": "0x0000000000000000000000000000000000000000000000000000000000002667",
+      "requester": "0x000000000000000000000000000000000000034a",
+      "proposer": "0x00000000000000000000000000000000000003b4",
+      "identifier": "YES_OR_NO_QUERY",
+      "requestTimestamp": 1789371000,
+      "ancillaryDataHex": "0x507265766965772073796e74686574696320616e63696c6c617279",
+      "ancillaryDataText": "Synthetic preview question. No real oracle request or market is represented.",
+      "marketId": "910002",
+      "proposedPrice": "0",
+      "rawTopics": "[\"0x0000000000000000000000000000000000000000000000000000000000002667\", \"0x000000000000000000000000000000000000000000000000000000000000034a\", \"0x00000000000000000000000000000000000000000000000000000000000003b4\"]",
+      "rawData": "0x000000000000000000000000000000000000000000000000000000000000006500000000000000000000000000000000000000000000000000000000000000ca",
+      "fetchedAt": "2026-09-14T08:30:00Z",
+      "conditionId": "0x00000000000000000000000000000000000000000000000000000000000002be",
+      "eventSlug": "synthetic-event-2",
+      "marketSlug": "synthetic-market-2",
+      "question": "Example: Will the network upgrade be published this month?",
+      "polymarketUrl": "https://polymarket.com/market/synthetic-market-2",
+      "disputer": "0x000000000000000000000000000000000000041c"
+    }
+  ]
+}

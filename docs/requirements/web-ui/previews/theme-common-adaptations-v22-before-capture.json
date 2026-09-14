@@ -1,0 +1,409 @@
+{
+  "result": "capture_complete",
+  "mode": "current React, all API/auth intercepted; synthetic data",
+  "captures": [
+    {
+      "kind": "login",
+      "size": "desktop",
+      "filename": "theme-common-adaptations-v22-before-login-desktop.png",
+      "requestedRoute": "/admin/login",
+      "actualURL": "http://localhost:4000/admin/login",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "A\nAthena Admin\nADMINISTRATION CONSOLE\nContinue with Google\nAdministrator access is verified by the Athena server. Member and wallet sign-in methods are not available in this console."
+    },
+    {
+      "kind": "login",
+      "size": "mobile",
+      "filename": "theme-common-adaptations-v22-before-login-mobile.png",
+      "requestedRoute": "/admin/login",
+      "actualURL": "http://localhost:4000/admin/login",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "A\nAthena Admin\nADMINISTRATION CONSOLE\nContinue with Google\nAdministrator access is verified by the Athena server. Member and wallet sign-in methods are not available in this console."
+    },
+    {
+      "kind": "register",
+      "size": "desktop",
+      "filename": "theme-common-adaptations-v22-before-register-desktop.png",
+      "requestedRoute": "/register?athenaRealm=admin",
+      "actualURL": "http://localhost:4000/register?athenaRealm=admin",
+      "requests": [
+        "GET /auth/registration"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "A\nChoose a username\nYour permanent public name in Athena\nVerified Google account\nalex.chen@example.invalid\nAdministrator account\nUsername\n@\n3–42 characters: letters, numbers, periods, or hyphens.\nThis username cannot be "
+    },
+    {
+      "kind": "register",
+      "size": "mobile",
+      "filename": "theme-common-adaptations-v22-before-register-mobile.png",
+      "requestedRoute": "/register?athenaRealm=admin",
+      "actualURL": "http://localhost:4000/register?athenaRealm=admin",
+      "requests": [
+        "GET /auth/registration"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "A\nChoose a username\nYour permanent public name in Athena\nVerified Google account\nalex.chen@example.invalid\nAdministrator account\nUsername\n@\n3–42 characters: letters, numbers, periods, or hyphens.\nThis username cannot be "
+    },
+    {
+      "kind": "profile",
+      "size": "desktop",
+      "filename": "theme-common-adaptations-v22-before-profile-desktop.png",
+      "requestedRoute": "/admin/account/profile",
+      "actualURL": "http://localhost:4000/admin/account/profile",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Skip to main content\nA\nAthena Admin\nADMINISTRATION CONSOLE\nACCOUNT ADMIN\nAccounts\nGOVERNANCE\nProfit Sharing\nSYSTEM\nTrader Sync\nService Status\nEtherscan Gateways\nNotifications\nA\nAlex Chen\n@alexchen.admin\nAccount\n/\nProfile"
+    },
+    {
+      "kind": "profile",
+      "size": "mobile",
+      "filename": "theme-common-adaptations-v22-before-profile-mobile.png",
+      "requestedRoute": "/admin/account/profile",
+      "actualURL": "http://localhost:4000/admin/account/profile",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Skip to main content\nAccount\n/\nProfile\nAccount Center\nManage your Athena identity, appearance, and current access.\nA\nAlex Chen\n@alexchen.admin\nStandard\nAdministrator\nAccount section\nProfile\nProfile\nA\nUpload image\nJPEG, P"
+    },
+    {
+      "kind": "access",
+      "size": "desktop",
+      "filename": "theme-common-adaptations-v22-before-access-desktop.png",
+      "requestedRoute": "/admin/account/access",
+      "actualURL": "http://localhost:4000/admin/account/access",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/version"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Skip to main content\nA\nAthena Admin\nADMINISTRATION CONSOLE\nACCOUNT ADMIN\nAccounts\nGOVERNANCE\nProfit Sharing\nSYSTEM\nTrader Sync\nService Status\nEtherscan Gateways\nNotifications\nA\nAlex Chen\n@alexchen.admin\nAccount\n/\nAccess "
+    },
+    {
+      "kind": "access",
+      "size": "mobile",
+      "filename": "theme-common-adaptations-v22-before-access-mobile.png",
+      "requestedRoute": "/admin/account/access",
+      "actualURL": "http://localhost:4000/admin/account/access",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/version"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Skip to main content\nAccount\n/\nAccess & session\nAccount Center\nManage your Athena identity, appearance, and current access.\nA\nAlex Chen\n@alexchen.admin\nStandard\nAdministrator\nAccount section\nAccess & session\nCurrent sess"
+    },
+    {
+      "kind": "member-help",
+      "size": "desktop",
+      "filename": "theme-common-adaptations-v22-before-member-help-desktop.png",
+      "requestedRoute": "/help",
+      "actualURL": "http://localhost:4000/help",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Skip to main content\nA\nAthena\nOPERATIONS CONSOLE\nMARKETS\nMarket Radar\nTrader Sync\nSports\nManaged OO\nWorm Trading\nWorld Cup Corners\nTOKEN & RISK\nSolana\nWallets\nOPERATIONS\nProfit Sharing\nNotifications\nA\nAlex Chen\n@alexchen"
+    },
+    {
+      "kind": "member-help",
+      "size": "mobile",
+      "filename": "theme-common-adaptations-v22-before-member-help-mobile.png",
+      "requestedRoute": "/help",
+      "actualURL": "http://localhost:4000/help",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Skip to main content\nSupport\n/\nHelp\nHelp\nOperational reference links\nResources\nConnect an AI\nLLM discovery (llms.txt)\nFull-Account AI Access\nSwagger UI\nATHENA desktop UI is optimized for browsing, search, detail inspecti"
+    },
+    {
+      "kind": "admin-help",
+      "size": "desktop",
+      "filename": "theme-common-adaptations-v22-before-admin-help-desktop.png",
+      "requestedRoute": "/admin/help",
+      "actualURL": "http://localhost:4000/admin/help",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Skip to main content\nA\nAthena Admin\nADMINISTRATION CONSOLE\nACCOUNT ADMIN\nAccounts\nGOVERNANCE\nProfit Sharing\nSYSTEM\nTrader Sync\nService Status\nEtherscan Gateways\nNotifications\nA\nAlex Chen\n@alexchen.admin\nSupport\n/\nHelp\nHe"
+    },
+    {
+      "kind": "admin-help",
+      "size": "mobile",
+      "filename": "theme-common-adaptations-v22-before-admin-help-mobile.png",
+      "requestedRoute": "/admin/help",
+      "actualURL": "http://localhost:4000/admin/help",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Skip to main content\nSupport\n/\nHelp\nHelp\nOperational reference links\nResources\nLLM discovery (llms.txt)\nFull-Account AI Access\nSwagger UI\nATHENA desktop UI is optimized for browsing, search, detail inspection, and operat"
+    },
+    {
+      "kind": "member-not-found",
+      "size": "desktop",
+      "filename": "theme-common-adaptations-v22-before-member-not-found-desktop.png",
+      "requestedRoute": "/unknown-v22",
+      "actualURL": "http://localhost:4000/unknown-v22",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Skip to main content\nA\nAthena\nOPERATIONS CONSOLE\nMARKETS\nMarket Radar\nTrader Sync\nSports\nManaged OO\nWorm Trading\nWorld Cup Corners\nTOKEN & RISK\nSolana\nWallets\nOPERATIONS\nProfit Sharing\nNotifications\nA\nAlex Chen\n@alexchen"
+    },
+    {
+      "kind": "member-not-found",
+      "size": "mobile",
+      "filename": "theme-common-adaptations-v22-before-member-not-found-mobile.png",
+      "requestedRoute": "/unknown-v22",
+      "actualURL": "http://localhost:4000/unknown-v22",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Skip to main content\nPage not found\nReturn home"
+    },
+    {
+      "kind": "admin-not-found",
+      "size": "desktop",
+      "filename": "theme-common-adaptations-v22-before-admin-not-found-desktop.png",
+      "requestedRoute": "/admin/unknown-v22",
+      "actualURL": "http://localhost:4000/admin/unknown-v22",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Skip to main content\nA\nAthena Admin\nADMINISTRATION CONSOLE\nACCOUNT ADMIN\nAccounts\nGOVERNANCE\nProfit Sharing\nSYSTEM\nTrader Sync\nService Status\nEtherscan Gateways\nNotifications\nA\nAlex Chen\n@alexchen.admin\nPage not found\nRe"
+    },
+    {
+      "kind": "admin-not-found",
+      "size": "mobile",
+      "filename": "theme-common-adaptations-v22-before-admin-not-found-mobile.png",
+      "requestedRoute": "/admin/unknown-v22",
+      "actualURL": "http://localhost:4000/admin/unknown-v22",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Skip to main content\nPage not found\nReturn to accounts"
+    },
+    {
+      "kind": "admin-forbidden",
+      "size": "desktop",
+      "filename": "theme-common-adaptations-v22-before-admin-forbidden-desktop.png",
+      "requestedRoute": "/admin/accounts",
+      "actualURL": "http://localhost:4000/admin/accounts",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Administrator access required\nThis account can use the Athena member workspace but is not allowed to open Athena Admin.\nReturn to Athena"
+    },
+    {
+      "kind": "admin-forbidden",
+      "size": "mobile",
+      "filename": "theme-common-adaptations-v22-before-admin-forbidden-mobile.png",
+      "requestedRoute": "/admin/accounts",
+      "actualURL": "http://localhost:4000/admin/accounts",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Administrator access required\nThis account can use the Athena member workspace but is not allowed to open Athena Admin.\nReturn to Athena"
+    },
+    {
+      "kind": "member-forbidden",
+      "size": "desktop",
+      "filename": "theme-common-adaptations-v22-before-member-forbidden-desktop.png",
+      "requestedRoute": "/worm-trading",
+      "actualURL": "http://localhost:4000/account/access",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/version"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Skip to main content\nA\nAthena\nOPERATIONS CONSOLE\nMARKETS\nMarket Radar\nTrader Sync\nSports\nManaged OO\nWorld Cup Corners\nTOKEN & RISK\nSolana\nWallets\nOPERATIONS\nProfit Sharing\nNotifications\nA\nAlex Chen\n@alexchen\n•••\nAccount\n"
+    },
+    {
+      "kind": "member-forbidden",
+      "size": "mobile",
+      "filename": "theme-common-adaptations-v22-before-member-forbidden-mobile.png",
+      "requestedRoute": "/worm-trading",
+      "actualURL": "http://localhost:4000/account/access",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/version"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Skip to main content\nAccount\n/\nAccess & session\nAccount Center\nManage your Athena identity, appearance, API keys, and current access.\nA\nAlex Chen\n@alexchen\nStandard\nMember\nAccount section\nAccess & session\nCurrent session"
+    },
+    {
+      "kind": "member-expired",
+      "size": "desktop",
+      "filename": "theme-common-adaptations-v22-before-member-expired-desktop.png",
+      "requestedRoute": "/account/profile",
+      "actualURL": "http://localhost:4000/login?returnTo=%2Faccount%2Fprofile",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "A\nAthena\nOPERATIONS CONSOLE\nContinue with Google\nContinue with Phantom\nSign in with a verified Google account or prove ownership of a Phantom wallet. Business access is granted separately by an Athena administrator.\nPhan"
+    },
+    {
+      "kind": "member-expired",
+      "size": "mobile",
+      "filename": "theme-common-adaptations-v22-before-member-expired-mobile.png",
+      "requestedRoute": "/account/profile",
+      "actualURL": "http://localhost:4000/login?returnTo=%2Faccount%2Fprofile",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "A\nAthena\nOPERATIONS CONSOLE\nContinue with Google\nContinue with Phantom\nSign in with a verified Google account or prove ownership of a Phantom wallet. Business access is granted separately by an Athena administrator.\nPhan"
+    },
+    {
+      "kind": "admin-expired",
+      "size": "desktop",
+      "filename": "theme-common-adaptations-v22-before-admin-expired-desktop.png",
+      "requestedRoute": "/admin/account/profile",
+      "actualURL": "http://localhost:4000/admin/login?returnTo=%2Fadmin%2Faccount%2Fprofile",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "A\nAthena Admin\nADMINISTRATION CONSOLE\nContinue with Google\nAdministrator access is verified by the Athena server. Member and wallet sign-in methods are not available in this console."
+    },
+    {
+      "kind": "admin-expired",
+      "size": "mobile",
+      "filename": "theme-common-adaptations-v22-before-admin-expired-mobile.png",
+      "requestedRoute": "/admin/account/profile",
+      "actualURL": "http://localhost:4000/admin/login?returnTo=%2Fadmin%2Faccount%2Fprofile",
+      "requests": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "A\nAthena Admin\nADMINISTRATION CONSOLE\nContinue with Google\nAdministrator access is verified by the Athena server. Member and wallet sign-in methods are not available in this console."
+    },
+    {
+      "kind": "member-loading",
+      "size": "desktop",
+      "filename": "theme-common-adaptations-v22-before-member-loading-desktop.png",
+      "requestedRoute": "/account/profile",
+      "actualURL": "http://localhost:4000/account/profile",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Loading Athena..."
+    },
+    {
+      "kind": "member-loading",
+      "size": "mobile",
+      "filename": "theme-common-adaptations-v22-before-member-loading-mobile.png",
+      "requestedRoute": "/account/profile",
+      "actualURL": "http://localhost:4000/account/profile",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Loading Athena..."
+    },
+    {
+      "kind": "admin-loading",
+      "size": "desktop",
+      "filename": "theme-common-adaptations-v22-before-admin-loading-desktop.png",
+      "requestedRoute": "/admin/account/profile",
+      "actualURL": "http://localhost:4000/admin/account/profile",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Loading Athena..."
+    },
+    {
+      "kind": "admin-loading",
+      "size": "mobile",
+      "filename": "theme-common-adaptations-v22-before-admin-loading-mobile.png",
+      "requestedRoute": "/admin/account/profile",
+      "actualURL": "http://localhost:4000/admin/account/profile",
+      "requests": [
+        "GET /api/v1/app/bootstrap"
+      ],
+      "unexpected": [],
+      "errors": [],
+      "overflow": false,
+      "text": "Loading Athena..."
+    }
+  ],
+  "notVerified": [
+    "Real identities",
+    "backend services",
+    "live smoke"
+  ]
+}

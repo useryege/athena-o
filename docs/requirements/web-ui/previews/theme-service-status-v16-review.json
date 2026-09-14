@@ -1,0 +1,204 @@
+{
+  "version": "v16",
+  "surface": "Administrator Service Status",
+  "status": "awaiting_user_review",
+  "production_ui_changed": false,
+  "scope": "Visual proposal for existing administrator Service Status with local synthetic demonstrations only.",
+  "direction": ".superpowers/v16-direction.md",
+  "primary_screenshots": [
+    "theme-service-status-v16-services-desktop.png",
+    "theme-service-status-v16-notification-desktop.png",
+    "theme-service-status-v16-services-mobile.png",
+    "theme-service-status-v16-trader-mobile.png"
+  ],
+  "inspection": {
+    "own_rounds": 2,
+    "prototype_screenshots": 11,
+    "before_screenshots": 2,
+    "viewports": [
+      "1440x900",
+      "390x844",
+      "320x844",
+      "720x900 with root font at200%"
+    ],
+    "corrections": [
+      "Resolve info and arrow icons to existing authored SVG symbols.",
+      "Restore warning color on recovery status tags.",
+      "Size the avatar with text scaling and line-height1 to keep enlarged letters inside its boundary."
+    ],
+    "reviewer_fix_batches": 0,
+    "capture_policy": "Full-page from document top with settled fonts and disabled animation; mobile drawer is actual390x844 viewport."
+  },
+  "independent_review": {
+    "reviewer": "/root/v16_finish_reviewer",
+    "disposition": "ship",
+    "scope": "Full independent visual proposal review over11 target screenshots,2 currentReact comparison screenshots,source contracts and recorded browser evidence; not user approval or production acceptance.",
+    "report": ".superpowers/v16-finish-review.txt",
+    "sections": {
+      "persistence": "pass — PRODUCT.md and the v16 surface brief/direction contract exist; this is a code-led ordinary extension, so no comp/build-state matrix applies. DESIGN.md and .impeccable/design.json remain absent as explicitly required for this bounded round. All 13 required screenshots exist: 11 target proposal rasters and 2 incumbent captures. They carry provenance and have byte-identical shipping copies; the incumbent capture record also exists. The shipped documenter must now persist the named v16 proposal/index updates without expanding the approval scope.",
+      "fidelity": "| salient element | verdict | evidence |\n| --- | --- | --- |\n| Administrator shell and navigation | match | 224px desktop sidebar, 64px topbar, 280px/max viewport−48 drawer, grouping, semantic icons, and selected Service Status treatment follow the pinned v15 shell. |\n| Three-source topology | match | Services, Notifications, and Trader Sync remain independent tabs; every tab keeps a visible source-specific status while one complete source panel is selected. |\n| Services content | match | Last checked, all 10 service rows, explicit Unreachable text, exact error, and the separation between gRPC connectivity and runtime activity are preserved. |\n| Notification content and priority | match | Last received remains independent; recovery precedes queues and runtime details; failed/stopped precedence, stale and first-read failure treatments, exact millisecond strings, zero/missing distinction, and expandable reason/start/clock are retained. |\n| Trader Sync content | match | Collector, opaque epoch/filter, raw observability, all seven supplied metrics, units, gauge/window/epoch provenance, exact unsafe-integer string, and synthetic-window labeling are retained without cross-scope summation. |\n| Responsive transformation | acceptable adaptation | The surface brief explicitly requires desktop tables to become separated mobile records; the 390px and 320px captures keep the reading order, complete values, and no horizontal overflow. The 720px/200% capture preserves the same hierarchy without clipping. |\n| TYPE | match | Approved Inter carries headings, body, controls, and numerals; JetBrains Mono is used for opaque epoch identifiers and the expandable recovery reason/clock identifiers. The 28/24px page title, 20px section titles, tabular numerals, and 13–16px support hierarchy follow the pinned v2 system. |\n| MATERIAL | match | The committed Nansen-derived operator world uses flat near-black surfaces, restrained 1px separators, authored line icons, and status color as information; no imitated physical material, decorative glass, or unsupported raster obligation appears. |\n| GROUND | match | The net page field is the approved #06080B with #0F1114 panels, #181D22 interaction surfaces, #252A30 separators, white/gray text, and #00FFA7 focus/selection accents. |\n| State and truth coverage | match | Recovery, stale, unavailable, loading, empty, failed, exact-zero, missing-value, and disconnected states remain local demonstrations; the page labels data synthetic and makes no live polling or global-health claim. |",
+      "ceiling": "reached — the Operate surface uses the committed desktop/mobile frames, restrained border depth, approved lettering, low ornament density, and the specified approximately 160ms color response; additional decoration or motion would weaken the pinned administrator system.",
+      "material_fixes": "none",
+      "keep": "Keep the three source statuses simultaneously visible and source-specific, with independent timestamps and the complete selected-source detail, while the documenter records the proposal as awaiting user judgment."
+    }
+  },
+  "detector": {
+    "findings": [
+      {
+        "antipattern": "low-contrast",
+        "name": "Low contrast text",
+        "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+        "severity": "warning",
+        "category": "quality",
+        "file": "/home/yege/work/athena/docs/requirements/web-ui/previews/theme-service-status-v16.html",
+        "line": 0,
+        "snippet": ":hover state 1.3:1 (need 4.5:1) — text #ffffff on #00ffa7"
+      },
+      {
+        "antipattern": "overused-font",
+        "name": "Overused font",
+        "description": "Inter, Roboto, Fraunces, Geist, Plus Jakarta Sans, and Space Grotesk are used on so many sites they no longer feel distinctive. Each new wave of AI-generated UIs converges on the same handful of faces. Choose a face that gives your interface personality.",
+        "severity": "warning",
+        "category": "slop",
+        "file": "/home/yege/work/athena/docs/requirements/web-ui/previews/theme-service-status-v16.html",
+        "line": 0,
+        "snippet": "Primary font: inter"
+      }
+    ],
+    "manual_runs": 1,
+    "file_scoped_exceptions": [
+      "overused-font=inter: user-approved v2 typography.",
+      "low-contrast=*: verified false combination of inherited white and unused mint primary CSS. Actual rendered controls pass recorded hover samples."
+    ]
+  },
+  "hover_contrast": {
+    "primaryButtonsRendered": 0,
+    "records": [
+      {
+        "selector": "#refresh",
+        "color": "rgb(255, 255, 255)",
+        "background": "rgb(24, 29, 34)",
+        "ratio": 16.967193438998866
+      },
+      {
+        "selector": "#tab-services",
+        "color": "rgb(159, 160, 161)",
+        "background": "rgb(15, 17, 20)",
+        "ratio": 7.218804157993069
+      },
+      {
+        "selector": "#tab-notification",
+        "color": "rgb(255, 255, 255)",
+        "background": "rgb(15, 17, 20)",
+        "ratio": 18.90882568923543
+      },
+      {
+        "selector": "#panel-notification [data-retry]",
+        "color": "rgb(230, 191, 114)",
+        "background": "rgb(24, 29, 34)",
+        "ratio": 9.743936439868495
+      },
+      {
+        "selector": ".nav-item[aria-current]",
+        "color": "rgb(0, 255, 167)",
+        "background": "rgb(16, 44, 36)",
+        "ratio": 11.267391393146381
+      }
+    ],
+    "result": "passed",
+    "explanation": "Detector mixes inherited white text and an unused mint primary rule. Target has no rendered primary button. Actual rendered hovered controls use dark surfaces with readable text."
+  },
+  "asset_provenance": {
+    "rasters": 13,
+    "proposal_rasters": 11,
+    "incumbent_rasters": 2,
+    "missing": 0,
+    "method": "Playwright Chromium screenshots with embedded origins, no generated or retouched pixels.",
+    "scan": ".superpowers/v16-raster-provenance-scan.txt"
+  },
+  "documentation": "service-status-proposal.md, visual-theme.md and three indexes. Ordinary extension preserves pre-existing absence of DESIGN.md and .impeccable/design.json.",
+  "limitations": [
+    "This proposal remains awaiting user review; only directly presented and explicitly accepted scopes enter the visual baseline.",
+    "All runtime values are synthetic. HTML makes no external or live service requests. Refresh simply restores the sample fixture; it does not simulate independent polling.",
+    "Current React baseline uses intercepted GET fixtures. No live authentication, actual service health or full-stack smoke has been tested.",
+    "The production10-second visible single-flight and independent requests/cache scopes, stale timestamps, safe cancellation and administrator realm restrictions remain implementation requirements.",
+    "Recovery timing keeps exact string milliseconds, including zero and unavailable; no local countdown.",
+    "Raw missing values remain Not observable. Metric strings, opaque epochs, units and window boundaries are not combined or interpreted as global health.",
+    "synthetic_window is an illustrative window-scope row, not a statement that an existing producer emits it.",
+    "Status source tabs and mobile record layouts are new proposed presentation, not previously approved behavior.",
+    "Other administrator destinations show scope notices and have no real navigation in this prototype.",
+    "Full source-specific error details and all asynchronous failure transitions require production implementation verification.",
+    "No service was started. Existing root Vite was borrowed and preserved; task browser contexts are closed."
+  ],
+  "prior_approved_digests_unchanged": 214,
+  "artifacts": [
+    {
+      "path": "theme-service-status-v16-before-capture.json",
+      "sha256": "f002b877cff32f2e9541c16e23d0e49c99de1cf01998d3b50abb705b3506fb00"
+    },
+    {
+      "path": "theme-service-status-v16-before-desktop.png",
+      "sha256": "f9f7398bd3a9622ed303b7f0418fc80d6dc0d666b43f9c921d54717e13694a11"
+    },
+    {
+      "path": "theme-service-status-v16-before-mobile.png",
+      "sha256": "c612095c0b885b78efab71f878aa34562c6abe705b7f9e74ecf94b022fb90d93"
+    },
+    {
+      "path": "theme-service-status-v16-checks.json",
+      "sha256": "898c2a56671f11a5cd3486922b6e2ccb481452a463bbfbcaaf555463fce82435"
+    },
+    {
+      "path": "theme-service-status-v16-data.json",
+      "sha256": "019c81a5c5d06e34f8b6810186bef3789040931e9fb5e5a3e69d1aa6fdbb2a1c"
+    },
+    {
+      "path": "theme-service-status-v16-narrow.png",
+      "sha256": "f80691598e87f3981507ad6ef0cf17a1cef39a38aa88782387b69d028b5a3a8c"
+    },
+    {
+      "path": "theme-service-status-v16-navigation-mobile.png",
+      "sha256": "159a551be2aa6e3ac632830b85292bef251f0ef73d32063290b5b3957efa776e"
+    },
+    {
+      "path": "theme-service-status-v16-notification-desktop.png",
+      "sha256": "51adfe7252401bba2b154e688881cc70a8061a6932fd2bb1bef8dcbe096c15f4"
+    },
+    {
+      "path": "theme-service-status-v16-notification-mobile.png",
+      "sha256": "a2a831ebb3e10ac17d35a80668fce68608a50d55465ddb7776dddf0db480c79a"
+    },
+    {
+      "path": "theme-service-status-v16-services-desktop.png",
+      "sha256": "12ad491b5b450a8b070c510ae00150fa38706ae081aea6605bf116d941e609f5"
+    },
+    {
+      "path": "theme-service-status-v16-services-mobile.png",
+      "sha256": "f29164b7353b2964376152a75cebc1e92957d07a053427b7145268a8747a67af"
+    },
+    {
+      "path": "theme-service-status-v16-stale-desktop.png",
+      "sha256": "3128646364ad09fe3be498c996009421d8ef5268a910d8ccb36ef2db2d4059f7"
+    },
+    {
+      "path": "theme-service-status-v16-trader-desktop.png",
+      "sha256": "0399f7ebc0bf4c84e3895cc97830109f2c59e134640f3e6dfa37e195453dda21"
+    },
+    {
+      "path": "theme-service-status-v16-trader-mobile.png",
+      "sha256": "73db9bb58d310372355d41fbbf231036461367ae840680a16c12797f60b43cc7"
+    },
+    {
+      "path": "theme-service-status-v16-unavailable-mobile.png",
+      "sha256": "efa5c7340070fa0ec8ad5c0f8a4a66dcb4687b5fb2cbcb6e64819f9879ffab9b"
+    },
+    {
+      "path": "theme-service-status-v16-zoom.png",
+      "sha256": "8bba38ce722d58d95a41884439ca057d6e41fe4ccd59be6b07b28d83730f3eae"
+    },
+    {
+      "path": "theme-service-status-v16.html",
+      "sha256": "a07197cc676538a855891e3004f45f4beb593cb8cd6ce98d835bda2e581a2712"
+    }
+  ]
+}

@@ -1,0 +1,202 @@
+{
+  "synthetic": true,
+  "user": {
+    "loggedIn": true,
+    "accountId": "11111111-1111-4111-8111-111111111111",
+    "username": "alexchen",
+    "iss": "fixture",
+    "administrator": false,
+    "profile": {
+      "displayName": "Alex Chen",
+      "tier": "ACCOUNT_TIER_STANDARD",
+      "avatarUrl": "",
+      "revision": "4"
+    },
+    "preferences": {
+      "theme": "ACCOUNT_THEME_DARK",
+      "revision": "2"
+    },
+    "access": {
+      "loginEnabled": true,
+      "apiKeyEnabled": true,
+      "profitSharingEnabled": true,
+      "revision": "1",
+      "moduleAccess": [
+        {
+          "module": "ACCOUNT_DATA_MODULE_WALLET",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SOLANA",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+        }
+      ]
+    }
+  },
+  "adminUser": {
+    "loggedIn": true,
+    "accountId": "22222222-2222-4222-8222-222222222222",
+    "username": "alexchen.admin",
+    "iss": "fixture",
+    "administrator": true,
+    "profile": {
+      "displayName": "Alex Chen",
+      "tier": "ACCOUNT_TIER_STANDARD",
+      "avatarUrl": "",
+      "revision": "4"
+    },
+    "preferences": {
+      "theme": "ACCOUNT_THEME_DARK",
+      "revision": "2"
+    },
+    "access": {
+      "loginEnabled": true,
+      "apiKeyEnabled": false,
+      "profitSharingEnabled": false,
+      "revision": "1",
+      "moduleAccess": [
+        {
+          "module": "ACCOUNT_DATA_MODULE_WALLET",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SOLANA",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+        },
+        {
+          "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+          "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+        }
+      ]
+    }
+  },
+  "email": "alex.chen@example.invalid",
+  "helpSettings": {
+    "binaryUrls": {}
+  },
+  "modules": [
+    {
+      "label": "Market Radar",
+      "description": "Hot, realtime, and moving Polymarket discovery views.",
+      "level": "No access"
+    },
+    {
+      "label": "Sports Live",
+      "description": "Current sports events and live price histories.",
+      "level": "No access"
+    },
+    {
+      "label": "Sports History",
+      "description": "Completed sports history, sync state, and manual refresh.",
+      "level": "No access"
+    },
+    {
+      "label": "Managed OO",
+      "description": "Managed Optimistic Oracle proposals, disputes, and block parsing.",
+      "level": "No access"
+    },
+    {
+      "label": "Worm Markets",
+      "description": "Standalone Worm market data APIs.",
+      "level": "No access"
+    },
+    {
+      "label": "Worm Trading",
+      "description": "Owner-scoped Solana balances and Worm trading operations.",
+      "level": "No access"
+    },
+    {
+      "label": "World Cup Corners",
+      "description": "Protected World Cup corner and result dataset.",
+      "level": "No access"
+    },
+    {
+      "label": "Solana",
+      "description": "Read-only discovery of newly initialized Solana token candidates.",
+      "level": "No access"
+    },
+    {
+      "label": "Wallet",
+      "description": "Wallet inventory, creation, import, aliases, and sensitive secret access.",
+      "level": "No access"
+    },
+    {
+      "label": "Trader Sync",
+      "description": "Independent trader subscriptions and activity alerts.",
+      "level": "No access"
+    }
+  ],
+  "resources": [
+    {
+      "label": "LLM discovery (llms.txt)",
+      "path": "/llms.txt",
+      "description": "Discover Athena resources for AI clients.",
+      "newTab": true
+    },
+    {
+      "label": "Full-Account AI Access",
+      "path": "/docs/ai/safety.md",
+      "description": "Read the scope and responsibilities of AI access.",
+      "newTab": true
+    },
+    {
+      "label": "Swagger UI",
+      "path": "/swagger-ui",
+      "description": "Browse the available API reference.",
+      "newTab": false
+    }
+  ],
+  "googleMark": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOCAxOCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJHb29nbGUiPgogIDxwYXRoIGZpbGw9IiM0Mjg1RjQiIGQ9Ik0xNy42NCA5LjIwNWMwLS42MzgtLjA1Ny0xLjI1Mi0uMTY0LTEuODQxSDl2My40ODJoNC44NDRhNC4xNCA0LjE0IDAgMCAxLTEuNzk3IDIuNzE2djIuMjU4aDIuOTA5YzEuNzAyLTEuNTY3IDIuNjg0LTMuODc1IDIuNjg0LTYuNjE1WiIvPgogIDxwYXRoIGZpbGw9IiMzNEE4NTMiIGQ9Ik05IDE4YzIuNDMgMCA0LjQ2OC0uODA2IDUuOTU2LTIuMThsLTIuOTA5LTIuMjU4Yy0uODA2LjU0LTEuODM1Ljg1OS0zLjA0Ny44NTktMi4zNDQgMC00LjMyOC0xLjU4NS01LjAzNy0zLjcxNEguOTU2djIuMzMyQTkgOSAwIDAgMCA5IDE4WiIvPgogIDxwYXRoIGZpbGw9IiNGQkJDMDUiIGQ9Ik0zLjk2MyAxMC43MDdBNS40MSA1LjQxIDAgMCAxIDMuNjgxIDljMC0uNTkzLjEwMi0xLjE3LjI4Mi0xLjcwN1Y0Ljk2MUguOTU2QTkgOSAwIDAgMCAwIDljMCAxLjQ1Mi4zNDcgMi44MjcuOTU2IDQuMDM5bDMuMDA3LTIuMzMyWiIvPgogIDxwYXRoIGZpbGw9IiNFQTQzMzUiIGQ9Ik05IDMuNThjMS4zMjEgMCAyLjUwNy40NTQgMy40NDEgMS4zNDZsMi41ODEtMi41ODJDMTMuNDY0Ljg5MiAxMS40MjYgMCA5IDBBOSA5IDAgMCAwIC45NTYgNC45NjFsMy4wMDcgMi4zMzJDNC42NzIgNS4xNjQgNi42NTYgMy41OCA5IDMuNThaIi8+Cjwvc3ZnPgo="
+}

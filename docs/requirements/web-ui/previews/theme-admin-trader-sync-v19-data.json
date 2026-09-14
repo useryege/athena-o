@@ -1,0 +1,209 @@
+{
+  "synthetic": true,
+  "notice": "Visual preview · Synthetic subscription summaries. Read-only local demonstration.",
+  "admin": {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "username": "alex.admin",
+    "administrator": true,
+    "access": {
+      "loginEnabled": true,
+      "apiKeyEnabled": true,
+      "profitSharingEnabled": false,
+      "revision": "7",
+      "moduleAccess": [
+        {
+          "module": 1,
+          "dataAccess": 1
+        },
+        {
+          "module": 2,
+          "dataAccess": 1
+        },
+        {
+          "module": 3,
+          "dataAccess": 0
+        },
+        {
+          "module": 4,
+          "dataAccess": 0
+        },
+        {
+          "module": 5,
+          "dataAccess": 0
+        },
+        {
+          "module": 11,
+          "dataAccess": 0
+        },
+        {
+          "module": 7,
+          "dataAccess": 0
+        },
+        {
+          "module": 8,
+          "dataAccess": 1
+        },
+        {
+          "module": 13,
+          "dataAccess": 1
+        },
+        {
+          "module": 9,
+          "dataAccess": 1
+        },
+        {
+          "module": 12,
+          "dataAccess": 2
+        }
+      ]
+    },
+    "profile": {
+      "displayName": "Alex Morgan",
+      "tier": "ACCOUNT_TIER_STANDARD",
+      "avatarUrl": "",
+      "revision": "4"
+    },
+    "identity": {
+      "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+      "verifiedEmail": "alex.admin@example.invalid",
+      "solanaAddress": "",
+      "createdAt": 1783999440,
+      "lastLoginAt": 1789351200
+    },
+    "status": "ACCOUNT_STATUS_ACTIVE",
+    "loggedIn": true,
+    "accountId": "44444444-4444-4444-8444-444444444444",
+    "iss": "athena",
+    "preferences": {
+      "theme": "ACCOUNT_THEME_DARK",
+      "revision": "2"
+    }
+  },
+  "asOf": "2026-09-14T06:30:00Z",
+  "summaries": [
+    {
+      "subscriptionId": "70000000-0000-4000-8000-000000000001",
+      "accountId": "60000000-0000-4000-8000-000000000001",
+      "username": "alex.chen",
+      "email": "alex.chen@example.test",
+      "wallet": "0x1234567890123456789012345678901234567890",
+      "status": "healthy",
+      "createdAt": "2026-09-10T01:00:00Z",
+      "updatedAt": "2026-09-14T06:28:00Z",
+      "observation": {
+        "state": "healthy",
+        "reason": "",
+        "lastReliableAt": "2026-09-14T06:29:45Z",
+        "interruptionCount": "2",
+        "latestInterruption": {
+          "start": "2026-09-13T02:12:00Z",
+          "reason": "collector_disconnected",
+          "uncertainty": "unknown_end",
+          "possibleMissing": true
+        }
+      },
+      "activityCount": "421",
+      "associatedDeliveryCounts": {
+        "total": "93",
+        "pending": "1",
+        "sending": "0",
+        "sent": "90",
+        "failed": "1",
+        "unknown": "1",
+        "cancelled": "0"
+      },
+      "asOf": "2026-09-14T06:30:00Z"
+    },
+    {
+      "subscriptionId": "70000000-0000-4000-8000-000000000002",
+      "accountId": "60000000-0000-4000-8000-000000000002",
+      "username": "mira.li",
+      "email": "mira.li@example.test",
+      "wallet": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+      "status": "interrupted",
+      "createdAt": "2026-09-10T01:00:00Z",
+      "updatedAt": "2026-09-14T06:28:00Z",
+      "observation": {
+        "state": "interrupted",
+        "reason": "collector_disconnected",
+        "lastReliableAt": "2026-09-14T06:23:02Z",
+        "interruptionCount": "1",
+        "latestInterruption": {
+          "start": "2026-09-14T06:23:03Z",
+          "reason": "collector_disconnected",
+          "uncertainty": "ongoing",
+          "possibleMissing": true
+        }
+      },
+      "activityCount": "11",
+      "associatedDeliveryCounts": {
+        "total": "8",
+        "pending": "0",
+        "sending": "0",
+        "sent": "7",
+        "failed": "0",
+        "unknown": "1",
+        "cancelled": "0"
+      },
+      "asOf": "2026-09-14T06:30:00Z"
+    },
+    {
+      "subscriptionId": "70000000-0000-4000-8000-000000000003",
+      "accountId": "60000000-0000-4000-8000-000000000003",
+      "username": "sam.wu",
+      "email": "sam.wu@example.test",
+      "wallet": "0x7890123456789012345678901234567890123456",
+      "status": "paused",
+      "createdAt": "2026-09-10T01:00:00Z",
+      "updatedAt": "2026-09-14T06:28:00Z",
+      "observation": {
+        "state": "inactive",
+        "reason": "subscription_paused",
+        "lastReliableAt": "2026-09-14T05:19:58Z",
+        "interruptionCount": "0"
+      },
+      "activityCount": "0",
+      "associatedDeliveryCounts": {
+        "total": "0",
+        "pending": "0",
+        "sending": "0",
+        "sent": "0",
+        "failed": "0",
+        "unknown": "0",
+        "cancelled": "0"
+      },
+      "asOf": "2026-09-14T06:30:00Z",
+      "pausedAt": "2026-09-14T05:20:00Z"
+    }
+  ],
+  "cancelled": {
+    "subscriptionId": "70000000-0000-4000-8000-000000000004",
+    "accountId": "60000000-0000-4000-8000-000000000003",
+    "username": "sam.wu",
+    "email": "sam.wu@example.test",
+    "wallet": "0x7890123456789012345678901234567890123456",
+    "status": "cancelled",
+    "createdAt": "2026-09-10T01:00:00Z",
+    "updatedAt": "2026-09-14T06:28:00Z",
+    "observation": {
+      "state": "inactive",
+      "reason": "subscription_cancelled",
+      "lastReliableAt": "2026-09-14T05:19:58Z",
+      "interruptionCount": "0"
+    },
+    "activityCount": "0",
+    "associatedDeliveryCounts": {
+      "total": "0",
+      "pending": "0",
+      "sending": "0",
+      "sent": "0",
+      "failed": "0",
+      "unknown": "0",
+      "cancelled": "0"
+    },
+    "asOf": "2026-09-14T06:30:00Z",
+    "pausedAt": "2026-09-14T05:20:00Z",
+    "cancelledAt": "2026-09-14T05:20:00Z"
+  },
+  "page": {}
+}

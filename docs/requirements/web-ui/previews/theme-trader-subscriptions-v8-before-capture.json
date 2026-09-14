@@ -1,0 +1,162 @@
+{
+  "task": "ATHENA Trader subscriptions v8 before-state screenshots",
+  "result": "passed",
+  "capturedAt": "2026-09-14T08:19:19+08:00",
+  "evidenceClassification": "ui-fixtures",
+  "evidenceLabel": "当前 React 组件 + 明确标注的虚构数据",
+  "scope": {
+    "route": "/trader-sync/subscriptions",
+    "theme": "dark",
+    "application": "member",
+    "views": ["current", "cancelled"],
+    "fullSystemSmokeRequired": false,
+    "externalAccountsUsed": false,
+    "externalAPIsUsed": false,
+    "mutationRequestsObserved": false,
+    "productionUIChanged": false
+  },
+  "repository": {
+    "root": "/home/yege/work/athena",
+    "branch": "rf4",
+    "head": "7c6e4839f8ee9323bc6d84c7565b44577d88eda4",
+    "productionUIDiffAtVerification": "empty"
+  },
+  "source": {
+    "page": "ui/src/app/member/pages/trader-sync/subscriptions.tsx",
+    "subscriptionState": "ui/src/app/member/pages/trader-sync/subscription-state.tsx",
+    "models": "ui/src/app/member/trader-sync-models.ts",
+    "styles": "ui/src/app/member/pages/trader-sync/trader-sync.css",
+    "fixtureRouter": "ui/e2e/trader-sync-fixtures.ts",
+    "baseFixture": "ui/src/app/member/testdata/trader-sync/01.json",
+    "summary": "The current page renders a four-column ResourceTable on desktop and the same identity, monitoring, queue, and manage facts through compactRender on mobile. Current and cancelled use independent view queries; no lifecycle controls are rendered in this list.",
+    "sourceHashesSha256": {
+      "ui/src/app/member/pages/trader-sync/subscriptions.tsx": "0a9d79ee94dc2a8266f4a321cf2b68d2550bb09bc3f30570e3683fbb0b6e5a4c",
+      "ui/src/app/member/pages/trader-sync/subscription-state.tsx": "ae3a387a82edb18d3b4133eac824a8bbfea97842b2488a22b7390c37236047dd",
+      "ui/src/app/member/trader-sync-models.ts": "93486f02e26f5dae3f9d2a3fbe557e40ff917dc25a3d0be38f714d009675eed4",
+      "ui/src/app/member/pages/trader-sync/trader-sync.css": "16ef9f7fc9d649065b468a1f3c3efe842fde9f273033698aaf2a00e6438c242c",
+      "ui/e2e/trader-sync-fixtures.ts": "b1b44efdc8c6d294f4c08e778cda3be9b63683ca92c948e420b52b9f0810bbdc",
+      "ui/src/app/member/testdata/trader-sync/01.json": "4b8ed62887e72530bfb4327ced1566c5b2f1ed1eef5f2b86318fb3eaed26aefd"
+    }
+  },
+  "data": {
+    "path": "docs/requirements/web-ui/previews/theme-trader-subscriptions-v8-data.json",
+    "sha256": "c0f0936e587a30b24f9001190def7e719f51e6d994f123ce2aa9519f0406c291",
+    "synthetic": true,
+    "asOf": "2026-09-14T06:42:00Z",
+    "quota": {"used": 3, "limit": 10},
+    "currentStates": ["healthy", "paused", "interrupted"],
+    "cancelledCount": 1,
+    "identityFacts": "Every item includes a complete wallet and private note. Available public names and explicit unavailable evidence reasons are retained in targetDisplay.",
+    "monitoringFacts": "Every item includes currentInterval.effectiveAt and observation.lastReliableAt. The interrupted item also includes the existing latestInterruption fields.",
+    "queueFacts": "Every item includes total plus pending, sending, sent, failed, unknown, and cancelled counts. The existing queueNotice payload is retained for paused and cancelled items and translated by the current UI."
+  },
+  "capture": {
+    "runner": "Playwright 1.60.0",
+    "browser": "Google Chrome for Testing 148.0.7778.96 (Playwright paired Chromium, channel=chromium)",
+    "node": "v24.14.1",
+    "yarn": "1.22.22",
+    "vite": "7.3.5",
+    "command": "cd ui && yarn playwright test --config ../.superpowers/v8-current.playwright.config.ts",
+    "testResult": "2 passed (2.9s)",
+    "requestBoundary": {
+      "currentPerViewport": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/trader-sync/subscriptions?page.page_size=50&view=current"
+      ],
+      "cancelled": [
+        "GET /api/v1/app/bootstrap",
+        "GET /api/v1/trader-sync/subscriptions?page.page_size=50&view=current",
+        "GET /api/v1/trader-sync/subscriptions?page.page_size=50&view=cancelled"
+      ],
+      "allRequestsIntercepted": true,
+      "mutationMethodsObserved": []
+    },
+    "assertions": [
+      "current renders healthy, paused, and interrupted rows",
+      "each current row renders complete wallet, note, effective time, last reliable observation, and six visible queue counts",
+      "available public names and profile_query_failed reason render",
+      "existing queue notice renders through the current fixed English translation",
+      "cancelled view independently loads the retained cancelled item",
+      "quota is 3 / 10 in both views",
+      "all observed API requests use GET",
+      "no horizontal document overflow at either viewport"
+    ],
+    "screenshots": [
+      {
+        "path": "docs/requirements/web-ui/previews/theme-trader-subscriptions-v8-before-desktop.png",
+        "view": "current",
+        "viewport": {"width": 1440, "height": 900},
+        "document": {"width": 1440, "height": 900},
+        "overflowX": false,
+        "sha256": "482f88859f0831ce94c2c620cd0652ef5cbffab656335d158d91eba6308b9f2e"
+      },
+      {
+        "path": "docs/requirements/web-ui/previews/theme-trader-subscriptions-v8-before-mobile.png",
+        "view": "current",
+        "viewport": {"width": 390, "height": 844},
+        "document": {"width": 390, "height": 1711},
+        "overflowX": false,
+        "sha256": "5d918a67e09a145ed8d0605339986b4fc80c14fb8b3cd8663c71cbbc2fdcf88d"
+      },
+      {
+        "path": "docs/requirements/web-ui/previews/theme-trader-subscriptions-v8-before-cancelled.png",
+        "view": "cancelled",
+        "viewport": {"width": 1440, "height": 900},
+        "document": {"width": 1440, "height": 900},
+        "overflowX": false,
+        "sha256": "2810248cd582d27502b3ed35ad04223856fe9811dc268207be5bee6c57824ffd"
+      }
+    ]
+  },
+  "environment": {
+    "preExistingRetained": [
+      {
+        "kind": "shared root runtime supervisor",
+        "pid": 307846,
+        "repository": "/home/yege/work/athena",
+        "status": "retained; not owned or used by this task"
+      },
+      {
+        "kind": "shared root Vite",
+        "pid": 308228,
+        "address": "http://127.0.0.1:4000",
+        "repository": "/home/yege/work/athena/ui",
+        "status": "retained; not owned or used by this task"
+      },
+      {
+        "kind": "shared root API",
+        "pid": 3950976,
+        "address": "http://127.0.0.1:8080",
+        "status": "retained; not owned or used by intercepted fixture APIs"
+      },
+      {
+        "kind": "independent worktree Vite",
+        "pid": 1053295,
+        "address": "http://127.0.0.1:24000",
+        "repository": "/home/yege/work/athena/.worktrees/trader-sync-independent/ui",
+        "status": "retained; not owned or used by this task"
+      }
+    ],
+    "temporary": {
+      "kind": "Vite page server",
+      "address": "http://127.0.0.1:5618",
+      "repository": "/home/yege/work/athena/ui",
+      "command": "yarn vite --host 127.0.0.1 --port 5618 --strictPort",
+      "ownedExecutionSession": 60566,
+      "stopped": true,
+      "stopMethod": "SIGINT through the owned persistent execution session",
+      "verification": [
+        "ss showed no listener on port 5618",
+        "inspection of all node process command lines found no Vite process with port 5618"
+      ]
+    }
+  },
+  "temporaryArtifacts": [
+    ".superpowers/v8-build-demo-data.mjs",
+    ".superpowers/v8-current.playwright.config.ts",
+    ".superpowers/v8-current-capture.spec.ts",
+    ".superpowers/v8-current-desktop-metrics.json",
+    ".superpowers/v8-current-mobile-metrics.json",
+    ".superpowers/v8-cancelled-desktop-metrics.json"
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "status": "approved_for_etherscan_gateways_presented_visuals",
+  "confirmed_by": "user",
+  "feedback": "舒服",
+  "confirmed_date": "2026-09-14",
+  "review_context": "用户查看上一回复展示的 Gateways 桌面、Live Probe 桌面、Gateways 手机和 Live Probe 手机四张主图后反馈“舒服”。按直接展示范围确认视觉。",
+  "directly_presented_artifacts": [
+    "theme-etherscan-gateways-v17-gateways-desktop.png",
+    "theme-etherscan-gateways-v17-probe-desktop.png",
+    "theme-etherscan-gateways-v17-gateways-mobile.png",
+    "theme-etherscan-gateways-v17-probe-mobile.png"
+  ],
+  "approved_scope": [
+    "所展示 Gateways／Live Probe 双来源页签、独立状态摘要、管理员导航、配色、字体、留白与信息密度",
+    "所展示 Gateways 桌面记录与390px手机布局，网关计数、完整地址、可达性、运行状态、延迟、检查时间、错误及默认收起的连接详情入口",
+    "所展示 Live Probe 桌面／手机表单、操作主次、上一轮结果、成功率与成功门槛的阅读层级",
+    "所展示七种失败分类、By Gateway 明细、By API Key 切换入口、默认收起的时序详情入口及默认展开的错误样本视觉"
+  ],
+  "not_approved_by_this_feedback": [
+    "By API Key 明细与时序展开桌面、连接信息展开手机、运行中手机、启动失败手机、320px窄屏、200%字号及其他辅助状态未由此次反馈逐图确认",
+    "真实探针请求、权限、额度、轮询、异步竞态、重试等实现或生产验收",
+    "其他管理员页面、正式 ui/ 已改版、全站设计完成或新增业务能力",
+    "当前 React 对照截图作为新主题目标"
+  ],
+  "artifacts": [
+    {
+      "path": "theme-etherscan-gateways-v17-before-capture.json",
+      "sha256": "2bf641c8b4ef2ffb7165595931d493eb82dc3384c950961e6f7235e886b14641"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-before-desktop.png",
+      "sha256": "4a189f122ae0340c0f5194238855d5ada0b7aed53598440cdf18930c69e52f56"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-before-mobile.png",
+      "sha256": "5f9fe45906bc439c945cf27a1447d82acce3c56e7563b3345d27e5ea4558e573"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-checks.json",
+      "sha256": "a679dff4da3a88e22cadd1fe85d48719ef5aebe0052258250b6f0c38b6efe14f"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-connection-mobile.png",
+      "sha256": "9a25317512ea322c13bbd0f65b2f6f10ab6d5d983e5929a0019656dd81143cf9"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-data.json",
+      "sha256": "e316329e5f67bb2348588de3b72fc9c4e138f668ef7d306aa95ffe708493406a"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-gateways-desktop.png",
+      "sha256": "c54917f05f1fab73af5c9ce0dbfea8765bf24dbe868e1f34896329447f091f8c"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-gateways-mobile.png",
+      "sha256": "05f08586549d52d76f429d7c4228706e7a0cacd19f75fe5b1080c4e1ee083bc4"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-keys-desktop.png",
+      "sha256": "875107f35003c50bc66ac4c95418e3828f71848a4d4682adb4891991d22d0ec0"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-narrow.png",
+      "sha256": "79e4ea26d238438f41a8b07eed790f94580c18f4e37b6c9fbbf58fb54ebd45a2"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-probe-desktop.png",
+      "sha256": "1c3895eea2827375eee3febed4c4c625352f81ce1675099ca046f6db0cd2b804"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-probe-mobile.png",
+      "sha256": "f16caffffb9ed08f637b44efa895e41b36e4ae3448b54331c1cf5c81c3b37954"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-running-mobile.png",
+      "sha256": "51ca7b67c37670ed8e62da778a1d7607c00db583061f59280fe7415433e259e5"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-start-error-mobile.png",
+      "sha256": "203bf2573de8b6a511bc49c296f261100d67e2caae6a9f4983d98a1445ed7515"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-zoom.png",
+      "sha256": "f13bd3f47e5c3d21b2a82ab785b972ecab54c586694289276ef2e9cd7f57bbbf"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17.html",
+      "sha256": "9d4b1c9e9c140baffae1a79ce67ec116de7082ec48c59fcd61280d9ab3a9b4b4"
+    },
+    {
+      "path": "theme-etherscan-gateways-v17-review.json",
+      "sha256": "dcfc4c918fa0e04be09065c0acdfbaeb2f516742583bcef989363be214e65c08"
+    }
+  ]
+}

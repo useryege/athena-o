@@ -1,0 +1,367 @@
+{
+  "label": "Trader add v7 visual comparison demo data",
+  "evidenceMode": "ui-fixtures",
+  "input": "https://polymarket.com/profile/0x00000000000000000000000000000000000000cc",
+  "browserClock": "2026-09-14T06:42:10Z",
+  "queryAt": "2026-09-14T06:42:00Z",
+  "expiresAt": "2026-09-14T06:47:00Z",
+  "note": "Election desk",
+  "quota": {
+    "used": 3,
+    "limit": 10
+  },
+  "telegram": {
+    "botAvailable": true,
+    "botUsername": "athena_alerts_demo_bot",
+    "binding": {
+      "status": "connected",
+      "telegramUsername": "athena_demo",
+      "telegramDisplayName": "ATHENA Demo",
+      "boundAt": "2026-09-14T01:00:00Z",
+      "revision": 7
+    }
+  },
+  "target": {
+    "wallet": "0x00000000000000000000000000000000000000cc",
+    "canonicalProfileURL": "https://polymarket.com/profile/0x00000000000000000000000000000000000000cc",
+    "avatar": {
+      "evidence": {
+        "availability": "unavailable",
+        "reasonCode": "missing_or_invalid",
+        "source": "https://gamma-api.polymarket.com/public-profile?address=0x00000000000000000000000000000000000000cc",
+        "queriedAt": "2026-09-14T06:42:00Z"
+      }
+    },
+    "displayName": {
+      "evidence": {
+        "availability": "available",
+        "reasonCode": "",
+        "source": "https://gamma-api.polymarket.com/public-profile?address=0x00000000000000000000000000000000000000cc",
+        "queriedAt": "2026-09-14T06:42:00Z"
+      },
+      "value": "Gateway Target"
+    },
+    "verified": {
+      "evidence": {
+        "availability": "available",
+        "reasonCode": "",
+        "source": "https://gamma-api.polymarket.com/public-profile?address=0x00000000000000000000000000000000000000cc",
+        "queriedAt": "2026-09-14T06:42:00Z"
+      },
+      "value": false
+    },
+    "joinedAt": {
+      "evidence": {
+        "availability": "available",
+        "reasonCode": "",
+        "source": "https://data-api.polymarket.com/v1/user-stats?proxyAddress=0x00000000000000000000000000000000000000cc",
+        "queriedAt": "2026-09-14T06:42:00Z"
+      },
+      "value": "2024-06-19T21:35:45.083Z"
+    },
+    "positionValue": {
+      "evidence": {
+        "availability": "available",
+        "reasonCode": "",
+        "source": "https://data-api.polymarket.com/value?user=0x00000000000000000000000000000000000000cc",
+        "queriedAt": "2026-09-14T06:42:00Z"
+      },
+      "value": "0"
+    },
+    "largestWin": {
+      "evidence": {
+        "availability": "available",
+        "reasonCode": "",
+        "source": "https://data-api.polymarket.com/v1/user-stats?proxyAddress=0x00000000000000000000000000000000000000cc",
+        "queriedAt": "2026-09-14T06:42:00Z"
+      },
+      "value": "0"
+    },
+    "predictions": {
+      "evidence": {
+        "availability": "available",
+        "reasonCode": "",
+        "source": "https://data-api.polymarket.com/traded?user=0x00000000000000000000000000000000000000cc",
+        "queriedAt": "2026-09-14T06:42:00Z"
+      },
+      "value": "9007199254740993"
+    },
+    "pnl": [
+      {
+        "period": "1D",
+        "amount": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "query_failed",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=1h&interval=1d&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        },
+        "curve": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "query_failed",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=1h&interval=1d&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          },
+          "points": null
+        },
+        "interval": "1d",
+        "fidelity": "1h",
+        "referenceTime": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "official_reference_unavailable",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=1h&interval=1d&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        },
+        "timezone": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "official_timezone_unavailable",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=1h&interval=1d&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        }
+      },
+      {
+        "period": "1W",
+        "amount": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "query_failed",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=3h&interval=1w&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        },
+        "curve": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "query_failed",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=3h&interval=1w&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          },
+          "points": null
+        },
+        "interval": "1w",
+        "fidelity": "3h",
+        "referenceTime": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "official_reference_unavailable",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=3h&interval=1w&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        },
+        "timezone": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "official_timezone_unavailable",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=3h&interval=1w&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        }
+      },
+      {
+        "period": "1M",
+        "amount": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "query_failed",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=18h&interval=1m&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        },
+        "curve": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "query_failed",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=18h&interval=1m&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          },
+          "points": null
+        },
+        "interval": "1m",
+        "fidelity": "18h",
+        "referenceTime": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "official_reference_unavailable",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=18h&interval=1m&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        },
+        "timezone": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "official_timezone_unavailable",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=18h&interval=1m&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        }
+      },
+      {
+        "period": "1Y",
+        "amount": {
+          "evidence": {
+            "availability": "available",
+            "reasonCode": "",
+            "source": "synthetic_v7_visual_comparison_fixture",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          },
+          "value": "18432.75"
+        },
+        "curve": {
+          "evidence": {
+            "availability": "available",
+            "reasonCode": "",
+            "source": "synthetic_v7_visual_comparison_fixture",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          },
+          "points": [
+            {
+              "t": "1757832120",
+              "p": "4200.00"
+            },
+            {
+              "t": "1761717720",
+              "p": "7650.25"
+            },
+            {
+              "t": "1767339720",
+              "p": "6125.50"
+            },
+            {
+              "t": "1772876520",
+              "p": "10980.75"
+            },
+            {
+              "t": "1778498520",
+              "p": "9840.25"
+            },
+            {
+              "t": "1784035320",
+              "p": "14210.00"
+            },
+            {
+              "t": "1786896120",
+              "p": "13275.50"
+            },
+            {
+              "t": "1789368120",
+              "p": "18432.75"
+            }
+          ]
+        },
+        "interval": "all",
+        "fidelity": "1d",
+        "referenceTime": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "official_reference_unavailable",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=1d&interval=all&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        },
+        "timezone": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "official_timezone_unavailable",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=1d&interval=all&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        }
+      },
+      {
+        "period": "YTD",
+        "amount": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "query_failed",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=1d&interval=all&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        },
+        "curve": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "query_failed",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=1d&interval=all&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          },
+          "points": null
+        },
+        "interval": "all",
+        "fidelity": "1d",
+        "referenceTime": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "official_reference_unavailable",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=1d&interval=all&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        },
+        "timezone": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "official_timezone_unavailable",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=1d&interval=all&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        }
+      },
+      {
+        "period": "ALL",
+        "amount": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "query_failed",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=1d&interval=all&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        },
+        "curve": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "query_failed",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=1d&interval=all&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          },
+          "points": null
+        },
+        "interval": "all",
+        "fidelity": "1d",
+        "referenceTime": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "official_reference_unavailable",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=1d&interval=all&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        },
+        "timezone": {
+          "evidence": {
+            "availability": "unavailable",
+            "reasonCode": "official_timezone_unavailable",
+            "source": "https://user-pnl-api.polymarket.com/user-pnl?fidelity=1d&interval=all&user_address=0x00000000000000000000000000000000000000cc",
+            "queriedAt": "2026-09-14T06:42:00Z"
+          }
+        }
+      }
+    ],
+    "defaultPeriod": "1Y",
+    "confirmationToken": "drpgrOFzxk_j7XoMLKp7Ljud4wC9yPJsmxz36dmn3D4",
+    "expiresAt": "2026-09-14T06:47:00Z",
+    "usageNotice": "优先选择低频交易者；高频监控不纳入性能保障",
+    "savedNote": {
+      "wallet": "0x00000000000000000000000000000000000000cc",
+      "note": "Election desk",
+      "revision": "1"
+    },
+    "quota": {
+      "used": 3,
+      "limit": 10
+    }
+  }
+}

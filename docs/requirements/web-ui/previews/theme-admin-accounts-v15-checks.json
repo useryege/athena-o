@@ -1,0 +1,398 @@
+{
+  "version": "v15",
+  "result": "passed",
+  "scope": "Local visual prototype. No production behavior or live account writes tested.",
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "zoom": 1,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-admin-accounts-v15-desktop.png",
+        "theme-admin-accounts-v15-profile-desktop.png"
+      ],
+      "contracts": [
+        "10 displayed modules",
+        "Unique IDs for controls and SVG symbols",
+        "Trader Sync supports only no access and read/write",
+        "Solana supports only no access and read",
+        "Selected-account detail is visible",
+        "Sampled body text meets 4.5:1 contrast",
+        "Unsaved display name blocks applying a tier",
+        "Hidden Token grant retained in edited aggregate",
+        "Sensitive changes require confirmation",
+        "API key reduction explains preservation",
+        "Escape cancels confirmation",
+        "Local save retains full 11-module aggregate",
+        "Saving access retains unrelated name draft",
+        "Leaving dirty account requires explicit discard",
+        "Administrator access is read-only",
+        "Own administrator profile is read-only",
+        "Copy preserves full wallet address",
+        "JetBrains Mono loaded at wallet consumer",
+        "Conflict discards stale access draft",
+        "Conflict reload shows authoritative access",
+        "Non-conflict error preserves draft",
+        "Empty state offers filter recovery",
+        "Clearing filters restores directory",
+        "Loading directory carries busy state",
+        "Load error includes retry",
+        "Retry restores local demo",
+        "Search filters identities",
+        "No browser script errors",
+        "No external requests"
+      ],
+      "initialGeometry": {
+        "width": 1440,
+        "documentWidth": 1440
+      },
+      "geometry": {
+        "width": 1440,
+        "documentWidth": 1440,
+        "inter": true,
+        "mono": true
+      },
+      "contrast": [
+        {
+          "selector": ".description",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": ".section-description",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".permission-copy strong",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".permission-copy p",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".heading-identity",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".module-copy summary",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        }
+      ],
+      "addressFont": {
+        "fontFamily": "\"JetBrains Mono\", ui-monospace, monospace",
+        "loaded": true
+      }
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-admin-accounts-v15-mobile-list.png",
+        "theme-admin-accounts-v15-mobile-access.png",
+        "theme-admin-accounts-v15-profile-mobile.png",
+        "theme-admin-accounts-v15-confirm-mobile.png",
+        "theme-admin-accounts-v15-identity-mobile.png",
+        "theme-admin-accounts-v15-navigation-mobile.png",
+        "theme-admin-accounts-v15-empty-mobile.png"
+      ],
+      "contracts": [
+        "10 displayed modules",
+        "Unique IDs for controls and SVG symbols",
+        "Trader Sync supports only no access and read/write",
+        "Solana supports only no access and read",
+        "Selected-account detail is visible",
+        "Mobile detail hides the directory",
+        "Sampled body text meets 4.5:1 contrast",
+        "Unsaved display name blocks applying a tier",
+        "Hidden Token grant retained in edited aggregate",
+        "Sensitive changes require confirmation",
+        "API key reduction explains preservation",
+        "Escape cancels confirmation",
+        "Local save retains full 11-module aggregate",
+        "Saving access retains unrelated name draft",
+        "Leaving dirty account requires explicit discard",
+        "Administrator access is read-only",
+        "Own administrator profile is read-only",
+        "Copy preserves full wallet address",
+        "JetBrains Mono loaded at wallet consumer",
+        "Conflict discards stale access draft",
+        "Conflict reload shows authoritative access",
+        "Non-conflict error preserves draft",
+        "Empty state offers filter recovery",
+        "Clearing filters restores directory",
+        "Loading directory carries busy state",
+        "Load error includes retry",
+        "Retry restores local demo",
+        "Search filters identities",
+        "No browser script errors",
+        "No external requests"
+      ],
+      "initialGeometry": {
+        "width": 390,
+        "documentWidth": 390
+      },
+      "geometry": {
+        "width": 390,
+        "documentWidth": 390,
+        "inter": true,
+        "mono": true
+      },
+      "contrast": [
+        {
+          "selector": ".description",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": ".section-description",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".permission-copy strong",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".permission-copy p",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".heading-identity",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".module-copy summary",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        }
+      ],
+      "addressFont": {
+        "fontFamily": "\"JetBrains Mono\", ui-monospace, monospace",
+        "loaded": true
+      }
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "zoom": 1,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-admin-accounts-v15-narrow.png"
+      ],
+      "contracts": [
+        "10 displayed modules",
+        "Unique IDs for controls and SVG symbols",
+        "Trader Sync supports only no access and read/write",
+        "Solana supports only no access and read",
+        "Selected-account detail is visible",
+        "Mobile detail hides the directory",
+        "Sampled body text meets 4.5:1 contrast",
+        "Unsaved display name blocks applying a tier",
+        "Hidden Token grant retained in edited aggregate",
+        "Sensitive changes require confirmation",
+        "API key reduction explains preservation",
+        "Escape cancels confirmation",
+        "Local save retains full 11-module aggregate",
+        "Saving access retains unrelated name draft",
+        "Leaving dirty account requires explicit discard",
+        "Administrator access is read-only",
+        "Own administrator profile is read-only",
+        "Copy preserves full wallet address",
+        "JetBrains Mono loaded at wallet consumer",
+        "Conflict discards stale access draft",
+        "Conflict reload shows authoritative access",
+        "Non-conflict error preserves draft",
+        "Empty state offers filter recovery",
+        "Clearing filters restores directory",
+        "Loading directory carries busy state",
+        "Load error includes retry",
+        "Retry restores local demo",
+        "Search filters identities",
+        "No browser script errors",
+        "No external requests"
+      ],
+      "initialGeometry": {
+        "width": 320,
+        "documentWidth": 320
+      },
+      "geometry": {
+        "width": 320,
+        "documentWidth": 320,
+        "inter": true,
+        "mono": true
+      },
+      "contrast": [
+        {
+          "selector": ".description",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": ".section-description",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".permission-copy strong",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".permission-copy p",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".heading-identity",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".module-copy summary",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        }
+      ],
+      "addressFont": {
+        "fontFamily": "\"JetBrains Mono\", ui-monospace, monospace",
+        "loaded": true
+      }
+    },
+    {
+      "name": "zoom",
+      "width": 720,
+      "height": 900,
+      "zoom": 2,
+      "pageErrors": [],
+      "externalRequests": [],
+      "issues": [],
+      "screenshots": [
+        "theme-admin-accounts-v15-zoom.png"
+      ],
+      "contracts": [
+        "10 displayed modules",
+        "Unique IDs for controls and SVG symbols",
+        "Trader Sync supports only no access and read/write",
+        "Solana supports only no access and read",
+        "Selected-account detail is visible",
+        "Mobile detail hides the directory",
+        "Sampled body text meets 4.5:1 contrast",
+        "Unsaved display name blocks applying a tier",
+        "Hidden Token grant retained in edited aggregate",
+        "Sensitive changes require confirmation",
+        "API key reduction explains preservation",
+        "Escape cancels confirmation",
+        "Local save retains full 11-module aggregate",
+        "Saving access retains unrelated name draft",
+        "Leaving dirty account requires explicit discard",
+        "Administrator access is read-only",
+        "Own administrator profile is read-only",
+        "Copy preserves full wallet address",
+        "JetBrains Mono loaded at wallet consumer",
+        "Conflict discards stale access draft",
+        "Conflict reload shows authoritative access",
+        "Non-conflict error preserves draft",
+        "Empty state offers filter recovery",
+        "Clearing filters restores directory",
+        "Loading directory carries busy state",
+        "Load error includes retry",
+        "Retry restores local demo",
+        "Search filters identities",
+        "No browser script errors",
+        "No external requests"
+      ],
+      "initialGeometry": {
+        "width": 720,
+        "documentWidth": 720
+      },
+      "geometry": {
+        "width": 720,
+        "documentWidth": 720,
+        "inter": true,
+        "mono": true
+      },
+      "contrast": [
+        {
+          "selector": ".description",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(6, 8, 11)",
+          "ratio": 7.654998092963268
+        },
+        {
+          "selector": ".section-description",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".permission-copy strong",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        },
+        {
+          "selector": ".permission-copy p",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".heading-identity",
+          "foreground": "rgb(159, 160, 161)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 7.218804157993069
+        },
+        {
+          "selector": ".module-copy summary",
+          "foreground": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "ratio": 18.90882568923543
+        }
+      ],
+      "addressFont": {
+        "fontFamily": "\"JetBrains Mono\", ui-monospace, monospace",
+        "loaded": true
+      }
+    }
+  ],
+  "captureNote": "Page states are full-page captures from top. Fixed confirmation and navigation overlays use the actual 390\u00d7844 viewport; this avoids invalid extension below a fixed backdrop."
+}

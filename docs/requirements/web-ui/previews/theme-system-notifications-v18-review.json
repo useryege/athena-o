@@ -1,0 +1,265 @@
+{
+  "version": "v18",
+  "surface": "Administrator System Notifications list and detail",
+  "status": "awaiting_user_review",
+  "production_ui_changed": false,
+  "scope": "Static visual proposal for the existing administrator list/detail flow. Synthetic delivery records and local queue demonstration only.",
+  "direction": ".superpowers/v18-direction.md",
+  "primary_screenshots": [
+    "theme-system-notifications-v18-list-desktop.png",
+    "theme-system-notifications-v18-detail-desktop.png",
+    "theme-system-notifications-v18-list-mobile.png",
+    "theme-system-notifications-v18-detail-mobile.png"
+  ],
+  "review_grouping": "List and detail, desktop and mobile are one review group. Reuse confirmed common visual rules; routine auxiliary states do not require separate per-image user approval. Historical approval scopes remain accurate.",
+  "inspection": {
+    "own_rounds": 2,
+    "prototype_screenshots": 7,
+    "before_screenshots": 4,
+    "viewports": [
+      "1440x900",
+      "390x844",
+      "320x844",
+      "720x900 with root font at 200%"
+    ],
+    "corrections": [
+      "No visual changes between own rounds. Scoped the checker to current-page callouts after a hidden historical modal error caused ambiguous locators.",
+      "Aligned the current React fixture pageSize with actual UI default50 and options10/50/100."
+    ],
+    "reviewer_fix_batches": 0,
+    "capture_policy": "Document top, fonts settled, pointer at0,0, animations disabled. Test-mobile dialog is actual390x844 viewport; all other captures full-page."
+  },
+  "independent_review": {
+    "reviewer": "/root/v10_documenter",
+    "role": "impeccable_finish_reviewer",
+    "disposition": "ship",
+    "scope": "Independent review of7 prototype screenshots,4 current React comparisons, source contracts and browser evidence. Static visual proposal, not user approval or production acceptance.",
+    "report": ".superpowers/v18-finish-review.txt",
+    "sections": {
+      "persistence": "pass — `PRODUCT.md` exists. This is an ordinary code-led extension of the approved v1–v17 visual world, so no comp/build-state gate applies; the approved v17 Etherscan Gateways captures corroborate the inherited administrator shell. The pre-existing absence of `DESIGN.md` and `.impeccable/design.json` is recorded drift and does not require repair in this bounded review. All 11 required captures exist, match their named states, start at the claimed document/viewport top, have plausible dimensions, and are byte-identical to the copies in `.impeccable/review/v18/`. Provenance reports 11 rasters and 0 missing.",
+      "fidelity": "| Element | Verdict | Evidence |\n| --- | --- | --- |\n| TYPE | match | Self-hosted Inter preserves the approved administrator hierarchy; JetBrains Mono is limited to delivery identifiers, source/provider values, and raw provider text. No system display face or decorative monospace is introduced. |\n| MATERIAL | match | The interface uses the established flat tonal layering, restrained 1px borders, 12–14px radii, semantic dots, and consistent SVG line icons. It does not imitate physical texture, glass, bevel, or photographic material. |\n| GROUND | match | The rendered near-black `#06080B` field, `#0F1114` panels, white/gray text, and limited `#00FFA7` accent match OWN-WORLD and the approved v17 neighbor without warmer/cooler drift. |\n| Administrator shell | match | Desktop retains the 224px sidebar and 64px top bar; mobile uses the established compact top bar and 280px navigation drawer contract. Navigation grouping, account affordance, and active state align with v17. |\n| List topology and reading order | match | Desktop places heading/actions above filters and a five-column record list; title/topic and destination/channel combine the seven source fields without loss. Mobile reflows every record into title/topic, severity, delivery, destination/channel, and UTC+8 created time. |\n| Filtering and pagination | match | Keyword, All plus six status values, All/test/prod chats, refresh, default 50, and 10/50/100 page sizes remain present. The absence of a synthetic cancelled record respects product truth while retaining the source-supported filter. |\n| Detail topology and truth | match | Unknown warning precedes message, delivery result, five-time timeline, and collapsed identifiers. All 17 source fields remain findable; missing HTTP started and Sent values are dashes, and Unknown explicitly says Telegram may have received the message and it will not be resent automatically. |\n| Responsive adaptation | acceptable adaptation | At 390px and 320px, the desktop two-column detail becomes message → result → timeline and table rows become divided records, as required by FIRST VIEWPORT and the mobile reading contract. The 200% capture preserves the same hierarchy without horizontal clipping. |\n| Test Notification dialog | match | The 390×844 viewport capture shows a real modal with clear target, synthetic-preview notice, Cancel, and one primary queue action. Evidence covers required trimmed input, pending lock/no duplicate submit, failure retention, focus recovery, and queued/pending/test/admin-ui success semantics. |\n| Detector findings | match | Approved Inter explains `overused-font`. Measured primary hover text/background is near-black on green at 15.70:1, and modal actions retain 20px bottom inset with 20/24px side padding, so the low-contrast and cramped-padding reports do not describe the rendered result. |\n| Scope and claims | match | Synthetic fixture/footer labels are explicit; current React comparisons use intercepted GETs only. No Resend, Cancel, Delete, unsupported protocol link, real API mutation, Telegram action, or delivery claim was added. |",
+      "ceiling": "reached — the Operate-mode quality bar is met with dense but scannable records, clear severity/delivery separation, message-first detail, restrained tonal depth, approved lettering, no decorative ornament, and no promised motion left unused. Desktop, mobile, 320px, and 200% text evidence cover the native web presentation modes named by the contract; loading, empty, error, long-content, keyboard, and modal states are covered by the supplied checks.",
+      "material_fixes": "none.",
+      "keep": "Keep the compact five-column desktop scan, full-field mobile reflow, message → result → timeline detail order, explicit Unknown/no-auto-resend warning, collapsed technical identifiers, UTC+8 time separation, and the restrained Nansen-derived administrator shell unchanged when presenting this v18 proposal for user review."
+    },
+    "handoff_exception": "Fresh reviewer spawn failed with agent thread limit reached; no close-agent tool exists. Reused a prior v10 documenter that had not participated in this v18 design or inherited its build transcript. Replacement disclosed to user."
+  },
+  "detector": {
+    "manual_runs": 1,
+    "findings": [
+      {
+        "antipattern": "low-contrast",
+        "name": "Low contrast text",
+        "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+        "severity": "warning",
+        "category": "quality",
+        "file": "/home/yege/work/athena/docs/requirements/web-ui/previews/theme-system-notifications-v18.html",
+        "line": 0,
+        "snippet": ":hover state 1.3:1 (need 4.5:1) — text #ffffff on #00ffa7"
+      },
+      {
+        "antipattern": "cramped-padding",
+        "name": "Cramped padding",
+        "description": "Text is too close to the edge of its container. Two shapes: (1) an element with its own text where the padding is too low for the font size, and (2) a wrapper with text-bearing children and near-zero padding against a visible boundary (border, outline, or non-transparent background) — children land flush against the boundary line. Add at least 8px (ideally 12–16px) of padding inside bordered, outlined, or colored containers.",
+        "severity": "warning",
+        "category": "quality",
+        "file": "/home/yege/work/athena/docs/requirements/web-ui/previews/theme-system-notifications-v18.html",
+        "line": 0,
+        "snippet": "<dialog> \"test-dialog\": children flush against border+bg on bottom (no inset)"
+      },
+      {
+        "antipattern": "overused-font",
+        "name": "Overused font",
+        "description": "Inter, Roboto, Fraunces, Geist, Plus Jakarta Sans, and Space Grotesk are used on so many sites they no longer feel distinctive. Each new wave of AI-generated UIs converges on the same handful of faces. Choose a face that gives your interface personality.",
+        "severity": "warning",
+        "category": "slop",
+        "file": "/home/yege/work/athena/docs/requirements/web-ui/previews/theme-system-notifications-v18.html",
+        "line": 0,
+        "snippet": "Primary font: inter"
+      }
+    ],
+    "file_scoped_exceptions": [
+      "overused-font=inter: explicit user-approved v2 typography.",
+      "low-contrast=*: false positive; primary hover renders#06080B on#51FFC3 at15.70:1.",
+      "cramped-padding=*: false positive; test dialog delegates spacing to child action region, measured bottom inset20px and horizontal20/24px."
+    ]
+  },
+  "detector_triage": {
+    "result": "passed",
+    "scope": "Targeted triage of single detector run, no additional screenshots or visual edits.",
+    "records": [
+      {
+        "name": "desktop",
+        "selector": "#open-test",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "desktop",
+        "selector": "#send-test",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "desktop",
+        "selector": ".modal-actions",
+        "paddingBottom": 20,
+        "buttonInsetBottom": 20,
+        "paddingLeft": 24,
+        "paddingRight": 24
+      },
+      {
+        "name": "mobile",
+        "selector": "#open-test",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "mobile",
+        "selector": "#send-test",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "mobile",
+        "selector": ".modal-actions",
+        "paddingBottom": 20,
+        "buttonInsetBottom": 20,
+        "paddingLeft": 20,
+        "paddingRight": 20
+      },
+      {
+        "name": "narrow",
+        "selector": "#open-test",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "narrow",
+        "selector": "#send-test",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "narrow",
+        "selector": ".modal-actions",
+        "paddingBottom": 20,
+        "buttonInsetBottom": 20,
+        "paddingLeft": 20,
+        "paddingRight": 20
+      },
+      {
+        "name": "zoom",
+        "selector": "#open-test",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "zoom",
+        "selector": "#send-test",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "zoom",
+        "selector": ".modal-actions",
+        "paddingBottom": 20,
+        "buttonInsetBottom": 20,
+        "paddingLeft": 20,
+        "paddingRight": 20
+      }
+    ]
+  },
+  "asset_provenance": {
+    "rasters": 11,
+    "proposal_rasters": 7,
+    "incumbent_rasters": 4,
+    "missing": 0,
+    "method": "Playwright Chromium screenshots, embedded origins and identical review copies; no generated/retouched pixels.",
+    "scan": ".superpowers/v18-raster-provenance-scan.txt"
+  },
+  "documentation": "system-notifications-proposal.md, visual-theme.md and three indexes. AGENTS.md and PRODUCT.md also record grouped review policy. Ordinary extension preserves pre-existing absence of DESIGN.md and .impeccable/design.json.",
+  "limitations": [
+    "v18 awaits grouped user review; prior approvals do not automatically approve this new layout.",
+    "All delivery records and queue outcomes are synthetic. No test POST or Telegram operation was submitted.",
+    "Current React used intercepted synthetic GET responses. No live authentication, provider delivery, backend health, races or full-stack acceptance was verified.",
+    "Production integration must keep all17fields, UTC+8 timestamps, unknown semantics and current admin permissions; do not infer Sent or HTTP started from another timestamp.",
+    "Cancelled exists in the shared UI filter vocabulary but not as a system table status. No cancelled system record or cancellation action was invented.",
+    "Test queue acceptance is pending, directed to configured test chat with source admin-ui. It does not prove delivery and does not resend the selected record.",
+    "Prototype return preserves local list filters; that retention is a proposed interaction and not an existing complete production behavior guarantee.",
+    "Keyword filtering and pagination are local demonstrations, not guarantees of backend search semantics or remote paging.",
+    "Other administrator/account destinations show local scope notices, without live navigation or logout.",
+    "No task services started. Task browser contexts closed; existing borrowed root Vite localhost4000 PID308228 preserved."
+  ],
+  "prior_approved_digests_unchanged": 249,
+  "artifacts": [
+    {
+      "path": "theme-system-notifications-v18-before-capture.json",
+      "sha256": "a4b8f2018b6ed7a6c921c48c5d6b80300a2d6e35c1b0c77f37d8592a2b0976c5"
+    },
+    {
+      "path": "theme-system-notifications-v18-before-detail-desktop.png",
+      "sha256": "949a1b27d4aa6fe321a4124f42d3c849d1bce21aa2e34a614c8cd0608c4333d3"
+    },
+    {
+      "path": "theme-system-notifications-v18-before-detail-mobile.png",
+      "sha256": "b2bcbc6da0efbf56e14bddee8865f2a17a9c4a9bc4db54866a043fdacfb7ce19"
+    },
+    {
+      "path": "theme-system-notifications-v18-before-list-desktop.png",
+      "sha256": "4c1f4f8cb6dbde328b7839a53ab4de6651fe169e6a8b7339e8cdb33f00bf115e"
+    },
+    {
+      "path": "theme-system-notifications-v18-before-list-mobile.png",
+      "sha256": "ff18c4d66ce2fd3741a06491a0e0151a165813aecb7c41c2f463020df235a650"
+    },
+    {
+      "path": "theme-system-notifications-v18-checks.json",
+      "sha256": "f1a5f03552fcb6cdf2b73199a311670142a0f4ee4b3ebdd30dcf591d86624392"
+    },
+    {
+      "path": "theme-system-notifications-v18-data.json",
+      "sha256": "03a24bf367012b0e38c621f19427095901fee8c7acd326f094bb8f158ee24e1e"
+    },
+    {
+      "path": "theme-system-notifications-v18-detail-desktop.png",
+      "sha256": "7e72029ddbaec7c48e8b9b606743ba87eb27d418d4503fd0c8fe55b250a2d75b"
+    },
+    {
+      "path": "theme-system-notifications-v18-detail-mobile.png",
+      "sha256": "68a0595c153b21ca79b3ed3a18ad25389a5cade5c2a9616b31dd56d0c1e78433"
+    },
+    {
+      "path": "theme-system-notifications-v18-list-desktop.png",
+      "sha256": "51501d7a537eb75574d52b7b05fbaef1c961c358a159881e963dfcbce6e509e6"
+    },
+    {
+      "path": "theme-system-notifications-v18-list-mobile.png",
+      "sha256": "4a564eca4e03a3f53fa4aeb6090b0704138bdde80948d07922a451f64edfe754"
+    },
+    {
+      "path": "theme-system-notifications-v18-narrow.png",
+      "sha256": "784575739a0bd769deb2894cc6ad985ba5b6b910d98a0d8b6021982d819b9e86"
+    },
+    {
+      "path": "theme-system-notifications-v18-test-mobile.png",
+      "sha256": "64e4b71eaa65fb5f32c89b82fd3e9ac48648e64aac6ed6e6b9293c2779e7bbcc"
+    },
+    {
+      "path": "theme-system-notifications-v18-zoom.png",
+      "sha256": "91f055ce9e9d7dd94f63d2432c6433941aa74b8ad1033b62e208d36f0dd856e4"
+    },
+    {
+      "path": "theme-system-notifications-v18.html",
+      "sha256": "43fcb98e2f3cfeb6310f4d1ab26ea9fef798d249afe89dd336da3b4d48e3d03b"
+    }
+  ]
+}

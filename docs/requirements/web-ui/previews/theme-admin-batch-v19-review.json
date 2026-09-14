@@ -1,0 +1,448 @@
+{
+  "version": "v19",
+  "surface": "Administrator Trader Sync list/summary and Profit Sharing round list/detail",
+  "status": "awaiting_user_review",
+  "production_ui_changed": false,
+  "scope": "Four actual administrator pages in one review batch. Static HTML with synthetic data and local demonstrations. No production writes.",
+  "directions": [
+    ".superpowers/v19-trader-direction.md",
+    ".superpowers/v19-profit-direction.md"
+  ],
+  "primary_screenshots": [
+    "theme-admin-trader-sync-v19-list-desktop.png",
+    "theme-admin-trader-sync-v19-detail-desktop.png",
+    "theme-admin-trader-sync-v19-list-mobile.png",
+    "theme-admin-trader-sync-v19-detail-mobile.png",
+    "theme-admin-profit-sharing-v19-list-desktop.png",
+    "theme-admin-profit-sharing-v19-detail-desktop.png",
+    "theme-admin-profit-sharing-v19-list-mobile.png",
+    "theme-admin-profit-sharing-v19-detail-mobile.png"
+  ],
+  "review_grouping": "Complete multiple actual pages before presenting each batch; desktop and mobile together. Common style decisions are reused, and routine auxiliary states do not add per-image approval gates. v18 main screenshots are approved separately; v19 awaits feedback.",
+  "inspection": {
+    "trader_own_rounds": 1,
+    "profit_own_rounds": 2,
+    "proposal_screenshots": 14,
+    "before_screenshots": 8,
+    "viewports": [
+      "1440x900",
+      "390x844",
+      "320x844",
+      "720x900 with root font at200%"
+    ],
+    "corrections": [
+      "Profit create modal keeps its actions visible while its body scrolls; page heading stacks at enlarged font/narrow available width.",
+      "Profit round names use native keyboard-accessible controls.",
+      "Independent review requested explicit seed-not-applicable provenance and complete local Create/Draft participant roster controls and validation; addressed in one named correction batch."
+    ],
+    "reviewer_fix_batches": 1,
+    "capture_policy": "Document top, fonts settled, pointer moved away, reduced motion. Profit create-mobile uses actual390x844 viewport with its modal body scrolled to the roster controls; document remains at top. Other images full-page."
+  },
+  "independent_review": {
+    "reviewer": "/root/v10_documenter",
+    "role": "impeccable_finish_reviewer",
+    "disposition": "ship",
+    "scope": "Full batch of14 proposed screenshots and8 current React comparisons with source and browser evidence; not user approval or production acceptance.",
+    "report": ".superpowers/v19-finish-review.txt",
+    "sections": {
+      "persistence": "pass — `PRODUCT.md` exists; this is a code-led established-world extension with no comp/build-state requirement; Profit Sharing now records `FORM-SEED: not-applicable` in both the direction and matching surface brief; the pre-existing absence of `DESIGN.md` and `.impeccable/design.json` remains disclosed. All 22 required PNGs are valid, provenance-scanned with 0 missing, and byte-identical to `.impeccable/review/v19/`; the updated checks pass and the current-React capture reports remain GET-only fixture evidence.",
+      "fidelity": "| Salient element | Classification | Evidence |\n| --- | --- | --- |\n| TYPE | match | Approved Inter hierarchy remains intact for interface copy, with JetBrains Mono limited to wallets, IDs, slugs, cursors, and technical values. |\n| MATERIAL | match | Flat near-black panels, fine borders, restrained semantic fills, and line icons continue the approved v15/v17/v18 admin system without simulated physical material. |\n| GROUND | match | The near-black page field and slightly raised neutral panels remain within the Nansen world named by OWN-WORLD, without warm or blue-slate drift. |\n| Administrator shell | match | The desktop navigation, top bar, mobile header/drawer, account affordance, and selected state remain aligned with the approved neighboring admin references. |\n| Trader Sync list and detail | match | Applied filters, exact string counts, opaque pagination, full identity, lifecycle/current-observation separation, historical boundaries, and collapsible technical details remain present without write actions. |\n| Profit Sharing list and detail | match | Four-stage progress, sealed collecting state, anonymous voting, final results, participant status, action prerequisites, confirmations, and conflict/error handling remain intact. |\n| Responsive and accessibility adaptation | acceptable adaptation | Desktop, 390px, 320px, and 720px at 200% preserve reading order without clipping or horizontal overflow; updated checks retain keyboard, dialog, duplicate-ID, page-error, and external-request coverage. This follows the stated mobile and accessibility requirements. |\n| Profit Sharing Create roster | match | The scrollable mobile dialog now exposes eligible-account selection, a read-only display-name/username snapshot, required baseline responsibility, Remove, and Add participant while keeping Cancel/Create fixed and visible. Checks cover 0–5 rows, required and duplicate errors, maximum-five disabling, removal, and zero-person draft creation. |\n| Profit Sharing Draft roster | match | The Draft definition supports adding and removing through 0–5 participants, account selection, read-only identity snapshots, editable responsibilities, incomplete-draft saving, unsaved-state gating, and Open only after five valid saved participants. |\n| Synthetic claims and request boundary | match | Fixtures remain explicitly synthetic, prototype mutations remain local, no external request is recorded, and no governance allocation is described as settled profit. |",
+      "ceiling": "reached — the corrected roster controls use the same compact inputs, borders, spacing, icon language, fixed action hierarchy, and responsive frames as the established admin world. The seven refreshed Profit Sharing captures preserve the previously accepted four-page composition while making the complete roster workflow legible.",
+      "material_fixes": "none — both named findings are resolved: seed provenance is explicit, and Create/Draft provide the required local 0–5 participant workflow with exact-five Open gating and supporting check evidence.",
+      "keep": "Keep the four-page scan hierarchy, current-versus-history separation, exact string counts, sealed/anonymous governance boundaries, fixed mobile modal actions, approved Inter/JetBrains Mono roles, and restrained Nansen dark admin palette unchanged during documentation and later production implementation."
+    },
+    "handoff_exception": "New agent spawn failed with agent thread limit reached and no close-agent tool exists. Reused a reviewer that did not participate in v19 design or implementation. Substitution disclosed."
+  },
+  "detector": {
+    "manual_runs": 1,
+    "findings": [
+      {
+        "antipattern": "low-contrast",
+        "name": "Low contrast text",
+        "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+        "severity": "warning",
+        "category": "quality",
+        "file": "/home/yege/work/athena/docs/requirements/web-ui/previews/theme-admin-trader-sync-v19.html",
+        "line": 0,
+        "snippet": ":hover state 1.3:1 (need 4.5:1) — text #ffffff on #00ffa7"
+      },
+      {
+        "antipattern": "overused-font",
+        "name": "Overused font",
+        "description": "Inter, Roboto, Fraunces, Geist, Plus Jakarta Sans, and Space Grotesk are used on so many sites they no longer feel distinctive. Each new wave of AI-generated UIs converges on the same handful of faces. Choose a face that gives your interface personality.",
+        "severity": "warning",
+        "category": "slop",
+        "file": "/home/yege/work/athena/docs/requirements/web-ui/previews/theme-admin-trader-sync-v19.html",
+        "line": 0,
+        "snippet": "Primary font: inter"
+      },
+      {
+        "antipattern": "low-contrast",
+        "name": "Low contrast text",
+        "description": "Text does not meet WCAG AA contrast requirements (4.5:1 for body, 3:1 for large text). Increase the contrast between text and background.",
+        "severity": "warning",
+        "category": "quality",
+        "file": "/home/yege/work/athena/docs/requirements/web-ui/previews/theme-admin-profit-sharing-v19.html",
+        "line": 0,
+        "snippet": ":hover state 1.3:1 (need 4.5:1) — text #ffffff on #00ffa7"
+      },
+      {
+        "antipattern": "overused-font",
+        "name": "Overused font",
+        "description": "Inter, Roboto, Fraunces, Geist, Plus Jakarta Sans, and Space Grotesk are used on so many sites they no longer feel distinctive. Each new wave of AI-generated UIs converges on the same handful of faces. Choose a face that gives your interface personality.",
+        "severity": "warning",
+        "category": "slop",
+        "file": "/home/yege/work/athena/docs/requirements/web-ui/previews/theme-admin-profit-sharing-v19.html",
+        "line": 0,
+        "snippet": "Primary font: inter"
+      }
+    ],
+    "file_scoped_exceptions": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-admin-trader-sync-v19.html"
+        ],
+        "createdAt": "2026-09-14T07:56:04.052Z",
+        "reason": "Explicit user-approved v2 Inter typography, retained in the Nansen-inspired single dark theme."
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-admin-trader-sync-v19.html"
+        ],
+        "createdAt": "2026-09-14T07:56:04.059Z",
+        "reason": "False positive: browser-computed hovered primary controls render near-black #06080B on #51FFC3 at15.70:1. Twenty samples across both v19 surfaces and four viewport conditions. See .superpowers/v19-detector-triage.json."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-admin-profit-sharing-v19.html"
+        ],
+        "createdAt": "2026-09-14T07:56:04.066Z",
+        "reason": "Explicit user-approved v2 Inter typography, retained in the Nansen-inspired single dark theme."
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/requirements/web-ui/previews/theme-admin-profit-sharing-v19.html"
+        ],
+        "createdAt": "2026-09-14T07:56:04.073Z",
+        "reason": "False positive: browser-computed hovered primary controls render near-black #06080B on #51FFC3 at15.70:1. Twenty samples across both v19 surfaces and four viewport conditions. See .superpowers/v19-detector-triage.json."
+      }
+    ]
+  },
+  "detector_triage": {
+    "result": "passed",
+    "scope": "Targeted triage of single combined detector run: actual hovered primary-control contrast; no screenshots or UI edits.",
+    "records": [
+      {
+        "name": "desktop",
+        "surface": "trader-sync",
+        "selector": "#apply-filters",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "desktop",
+        "surface": "profit-sharing",
+        "selector": "#new-round",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "desktop",
+        "surface": "profit-sharing",
+        "selector": "#create-action",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "desktop",
+        "surface": "profit-sharing",
+        "selector": "#advance",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "desktop",
+        "surface": "profit-sharing",
+        "selector": "#confirm-action",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "mobile",
+        "surface": "trader-sync",
+        "selector": "#apply-filters",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "mobile",
+        "surface": "profit-sharing",
+        "selector": "#new-round",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "mobile",
+        "surface": "profit-sharing",
+        "selector": "#create-action",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "mobile",
+        "surface": "profit-sharing",
+        "selector": "#advance",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "mobile",
+        "surface": "profit-sharing",
+        "selector": "#confirm-action",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "narrow",
+        "surface": "trader-sync",
+        "selector": "#apply-filters",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "narrow",
+        "surface": "profit-sharing",
+        "selector": "#new-round",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "narrow",
+        "surface": "profit-sharing",
+        "selector": "#create-action",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "narrow",
+        "surface": "profit-sharing",
+        "selector": "#advance",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "narrow",
+        "surface": "profit-sharing",
+        "selector": "#confirm-action",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "zoom",
+        "surface": "trader-sync",
+        "selector": "#apply-filters",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "zoom",
+        "surface": "profit-sharing",
+        "selector": "#new-round",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "zoom",
+        "surface": "profit-sharing",
+        "selector": "#create-action",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "zoom",
+        "surface": "profit-sharing",
+        "selector": "#advance",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      },
+      {
+        "name": "zoom",
+        "surface": "profit-sharing",
+        "selector": "#confirm-action",
+        "fg": "rgb(6, 8, 11)",
+        "bg": "rgb(81, 255, 195)",
+        "ratio": 15.699177034827596
+      }
+    ]
+  },
+  "asset_provenance": {
+    "rasters": 22,
+    "proposal_rasters": 14,
+    "incumbent_rasters": 8,
+    "missing": 0,
+    "method": "Playwright Chromium screenshots with embedded origins and identical review copies, without generated or retouched pixels.",
+    "scan": ".superpowers/v19-raster-provenance-scan.txt"
+  },
+  "documentation": "admin-business-batch-proposal.md, visual-theme.md and three indexes. v18 approval and multi-page batching policy recorded in AGENTS.md and PRODUCT.md. Existing missing DESIGN.md and .impeccable/design.json preserved.",
+  "limitations": [
+    "v19 layouts await user review; this is a static design batch and not production implementation.",
+    "Current React captures intercept synthetic GET responses. No real authorization, backend reads/writes, races or full-stack smoke was verified.",
+    "Trader Sync is read-only administrator summary scope: no private notes, activity bodies, per-delivery histories or lifecycle mutation controls.",
+    "Trader reliable checkpoint means persisted coverage of current activation, not last trade. Unknown historical endpoint does not imply ongoing interruption. Counts remain exact strings and cannot be added across subscription rows.",
+    "Trader list filtering/cursor navigation and retained local filters on return are prototype demonstrations, not verified remote semantics or current production route-state retention.",
+    "Profit Sharing creation, editing and lifecycle actions display local previews only. Five-member eligibility, expected-revision conflicts, sealed proposals, anonymity and runoff are requirements retained from existing source, not real backend verification.",
+    "Governance allocation percentages are proposal content, not financial profit settlement.",
+    "Auxiliary states are implementation evidence, not user-approved screenshots and not new per-image approval gates.",
+    "Other administrator and account destinations show local scope notices. No task services started; browser contexts closed; existing borrowed root Vite localhost4000 PID308228 preserved."
+  ],
+  "prior_approved_digests_unchanged": 265,
+  "artifacts": [
+    {
+      "path": "theme-admin-trader-sync-v19-before-capture.json",
+      "sha256": "68da692147dd2f1a93355fccd824049558ecd7e8c79a44fd6a6b8bb5b9dfe915"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-before-detail-desktop.png",
+      "sha256": "b23d724eb3ab44c1f27bd9db56db82b54b4510f08b81d165a8cc6f5f0b186d98"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-before-detail-mobile.png",
+      "sha256": "bd12f0a713e272aca286482dc1b43abf367db3dd3fb1d1e4df568f2810d6edb6"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-before-list-desktop.png",
+      "sha256": "9e5a263932b5642ae59afb20d01ceead652e4ad81ab93014f1fb88342d9e2804"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-before-list-mobile.png",
+      "sha256": "1982fa9a4c0b36f9d896a08f45c9bbed6e162df959f4950f92aaab74a671be9f"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-checks.json",
+      "sha256": "40b9c0e97df1fc5cdc87b0cb59907abcc715d560d8ba511015ce91157abb331a"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-data.json",
+      "sha256": "48f5709a08ed7ac64cce4dffd80b003b161c613a65894a464a9a961b200f1148"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-detail-desktop.png",
+      "sha256": "9137c4d5226f4c82ad8775df0bab12343dc9f0c10696b533c65183f78c62e52c"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-detail-mobile.png",
+      "sha256": "c4f8e4884cf09c42be919f7c2ce860a731264adb6473d1da8c0d4bb91dbbece0"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-identity-mobile.png",
+      "sha256": "ed037c0b244e1706c87589648f1a25c7e142017d671f018464a11b0a7f0e703c"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-list-desktop.png",
+      "sha256": "559bd2e43b923aad905c7473196f5d09d630ec4ca4d686e552f8ad4d64a5edf9"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-list-mobile.png",
+      "sha256": "3e53782c97bdcd1c28882452d46967d58ebb704237260086187b36c7e7da74d8"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-narrow.png",
+      "sha256": "8eea8ec57c70a95c78cc7f1a6af8f3e895292b6919afb5e9ce62ab0743baef04"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19-zoom.png",
+      "sha256": "23c6d18115ee2d4e6166351411389d0fc650e323e098e64d4d200fb98ef78882"
+    },
+    {
+      "path": "theme-admin-trader-sync-v19.html",
+      "sha256": "703d03518768c2202cf1dc002ca95607d54800c72909cfbb36fc53a34e651719"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-before-capture.json",
+      "sha256": "f65b3689041fa858fa57fd0537c0733ba9a1826b71be6d6d7013755b1a9559ed"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-before-detail-desktop.png",
+      "sha256": "d41e288042ebc15dcff8c154a2d4e7b4c7e5fc24e8bb0a25ecc89be7f02ca6c5"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-before-detail-mobile.png",
+      "sha256": "3259c82fd31f6bc4aee8bef093129cebd773f4d6ce6850719bf3f7cb602dcdbb"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-before-list-desktop.png",
+      "sha256": "d6de1edaf2b12ba780bd05be48702d201d640aaed2d4d55bd78f9a386c7ed01d"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-before-list-mobile.png",
+      "sha256": "61cb86416b6b3af61081ab9a971a049e842c2a84a645dddbaddaa596c4bca04b"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-checks.json",
+      "sha256": "4d458e1eb64700becd4aefa3cdeb8a29361c16e4cee7fdcca2e94640867de8b8"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-create-mobile.png",
+      "sha256": "e54817e5abc2f240d30ea54bf7c6331a38c5aef3aef7f398688d66ad0c5573d7"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-data.json",
+      "sha256": "ec0ee558e80a6da3f5e0eadd250018fc7ce9b00385c05951584527421f0373e8"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-detail-desktop.png",
+      "sha256": "6a45eb75b490018ae2a4b7b6b00e39d51b13570140f10d8d23316b7d7cf43d8c"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-detail-mobile.png",
+      "sha256": "fae04b2b1096f1f9b2668cac46d630b1f5063081bfeed026d4ad41fc5063cc61"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-list-desktop.png",
+      "sha256": "d18b77165c727fc1c75f409a6f33cb0393e35f9ffc5e657cf4d02ed3dc5e1f77"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-list-mobile.png",
+      "sha256": "1262751af94494fc3e2b0e605752d123342fdb0f15beb3650f451a7c9df3864a"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-narrow.png",
+      "sha256": "a1a5bef20e439b06478a95a7c9653adc2394ada9c528f8d8cf53d4b08e365b02"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19-zoom.png",
+      "sha256": "1b7a3773a0d9c6fc345fb1431f3c3581a682b862ee614dc396d0039ee941289c"
+    },
+    {
+      "path": "theme-admin-profit-sharing-v19.html",
+      "sha256": "b67833c66fee5773d3498524a8bb994b4f2a73583e53296dd0a8806c470d990a"
+    }
+  ]
+}

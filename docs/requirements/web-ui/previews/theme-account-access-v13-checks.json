@@ -1,0 +1,271 @@
+{
+  "result": "passed",
+  "evidence": "Local HTML visual prototype with synthetic identities and grants; no permission checks, polling, authorization writes or logout request",
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "textScale": 1,
+      "geometry": {
+        "width": 1440,
+        "documentWidth": 1440,
+        "rootFont": "16px",
+        "inter": true,
+        "mono": true
+      },
+      "axes": [
+        "Exact ten source display modules and 2/3/5 permission summary; all fifteen current fields retained; keyboard details disclosure; complete identity copy and failure retention",
+        "Google and Phantom pending distinctions; complete provider-specific identity; pending navigation excludes Security and business modules; refresh disables both actions; demo logout, refreshing/error states preserve identity and permissions"
+      ],
+      "contrast": [
+        {
+          "fg": "#9FA0A1",
+          "bg": "#0F1114",
+          "ratio": 7.218804157993069
+        },
+        {
+          "fg": "#9FA0A1",
+          "bg": "#181D22",
+          "ratio": 6.477549085274277
+        },
+        {
+          "fg": "#FFFFFF",
+          "bg": "#06080B",
+          "ratio": 20.051385440481855
+        },
+        {
+          "fg": "#06080B",
+          "bg": "#00FFA7",
+          "ratio": 15.145483719785531
+        },
+        {
+          "fg": "#E6BF72",
+          "bg": "#0F1114",
+          "ratio": 10.858978907199512
+        },
+        {
+          "fg": "#F58C9B",
+          "bg": "#2B171C",
+          "ratio": 7.3322962397310985
+        },
+        {
+          "fg": "#ADD9D6",
+          "bg": "#0F1114",
+          "ratio": 12.31144358500932
+        },
+        {
+          "fg": "#9AE7C7",
+          "bg": "#102C24",
+          "ratio": 10.391594264514435
+        }
+      ],
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-account-access-v13-desktop.png",
+        "theme-account-access-v13-desktop-expanded.png",
+        "theme-account-access-v13-desktop-pending.png"
+      ]
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 390,
+        "documentWidth": 390,
+        "rootFont": "16px",
+        "inter": true,
+        "mono": true
+      },
+      "axes": [
+        "Exact ten source display modules and 2/3/5 permission summary; all fifteen current fields retained; keyboard details disclosure; complete identity copy and failure retention",
+        "Google and Phantom pending distinctions; complete provider-specific identity; pending navigation excludes Security and business modules; refresh disables both actions; demo logout, refreshing/error states preserve identity and permissions"
+      ],
+      "contrast": [
+        {
+          "fg": "#9FA0A1",
+          "bg": "#0F1114",
+          "ratio": 7.218804157993069
+        },
+        {
+          "fg": "#9FA0A1",
+          "bg": "#181D22",
+          "ratio": 6.477549085274277
+        },
+        {
+          "fg": "#FFFFFF",
+          "bg": "#06080B",
+          "ratio": 20.051385440481855
+        },
+        {
+          "fg": "#06080B",
+          "bg": "#00FFA7",
+          "ratio": 15.145483719785531
+        },
+        {
+          "fg": "#E6BF72",
+          "bg": "#0F1114",
+          "ratio": 10.858978907199512
+        },
+        {
+          "fg": "#F58C9B",
+          "bg": "#2B171C",
+          "ratio": 7.3322962397310985
+        },
+        {
+          "fg": "#ADD9D6",
+          "bg": "#0F1114",
+          "ratio": 12.31144358500932
+        },
+        {
+          "fg": "#9AE7C7",
+          "bg": "#102C24",
+          "ratio": 10.391594264514435
+        }
+      ],
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-account-access-v13-mobile.png",
+        "theme-account-access-v13-mobile-pending.png",
+        "theme-account-access-v13-mobile-error.png",
+        "theme-account-access-v13-mobile-phantom.png"
+      ]
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 844,
+      "textScale": 1,
+      "geometry": {
+        "width": 320,
+        "documentWidth": 320,
+        "rootFont": "16px",
+        "inter": true,
+        "mono": true
+      },
+      "axes": [
+        "Exact ten source display modules and 2/3/5 permission summary; all fifteen current fields retained; keyboard details disclosure; complete identity copy and failure retention",
+        "Google and Phantom pending distinctions; complete provider-specific identity; pending navigation excludes Security and business modules; refresh disables both actions; demo logout, refreshing/error states preserve identity and permissions"
+      ],
+      "contrast": [
+        {
+          "fg": "#9FA0A1",
+          "bg": "#0F1114",
+          "ratio": 7.218804157993069
+        },
+        {
+          "fg": "#9FA0A1",
+          "bg": "#181D22",
+          "ratio": 6.477549085274277
+        },
+        {
+          "fg": "#FFFFFF",
+          "bg": "#06080B",
+          "ratio": 20.051385440481855
+        },
+        {
+          "fg": "#06080B",
+          "bg": "#00FFA7",
+          "ratio": 15.145483719785531
+        },
+        {
+          "fg": "#E6BF72",
+          "bg": "#0F1114",
+          "ratio": 10.858978907199512
+        },
+        {
+          "fg": "#F58C9B",
+          "bg": "#2B171C",
+          "ratio": 7.3322962397310985
+        },
+        {
+          "fg": "#ADD9D6",
+          "bg": "#0F1114",
+          "ratio": 12.31144358500932
+        },
+        {
+          "fg": "#9AE7C7",
+          "bg": "#102C24",
+          "ratio": 10.391594264514435
+        }
+      ],
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-account-access-v13-narrow.png"
+      ]
+    },
+    {
+      "name": "text-200",
+      "width": 720,
+      "height": 900,
+      "textScale": 2,
+      "geometry": {
+        "width": 720,
+        "documentWidth": 720,
+        "rootFont": "32px",
+        "inter": true,
+        "mono": true
+      },
+      "axes": [
+        "Exact ten source display modules and 2/3/5 permission summary; all fifteen current fields retained; keyboard details disclosure; complete identity copy and failure retention",
+        "Google and Phantom pending distinctions; complete provider-specific identity; pending navigation excludes Security and business modules; refresh disables both actions; demo logout, refreshing/error states preserve identity and permissions"
+      ],
+      "contrast": [
+        {
+          "fg": "#9FA0A1",
+          "bg": "#0F1114",
+          "ratio": 7.218804157993069
+        },
+        {
+          "fg": "#9FA0A1",
+          "bg": "#181D22",
+          "ratio": 6.477549085274277
+        },
+        {
+          "fg": "#FFFFFF",
+          "bg": "#06080B",
+          "ratio": 20.051385440481855
+        },
+        {
+          "fg": "#06080B",
+          "bg": "#00FFA7",
+          "ratio": 15.145483719785531
+        },
+        {
+          "fg": "#E6BF72",
+          "bg": "#0F1114",
+          "ratio": 10.858978907199512
+        },
+        {
+          "fg": "#F58C9B",
+          "bg": "#2B171C",
+          "ratio": 7.3322962397310985
+        },
+        {
+          "fg": "#ADD9D6",
+          "bg": "#0F1114",
+          "ratio": 12.31144358500932
+        },
+        {
+          "fg": "#9AE7C7",
+          "bg": "#102C24",
+          "ratio": 10.391594264514435
+        }
+      ],
+      "issues": [],
+      "pageErrors": [],
+      "externalRequests": [],
+      "screenshots": [
+        "theme-account-access-v13-text-200.png"
+      ]
+    }
+  ]
+}
