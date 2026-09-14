@@ -1,5 +1,5 @@
 import {LoadingOutlined, ReloadOutlined} from '@ant-design/icons';
-import {Button, Empty, Space, Switch, Tag, Typography} from 'antd';
+import {Button, Empty, Space, Tag, Typography} from 'antd';
 import * as React from 'react';
 import {AppPage, useAsyncData} from '../../components';
 import {Context, useAuthorization} from '../../shared/context';
@@ -19,7 +19,7 @@ const sportsHistorySyncTime = (value?: number) => formatBeijingUnixSeconds(value
 const SportsHistorySyncStatusBar = (props: {status?: SportsHistorySyncStatus; refreshing: boolean}) => {
     const state = props.refreshing ? 'syncing' : props.status?.state || 'idle';
     const labels = {idle: 'Idle', syncing: 'Syncing', succeeded: 'Succeeded', failed: 'Failed'};
-    const colors = {idle: 'default', syncing: 'blue', succeeded: 'green', failed: 'red'} as const;
+    const colors = {idle: 'default', syncing: 'processing', succeeded: 'success', failed: 'error'} as const;
     let detail = props.refreshing ? 'Starting synchronization' : `Last successful ${sportsHistorySyncTime(props.status?.lastSuccessAt)}`;
     if (!props.refreshing && state === 'syncing') {
         detail = `Started ${sportsHistorySyncTime(props.status?.startedAt)}`;
@@ -47,6 +47,14 @@ export const SportsHistoryPage = () => {
     const canWrite = authorization.canWrite(AccountDataModule.SportsHistory);
     const canWriteRef = React.useRef(canWrite);
     canWriteRef.current = canWrite;
+    const activeRequest = React.useRef(0);
+    React.useEffect(
+        () => () => {
+            activeRequest.current += 1;
+            canWriteRef.current = false;
+        },
+        []
+    );
     const ctx = React.useContext(Context);
     const events = useAsyncData(() => services.sportsHistory.listEvents(200), []);
     const syncStatus = useAsyncData(() => services.sportsHistory.getSyncStatus(), []);
@@ -63,9 +71,6 @@ export const SportsHistoryPage = () => {
     }, [marketKeySignature]);
     const historyByMarketKey = React.useMemo(() => {
         const out = new Map<string, SportsPriceHistorySeriesItem[]>();
-        if (history.error) {
-            return out;
-        }
         (history.data?.items || []).forEach(item => {
             const items = out.get(item.marketKey) || [];
             items.push(item);
@@ -100,6 +105,7 @@ export const SportsHistoryPage = () => {
 
     React.useEffect(() => {
         if (!canWrite) {
+            activeRequest.current += 1;
             setRefreshing(false);
         }
     }, [canWrite]);
@@ -114,19 +120,23 @@ export const SportsHistoryPage = () => {
         if (!canWrite) {
             return;
         }
+        const request = ++activeRequest.current;
         setRefreshing(true);
         syncStatus.reload();
         try {
             await services.sportsHistory.refresh();
+            if (request !== activeRequest.current || !canWriteRef.current) return;
             ctx.notifications.success('Sports history refreshed');
         } catch (err: any) {
-            if (canWriteRef.current) {
+            if (request === activeRequest.current && canWriteRef.current) {
                 ctx.notifications.error('Sports history refresh failed', err?.message || 'Could not refresh sports history data.');
             }
         } finally {
-            setRefreshing(false);
-            syncStatus.reload();
-            reloadAll();
+            if (request === activeRequest.current && canWriteRef.current) {
+                setRefreshing(false);
+                syncStatus.reload();
+                reloadAll();
+            }
         }
     }, [canWrite, ctx.notifications, reloadAll, syncStatus.reload]);
     const toggleScratchMode = React.useCallback((checked: boolean) => {
@@ -138,55 +148,70 @@ export const SportsHistoryPage = () => {
     const resetScratch = React.useCallback(() => setScratchResetVersion(version => version + 1), []);
 
     return (
-        <AppPage
-            title='Sports History'
-            subtitle={`Last 72 hours · Fetched ${formatBeijingUnixSeconds(events.data?.fetchedAt) || '-'} ${events.data?.stale ? '(stale)' : ''}`}
-            loading={events.loading}
-            error={events.error || syncStatus.error}
-            extra={
-                <Space className='sports-history-actions' wrap={true}>
-                    <Switch checked={scratchMode} checkedChildren='Scratch' unCheckedChildren='Scratch' onChange={toggleScratchMode} />
-                    <Button icon={<ReloadOutlined />} disabled={!scratchMode} onClick={resetScratch}>
-                        Reset
-                    </Button>
-                    {canWrite && (
-                        <Button type='primary' icon={<ReloadOutlined />} loading={refreshing || serverSyncing} disabled={refreshing || serverSyncing} onClick={refresh}>
-                            Refresh data
+        <div className='market-intelligence-page sports-page'>
+            <AppPage
+                title='Sports History'
+                subtitle='Completed ATP and WTA events from the last 72 hours.'
+                onRefresh={reloadAll}
+                loading={events.loading}
+                error={events.error || syncStatus.error || history.error}
+                extra={
+                    <Space className='sports-history-actions' wrap={true}>
+                        <Button aria-pressed={scratchMode} onClick={() => toggleScratchMode(!scratchMode)}>
+                            Scratch
                         </Button>
-                    )}
-                </Space>
-            }>
-            <SportsHistorySyncStatusBar status={syncStatus.data} refreshing={refreshing} />
-            <div className='sports-live-sections sports-history-sections'>
-                {!events.loading && items.length === 0 && <Empty description='No data' />}
-                {sportsHistoryLeagues.map(league => {
-                    const leagueItems = byLeague.get(league) || [];
-                    if (leagueItems.length === 0) {
-                        return null;
-                    }
-                    return (
-                        <section className='sports-live-section' key={league}>
-                            <div className='sports-live-section__header'>
-                                <Typography.Title level={5}>{league}</Typography.Title>
-                                <Typography.Text className='sports-live-section__count' type='secondary'>
-                                    {leagueItems.length} events
-                                </Typography.Text>
-                            </div>
-                            <div className='sports-live-section__body'>
-                                {leagueItems.map(item => (
-                                    <SportsHistoryEventCard
-                                        item={item}
-                                        history={sportsLiveCardHistory(item, historyByMarketKey)}
-                                        scratchMode={scratchMode}
-                                        scratchResetVersion={scratchResetVersion}
-                                        key={`${item.eventKey}:${scratchMode ? scratchResetVersion : 'direct'}`}
-                                    />
-                                ))}
-                            </div>
-                        </section>
-                    );
-                })}
-            </div>
-        </AppPage>
+                        <Button icon={<ReloadOutlined />} disabled={!scratchMode} onClick={resetScratch}>
+                            Reset
+                        </Button>
+                        {canWrite && (
+                            <Button type='primary' icon={<ReloadOutlined />} loading={refreshing || serverSyncing} disabled={refreshing || serverSyncing} onClick={refresh}>
+                                Refresh data
+                            </Button>
+                        )}
+                    </Space>
+                }>
+                {syncStatus.data && <SportsHistorySyncStatusBar status={syncStatus.data} refreshing={refreshing} />}
+                {events.data && (
+                    <div className='radar-snapshot'>
+                        <span className={events.data.stale || events.error ? 'radar-warmup' : 'radar-connected'}>
+                            {events.data.stale || events.error ? 'Stale snapshot' : 'Snapshot available'}
+                        </span>
+                        <span>Fetched {formatBeijingUnixSeconds(events.data.fetchedAt) || 'Unavailable'} · UTC+8</span>
+                    </div>
+                )}
+                {history.error && Boolean(history.data?.items.length) && <p className='radar-warmup'>Price history is stale. Refresh to retry.</p>}
+                <div className='sports-live-sections sports-history-sections'>
+                    {Boolean(events.data) && !events.error && !events.loading && items.length === 0 && <Empty description='No data' />}
+                    {sportsHistoryLeagues.map(league => {
+                        const leagueItems = byLeague.get(league) || [];
+                        if (leagueItems.length === 0) {
+                            return null;
+                        }
+                        return (
+                            <section className='sports-live-section' key={league}>
+                                <div className='sports-live-section__header'>
+                                    <Typography.Title level={5}>{league}</Typography.Title>
+                                    <Typography.Text className='sports-live-section__count' type='secondary'>
+                                        {leagueItems.length} events
+                                    </Typography.Text>
+                                </div>
+                                <div className='sports-live-section__body'>
+                                    {leagueItems.map(item => (
+                                        <SportsHistoryEventCard
+                                            item={item}
+                                            history={sportsLiveCardHistory(item, historyByMarketKey)}
+                                            historyState={history.error ? 'failed' : history.loading ? 'loading' : undefined}
+                                            scratchMode={scratchMode}
+                                            scratchResetVersion={scratchResetVersion}
+                                            key={`${item.eventKey}:${scratchMode ? scratchResetVersion : 'direct'}`}
+                                        />
+                                    ))}
+                                </div>
+                            </section>
+                        );
+                    })}
+                </div>
+            </AppPage>
+        </div>
     );
 };

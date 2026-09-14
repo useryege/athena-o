@@ -1,3 +1,6 @@
+import marketCases from './fixtures/markets.json';
+import sportsCases from './fixtures/sports.json';
+import managedOOCases from './fixtures/managed-oo.json';
 import walletCases from './fixtures/wallets.json';
 import solanaCases from './fixtures/solana.json';
 import governanceCases from './fixtures/governance.json';
@@ -62,6 +65,9 @@ const authenticated = (options: {administrator?: boolean; active?: boolean} = {}
 });
 
 export const themeCases: ThemeCase[] = [
+    ...(marketCases as ThemeCase[]),
+    ...(sportsCases as ThemeCase[]),
+    ...(managedOOCases as ThemeCase[]),
     ...(identityCases as ThemeCase[]),
     ...(walletCases as ThemeCase[]),
     ...(solanaCases as ThemeCase[]),

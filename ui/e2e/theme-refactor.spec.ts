@@ -914,3 +914,5 @@ for (const size of [
 }
 
 import './theme-refactor/foundations';
+
+import './theme-refactor/markets';

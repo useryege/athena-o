@@ -225,6 +225,8 @@ body::-webkit-scrollbar-thumb,
     min-height: 44px;
 }
 .athena-shell__sidebar-toggle {
+    flex-shrink: 0;
+    min-width: 44px;
     width: 44px;
     min-height: 44px;
 }

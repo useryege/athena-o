@@ -62,9 +62,6 @@ export const SportsLivePage = () => {
 
     const historyByMarketKey = React.useMemo(() => {
         const out = new Map<string, SportsPriceHistorySeriesItem[]>();
-        if (history.error) {
-            return out;
-        }
         (history.data?.items || []).forEach(item => {
             const items = out.get(item.marketKey) || [];
             items.push(item);
@@ -75,31 +72,49 @@ export const SportsLivePage = () => {
     const items = events.data?.items || [];
     const sections = React.useMemo(() => sportsLiveSections(items), [items]);
     return (
-        <AppPage
-            title='Sports Live'
-            subtitle={`Fetched ${formatBeijingUnixSeconds(events.data?.fetchedAt) || '-'} ${events.data?.stale ? '(stale)' : ''}`}
-            loading={events.loading}
-            error={events.error}
-            onRefresh={reloadAll}>
-            <div className='sports-live-sections'>
-                {!events.loading && items.length === 0 && <Empty description='No data' />}
-                {sections.map(section => (
-                    <section className='sports-live-section' key={section.key}>
-                        <div className='sports-live-section__header'>
-                            <Typography.Title level={5}>{section.title}</Typography.Title>
-                            <Typography.Text className='sports-live-section__count' type='secondary'>
-                                {section.items.length} events
-                            </Typography.Text>
-                        </div>
-                        <div className='sports-live-section__body'>
-                            {section.items.map(item => {
-                                const Card = isFifwcSportsLiveEvent(item) ? FifwcSportsLiveEventCard : LegacySportsLiveEventCard;
-                                return <Card item={item} history={sportsLiveCardHistory(item, historyByMarketKey)} key={item.eventKey} />;
-                            })}
-                        </div>
-                    </section>
-                ))}
-            </div>
-        </AppPage>
+        <div className='market-intelligence-page sports-page'>
+            <AppPage
+                title='Sports Live'
+                subtitle='Current sports events, scores, and moneyline prices.'
+                loading={events.loading}
+                error={events.error || history.error}
+                onRefresh={reloadAll}>
+                {events.data && (
+                    <div className='radar-snapshot'>
+                        <span className={events.data.stale || events.error ? 'radar-warmup' : 'radar-connected'}>
+                            {events.data.stale || events.error ? 'Stale snapshot' : 'Snapshot available'}
+                        </span>
+                        <span>Fetched {formatBeijingUnixSeconds(events.data.fetchedAt) || 'Unavailable'} · UTC+8</span>
+                    </div>
+                )}
+                {history.error && Boolean(history.data?.items.length) && <p className='radar-warmup'>Price history is stale. Refresh to retry.</p>}
+                <div className='sports-live-sections'>
+                    {Boolean(events.data) && !events.error && !events.loading && items.length === 0 && <Empty description='No data' />}
+                    {sections.map(section => (
+                        <section className='sports-live-section' key={section.key}>
+                            <div className='sports-live-section__header'>
+                                <Typography.Title level={5}>{section.title}</Typography.Title>
+                                <Typography.Text className='sports-live-section__count' type='secondary'>
+                                    {section.items.length} events
+                                </Typography.Text>
+                            </div>
+                            <div className='sports-live-section__body'>
+                                {section.items.map(item => {
+                                    const Card = isFifwcSportsLiveEvent(item) ? FifwcSportsLiveEventCard : LegacySportsLiveEventCard;
+                                    return (
+                                        <Card
+                                            item={item}
+                                            history={sportsLiveCardHistory(item, historyByMarketKey)}
+                                            historyState={history.error ? 'failed' : history.loading ? 'loading' : undefined}
+                                            key={item.eventKey}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        </section>
+                    ))}
+                </div>
+            </AppPage>
+        </div>
     );
 };

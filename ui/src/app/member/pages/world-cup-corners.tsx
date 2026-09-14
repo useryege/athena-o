@@ -1,8 +1,8 @@
 import {InfoCircleOutlined, SearchOutlined} from '@ant-design/icons';
 import type {ColumnsType} from 'antd/es/table';
-import {Alert, Button, Input, Progress, Space, Tag, Typography} from 'antd';
+import {Alert, Button, Input, Progress, Select, Tag, Typography} from 'antd';
 import * as React from 'react';
-import {AppPage, ChoiceGroup, ResourceTable, useAsyncData} from '../../components';
+import {AppPage, ResourceTable, useAsyncData} from '../../components';
 import {memberServices as services} from '../services';
 import type {WorldCupCornerMatch, WorldCupCornerStageKey} from '../../shared/services/world-cup-corners-service';
 
@@ -49,6 +49,8 @@ export const WorldCupCornersPage = () => {
     const [search, setSearch] = React.useState('');
     const [stage, setStage] = React.useState<WorldCupCornerStageKey | 'all'>('all');
     const [outcome, setOutcome] = React.useState<OutcomeFilter>('all');
+    const [sort, setSort] = React.useState('tournament');
+    const [methodOpen, setMethodOpen] = React.useState(false);
     const stageHeadingID = React.useId();
     const tableHeadingID = React.useId();
     const stageByKey = React.useMemo(() => new Map(stages.map(item => [item.key, item])), [stages]);
@@ -61,7 +63,7 @@ export const WorldCupCornersPage = () => {
 
     const filteredItems = React.useMemo(() => {
         const query = search.trim().toLowerCase();
-        return matches.filter(item => {
+        const filtered = matches.filter(item => {
             if (stage !== 'all' && item.stage !== stage) {
                 return false;
             }
@@ -73,7 +75,12 @@ export const WorldCupCornersPage = () => {
             }
             return !query || item.homeTeam.toLowerCase().includes(query) || item.awayTeam.toLowerCase().includes(query);
         });
-    }, [matches, outcome, search, stage]);
+        if (sort === 'corners90') filtered.sort((a, b) => corners90Total(b) - corners90Total(a));
+        if (sort === 'corners90Asc') filtered.sort((a, b) => corners90Total(a) - corners90Total(b));
+        if (sort === 'cornersFullAsc') filtered.sort((a, b) => cornersFullTotal(a) - cornersFullTotal(b));
+        if (sort === 'cornersFull') filtered.sort((a, b) => cornersFullTotal(b) - cornersFullTotal(a));
+        return filtered;
+    }, [matches, outcome, search, stage, sort]);
 
     const columns: ColumnsType<WorldCupCornerMatch> = [
         {
@@ -113,7 +120,6 @@ export const WorldCupCornersPage = () => {
             key: 'corners90Total',
             width: 120,
             align: 'center',
-            sorter: (left, right) => corners90Total(left) - corners90Total(right),
             render: item => <span className='world-cup-corners-number world-cup-corners-number--strong'>{corners90Total(item)}</span>
         },
         {
@@ -121,13 +127,8 @@ export const WorldCupCornersPage = () => {
             key: 'over65',
             width: 105,
             align: 'center',
-            filters: [
-                {text: 'Hit', value: 'hit'},
-                {text: 'Miss', value: 'miss'}
-            ],
-            onFilter: (value, item) => (value === 'hit' ? hitsOver(item) : !hitsOver(item)),
             render: item => (
-                <Tag color={hitsOver(item) ? 'green' : 'default'} className='world-cup-corners-result'>
+                <Tag color={hitsOver(item) ? 'success' : 'default'} className='world-cup-corners-result'>
                     {hitsOver(item) ? 'HIT' : 'MISS'}
                 </Tag>
             )
@@ -137,7 +138,6 @@ export const WorldCupCornersPage = () => {
             key: 'cornersFull',
             width: 165,
             align: 'center',
-            sorter: (left, right) => cornersFullTotal(left) - cornersFullTotal(right),
             render: item => <span className='world-cup-corners-number'>{formatPair(item.homeCornersFull, item.awayCornersFull)}</span>
         }
     ];
@@ -146,125 +146,214 @@ export const WorldCupCornersPage = () => {
         setSearch('');
         setStage('all');
         setOutcome('all');
+        setSort('tournament');
     };
-    const filtersActive = Boolean(search || stage !== 'all' || outcome !== 'all');
+    const filtersActive = Boolean(search || stage !== 'all' || outcome !== 'all' || sort !== 'tournament');
 
     return (
-        <AppPage
-            title='2022 World Cup Corner Analysis'
-            loading={dataset.loading}
-            error={dataset.error}
-            onRefresh={dataset.reload}
-            subtitle={
-                <span>
-                    64 matches · Data derived from{' '}
-                    <Typography.Link href='https://github.com/statsbomb/open-data' target='_blank' rel='noopener noreferrer'>
-                        StatsBomb Open Data
-                    </Typography.Link>
-                </span>
-            }>
-            <Alert
-                className='world-cup-corners-notice'
-                type='info'
-                showIcon={true}
-                icon={<InfoCircleOutlined />}
-                title='Settlement scope'
-                description={
+        <div className='market-intelligence-page corners-page'>
+            <AppPage
+                title='2022 World Cup Corner Analysis'
+                loading={dataset.loading}
+                error={dataset.error}
+                onRefresh={dataset.reload}
+                subtitle={
                     <span>
-                        The O6.5 analysis uses corners taken during 90 minutes plus stoppage time. Extra-time corners appear only in the full-match column. Always confirm the{' '}
-                        <Typography.Link href='https://docs.polymarket.us/faqs/sports-faqs' target='_blank' rel='noopener noreferrer'>
-                            market-specific rules
-                        </Typography.Link>{' '}
-                        before trading.
+                        {dataset.data ? `${matches.length} matches · ` : ''}Data derived from{' '}
+                        <Typography.Link href='https://github.com/statsbomb/open-data' target='_blank' rel='noopener noreferrer'>
+                            StatsBomb Open Data
+                        </Typography.Link>
                     </span>
-                }
-            />
+                }>
+                <Alert
+                    className='world-cup-corners-notice'
+                    type='info'
+                    showIcon={true}
+                    icon={<InfoCircleOutlined />}
+                    title='Settlement scope'
+                    description={
+                        <span>
+                            The O6.5 analysis uses corners taken during 90 minutes plus stoppage time. Extra-time corners appear only in the full-match column. Always confirm the{' '}
+                            <Typography.Link href='https://docs.polymarket.us/faqs/sports-faqs' target='_blank' rel='noopener noreferrer'>
+                                market-specific rules
+                            </Typography.Link>{' '}
+                            before trading.
+                        </span>
+                    }
+                />
 
-            <section className='world-cup-corners-kpis' aria-label='Tournament summary'>
-                <KpiCard label='Sample size' value={`${tournamentSummary.matches}`} detail='matches in the 2022 tournament' />
-                <KpiCard label='O6.5 overall' value={formatRate(tournamentSummary.hitRate)} detail={`${tournamentSummary.hits}/${tournamentSummary.matches} matches`} tone='good' />
-                <KpiCard label='O6.5 knockout' value={formatRate(knockoutSummary.hitRate)} detail={`${knockoutSummary.hits}/${knockoutSummary.matches} matches`} tone='good' />
-                <KpiCard label='Average 90-min corners' value={tournamentSummary.average.toFixed(2)} detail='combined corners per match' />
-            </section>
-
-            <section className='world-cup-corners-stage-panel' aria-labelledby={stageHeadingID}>
-                <header className='world-cup-corners-section-header'>
-                    <div>
-                        <Typography.Title id={stageHeadingID} level={2}>
-                            O6.5 hit rate by stage
-                        </Typography.Title>
-                        <Typography.Text type='secondary'>Visible sample sizes keep small knockout rounds in context.</Typography.Text>
-                    </div>
-                </header>
-                <div className='world-cup-corners-stage-list'>
-                    {stageSummaries.map(({stage: stageItem, summary}) => (
-                        <div className='world-cup-corners-stage-row' key={stageItem.key}>
-                            <Typography.Text className='world-cup-corners-stage-row__label'>{stageItem.shortLabel}</Typography.Text>
-                            <Progress
-                                className='world-cup-corners-stage-row__progress'
-                                percent={Number(summary.hitRate.toFixed(1))}
-                                showInfo={false}
-                                strokeColor='var(--athena-green)'
-                                trailColor='var(--athena-bg-soft)'
+                <Button onClick={() => setMethodOpen(!methodOpen)} aria-expanded={methodOpen}>
+                    View methodology &amp; sources
+                </Button>
+                {methodOpen && (
+                    <p className='world-cup-corners-footnote'>
+                        90-minute corners count periods 1–2; full-match corners also include periods 3–4. Penalty shootouts are separate from the score after extra time. The
+                        displayed sample and hit rates use the returned match dataset.
+                    </p>
+                )}
+                {dataset.error && dataset.data && <p className='radar-warmup'>Stale dataset. Refresh to retry.</p>}
+                {dataset.data && (
+                    <>
+                        <section className='world-cup-corners-kpis' aria-label='Tournament summary'>
+                            <KpiCard label='Sample size' value={`${tournamentSummary.matches}`} detail='matches in the 2022 tournament' />
+                            <KpiCard
+                                label='O6.5 overall'
+                                value={formatRate(tournamentSummary.hitRate)}
+                                detail={`${tournamentSummary.hits}/${tournamentSummary.matches} matches`}
+                                tone='good'
                             />
-                            <span className='world-cup-corners-stage-row__value'>
-                                <strong>{formatRate(summary.hitRate)}</strong>
-                                <small>
-                                    {summary.hits}/{summary.matches}
-                                </small>
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            </section>
+                            <KpiCard
+                                label='O6.5 knockout'
+                                value={formatRate(knockoutSummary.hitRate)}
+                                detail={`${knockoutSummary.hits}/${knockoutSummary.matches} matches`}
+                                tone='good'
+                            />
+                            <KpiCard label='Average 90-min corners' value={tournamentSummary.average.toFixed(2)} detail='combined corners per match' />
+                        </section>
 
-            <section className='world-cup-corners-table-panel' aria-labelledby={tableHeadingID}>
-                <header className='world-cup-corners-table-header'>
-                    <div>
-                        <Typography.Title id={tableHeadingID} level={2}>
-                            Match data
-                        </Typography.Title>
-                        <Typography.Text type='secondary'>
-                            Showing {filteredItems.length} of {matches.length} matches
-                        </Typography.Text>
-                    </div>
-                    <Space className='world-cup-corners-filters' size={10} wrap={true}>
-                        <Input
-                            aria-label='Search by team'
-                            allowClear={true}
-                            prefix={<SearchOutlined />}
-                            placeholder='Search team'
-                            value={search}
-                            onChange={event => setSearch(event.target.value)}
-                        />
-                        <ChoiceGroup<WorldCupCornerStageKey | 'all'>
-                            ariaLabel='Filter by stage'
-                            value={stage}
-                            options={[{value: 'all', label: 'All'}, ...stages.map(item => ({value: item.key, label: item.label}))]}
-                            onChange={setStage}
-                        />
-                        <ChoiceGroup<OutcomeFilter>
-                            ariaLabel='Filter by O6.5 outcome'
-                            value={outcome}
-                            onChange={setOutcome}
-                            options={[
-                                {label: 'All', value: 'all'},
-                                {label: 'O6.5 Hit', value: 'hit'},
-                                {label: 'Miss', value: 'miss'}
-                            ]}
-                        />
-                        <Button disabled={!filtersActive} onClick={resetFilters}>
-                            Reset
-                        </Button>
-                    </Space>
-                </header>
-                <ResourceTable rowKey='id' label='2022 World Cup corner data' items={filteredItems} columns={columns} scrollX={1090} stickyHeader={true} />
-            </section>
+                        <section className='world-cup-corners-stage-panel' aria-labelledby={stageHeadingID}>
+                            <header className='world-cup-corners-section-header'>
+                                <div>
+                                    <Typography.Title id={stageHeadingID} level={2}>
+                                        O6.5 hit rate by stage
+                                    </Typography.Title>
+                                    <Typography.Text type='secondary'>Visible sample sizes keep small knockout rounds in context.</Typography.Text>
+                                </div>
+                            </header>
+                            <div className='world-cup-corners-stage-list'>
+                                {stageSummaries.map(({stage: stageItem, summary}) => (
+                                    <div className='world-cup-corners-stage-row' key={stageItem.key}>
+                                        <Typography.Text className='world-cup-corners-stage-row__label'>{stageItem.shortLabel}</Typography.Text>
+                                        <Progress
+                                            className='world-cup-corners-stage-row__progress'
+                                            aria-label={`${stageItem.label} O6.5 hit rate`}
+                                            percent={Number(summary.hitRate.toFixed(1))}
+                                            showInfo={false}
+                                            strokeColor='var(--athena-green)'
+                                            trailColor='var(--athena-bg-soft)'
+                                        />
+                                        <span className='world-cup-corners-stage-row__value'>
+                                            <strong>{formatRate(summary.hitRate)}</strong>
+                                            <small>
+                                                {summary.hits}/{summary.matches}
+                                            </small>
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
 
-            <Typography.Paragraph className='world-cup-corners-footnote' type='secondary'>
-                Method: 90-minute corners count StatsBomb corner events in periods 1–2; full-match corners also include periods 3–4. Penalty shootout results are shown separately
-                from the score after extra time.
-            </Typography.Paragraph>
-        </AppPage>
+                        <section className='world-cup-corners-table-panel' aria-labelledby={tableHeadingID}>
+                            <header className='world-cup-corners-table-header'>
+                                <div>
+                                    <Typography.Title id={tableHeadingID} level={2}>
+                                        Match data
+                                    </Typography.Title>
+                                    <Typography.Text type='secondary'>
+                                        Showing {filteredItems.length} of {matches.length} matches
+                                    </Typography.Text>
+                                </div>
+                                <div className='world-cup-corners-filters'>
+                                    <label>
+                                        Team
+                                        <Input
+                                            aria-label='Search by team'
+                                            allowClear
+                                            prefix={<SearchOutlined />}
+                                            placeholder='Search team'
+                                            value={search}
+                                            onChange={event => setSearch(event.target.value)}
+                                        />
+                                    </label>
+                                    <label>
+                                        Stage
+                                        <Select
+                                            aria-label='Filter by stage'
+                                            value={stage}
+                                            options={[{value: 'all', label: 'All stages'}, ...stages.map(item => ({value: item.key, label: item.label}))]}
+                                            onChange={setStage}
+                                        />
+                                    </label>
+                                    <label>
+                                        O6.5 outcome
+                                        <Select
+                                            aria-label='Filter by O6.5 outcome'
+                                            value={outcome}
+                                            onChange={setOutcome}
+                                            options={[
+                                                {value: 'all', label: 'All outcomes'},
+                                                {value: 'hit', label: 'Hit'},
+                                                {value: 'miss', label: 'Miss'}
+                                            ]}
+                                        />
+                                    </label>
+                                    <Button disabled={!filtersActive} onClick={resetFilters}>
+                                        Reset
+                                    </Button>
+                                    <label>
+                                        Sort matches
+                                        <Select
+                                            aria-label='Sort matches'
+                                            value={sort}
+                                            onChange={setSort}
+                                            options={[
+                                                {value: 'tournament', label: 'Tournament order'},
+                                                {value: 'corners90', label: '90-min total, highest first'},
+                                                {value: 'corners90Asc', label: '90-min total, lowest first'},
+                                                {value: 'cornersFullAsc', label: 'Full-match total, lowest first'},
+                                                {value: 'cornersFull', label: 'Full-match total, highest first'}
+                                            ]}
+                                        />
+                                    </label>
+                                </div>
+                            </header>
+                            <ResourceTable
+                                rowKey='id'
+                                label='2022 World Cup corner data'
+                                items={filteredItems}
+                                columns={columns}
+                                scrollX={1090}
+                                stickyHeader={true}
+                                compactRender={item => (
+                                    <article>
+                                        <span className='radar-description'>{stageByKey.get(item.stage)?.shortLabel || item.stage}</span>
+                                        <h3 className='radar-heading'>
+                                            {item.homeTeam} – {item.awayTeam}
+                                        </h3>
+                                        <dl className='market-fact-grid'>
+                                            <div>
+                                                <dt>90-min corners</dt>
+                                                <dd>{formatPair(item.homeCorners90, item.awayCorners90)}</dd>
+                                            </div>
+                                            <div>
+                                                <dt>90-min total / O6.5</dt>
+                                                <dd>
+                                                    {corners90Total(item)} · <span className={hitsOver(item) ? 'radar-up' : ''}>{hitsOver(item) ? 'HIT' : 'MISS'}</span>
+                                                </dd>
+                                            </div>
+                                            <div>
+                                                <dt>Score after ET</dt>
+                                                <dd>
+                                                    <Score item={item} />
+                                                </dd>
+                                            </div>
+                                            <div>
+                                                <dt>Full-match corners</dt>
+                                                <dd>{formatPair(item.homeCornersFull, item.awayCornersFull)}</dd>
+                                            </div>
+                                        </dl>
+                                    </article>
+                                )}
+                            />
+                        </section>
+
+                        <Typography.Paragraph className='world-cup-corners-footnote' type='secondary'>
+                            Method: 90-minute corners count StatsBomb corner events in periods 1–2; full-match corners also include periods 3–4. Penalty shootout results are shown
+                            separately from the score after extra time.
+                        </Typography.Paragraph>
+                    </>
+                )}
+            </AppPage>
+        </div>
     );
 };

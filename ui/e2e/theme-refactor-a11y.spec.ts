@@ -8,6 +8,14 @@ const tags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
 for (const scenario of themeCases.filter(item =>
     [
+        'markets-hot',
+        'markets-realtime',
+        'markets-movers',
+        'markets-live',
+        'markets-history',
+        'markets-corners',
+        'markets-proposals',
+        'markets-disputes',
         'foundations-wallets',
         'foundations-solana',
         'foundations-member-rounds',
@@ -55,6 +63,7 @@ for (const scenario of themeCases.filter(item =>
 }
 
 for (const state of [
+    {id: 'markets-proposals', tab: 'Evidence'},
     {id: 'admin-accounts', tab: 'Access'},
     {id: 'admin-accounts', tab: 'Profile'},
     {id: 'admin-services', tab: 'Notifications'},
@@ -66,8 +75,10 @@ for (const state of [
         await page.setViewportSize({width: 390, height: 844});
         const ledger = await openThemeCase(page, state.id);
         if (state.id === 'admin-accounts') await page.locator('.admin-accounts-mobile-card').first().click();
-        if (state.id === 'admin-notifications') await page.getByRole('button', {name: 'Test Notification', exact: true}).click();
+        if (state.id === 'markets-proposals') await page.getByRole('button', {name: 'View evidence', exact: true}).filter({visible: true}).first().click();
+        else if (state.id === 'admin-notifications') await page.getByRole('button', {name: 'Test Notification', exact: true}).click();
         else await page.getByRole('tab', {name: new RegExp(`^${state.tab}`)}).click();
+        if (state.id === 'markets-proposals') await page.evaluate(() => window.scrollTo(0, 0));
         await assertThemeLayout(page);
         const results = await new AxeBuilder({page}).withTags(tags).analyze();
         const rawResult = info.outputPath('axe-results.json');
