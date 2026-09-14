@@ -3627,5 +3627,353 @@
         }
       }
     ]
+  },
+  {
+    "id": "markets-history-writable",
+    "route": "/sports-history",
+    "realm": "member",
+    "heading": "Sports History",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-history/events",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "eventKey": "hist-atp",
+              "eventId": "synthetic-hist-atp",
+              "slug": "atp-fri-med-2026-09-14",
+              "title": "Taylor Fritz vs. Daniil Medvedev",
+              "score": "6\u20134, 7\u20136",
+              "period": "Final",
+              "elapsed": "63:00",
+              "gameStatus": "Finished",
+              "startTime": "2026-09-14T06:00:00Z",
+              "updatedAt": "2026-09-14T08:00:00Z",
+              "volume": 284125.52,
+              "liquidity": 54320.75,
+              "marketCount": 1,
+              "markets": [
+                {
+                  "marketKey": "hist-atp-ml",
+                  "conditionId": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "slug": "atp-fri-med-2026-09-14",
+                  "sportsMarketType": "moneyline",
+                  "question": "Taylor Fritz vs. Daniil Medvedev",
+                  "outcomes": "[\"Taylor Fritz\", \"Daniil Medvedev\"]",
+                  "outcomePrices": "[\"1.000\", \"0.000\"]",
+                  "updatedAt": "2026-09-14T08:00:00Z"
+                }
+              ],
+              "teams": [
+                {
+                  "name": "Taylor Fritz"
+                },
+                {
+                  "name": "Daniil Medvedev"
+                }
+              ],
+              "league": "ATP",
+              "finishedAt": "2026-09-14T07:45:00Z"
+            },
+            {
+              "eventKey": "hist-wta",
+              "eventId": "synthetic-hist-wta",
+              "slug": "wta-swi-sab-2026-09-14",
+              "title": "Iga \u015awi\u0105tek vs. Aryna Sabalenka",
+              "score": "4\u20136, 6\u20133, 4\u20136",
+              "period": "Final",
+              "elapsed": "63:00",
+              "gameStatus": "Finished",
+              "startTime": "2026-09-14T06:00:00Z",
+              "updatedAt": "2026-09-14T08:00:00Z",
+              "volume": 284125.52,
+              "liquidity": 54320.75,
+              "marketCount": 1,
+              "markets": [
+                {
+                  "marketKey": "hist-wta-ml",
+                  "conditionId": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "slug": "wta-swi-sab-2026-09-14",
+                  "sportsMarketType": "moneyline",
+                  "question": "Iga \u015awi\u0105tek vs. Aryna Sabalenka",
+                  "outcomes": "[\"Iga \\u015awi\\u0105tek\", \"Aryna Sabalenka\"]",
+                  "outcomePrices": "[\"0.000\", \"1.000\"]",
+                  "updatedAt": "2026-09-14T08:00:00Z"
+                }
+              ],
+              "teams": [
+                {
+                  "name": "Iga \u015awi\u0105tek"
+                },
+                {
+                  "name": "Aryna Sabalenka"
+                }
+              ],
+              "league": "WTA",
+              "finishedAt": "2026-09-14T07:45:00Z"
+            }
+          ],
+          "fetchedAt": 1789372800,
+          "stale": false
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sports-history/price-history:batchGet",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "marketKey": "hist-atp-ml",
+              "tokenId": "hist-atp-ml-0",
+              "outcome": "Taylor Fritz",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.5805,
+                0.5759,
+                0.6364,
+                0.7168,
+                0.7123,
+                0.7727,
+                0.8532,
+                0.8486,
+                0.9091,
+                0.9895,
+                1
+              ]
+            },
+            {
+              "marketKey": "hist-atp-ml",
+              "tokenId": "hist-atp-ml-1",
+              "outcome": "Daniil Medvedev",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.4895,
+                0.3941,
+                0.3636,
+                0.3532,
+                0.2577,
+                0.2273,
+                0.2168,
+                0.1214,
+                0.0909,
+                0.0805,
+                0
+              ]
+            },
+            {
+              "marketKey": "hist-wta-ml",
+              "tokenId": "hist-wta-ml-0",
+              "outcome": "Iga \u015awi\u0105tek",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.4895,
+                0.3941,
+                0.3636,
+                0.3532,
+                0.2577,
+                0.2273,
+                0.2168,
+                0.1214,
+                0.0909,
+                0.0805,
+                0
+              ]
+            },
+            {
+              "marketKey": "hist-wta-ml",
+              "tokenId": "hist-wta-ml-1",
+              "outcome": "Aryna Sabalenka",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.5805,
+                0.5759,
+                0.6364,
+                0.7168,
+                0.7123,
+                0.7727,
+                0.8532,
+                0.8486,
+                0.9091,
+                0.9895,
+                1
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-history/sync-status",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "status": {
+            "state": "succeeded",
+            "startedAt": 1789372680,
+            "completedAt": 1789372740,
+            "lastSuccessAt": 1789372740,
+            "errorMessage": ""
+          }
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sports-history:refresh",
+        "realm": "member",
+        "status": 200,
+        "delayMs": 800,
+        "json": {
+          "status": {
+            "state": "succeeded",
+            "completedAt": 1789372740
+          }
+        }
+      }
+    ]
   }
 ]

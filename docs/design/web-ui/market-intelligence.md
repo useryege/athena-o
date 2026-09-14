@@ -15,7 +15,7 @@
 | `/managed-oo/proposals` | 问题、区块、原始 proposed price、请求时间、完整 proposer 地址和交易证据 |
 | `/managed-oo/disputes` | 同一日志事实结构中的 disputer 角色和争议证据 |
 
-Market Radar 的三个展示组件分别接受 `MarketRadarHotMarketItem`、`MarketRadarRealtimeMarketItem` 和 `MarketRadarMoverMarketItem`。桌面与手机消费同一记录模型。`MarketVolume` 将已知零显示为 `0`，缺失显示为 `Unavailable`；24h 和 total 各用各自字段。原始价格、完整 condition/token 标识及窗口样本按需展开。分页默认 50，保留 10／50／100 选择；刷新保留有效页，数据收缩时修正越界页。
+Market Radar 的三个展示组件分别接受 `MarketRadarHotMarketItem`、`MarketRadarRealtimeMarketItem` 和 `MarketRadarMoverMarketItem`。桌面与手机消费同一记录模型。`MarketVolume` 将已知零显示为 `0`，缺失显示为 `Unavailable`；24h 和 total 各用各自字段。原始价格、完整 condition/token 标识及窗口样本按需展开。顶层 proto3 计数（candidate、monitored/subscribed market/token）经实际 encoding/json 网关省略时代表零；局部解码保留该默认值，显式 null／非法计数仍显示 Unknown。该规则不应用到 nested 金额、价格或时间；顶层省略布尔仍按合法 false 处理。分页默认 50，保留 10／50／100 选择；刷新保留有效页，数据收缩时修正越界页。
 
 Sports 图表由 `sports-market-card.tsx` 的 SVG 绘图代码控制，横坐标使用有效的业务 timestamp。缺时间的点不以数组索引代替；缺 outcome 的序列不借用其他 outcome。蓝／黄／紫区分球队／outcome，反馈色另行表达成功、失败与陈旧。时间选择支持指针和键盘，并显示完整北京时间与选中值。历史加载、历史请求失败和成功无历史分别表达；没有数据时不绘造曲线。比分、moneyline 快照与价格曲线保持各自口径。
 
@@ -26,6 +26,8 @@ Managed OO 的 proposed price 保持字符串原值，包括零和负值，不�
 ## 请求与身份边界
 
 首次请求失败时显示错误，不同时展示成功空态或零记录。已有记录刷新失败保留旧数据并标明陈旧。八条入口按会员 accountId 与 issuer 重挂载；realm 由独立会员应用根限定。离开页面、替换身份或撤销写权限后，迟到的解析／同步请求不回写旧草稿、通知或刷新当前页面。
+
+Sports History 的 `Reload saved data` 只重载已保存事件／价格历史，`Sync history` 是仅对可写账号开放的独立手动同步；同步进行中禁用重复提交。
 
 页面仍调用既有读取、手动刷新和区块解析 API，没有增加后端或服务边界。验收使用 `theme:markets` 严格声明 fixture 请求；区块解析 POST 仅在用例明确声明的本地拦截中执行，不证明真实扫描、链上写入或供应商接入。
 

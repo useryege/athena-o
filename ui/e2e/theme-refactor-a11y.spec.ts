@@ -13,6 +13,7 @@ for (const scenario of themeCases.filter(item =>
         'markets-movers',
         'markets-live',
         'markets-history',
+        'markets-history-writable',
         'markets-corners',
         'markets-proposals',
         'markets-disputes',

@@ -153,6 +153,7 @@ export const SportsHistoryPage = () => {
                 title='Sports History'
                 subtitle='Completed ATP and WTA events from the last 72 hours.'
                 onRefresh={reloadAll}
+                refreshLabel='Reload saved data'
                 loading={events.loading}
                 error={events.error || syncStatus.error || history.error}
                 extra={
@@ -164,8 +165,14 @@ export const SportsHistoryPage = () => {
                             Reset
                         </Button>
                         {canWrite && (
-                            <Button type='primary' icon={<ReloadOutlined />} loading={refreshing || serverSyncing} disabled={refreshing || serverSyncing} onClick={refresh}>
-                                Refresh data
+                            <Button
+                                aria-label='Sync history'
+                                type='primary'
+                                icon={<ReloadOutlined />}
+                                loading={refreshing || serverSyncing}
+                                disabled={refreshing || serverSyncing}
+                                onClick={refresh}>
+                                Sync history
                             </Button>
                         )}
                     </Space>

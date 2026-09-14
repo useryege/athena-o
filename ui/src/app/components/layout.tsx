@@ -11,6 +11,7 @@ export const AppPage = (props: {
     loading?: boolean;
     error?: Error;
     onRefresh?: () => void;
+    refreshLabel?: string;
 }) => {
     return (
         <div className='app-page' aria-busy={props.loading || undefined}>
@@ -21,8 +22,8 @@ export const AppPage = (props: {
                 </div>
                 <Space className='app-page__actions' wrap={true}>
                     {props.onRefresh && (
-                        <Tooltip title='Refresh data'>
-                            <Button aria-label='Refresh data' icon={<ReloadOutlined />} loading={props.loading} onClick={props.onRefresh} />
+                        <Tooltip title={props.refreshLabel || 'Refresh data'}>
+                            <Button aria-label={props.refreshLabel || 'Refresh data'} icon={<ReloadOutlined />} loading={props.loading} onClick={props.onRefresh} />
                         </Tooltip>
                     )}
                     {props.extra}

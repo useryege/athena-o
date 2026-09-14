@@ -78,7 +78,7 @@ for (const viewport of [
                 await expect(visible(page, id === 'live' ? '1–0' : '6–4, 7–6')).toBeVisible();
                 await expect(visible(page, id === 'live' ? '0.615' : '1.000')).toBeVisible();
                 await expect(page.getByRole('slider', {name: 'History time'}).first()).toBeVisible();
-                await expect(page.getByRole('button', {name: 'Refresh data', exact: true})).toHaveCount(1); // read-only reload, no manual synchronization
+                await expect(page.getByRole('button', {name: id === 'history' ? 'Reload saved data' : 'Refresh data', exact: true})).toHaveCount(1); // read-only reload, no manual synchronization
             } else if (id === 'corners') {
                 await expect(visible(page, '62.5%')).toBeVisible();
                 await expect(visible(page, '7.75')).toBeVisible();
@@ -138,7 +138,7 @@ for (const id of ['hot', 'live', 'history', 'corners', 'proposals'])
         await expect(page.locator('.radar-record:visible,.sports-live-card:visible,.world-cup-corners-kpis:visible,.managed-oo-record:visible').first()).toBeVisible();
         firstData.status = 503;
         firstData.json = {message: 'Refresh source unavailable'};
-        await page.getByRole('button', {name: 'Refresh data', exact: true}).click();
+        await page.getByRole('button', {name: id === 'history' ? 'Reload saved data' : 'Refresh data', exact: true}).click();
         await expect(visible(page, 'Request failed')).toBeVisible();
         await expect(
             page
@@ -163,7 +163,7 @@ test('theme:markets Sources and evidence preserve complete original fields', asy
     await expect(drawer.getByText('1000000000000000000', {exact: true})).toBeVisible();
     await expect(drawer.getByText('1789372800', {exact: true})).toBeVisible();
     await expect.poll(async () => Math.round((await drawer.boundingBox())?.x ?? -1)).toBe(0);
-    await drawer.locator('.ant-drawer-body').evaluate(el => el.scrollTop = 0);
+    await drawer.locator('.ant-drawer-body').evaluate(el => (el.scrollTop = 0));
     await page.screenshot({path: info.outputPath('evidence-summary.png')});
     await drawer.locator('summary').click();
     await expect(drawer.getByText('Raw topics', {exact: true})).toBeVisible();
@@ -211,7 +211,7 @@ for (const id of mainIds)
         const title = page.getByRole('heading', {level: 1});
         const subtitle = page.locator('.app-page__heading > .ant-typography-secondary');
         const numberInput = page.getByRole('spinbutton', {name: 'Polygon block number'});
-        const beforeInput = await numberInput.count() ? await numberInput.evaluate(el => parseFloat(getComputedStyle(el).fontSize)) : undefined;
+        const beforeInput = (await numberInput.count()) ? await numberInput.evaluate(el => parseFloat(getComputedStyle(el).fontSize)) : undefined;
         const beforeBody = await subtitle.evaluate(el => parseFloat(getComputedStyle(el).fontSize));
         const before = await title.evaluate(el => parseFloat(getComputedStyle(el).fontSize));
         await page.evaluate(() => (document.documentElement.style.fontSize = '32px'));
@@ -359,3 +359,95 @@ test('theme:markets corners ascending order remains consistent after desktop to 
     await expect(page.locator('.world-cup-corners-filters .ant-select-content').filter({hasText: '90-min total, lowest first'})).toBeVisible();
     checkReads(ledger);
 });
+
+test('theme:markets history writable separates saved reads from single-flight sync', async ({page}, info) => {
+    await page.setViewportSize({width: 390, height: 844});
+    const ledger = await openThemeCase(page, 'markets-history-writable');
+    const read = page.getByRole('button', {name: 'Reload saved data', exact: true});
+    const sync = page.getByRole('button', {name: 'Sync history', exact: true});
+    await expect(read).toHaveCount(1);
+    await expect(sync).toHaveCount(1);
+    await expect(page.getByRole('button', {name: 'Refresh data', exact: true})).toHaveCount(0);
+    const calls = (path: string) => ledger.requests.filter(item => item.path === path);
+    const eventsPath = '/api/v1/sports-history/events';
+    const historyPath = '/api/v1/sports-history/price-history:batchGet';
+    const syncPath = '/api/v1/sports-history:refresh';
+    await expect(page.getByRole('slider', {name: 'History time'}).first()).toBeVisible();
+    await read.click();
+    await expect.poll(() => calls(historyPath).length).toBe(2);
+    expect(calls(syncPath)).toEqual([]);
+    expect(calls(eventsPath).map(item => [item.method, item.query, item.realm])).toEqual([
+        ['GET', '?limit=200', 'member'],
+        ['GET', '?limit=200', 'member']
+    ]);
+    await sync.click();
+    await expect(sync).toBeDisabled();
+    await page.keyboard.press('Enter');
+    await expect.poll(() => calls(syncPath).length).toBe(1);
+    await page.screenshot({path: info.outputPath('history-sync-pending.png'), fullPage: true});
+    await expect(page.getByText('Sports history refreshed', {exact: true})).toBeVisible();
+    await expect(sync).toBeEnabled();
+    await expect.poll(() => calls(historyPath).length).toBe(3);
+    expect(calls(syncPath)).toEqual([{method: 'POST', path: syncPath, realm: 'member', query: '', body: {}}]);
+    expect(calls(eventsPath).map(item => item.query)).toEqual(['?limit=200', '?limit=200', '?limit=200']);
+    expect(calls(historyPath).map(item => ({method: item.method, realm: item.realm, query: item.query, body: item.body}))).toEqual(
+        Array.from({length: 3}, () => ({
+            method: 'POST',
+            realm: 'member',
+            query: '',
+            body: {market_keys: ['hist-atp-ml', 'hist-wta-ml'], limit_per_token: 360}
+        }))
+    );
+    expect(calls('/api/v1/sports-history/sync-status')).toHaveLength(3);
+    assertThemeLedger(ledger);
+});
+
+test('theme:markets history read-only permits saved reload and hides write synchronization', async ({page}) => {
+    const ledger = await openThemeCase(page, 'markets-history');
+    await expect(page.getByRole('slider', {name: 'History time'}).first()).toBeVisible();
+    await expect(page.getByRole('button', {name: 'Sync history', exact: true})).toHaveCount(0);
+    await page.getByRole('button', {name: 'Reload saved data', exact: true}).click();
+    await expect.poll(() => ledger.requests.filter(item => item.path.endsWith('price-history:batchGet')).length).toBe(2);
+    expect(ledger.requests.filter(item => item.path === '/api/v1/sports-history:refresh')).toEqual([]);
+    checkReads(ledger);
+});
+
+for (const id of ['hot', 'realtime', 'movers']) {
+    test(`theme:markets wire ${id} omitted proto defaults retain false and known-zero counts`, async ({page}) => {
+        const data = scenario(id);
+        const body = data.replies[1].json as Record<string, unknown>;
+        for (const field of [
+            'stale',
+            'connected',
+            'candidateCount',
+            'candidate_count',
+            'monitoredMarkets',
+            'monitored_markets',
+            'monitoredTokens',
+            'monitored_tokens',
+            'subscribedMarkets',
+            'subscribed_markets',
+            'subscribedTokens',
+            'subscribed_tokens'
+        ])
+            delete body[field];
+        const ledger = await go(page, data);
+        await expect(visible(page, 'Current snapshot')).toBeVisible();
+        await expect(visible(page, '0 candidates · 0 monitored markets')).toBeVisible();
+        if (id !== 'hot') {
+            await expect(visible(page, 'Sampling disconnected')).toBeVisible();
+            await expect(page.getByText(/0 monitored tokens/)).toBeVisible();
+        }
+        checkReads(ledger);
+    });
+    for (const invalid of [null, 'invalid'])
+        test(`theme:markets wire ${id} explicit counter ${String(invalid)} is unknown`, async ({page}) => {
+            const data = scenario(id);
+            const body = data.replies[1].json as Record<string, unknown>;
+            for (const field of ['candidateCount', 'monitoredMarkets', 'monitoredTokens', 'subscribedMarkets', 'subscribedTokens']) body[field] = invalid;
+            const ledger = await go(page, data);
+            await expect(visible(page, 'Unknown candidates · Unknown monitored markets')).toBeVisible();
+            if (id !== 'hot') await expect(page.getByText(/Unknown monitored tokens/)).toBeVisible();
+            checkReads(ledger);
+        });
+}
