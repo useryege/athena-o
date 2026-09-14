@@ -469,6 +469,8 @@ test('theme:identity review mobile Profile leave confirmation stacks safe action
     expect(discardBox!.y).toBeGreaterThanOrEqual(keepBox!.y + keepBox!.height + 8);
     expect(keepBox!.width).toBeGreaterThan(280);
     expect(discardBox!.width).toBeCloseTo(keepBox!.width, 0);
+    expect(discardBox!.x).toBeCloseTo(keepBox!.x, 0);
+    expect(discardBox!.x + discardBox!.width).toBeCloseTo(keepBox!.x + keepBox!.width, 0);
     for (let i = 0; i < 5; i++) {
         await page.keyboard.press('Tab');
         const focus = await dialog.evaluate(node => ({inside: node.contains(document.activeElement), active: document.activeElement?.tagName, className: document.activeElement?.className}));

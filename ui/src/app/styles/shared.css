@@ -1734,5 +1734,6 @@ input, textarea { caret-color: var(--athena-primary); }
 
 @media (max-width: 600px) {
     .account-profile-leave-confirm .ant-modal-confirm-btns { display: flex; flex-direction: column; gap: 12px; }
-    .account-profile-leave-confirm .ant-modal-confirm-btns .ant-btn { width: 100%; margin-inline-start: 0; }
+    .account-profile-leave-confirm .ant-modal-confirm-btns .ant-btn { width: 100%; }
+    .account-profile-leave-confirm.ant-modal .ant-modal-confirm-btns .ant-btn + .ant-btn { margin-inline-start: 0; }
 }
