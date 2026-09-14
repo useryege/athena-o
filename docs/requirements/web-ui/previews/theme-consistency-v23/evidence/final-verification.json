@@ -1,0 +1,71 @@
+{
+  "baselineFiles": 826,
+  "unchangedBaselineFiles": 825,
+  "expectedIndexUpdates": [
+    "docs/requirements/web-ui/previews/README.md"
+  ],
+  "sourceAndRevisionDigestsVerified": 8,
+  "productionUiUnchanged": true,
+  "localLinksChecked": 1028,
+  "invalidLinks": [],
+  "newFileWhitespaceIssues": 0,
+  "scriptSyntax": "passed",
+  "planTypecheck": "tsc strict noEmit passed (isolated Provider example, current installed Ant/React declarations)",
+  "cleanup": {
+    "stopped": [
+      {
+        "pid": 3163650,
+        "cwd": "/home/yege/work/athena",
+        "argv": [
+          "python3",
+          "-u",
+          "-m",
+          "http.server",
+          "41823",
+          "--bind",
+          "127.0.0.1",
+          "--directory",
+          "/home/yege/work/athena"
+        ]
+      },
+      {
+        "pid": 3176157,
+        "cwd": "/home/yege/work/athena",
+        "argv": [
+          "python3",
+          "-u",
+          "-m",
+          "http.server",
+          "41823",
+          "--bind",
+          "127.0.0.1",
+          "--directory",
+          "/home/yege/work/athena"
+        ],
+        "session": 78139
+      }
+    ],
+    "session": 25963,
+    "port": 41823,
+    "processExited": true,
+    "portReleased": true,
+    "preserved": "Existing user/other-task environments were not changed.",
+    "browserClosed": true
+  },
+  "resolution": {
+    "scope": "design-and-plans-only",
+    "coveredViews": 44,
+    "batchChecks": 166,
+    "batchPassed": 164,
+    "targetedAntViews": 4,
+    "targetedAntChecks": 31,
+    "targetedAntPassed": 31,
+    "unresolvedAdoptedFindings": [],
+    "note": "第二轮全量的两项字体读数采于 CSS 过渡中；等待过渡结束后定向复核。最终同时补齐 Input 最小高度并验证 44→88px。原始失败记录完整保留。",
+    "productionImplemented": false,
+    "targetedColumnsViews": 8,
+    "targetedColumnsChecks": 27,
+    "targetedColumnsPassed": 27,
+    "numericColumnScope": "Explicit numeric roles only; Wallets Type and Source remain left aligned."
+  }
+}

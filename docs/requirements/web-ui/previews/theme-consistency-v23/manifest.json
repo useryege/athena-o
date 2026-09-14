@@ -1,0 +1,61 @@
+{
+  "kind": "design-review-correction",
+  "version": 23,
+  "productionImplemented": false,
+  "sources": [
+    {
+      "file": "theme-service-status-v16.html",
+      "source": "docs/requirements/web-ui/previews/theme-service-status-v16.html",
+      "sourceSha256": "a07197cc676538a855891e3004f45f4beb593cb8cd6ce98d835bda2e581a2712",
+      "revisionSha256": "73f9114868cc654313a1b999d7e708bc81b99908b5463e0d3a6eb587909997c2"
+    },
+    {
+      "file": "theme-wallets-v20.html",
+      "source": "docs/requirements/web-ui/previews/theme-wallets-v20.html",
+      "sourceSha256": "fde88ae688fe4db0e55367c7e56c03610f5a4b1e1cfa2aa24d9326b93a15207b",
+      "revisionSha256": "2ac717c851135b7f79fcb060eb3e2cfaf4666dff3df013f752873283b7a06054"
+    },
+    {
+      "file": "theme-market-radar-v21.html",
+      "source": "docs/requirements/web-ui/previews/theme-market-radar-v21.html",
+      "sourceSha256": "c78ebd5a5febd2aa385ff9d5bb4fa867a3a21fd87d9ecfc93d462b57802600eb",
+      "revisionSha256": "f111ff5b8fd068456609813c5eaaf20fc183b20b3b5cb3bb296f32b755c1f5e4"
+    },
+    {
+      "file": "theme-worm-assets-v22.html",
+      "source": "docs/requirements/web-ui/previews/theme-worm-assets-v22.html",
+      "sourceSha256": "54b167dff240754bda6cd6c6ed6fefbab37f49240a20a4b3a3ede40792a502e5",
+      "revisionSha256": "73ae99ab42164698b4d8da425620ee59f63db30747e9096a6e2c4e39f509fef1"
+    },
+    {
+      "file": "theme-worm-combinations-v22.html",
+      "source": "docs/requirements/web-ui/previews/theme-worm-combinations-v22.html",
+      "sourceSha256": "27a71ad93133bcf3c836acaffe2cf4c7339b7ce1aa02044dd4a6e0a02ea89348",
+      "revisionSha256": "87b8646098fe17aacf8dda7244ae2070d11f8230ea4304430c28408f94154926"
+    },
+    {
+      "file": "theme-worm-executions-v22.html",
+      "source": "docs/requirements/web-ui/previews/theme-worm-executions-v22.html",
+      "sourceSha256": "fb009db58b131d2c1b9c617d66663db2d7c16f6f33b551fe23ce207226276665",
+      "revisionSha256": "6f4ea98c3835457da9e8c322e582efca63d055273a2b8076a5bd1cf8abfbf6aa"
+    },
+    {
+      "file": "theme-common-adaptations-v22.html",
+      "source": "docs/requirements/web-ui/previews/theme-common-adaptations-v22.html",
+      "sourceSha256": "260b2da642502e07a613afa90f783664f5bd5e679f548c731ad5b1081b745b5f",
+      "revisionSha256": "646df7d600720580ce2aaf9c86770fc87a7059561878ba9348fa651fa3a51f64"
+    },
+    {
+      "file": "wallet-analytics-v1.html",
+      "source": "docs/requirements/token/previews/wallet-analytics-v1.html",
+      "sourceSha256": "7262c2ece8d5b7298a217dfa0740d970ad2b2c61b191046c4e93ad744be05153",
+      "revisionSha256": "1e1254f1354fff4249b92f66344d407736fb783076c8b0ff9f6d5e2204a62eb4"
+    }
+  ],
+  "runtime": {
+    "node": "v24.14.1",
+    "react": "18.3.1",
+    "antd": "6.4.3",
+    "cssinjs": "2.1.2"
+  }
+}

@@ -1,0 +1,46 @@
+/* 修订稿的唯一色值表。正式实施迁入 app/styles/tokens.css，不由页面复制。 */
+@font-face { font-family: Inter; src: url('../files/InterVariable.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'JetBrains Mono'; src: url('../files/JetBrainsMono-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+:root {
+  color-scheme: dark;
+  --athena-bg: #06080B;
+  --athena-panel: #0F1114;
+  --athena-panel-elevated: #181D22;
+  --athena-border: #252A30;
+  --athena-border-strong: #61717B;
+  --athena-text: #FFFFFF;
+  --athena-muted: #9FA0A1;
+  --athena-primary: #00FFA7;
+  --athena-primary-hover: #51FFC3;
+  --athena-primary-active: #09C385;
+  --athena-selected-bg: #102C24;
+  --athena-green: #55D9A1;
+  --athena-green-bg: #0E201B;
+  --athena-green-border: #2D5747;
+  --athena-amber: #E6BF72;
+  --athena-amber-bg: #211C13;
+  --athena-amber-border: #665231;
+  --athena-red: #F58C9B;
+  --athena-red-hover: #FFB0BD;
+  --athena-red-active: #E5778B;
+  --athena-red-bg: #24171C;
+  --athena-red-border: #673B47;
+  --athena-blue: #9BC6F3;
+  --athena-blue-bg: #141D27;
+  --athena-blue-border: #35516D;
+  --athena-font: Inter, 'Noto Sans CJK SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --athena-data-font: 'JetBrains Mono', monospace;
+  --athena-type-page: 1.75rem;
+  --athena-type-section: 1.25rem;
+  --athena-type-body: 1rem;
+  --athena-type-control: .875rem;
+  --athena-type-aux: .8125rem;
+  --athena-control-height: 2.75rem;
+  /* 冻结原型的消费名仅在修订稿内映射；正式 UI 直接使用 athena 变量。 */
+  --page: var(--athena-bg); --panel: var(--athena-panel); --raised: var(--athena-panel-elevated);
+  --line: var(--athena-border); --edge: var(--athena-border-strong);
+  --text: var(--athena-text); --muted: var(--athena-muted);
+  --accent: var(--athena-primary); --mint: var(--athena-primary);
+  --positive: var(--athena-green); --negative: var(--athena-red);
+  --warning: var(--athena-amber); --info: var(--athena-blue);
+}

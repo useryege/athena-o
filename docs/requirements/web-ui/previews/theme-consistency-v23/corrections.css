@@ -1,0 +1,96 @@
+/* 只覆盖已授权的一致性修正，原样板及业务交互保留在独立文件。 */
+body { font-family: var(--athena-font); }
+::selection { background: var(--athena-primary); color: var(--athena-bg); }
+input, textarea { caret-color: var(--athena-primary); }
+.avatar { width: 1.75rem; height: 1.75rem; min-width: 1.75rem; flex-shrink: 0; line-height: 1; display: grid; place-items: center; }
+.section-heading h2, .panel-head h2, .radar-panel-heading h2, .wc-line h2, .panel h2 { font-size: 1.25rem; line-height: 1.4; font-weight: 600; }
+.group-label { font-size: .8125rem; font-weight: 400; }
+.radar-row h3 { font-weight: 500; }
+
+/* 选中态按控件角色区分，跨页面复用。 */
+.nav-item[aria-current=page] { background: var(--athena-selected-bg); color: var(--athena-primary); font-weight: 500; }
+.segmented button[aria-pressed=true], .segmented button[aria-pressed=true]:hover {
+  background: var(--athena-selected-bg); color: var(--athena-primary);
+}
+.pagination [aria-current=page], .pagination [aria-current=page]:hover,
+.radar-page-buttons strong {
+  color: var(--athena-primary); background: var(--athena-panel); border: 1px solid var(--athena-primary); font-weight: 500;
+}
+input[readonly]:not([disabled]), textarea[readonly]:not([disabled]), .ant-input[readonly]:not([disabled]) {
+  color: var(--athena-muted); background: var(--athena-panel-elevated); border-color: var(--athena-border); cursor: text;
+}
+input:disabled, textarea:disabled, select:disabled, .ant-input:disabled {
+  color: var(--athena-muted); background: var(--athena-panel-elevated); border-color: var(--athena-border); cursor: not-allowed; border-style: dashed;
+}
+input[readonly]:focus-visible, textarea[readonly]:focus-visible {
+  outline: 2px solid var(--athena-primary); outline-offset: 3px;
+}
+
+/* 业务收益和连接成功均属语义绿，品牌青绿仅用于交互强调。 */
+.radar-up, .radar-connected { color: var(--athena-green); }
+.radar-down { color: var(--athena-red); }
+.radar-warmup { color: var(--athena-amber); }
+@media (min-width: 901px) {
+  .athena-numeric-column,
+  .radar-hot-metrics .radar-metric, .radar-leader .radar-metric:nth-child(2) { text-align: right; }
+}
+.asset-num, .radar-value { font-variant-numeric: tabular-nums lining-nums; }
+
+/* 容器宽度相对根字号判断：720px + 200% 字号也进入分组行。 */
+.table-wrap:has(.services-table) { container-type: inline-size; }
+@container (max-width: 44rem) {
+  .services-table { table-layout: auto; }
+  .services-table thead { display: none; }
+  .services-table tbody { display: block; }
+  .services-table tr { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .375rem .75rem; border-top: 1px solid var(--athena-border); padding: 1rem 0; align-items: baseline; }
+  .services-table td { display: block; min-width: 0; padding: 0; border: 0; overflow-wrap: anywhere; }
+  .services-table td:first-child { font-weight: 500; }
+  .services-table td:nth-child(3) { grid-column: 1 / -1; font-size: .8125rem; }
+  .services-table td.healthy-error { display: none; }
+  .services-table .tag { font-size: .8125rem; white-space: normal; }
+}
+
+/* Ant 6 变量声明绕过 px2remTransformer，须在同一 theme key 上映射文字角色。
+   重复类提高特异性，避免 CSS-in-JS 的插入顺序改变结果；浮层也带此 key。 */
+.athena-theme.athena-theme {
+  --ant-font-size: var(--athena-type-control);
+  --ant-font-size-sm: var(--athena-type-aux);
+  --ant-font-size-lg: var(--athena-type-body);
+  --ant-font-size-xl: var(--athena-type-section);
+  --ant-font-size-heading-1: var(--athena-type-page);
+  --ant-font-size-heading-2: var(--athena-type-section);
+  --ant-font-size-heading-3: var(--athena-type-body);
+  --ant-font-size-heading-4: var(--athena-type-body);
+  --ant-font-size-heading-5: var(--athena-type-control);
+  --ant-font-size-icon: var(--athena-type-aux);
+  --ant-font-height: 1.375rem;
+  --ant-font-height-sm: 1.25rem;
+  --ant-font-height-lg: 1.5rem;
+  --ant-control-height: var(--athena-control-height);
+  --ant-control-height-sm: var(--athena-control-height);
+  --ant-control-height-lg: 3.25rem;
+  --ant-button-content-font-size: var(--athena-type-control);
+  --ant-button-content-font-size-sm: var(--athena-type-control);
+  --ant-button-content-font-size-lg: var(--athena-type-body);
+  --ant-input-input-font-size: var(--athena-type-control);
+  --ant-input-input-font-size-sm: var(--athena-type-control);
+  --ant-input-input-font-size-lg: var(--athena-type-body);
+  --ant-alert-with-description-icon-size: 1.5rem;
+  --ant-alert-default-padding: 1rem 1.25rem;
+  --ant-alert-with-description-padding: 1.25rem 1.5rem;
+  --ant-font-family-code: var(--athena-data-font);
+}
+/* 固定按钮高还须允许长文本增高。 */
+.ant-btn { min-height: 2.75rem; height: auto; white-space: normal; padding-block: .625rem; line-height: 1.55; }
+.ant-input { min-height: var(--athena-control-height); }
+.ant-btn > span { overflow-wrap: anywhere; }
+.ant-alert { min-width: 0; }
+.ant-alert-content { min-width: 0; overflow-wrap: anywhere; }
+.ant-alert .ant-alert-description { color: var(--athena-muted); }
+.ant-alert .ant-alert-title { color: var(--athena-text); }
+.ant-segmented { max-width: 100%; }
+.ant-segmented-group { flex-wrap: wrap; }
+.ant-segmented-item-label { min-height: 2.75rem; display: flex; align-items: center; white-space: normal; }
+.ant-pagination .ant-pagination-item { min-width: 2.75rem; height: auto; line-height: 2.75rem; }
+.ant-btn:focus-visible, .ant-input:focus-visible, .ant-pagination-item:focus-visible { outline: 2px solid var(--athena-primary); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .ant-btn, .ant-input, .ant-pagination-item { transition: none; } }

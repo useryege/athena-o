@@ -1,0 +1,2775 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src 'self' file:; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>ATHENA · Wallet analytics preview · v23 consistency revision</title>
+<link rel="icon" href="data:,">
+<style>
+@font-face{font-family:Inter;src:url('../files/InterVariable.woff2') format('woff2');font-weight:100 900;font-display:swap}
+@font-face{font-family:'JetBrains Mono';src:url('../files/JetBrainsMono-Regular.woff2') format('woff2');font-weight:400;font-display:swap}
+:root{color-scheme:dark;--page:#06080B;--panel:#0F1114;--raised:#181D22;--line:#252A30;--text:#FFFFFF;--muted:#9FA0A1;--accent:#00FFA7;--positive:#55D9A1;--negative:#F58C9B;--edge:#61717B;--sidebar:224px;font-family:Inter,'Noto Sans CJK SC','PingFang SC','Microsoft YaHei',sans-serif;font-synthesis:none;font-optical-sizing:auto}
+*{box-sizing:border-box;scrollbar-width:thin;scrollbar-color:var(--edge) var(--page)}body{margin:0;background:var(--page);color:var(--text);font-size:1rem;line-height:1.6;-webkit-font-smoothing:antialiased}h1,h2,h3,p{margin:0}h1,h2{text-wrap:balance}p{max-width:68ch}button,input,select{font:inherit}button{cursor:pointer}a{color:var(--muted);text-underline-offset:4px}a:hover{color:var(--text)}button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible,[tabindex]:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}::selection{background:var(--accent);color:var(--page)}input{caret-color:var(--accent)}button{color:inherit}button:disabled{cursor:wait;color:var(--muted);background:var(--raised)}
+.icon{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}.sprite{position:absolute;width:0;height:0;overflow:hidden}.muted,.meta{color:var(--muted)}.meta{font-size:.8125rem;line-height:1.55}.num{font-variant-numeric:tabular-nums lining-nums;white-space:nowrap;letter-spacing:0}.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.8125rem;line-height:1.7;font-weight:400;font-variant-ligatures:none}.positive{color:var(--positive)}.negative{color:var(--negative)}.section-title{font-size:1.25rem;line-height:1.4;font-weight:600;letter-spacing:-.01em}
+.sidebar{position:fixed;inset:0 auto 0 0;width:var(--sidebar);background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:30}.sidebar-brand{min-height:64px;padding:12px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}.wordmark{font-size:1.375rem;letter-spacing:-.02em;font-weight:600}.brand-symbol{width:26px;height:26px;fill:none;stroke:var(--accent);stroke-width:1.7;flex-shrink:0}.sidebar-nav{overflow:auto;flex:1;padding:18px 12px}.nav-group+.nav-group{margin-top:24px}.group-label{font-size:.8125rem;color:var(--muted);line-height:1.55;margin:0 12px 8px}.nav-item{width:100%;min-height:40px;display:flex;align-items:center;gap:12px;border:0;background:transparent;border-radius:8px;text-align:left;padding:10px 12px;font-size:.875rem;line-height:1.4;font-weight:400;color:var(--muted)}.nav-item:hover{background:var(--raised);color:var(--text)}.nav-item .label{min-width:0;overflow-wrap:anywhere}.nav-item .chevron{width:12px;height:12px;margin-left:auto}.nav-item[aria-current]{background:#102C24;color:var(--accent);font-weight:500}.nav-item+.nav-item{margin-top:4px}.sidebar-bottom{border-top:1px solid var(--line);padding:12px}.sidebar-bottom .meta{padding:6px 12px 2px}.sidebar .sidebar-close{display:none}.icon-button{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:8px;background:transparent;color:var(--muted);flex-shrink:0}.icon-button:hover{background:var(--raised);color:var(--text)}
+.app{margin-left:var(--sidebar);min-width:0}.topbar{height:64px;border-bottom:1px solid var(--line);display:flex;gap:16px;align-items:center;justify-content:space-between;padding:0 32px}.top-left{display:flex;align-items:center;gap:14px;min-width:0}.breadcrumbs{font-size:.8125rem;color:var(--muted);display:flex;gap:12px;align-items:center;min-width:0}.breadcrumbs .current{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.breadcrumbs .icon{width:12px;height:12px}.mobile-toggle{display:none}.account-wrap{position:relative}.account-button{display:flex;align-items:center;gap:9px;border:0;background:none;min-height:40px;padding:4px;border-radius:8px;font-size:.8125rem;color:var(--muted)}.account-button:hover{color:var(--text)}.avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--raised);border:1px solid var(--edge);font-weight:500;color:var(--text)}.account-button .icon{width:12px;height:12px}.account-menu{position:absolute;right:0;top:48px;z-index:40;width:210px;padding:8px;border:1px solid var(--edge);background:var(--panel);border-radius:12px}.account-menu button{font-size:.875rem;width:100%;text-align:left;border:0;background:none;border-radius:7px;padding:10px 12px}.account-menu button:hover{background:var(--raised)}[hidden]{display:none!important}
+main{max-width:1360px;margin:auto;padding:32px}.page-heading{display:flex;align-items:start;justify-content:space-between;gap:24px;margin-bottom:24px}h1{font-size:1.75rem;line-height:1.3;font-weight:600;letter-spacing:-.02em;margin-bottom:8px}.description{font-size:1rem;line-height:1.6;color:var(--muted)}.page-actions{padding-top:2px;flex-shrink:0}.btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border:1px solid transparent;border-radius:10px;font-size:.875rem;font-weight:500;line-height:1.4;white-space:nowrap;transition:background-color .16s ease-out}.primary{background:var(--accent);color:var(--page)}.primary:hover{background:#51FFC3}.primary:active{background:#09C385}.secondary{background:transparent;border-color:var(--edge);color:var(--text)}.secondary:hover{background:var(--raised)}
+.query{display:flex;align-items:end;flex-wrap:wrap;gap:16px;padding:0 0 24px}.field{flex:1 1 23rem;min-width:0}.field label,.period-label{display:block;font-size:.8125rem;color:var(--muted);line-height:1.55;margin-bottom:8px}.input-box{min-height:44px;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--edge);background:var(--panel);border-radius:10px}.input-box .icon{color:var(--muted)}input{border:0;background:none;color:var(--text);outline:0;min-width:0;width:100%}.input-box:focus-within{border-color:var(--accent);outline:2px solid var(--accent);outline-offset:2px}.input-box input:focus-visible{outline:0}input::placeholder{color:var(--muted)}.periods{display:flex;align-items:center;background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:3px;gap:3px}.periods button{border:0;border-radius:7px;background:none;color:var(--muted);font-size:.8125rem;line-height:1.5;padding:8px 12px;min-height:36px}.periods button:hover{background:var(--raised);color:var(--text)}.periods button[aria-pressed=true]{background:#102C24;color:var(--accent)}.form-error{font-size:.8125rem;color:var(--negative);line-height:1.55;margin-top:-12px;margin-bottom:18px}
+.overview{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:24px;display:flex;align-items:end;flex-wrap:wrap;gap:24px}.metric{flex:1 1 8rem;min-width:0}.metric:first-child{flex:1.8 1 18rem}.metric-label{font-size:.8125rem;line-height:1.55;color:var(--muted);margin-bottom:8px}.main-number{font-size:2.5rem;line-height:1.2;letter-spacing:-.025em;font-weight:600}.sub-number{font-size:1.5rem;line-height:1.3;font-weight:500}.unit{font-size:.8125rem;font-weight:400;color:var(--muted);margin-left:5px}.result-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0 28px}.network{display:flex;align-items:center;gap:7px}.network .icon{width:13px;height:17px}
+.data-section+.data-section{margin-top:28px}.section-head{display:flex;gap:20px;align-items:center;justify-content:space-between;margin-bottom:16px}.section-head p{margin-top:4px}.filter-field{display:flex;align-items:center;gap:10px}.filter-field label{font-size:.8125rem;color:var(--muted);white-space:nowrap}.filter-field select{min-height:40px;max-width:100%;border:1px solid var(--edge);border-radius:8px;background:var(--panel);color:var(--text);padding:8px 28px 8px 12px;font-size:.8125rem}.data-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}.table-scroll{overflow:auto;padding:0 24px}table{border-collapse:collapse;white-space:nowrap;width:100%;min-width:720px}th{font-size:.8125rem;font-weight:500;color:var(--muted);text-align:right;padding:14px 16px;border-bottom:1px solid var(--line);line-height:1.55}td{font-size:.875rem;line-height:1.5;text-align:right;padding:14px 16px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left;padding-left:0}th:last-child,td:last-child{padding-right:0}tbody tr:last-child td{border-bottom:0}tbody tr:hover{background:var(--raised)}.token-cell{display:flex;gap:12px;align-items:center}.token-mark{display:grid;place-items:center;width:32px;height:32px;flex-shrink:0;border-radius:50%;background:var(--raised);border:1px solid var(--edge);font-size:.8125rem;font-weight:500;color:var(--muted)}.token-cell strong{font-weight:600}.token-cell .meta{font-size:.8125rem;line-height:1.55}.num{font-weight:500}.main-number{font-weight:600}.panel-end{border-top:1px solid var(--line);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}.text-button{display:inline-flex;gap:7px;align-items:center;min-height:36px;padding:6px 0;border:0;background:none;color:var(--accent);font-size:.8125rem;line-height:1.55}.text-button:hover{text-decoration:underline;text-underline-offset:4px}.text-button .icon{width:14px;height:14px}.tx-table th,.tx-table td{text-align:left}.tx-table th:last-child,.tx-table td:last-child{text-align:right}.direction{font-size:.8125rem;color:var(--muted)}.review-footer{display:flex;justify-content:space-between;gap:16px;margin-top:24px;padding-top:16px;border-top:1px solid var(--line);font-size:.8125rem;color:var(--muted);line-height:1.55}.notice{position:fixed;bottom:20px;left:calc(var(--sidebar) + 32px);right:32px;max-width:640px;padding:12px 16px;background:var(--raised);border:1px solid var(--edge);border-radius:10px;color:var(--text);font-size:.875rem;line-height:1.5;z-index:60}.scrim{position:fixed;inset:0;background:rgb(0 0 0 / .65);z-index:20}
+body.collapsed{--sidebar:76px}.collapsed .sidebar-brand{padding:18px 24px}.collapsed .sidebar .wordmark,.collapsed .sidebar .label,.collapsed .sidebar .chevron,.collapsed .sidebar .group-label,.collapsed .sidebar-bottom .meta{display:none}.collapsed .sidebar-nav{padding:18px 12px}.collapsed .nav-item{justify-content:center;padding:12px}.collapsed .nav-group+.nav-group{padding-top:16px;border-top:1px solid var(--line)}.collapsed .sidebar-bottom .nav-item{justify-content:center}
+.mobile-token-list{display:none}.mobile-token-row{padding:16px 20px;border-bottom:1px solid var(--line)}.mobile-token-row:last-child{border-bottom:0}.mobile-token-top{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:.875rem;line-height:1.5}.mobile-token-values{display:flex;justify-content:space-between;gap:16px;margin-top:12px;font-size:.875rem;line-height:1.5}.mobile-token-values .meta{display:block;margin-bottom:3px}.mobile-token-values>div:last-child{text-align:right}
+@media(max-width:1150px){main{padding:28px 24px}.topbar{padding:0 24px}.main-number{font-size:2.25rem}.page-heading{gap:16px}.field{flex-basis:100%}.query{gap:12px}.query>.btn{margin-left:auto}}
+@media(max-width:900px){body,body.collapsed{--sidebar:0px}.sidebar{display:none;width:280px;max-width:calc(100vw - 48px)}body.nav-open{overflow:hidden}body.nav-open .sidebar{display:flex}.sidebar-brand{padding:12px 20px}.sidebar .sidebar-close{display:inline-flex;margin-left:auto}.mobile-toggle{display:inline-flex}.nav-item{min-height:44px}.desktop-collapse{display:none}.topbar{padding:0 20px}.top-left{gap:8px}.breadcrumbs>.parent,.breadcrumbs>.icon{display:none}.account-button .account-name,.account-button>.icon{display:none}.account-button{padding:4px}.app{margin:0}.notice{left:20px;right:20px}.collapsed .sidebar .wordmark,.collapsed .sidebar .label,.collapsed .sidebar .group-label,.collapsed .sidebar-bottom .meta{display:block}.collapsed .sidebar .chevron{display:block}.collapsed .sidebar-brand{padding:12px 20px}.collapsed .nav-item{justify-content:start;padding:10px 12px}.collapsed .nav-group+.nav-group{border:0;padding:0}.collapsed .sidebar-bottom .nav-item{justify-content:start}}
+@media(max-width:600px){main{padding:24px 20px}.page-heading{flex-direction:column;gap:16px;margin-bottom:24px}h1{font-size:1.5rem;line-height:1.35}.page-actions{padding:0}.page-actions .btn{min-height:40px;padding:8px 12px}.query{gap:16px}.field{flex-basis:100%}.query>.btn{margin-left:auto;align-self:end}.periods button{padding:8px 10px}.overview{padding:20px;gap:24px 16px}.metric{flex-basis:7rem}.metric:first-child{flex-basis:100%}.main-number{font-size:2rem}.result-meta{align-items:start;flex-direction:column;margin-bottom:28px;gap:6px}.section-head{align-items:start;flex-direction:column;gap:14px}.filter-field{width:100%;justify-content:space-between;flex-wrap:wrap}.filter-field .text-button{flex-basis:100%}.mobile-token-list{display:block}#tokens-title~*{min-width:0}.data-section:has(#token-rows) .table-scroll{display:none}.table-scroll{padding:0 20px}.panel-end{padding:12px 20px;align-items:start;flex-direction:column;gap:6px}.review-footer{flex-direction:column;gap:6px}.data-section+.data-section{margin-top:28px}.breadcrumbs{font-size:.8125rem}.query .period-label{font-size:.8125rem}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.preview-note{font-size:.8125rem;color:var(--muted);line-height:1.65;display:flex;align-items:baseline;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:24px}
+.preview-note>p{max-width:none}.preview-note details{flex-shrink:0}.preview-note summary{cursor:pointer;text-decoration:underline;text-underline-offset:4px}
+.preview-settings{padding:16px 0 4px;max-width:50rem}.preview-note:has(details[open]){display:block}.preview-note details[open]{margin-top:8px}
+.preview-settings label,.preview-settings select{font-size:.8125rem}.preview-settings select{display:block;background:var(--panel);border:1px solid var(--edge);color:var(--text);border-radius:8px;padding:10px;margin:6px 0;max-width:100%}
+.preview-examples{display:flex;gap:8px 16px;flex-wrap:wrap;margin-bottom:12px}.inline-link{border:0;background:transparent;color:var(--accent);font:inherit;padding:0;min-height:32px;text-align:left;cursor:pointer;text-underline-offset:4px}
+.inline-link:hover{text-decoration:underline}.page-heading{margin-bottom:24px}.period-field{padding:0;margin:0;min-width:0;border:0}.period-field legend{font-size:.8125rem;color:var(--muted);margin-bottom:8px;padding:0}
+.periods button{min-height:36px}.query{gap:16px;padding-bottom:20px}.query .field{flex-basis:24rem}.wallet-context{display:flex;gap:10px 20px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.wallet-reference{display:inline-flex;gap:8px;align-items:center;background:transparent;color:var(--text);border:0;padding:2px 0;min-height:32px}.wallet-reference:hover{color:var(--accent)}.wallet-reference .icon{width:15px;height:15px}.range{margin-left:auto}
+.overview{gap:32px;padding:22px 24px}.metric:first-child{flex:0 1 26rem}.metric:nth-child(2){flex:1 1 10rem}.main-number{font-size:2.5rem}.metric-label{margin-bottom:7px}.metric .num{display:inline-block;max-width:100%}
+.result-meta{align-items:start;margin-bottom:28px}.source-details{font-size:.8125rem;line-height:1.65;color:var(--muted)}.source-details summary{cursor:pointer;color:var(--muted);text-underline-offset:4px}.source-details summary:hover{color:var(--text)}.source-details[open]{flex-basis:100%;width:100%}.source-details p{margin-top:8px;max-width:76ch}
+.source-details dl{max-width:48rem}.section-head{margin-bottom:16px}.section-jump{font-size:.8125rem;display:inline-flex;gap:7px;align-items:center;text-decoration:none}.section-jump:hover{text-decoration:underline}.section-jump .icon{width:14px;height:14px}
+.list-tools{display:flex;align-items:start;gap:20px;margin-bottom:20px}.list-tools label{font-size:.8125rem;display:block;color:var(--muted);margin-bottom:8px;line-height:1.55}.contract-form{flex:1;min-width:0}.search-controls{display:flex;gap:10px}.search-controls .input-box{flex:1;min-width:0}.contract-form .meta{margin-top:8px}.search-error{font-size:.8125rem;color:var(--negative);margin-top:8px;line-height:1.55}.input-box:has([aria-invalid=true]){border-color:var(--negative)}
+.sort-field{position:relative;flex:0 0 212px;min-width:0}.select-trigger{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;min-height:44px;padding:10px 14px;border:1px solid var(--edge);border-radius:10px;background:var(--panel);color:var(--text);font-size:.875rem;line-height:1.4}.select-trigger:hover{background:var(--raised)}.select-trigger[aria-expanded=true]{border-color:var(--accent)}.select-trigger .icon{width:16px;height:16px;color:var(--muted)}
+.sort-menu{position:absolute;top:calc(100% + 8px);right:0;width:100%;background:var(--raised);border:1px solid var(--edge);border-radius:12px;padding:6px;z-index:15}.sort-option{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px;padding:10px;border-radius:7px;font-size:.875rem;cursor:pointer}.sort-option:hover{background:var(--line)}.sort-option[aria-selected=true]{background:#102C24;color:var(--accent)}.sort-option .icon{width:16px;height:16px;visibility:hidden}.sort-option[aria-selected=true] .icon{visibility:visible}.sort-option:focus-visible{outline-offset:-2px}
+.applied-filter{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 16px}.filter-chip{display:flex;align-items:center;gap:10px;background:#102C24;border:1px solid #2D5747;border-radius:8px;padding:5px 8px 5px 12px;color:#B5E8D2;font-size:.8125rem;min-width:0;max-width:100%}.filter-chip .mono{overflow-wrap:anywhere;white-space:normal;min-width:0}.filter-chip button{width:32px;height:32px;display:grid;place-items:center;background:transparent;color:var(--accent);border:0;border-radius:6px;flex-shrink:0}.filter-chip button:hover{background:#184435}
+.token-table-wrap,.transaction-table-wrap{overflow:auto;padding:0 24px}.token-table{min-width:990px;white-space:normal}.token-table th{padding:14px 10px}.token-table td{padding:17px 10px;vertical-align:top}.token-table .row-main td{border-bottom:0}.token-table .row-actions td{padding:0 0 14px}.token-table .row-actions{border-bottom:1px solid var(--line)}.token-table .row-actions:last-child{border-bottom:0}.token-table th:first-child{width:170px}.token-table th:nth-child(4){min-width:184px}.table-unit{display:block;font-size:.8125rem;color:var(--muted);font-weight:400;line-height:1.55;margin-top:2px}
+.token-pick{border:0;background:transparent;padding:0;text-align:left;color:var(--text);font-size:.875rem;line-height:1.5;display:inline-flex;gap:9px;align-items:start;border-radius:6px;min-height:38px}.token-pick:hover strong,.token-pick[aria-pressed=true] strong{color:var(--accent)}.token-pick strong{font-weight:600}.token-pick .mono{display:block;color:var(--muted);margin-top:3px}.token-pick .icon{width:14px;height:14px;margin-top:3px;color:var(--muted)}.native-label{display:block;color:var(--muted);font-size:.8125rem;font-weight:400}
+.cell-secondary{display:block;color:var(--muted);font-size:.8125rem;line-height:1.65;margin-top:4px}.data-panel{overflow:hidden}.data-panel table tr:hover{background:transparent}.row-main:hover,.transaction-table tbody>tr:hover{background:var(--raised)!important}
+.full-details{text-align:left;font-size:.8125rem;color:var(--muted);line-height:1.6}.full-details>summary{cursor:pointer;display:list-item;width:fit-content;border-radius:4px;min-height:24px}.full-details>summary:hover{color:var(--text)}.full-details[open]{padding-bottom:8px}.full-details[open]>summary{margin-bottom:12px}.full-details p{max-width:none}
+.detail-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 24px;margin:16px 0 0;text-align:left}.detail-values dt{color:var(--muted);font-size:.8125rem}.detail-values dd{margin:4px 0 0;color:var(--text);font-size:.875rem;white-space:normal;overflow-wrap:anywhere;font-variant-numeric:tabular-nums lining-nums}.detail-address{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px}.detail-address .mono{overflow-wrap:anywhere;white-space:normal;color:var(--text)}.detail-address .inline-link{font-size:.8125rem;display:inline-flex;align-items:center;gap:6px}.detail-address .icon{width:14px;height:14px}
+.list-footer{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:15px 24px;border-top:1px solid var(--line)}.loaded-count{font-size:.875rem;color:var(--text);line-height:1.5}.footer-detail{font-size:.8125rem;color:var(--muted);line-height:1.6;margin-top:4px}.list-footer .btn{min-width:144px}.list-footer .btn:disabled{cursor:default;border-color:var(--line)}.section-meta{display:flex;gap:8px 16px;flex-wrap:wrap;align-items:baseline;margin-top:12px}.section-meta .source-details{margin-left:auto}.data-section+.data-section{margin-top:30px}.data-explanation{font-size:.8125rem;color:var(--muted);line-height:1.65;margin-top:12px;max-width:80ch}
+.transaction-table{min-width:940px}.transaction-table th,.transaction-table td{text-align:left;vertical-align:top;white-space:normal}.transaction-table td{padding:18px 16px}.transaction-table th:first-child{width:140px}.transaction-table th:nth-child(2){width:43%}.transaction-table th:nth-child(3),.transaction-table td:nth-child(3){text-align:right}.transaction-table th:nth-child(4){width:160px}.tx-time{font-size:.8125rem;font-weight:400}.tx-time span{display:block;color:var(--muted);margin-top:3px}.asset-line{display:flex;gap:10px;align-items:baseline;margin-bottom:7px;font-size:.875rem;min-width:0}.asset-line:last-child{margin-bottom:0}.asset-side{color:var(--muted);font-size:.8125rem;flex:0 0 25px}.asset-values{display:flex;gap:6px;flex-wrap:wrap;min-width:0}.asset-values .num{font-weight:500;white-space:normal;overflow-wrap:anywhere}.asset-symbol{font-weight:600}.hash-link{display:inline-flex;gap:6px;align-items:center;white-space:nowrap;text-decoration:none;color:var(--text)}.hash-link:hover{color:var(--accent);text-decoration:underline}.hash-link .icon{width:13px;height:13px}.transaction-table .full-details{margin-top:8px}.transaction-table .full-details[open]{width:100%;max-width:330px;min-width:180px}.transaction-table .detail-values{display:block}.transaction-table .detail-values>div{margin-top:14px}.transaction-table .detail-address{display:block}.transaction-table .detail-address>*{margin-top:6px}.asset-exact{padding:12px 0 0;margin-top:12px;border-top:1px solid var(--line)}.asset-exact .mono{white-space:normal;overflow-wrap:anywhere}.asset-exact h4{margin:0;font-size:.875rem;font-weight:500;color:var(--text)}
+.mobile-tokens,.mobile-transactions{display:none}.mobile-token,.mobile-transaction{padding:20px;border-bottom:1px solid var(--line)}.mobile-token:last-child,.mobile-transaction:last-child{border-bottom:0}.mobile-token-top{display:flex;align-items:start;justify-content:space-between;gap:14px}.mobile-token-pnl{text-align:right;font-size:.875rem;line-height:1.5}.mobile-token-pnl .meta{display:block;margin-bottom:4px}.mobile-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 20px;margin-top:18px;font-size:.875rem;line-height:1.5}.mobile-values>div:nth-child(even){text-align:right}.mobile-values .meta{display:block;margin-bottom:5px}.mobile-values .num{white-space:normal;overflow-wrap:anywhere}.mobile-values .cell-secondary{font-size:.8125rem}.mobile-token .full-details{margin-top:16px}.mobile-token .detail-values,.mobile-transaction .detail-values{grid-template-columns:1fr}.mobile-token .token-pick .icon{display:none}.mobile-transaction .full-details{margin-top:14px}.mobile-tx-head{display:flex;justify-content:space-between;gap:16px;margin-bottom:16px}.mobile-tx-amount{font-size:.875rem;text-align:right}.mobile-tx-amount .meta{display:block;margin-bottom:4px}.mobile-transaction .hash-link{margin-top:16px}.mobile-transaction .asset-line{align-items:baseline}.mobile-transaction .asset-values{gap:4px 7px}
+.empty-view,.section-empty{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:40px 24px;text-align:center}.empty-view h2,.section-empty h3{font-size:1.125rem;line-height:1.5;font-weight:500;margin:0 0 8px}.empty-view p,.section-empty p{font-size:.875rem;color:var(--muted);max-width:55ch;line-height:1.65;margin:0 auto}.empty-view .inline-link,.section-empty .inline-link{margin-top:16px;font-size:.875rem}.feedback{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:.875rem;line-height:1.6;margin-bottom:16px}.feedback.warning{color:#E6BF72}.feedback.error{color:var(--negative)}.feedback button{display:block;margin-top:8px}.loading-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px}.loading-panel p{color:var(--muted);font-size:.875rem;margin-bottom:18px}.skeleton{height:18px;background:var(--line);border-radius:4px;max-width:100%;margin-top:18px}.skeleton:nth-child(2){width:60%}.skeleton:nth-child(3){width:90%}.skeleton:nth-child(4){width:75%}
+.source-details .detail-values{margin-top:12px}button:disabled{cursor:default}.section-jump:focus-visible{outline-offset:4px}.data-section{scroll-margin-top:24px}dialog{background:var(--panel);border:1px solid var(--edge);color:var(--text);border-radius:14px;padding:24px;width:480px;max-width:calc(100vw - 40px)}dialog::backdrop{background:rgb(0 0 0 / .65)}dialog p{font-size:.875rem;color:var(--muted);margin-top:12px}textarea{width:100%;max-width:100%;margin:16px 0;background:var(--raised);border:1px solid var(--edge);border-radius:8px;color:var(--text);padding:12px;font-family:'JetBrains Mono',monospace;font-size:.8125rem;line-height:1.7;resize:vertical}textarea:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media(max-width:1200px){.range{margin-left:0;flex-basis:100%}.query .field{flex-basis:100%}.token-table-wrap,.transaction-table-wrap{padding:0 20px}.token-table{min-width:950px}.main-number{font-size:2.25rem}}
+@media(max-width:760px){.list-tools{flex-wrap:wrap;gap:16px}.contract-form{flex-basis:100%}.sort-field{flex:0 1 100%}.token-table-wrap,.transaction-table-wrap{display:none}.mobile-tokens,.mobile-transactions{display:block}.preview-note{display:block}.preview-note details{margin-top:6px}.section-head{flex-wrap:wrap;gap:8px}.section-meta{display:block}.section-meta .source-details{margin:8px 0 0}.detail-values{grid-template-columns:1fr}.list-footer{align-items:stretch;flex-direction:column;gap:14px}.wallet-context{gap:6px 16px}.range{line-height:1.65}.full-details>summary{min-height:32px}.result-meta{gap:8px}.overview{align-items:start}.metric:first-child{flex:1 1 100%}.metric:nth-child(2){flex:1 1 100%}.section-jump{min-height:32px}}
+@media(max-width:600px){.preview-note{margin-bottom:24px}.page-heading{gap:16px}.page-actions{align-self:start}.query{gap:16px;padding-bottom:20px}.query .period-field{flex:1 1 auto}.query>.btn{margin-left:0;padding:10px 12px}.periods{width:fit-content}.periods button{padding:8px 9px}.overview{padding:20px;gap:24px}.main-number{font-size:2rem}.search-controls{gap:8px}.search-controls .input-box{padding:10px}.search-controls .input-box .icon{display:none}.search-controls .btn{padding:10px 12px}.filter-chip{width:100%;flex-wrap:wrap}.filter-chip #filter-address{flex:1 1 12rem}.filter-chip #filter-name:empty{display:none}.mobile-token-top{gap:12px}.mobile-token .token-pick .mono{font-size:.8125rem}.section-head{align-items:start}.data-section+.data-section{margin-top:28px}.list-footer{padding:18px 20px}.result-meta{margin-bottom:28px}.wallet-reference{font-size:.8125rem}.range{font-size:.8125rem}.empty-view,.section-empty{padding:32px 20px}}
+@media(max-width:760px){.mobile-values>div:nth-child(3),.mobile-values>div:nth-child(4){grid-column:1 / -1}.mobile-values>div:nth-child(4){display:flex;justify-content:space-between;align-items:baseline;gap:12px;text-align:left;flex-wrap:wrap}.mobile-values>div:nth-child(3)>.num{white-space:nowrap}}
+@media(max-width:360px){.query .period-field{flex-basis:100%}.query>.btn{width:100%}.mobile-token-top{flex-wrap:wrap}.mobile-token-pnl{text-align:left;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.mobile-token-pnl .meta{margin:0}.mobile-values{grid-template-columns:1fr;gap:14px}.mobile-values>div:nth-child(even){text-align:left}.mobile-tx-head{flex-wrap:wrap}.main-number{font-size:1.75rem}.preview-examples{display:block}.preview-examples>*{display:block}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+<style>/* 修订稿的唯一色值表。正式实施迁入 app/styles/tokens.css，不由页面复制。 */
+@font-face { font-family: Inter; src: url('../files/InterVariable.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'JetBrains Mono'; src: url('../files/JetBrainsMono-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+:root {
+  color-scheme: dark;
+  --athena-bg: #06080B;
+  --athena-panel: #0F1114;
+  --athena-panel-elevated: #181D22;
+  --athena-border: #252A30;
+  --athena-border-strong: #61717B;
+  --athena-text: #FFFFFF;
+  --athena-muted: #9FA0A1;
+  --athena-primary: #00FFA7;
+  --athena-primary-hover: #51FFC3;
+  --athena-primary-active: #09C385;
+  --athena-selected-bg: #102C24;
+  --athena-green: #55D9A1;
+  --athena-green-bg: #0E201B;
+  --athena-green-border: #2D5747;
+  --athena-amber: #E6BF72;
+  --athena-amber-bg: #211C13;
+  --athena-amber-border: #665231;
+  --athena-red: #F58C9B;
+  --athena-red-hover: #FFB0BD;
+  --athena-red-active: #E5778B;
+  --athena-red-bg: #24171C;
+  --athena-red-border: #673B47;
+  --athena-blue: #9BC6F3;
+  --athena-blue-bg: #141D27;
+  --athena-blue-border: #35516D;
+  --athena-font: Inter, 'Noto Sans CJK SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --athena-data-font: 'JetBrains Mono', monospace;
+  --athena-type-page: 1.75rem;
+  --athena-type-section: 1.25rem;
+  --athena-type-body: 1rem;
+  --athena-type-control: .875rem;
+  --athena-type-aux: .8125rem;
+  --athena-control-height: 2.75rem;
+  /* 冻结原型的消费名仅在修订稿内映射；正式 UI 直接使用 athena 变量。 */
+  --page: var(--athena-bg); --panel: var(--athena-panel); --raised: var(--athena-panel-elevated);
+  --line: var(--athena-border); --edge: var(--athena-border-strong);
+  --text: var(--athena-text); --muted: var(--athena-muted);
+  --accent: var(--athena-primary); --mint: var(--athena-primary);
+  --positive: var(--athena-green); --negative: var(--athena-red);
+  --warning: var(--athena-amber); --info: var(--athena-blue);
+}
+
+/* 只覆盖已授权的一致性修正，原样板及业务交互保留在独立文件。 */
+body { font-family: var(--athena-font); }
+::selection { background: var(--athena-primary); color: var(--athena-bg); }
+input, textarea { caret-color: var(--athena-primary); }
+.avatar { width: 1.75rem; height: 1.75rem; min-width: 1.75rem; flex-shrink: 0; line-height: 1; display: grid; place-items: center; }
+.section-heading h2, .panel-head h2, .radar-panel-heading h2, .wc-line h2, .panel h2 { font-size: 1.25rem; line-height: 1.4; font-weight: 600; }
+.group-label { font-size: .8125rem; font-weight: 400; }
+.radar-row h3 { font-weight: 500; }
+
+/* 选中态按控件角色区分，跨页面复用。 */
+.nav-item[aria-current=page] { background: var(--athena-selected-bg); color: var(--athena-primary); font-weight: 500; }
+.segmented button[aria-pressed=true], .segmented button[aria-pressed=true]:hover {
+  background: var(--athena-selected-bg); color: var(--athena-primary);
+}
+.pagination [aria-current=page], .pagination [aria-current=page]:hover,
+.radar-page-buttons strong {
+  color: var(--athena-primary); background: var(--athena-panel); border: 1px solid var(--athena-primary); font-weight: 500;
+}
+input[readonly]:not([disabled]), textarea[readonly]:not([disabled]), .ant-input[readonly]:not([disabled]) {
+  color: var(--athena-muted); background: var(--athena-panel-elevated); border-color: var(--athena-border); cursor: text;
+}
+input:disabled, textarea:disabled, select:disabled, .ant-input:disabled {
+  color: var(--athena-muted); background: var(--athena-panel-elevated); border-color: var(--athena-border); cursor: not-allowed; border-style: dashed;
+}
+input[readonly]:focus-visible, textarea[readonly]:focus-visible {
+  outline: 2px solid var(--athena-primary); outline-offset: 3px;
+}
+
+/* 业务收益和连接成功均属语义绿，品牌青绿仅用于交互强调。 */
+.radar-up, .radar-connected { color: var(--athena-green); }
+.radar-down { color: var(--athena-red); }
+.radar-warmup { color: var(--athena-amber); }
+@media (min-width: 901px) {
+  .athena-numeric-column,
+  .radar-hot-metrics .radar-metric, .radar-leader .radar-metric:nth-child(2) { text-align: right; }
+}
+.asset-num, .radar-value { font-variant-numeric: tabular-nums lining-nums; }
+
+/* 容器宽度相对根字号判断：720px + 200% 字号也进入分组行。 */
+.table-wrap:has(.services-table) { container-type: inline-size; }
+@container (max-width: 44rem) {
+  .services-table { table-layout: auto; }
+  .services-table thead { display: none; }
+  .services-table tbody { display: block; }
+  .services-table tr { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .375rem .75rem; border-top: 1px solid var(--athena-border); padding: 1rem 0; align-items: baseline; }
+  .services-table td { display: block; min-width: 0; padding: 0; border: 0; overflow-wrap: anywhere; }
+  .services-table td:first-child { font-weight: 500; }
+  .services-table td:nth-child(3) { grid-column: 1 / -1; font-size: .8125rem; }
+  .services-table td.healthy-error { display: none; }
+  .services-table .tag { font-size: .8125rem; white-space: normal; }
+}
+
+/* Ant 6 变量声明绕过 px2remTransformer，须在同一 theme key 上映射文字角色。
+   重复类提高特异性，避免 CSS-in-JS 的插入顺序改变结果；浮层也带此 key。 */
+.athena-theme.athena-theme {
+  --ant-font-size: var(--athena-type-control);
+  --ant-font-size-sm: var(--athena-type-aux);
+  --ant-font-size-lg: var(--athena-type-body);
+  --ant-font-size-xl: var(--athena-type-section);
+  --ant-font-size-heading-1: var(--athena-type-page);
+  --ant-font-size-heading-2: var(--athena-type-section);
+  --ant-font-size-heading-3: var(--athena-type-body);
+  --ant-font-size-heading-4: var(--athena-type-body);
+  --ant-font-size-heading-5: var(--athena-type-control);
+  --ant-font-size-icon: var(--athena-type-aux);
+  --ant-font-height: 1.375rem;
+  --ant-font-height-sm: 1.25rem;
+  --ant-font-height-lg: 1.5rem;
+  --ant-control-height: var(--athena-control-height);
+  --ant-control-height-sm: var(--athena-control-height);
+  --ant-control-height-lg: 3.25rem;
+  --ant-button-content-font-size: var(--athena-type-control);
+  --ant-button-content-font-size-sm: var(--athena-type-control);
+  --ant-button-content-font-size-lg: var(--athena-type-body);
+  --ant-input-input-font-size: var(--athena-type-control);
+  --ant-input-input-font-size-sm: var(--athena-type-control);
+  --ant-input-input-font-size-lg: var(--athena-type-body);
+  --ant-alert-with-description-icon-size: 1.5rem;
+  --ant-alert-default-padding: 1rem 1.25rem;
+  --ant-alert-with-description-padding: 1.25rem 1.5rem;
+  --ant-font-family-code: var(--athena-data-font);
+}
+/* 固定按钮高还须允许长文本增高。 */
+.ant-btn { min-height: 2.75rem; height: auto; white-space: normal; padding-block: .625rem; line-height: 1.55; }
+.ant-input { min-height: var(--athena-control-height); }
+.ant-btn > span { overflow-wrap: anywhere; }
+.ant-alert { min-width: 0; }
+.ant-alert-content { min-width: 0; overflow-wrap: anywhere; }
+.ant-alert .ant-alert-description { color: var(--athena-muted); }
+.ant-alert .ant-alert-title { color: var(--athena-text); }
+.ant-segmented { max-width: 100%; }
+.ant-segmented-group { flex-wrap: wrap; }
+.ant-segmented-item-label { min-height: 2.75rem; display: flex; align-items: center; white-space: normal; }
+.ant-pagination .ant-pagination-item { min-width: 2.75rem; height: auto; line-height: 2.75rem; }
+.ant-btn:focus-visible, .ant-input:focus-visible, .ant-pagination-item:focus-visible { outline: 2px solid var(--athena-primary); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .ant-btn, .ant-input, .ant-pagination-item { transition: none; } }
+</style></head>
+<body>
+
+<svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+<symbol id="grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+<symbol id="swap" viewBox="0 0 24 24"><path d="M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4"/></symbol>
+<symbol id="cup" viewBox="0 0 24 24"><path d="M8 3h8v7a4 4 0 0 1-8 0ZM8 5H4v3a4 4 0 0 0 4 4m8-7h4v3a4 4 0 0 1-4 4M12 14v6m-4 1h8"/></symbol>
+<symbol id="layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></symbol>
+<symbol id="chart" viewBox="0 0 24 24"><path d="M4 3v17h17M8 15v-4m5 4V7m5 8V4"/></symbol>
+<symbol id="wallet-icon" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="15" rx="2"/><path d="M3 8V5l14-3v4m4 6h-6v5h6m-3-2.5h.01"/></symbol>
+<symbol id="pie" viewBox="0 0 24 24"><path d="M10 3a9 9 0 1 0 11 11H10ZM14 2v8h8a9 9 0 0 0-8-8Z"/></symbol>
+<symbol id="bell" viewBox="0 0 24 24"><path d="M5 9a7 7 0 0 1 14 0v5l2 4H3l2-4ZM9 21h6"/></symbol>
+<symbol id="help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 8a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4m0 4h.01"/></symbol>
+<symbol id="chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+<symbol id="down" viewBox="0 0 24 24"><path d="m5 9 7 7 7-7"/></symbol>
+<symbol id="menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+<symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+<symbol id="panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m8-11-3 3 3 3"/></symbol>
+<symbol id="refresh-icon" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1"/></symbol>
+<symbol id="search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></symbol>
+<symbol id="eth" viewBox="0 0 24 24"><path d="m12 2 7 10-7 4-7-4 7-10Zm-7 13 7 7 7-7-7 4-7-4Z"/></symbol>
+<symbol id="v5-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol><symbol id="copy-icon" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></symbol><symbol id="external-icon" viewBox="0 0 24 24"><path d="M14 3h7v7M21 3l-11 11M11 5H4v15h15v-7"/></symbol></defs></svg>
+<div class="scrim" id="scrim" hidden></div>
+<aside class="sidebar" id="sidebar" aria-label="Main navigation">
+<div class="sidebar-brand"><svg class="brand-symbol" viewBox="0 0 28 28" aria-hidden="true"><path d="m4 23 10-19 10 19M8 17h12M11 23h6"/></svg><span class="wordmark">ATHENA</span><button class="icon-button sidebar-close" id="close-nav" aria-label="Close navigation"><svg class="icon"><use href="#close"/></svg></button></div>
+<nav class="sidebar-nav" aria-label="Member modules">
+<div class="nav-group"><p class="group-label">Markets</p>
+<button class="nav-item" data-demo="Market Radar" aria-label="Market Radar" title="Market Radar"><svg class="icon"><use href="#grid"/></svg><span class="label">Market Radar</span><svg class="icon chevron"><use href="#chevron"/></svg></button>
+<button class="nav-item" data-demo="Trader Sync" aria-label="Trader Sync" title="Trader Sync"><svg class="icon"><use href="#swap"/></svg><span class="label">Trader Sync</span></button>
+<button class="nav-item" data-demo="Sports" aria-label="Sports" title="Sports"><svg class="icon"><use href="#cup"/></svg><span class="label">Sports</span><svg class="icon chevron"><use href="#chevron"/></svg></button>
+<button class="nav-item" data-demo="Managed OO" aria-label="Managed OO" title="Managed OO"><svg class="icon"><use href="#layers"/></svg><span class="label">Managed OO</span><svg class="icon chevron"><use href="#chevron"/></svg></button>
+<button class="nav-item" data-demo="Worm Trading" aria-label="Worm Trading" title="Worm Trading"><svg class="icon"><use href="#swap"/></svg><span class="label">Worm Trading</span><svg class="icon chevron"><use href="#chevron"/></svg></button>
+<button class="nav-item" data-demo="World Cup Corners" aria-label="World Cup Corners" title="World Cup Corners"><svg class="icon"><use href="#chart"/></svg><span class="label">World Cup Corners</span></button></div>
+<div class="nav-group"><p class="group-label">Token &amp; Risk</p><button class="nav-item" aria-current="page" data-demo="Token" aria-label="Token" title="Token"><svg class="icon"><use href="#grid"/></svg><span class="label">Token</span></button><button class="nav-item" data-demo="Wallets" aria-label="Wallets" title="Wallets"><svg class="icon"><use href="#wallet-icon"/></svg><span class="label">Wallets</span></button></div>
+<div class="nav-group"><p class="group-label">Operations</p><button class="nav-item" data-demo="Profit Sharing" aria-label="Profit Sharing" title="Profit Sharing"><svg class="icon"><use href="#pie"/></svg><span class="label">Profit Sharing</span></button><button class="nav-item" data-demo="Notifications" aria-label="Notifications" title="Notifications"><svg class="icon"><use href="#bell"/></svg><span class="label">Notifications</span></button></div>
+</nav><div class="sidebar-bottom"><button class="nav-item" data-demo="Help" aria-label="Help" title="Help"><svg class="icon"><use href="#help"/></svg><span class="label">Help</span></button><p class="meta">Member workspace</p></div>
+</aside>
+<div class="app" id="app">
+<header class="topbar"><div class="top-left"><button class="icon-button desktop-collapse" id="collapse" aria-label="Collapse navigation" aria-expanded="true"><svg class="icon"><use href="#panel"/></svg></button><button class="icon-button mobile-toggle" id="open-nav" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar"><svg class="icon"><use href="#menu"/></svg></button><nav class="breadcrumbs" aria-label="Breadcrumb"><span class="parent">Token</span><svg class="icon" aria-hidden="true"><use href="#chevron"/></svg><span class="current">Wallet analytics</span></nav></div><div class="account-wrap"><button class="account-button" id="account" aria-label="Account menu for demo user" aria-expanded="false" aria-controls="account-menu"><span class="avatar" aria-hidden="true">D</span><span class="account-name">@demo</span><svg class="icon" aria-hidden="true"><use href="#down"/></svg></button><div class="account-menu" id="account-menu" hidden><button data-demo="Profile">Profile</button><button data-demo="Access">Access</button><button data-demo="Security">Security</button><button data-demo="Help">Help</button><button data-demo="Log out">Log out</button></div></div></header>
+
+<main id="main">
+<aside class="preview-note" aria-label="Preview information" lang="zh-CN">
+  <p>页面预览 · Nansen 真实样本保存于 2026-09-13，非实时数据。</p>
+  <details id="preview-settings"><summary>样本与状态</summary><div class="preview-settings">
+    <div class="preview-examples"><span>载入样本：</span><button type="button" class="inline-link" data-wallet="B">钱包 B · 盈亏与持仓</button><button type="button" class="inline-link" data-wallet="A">钱包 A · 缺失值与分页</button></div>
+    <label for="demo-state">页面状态演示</label><select id="demo-state"><option value="normal">正常样本</option><option value="initial">首次进入</option><option value="loading">查询中（模拟）</option><option value="failed">逐币加载失败（模拟）</option><option value="stale">逐币刷新失败，保留旧结果（模拟）</option><option value="quota">额度耗尽（模拟）</option></select>
+    <p>全部操作在本地运行。样本未记录的日期或后续页会明确提示；模拟状态不代表实际服务状态。</p>
+  </div></details>
+</aside>
+<div class="page-heading"><div><h1>Wallet analytics</h1><p class="description">Wallet data, reported by Nansen.</p></div><div class="page-actions"><button class="btn secondary" id="refresh" type="button"><svg class="icon" aria-hidden="true"><use href="#refresh-icon"/></svg>Refresh data</button></div></div>
+<form class="query" id="wallet-form" novalidate>
+  <div class="field"><label for="wallet-address">Ethereum wallet address</label><div class="input-box"><svg class="icon" aria-hidden="true"><use href="#wallet-icon"/></svg><input class="mono" id="wallet-address" placeholder="0x… full wallet address" autocomplete="off" spellcheck="false" aria-describedby="wallet-error" aria-invalid="false"></div></div>
+  <fieldset class="period-field"><legend>Period</legend><div class="periods"><button type="button" data-period="7" aria-pressed="false">7 days</button><button type="button" data-period="30" aria-pressed="true">30 days</button><button type="button" data-period="90" aria-pressed="false">90 days</button></div></fieldset>
+  <button class="btn primary" id="query-wallet" type="submit">Query wallet</button>
+</form>
+<p class="form-error" id="wallet-error" role="alert" hidden></p>
+<div id="quota-note" class="feedback warning" role="status" hidden>Shared API credits are exhausted. Retained results are still available; new data cannot be requested.</div>
+<div id="initial-state" class="empty-view" hidden><h2>Look up an Ethereum wallet</h2><p>Enter a wallet address to see the overview, token performance and transaction records available from Nansen.</p><button type="button" class="inline-link" data-wallet="B">Try the saved sample</button></div>
+<div id="results">
+  <section id="overview-section" aria-labelledby="overview-title" aria-busy="false">
+    <h2 class="sr-only" id="overview-title">Wallet overview</h2>
+    <div class="wallet-context"><span class="network meta"><svg class="icon" aria-hidden="true"><use href="#eth"/></svg>Ethereum Mainnet</span><button class="wallet-reference mono" id="wallet-copy" type="button"></button><span class="meta range" id="query-range"></span></div>
+    <div id="overview-content"></div>
+    <div class="result-meta"><span class="meta" id="overview-source"></span><details class="source-details"><summary>About this data</summary><p>Values use Nansen’s definitions. Token filtering leaves the wallet overview unchanged. Holdings are the values returned by Nansen; they are not guaranteed to be live balances or exact period-end balances.</p><div id="overview-exact"></div></details></div>
+  </section>
+  <section class="data-section" aria-labelledby="tokens-title" id="tokens-section" aria-busy="false">
+    <div class="section-head"><div><h2 class="section-title" id="tokens-title">Token performance</h2><p class="meta">Bought, sold, holdings and PnL · USD</p></div><a class="section-jump" href="#transactions-section">View transactions<svg class="icon" aria-hidden="true"><use href="#down"/></svg></a></div>
+    <div class="list-tools">
+      <form id="contract-form" class="contract-form" novalidate><label for="contract">Token contract address</label><div class="search-controls"><div class="input-box"><svg class="icon" aria-hidden="true"><use href="#search"/></svg><input class="mono" id="contract" placeholder="0x… full contract address" autocomplete="off" spellcheck="false" aria-invalid="false" aria-describedby="filter-help filter-error"></div><button class="btn secondary" type="submit">Filter</button></div><p class="meta" id="filter-help">Exact address · filters tokens and transactions.</p><p class="search-error" id="filter-error" role="alert" hidden></p></form>
+      <div class="sort-field"><label id="sort-label">Realized PnL order</label><button class="select-trigger" id="sort-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="sort-menu" aria-labelledby="sort-label sort-current"><span id="sort-current">High to low</span><svg class="icon" aria-hidden="true"><use href="#down"/></svg></button><div class="sort-menu" id="sort-menu" role="listbox" aria-labelledby="sort-label" hidden><div class="sort-option" role="option" aria-selected="true" tabindex="-1" data-order="desc">High to low<svg class="icon" aria-hidden="true"><use href="#v5-check"/></svg></div><div class="sort-option" role="option" aria-selected="false" tabindex="-1" data-order="asc">Low to high<svg class="icon" aria-hidden="true"><use href="#v5-check"/></svg></div></div></div>
+    </div>
+    <div class="applied-filter" id="applied-filter" hidden><div class="filter-chip"><span id="filter-name"></span><span id="filter-address" class="mono"></span><button type="button" id="clear-filter" aria-label="Clear token filter"><svg class="icon" aria-hidden="true"><use href="#close"/></svg></button></div><span class="meta">Wallet overview unchanged</span></div>
+    <div id="token-feedback"></div><div id="tokens-content"></div>
+    <div class="section-meta"><p class="meta" id="tokens-source"></p><details class="source-details"><summary>How to read these values</summary><p>Bought and sold amounts follow Nansen’s definitions and may include ordinary transfers. Realized and unrealized PnL are shown separately. “Unavailable” means the provider returned no value; $0.00 is a known zero. An ≈ prefix marks a rounded quantity. Use “Full values” to check the original precision.</p></details></div>
+  </section>
+  <section class="data-section" aria-labelledby="transactions-title" id="transactions-section" aria-busy="false">
+    <div class="section-head"><div><h2 class="section-title" id="transactions-title">Transactions</h2><p class="meta">Newest first · UTC+8 · <span id="transaction-filter-label">All tokens</span></p></div><span class="meta">Up to 20 records per load</span></div>
+    <div id="transactions-content"></div><p class="meta section-meta" id="transactions-source"></p>
+    <p class="data-explanation">Assets and quantities are shown as returned by Nansen. The USD amount belongs to the record; it is not transaction profit.</p>
+  </section>
+</div>
+<footer class="review-footer"><span lang="zh-CN">钱包数据展示 v1 · 页面设计待确认 · 正式功能尚未实现</span><span>Data source: Nansen · Ethereum</span></footer>
+<p class="sr-only" role="status" id="announcement"></p>
+</main></div>
+<div class="notice" role="status" id="notice" hidden></div>
+<dialog id="copy-fallback" aria-labelledby="copy-title"><h2 class="section-title" id="copy-title">Copy full value</h2><p>Clipboard access is unavailable. Select and copy the value below.</p><label class="sr-only" for="copy-value">Full value</label><textarea id="copy-value" readonly rows="3"></textarea><button class="btn secondary" id="close-copy" type="button">Close</button></dialog>
+<script id="sample-data" type="application/json">{
+  "kind": "recorded Nansen validation samples; not live data",
+  "sample_date": "2026-09-13",
+  "default_wallet": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+  "wallets": [
+    {
+      "address": "0xfb67ef6fe609edab1e0595e6815634e8e4db9cf7",
+      "name": "Sample B",
+      "periods": {
+        "30": {
+          "summary": {
+            "values": {
+              "realized_pnl_usd": "64430.54885516991",
+              "traded_token_count": 3
+            },
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-summary.json",
+                "sha256": "c4f1b27224ad705670e5fe5b316900b50dfea6744153386b622bf307b1e06696",
+                "request_started_at": "2026-09-13T13:23:22.033754+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "tokens": {
+            "rows": [
+              {
+                "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                "token_symbol": "PEPE",
+                "bought_usd": "1178762.37812079",
+                "sold_usd": "573682.7677887044",
+                "holding_amount": "166004034009.59995",
+                "holding_usd": "563264.3948222192",
+                "pnl_usd_realised": "53399.356282457564",
+                "pnl_usd_unrealised": "-95214.57179232404"
+              },
+              {
+                "token_address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                "token_symbol": "WETH",
+                "bought_usd": "0.0",
+                "sold_usd": "602005.1357167771",
+                "holding_amount": "0.0",
+                "holding_usd": "0.0",
+                "pnl_usd_realised": "8216.039858283058",
+                "pnl_usd_unrealised": "0.0"
+              },
+              {
+                "token_address": "0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce",
+                "token_symbol": "SHIB",
+                "bought_usd": "83908.15766643375",
+                "sold_usd": "86723.31038086304",
+                "holding_amount": "0.00000181579280252",
+                "holding_usd": "0.000000000009450538427733932",
+                "pnl_usd_realised": "2815.152714429288",
+                "pnl_usd_unrealised": "0.0000000000008181834517910908"
+              }
+            ],
+            "complete": true,
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-pnl-true.json",
+                "sha256": "d0467c28dba2bfed34d2bdde1f57634bfd2450a17da53dac261fc63d24c0606e",
+                "request_started_at": "2026-09-13T13:23:19.755354+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              },
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-pnl-false.json",
+                "sha256": "1be09737eadbad32fa1c1d4ec27384f52674d26ee34f7e4119508eb1b6b6c2a0",
+                "request_started_at": "2026-09-13T13:23:21.321281+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "transactions": {
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-31T15:05:59",
+                    "transaction_hash": "0x83e6c89e048a3bf7b5ccb14ef6bd5fb0f1cfed0d0ad2428c9070ef886ad660ed",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SUPRA",
+                        "token_amount": "100.0",
+                        "token_address": "0xdc7404100a092c898e93708ef73f3322a7acc213",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:17:23",
+                    "transaction_hash": "0xc3aa921eb0a0cf365fec51b5f5b795097deb62e35fb9e23862cebcd466b246b4",
+                    "volume_usd": "18654.83358212071",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-18695.369808714993",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "4697756034.516492",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:14:47",
+                    "transaction_hash": "0x34dabde8490de7c8cb740261ff9690d9aba186213b22cb948f5d21a80940301c",
+                    "volume_usd": "31956.178914744665",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-32025.618446535347",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "8048108154.188779",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:05:47",
+                    "transaction_hash": "0x619cbcf4bfd613571c83df61d4bddfb18842d7c9a64a7d7539b5bbad1206b053",
+                    "volume_usd": "226.25353824348988",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-226.74517836740858",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.08933698700218218",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:05:11",
+                    "transaction_hash": "0xdfe97366186407a3df533ca38150a292b98cd2ad481d66d94f878d16c24998cd",
+                    "volume_usd": "7263.229031035693",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-7279.011744749656",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "1831572400.9807167",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:03:35",
+                    "transaction_hash": "0x189af586c3f4c065d95d259a14c35636e499101885019557ed64937a56be6329",
+                    "volume_usd": "11973.981005772635",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-12000.0",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "3015075376.884422",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:02:59",
+                    "transaction_hash": "0x21f640e901dcd896d1bbf4191ddcc879a70db2b3c2cbd9eaad2d9379a353d7ee",
+                    "volume_usd": "57884.770858696174",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-58010.552210620706",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "14619792406.430883",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:01:47",
+                    "transaction_hash": "0xa3faf60b596507ad5460f7b2939e783ae63375f85586ac4836a472877ffb2b8c",
+                    "volume_usd": "2368.7968940330557",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-2373.944197397069",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "596884855.9392626",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T10:01:23",
+                    "transaction_hash": "0x53ca0088e21d29c2b4c64c6380425920a77929c16636c94ed8513c9bf345d0e8",
+                    "volume_usd": "90703.70881503876",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-90900.80444053885",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "22839398100.6379",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:59:47",
+                    "transaction_hash": "0x502bad734be97fe46b35814fad39a4dbcc9e651eeb58c93a4898de0669a911bf",
+                    "volume_usd": "90706.10491719845",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-90903.20574933519",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "22889816993.654716",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:58:59",
+                    "transaction_hash": "0x6380b4bd1a4cca64e3c3bfa23d63520651fdca79a541ae866c9c398ffc5e77b6",
+                    "volume_usd": "53259.71232782167",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-53375.44360774775",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "13464276034.397987",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:57:35",
+                    "transaction_hash": "0x130c6bd1bae6e866bebbf3fd3913458723b9c9f330033c4fdc26485ee7d50e7f",
+                    "volume_usd": "60594.88856730814",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-60726.55889942913",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "15263001901.044098",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:56:35",
+                    "transaction_hash": "0xf7f151b837afd9ba1dc15cedd33dc2293f90fc3571188661abd244bbb1457f96",
+                    "volume_usd": "5212.7429368047",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-5224.070024121446",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "1312696731.062646",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:55:11",
+                    "transaction_hash": "0x355e7ce2c875da511b403a172fbefa51036968b8290315daf30d5bf575329f53",
+                    "volume_usd": "39913.27001924212",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-40000.0",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "10055260018.076946",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:51:35",
+                    "transaction_hash": "0xb6983e102781cfd1be66234c1378274780ed6fc6da17ad7b9a5e86a61cf67fe6",
+                    "volume_usd": "57466.442520413606",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-57591.31486115683",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "14474706168.79077",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:39:11",
+                    "transaction_hash": "0x89d8d34a71d2ee09e8a38dd74ce8c5865e51c9a6759c466bb793c1dfad22ec46",
+                    "volume_usd": "75245.48723661719",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-75408.9927488692",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "18976298061.794025",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:38:35",
+                    "transaction_hash": "0x40b9792491201b8794ea0d0cc0c4199ffbf43b1dc25d756976b4a8ab2bc15f0d",
+                    "volume_usd": "9936.544520100098",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-9958.13624422124",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "2502670838.2722535",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:37:11",
+                    "transaction_hash": "0x82f18cfcd14cba76a25131df98ce1bec8c6ffb6f91e063207a35649542908dbc",
+                    "volume_usd": "8587.555177382335",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-8606.215600217462",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "2162371206.266285",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:36:47",
+                    "transaction_hash": "0xedec9bc61ac530eab6f3e6306029e5620c635e41e775cb4000310d4df0f47a93",
+                    "volume_usd": "7838.592119818164",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-7855.625075108295",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "1973775144.4995716",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-27T09:34:47",
+                    "transaction_hash": "0xaf0ed7eb3bb19a256169d43d34f448150895aa17d80fe63b64dcb7236d2a77b4",
+                    "volume_usd": "8327.567850651943",
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "DAI",
+                        "token_amount": "-8345.663331155014",
+                        "token_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "PEPE",
+                        "token_amount": "2096986342.4028342",
+                        "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  }
+                ],
+                "is_last_page": false,
+                "source": {
+                  "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-transactions.json",
+                  "sha256": "361cccce70f08ebb0b319658a1a35db9c1912fd5c2f043cb5e17547ae329c3e6",
+                  "request_started_at": "2026-09-13T13:23:24.004727+00:00",
+                  "date": {
+                    "from": "2026-08-14T13:03:28Z",
+                    "to": "2026-09-13T13:03:28Z"
+                  }
+                }
+              }
+            ],
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-transactions.json",
+                "sha256": "361cccce70f08ebb0b319658a1a35db9c1912fd5c2f043cb5e17547ae329c3e6",
+                "request_started_at": "2026-09-13T13:23:24.004727+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          }
+        },
+        "7": {
+          "summary": {
+            "values": {
+              "realized_pnl_usd": "0.0",
+              "traded_token_count": 0
+            },
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-summary-7d.json",
+                "sha256": "6ce7c5c9ef59837cb1ee9074b6d118dec8631b41d4cff5ddd7add441c16171af",
+                "request_started_at": "2026-09-13T13:24:53.724992+00:00",
+                "date": {
+                  "from": "2026-09-06T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "tokens": null,
+          "transactions": null
+        },
+        "90": {
+          "summary": {
+            "values": {
+              "realized_pnl_usd": "-164453.51478110344",
+              "traded_token_count": 3
+            },
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-summary-90d.json",
+                "sha256": "027ddda8e8899b804ea681ab507645a096e6d38ec82050f552ce5cbf8c8b267c",
+                "request_started_at": "2026-09-13T13:24:57.186210+00:00",
+                "date": {
+                  "from": "2026-06-15T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "tokens": {
+            "rows": [
+              {
+                "token_address": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+                "token_symbol": "PEPE",
+                "bought_usd": "1747016.37401855",
+                "sold_usd": "1157409.0770281386",
+                "holding_amount": "166004034009.59995",
+                "holding_usd": "562664.1507378542",
+                "pnl_usd_realised": "68871.66962413142",
+                "pnl_usd_unrealised": "-95814.815876689"
+              },
+              {
+                "token_address": "0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce",
+                "token_symbol": "SHIB",
+                "bought_usd": "123906.77829450491",
+                "sold_usd": "127102.48347536047",
+                "holding_amount": "0.00000181579280252",
+                "holding_usd": "0.000000000009450538427733932",
+                "pnl_usd_realised": "3195.7051808555548",
+                "pnl_usd_unrealised": "0.0000000000008181834517910908"
+              },
+              {
+                "token_address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                "token_symbol": "WETH",
+                "bought_usd": "1734624.4633112652",
+                "sold_usd": "2318914.0701668803",
+                "holding_amount": "0.0",
+                "holding_usd": "0.0",
+                "pnl_usd_realised": "-236520.88958609043",
+                "pnl_usd_unrealised": "0.0"
+              }
+            ],
+            "complete": false,
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/active-pnl-90d.json",
+                "sha256": "eb973bf73999f3eb25671abe493e5427b023fd1151ca1bd95ebfb3830ba10a8b",
+                "request_started_at": "2026-09-13T13:24:58.404271+00:00",
+                "date": {
+                  "from": "2026-06-15T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "transactions": null
+        }
+      }
+    },
+    {
+      "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+      "name": "Sample A",
+      "periods": {
+        "30": {
+          "summary": {
+            "values": {
+              "realized_pnl_usd": "0.0",
+              "traded_token_count": 10
+            },
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-integration-sample-130328/pnl-summary.json",
+                "sha256": "984c5fc6c267b4204d2184832540d483ba43db2c5c8326ee4293fbd8593a8834",
+                "request_started_at": "2026-09-13T13:03:29.361218+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "tokens": {
+            "rows": [
+              {
+                "token_address": "0x712f3378cd1a0476b53f0e29b1a9586e00d78683",
+                "token_symbol": "CATE",
+                "bought_usd": "540.1799619831451",
+                "sold_usd": "-0.0",
+                "holding_amount": "30000000.0",
+                "holding_usd": "16634.26260190761",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "16094.082639924465"
+              },
+              {
+                "token_address": "0xe172e9b6cfbeeb5593bdce3f077356fdb33af904",
+                "token_symbol": "FOLD",
+                "bought_usd": "0.0",
+                "sold_usd": "-0.0",
+                "holding_amount": "240000.0",
+                "holding_usd": "11654.746764549673",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "11654.746764549673"
+              },
+              {
+                "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                "token_symbol": "ETH",
+                "bought_usd": "190.36024231971697",
+                "sold_usd": "-0.0",
+                "holding_amount": "6.712345973092495",
+                "holding_usd": "16625.768922597203",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "1792.4941800697595"
+              },
+              {
+                "token_address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                "token_symbol": "WETH",
+                "bought_usd": "0.000024856850000000006",
+                "sold_usd": "-0.0",
+                "holding_amount": "1.4618981740190888",
+                "holding_usd": "3621.2825858444253",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "224.50905245575473"
+              },
+              {
+                "token_address": "0x63696fc66795b51d02c1590b536484a41fbddf9a",
+                "token_symbol": "WELL",
+                "bought_usd": "0.07769118569192635",
+                "sold_usd": "-0.0",
+                "holding_amount": "7450.70286824714",
+                "holding_usd": "0.09282072774916317",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "0.015129542057236826"
+              },
+              {
+                "token_address": "0xdfa208bb0b811cfbb5fa3ea98ec37aa86180e668",
+                "token_symbol": "W🍖",
+                "bought_usd": "0.07226905667089309",
+                "sold_usd": "-0.0",
+                "holding_amount": "10.0",
+                "holding_usd": "0.07482102050196479",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "0.0025519638310717106"
+              },
+              {
+                "token_address": "0x3845badade8e6dff049820680d1f14bd3903a5d0",
+                "token_symbol": "SAND",
+                "bought_usd": "0.010000000157717763",
+                "sold_usd": "-0.0",
+                "holding_amount": "0.25007549",
+                "holding_usd": "0.008973622931704109",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "-0.0010263772260136552"
+              },
+              {
+                "token_address": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+                "token_symbol": "STETH",
+                "bought_usd": "0.0000000000000024414807402474",
+                "sold_usd": "-0.0",
+                "holding_amount": "0.000010179828756122",
+                "holding_usd": "0.025192772997798388",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "-0.016913976286615583"
+              },
+              {
+                "token_address": "0x7fd4d7737597e7b4ee22acbf8d94362343ae0a79",
+                "token_symbol": "WMC",
+                "bought_usd": "2.30760272983045",
+                "sold_usd": "-0.0",
+                "holding_amount": "3.68",
+                "holding_usd": "9.066092902953509",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "-18.361424641152343"
+              },
+              {
+                "token_address": "0x777777780838c00038ecd48f63f3c37669322bc8",
+                "token_symbol": "ETHCAT",
+                "bought_usd": "121.96789686549216",
+                "sold_usd": "-0.0",
+                "holding_amount": "344281.510705851",
+                "holding_usd": "83.60043086249816",
+                "pnl_usd_realised": "0.0",
+                "pnl_usd_unrealised": "-38.36746600299401"
+              }
+            ],
+            "complete": true,
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-integration-sample-130328/pnl.json",
+                "sha256": "4ec10723b3ce12b2180420c6a4b8c0eef846a16dcf49a06b3087e8e7a5afb3a0",
+                "request_started_at": "2026-09-13T13:03:30.095748+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              },
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-integration-sample-130328/pnl-show-realized-false.json",
+                "sha256": "19dffe50b7f4ee01bfb7673c75e5767ab0b7b1a8273bed8505bd0aa525a486ad",
+                "request_started_at": "2026-09-13T13:04:25.747908+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "transactions": {
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T08:50:35",
+                    "transaction_hash": "0xb6b79ae93ccd350787da71427605c58b8e57a709de3b87c4488396a512a112a8",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T07:54:47",
+                    "transaction_hash": "0x2489ee592d29826e6ec4f75857543eb861420d2190b374dcf788ef60fa9eb11e",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T02:05:59",
+                    "transaction_hash": "0xcb803aa0220c7a87054aef0fdddbd6c1e0931f19e008477a7ab204753af3bc8d",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "🌱 BOT",
+                        "token_amount": "1289261.7048681723",
+                        "token_address": "0x6af9e8b574ff773b9e2f87690e477add5c9d0991",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T20:31:59",
+                    "transaction_hash": "0x6fb7ecc59484bb9ff748461c4f298f9e24d2e7f0d61d4e82c8f9097c8700354e",
+                    "volume_usd": "0.009759458670677021",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000003944975481977",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T15:38:35",
+                    "transaction_hash": "0x0bdff62df6a5c82bfb22b1430c9cd04d922289d74253c5b65c5e74023142c536",
+                    "volume_usd": "0.2473895900054144",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.0001",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T15:29:47",
+                    "transaction_hash": "0xa8586a060bc258089808fb0f5062f674795be0fb4556f4f506aec1b3a510acb8",
+                    "volume_usd": "0.2473895900054144",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.0001",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T15:35:59",
+                    "transaction_hash": "0xd85b88efd929ef59acfd8c03d4418d0dd854ee6b120f0b4499c59aec01eacad0",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "CHA-SAN",
+                        "token_amount": "12620700000.0",
+                        "token_address": "0xafba15b33e986f533090ca9494d69e9f0e799799",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T10:54:11",
+                    "transaction_hash": "0xbf854b8299ae4b3f755ca347f469bc8db743381d677f39e858d394ed66b94d66",
+                    "volume_usd": "0.000024938800000000003",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WETH",
+                        "token_amount": "0.00000001",
+                        "token_address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T07:57:11",
+                    "transaction_hash": "0x7d2c9b4576dc487b5a7b58a0ca083239b90011535d83dae9158c5521ddf37cc9",
+                    "volume_usd": "0.0009979883744675943",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000000400107228737",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-06T12:46:47",
+                    "transaction_hash": "0x6a2f9a508d110bd2d2c7b1dfdfbad28ea99ec8ca11d34cbae1f82ad19b9c2ff5",
+                    "volume_usd": "0.07226905667089309",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "W🍖",
+                        "token_amount": "10.0",
+                        "token_address": "0xdfa208bb0b811cfbb5fa3ea98ec37aa86180e668",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-06T12:46:23",
+                    "transaction_hash": "0xa7d1599827d89e6556c7354faea3bf8c4c66f42c996dfb3816bd4aa553ff292c",
+                    "volume_usd": "2.30760272983045",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WMC",
+                        "token_amount": "1.0",
+                        "token_address": "0x7fd4d7737597e7b4ee22acbf8d94362343ae0a79",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-05T21:40:35",
+                    "transaction_hash": "0x17a4ef8c79f69df16626ea43f5d7710a714ee9b882d608819704fb4178f6110b",
+                    "volume_usd": "0.009895867331882796",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SAND",
+                        "token_amount": "0.25007549",
+                        "token_address": "0x3845badade8e6dff049820680d1f14bd3903a5d0",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-02T09:23:59",
+                    "transaction_hash": "0x57b7db530069df7cc29ea116de89c3a1c0794c795e5812d9bc8cab366bd97217",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-01T19:25:47",
+                    "transaction_hash": "0x83e84fbbc97feb90fd52ceca9f8a054a37198307b0f144bebce491f57d1f8e06",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-01T15:38:59",
+                    "transaction_hash": "0xa71c96d61902046b9b854657fcc9f5018a731a2ec78fa367db802e1f65b00380",
+                    "volume_usd": "0.09981742384351311",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "USDT",
+                        "token_amount": "0.1",
+                        "token_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-01T11:04:47",
+                    "transaction_hash": "0x3eee526656db0494b3934a82d6dbe2a134e4ea7be7250528637af0ea11181f33",
+                    "volume_usd": "171.5027803092994",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.06997199661012063",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-31T23:48:47",
+                    "transaction_hash": "0x1982d576004a9ed419ffc4639f1133dc956ec856f9e9b2a11d59a664d67d2699",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-31T17:41:11",
+                    "transaction_hash": "0x0bbad83b805464ee1fe830f2825754b0bc2696bb52f00b41bb40ca7b056b7297",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-30T19:14:11",
+                    "transaction_hash": "0x989b37eb89c045efc34b8c77ea1f54eb7de2eb98a913ff630aef96b6e7cfa4b2",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SHRUB",
+                        "token_amount": "4000000000.0",
+                        "token_address": "0xd5aaa4ae36a51347a056bbba2744b566f16e6f9c",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-30T11:36:23",
+                    "transaction_hash": "0xf27d57ae947ac12c2bc86a782b042c887b39e27a9d77e6e310a22211322093b1",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SUPRA",
+                        "token_amount": "10.0",
+                        "token_address": "0xdc7404100a092c898e93708ef73f3322a7acc213",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  }
+                ],
+                "is_last_page": false,
+                "source": {
+                  "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-integration-sample-130328/transactions.json",
+                  "sha256": "7472ec3efb0f7aec67b4af5c1b831af917c14716240615af88b06bf3d14350ed",
+                  "request_started_at": "2026-09-13T13:03:33.430948+00:00",
+                  "date": {
+                    "from": "2026-08-14T13:03:28Z",
+                    "to": "2026-09-13T13:03:28Z"
+                  }
+                }
+              },
+              {
+                "rows": [
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-30T08:50:11",
+                    "transaction_hash": "0x69a15ebf826f9cbab7421850756dfc6452d6e47cc6d44249baaebef3336b95db",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-30T02:22:23",
+                    "transaction_hash": "0x9c18bc7fc0ded0c6b75d848a306584b14801db2ff340170024d82785201186e9",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SWABY",
+                        "token_amount": "60000000.0",
+                        "token_address": "0x4508850185d9dec2b29a8f066af730bb2050d85d",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-26T09:39:11",
+                    "transaction_hash": "0xaa1d3aacf92edeccba9ada1af72a5f23da27f572572d6f2282c61276afa60789",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "AWF",
+                        "token_amount": "980.0",
+                        "token_address": "0x12a77658112cf42914cb614d13653ed5852da1e5",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-26T05:37:23",
+                    "transaction_hash": "0xb46b005f4587765476fa2c4092ea47d617dab1c6fe2447ca25a41d2b2b951d9e",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "DOGDOIN",
+                        "token_amount": "209514.37377194196",
+                        "token_address": "0x6a88e16566eddab7e3756c82d80096129a8e8276",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-25T19:34:47",
+                    "transaction_hash": "0x9e614e2ccc3d8e9829261eb53b0a99e32f19390041889f65c9e7cb9d1d41fab8",
+                    "volume_usd": "0.1649486714956595",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.0000666",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-25T06:32:23",
+                    "transaction_hash": "0x2a6b0fd28b548a4843a2c7ae0ed8e9c6fe263d5498f8dcfae8f7c380429437ba",
+                    "volume_usd": "1.0137683048594863",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000409321084501238",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-24T16:48:11",
+                    "transaction_hash": "0x16fce9bf941b09771992bc8f566ac034fe621afb0a7320d052e9de53f33d4a27",
+                    "volume_usd": null,
+                    "tokens_sent": [
+                      {
+                        "token_symbol": "VITALIK",
+                        "token_amount": "-107705.11558637",
+                        "token_address": "0x6390ee51738652b4f22c20f0fd02275cbd5ff685",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ],
+                    "tokens_received": []
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-24T16:21:23",
+                    "transaction_hash": "0x31cef54f91370935f303aa66a8e3cd6081fcd6e905811a128bfbb0853e252930",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETHDOG",
+                        "token_amount": "30000000.0",
+                        "token_address": "0x0b0564726fd4d02eea762ffa28ec975ff71a14fa",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-24T07:53:11",
+                    "transaction_hash": "0xff3d62e0f231a98db040a34b85f23752c0b66fdb4b815bdfb65fcd28e81abc1b",
+                    "volume_usd": "1.010500805072284",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000409321084501238",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-24T07:52:35",
+                    "transaction_hash": "0x16c744b5839afe4392cba2259e465529c5b2aa81850327c8e1cba6618a8d33cc",
+                    "volume_usd": "1.010500805072284",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000409321084501238",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-23T23:29:11",
+                    "transaction_hash": "0x4a244aa9a826fcb68e6b467226788f3766f9d3bcb073df4cc3ada52a90e955c8",
+                    "volume_usd": "0.009863512048160075",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WEBCAT",
+                        "token_amount": "69420.0",
+                        "token_address": "0x7c5b840084e403b1c2918396bfff40000ae82f0c",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-23T23:22:35",
+                    "transaction_hash": "0x9c7dbaa54fcb40bdba0d2080ef90f65ae8e9dcda09ca90cfe8e1d6736ec959d7",
+                    "volume_usd": "0.9863512048160097",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WEBCAT",
+                        "token_amount": "6942000.000000016",
+                        "token_address": "0x7c5b840084e403b1c2918396bfff40000ae82f0c",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-23T20:03:47",
+                    "transaction_hash": "0x970dc061f31f568f3fbe256761e71512b1c4f5d075b7f7d1c23086f278a03247",
+                    "volume_usd": "0.9937910864121913",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000409321084501238",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-23T11:03:47",
+                    "transaction_hash": "0x9c0807a414cef03654ed8fb62234577db919dd25e0378a85abb675db1c07136e",
+                    "volume_usd": "77.25892312196352",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETHCAT",
+                        "token_amount": "126588.187709472",
+                        "token_address": "0x777777780838c00038ecd48f63f3c37669322bc8",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-23T07:53:11",
+                    "transaction_hash": "0x3c1817548e7c0d2350bf2c7bb37552f7037bf7c148b59f66c21cc98cc22198e2",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ECAT",
+                        "token_amount": "100000000.0",
+                        "token_address": "0x6f97a626fd3a28768c7d7a4cd170a1214c539caa",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-22T18:24:59",
+                    "transaction_hash": "0xd8e1a3814618779e1a053f0994e6c537294db79913ab801cc7f245b3eb2c9f39",
+                    "volume_usd": "78.93644199975645",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETHCAT",
+                        "token_amount": "217693.322996379",
+                        "token_address": "0x777777780838c00038ecd48f63f3c37669322bc8",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-22T16:49:23",
+                    "transaction_hash": "0xa835cabfb16e141bae7e2cac3f157b4c17ade53f33cb1c5609efdcde2a7d3a10",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ECAT",
+                        "token_amount": "900000000.0",
+                        "token_address": "0x6f97a626fd3a28768c7d7a4cd170a1214c539caa",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-22T03:08:23",
+                    "transaction_hash": "0x732fbfe549bfafa7f57b399cc9670a1face3a5394afb0622534ad965b444eeb8",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "CATE",
+                        "token_amount": "30000000.0",
+                        "token_address": "0x712f3378cd1a0476b53f0e29b1a9586e00d78683",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-22T02:37:47",
+                    "transaction_hash": "0x939d0846a407d6ff92d298e36e816803e4ec62b0385aaec52ce15d052054e490",
+                    "volume_usd": "0.11315628348668631",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WELL",
+                        "token_amount": "7450.70286824714",
+                        "token_address": "0x63696fc66795b51d02c1590b536484a41fbddf9a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-21T21:54:23",
+                    "transaction_hash": "0xb9aa8ef42c18923543e94f11c30b5c98f956929d78e271c5fb5d30a0510a7ea5",
+                    "volume_usd": "0.9067073284797114",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000379393620112634",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  }
+                ],
+                "is_last_page": false,
+                "source": {
+                  "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-page2.json",
+                  "sha256": "f652a0f0fb6b5e08378fce1a00e389f69ef0a528c3ae6fa59bebbef50c941de6",
+                  "request_started_at": "2026-09-13T13:21:35.677093+00:00",
+                  "date": {
+                    "from": "2026-08-14T13:03:28Z",
+                    "to": "2026-09-13T13:03:28Z"
+                  }
+                }
+              }
+            ],
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-integration-sample-130328/transactions.json",
+                "sha256": "7472ec3efb0f7aec67b4af5c1b831af917c14716240615af88b06bf3d14350ed",
+                "request_started_at": "2026-09-13T13:03:33.430948+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              },
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-page2.json",
+                "sha256": "f652a0f0fb6b5e08378fce1a00e389f69ef0a528c3ae6fa59bebbef50c941de6",
+                "request_started_at": "2026-09-13T13:21:35.677093+00:00",
+                "date": {
+                  "from": "2026-08-14T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          },
+          "filtered_transactions": {
+            "0x712f3378cd1a0476b53f0e29b1a9586e00d78683": {
+              "pages": [
+                {
+                  "rows": [
+                    {
+                      "chain": "ethereum",
+                      "block_timestamp": "2026-08-22T03:08:23",
+                      "transaction_hash": "0x732fbfe549bfafa7f57b399cc9670a1face3a5394afb0622534ad965b444eeb8",
+                      "volume_usd": null,
+                      "tokens_sent": [],
+                      "tokens_received": [
+                        {
+                          "token_symbol": "CATE",
+                          "token_amount": "30000000.0",
+                          "token_address": "0x712f3378cd1a0476b53f0e29b1a9586e00d78683",
+                          "chain": "ethereum",
+                          "price_usd": null,
+                          "value_usd": null
+                        }
+                      ]
+                    }
+                  ],
+                  "is_last_page": true,
+                  "source": {
+                    "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-cate-filter.json",
+                    "sha256": "d27a0bb75d1641960a7331d2ec8257b3c5d58a42a9d73815f4c10d1556060f1f",
+                    "request_started_at": "2026-09-13T13:21:41.676837+00:00",
+                    "date": {
+                      "from": "2026-08-14T13:03:28Z",
+                      "to": "2026-09-13T13:03:28Z"
+                    }
+                  }
+                }
+              ],
+              "sources": [
+                {
+                  "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-cate-filter.json",
+                  "sha256": "d27a0bb75d1641960a7331d2ec8257b3c5d58a42a9d73815f4c10d1556060f1f",
+                  "request_started_at": "2026-09-13T13:21:41.676837+00:00",
+                  "date": {
+                    "from": "2026-08-14T13:03:28Z",
+                    "to": "2026-09-13T13:03:28Z"
+                  }
+                }
+              ]
+            },
+            "0xdac17f958d2ee523a2206206994597c13d831ec7": {
+              "pages": [
+                {
+                  "rows": [
+                    {
+                      "chain": "ethereum",
+                      "block_timestamp": "2026-09-01T15:38:59",
+                      "transaction_hash": "0xa71c96d61902046b9b854657fcc9f5018a731a2ec78fa367db802e1f65b00380",
+                      "volume_usd": "0.09981742384351311",
+                      "tokens_sent": [],
+                      "tokens_received": [
+                        {
+                          "token_symbol": "USDT",
+                          "token_amount": "0.1",
+                          "token_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                          "chain": "ethereum",
+                          "price_usd": null,
+                          "value_usd": null
+                        }
+                      ]
+                    }
+                  ],
+                  "is_last_page": true,
+                  "source": {
+                    "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-usdt-filter.json",
+                    "sha256": "5bdaec6df73ddd11f3e40a10e396ce35fa7b9db05eece6bc4652542ee7447656",
+                    "request_started_at": "2026-09-13T13:21:39.963086+00:00",
+                    "date": {
+                      "from": "2026-08-14T13:03:28Z",
+                      "to": "2026-09-13T13:03:28Z"
+                    }
+                  }
+                }
+              ],
+              "sources": [
+                {
+                  "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-usdt-filter.json",
+                  "sha256": "5bdaec6df73ddd11f3e40a10e396ce35fa7b9db05eece6bc4652542ee7447656",
+                  "request_started_at": "2026-09-13T13:21:39.963086+00:00",
+                  "date": {
+                    "from": "2026-08-14T13:03:28Z",
+                    "to": "2026-09-13T13:03:28Z"
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "7": {
+          "summary": null,
+          "tokens": null,
+          "transactions": {
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T08:50:35",
+                    "transaction_hash": "0xb6b79ae93ccd350787da71427605c58b8e57a709de3b87c4488396a512a112a8",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T07:54:47",
+                    "transaction_hash": "0x2489ee592d29826e6ec4f75857543eb861420d2190b374dcf788ef60fa9eb11e",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T02:05:59",
+                    "transaction_hash": "0xcb803aa0220c7a87054aef0fdddbd6c1e0931f19e008477a7ab204753af3bc8d",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "🌱 BOT",
+                        "token_amount": "1289261.7048681723",
+                        "token_address": "0x6af9e8b574ff773b9e2f87690e477add5c9d0991",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T20:31:59",
+                    "transaction_hash": "0x6fb7ecc59484bb9ff748461c4f298f9e24d2e7f0d61d4e82c8f9097c8700354e",
+                    "volume_usd": "0.009759458670677021",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000003944975481977",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T15:38:35",
+                    "transaction_hash": "0x0bdff62df6a5c82bfb22b1430c9cd04d922289d74253c5b65c5e74023142c536",
+                    "volume_usd": "0.2473895900054144",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.0001",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T15:29:47",
+                    "transaction_hash": "0xa8586a060bc258089808fb0f5062f674795be0fb4556f4f506aec1b3a510acb8",
+                    "volume_usd": "0.2473895900054144",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.0001",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T15:35:59",
+                    "transaction_hash": "0xd85b88efd929ef59acfd8c03d4418d0dd854ee6b120f0b4499c59aec01eacad0",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "CHA-SAN",
+                        "token_amount": "12620700000.0",
+                        "token_address": "0xafba15b33e986f533090ca9494d69e9f0e799799",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T10:54:11",
+                    "transaction_hash": "0xbf854b8299ae4b3f755ca347f469bc8db743381d677f39e858d394ed66b94d66",
+                    "volume_usd": "0.000024938800000000003",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WETH",
+                        "token_amount": "0.00000001",
+                        "token_address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T07:57:11",
+                    "transaction_hash": "0x7d2c9b4576dc487b5a7b58a0ca083239b90011535d83dae9158c5521ddf37cc9",
+                    "volume_usd": "0.0009979883744675943",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000000400107228737",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  }
+                ],
+                "is_last_page": true,
+                "source": {
+                  "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-7d.json",
+                  "sha256": "e5c6929b015dbf51d3d8eab95e71239f77d2dc518b357ad13def7dbcb81881ee",
+                  "request_started_at": "2026-09-13T13:24:55.444737+00:00",
+                  "date": {
+                    "from": "2026-09-06T13:03:28Z",
+                    "to": "2026-09-13T13:03:28Z"
+                  }
+                }
+              }
+            ],
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-7d.json",
+                "sha256": "e5c6929b015dbf51d3d8eab95e71239f77d2dc518b357ad13def7dbcb81881ee",
+                "request_started_at": "2026-09-13T13:24:55.444737+00:00",
+                "date": {
+                  "from": "2026-09-06T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          }
+        },
+        "90": {
+          "summary": null,
+          "tokens": null,
+          "transactions": {
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T08:50:35",
+                    "transaction_hash": "0xb6b79ae93ccd350787da71427605c58b8e57a709de3b87c4488396a512a112a8",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T07:54:47",
+                    "transaction_hash": "0x2489ee592d29826e6ec4f75857543eb861420d2190b374dcf788ef60fa9eb11e",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-13T02:05:59",
+                    "transaction_hash": "0xcb803aa0220c7a87054aef0fdddbd6c1e0931f19e008477a7ab204753af3bc8d",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "🌱 BOT",
+                        "token_amount": "1289261.7048681723",
+                        "token_address": "0x6af9e8b574ff773b9e2f87690e477add5c9d0991",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T20:31:59",
+                    "transaction_hash": "0x6fb7ecc59484bb9ff748461c4f298f9e24d2e7f0d61d4e82c8f9097c8700354e",
+                    "volume_usd": "0.009759458670677021",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000003944975481977",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T15:38:35",
+                    "transaction_hash": "0x0bdff62df6a5c82bfb22b1430c9cd04d922289d74253c5b65c5e74023142c536",
+                    "volume_usd": "0.2473895900054144",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.0001",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-11T15:29:47",
+                    "transaction_hash": "0xa8586a060bc258089808fb0f5062f674795be0fb4556f4f506aec1b3a510acb8",
+                    "volume_usd": "0.2473895900054144",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.0001",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T15:35:59",
+                    "transaction_hash": "0xd85b88efd929ef59acfd8c03d4418d0dd854ee6b120f0b4499c59aec01eacad0",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "CHA-SAN",
+                        "token_amount": "12620700000.0",
+                        "token_address": "0xafba15b33e986f533090ca9494d69e9f0e799799",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T10:54:11",
+                    "transaction_hash": "0xbf854b8299ae4b3f755ca347f469bc8db743381d677f39e858d394ed66b94d66",
+                    "volume_usd": "0.000024938800000000003",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WETH",
+                        "token_amount": "0.00000001",
+                        "token_address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-09T07:57:11",
+                    "transaction_hash": "0x7d2c9b4576dc487b5a7b58a0ca083239b90011535d83dae9158c5521ddf37cc9",
+                    "volume_usd": "0.0009979883744675943",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.000000400107228737",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-06T12:46:47",
+                    "transaction_hash": "0x6a2f9a508d110bd2d2c7b1dfdfbad28ea99ec8ca11d34cbae1f82ad19b9c2ff5",
+                    "volume_usd": "0.07226905667089309",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "W🍖",
+                        "token_amount": "10.0",
+                        "token_address": "0xdfa208bb0b811cfbb5fa3ea98ec37aa86180e668",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-06T12:46:23",
+                    "transaction_hash": "0xa7d1599827d89e6556c7354faea3bf8c4c66f42c996dfb3816bd4aa553ff292c",
+                    "volume_usd": "2.30760272983045",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "WMC",
+                        "token_amount": "1.0",
+                        "token_address": "0x7fd4d7737597e7b4ee22acbf8d94362343ae0a79",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-05T21:40:35",
+                    "transaction_hash": "0x17a4ef8c79f69df16626ea43f5d7710a714ee9b882d608819704fb4178f6110b",
+                    "volume_usd": "0.009895867331882796",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SAND",
+                        "token_amount": "0.25007549",
+                        "token_address": "0x3845badade8e6dff049820680d1f14bd3903a5d0",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-02T09:23:59",
+                    "transaction_hash": "0x57b7db530069df7cc29ea116de89c3a1c0794c795e5812d9bc8cab366bd97217",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-01T19:25:47",
+                    "transaction_hash": "0x83e84fbbc97feb90fd52ceca9f8a054a37198307b0f144bebce491f57d1f8e06",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-01T15:38:59",
+                    "transaction_hash": "0xa71c96d61902046b9b854657fcc9f5018a731a2ec78fa367db802e1f65b00380",
+                    "volume_usd": "0.09981742384351311",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "USDT",
+                        "token_amount": "0.1",
+                        "token_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-09-01T11:04:47",
+                    "transaction_hash": "0x3eee526656db0494b3934a82d6dbe2a134e4ea7be7250528637af0ea11181f33",
+                    "volume_usd": "171.5027803092994",
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "ETH",
+                        "token_amount": "0.06997199661012063",
+                        "token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-31T23:48:47",
+                    "transaction_hash": "0x1982d576004a9ed419ffc4639f1133dc956ec856f9e9b2a11d59a664d67d2699",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-31T17:41:11",
+                    "transaction_hash": "0x0bbad83b805464ee1fe830f2825754b0bc2696bb52f00b41bb40ca7b056b7297",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SOS",
+                        "token_amount": "1.0",
+                        "token_address": "0x7373dbc24dcd785896e8ac3d5372c6ced9b75a8a",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-30T19:14:11",
+                    "transaction_hash": "0x989b37eb89c045efc34b8c77ea1f54eb7de2eb98a913ff630aef96b6e7cfa4b2",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SHRUB",
+                        "token_amount": "4000000000.0",
+                        "token_address": "0xd5aaa4ae36a51347a056bbba2744b566f16e6f9c",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  },
+                  {
+                    "chain": "ethereum",
+                    "block_timestamp": "2026-08-30T11:36:23",
+                    "transaction_hash": "0xf27d57ae947ac12c2bc86a782b042c887b39e27a9d77e6e310a22211322093b1",
+                    "volume_usd": null,
+                    "tokens_sent": [],
+                    "tokens_received": [
+                      {
+                        "token_symbol": "SUPRA",
+                        "token_amount": "10.0",
+                        "token_address": "0xdc7404100a092c898e93708ef73f3322a7acc213",
+                        "chain": "ethereum",
+                        "price_usd": null,
+                        "value_usd": null
+                      }
+                    ]
+                  }
+                ],
+                "is_last_page": false,
+                "source": {
+                  "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-90d.json",
+                  "sha256": "e60b6e612062b876926b8f2fe049f2c48ce2c07bfcc173737e635c46a0f43fa6",
+                  "request_started_at": "2026-09-13T13:24:59.932525+00:00",
+                  "date": {
+                    "from": "2026-06-15T13:03:28Z",
+                    "to": "2026-09-13T13:03:28Z"
+                  }
+                }
+              }
+            ],
+            "sources": [
+              {
+                "file": "docs/requirements/token/research-data/2026-09-13-wallet-analytics/nansen-semantics-132128/transactions-90d.json",
+                "sha256": "e60b6e612062b876926b8f2fe049f2c48ce2c07bfcc173737e635c46a0f43fa6",
+                "request_started_at": "2026-09-13T13:24:59.932525+00:00",
+                "date": {
+                  "from": "2026-06-15T13:03:28Z",
+                  "to": "2026-09-13T13:03:28Z"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}</script>
+<script>'use strict';
+const sample = JSON.parse(document.getElementById('sample-data').textContent);
+const $ = id => document.getElementById(id);
+const all = selector => [...document.querySelectorAll(selector)];
+const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const icon = name => `<svg class="icon" aria-hidden="true"><use href="#${name}"/></svg>`;
+const shorten = (value, first = 8, last = 6) => value ? `${value.slice(0, first)}…${value.slice(-last)}` : 'Unavailable';
+const addressPattern = /^0x[0-9a-f]{40}$/i;
+const nativeAddress = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+let wallet = sample.wallets[0], period = '30', filter = '', order = 'desc', pageCount = 1, mode = 'normal';
+let notificationTimer, operation = 0;
+
+function parts(value) {
+  if (value == null) return null;
+  const source = String(value), unsigned = source.replace(/^[-+]/, ''), [whole, decimals = ''] = unsigned.split('.');
+  const magnitude = BigInt(whole + decimals);
+  return {whole, decimals, magnitude, negative: source.startsWith('-') && magnitude !== 0n};
+}
+function numericCompare(a, b) {
+  const pa = parts(a), pb = parts(b), scale = Math.max(pa.decimals.length, pb.decimals.length);
+  const va = pa.magnitude * 10n ** BigInt(scale - pa.decimals.length) * (pa.negative ? -1n : 1n);
+  const vb = pb.magnitude * 10n ** BigInt(scale - pb.decimals.length) * (pb.negative ? -1n : 1n);
+  return va < vb ? -1 : va > vb ? 1 : 0;
+}
+function grouped(value) { return value.replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function rounded(value, scale) {
+  const p = parts(value), digits = (p.decimals + '0'.repeat(scale + 1)), increment = digits[scale] >= '5' ? 1n : 0n;
+  const roundedMagnitude = BigInt(p.whole + digits.slice(0, scale)) + increment;
+  const text = roundedMagnitude.toString().padStart(scale + 1, '0');
+  return {whole: scale ? text.slice(0, -scale) : text, decimals: scale ? text.slice(-scale) : '', approximate: /[1-9]/.test(p.decimals.slice(scale))};
+}
+function dollars(value, pnl = false) {
+  const p = parts(value); if (!p) return '<span class="meta">Unavailable</span>';
+  const zero = p.magnitude === 0n;
+  const sign = zero ? '' : p.negative ? '−' : pnl ? '+' : '';
+  const color = pnl && !zero ? p.negative ? ' negative' : ' positive' : '';
+  const tiny = !zero && numericCompare(String(value).replace('-', ''), '0.01') < 0;
+  const r = rounded(value, 2), text = tiny ? `${sign}&lt;$0.01` : `${sign}$${grouped(r.whole)}.${r.decimals}`;
+  return `<span class="num${color}">${text}</span>`;
+}
+function quantity(value) {
+  const p = parts(value); if (!p) return '<span class="meta">Unavailable</span>';
+  let scale = 6;
+  if (BigInt(p.whole) === 0n && p.magnitude !== 0n) scale = Math.max(scale, p.decimals.search(/[1-9]/) + 4);
+  const r = rounded(value, scale), fraction = r.decimals.replace(/0+$/, '');
+  const text = `${r.approximate ? '≈' : ''}${p.negative ? '−' : ''}${grouped(r.whole)}${fraction ? '.' + fraction : ''}`;
+  return `<span class="num">${text}</span>`;
+}
+function exact(value, unit = '') { return value == null ? 'Unavailable' : `${esc(value)}${unit ? ' ' + esc(unit) : ''}`; }
+function dateParts(value) {
+  const timestamp = /(?:Z|[+-]\d{2}:\d{2})$/.test(value) ? value : `${value}Z`;
+  const p = new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Shanghai', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hourCycle:'h23'}).formatToParts(new Date(timestamp));
+  const map = Object.fromEntries(p.map(x => [x.type, x.value]));
+  return {date:`${map.year}-${map.month}-${map.day}`, time:`${map.hour}:${map.minute}:${map.second}`};
+}
+function fullTime(value) { const d = dateParts(value); return `${d.date} ${d.time} UTC+8`; }
+function current() { return wallet.periods[period]; }
+function sourceText(part) {
+  if (!part?.sources?.length) return '';
+  const starts = part.sources.map(s => s.request_started_at).sort();
+  return `Nansen · saved sample · request started ${fullTime(starts.at(-1))}`;
+}
+function empty(title, description) { return `<div class="section-empty"><h3>${esc(title)}</h3><p>${esc(description)}</p></div>`; }
+function missing(area) { return empty('Sample not recorded', `This offline preview has no complete ${area} sample for this wallet and period. Choose 30 days or switch the sample wallet.`); }
+function loading(area) { return `<div class="loading-panel"><p>Loading ${esc(area)}…</p><div class="skeleton" aria-hidden="true"></div><div class="skeleton" aria-hidden="true"></div><div class="skeleton" aria-hidden="true"></div></div>`; }
+function notify(message) {
+  clearTimeout(notificationTimer); $('notice').textContent = message; $('notice').hidden = false;
+  notificationTimer = setTimeout(() => { $('notice').hidden = true; }, 5500);
+}
+function announce(message) { $('announcement').textContent = message; }
+function setError(id, message, input, invalid = true) {
+  $(id).textContent = message; $(id).hidden = !message; $(input).setAttribute('aria-invalid', String(Boolean(message) && invalid));
+}
+function addressLinks(address, native = false) {
+  if (!address) return '<span class="meta">Address unavailable</span>';
+  if (native) return '<span class="native-label">ETH · native asset; no ERC-20 contract</span>';
+  return `<div class="detail-address"><span class="mono">${esc(address)}</span><button type="button" class="inline-link" data-copy="${esc(address)}" aria-label="Copy complete address">${icon('copy-icon')}Copy address</button><a class="inline-link" href="https://etherscan.io/token/${esc(address)}" target="_blank" rel="noopener noreferrer">Etherscan${icon('external-icon')}</a></div>`;
+}
+function valueList(entries) { return `<dl class="detail-values">${entries.map(([label,value]) => `<div><dt>${esc(label)}</dt><dd>${value}</dd></div>`).join('')}</dl>`; }
+function tokenDetails(t) {
+  return `<details class="full-details"><summary>Full values</summary>${addressLinks(t.token_address, t.token_address?.toLowerCase() === nativeAddress)}${valueList([
+    ['Bought · USD', exact(t.bought_usd)], ['Sold · USD', exact(t.sold_usd)], ['Holding quantity', exact(t.holding_amount, t.token_symbol)],
+    ['Holding value · USD', exact(t.holding_usd)], ['Realized PnL · USD', exact(t.pnl_usd_realised)], ['Unrealized PnL · USD', exact(t.pnl_usd_unrealised)],
+  ])}</details>`;
+}
+function tokenPick(t) {
+  const native = t.token_address?.toLowerCase() === nativeAddress;
+  const content = `<span><strong>${esc(t.token_symbol || 'Unknown token')}</strong><span class="${native ? 'native-label' : 'mono'}">${native ? 'Native asset' : esc(shorten(t.token_address, 6, 4))}</span></span>`;
+  if (native || !t.token_address) return `<span class="token-pick">${content}</span>`;
+  return `<button type="button" class="token-pick" data-token="${esc(t.token_address)}" aria-pressed="${filter === t.token_address.toLowerCase()}" aria-label="Filter lists by ${esc(t.token_symbol || t.token_address)}">${content}${icon('search')}</button>`;
+}
+function renderSummary() {
+  const part = current().summary;
+  $('overview-source').textContent = sourceText(part);
+  $('overview-exact').innerHTML = part ? valueList([['Realized PnL · USD', exact(part.values.realized_pnl_usd)], ['Traded tokens', exact(part.values.traded_token_count)]]) : '';
+  if (mode === 'loading') { $('overview-content').innerHTML = loading('wallet overview'); $('overview-source').textContent = ''; return; }
+  if (!part) { $('overview-content').innerHTML = missing('overview'); return; }
+  $('overview-content').innerHTML = `<div class="overview"><div class="metric"><p class="metric-label">Realized PnL <span class="unit">USD</span></p><div class="main-number" id="summary-pnl">${dollars(part.values.realized_pnl_usd, true)}</div></div><div class="metric"><p class="metric-label">Traded tokens</p><div class="sub-number num" id="summary-count">${exact(part.values.traded_token_count)}</div></div></div>`;
+}
+function sortedTokens() {
+  return (current().tokens?.rows || []).filter(t => !filter || t.token_address?.toLowerCase() === filter).sort((a,b) => {
+    const av=a.pnl_usd_realised, bv=b.pnl_usd_realised;
+    if (av == null && bv != null) return 1;
+    if (av != null && bv == null) return -1;
+    const c = av == null ? 0 : numericCompare(av, bv) * (order === 'desc' ? -1 : 1);
+    return c || (a.token_address || '').localeCompare(b.token_address || '');
+  });
+}
+function renderTokens() {
+  const part = current().tokens, rows = sortedTokens();
+  $('tokens-source').textContent = sourceText(part); $('token-feedback').innerHTML = '';
+  if (mode === 'loading') { $('tokens-content').innerHTML = loading('token performance'); $('tokens-source').textContent=''; return; }
+  if (mode === 'failed') {
+    $('tokens-content').innerHTML = empty('Token performance could not be loaded', 'The wallet overview and transactions are still available. Retry this section to request token data again.');
+    $('token-feedback').innerHTML = '<div class="feedback error" role="status">Nansen token data is temporarily unavailable.<button type="button" class="inline-link" data-retry>Retry token performance</button></div>';
+    $('tokens-source').textContent = ''; return;
+  }
+  if (mode === 'stale') $('token-feedback').innerHTML = '<div class="feedback warning" role="status">Refresh failed. Showing the previous token result with its original query range.<button type="button" class="inline-link" data-retry>Retry token performance</button></div>';
+  if (!part) { $('tokens-content').innerHTML = missing('token list'); return; }
+  if (!rows.length) {
+    $('tokens-content').innerHTML = empty(part.complete ? 'No tokens match this address' : 'No match in the saved sample', part.complete ? 'No matching token was returned in the recorded dataset for this wallet and period. Clear the token filter to see all returned tokens.' : 'The saved sample does not cover the complete token list. A live query is needed to check other results.');
+    return;
+  }
+  const desktop = rows.map(t => `<tr class="row-main" data-token-row="${esc(t.token_symbol)}"><td>${tokenPick(t)}</td><td>${dollars(t.bought_usd)}</td><td>${dollars(t.sold_usd)}</td><td>${quantity(t.holding_amount)}<span class="cell-secondary">${dollars(t.holding_usd)}</span></td><td>${dollars(t.pnl_usd_realised,true)}</td><td>${dollars(t.pnl_usd_unrealised,true)}</td></tr><tr class="row-actions"><td colspan="6">${tokenDetails(t)}</td></tr>`).join('');
+  const mobile = rows.map(t => `<article class="mobile-token" role="listitem"><div class="mobile-token-top">${tokenPick(t)}<div class="mobile-token-pnl"><span class="meta">Realized PnL · USD</span>${dollars(t.pnl_usd_realised,true)}</div></div><div class="mobile-values"><div><span class="meta">Bought · USD</span>${dollars(t.bought_usd)}</div><div><span class="meta">Sold · USD</span>${dollars(t.sold_usd)}</div><div><span class="meta">Holdings · ${esc(t.token_symbol || 'token')}</span>${quantity(t.holding_amount)}<span class="cell-secondary">${dollars(t.holding_usd)} USD</span></div><div><span class="meta">Unrealized PnL · USD</span>${dollars(t.pnl_usd_unrealised,true)}</div></div>${tokenDetails(t)}</article>`).join('');
+  $('tokens-content').innerHTML = `<div class="data-panel"><div class="token-table-wrap" tabindex="0" role="region" aria-label="Token performance table"><table class="token-table"><caption class="sr-only">Nansen token performance in USD</caption><thead><tr><th scope="col">Token / contract</th><th scope="col">Bought<span class="table-unit">USD</span></th><th scope="col">Sold<span class="table-unit">USD</span></th><th scope="col">Holdings<span class="table-unit">Quantity / USD</span></th><th scope="col" aria-sort="${order==='desc'?'descending':'ascending'}">Realized PnL<span class="table-unit">USD</span></th><th scope="col">Unrealized PnL<span class="table-unit">USD</span></th></tr></thead><tbody>${desktop}</tbody></table></div><div class="mobile-tokens" role="list" aria-label="Token performance">${mobile}</div><div class="list-footer"><div><p class="loaded-count">${rows.length} ${rows.length===1?'token':'tokens'} loaded</p><p class="footer-detail">${part.complete ? 'All returned tokens loaded for this selection' : 'Preview: realized-token sample only; full coverage is unverified'}</p></div></div></div>`;
+}
+function assetsMarkup(record) {
+  const sides = [['Out',record.tokens_sent],['In',record.tokens_received]];
+  const lines = sides.flatMap(([side,assets]) => assets.map(a => `<div class="asset-line"><span class="asset-side">${side}</span><span class="asset-values">${quantity(a.token_amount)}<span class="asset-symbol">${esc(a.token_symbol || 'Unknown token')}${a.token_address?.toLowerCase()===nativeAddress?' <span class="meta">(native)</span>':''}</span></span></div>`));
+  return lines.length ? lines.join('') : '<span class="meta">Assets unavailable</span>';
+}
+function transactionDetails(r) {
+  const assets = [['Out',r.tokens_sent],['In',r.tokens_received]].flatMap(([side,list]) => list.map(a => `<div class="asset-exact"><h4>${side} · ${esc(a.token_symbol || 'Unknown token')}</h4>${valueList([['Quantity', exact(a.token_amount)], ['Token value · USD', exact(a.value_usd)], ['Token price · USD', exact(a.price_usd)]])}${addressLinks(a.token_address, a.token_address?.toLowerCase() === nativeAddress)}</div>`)).join('');
+  return `<details class="full-details"><summary>Full record</summary><p class="detail-address"><span class="mono">${esc(r.transaction_hash)}</span><button type="button" class="inline-link" data-copy="${esc(r.transaction_hash)}">${icon('copy-icon')}Copy full hash</button></p>${valueList([['Record amount · USD', exact(r.volume_usd)], ['Time · UTC+8', fullTime(r.block_timestamp)]])}${assets}</details>`;
+}
+function transactionData() {
+  const c = current(), exactPart = filter && c.filtered_transactions?.[filter], part = exactPart || c.transactions;
+  if (!part) return {part:null, rows:[]};
+  const pages = part.pages.slice(0, exactPart ? 1 : pageCount);
+  const rows = pages.flatMap(p=>p.rows).filter(r=> !filter || r.tokens_sent.concat(r.tokens_received).some(a=>a.token_address?.toLowerCase() === filter));
+  return {part,rows,pages,exactPart:Boolean(exactPart),moreSaved: !exactPart && pageCount < part.pages.length, last:pages.at(-1).is_last_page};
+}
+function renderTransactions() {
+  const {part,rows,pages,exactPart,moreSaved,last}=transactionData();
+  const token = current().tokens?.rows.find(t=>t.token_address?.toLowerCase() === filter);
+  $('transaction-filter-label').textContent = filter ? (token?.token_symbol || shorten(filter)) : 'All tokens';
+  $('transactions-source').textContent = sourceText(part);
+  if (mode === 'loading') { $('transactions-content').innerHTML=loading('transactions'); $('transactions-source').textContent=''; return; }
+  if (!part) { $('transactions-content').innerHTML=missing('transaction'); return; }
+  const desktop=rows.map(r=>{const d=dateParts(r.block_timestamp);return `<tr><td class="tx-time">${d.date}<span>${d.time}</span></td><td>${assetsMarkup(r)}</td><td>${dollars(r.volume_usd)}</td><td><a class="hash-link mono" href="https://etherscan.io/tx/${esc(r.transaction_hash)}" target="_blank" rel="noopener noreferrer" aria-label="Open transaction ${esc(r.transaction_hash)} on Etherscan">${esc(shorten(r.transaction_hash,6,4))}${icon('external-icon')}</a>${transactionDetails(r)}</td></tr>`;}).join('');
+  const mobile=rows.map(r=>{const d=dateParts(r.block_timestamp);return `<article class="mobile-transaction" role="listitem"><div class="mobile-tx-head"><div class="tx-time">${d.date}<span>${d.time} UTC+8</span></div><div class="mobile-tx-amount"><span class="meta">Amount · USD</span>${dollars(r.volume_usd)}</div></div>${assetsMarkup(r)}<a class="hash-link mono" href="https://etherscan.io/tx/${esc(r.transaction_hash)}" target="_blank" rel="noopener noreferrer">${esc(shorten(r.transaction_hash))}${icon('external-icon')}<span class="sr-only">Open transaction on Etherscan</span></a>${transactionDetails(r)}</article>`;}).join('');
+  const localFilter = filter && !exactPart;
+  const count = rows.length;
+  let footer = last ? 'All returned records loaded for this selection' : moreSaved ? 'More saved records available' : 'Nansen returned more pages; this preview has no further saved page';
+  if (localFilter) footer = `Preview: ${count} matches within ${pages.flatMap(p=>p.rows).length} saved records. The complete filtered history requires a live query.`;
+  const content=rows.length ? `<div class="transaction-table-wrap" tabindex="0" role="region" aria-label="Transaction records table"><table class="transaction-table"><caption class="sr-only">Nansen transactions, newest first</caption><thead><tr><th scope="col">Time · UTC+8</th><th scope="col">Assets / quantities</th><th scope="col">Amount · USD</th><th scope="col">Transaction</th></tr></thead><tbody>${desktop}</tbody></table></div><div class="mobile-transactions" role="list" aria-label="Transaction records">${mobile}</div>` : `<div class="section-empty"><h3>${last && exactPart ? 'No matching transactions' : 'No match in the saved records'}</h3><p>${localFilter ? 'This preview filters only the saved records. It does not prove that the full wallet history has no match.' : 'Nansen returned no records for this saved query.'}</p></div>`;
+  $('transactions-content').innerHTML=`<div class="data-panel">${content}<div class="list-footer"><div><p class="loaded-count" id="transaction-count">${count} ${count===1?'record':'records'} loaded</p><p class="footer-detail">${footer}</p></div>${!last ? `<button type="button" class="btn secondary" id="load-transactions" ${moreSaved?'':'disabled'}>${moreSaved?'Load more':'No saved next page'}</button>`:''}</div></div>`;
+}
+function render() {
+  const c=current();
+  $('initial-state').hidden=mode!=='initial'; $('results').hidden=mode==='initial'; $('quota-note').hidden=mode!=='quota';
+  $('refresh').disabled=mode==='loading'||mode==='quota'||mode==='initial'; $('query-wallet').disabled=mode==='loading';
+  $('query-wallet').textContent=mode==='loading'?'Querying…':'Query wallet';
+  all('[data-period]').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.period===period)); b.disabled=mode==='loading';});
+  const sources=c.summary?.sources||c.tokens?.sources||c.transactions?.sources;
+  if (sources?.length) {const range=sources[0].date; $('query-range').textContent=`${fullTime(range.from).replace(' UTC+8','')} – ${fullTime(range.to)}`;}
+  $('wallet-copy').innerHTML=`${esc(shorten(wallet.address,10,8))}${icon('copy-icon')}`;
+  $('wallet-copy').setAttribute('aria-label',`Copy full wallet address ${wallet.address}`);
+  $('applied-filter').hidden=!filter; $('filter-address').textContent=filter;
+  $('filter-name').textContent=c.tokens?.rows.find(t=>t.token_address?.toLowerCase()===filter)?.token_symbol||'';
+  for (const id of ['overview-section','tokens-section','transactions-section']) $(id).setAttribute('aria-busy',String(mode==='loading'));
+  renderSummary(); renderTokens(); renderTransactions();
+}
+function clearFilter() { filter=''; $('contract').value=''; pageCount=1; setError('filter-error','','contract'); render(); announce('Token filter cleared. Wallet and period unchanged.'); }
+function applyFilter(address) {
+  filter=address.toLowerCase(); $('contract').value=address; pageCount=1; setError('filter-error','','contract'); render(); announce('Token filter applied to tokens and transactions. Wallet overview unchanged.');
+}
+function loadSample(letter) {
+  operation++; wallet=sample.wallets.find(w=>w.name===`Sample ${letter}`); period='30'; filter=''; pageCount=1; mode='normal';
+  $('wallet-address').value=wallet.address; $('contract').value=''; $('demo-state').value='normal';
+  setError('wallet-error','','wallet-address'); setError('filter-error','','contract'); render(); announce(`${wallet.name} loaded. Saved Nansen data from September 13, 2026.`);
+}
+function runLocalQuery(refresh = false) {
+  const address=$('wallet-address').value.trim();
+  if (!addressPattern.test(address)) {setError('wallet-error','Enter 0x followed by 40 hexadecimal characters.','wallet-address'); $('wallet-address').focus();return;}
+  const match=sample.wallets.find(w=>w.address.toLowerCase()===address.toLowerCase());
+  if (!match) {setError('wallet-error','This offline preview contains only Sample A and Sample B. Open “样本与状态” to load one.','wallet-address',false);return;}
+  setError('wallet-error','','wallet-address'); const sameWallet=wallet.address===match.address; wallet=match;
+  if (!sameWallet) {filter='';$('contract').value='';}
+  const ticket=++operation; mode='loading'; render();
+  setTimeout(()=>{if(ticket!==operation)return; mode='normal'; pageCount=1;$('demo-state').value='normal';render(); notify(refresh?'Preview reloaded from saved samples. No API call was made; sample times remain unchanged.':'Saved sample loaded. This preview did not query Nansen.');},550);
+}
+$('wallet-form').addEventListener('submit',e=>{e.preventDefault();runLocalQuery();});
+$('refresh').addEventListener('click',()=>runLocalQuery(true));
+all('[data-period]').forEach(b=>b.addEventListener('click',()=>{operation++;period=b.dataset.period;pageCount=1;mode='normal';$('demo-state').value='normal';render();announce(`${period}-day saved sample selected. Missing samples are labeled.`);}));
+$('contract-form').addEventListener('submit',e=>{e.preventDefault();const address=$('contract').value.trim();if(!address){clearFilter();return;}if(!addressPattern.test(address)||address.toLowerCase()===nativeAddress){setError('filter-error','Enter a complete ERC-20 contract address (0x and 40 hexadecimal characters).','contract');$('contract').focus();return;}applyFilter(address);});
+$('clear-filter').addEventListener('click',()=>{clearFilter();$('contract').focus();});
+$('demo-state').addEventListener('change',e=>{operation++;mode=e.target.value;render();});
+document.addEventListener('click',e=>{
+  const pick=e.target.closest('[data-token]');if(pick)applyFilter(pick.dataset.token);
+  const example=e.target.closest('[data-wallet]');if(example)loadSample(example.dataset.wallet);
+  if(e.target.closest('[data-retry]')) {mode='normal';$('demo-state').value='normal';render();notify('Preview: the saved token result has been restored. No request was made.');}
+  if(e.target.closest('#load-transactions')) {pageCount++;renderTransactions();announce('20 more saved records loaded.');}
+  const copy=e.target.closest('[data-copy]');if(copy)copyValue(copy.dataset.copy);
+  const nav=e.target.closest('[data-demo]');if(nav)notify(`Preview only: ${nav.dataset.demo} is not opened from this sample.`);
+});
+async function copyValue(value) {
+  try {await navigator.clipboard.writeText(value);notify('Full value copied.');}
+  catch {$('copy-value').value=value;$('copy-fallback').showModal();$('copy-value').focus();$('copy-value').select();}
+}
+$('wallet-copy').addEventListener('click',()=>copyValue(wallet.address));
+$('close-copy').addEventListener('click',()=>$('copy-fallback').close());
+function closeSort(focus=false) {$('sort-menu').hidden=true;$('sort-trigger').setAttribute('aria-expanded','false');if(focus)$('sort-trigger').focus();}
+function openSort() {$('sort-menu').hidden=false;$('sort-trigger').setAttribute('aria-expanded','true');document.querySelector(`[data-order="${order}"]`).focus();}
+$('sort-trigger').addEventListener('click',()=>{$('sort-menu').hidden?openSort():closeSort();});
+$('sort-trigger').addEventListener('keydown',e=>{if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();openSort();}});
+all('[data-order]').forEach((option,index)=>{
+  function select(){order=option.dataset.order;$('sort-current').textContent=order==='desc'?'High to low':'Low to high';all('[data-order]').forEach(o=>o.setAttribute('aria-selected',String(o===option)));closeSort(true);renderTokens();announce(`Realized PnL sorted ${order==='desc'?'high to low':'low to high'}.`);}
+  option.addEventListener('click',select);option.addEventListener('keydown',e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();select();}if(['ArrowDown','ArrowUp','Home','End'].includes(e.key)){e.preventDefault();const opts=all('[data-order]');opts[e.key==='Home'?0:e.key==='End'?opts.length-1:(index+1)%opts.length].focus();}if(e.key==='Tab')closeSort();});
+});
+document.addEventListener('click',e=>{if(!e.target.closest('.sort-field'))closeSort();if(!e.target.closest('.account-wrap'))closeAccount();});
+const sidebar=$('sidebar'),app=$('app');
+function closeNav(focus=true) {document.body.classList.remove('nav-open');$('scrim').hidden=true;app.inert=false;sidebar.removeAttribute('role');sidebar.removeAttribute('aria-modal');$('open-nav').setAttribute('aria-expanded','false');if(focus)$('open-nav').focus();}
+function openNav() {document.body.classList.add('nav-open');$('scrim').hidden=false;app.inert=true;sidebar.setAttribute('role','dialog');sidebar.setAttribute('aria-modal','true');$('open-nav').setAttribute('aria-expanded','true');$('close-nav').focus();}
+$('open-nav').addEventListener('click',openNav);$('close-nav').addEventListener('click',()=>closeNav());$('scrim').addEventListener('click',()=>closeNav());
+$('collapse').addEventListener('click',()=>{const collapsed=document.body.classList.toggle('collapsed');$('collapse').setAttribute('aria-expanded',String(!collapsed));$('collapse').setAttribute('aria-label',collapsed?'Expand navigation':'Collapse navigation');});
+function closeAccount(focus=false){$('account-menu').hidden=true;$('account').setAttribute('aria-expanded','false');if(focus)$('account').focus();}
+$('account').addEventListener('click',()=>{const open=$('account-menu').hidden;$('account-menu').hidden=!open;$('account').setAttribute('aria-expanded',String(open));if(open)$('account-menu').querySelector('button').focus();});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){if(!$('sort-menu').hidden)closeSort(true);else if(!$('account-menu').hidden)closeAccount(true);else if(document.body.classList.contains('nav-open'))closeNav();}
+  if(e.key==='Tab'&&document.body.classList.contains('nav-open')){const nodes=[...sidebar.querySelectorAll('button,a,[tabindex="0"]')].filter(n=>n.getClientRects().length),first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+});
+window.matchMedia('(min-width:901px)').addEventListener('change',e=>{if(e.matches&&document.body.classList.contains('nav-open'))closeNav(false);});
+$('wallet-address').value=wallet.address;render();
+</script>
+</body></html>

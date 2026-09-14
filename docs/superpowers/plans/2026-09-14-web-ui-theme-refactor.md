@@ -10,6 +10,8 @@
 
 **方案：** [技术方案](../specs/2026-09-14-web-ui-theme-refactor-design.md)、[路由和状态覆盖](../../requirements/web-ui/theme-refactor-coverage.md)、[机器清单](../../requirements/web-ui/theme-refactor-coverage.json)。执行者必须同时读取方案及本计划。
 
+**审阅修订：** 用户已授权修复总体审阅问题；本计划采用[一致性修订契约](../../requirements/web-ui/theme-consistency-contract.md)与 [v23 可运行参考](../../requirements/web-ui/previews/theme-consistency-v23/README.md)。本次修正计划和设计参考，以下正式实施任务仍未执行。
+
 ## 全局约束
 
 - 本计划已编写，以下任务均未实施。用户已确认主视觉和规划方向，本轮没有完成生产 UI 或真实业务验收。
@@ -34,6 +36,8 @@
 | --- | --- |
 | 新建 | `ui/src/app/styles/tokens.css`：统一颜色、字体角色、空间变量 |
 | 新建 | `ui/src/app/shared/athena-theme.tsx`：导出 `createAthenaTheme(): ThemeConfig`、`AthenaThemeProvider({children}: {children: React.ReactNode})` |
+| 新建 | `ui/src/app/shared/athena-color-roles.ts`：从 CSS 读取完整最终色映射，导出 `createAthenaColorRoles(read: (name: string) => string): Partial<GlobalToken>` |
+| 修改 | `ui/package.json`、`ui/yarn.lock`：将当前已安装的 `@ant-design/cssinjs` 2.1.2 声明为直接依赖；不升级 Ant Design |
 | 新建 | `ui/src/assets/fonts/athena/`：两份 WOFF2 和两份许可 |
 | 修改 | 两份 HTML、`entry/member.tsx`、`entry/admin.tsx`、`session/bootstrap.tsx`：首屏及 Provider 归属 |
 | 修改 | `styles/shared.css`、`styles/member.css`、`styles/admin.css` 和各自 features CSS：共用与业务视觉 |
@@ -48,7 +52,7 @@
 
 ## T1：单深色入口、字体与主题偏好清理
 
-**文件：** 新建上述 tokens、theme provider、字体；修改两份 HTML、entry、bootstrap、两份 app、共享 account-center、models、accounts-service、view-preferences-service；删除 `shared/theme.ts`。后端修改 `internal/accountcenter/{types,manager}.go`、`internal/accountstate/store/{migrations/000001_init.sql,queries/account_center.sql,queries/account_directory.sql,sql_store.go}`、`internal/server/account/{account.proto,account.go}`、`internal/server/session/{session.proto,session.go}`、`internal/server/authz.go`，生成对应产物和 schema contract。
+**文件：** 新建上述 tokens、theme provider、color roles、字体；修改 package／lock、两份 HTML、entry、bootstrap、两份 app、共享 account-center、models、accounts-service、view-preferences-service；删除 `shared/theme.ts`。后端修改 `internal/accountcenter/{types,manager}.go`、`internal/accountstate/store/{migrations/000001_init.sql,queries/account_center.sql,queries/account_directory.sql,sql_store.go}`、`internal/server/account/{account.proto,account.go}`、`internal/server/session/{session.proto,session.go}`、`internal/server/authz.go`，生成对应产物和 schema contract。
 
 **消费：** 已批准颜色与本地字体、现有 profile／access／session 合同。
 
@@ -105,32 +109,50 @@ func TestCanonicalSchemaHasNoThemePreferences(t *testing.T) {
 import * as React from 'react';
 import {App, ConfigProvider, theme} from 'antd';
 import type {ThemeConfig} from 'antd';
+import {StyleProvider, px2remTransformer} from '@ant-design/cssinjs';
+import {createAthenaColorRoles} from './athena-color-roles';
+
+const transformers = [px2remTransformer({rootValue: 16, mediaQuery: false})];
 
 export const createAthenaTheme = (): ThemeConfig => {
     const style = getComputedStyle(document.documentElement);
     const read = (name: string) => style.getPropertyValue(`--athena-${name}`).trim();
+    const roles = createAthenaColorRoles(read);
     return {
-        algorithm: theme.darkAlgorithm,
+        cssVar: {key: 'athena-theme'},
+        algorithm: (seed, map) => ({...theme.darkAlgorithm(seed, map), ...roles}),
         token: {
-            colorPrimary: read('primary'), colorPrimaryHover: read('primary-hover'), colorPrimaryActive: read('primary-active'),
-            colorBgBase: read('bg'), colorBgLayout: read('bg'), colorBgContainer: read('panel'), colorBgElevated: read('panel-elevated'),
-            colorText: read('text'), colorTextSecondary: read('muted'), colorTextLightSolid: read('bg'),
-            colorBorder: read('border-strong'), colorBorderSecondary: read('border'), colorSplit: read('border'),
-            colorSuccess: read('green'), colorWarning: read('amber'), colorError: read('red'), colorInfo: read('blue'),
             fontFamily: read('font'), fontSize: 14, controlHeight: 44, borderRadius: 10,
             motionDurationFast: '0.16s', motionDurationMid: '0.2s'
         },
-        components: {Button: {primaryColor: read('bg'), primaryShadow: 'none'}}
+        components: {
+            Button: {
+                primaryColor: read('bg'), dangerColor: read('bg'), primaryShadow: 'none', dangerShadow: 'none', defaultShadow: 'none',
+                defaultColor: read('text'), defaultBg: read('panel'), defaultBorderColor: read('border-strong'),
+                defaultHoverColor: read('text'), defaultHoverBg: read('panel-elevated'), defaultHoverBorderColor: read('border-strong'),
+                defaultActiveColor: read('text'), defaultActiveBg: read('panel-elevated'), defaultActiveBorderColor: read('border-strong'),
+                borderColorDisabled: read('border')
+            },
+            Input: {activeBorderColor: read('primary'), hoverBorderColor: read('primary'), activeShadow: 'none'},
+            Segmented: {trackBg: read('panel'), itemSelectedBg: read('selected-bg'), itemSelectedColor: read('primary')},
+            Pagination: {itemActiveBg: read('panel')},
+            Alert: {defaultPadding: '16px 20px'}
+        }
     };
 };
 
 export const AthenaThemeProvider = ({children}: {children: React.ReactNode}) => {
     const [config] = React.useState(createAthenaTheme);
-    return <ConfigProvider theme={config}><App>{children}</App></ConfigProvider>;
+    return <StyleProvider transformers={transformers}>
+        <ConfigProvider theme={config}><App>{children}</App></ConfigProvider>
+    </StyleProvider>;
 };
 ```
 
-此代码定义 Provider 与读取接口；token CSS 的完整键和值以方案表为准，`--athena-brand`／`--athena-accent` 等现有消费名指向同一 primary。进入浏览器核对 Ant Design 派生色，尤其 hover／active、危险按钮和弹层，不以 theme 对象存在判定视觉通过。
+`createAthenaColorRoles` 的完整实现采用 [v23 参考中的同名函数](../../requirements/web-ui/previews/theme-consistency-v23/theme-reference.cjs)，迁为 TypeScript 并导入 `GlobalToken` 类型；它包括主色各态、反馈四组背景／边框／文字、链接、表面和辅助文字，禁止退回只设置 seed 的旧示例。CSS 的完整键和值采用[修订 token 表](../../requirements/web-ui/previews/theme-consistency-v23/tokens.css)，`--athena-brand`／`--athena-accent` 等消费名指向同一 primary。
+
+- [ ] 在共用 CSS 迁入 [v23 rem 桥接及控件高度规则](../../requirements/web-ui/previews/theme-consistency-v23/corrections.css)：Ant 6 的变量声明不会经过 `px2remTransformer`，须在 `.athena-theme.athena-theme` 映射全局字号、Button／Input 字号和控件高度；HTML 不固定根字号。确认 16→32px 根字号下，按钮、输入、提示正文的实际字体 14→28px，正文 16→32px。浮层必须沿同一 Provider／theme key；使用 App 上下文的 message／modal／notification，不能由未包裹的静态调用逃离主题。
+- [ ] 以实际 Ant 控件测主按钮和危险按钮 normal／hover／active、四类反馈背景／边框／图标和只读字段。逐项断言最终计算样式与修订契约一致，记录字体实际增幅及容器裁切；颜色配置对象正确不足以通过。v23 的 SSR 样本只提供可复现依据，正式 React 的 portal、交互及其余组件仍在 T2／T9 验证。
 
 - [ ] 运行局部 Jest、`go test ./internal/accountcenter/... ./internal/server/account/... ./internal/server/session/... ./internal/server/appbootstrap/...`，以及 `go test -tags=integration ./internal/accountstate/...`。`ui` 内运行 `yarn lint`，检查全部消费者已更新。
 - [ ] 检查生产源无 theme 切换／preferences RPC 消费；本地分页与排序存储仍可使用。后续 T2 浏览器用例补齐浅色系统、首屏、注册和主题旧缓存验证。提交本任务时包含源、生成物、前后端消费者及相关长期账户文档；不先合并一半 API 契约。
@@ -196,13 +218,14 @@ test('theme:core 系统浅色和旧偏好不能改变深色登录', async ({page
 - [ ] `openThemeCase` 在导航前安装拦截，使用 `ATHENA_UI_E2E_PATH_PREFIX`，等待对应 h1 和字体就绪。`assertThemeLayout` 检查根横向溢出、单个可见 h1、页头／操作区遮挡及可见主控件目标；不要只检查 `body` 的 scrollWidth 或隐藏桌面副本。
 - [ ] 沿 v3／v15 移动账户入口至顶栏，保留独立身份菜单；桌面 224px，900px 及以下导航抽屉。保留当前 focus trap、Escape、skip link 和关闭后焦点恢复，禁止用隐藏菜单保留可聚焦子项。
 - [ ] 调整 AppPage／Section 和表格数据层级；复用 `compactRender`，将手机卡片改为批准的分隔行。统一按钮、输入、反馈、菜单及现有弹窗 class，保持提交中的关闭规则和每页当前分页合同。
+- [ ] 按[共用状态表](../../requirements/web-ui/theme-consistency-contract.md#共用状态表)统一导航／页签／分段／数字页码；只读与禁用分别保留原生语义、外观和复制能力。管理员壳固定模块→图标映射；可比较的金额列及其表头右对齐，保留原始精度。统一区块标题 1.25rem／600、导航组标题 0.8125rem／400 与随字体放大的顶栏头像。
 
 ```css
 /* shared.css 中替换现有布局声明；不追加第二份旧主题。 */
 html, body, #app { min-width: 0; }
 .app-page { min-width: 0; }
 .app-page__heading h1 { font-size: 1.75rem; line-height: 1.3; font-weight: 600; }
-.section-panel__header h2 { font-size: 1.25rem; line-height: 1.4; }
+.section-panel__header h2 { font-size: 1.25rem; line-height: 1.4; font-weight: 600; }
 .athena-number { font-variant-numeric: tabular-nums lining-nums; }
 .athena-identifier { font-family: var(--athena-data-font); font-size: .8125rem; font-variant-ligatures: none; overflow-wrap: anywhere; }
 @media (max-width: 900px) {
@@ -253,6 +276,7 @@ html, body, #app { min-width: 0; }
 **产出：** v15–v18 的五条入口，S3／S8 和管理员辅助状态。
 
 - [ ] 为账户目录／详情／编辑冲突、Service Status 三页签、Gateway／Live Probe、通知列表／详情／测试弹窗建立数据与请求用例；明确管理员操作与会员 API key 不能互换。
+- [ ] Service Status 表格沿 v23 按容器宽度／44rem 阈值转分组行。增加 720px＋200% 根字号下 `Unreachable` 与完整超时说明不交叠的断言，同时验证正常桌面表格；不能只检查整页 scrollWidth。
 - [ ] 按 v15 桌面目录／详情、手机目录到详情；v16 来源分区；v17 网关与 Probe 独立；v18 通知列表／详情重排。移动详情要保留返回列表与原筛选。
 
 ```css
@@ -380,6 +404,7 @@ export const MarketVolume = ({value}: {value: number | undefined}) =>
 - [ ] 对机器清单逐条检查：37 条目标入口都有案例，2 条 Appearance 转为既有未找到，4 条默认／兜底按角色生效；共享注册 admin 变体单列。8 条 Trader Sync 只验共享主题影响与行为，不补写成布局已改版。Token 导航保持当前独立接入状态。
 - [ ] 现有深浅主题循环改为“系统输入 light／dark 时结果均 dark”，保留两个系统环境输入；只更新批准的主题／preferences 预期，不删除 owner、grant、cursor、撤权与未知状态用例。
 - [ ] 每个改版页面采集 1440×900、390×844 主图及 320×844、200% 字号证据。等待字体、关闭动画、移开指针、从页首截图；弹窗使用真实视口并记录内部滚动。与相应批准图逐页对应，不能把原型 DOM 的像素差当成产品回归门槛。
+- [ ] 放大检查先断言实际字体增加，再检查单元格、错误说明、头像、输入与固定操作区的局部内容边界。覆盖 Button／Input／Select／Table／Modal／Dropdown／Message／Notification 的实际消费；修订 CSS 若遗漏组件专用字号变量，补入公共桥接并重验。根字号模拟和原生浏览器缩放分开记录。
 - [ ] a11y spec 使用现有 `AxeBuilder` 与 WCAG 2／2.1 A／AA tags，保存原始 JSON。覆盖默认页、关键弹窗、失败／只读、焦点和主次按钮 normal／hover／active／disabled；裁字、手机键盘和中文回退另用实际浏览器核对。
 - [ ] 在 `ui` 执行 `yarn lint`、`yarn build` 与受影响 Jest 汇总；根目录执行无过滤 `make ui-acceptance` 和 `make ui-a11y`。不得携带 `UI_ACCEPTANCE_GREP`，报告必须含实际匹配／通过／失败／跳过数量。
 - [ ] 按[本地说明](../../developer-guide/running-locally.md#prepare-the-development-environment-for-acceptance)核对目标 worktree 与实例。新 schema 使用任务专用数据库，先完成显式 schema 准备；`make run` 启动持久会话并记录日志。现有数据库若校验失败，不 reset、不删除表来强行复用；按方案中的数据库边界处理。

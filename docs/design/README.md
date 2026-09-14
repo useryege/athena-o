@@ -8,6 +8,8 @@
 
 全站 UI 的[视觉主题重构目标](../requirements/web-ui/visual-theme.md)已确认采用 Nansen 单一深色、Inter／JetBrains Mono 及 v1–v5 共用基准；v6–v22 各记录所展示页面视觉已确认，[v20 四个会员业务页面](../requirements/web-ui/member-foundations-batch-proposal.md)、[v21 八页](../requirements/web-ui/market-intelligence-batch-proposal.md)、[v22 Worm 六页及六项共用适配](../requirements/web-ui/worm-and-common-batch-proposal.md)均已整批确认。[其余页面安排](../requirements/web-ui/remaining-pages-plan.md)按 4／8／6 三批覆盖本轮 18 页／19 条路由，排除 Trader Sync，并直接沿用已独立确认的 [Nansen 钱包战绩 v1](../requirements/token/wallet-analytics-page-proposal.md)。[总入口与继承状态](../requirements/web-ui/theme-refactor-coverage.md)已完成归属核对，[技术方案](../superpowers/specs/2026-09-14-web-ui-theme-refactor-design.md)及[实施计划](../superpowers/plans/2026-09-14-web-ui-theme-refactor.md)已整理。既有业务、权限与数据契约保持有效，正式主题重构尚未实现；下列已实现文档中的明暗模式、橙色主题和账户主题偏好继续描述当前代码。
 
+总体审阅修正见[一致性契约](../requirements/web-ui/theme-consistency-contract.md)和 [v23 参考及验证](../requirements/web-ui/previews/theme-consistency-v23/README.md)。两份实施计划已锁定共同主题依赖，正式源代码仍未改版。
+
 聊天记录不是跨任务事实来源。长期有效的技术决定应同步到对应设计文档，并与 [`docs/requirements/`](../requirements/README.md) 中的相关需求及任务规格按需互相链接。
 
 ## 设计状态

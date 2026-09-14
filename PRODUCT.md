@@ -57,6 +57,8 @@ Trader Sync 第一阶段提供目标确认、独立订阅、实时成交活动�
 
 [v22 Worm Trading 与共用页面](docs/requirements/web-ui/worm-and-common-batch-proposal.md)所展示的 Worm 六个实际业务页面及管理员登录／共享注册／Profile／Access、会员／管理员 Help 六项共用适配的桌面／手机二十四张主图已获用户整批确认；按 [v22 确认记录](docs/requirements/web-ui/previews/theme-worm-and-common-v22-approval.json)落实。沿用本批布局、阅读顺序、操作层级与既定 Nansen 主题搭配，辅助状态继承覆盖与验证，不追加逐图审批。三批 18 个业务页面及本批共用适配的主视觉均已确认；[总覆盖清单](docs/requirements/web-ui/theme-refactor-coverage.md)、[技术方案](docs/superpowers/specs/2026-09-14-web-ui-theme-refactor-design.md)与[实施计划](docs/superpowers/plans/2026-09-14-web-ui-theme-refactor.md)已整理。Trader Sync 专属页面暂缓重排，共享主题影响须回归；正式 `ui/` 尚未改版。
 
+总体审阅后，用户要求先修复一致性问题。[修订契约](docs/requirements/web-ui/theme-consistency-contract.md)及 [v23 证据](docs/requirements/web-ui/previews/theme-consistency-v23/README.md)已补齐最终颜色、文字放大、状态、数字列和图标规则；全站与 Token 计划共同消费同一主题及字体。正式前端尚未改版。
+
 ## Evidence on Hand
 
 - [平台说明](README.md)

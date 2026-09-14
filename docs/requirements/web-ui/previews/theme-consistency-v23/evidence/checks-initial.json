@@ -1,0 +1,2934 @@
+{
+  "mode": "static-design-revision",
+  "base": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/",
+  "cases": [
+    {
+      "id": "ant",
+      "url": "ant-specimen.html",
+      "size": "desktop",
+      "viewport": 1440,
+      "scroll": 1440,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Shared interface states",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "ant",
+      "url": "ant-specimen.html",
+      "size": "mobile",
+      "viewport": 390,
+      "scroll": 390,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Shared interface states",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "ant",
+      "url": "ant-specimen.html",
+      "size": "narrow",
+      "viewport": 320,
+      "scroll": 320,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Shared interface states",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "ant",
+      "url": "ant-specimen.html",
+      "size": "text-200",
+      "viewport": 720,
+      "scroll": 720,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Shared interface states",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "service",
+      "url": "theme-service-status-v16.html",
+      "size": "desktop",
+      "viewport": 1440,
+      "scroll": 1440,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Service Status",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "service",
+      "url": "theme-service-status-v16.html",
+      "size": "mobile",
+      "viewport": 390,
+      "scroll": 390,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Service Status",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "service",
+      "url": "theme-service-status-v16.html",
+      "size": "narrow",
+      "viewport": 320,
+      "scroll": 320,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Service Status",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "service",
+      "url": "theme-service-status-v16.html",
+      "size": "text-200",
+      "viewport": 720,
+      "scroll": 720,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Service Status",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "wallets",
+      "url": "theme-wallets-v20.html",
+      "size": "desktop",
+      "viewport": 1440,
+      "scroll": 1440,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Wallets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "wallets",
+      "url": "theme-wallets-v20.html",
+      "size": "mobile",
+      "viewport": 390,
+      "scroll": 390,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Wallets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "wallets",
+      "url": "theme-wallets-v20.html",
+      "size": "narrow",
+      "viewport": 320,
+      "scroll": 320,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Wallets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "wallets",
+      "url": "theme-wallets-v20.html",
+      "size": "text-200",
+      "viewport": 720,
+      "scroll": 720,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Wallets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "radar-hot",
+      "url": "theme-market-radar-v21.html?view=hot",
+      "size": "desktop",
+      "viewport": 1440,
+      "scroll": 1440,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Hot Markets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "radar-hot",
+      "url": "theme-market-radar-v21.html?view=hot",
+      "size": "mobile",
+      "viewport": 390,
+      "scroll": 390,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Hot Markets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "radar-hot",
+      "url": "theme-market-radar-v21.html?view=hot",
+      "size": "narrow",
+      "viewport": 320,
+      "scroll": 320,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Hot Markets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "radar-hot",
+      "url": "theme-market-radar-v21.html?view=hot",
+      "size": "text-200",
+      "viewport": 720,
+      "scroll": 720,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Hot Markets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "radar-realtime",
+      "url": "theme-market-radar-v21.html?view=realtime",
+      "size": "desktop",
+      "viewport": 1440,
+      "scroll": 1440,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Realtime Markets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "radar-realtime",
+      "url": "theme-market-radar-v21.html?view=realtime",
+      "size": "mobile",
+      "viewport": 390,
+      "scroll": 390,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Realtime Markets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "radar-realtime",
+      "url": "theme-market-radar-v21.html?view=realtime",
+      "size": "narrow",
+      "viewport": 320,
+      "scroll": 320,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Realtime Markets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "radar-realtime",
+      "url": "theme-market-radar-v21.html?view=realtime",
+      "size": "text-200",
+      "viewport": 720,
+      "scroll": 720,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Realtime Markets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "radar-movers",
+      "url": "theme-market-radar-v21.html?view=movers",
+      "size": "desktop",
+      "viewport": 1440,
+      "scroll": 1440,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Market Movers",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "radar-movers",
+      "url": "theme-market-radar-v21.html?view=movers",
+      "size": "mobile",
+      "viewport": 390,
+      "scroll": 390,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Market Movers",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "radar-movers",
+      "url": "theme-market-radar-v21.html?view=movers",
+      "size": "narrow",
+      "viewport": 320,
+      "scroll": 320,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Market Movers",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "radar-movers",
+      "url": "theme-market-radar-v21.html?view=movers",
+      "size": "text-200",
+      "viewport": 720,
+      "scroll": 720,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Market Movers",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "assets",
+      "url": "theme-worm-assets-v22.html",
+      "size": "desktop",
+      "viewport": 1440,
+      "scroll": 1440,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Worm Trading Assets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "assets",
+      "url": "theme-worm-assets-v22.html",
+      "size": "mobile",
+      "viewport": 390,
+      "scroll": 390,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Worm Trading Assets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "assets",
+      "url": "theme-worm-assets-v22.html",
+      "size": "narrow",
+      "viewport": 320,
+      "scroll": 320,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Worm Trading Assets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "assets",
+      "url": "theme-worm-assets-v22.html",
+      "size": "text-200",
+      "viewport": 720,
+      "scroll": 720,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Worm Trading Assets",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "combinations",
+      "url": "theme-worm-combinations-v22.html?view=list",
+      "size": "desktop",
+      "viewport": 1440,
+      "scroll": 1440,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Worm Trading Combinations",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "combinations",
+      "url": "theme-worm-combinations-v22.html?view=list",
+      "size": "mobile",
+      "viewport": 390,
+      "scroll": 390,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Worm Trading Combinations",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "combinations",
+      "url": "theme-worm-combinations-v22.html?view=list",
+      "size": "narrow",
+      "viewport": 320,
+      "scroll": 320,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Worm Trading Combinations",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "combinations",
+      "url": "theme-worm-combinations-v22.html?view=list",
+      "size": "text-200",
+      "viewport": 720,
+      "scroll": 720,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Worm Trading Combinations",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "executions",
+      "url": "theme-worm-executions-v22.html?view=list",
+      "size": "desktop",
+      "viewport": 1440,
+      "scroll": 1440,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Worm Trading Executions",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "executions",
+      "url": "theme-worm-executions-v22.html?view=list",
+      "size": "mobile",
+      "viewport": 390,
+      "scroll": 390,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Worm Trading Executions",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "executions",
+      "url": "theme-worm-executions-v22.html?view=list",
+      "size": "narrow",
+      "viewport": 320,
+      "scroll": 320,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Worm Trading Executions",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "executions",
+      "url": "theme-worm-executions-v22.html?view=list",
+      "size": "text-200",
+      "viewport": 720,
+      "scroll": 720,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Worm Trading Executions",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "profile",
+      "url": "theme-common-adaptations-v22.html?view=profile",
+      "size": "desktop",
+      "viewport": 1440,
+      "scroll": 1440,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Account Center",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "profile",
+      "url": "theme-common-adaptations-v22.html?view=profile",
+      "size": "mobile",
+      "viewport": 390,
+      "scroll": 390,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Account Center",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "profile",
+      "url": "theme-common-adaptations-v22.html?view=profile",
+      "size": "narrow",
+      "viewport": 320,
+      "scroll": 320,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Account Center",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "profile",
+      "url": "theme-common-adaptations-v22.html?view=profile",
+      "size": "text-200",
+      "viewport": 720,
+      "scroll": 720,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Account Center",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "token",
+      "url": "wallet-analytics-v1.html",
+      "size": "desktop",
+      "viewport": 1440,
+      "scroll": 1440,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Wallet analytics",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "token",
+      "url": "wallet-analytics-v1.html",
+      "size": "mobile",
+      "viewport": 390,
+      "scroll": 390,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Wallet analytics",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "token",
+      "url": "wallet-analytics-v1.html",
+      "size": "narrow",
+      "viewport": 320,
+      "scroll": 320,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Wallet analytics",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "token",
+      "url": "wallet-analytics-v1.html",
+      "size": "text-200",
+      "viewport": 720,
+      "scroll": 720,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Wallet analytics",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    }
+  ],
+  "checks": [
+    {
+      "name": "ant/desktop: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 1440,
+        "scroll": 1440,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Shared interface states",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "ant/desktop: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "primary/normal: final paint",
+      "passed": true,
+      "actual": {
+        "color": "rgb(6, 8, 11)",
+        "background": "rgb(0, 255, 167)",
+        "border": "rgba(0, 0, 0, 0)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 115,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "primary/hover: final paint",
+      "passed": true,
+      "actual": {
+        "color": "rgb(6, 8, 11)",
+        "background": "rgb(81, 255, 195)",
+        "border": "rgba(0, 0, 0, 0)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 115,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "primary/active: final paint",
+      "passed": true,
+      "actual": {
+        "color": "rgb(6, 8, 11)",
+        "background": "rgb(9, 195, 133)",
+        "border": "rgba(0, 0, 0, 0)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 115,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "danger/normal: final paint",
+      "passed": true,
+      "actual": {
+        "color": "rgb(6, 8, 11)",
+        "background": "rgb(245, 140, 155)",
+        "border": "rgba(0, 0, 0, 0)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 117,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "danger/hover: final paint",
+      "passed": true,
+      "actual": {
+        "color": "rgb(6, 8, 11)",
+        "background": "rgb(255, 176, 189)",
+        "border": "rgba(0, 0, 0, 0)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 117,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "danger/active: final paint",
+      "passed": true,
+      "actual": {
+        "color": "rgb(6, 8, 11)",
+        "background": "rgb(229, 119, 139)",
+        "border": "rgba(0, 0, 0, 0)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 117,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "ant/success: feedback roles",
+      "passed": true,
+      "actual": {
+        "box": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(14, 32, 27)",
+          "border": "rgb(45, 87, 71)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 575,
+          "height": 97.140625
+        },
+        "icon": {
+          "color": "rgb(85, 217, 161)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(85, 217, 161)",
+          "borderStyle": "none",
+          "font": "24px",
+          "align": "start",
+          "weight": "400",
+          "width": 24,
+          "height": 24
+        }
+      }
+    },
+    {
+      "name": "ant/warning: feedback roles",
+      "passed": true,
+      "actual": {
+        "box": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(33, 28, 19)",
+          "border": "rgb(102, 82, 49)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 575,
+          "height": 97.140625
+        },
+        "icon": {
+          "color": "rgb(230, 191, 114)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(230, 191, 114)",
+          "borderStyle": "none",
+          "font": "24px",
+          "align": "start",
+          "weight": "400",
+          "width": 24,
+          "height": 24
+        }
+      }
+    },
+    {
+      "name": "ant/error: feedback roles",
+      "passed": true,
+      "actual": {
+        "box": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(36, 23, 28)",
+          "border": "rgb(103, 59, 71)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 575,
+          "height": 97.140625
+        },
+        "icon": {
+          "color": "rgb(245, 140, 155)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(245, 140, 155)",
+          "borderStyle": "none",
+          "font": "24px",
+          "align": "start",
+          "weight": "400",
+          "width": 24,
+          "height": 24
+        }
+      }
+    },
+    {
+      "name": "ant/info: feedback roles",
+      "passed": true,
+      "actual": {
+        "box": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(20, 29, 39)",
+          "border": "rgb(53, 81, 109)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 575,
+          "height": 97.140625
+        },
+        "icon": {
+          "color": "rgb(155, 198, 243)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(155, 198, 243)",
+          "borderStyle": "none",
+          "font": "24px",
+          "align": "start",
+          "weight": "400",
+          "width": 24,
+          "height": 24
+        }
+      }
+    },
+    {
+      "name": "ant: segmented selection",
+      "passed": true,
+      "actual": {
+        "color": "rgb(0, 255, 167)",
+        "background": "rgb(16, 44, 36)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "none",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 52,
+        "height": 40
+      }
+    },
+    {
+      "name": "ant: current page",
+      "passed": true,
+      "actual": {
+        "color": "rgb(255, 255, 255)",
+        "background": "rgb(15, 17, 20)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "600",
+        "width": 44,
+        "height": 46
+      }
+    },
+    {
+      "name": "ant: readonly stays selectable",
+      "passed": true,
+      "actual": {
+        "readonly": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgb(24, 29, 34)",
+          "border": "rgb(37, 42, 48)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 372.671875,
+          "height": 44,
+          "readOnly": true,
+          "disabled": false
+        },
+        "selection": {
+          "length": 9,
+          "selected": 9
+        }
+      }
+    },
+    {
+      "name": "ant: disabled has distinct state",
+      "passed": true,
+      "actual": {
+        "readonly": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgb(24, 29, 34)",
+          "border": "rgb(37, 42, 48)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 372.671875,
+          "height": 44,
+          "readOnly": true,
+          "disabled": false
+        },
+        "disabled": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgb(24, 29, 34)",
+          "border": "rgb(37, 42, 48)",
+          "borderStyle": "dashed",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 372.65625,
+          "height": 44,
+          "readOnly": false,
+          "disabled": true
+        }
+      }
+    },
+    {
+      "name": "ant: keyboard focus visible",
+      "passed": false,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "ant/mobile: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 390,
+        "scroll": 390,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Shared interface states",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "ant/mobile: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "ant/narrow: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 320,
+        "scroll": 320,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Shared interface states",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "ant/narrow: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "ant/text-200: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 720,
+        "scroll": 720,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Shared interface states",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "ant/text-200: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "service/desktop: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 1440,
+        "scroll": 1440,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Service Status",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "service/desktop: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "service/desktop: status and error do not overlap",
+      "passed": true,
+      "actual": [
+        {
+          "status": "Unreachable",
+          "error": "Health check timed out after 5 seconds.",
+          "a": {
+            "x": 611.59375,
+            "y": 632.890625,
+            "w": 93,
+            "h": 19.5
+          },
+          "b": {
+            "x": 865.046875,
+            "y": 613.640625,
+            "w": 517.953125,
+            "h": 53.25
+          },
+          "overlap": false
+        }
+      ]
+    },
+    {
+      "name": "service/mobile: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 390,
+        "scroll": 390,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Service Status",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "service/mobile: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "service/mobile: status and error do not overlap",
+      "passed": true,
+      "actual": [
+        {
+          "status": "Unreachable",
+          "error": "Health check timed out after 5 seconds.",
+          "a": {
+            "x": 256,
+            "y": 668.15625,
+            "w": 93,
+            "h": 19.5
+          },
+          "b": {
+            "x": 41,
+            "y": 693.65625,
+            "w": 308,
+            "h": 21.4375
+          },
+          "overlap": false
+        }
+      ]
+    },
+    {
+      "name": "service/narrow: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 320,
+        "scroll": 320,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Service Status",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "service/narrow: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "service/narrow: status and error do not overlap",
+      "passed": true,
+      "actual": [
+        {
+          "status": "Unreachable",
+          "error": "Health check timed out after 5 seconds.",
+          "a": {
+            "x": 186,
+            "y": 706.546875,
+            "w": 93,
+            "h": 19.5
+          },
+          "b": {
+            "x": 41,
+            "y": 732.046875,
+            "w": 238,
+            "h": 42.875
+          },
+          "overlap": false
+        }
+      ]
+    },
+    {
+      "name": "service/text-200: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 720,
+        "scroll": 720,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Service Status",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "service/text-200: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "service/text-200: status and error do not overlap",
+      "passed": true,
+      "actual": [
+        {
+          "status": "Unreachable",
+          "error": "Health check timed out after 5 seconds.",
+          "a": {
+            "x": 518,
+            "y": 999.5625,
+            "w": 161,
+            "h": 39
+          },
+          "b": {
+            "x": 41,
+            "y": 1050.5625,
+            "w": 638,
+            "h": 42.890625
+          },
+          "overlap": false
+        }
+      ]
+    },
+    {
+      "name": "wallets/desktop: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 1440,
+        "scroll": 1440,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Wallets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "wallets/desktop: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "wallets/desktop: selected role",
+      "passed": true,
+      "actual": {
+        "color": "rgb(0, 255, 167)",
+        "background": "rgb(16, 44, 36)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "none",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 47,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "wallets/mobile: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 390,
+        "scroll": 390,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Wallets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "wallets/mobile: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "wallets/mobile: selected role",
+      "passed": true,
+      "actual": {
+        "color": "rgb(0, 255, 167)",
+        "background": "rgb(16, 44, 36)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "none",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 98,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "wallets/narrow: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 320,
+        "scroll": 320,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Wallets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "wallets/narrow: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "wallets/narrow: selected role",
+      "passed": true,
+      "actual": {
+        "color": "rgb(0, 255, 167)",
+        "background": "rgb(16, 44, 36)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "none",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 77.328125,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "wallets/text-200: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 720,
+        "scroll": 720,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Wallets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "wallets/text-200: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "wallets/text-200: selected role",
+      "passed": true,
+      "actual": {
+        "color": "rgb(0, 255, 167)",
+        "background": "rgb(16, 44, 36)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "none",
+        "font": "28px",
+        "align": "center",
+        "weight": "400",
+        "width": 208,
+        "height": 58.796875,
+        "disabled": false
+      }
+    },
+    {
+      "name": "radar-hot/desktop: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 1440,
+        "scroll": 1440,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Hot Markets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "radar-hot/desktop: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "radar-hot/desktop: .radar-connected",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "13px",
+        "align": "start",
+        "weight": "400",
+        "width": 110,
+        "height": 20.796875
+      }
+    },
+    {
+      "name": "radar-hot: comparable columns align right",
+      "passed": true,
+      "actual": [
+        {
+          "text": "24h volume$2,481,920.52",
+          "align": "right"
+        },
+        {
+          "text": "Liquidity$481,240.23",
+          "align": "right"
+        },
+        {
+          "text": "Spread0.008",
+          "align": "right"
+        },
+        {
+          "text": "24h volume$1,964,372.15",
+          "align": "right"
+        },
+        {
+          "text": "Liquidity$605,800.18",
+          "align": "right"
+        },
+        {
+          "text": "Spread0.008",
+          "align": "right"
+        },
+        {
+          "text": "24h volume$875,400.5",
+          "align": "right"
+        },
+        {
+          "text": "LiquidityUnknown",
+          "align": "right"
+        },
+        {
+          "text": "Spread0.008",
+          "align": "right"
+        },
+        {
+          "text": "24h volume$643,220",
+          "align": "right"
+        },
+        {
+          "text": "Liquidity$315,280.1",
+          "align": "right"
+        },
+        {
+          "text": "Spread0.008",
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "name": "radar-hot/mobile: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 390,
+        "scroll": 390,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Hot Markets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "radar-hot/mobile: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "radar-hot/mobile: .radar-connected",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "13px",
+        "align": "start",
+        "weight": "400",
+        "width": 110,
+        "height": 21.4375
+      }
+    },
+    {
+      "name": "radar-hot/narrow: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 320,
+        "scroll": 320,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Hot Markets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "radar-hot/narrow: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "radar-hot/narrow: .radar-connected",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "13px",
+        "align": "start",
+        "weight": "400",
+        "width": 110,
+        "height": 21.4375
+      }
+    },
+    {
+      "name": "radar-hot/text-200: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 720,
+        "scroll": 720,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Hot Markets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "radar-hot/text-200: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "radar-hot/text-200: .radar-connected",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "26px",
+        "align": "start",
+        "weight": "400",
+        "width": 204,
+        "height": 42.890625
+      }
+    },
+    {
+      "name": "radar-realtime/desktop: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 1440,
+        "scroll": 1440,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Realtime Markets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "radar-realtime/desktop: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "radar-realtime/desktop: .radar-up",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "14px",
+        "align": "right",
+        "weight": "400",
+        "width": 25,
+        "height": 17
+      }
+    },
+    {
+      "name": "radar-realtime/desktop: .radar-connected",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "13px",
+        "align": "start",
+        "weight": "400",
+        "width": 129,
+        "height": 20.796875
+      }
+    },
+    {
+      "name": "radar-realtime/desktop: .radar-down",
+      "passed": true,
+      "actual": {
+        "color": "rgb(245, 140, 155)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(245, 140, 155)",
+        "borderStyle": "none",
+        "font": "14px",
+        "align": "right",
+        "weight": "400",
+        "width": 22,
+        "height": 17
+      }
+    },
+    {
+      "name": "radar-realtime/desktop: .radar-warmup",
+      "passed": true,
+      "actual": {
+        "color": "rgb(230, 191, 114)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(230, 191, 114)",
+        "borderStyle": "none",
+        "font": "13px",
+        "align": "right",
+        "weight": "400",
+        "width": 52,
+        "height": 16
+      }
+    },
+    {
+      "name": "radar-realtime: comparable columns align right",
+      "passed": false,
+      "actual": []
+    },
+    {
+      "name": "radar-realtime/mobile: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 390,
+        "scroll": 390,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Realtime Markets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "radar-realtime/mobile: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "radar-realtime/mobile: .radar-up",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "13px",
+        "align": "right",
+        "weight": "400",
+        "width": 25,
+        "height": 16
+      }
+    },
+    {
+      "name": "radar-realtime/mobile: .radar-connected",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "13px",
+        "align": "start",
+        "weight": "400",
+        "width": 129,
+        "height": 21.4375
+      }
+    },
+    {
+      "name": "radar-realtime/mobile: .radar-down",
+      "passed": true,
+      "actual": {
+        "color": "rgb(245, 140, 155)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(245, 140, 155)",
+        "borderStyle": "none",
+        "font": "13px",
+        "align": "right",
+        "weight": "400",
+        "width": 22,
+        "height": 16
+      }
+    },
+    {
+      "name": "radar-realtime/mobile: .radar-warmup",
+      "passed": true,
+      "actual": {
+        "color": "rgb(230, 191, 114)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(230, 191, 114)",
+        "borderStyle": "none",
+        "font": "13px",
+        "align": "right",
+        "weight": "400",
+        "width": 52,
+        "height": 16
+      }
+    },
+    {
+      "name": "radar-realtime/narrow: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 320,
+        "scroll": 320,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Realtime Markets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "radar-realtime/narrow: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "radar-realtime/narrow: .radar-up",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "14px",
+        "align": "left",
+        "weight": "400",
+        "width": 25,
+        "height": 17
+      }
+    },
+    {
+      "name": "radar-realtime/narrow: .radar-connected",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "13px",
+        "align": "start",
+        "weight": "400",
+        "width": 129,
+        "height": 21.4375
+      }
+    },
+    {
+      "name": "radar-realtime/narrow: .radar-down",
+      "passed": true,
+      "actual": {
+        "color": "rgb(245, 140, 155)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(245, 140, 155)",
+        "borderStyle": "none",
+        "font": "14px",
+        "align": "left",
+        "weight": "400",
+        "width": 22,
+        "height": 17
+      }
+    },
+    {
+      "name": "radar-realtime/narrow: .radar-warmup",
+      "passed": true,
+      "actual": {
+        "color": "rgb(230, 191, 114)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(230, 191, 114)",
+        "borderStyle": "none",
+        "font": "13px",
+        "align": "left",
+        "weight": "400",
+        "width": 52,
+        "height": 16
+      }
+    },
+    {
+      "name": "radar-realtime/text-200: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 720,
+        "scroll": 720,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Realtime Markets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "radar-realtime/text-200: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "radar-realtime/text-200: .radar-up",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "28px",
+        "align": "left",
+        "weight": "400",
+        "width": 52,
+        "height": 34
+      }
+    },
+    {
+      "name": "radar-realtime/text-200: .radar-connected",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "26px",
+        "align": "start",
+        "weight": "400",
+        "width": 240,
+        "height": 42.890625
+      }
+    },
+    {
+      "name": "radar-realtime/text-200: .radar-down",
+      "passed": true,
+      "actual": {
+        "color": "rgb(245, 140, 155)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(245, 140, 155)",
+        "borderStyle": "none",
+        "font": "28px",
+        "align": "left",
+        "weight": "400",
+        "width": 47,
+        "height": 34
+      }
+    },
+    {
+      "name": "radar-realtime/text-200: .radar-warmup",
+      "passed": true,
+      "actual": {
+        "color": "rgb(230, 191, 114)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(230, 191, 114)",
+        "borderStyle": "none",
+        "font": "26px",
+        "align": "left",
+        "weight": "400",
+        "width": 99,
+        "height": 31
+      }
+    },
+    {
+      "name": "radar-movers/desktop: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 1440,
+        "scroll": 1440,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Market Movers",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "radar-movers/desktop: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "radar-movers/desktop: .radar-up",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "16px",
+        "align": "right",
+        "weight": "500",
+        "width": 21,
+        "height": 20
+      }
+    },
+    {
+      "name": "radar-movers/desktop: .radar-connected",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "13px",
+        "align": "start",
+        "weight": "400",
+        "width": 129,
+        "height": 20.796875
+      }
+    },
+    {
+      "name": "radar-movers/desktop: .radar-down",
+      "passed": true,
+      "actual": {
+        "color": "rgb(245, 140, 155)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(245, 140, 155)",
+        "borderStyle": "none",
+        "font": "16px",
+        "align": "right",
+        "weight": "500",
+        "width": 44,
+        "height": 20
+      }
+    },
+    {
+      "name": "radar-movers/mobile: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 390,
+        "scroll": 390,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Market Movers",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "radar-movers/mobile: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "radar-movers/mobile: .radar-up",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "14px",
+        "align": "start",
+        "weight": "500",
+        "width": 19,
+        "height": 17
+      }
+    },
+    {
+      "name": "radar-movers/mobile: .radar-connected",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "13px",
+        "align": "start",
+        "weight": "400",
+        "width": 129,
+        "height": 21.4375
+      }
+    },
+    {
+      "name": "radar-movers/mobile: .radar-down",
+      "passed": true,
+      "actual": {
+        "color": "rgb(245, 140, 155)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(245, 140, 155)",
+        "borderStyle": "none",
+        "font": "14px",
+        "align": "start",
+        "weight": "500",
+        "width": 40,
+        "height": 17
+      }
+    },
+    {
+      "name": "radar-movers/narrow: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 320,
+        "scroll": 320,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Market Movers",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "radar-movers/narrow: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "radar-movers/narrow: .radar-up",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "14px",
+        "align": "start",
+        "weight": "500",
+        "width": 19,
+        "height": 17
+      }
+    },
+    {
+      "name": "radar-movers/narrow: .radar-connected",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "13px",
+        "align": "start",
+        "weight": "400",
+        "width": 129,
+        "height": 21.4375
+      }
+    },
+    {
+      "name": "radar-movers/narrow: .radar-down",
+      "passed": true,
+      "actual": {
+        "color": "rgb(245, 140, 155)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(245, 140, 155)",
+        "borderStyle": "none",
+        "font": "14px",
+        "align": "start",
+        "weight": "500",
+        "width": 40,
+        "height": 17
+      }
+    },
+    {
+      "name": "radar-movers/text-200: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 720,
+        "scroll": 720,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Market Movers",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "radar-movers/text-200: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "radar-movers/text-200: .radar-up",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "32px",
+        "align": "start",
+        "weight": "500",
+        "width": 40,
+        "height": 39
+      }
+    },
+    {
+      "name": "radar-movers/text-200: .radar-connected",
+      "passed": true,
+      "actual": {
+        "color": "rgb(85, 217, 161)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(85, 217, 161)",
+        "borderStyle": "none",
+        "font": "26px",
+        "align": "start",
+        "weight": "400",
+        "width": 240,
+        "height": 42.890625
+      }
+    },
+    {
+      "name": "radar-movers/text-200: .radar-down",
+      "passed": true,
+      "actual": {
+        "color": "rgb(245, 140, 155)",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "rgb(245, 140, 155)",
+        "borderStyle": "none",
+        "font": "32px",
+        "align": "start",
+        "weight": "500",
+        "width": 82,
+        "height": 39
+      }
+    },
+    {
+      "name": "assets/desktop: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 1440,
+        "scroll": 1440,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Worm Trading Assets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "assets/desktop: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "assets: comparable columns align right",
+      "passed": true,
+      "actual": [
+        {
+          "text": "SOL balance",
+          "align": "right"
+        },
+        {
+          "text": "USDC balance",
+          "align": "right"
+        },
+        {
+          "text": "SOL balance1.284500000Confirmed",
+          "align": "right"
+        },
+        {
+          "text": "USDC balance248.320000Native USDC · 1 token account",
+          "align": "right"
+        },
+        {
+          "text": "SOL balance0.620000000Confirmed",
+          "align": "right"
+        },
+        {
+          "text": "USDC balance105.000000Native USDC · 1 token account",
+          "align": "right"
+        },
+        {
+          "text": "SOL balance0.150000000Confirmed",
+          "align": "right"
+        },
+        {
+          "text": "USDC balance52.760000Native USDC · 1 token account",
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "name": "assets/mobile: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 390,
+        "scroll": 390,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Worm Trading Assets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "assets/mobile: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "assets/narrow: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 320,
+        "scroll": 320,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Worm Trading Assets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "assets/narrow: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "assets/text-200: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 720,
+        "scroll": 720,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Worm Trading Assets",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "assets/text-200: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "combinations/desktop: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 1440,
+        "scroll": 1440,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Worm Trading Combinations",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "combinations/desktop: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "combinations/desktop: current page",
+      "passed": true,
+      "actual": {
+        "color": "rgb(0, 255, 167)",
+        "background": "rgb(15, 17, 20)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "500",
+        "width": 44,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "combinations/mobile: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 390,
+        "scroll": 390,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Worm Trading Combinations",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "combinations/mobile: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "combinations/mobile: current page",
+      "passed": true,
+      "actual": {
+        "color": "rgb(0, 255, 167)",
+        "background": "rgb(15, 17, 20)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "500",
+        "width": 44,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "combinations/narrow: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 320,
+        "scroll": 320,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Worm Trading Combinations",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "combinations/narrow: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "combinations/narrow: current page",
+      "passed": true,
+      "actual": {
+        "color": "rgb(0, 255, 167)",
+        "background": "rgb(15, 17, 20)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "500",
+        "width": 44,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "combinations/text-200: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 720,
+        "scroll": 720,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Worm Trading Combinations",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "combinations/text-200: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "combinations/text-200: current page",
+      "passed": true,
+      "actual": {
+        "color": "rgb(0, 255, 167)",
+        "background": "rgb(15, 17, 20)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "solid",
+        "font": "28px",
+        "align": "center",
+        "weight": "500",
+        "width": 44,
+        "height": 61.1875,
+        "disabled": false
+      }
+    },
+    {
+      "name": "executions/desktop: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 1440,
+        "scroll": 1440,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Worm Trading Executions",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "executions/desktop: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "executions/desktop: current page",
+      "passed": true,
+      "actual": {
+        "color": "rgb(0, 255, 167)",
+        "background": "rgb(15, 17, 20)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "500",
+        "width": 44,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "executions/mobile: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 390,
+        "scroll": 390,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Worm Trading Executions",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "executions/mobile: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "executions/mobile: current page",
+      "passed": true,
+      "actual": {
+        "color": "rgb(0, 255, 167)",
+        "background": "rgb(15, 17, 20)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "500",
+        "width": 44,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "executions/narrow: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 320,
+        "scroll": 320,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Worm Trading Executions",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "executions/narrow: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "executions/narrow: current page",
+      "passed": true,
+      "actual": {
+        "color": "rgb(0, 255, 167)",
+        "background": "rgb(15, 17, 20)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "500",
+        "width": 44,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "executions/text-200: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 720,
+        "scroll": 720,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Worm Trading Executions",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "executions/text-200: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "executions/text-200: current page",
+      "passed": true,
+      "actual": {
+        "color": "rgb(0, 255, 167)",
+        "background": "rgb(15, 17, 20)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "solid",
+        "font": "28px",
+        "align": "center",
+        "weight": "500",
+        "width": 44,
+        "height": 61.1875,
+        "disabled": false
+      }
+    },
+    {
+      "name": "profile/desktop: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 1440,
+        "scroll": 1440,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Account Center",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "profile/desktop: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "profile/desktop: readonly appearance",
+      "passed": true,
+      "actual": {
+        "readonly": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgb(24, 29, 34)",
+          "border": "rgb(37, 42, 48)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 640,
+          "height": 44,
+          "readOnly": true,
+          "disabled": false
+        },
+        "editable": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(6, 8, 11)",
+          "border": "rgb(97, 113, 123)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 640,
+          "height": 44,
+          "readOnly": false,
+          "disabled": false
+        }
+      }
+    },
+    {
+      "name": "admin: canonical icons",
+      "passed": true,
+      "actual": [
+        {
+          "label": "Accounts",
+          "icon": "#grid"
+        },
+        {
+          "label": "Profit Sharing",
+          "icon": "#pie"
+        },
+        {
+          "label": "Trader Sync",
+          "icon": "#swap"
+        },
+        {
+          "label": "Service Status",
+          "icon": "#activity"
+        },
+        {
+          "label": "Etherscan Gateways",
+          "icon": "#api-link"
+        },
+        {
+          "label": "Notifications",
+          "icon": "#bell"
+        },
+        {
+          "label": "Help",
+          "icon": "#help"
+        }
+      ]
+    },
+    {
+      "name": "profile/mobile: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 390,
+        "scroll": 390,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Account Center",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "profile/mobile: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "profile/mobile: readonly appearance",
+      "passed": true,
+      "actual": {
+        "readonly": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgb(24, 29, 34)",
+          "border": "rgb(37, 42, 48)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 308,
+          "height": 44,
+          "readOnly": true,
+          "disabled": false
+        },
+        "editable": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(6, 8, 11)",
+          "border": "rgb(97, 113, 123)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 308,
+          "height": 44,
+          "readOnly": false,
+          "disabled": false
+        }
+      }
+    },
+    {
+      "name": "profile/narrow: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 320,
+        "scroll": 320,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Account Center",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "profile/narrow: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "profile/narrow: readonly appearance",
+      "passed": true,
+      "actual": {
+        "readonly": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgb(24, 29, 34)",
+          "border": "rgb(37, 42, 48)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 246,
+          "height": 44,
+          "readOnly": true,
+          "disabled": false
+        },
+        "editable": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(6, 8, 11)",
+          "border": "rgb(97, 113, 123)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 246,
+          "height": 44,
+          "readOnly": false,
+          "disabled": false
+        }
+      }
+    },
+    {
+      "name": "profile/text-200: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 720,
+        "scroll": 720,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Account Center",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "profile/text-200: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "profile/text-200: readonly appearance",
+      "passed": true,
+      "actual": {
+        "readonly": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgb(24, 29, 34)",
+          "border": "rgb(37, 42, 48)",
+          "borderStyle": "solid",
+          "font": "28px",
+          "align": "start",
+          "weight": "400",
+          "width": 638,
+          "height": 65.390625,
+          "readOnly": true,
+          "disabled": false
+        },
+        "editable": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(6, 8, 11)",
+          "border": "rgb(97, 113, 123)",
+          "borderStyle": "solid",
+          "font": "28px",
+          "align": "start",
+          "weight": "400",
+          "width": 638,
+          "height": 65.390625,
+          "readOnly": false,
+          "disabled": false
+        }
+      }
+    },
+    {
+      "name": "token/desktop: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 1440,
+        "scroll": 1440,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Wallet analytics",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "token/desktop: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "token/mobile: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 390,
+        "scroll": 390,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Wallet analytics",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "token/mobile: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "token/narrow: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 320,
+        "scroll": 320,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Wallet analytics",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "token/narrow: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "token/text-200: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 720,
+        "scroll": 720,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Wallet analytics",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "token/text-200: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "token: enlarged avatar contains text",
+      "passed": false,
+      "actual": [
+        {
+          "width": 28,
+          "height": 28,
+          "textHeight": 31,
+          "contained": false
+        }
+      ]
+    },
+    {
+      "name": "ant: #primary actually doubles",
+      "passed": false,
+      "actual": {
+        "normal": {
+          "color": "rgb(6, 8, 11)",
+          "background": "rgb(0, 255, 167)",
+          "border": "rgba(0, 0, 0, 0)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "center",
+          "weight": "400",
+          "width": 115,
+          "height": 44,
+          "disabled": false
+        },
+        "enlarged": {
+          "color": "rgb(6, 8, 11)",
+          "background": "rgb(0, 255, 167)",
+          "border": "rgba(0, 0, 0, 0)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "center",
+          "weight": "400",
+          "width": 115,
+          "height": 75.8125,
+          "disabled": false
+        }
+      }
+    },
+    {
+      "name": "ant: #editable actually doubles",
+      "passed": false,
+      "actual": {
+        "normal": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "border": "rgb(97, 113, 123)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 372.65625,
+          "height": 44,
+          "readOnly": false,
+          "disabled": false
+        },
+        "enlarged": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "border": "rgb(97, 113, 123)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 494,
+          "height": 44,
+          "readOnly": false,
+          "disabled": false
+        }
+      }
+    },
+    {
+      "name": "ant: .ant-alert-description actually doubles",
+      "passed": false,
+      "actual": {
+        "normal": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(159, 160, 161)",
+          "borderStyle": "none",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 489,
+          "height": 22
+        },
+        "enlarged": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(159, 160, 161)",
+          "borderStyle": "none",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 408,
+          "height": 22
+        }
+      }
+    },
+    {
+      "name": "ant: .body-copy actually doubles",
+      "passed": true,
+      "actual": {
+        "normal": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(159, 160, 161)",
+          "borderStyle": "none",
+          "font": "16px",
+          "align": "start",
+          "weight": "400",
+          "width": 700,
+          "height": 25.59375
+        },
+        "enlarged": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(159, 160, 161)",
+          "borderStyle": "none",
+          "font": "32px",
+          "align": "start",
+          "weight": "400",
+          "width": 592,
+          "height": 102.375
+        }
+      }
+    },
+    {
+      "name": "no script errors",
+      "passed": true,
+      "actual": []
+    },
+    {
+      "name": "all resources load",
+      "passed": false,
+      "actual": [
+        {
+          "id": "token",
+          "size": "desktop",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/tokens.css",
+          "error": {
+            "errorText": "csp"
+          }
+        },
+        {
+          "id": "token",
+          "size": "desktop",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/corrections.css",
+          "error": {
+            "errorText": "csp"
+          }
+        },
+        {
+          "id": "token",
+          "size": "mobile",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/tokens.css",
+          "error": {
+            "errorText": "csp"
+          }
+        },
+        {
+          "id": "token",
+          "size": "mobile",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/corrections.css",
+          "error": {
+            "errorText": "csp"
+          }
+        },
+        {
+          "id": "token",
+          "size": "narrow",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/tokens.css",
+          "error": {
+            "errorText": "csp"
+          }
+        },
+        {
+          "id": "token",
+          "size": "narrow",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/corrections.css",
+          "error": {
+            "errorText": "csp"
+          }
+        },
+        {
+          "id": "token",
+          "size": "text-200",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/tokens.css",
+          "error": {
+            "errorText": "csp"
+          }
+        },
+        {
+          "id": "token",
+          "size": "text-200",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/corrections.css",
+          "error": {
+            "errorText": "csp"
+          }
+        }
+      ]
+    }
+  ],
+  "failures": [
+    {
+      "name": "ant: keyboard focus visible",
+      "passed": false,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "radar-realtime: comparable columns align right",
+      "passed": false,
+      "actual": []
+    },
+    {
+      "name": "token: enlarged avatar contains text",
+      "passed": false,
+      "actual": [
+        {
+          "width": 28,
+          "height": 28,
+          "textHeight": 31,
+          "contained": false
+        }
+      ]
+    },
+    {
+      "name": "ant: #primary actually doubles",
+      "passed": false,
+      "actual": {
+        "normal": {
+          "color": "rgb(6, 8, 11)",
+          "background": "rgb(0, 255, 167)",
+          "border": "rgba(0, 0, 0, 0)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "center",
+          "weight": "400",
+          "width": 115,
+          "height": 44,
+          "disabled": false
+        },
+        "enlarged": {
+          "color": "rgb(6, 8, 11)",
+          "background": "rgb(0, 255, 167)",
+          "border": "rgba(0, 0, 0, 0)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "center",
+          "weight": "400",
+          "width": 115,
+          "height": 75.8125,
+          "disabled": false
+        }
+      }
+    },
+    {
+      "name": "ant: #editable actually doubles",
+      "passed": false,
+      "actual": {
+        "normal": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "border": "rgb(97, 113, 123)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 372.65625,
+          "height": 44,
+          "readOnly": false,
+          "disabled": false
+        },
+        "enlarged": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "border": "rgb(97, 113, 123)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 494,
+          "height": 44,
+          "readOnly": false,
+          "disabled": false
+        }
+      }
+    },
+    {
+      "name": "ant: .ant-alert-description actually doubles",
+      "passed": false,
+      "actual": {
+        "normal": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(159, 160, 161)",
+          "borderStyle": "none",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 489,
+          "height": 22
+        },
+        "enlarged": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(159, 160, 161)",
+          "borderStyle": "none",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 408,
+          "height": 22
+        }
+      }
+    },
+    {
+      "name": "all resources load",
+      "passed": false,
+      "actual": [
+        {
+          "id": "token",
+          "size": "desktop",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/tokens.css",
+          "error": {
+            "errorText": "csp"
+          }
+        },
+        {
+          "id": "token",
+          "size": "desktop",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/corrections.css",
+          "error": {
+            "errorText": "csp"
+          }
+        },
+        {
+          "id": "token",
+          "size": "mobile",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/tokens.css",
+          "error": {
+            "errorText": "csp"
+          }
+        },
+        {
+          "id": "token",
+          "size": "mobile",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/corrections.css",
+          "error": {
+            "errorText": "csp"
+          }
+        },
+        {
+          "id": "token",
+          "size": "narrow",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/tokens.css",
+          "error": {
+            "errorText": "csp"
+          }
+        },
+        {
+          "id": "token",
+          "size": "narrow",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/corrections.css",
+          "error": {
+            "errorText": "csp"
+          }
+        },
+        {
+          "id": "token",
+          "size": "text-200",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/tokens.css",
+          "error": {
+            "errorText": "csp"
+          }
+        },
+        {
+          "id": "token",
+          "size": "text-200",
+          "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/corrections.css",
+          "error": {
+            "errorText": "csp"
+          }
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "id": "token",
+      "size": "desktop",
+      "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/tokens.css",
+      "error": {
+        "errorText": "csp"
+      }
+    },
+    {
+      "id": "token",
+      "size": "desktop",
+      "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/corrections.css",
+      "error": {
+        "errorText": "csp"
+      }
+    },
+    {
+      "id": "token",
+      "size": "mobile",
+      "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/tokens.css",
+      "error": {
+        "errorText": "csp"
+      }
+    },
+    {
+      "id": "token",
+      "size": "mobile",
+      "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/corrections.css",
+      "error": {
+        "errorText": "csp"
+      }
+    },
+    {
+      "id": "token",
+      "size": "narrow",
+      "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/tokens.css",
+      "error": {
+        "errorText": "csp"
+      }
+    },
+    {
+      "id": "token",
+      "size": "narrow",
+      "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/corrections.css",
+      "error": {
+        "errorText": "csp"
+      }
+    },
+    {
+      "id": "token",
+      "size": "text-200",
+      "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/tokens.css",
+      "error": {
+        "errorText": "csp"
+      }
+    },
+    {
+      "id": "token",
+      "size": "text-200",
+      "url": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/corrections.css",
+      "error": {
+        "errorText": "csp"
+      }
+    }
+  ],
+  "errors": [],
+  "runtime": {
+    "node": "v24.14.1",
+    "browser": "148.0.7778.96",
+    "playwright": "1.60.0"
+  }
+}

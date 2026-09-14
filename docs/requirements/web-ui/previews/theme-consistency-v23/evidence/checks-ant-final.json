@@ -1,0 +1,563 @@
+{
+  "mode": "static-design-revision",
+  "scope": "ant-targeted-recheck",
+  "base": "http://127.0.0.1:41823/docs/requirements/web-ui/previews/theme-consistency-v23/",
+  "cases": [
+    {
+      "id": "ant",
+      "url": "ant-specimen.html",
+      "size": "desktop",
+      "viewport": 1440,
+      "scroll": 1440,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Shared interface states",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "ant",
+      "url": "ant-specimen.html",
+      "size": "mobile",
+      "viewport": 390,
+      "scroll": 390,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Shared interface states",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "ant",
+      "url": "ant-specimen.html",
+      "size": "narrow",
+      "viewport": 320,
+      "scroll": 320,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Shared interface states",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    },
+    {
+      "id": "ant",
+      "url": "ant-specimen.html",
+      "size": "text-200",
+      "viewport": 720,
+      "scroll": 720,
+      "bodyColor": "rgb(6, 8, 11)",
+      "heading": "Shared interface states",
+      "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+    }
+  ],
+  "checks": [
+    {
+      "name": "ant/desktop: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 1440,
+        "scroll": 1440,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Shared interface states",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "ant/desktop: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "primary/normal: final paint",
+      "passed": true,
+      "actual": {
+        "color": "rgb(6, 8, 11)",
+        "background": "rgb(0, 255, 167)",
+        "border": "rgba(0, 0, 0, 0)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 115,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "primary/hover: final paint",
+      "passed": true,
+      "actual": {
+        "color": "rgb(6, 8, 11)",
+        "background": "rgb(81, 255, 195)",
+        "border": "rgba(0, 0, 0, 0)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 115,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "primary/active: final paint",
+      "passed": true,
+      "actual": {
+        "color": "rgb(6, 8, 11)",
+        "background": "rgb(9, 195, 133)",
+        "border": "rgba(0, 0, 0, 0)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 115,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "danger/normal: final paint",
+      "passed": true,
+      "actual": {
+        "color": "rgb(6, 8, 11)",
+        "background": "rgb(245, 140, 155)",
+        "border": "rgba(0, 0, 0, 0)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 117,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "danger/hover: final paint",
+      "passed": true,
+      "actual": {
+        "color": "rgb(6, 8, 11)",
+        "background": "rgb(255, 176, 189)",
+        "border": "rgba(0, 0, 0, 0)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 117,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "danger/active: final paint",
+      "passed": true,
+      "actual": {
+        "color": "rgb(6, 8, 11)",
+        "background": "rgb(229, 119, 139)",
+        "border": "rgba(0, 0, 0, 0)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 117,
+        "height": 44,
+        "disabled": false
+      }
+    },
+    {
+      "name": "ant/success: feedback roles",
+      "passed": true,
+      "actual": {
+        "box": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(14, 32, 27)",
+          "border": "rgb(45, 87, 71)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 575,
+          "height": 97.140625
+        },
+        "icon": {
+          "color": "rgb(85, 217, 161)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(85, 217, 161)",
+          "borderStyle": "none",
+          "font": "24px",
+          "align": "start",
+          "weight": "400",
+          "width": 24,
+          "height": 24
+        }
+      }
+    },
+    {
+      "name": "ant/warning: feedback roles",
+      "passed": true,
+      "actual": {
+        "box": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(33, 28, 19)",
+          "border": "rgb(102, 82, 49)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 575,
+          "height": 97.140625
+        },
+        "icon": {
+          "color": "rgb(230, 191, 114)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(230, 191, 114)",
+          "borderStyle": "none",
+          "font": "24px",
+          "align": "start",
+          "weight": "400",
+          "width": 24,
+          "height": 24
+        }
+      }
+    },
+    {
+      "name": "ant/error: feedback roles",
+      "passed": true,
+      "actual": {
+        "box": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(36, 23, 28)",
+          "border": "rgb(103, 59, 71)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 575,
+          "height": 97.140625
+        },
+        "icon": {
+          "color": "rgb(245, 140, 155)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(245, 140, 155)",
+          "borderStyle": "none",
+          "font": "24px",
+          "align": "start",
+          "weight": "400",
+          "width": 24,
+          "height": 24
+        }
+      }
+    },
+    {
+      "name": "ant/info: feedback roles",
+      "passed": true,
+      "actual": {
+        "box": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(20, 29, 39)",
+          "border": "rgb(53, 81, 109)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 575,
+          "height": 97.140625
+        },
+        "icon": {
+          "color": "rgb(155, 198, 243)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(155, 198, 243)",
+          "borderStyle": "none",
+          "font": "24px",
+          "align": "start",
+          "weight": "400",
+          "width": 24,
+          "height": 24
+        }
+      }
+    },
+    {
+      "name": "ant: segmented selection",
+      "passed": true,
+      "actual": {
+        "color": "rgb(0, 255, 167)",
+        "background": "rgb(16, 44, 36)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "none",
+        "font": "14px",
+        "align": "center",
+        "weight": "400",
+        "width": 52,
+        "height": 40
+      }
+    },
+    {
+      "name": "ant: current page",
+      "passed": true,
+      "actual": {
+        "color": "rgb(255, 255, 255)",
+        "background": "rgb(15, 17, 20)",
+        "border": "rgb(0, 255, 167)",
+        "borderStyle": "solid",
+        "font": "14px",
+        "align": "center",
+        "weight": "600",
+        "width": 44,
+        "height": 46
+      }
+    },
+    {
+      "name": "ant: readonly stays selectable",
+      "passed": true,
+      "actual": {
+        "readonly": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgb(24, 29, 34)",
+          "border": "rgb(37, 42, 48)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 372.671875,
+          "height": 44,
+          "readOnly": true,
+          "disabled": false
+        },
+        "selection": {
+          "length": 9,
+          "selected": 9
+        }
+      }
+    },
+    {
+      "name": "ant: disabled has distinct state",
+      "passed": true,
+      "actual": {
+        "readonly": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgb(24, 29, 34)",
+          "border": "rgb(37, 42, 48)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 372.671875,
+          "height": 44,
+          "readOnly": true,
+          "disabled": false
+        },
+        "disabled": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgb(24, 29, 34)",
+          "border": "rgb(37, 42, 48)",
+          "borderStyle": "dashed",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 372.65625,
+          "height": 44,
+          "readOnly": false,
+          "disabled": true
+        }
+      }
+    },
+    {
+      "name": "ant: keyboard focus visible",
+      "passed": true,
+      "actual": "rgb(0, 255, 167)"
+    },
+    {
+      "name": "ant/mobile: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 390,
+        "scroll": 390,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Shared interface states",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "ant/mobile: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "ant/narrow: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 320,
+        "scroll": 320,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Shared interface states",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "ant/narrow: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "ant/text-200: page fits",
+      "passed": true,
+      "actual": {
+        "viewport": 720,
+        "scroll": 720,
+        "bodyColor": "rgb(6, 8, 11)",
+        "heading": "Shared interface states",
+        "font": "Inter, \"Noto Sans CJK SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif"
+      }
+    },
+    {
+      "name": "ant/text-200: page color",
+      "passed": true,
+      "actual": "rgb(6, 8, 11)"
+    },
+    {
+      "name": "ant: #primary actually doubles",
+      "passed": true,
+      "actual": {
+        "normal": {
+          "color": "rgb(6, 8, 11)",
+          "background": "rgb(0, 255, 167)",
+          "border": "rgba(0, 0, 0, 0)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "center",
+          "weight": "400",
+          "width": 115,
+          "height": 44,
+          "disabled": false
+        },
+        "enlarged": {
+          "color": "rgb(6, 8, 11)",
+          "background": "rgb(0, 255, 167)",
+          "border": "rgba(0, 0, 0, 0)",
+          "borderStyle": "solid",
+          "font": "28px",
+          "align": "center",
+          "weight": "400",
+          "width": 188,
+          "height": 88,
+          "disabled": false
+        }
+      }
+    },
+    {
+      "name": "ant: #primary keeps scalable target",
+      "passed": true,
+      "actual": {
+        "normal": 44,
+        "enlarged": 88
+      }
+    },
+    {
+      "name": "ant: #editable actually doubles",
+      "passed": true,
+      "actual": {
+        "normal": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "border": "rgb(97, 113, 123)",
+          "borderStyle": "solid",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 372.65625,
+          "height": 44,
+          "readOnly": false,
+          "disabled": false
+        },
+        "enlarged": {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(15, 17, 20)",
+          "border": "rgb(97, 113, 123)",
+          "borderStyle": "solid",
+          "font": "28px",
+          "align": "start",
+          "weight": "400",
+          "width": 494,
+          "height": 88,
+          "readOnly": false,
+          "disabled": false
+        }
+      }
+    },
+    {
+      "name": "ant: #editable keeps scalable target",
+      "passed": true,
+      "actual": {
+        "normal": 44,
+        "enlarged": 88
+      }
+    },
+    {
+      "name": "ant: .ant-alert-description actually doubles",
+      "passed": true,
+      "actual": {
+        "normal": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(159, 160, 161)",
+          "borderStyle": "none",
+          "font": "14px",
+          "align": "start",
+          "weight": "400",
+          "width": 489,
+          "height": 22
+        },
+        "enlarged": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(159, 160, 161)",
+          "borderStyle": "none",
+          "font": "28px",
+          "align": "start",
+          "weight": "400",
+          "width": 336,
+          "height": 88
+        }
+      }
+    },
+    {
+      "name": "ant: .body-copy actually doubles",
+      "passed": true,
+      "actual": {
+        "normal": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(159, 160, 161)",
+          "borderStyle": "none",
+          "font": "16px",
+          "align": "start",
+          "weight": "400",
+          "width": 700,
+          "height": 25.59375
+        },
+        "enlarged": {
+          "color": "rgb(159, 160, 161)",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "rgb(159, 160, 161)",
+          "borderStyle": "none",
+          "font": "32px",
+          "align": "start",
+          "weight": "400",
+          "width": 592,
+          "height": 102.375
+        }
+      }
+    },
+    {
+      "name": "no script errors",
+      "passed": true,
+      "actual": []
+    },
+    {
+      "name": "all resources load",
+      "passed": true,
+      "actual": []
+    }
+  ],
+  "failures": [],
+  "resources": [],
+  "errors": [],
+  "runtime": {
+    "node": "v24.14.1",
+    "browser": "148.0.7778.96",
+    "playwright": "1.60.0"
+  }
+}

@@ -2,6 +2,8 @@ Method: dual-agent（A：`/root/theme_design_a` · B：`/root/theme_evidence_b`�
 
 # 全站 UI 总体设计审阅 · 2026-09-14
 
+> 后续处置：用户已要求“先修复这些问题”。R1–R5 及附带的一致性问题已在[修订契约](theme-consistency-contract.md)、[v23 样板与验证](previews/theme-consistency-v23/README.md)及两份实施计划中处理。以下内容保留审阅当时的问题与原始证据；“尚未修复”指当时状态，正式 `ui/` 仍未改版。
+
 > 审阅结论：Nansen 单一深色方向和页面主体结构可以保留；共用状态、数字排版及实施方案仍有需要修正的地方。尤其当前 Ant Design 配置示例会产生偏色，文字放大方案也未覆盖控件。应先收敛这些共用规则，再按已确认页面实施；无需重开全站审美或逐页审批。
 >
 > 本次是审阅交付，问题尚未修复。正式 `ui/`、原型、截图和 approval 未修改；只新增本报告、审阅证据及一个已批准 Inter 字体的文件级检测例外。

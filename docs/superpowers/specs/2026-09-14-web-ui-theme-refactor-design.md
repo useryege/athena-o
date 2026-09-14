@@ -29,6 +29,8 @@
 
 `ui/src/app/styles/tokens.css` 是运行时颜色、字体角色和共用尺寸的权威来源，`shared.css` 导入它。`ui/src/app/shared/athena-theme.tsx` 从根元素 CSS 变量读取对应颜色并产生 Ant Design `ThemeConfig`，避免两套颜色表各自演化。Theme Provider 不读取账户数据、存储或系统配色。
 
+总体审阅后的[一致性修订契约](../../requirements/web-ui/theme-consistency-contract.md)与 [v23 参考实现](../../requirements/web-ui/previews/theme-consistency-v23/README.md)补充最终绘制规则。Ant 深色算法完成后由 `athena-color-roles.ts` 锁定最终角色，不能只向算法输入 seed。公共层也是 Token 前端任务的前置依赖；Token 后端可独立推进，页面不得另建主题和字体副本。
+
 | CSS 变量 | 值／职责 |
 | --- | --- |
 | `--athena-bg` | `#06080B` 页面背景 |
@@ -41,6 +43,9 @@
 | `--athena-primary`、`--athena-brand`、`--athena-focus` | `#00FFA7` 强调与焦点 |
 | `--athena-primary-hover`／`--athena-primary-active` | `#51FFC3`／`#09C385` |
 | `--athena-green`／`--athena-amber`／`--athena-red`／`--athena-blue` | `#55D9A1`／`#E6BF72`／`#F58C9B`／`#9BC6F3` 语义反馈 |
+| `--athena-selected-bg` | `#102C24` 导航／分段选中底色；数字页码保留面板底与青绿边框 |
+| `--athena-{green,amber,red,blue}-{bg,border}` | 沿 v4 四组反馈背景／边框，完整值见修订契约及 token 文件 |
+| `--athena-red-hover`／`--athena-red-active` | `#FFB0BD`／`#E5778B` 危险实心按钮交互态 |
 | `--athena-font` | Inter，中文按 Noto Sans CJK SC、PingFang SC、Microsoft YaHei 回退 |
 | `--athena-data-font` | JetBrains Mono，地址／哈希／逐字符技术标识 |
 | `--athena-sidebar-width`／`--athena-header-height` | `224px`／`64px` |
@@ -51,6 +56,8 @@ HTML 在样式加载前只内联深色背景和正文色，两份入口值必须
 
 文字层级严格沿 v2：页面标题桌面 1.75rem、手机 1.5rem，区块 1.25rem，正文 1rem，控件／表格 0.875rem，辅助／地址 0.8125rem。金额启用 `tabular-nums lining-nums`，不改变业务格式化、原始精度或将未知值写成零。完整地址、原值及复制入口按页面确认范围保留。
 
+上述字号以公共 CSS 角色变量提供。保留用户根字号；`px2remTransformer` 处理普通 Ant 样式，`cssVar.key='athena-theme'` 对应的共用 rem 桥接处理 Ant 6 的全局及组件字号变量。不能假设转换器也会转换 token 变量声明。验证先确认实际字体 14→28px，再检查局部重叠；静态样板的 200% 根字号模拟不等于浏览器原生缩放或正式 React 验收。
+
 桌面应用壳 224px 侧栏、64px 顶栏、32px 内容边距，手机外侧 20px；沿 v3 与 v22 的 900px 应用壳切换点，JS 媒体查询与 CSS 同步。页面内部可以采用其原型的 1100px／1180px／600px 等内容断点。主操作目标至少 44px；200% 字号时允许控件增高，不能用固定高裁字。原型确认过的常规 40px 导航项保留其视觉比例，手机及主要触控操作补足目标面积。
 
 ## 组件和页面边界
@@ -58,6 +65,8 @@ HTML 在样式加载前只内联深色背景和正文色，两份入口值必须
 共享组件继续位于 `ui/src/app/components/`，只接收展示值和回调，不导入会员／管理员业务 service。`AppPage`、`Section`、`ResourceTable`、`ChoiceGroup`、`MetricRow` 等保持现有调用契约；只在确有消费方时增加展示属性。
 
 `ResourceTable` 的桌面列和手机 `compactRender` 使用同一份已筛选、已分页数据。隐藏的表示不参与键盘焦点；不能让手机重新排序、重新请求或获得不同金额。分页仍按模块原契约保留数字页、cursor、Previous／Next 或 Load more，v5 的钱包示例不覆盖全站分页业务。
+
+同类组件跨页面按修订契约维护选中与只读状态；只读仍能聚焦、选中和复制，禁用保持独立外观和语义。可纵向比较的余额／金额列和表头右对齐，独立指标及文字不强制右对齐。管理员导航沿 v15 固定模块图标，区块标题统一 1.25rem／600，顶栏头像随文字放大。Service Status 以容器 44rem 阈值重排，保留完整错误独占一行。
 
 弹窗保留现有 Ant Design 实现、受控开关、单飞和焦点恢复，用共用 class 约束最大宽度、可滚动正文及固定操作区。移动端按钮按原图纵向排列；危险确认显示对象和后果。新增样式不新增业务确认步骤，尤其 Prepare、授权、Start 和 Cash Out 的顺序继续各自独立。
 

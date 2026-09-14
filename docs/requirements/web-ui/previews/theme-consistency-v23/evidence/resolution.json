@@ -1,0 +1,16 @@
+{
+  "scope": "design-and-plans-only",
+  "coveredViews": 44,
+  "batchChecks": 166,
+  "batchPassed": 164,
+  "targetedAntViews": 4,
+  "targetedAntChecks": 31,
+  "targetedAntPassed": 31,
+  "unresolvedAdoptedFindings": [],
+  "note": "第二轮全量的两项字体读数采于 CSS 过渡中；等待过渡结束后定向复核。最终同时补齐 Input 最小高度并验证 44→88px。原始失败记录完整保留。",
+  "productionImplemented": false,
+  "targetedColumnsViews": 8,
+  "targetedColumnsChecks": 27,
+  "targetedColumnsPassed": 27,
+  "numericColumnScope": "Explicit numeric roles only; Wallets Type and Source remain left aligned."
+}

@@ -527,7 +527,9 @@ promise.abort = () => req.abort();
 
 ## 任务 9：按已确认 v1 实现正式钱包页
 
-**文件：** 新增 `ui/src/app/member/pages/wallet-analytics/{page,summary,tokens,transactions,status}.tsx`、同目录 `wallet-analytics.css` 和 `page.test.tsx`；修改 `ui/src/app/member/{app,routes}.tsx` 与现有 `ui/src/app/app.test.tsx`；复制两份已确认字体到 `ui/src/assets/fonts/wallet-analytics/`。
+**文件：** 新增 `ui/src/app/member/pages/wallet-analytics/{page,summary,tokens,transactions,status}.tsx`、同目录 `wallet-analytics.css` 和 `page.test.tsx`；修改 `ui/src/app/member/{app,routes}.tsx` 与现有 `ui/src/app/app.test.tsx`。复用全站 `ui/src/assets/fonts/athena/`，不另存字体。
+
+**前置依赖：** [全站主题计划 T1／T2](2026-09-14-web-ui-theme-refactor.md)的公共主题、字体、应用壳与中立组件须先实施并验证，再执行本任务。后端和任务 8 的服务／控制器可独立推进；不能为抢先落地页面而另建 Token 主题。共同规则以[一致性修订契约](../../requirements/web-ui/theme-consistency-contract.md)为准。
 
 **接口：** `WalletAnalyticsPage({ownerId}: {ownerId: string})` 为会员路由组件。SummaryPanel、TokenTable、TransactionsList、RegionStatus 只消费任务 8 的 RegionState 与回调；所有取数由 controller 负责。页面路由 `/tokens/wallet-analytics`，Token 子菜单同名；把 Token 加入 moduleLandingPaths，READ 用户可直接到达。
 
@@ -542,26 +544,15 @@ expect(screen.queryByText('Win rate')).toBeNull();
 
 测试所用 wallet 是上述 B 地址，user 由 `userEvent.setup()` 创建；使用当前 Jest 的标准 matcher 和 Testing Library 查找，视觉可见性在浏览器中验证，不为单个断言引入额外依赖。
 
-- [ ] **9.2 复刻业务内容与本地样式。** 完整预览 `docs/requirements/token/previews/wallet-analytics-v1.html` 是视觉依据；不得拿构建模板当页面产物。复用现有会员 shell 和路由，不复制出第二套假导航。钱包 route 为 shell 添加 `wallet-analytics` surface 标识，在本页 CSS 内应用已确认的背景、侧栏／页头密度、字体和控件；离开页面清理标识。本页始终深色，钱包 route 不显示旧主题切换入口；全站其他页面按各自改版任务推进。
+- [ ] **9.2 复刻业务内容并消费共用主题。** 完整预览 `docs/requirements/token/previews/wallet-analytics-v1.html` 是业务视觉依据；[v23 Token 修订稿](../../requirements/web-ui/previews/theme-consistency-v23/wallet-analytics-v1.html)补充共用状态与头像放大修正。复用 T1／T2 的会员 shell、路由和入口 Provider，页面 CSS 只管理业务布局与局部重排。不得添加 route 根主题标识、覆盖公共颜色／字体／壳尺寸，或创建页面级 Theme Provider；导航进入和离开均消费同一公共主题。
 
 ```css
-html[data-ui-surface='wallet-analytics'] {
-    color-scheme: dark;
-    --athena-bg: #06080B;
-    --athena-panel: #0F1114;
-    --athena-text: #FFFFFF;
-    --athena-muted: #9FA0A1;
-    --athena-primary: #00FFA7;
-    --athena-focus: #00FFA7;
-}
+.wallet-analytics-page { min-width: 0; }
 .wallet-analytics-page .num { font-variant-numeric: tabular-nums lining-nums; }
-.wallet-analytics-page .address { font-family: 'JetBrains Mono', monospace; }
-html[data-ui-surface='wallet-analytics'],
-html[data-ui-surface='wallet-analytics'] body,
-html[data-ui-surface='wallet-analytics'] #app { min-width: 0; }
+.wallet-analytics-page .address { font-family: var(--athena-data-font); }
 ```
 
-以完整 v1 的 token 值核对其余边框／弱文字／按钮文字色，不仅换一个强调色。字体来自 `docs/requirements/web-ui/previews/files/InterVariable.woff2` 与 `JetBrainsMono-Regular.woff2`，记录来源和摘要；构建以本地文件提供，不临时加载在线字体。全站改版若已在执行分支提供相同公共 tokens，直接使用实际公共实现，避免重复同一套值。
+以 v1 及 v23 共用修订核对最终绘制效果。颜色、反馈、只读、选中、字号放大均由全站公共层实现；字体来源和摘要由 T1 统一记录，本页只消费 `assets/fonts/athena/`。在浏览器核对从其他会员页进入、离开本页时主题和壳保持一致，字体不重复请求；保留钱包列表自己的 760px 重排阈值。
 
 - [ ] **9.3 展示实际元数据。** 正式页移除研究样本 banner、样本 A／B 和模拟状态选择器；`request started` 改为真实 meta.fetchedAt，分别展示三部分状态和实际范围。完整值仍可查看，缺字段为 Unavailable；来源说明沿用供应商口径，不新增费用、胜率或现金收益解释。
 - [ ] **9.4 实现完整交互。** 地址校验、日期切换、Query、Refresh data、合约筛选／清除、两种排序、两份 Load more、分区 Retry、低额度与耗尽提示分别连到 controller。Refresh 对当前已执行查询和可见筛选生效，输入草稿不改写旧结果身份。quota 失败独立提示，不遮挡数据。

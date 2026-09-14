@@ -1,0 +1,41 @@
+{
+  "stopped": [
+    {
+      "pid": 3163650,
+      "cwd": "/home/yege/work/athena",
+      "argv": [
+        "python3",
+        "-u",
+        "-m",
+        "http.server",
+        "41823",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "/home/yege/work/athena"
+      ]
+    },
+    {
+      "pid": 3176157,
+      "cwd": "/home/yege/work/athena",
+      "argv": [
+        "python3",
+        "-u",
+        "-m",
+        "http.server",
+        "41823",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "/home/yege/work/athena"
+      ],
+      "session": 78139
+    }
+  ],
+  "session": 25963,
+  "port": 41823,
+  "processExited": true,
+  "portReleased": true,
+  "preserved": "Existing user/other-task environments were not changed.",
+  "browserClosed": true
+}
