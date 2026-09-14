@@ -1,5 +1,31 @@
-import {expect, test} from '@playwright/test';
+import {expect, test, type Locator, type Page} from '@playwright/test';
 import {assertThemeLayout, assertThemeLedger, openThemeCase} from './theme-refactor/routes';
+
+const assertFullHeightMobileDrawer = async (page: Page, drawer: Locator) => {
+    const viewport = page.viewportSize();
+    if (!viewport) throw new Error('A fixed viewport is required for drawer assertions');
+    const expectedWidth = Math.min(280, viewport.width - 48);
+    await expect.poll(async () => (await drawer.boundingBox())?.x).toBeCloseTo(0, 0);
+    await expect.poll(async () => (await drawer.boundingBox())?.y).toBeCloseTo(0, 0);
+    await expect.poll(async () => (await drawer.boundingBox())?.width).toBeCloseTo(expectedWidth, 0);
+    await expect.poll(async () => (await drawer.boundingBox())?.height).toBeCloseTo(viewport.height, 0);
+
+    const backdrop = page.locator('.athena-shell__backdrop');
+    const [backdropBox, brandBox, closeBox, firstGroupBox] = await Promise.all([
+        backdrop.boundingBox(),
+        drawer.locator('.athena-brand').boundingBox(),
+        drawer.getByRole('button', {name: 'Close navigation'}).boundingBox(),
+        drawer.locator('.ant-menu-item-group').first().boundingBox()
+    ]);
+    expect(backdropBox?.y).toBeCloseTo(0, 0);
+    expect(backdropBox?.height).toBeCloseTo(viewport.height, 0);
+    expect(brandBox).not.toBeNull();
+    expect(closeBox).not.toBeNull();
+    expect(firstGroupBox).not.toBeNull();
+    expect(closeBox!.y).toBeGreaterThanOrEqual(brandBox!.y - 1);
+    expect(closeBox!.y + closeBox!.height).toBeLessThanOrEqual(brandBox!.y + brandBox!.height + 1);
+    expect(firstGroupBox!.y).toBeGreaterThanOrEqual(brandBox!.y + brandBox!.height - 1);
+};
 
 test('theme:core 系统浅色和旧偏好不能改变深色登录', async ({page}, info) => {
     await page.emulateMedia({colorScheme: 'light'});
@@ -47,6 +73,7 @@ for (const viewport of [
             const drawer = page.getByRole('dialog', {name: 'Primary navigation'});
             await expect(drawer).toBeVisible();
             await expect(drawer.getByRole('button', {name: 'Close navigation'})).toBeFocused();
+            await assertFullHeightMobileDrawer(page, drawer);
             await page.keyboard.press('Escape');
             await expect(toggle).toBeFocused();
             await expect(page.locator('.athena-shell__sider')).toHaveCSS('visibility', 'hidden');
@@ -73,6 +100,7 @@ test('theme:core admin mobile navigation traps focus and restores the toggle', a
     const drawer = page.getByRole('dialog', {name: 'Administration navigation'});
     await expect(drawer).toBeVisible();
     await expect(drawer.getByRole('button', {name: 'Close navigation'})).toBeFocused();
+    await assertFullHeightMobileDrawer(page, drawer);
     await expect(drawer.getByRole('button', {name: 'Help'})).toHaveAttribute('aria-current', 'page');
     await expect(drawer.getByText('Administration console', {exact: true})).toBeVisible();
     await page.keyboard.press('Escape');
@@ -80,6 +108,25 @@ test('theme:core admin mobile navigation traps focus and restores the toggle', a
     await expect(toggle).toBeFocused();
     assertThemeLedger(ledger);
 });
+
+for (const scenario of [
+    {id: 'member-shell', drawerName: 'Primary navigation'},
+    {id: 'admin-shell', drawerName: 'Administration navigation'}
+]) {
+    test(`theme:drawer ${scenario.id} covers the 320px viewport without crossing its brand row`, async ({page}) => {
+        await page.setViewportSize({width: 320, height: 720});
+        const ledger = await openThemeCase(page, scenario.id);
+        const toggle = page.getByRole('button', {name: 'Open navigation'});
+        await toggle.click();
+        const drawer = page.getByRole('dialog', {name: scenario.drawerName});
+        await expect(drawer.getByRole('button', {name: 'Close navigation'})).toBeFocused();
+        await assertFullHeightMobileDrawer(page, drawer);
+        await page.keyboard.press('Escape');
+        await expect(drawer).toBeHidden();
+        await expect(toggle).toBeFocused();
+        assertThemeLedger(ledger);
+    });
+}
 
 test('theme:harness records writes and rejects undeclared methods instead of fabricating success', async ({page}) => {
     const ledger = await openThemeCase(page, 'member-login');
@@ -136,11 +183,8 @@ test('theme:core shell typography and account portal follow 200% root text sizin
     const toggle = page.getByRole('button', {name: 'Open navigation'});
     await toggle.click();
     const drawer = page.getByRole('dialog', {name: 'Primary navigation'});
-    await expect.poll(async () => (await drawer.boundingBox())?.x).toBeCloseTo(0, 0);
-    await expect.poll(async () => (await drawer.boundingBox())?.width).toBeCloseTo(280, 0);
-    const drawerBox = await drawer.boundingBox();
+    await assertFullHeightMobileDrawer(page, drawer);
     await expect(page.locator('.ant-tooltip')).toHaveCount(0);
-    expect(drawerBox?.y).toBeCloseTo(headerBox?.height || 0, 0);
     await assertThemeLayout(page);
     const screenshot = info.outputPath('member-shell-root-200.png');
     await page.screenshot({path: screenshot, fullPage: true});

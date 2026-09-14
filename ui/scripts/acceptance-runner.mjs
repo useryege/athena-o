@@ -142,6 +142,7 @@ async function preflight(root, env, timeouts, check, invocationCwd) {
   if (!['acceptance', 'a11y'].includes(suite)) throw failure(`Invalid UI_ACCEPTANCE_SUITE: ${suite}`);
   if (suite === 'a11y' && mode !== 'isolated') throw failure('The a11y suite requires isolated UI_ACCEPTANCE_MODE');
   const grep = env.UI_ACCEPTANCE_GREP || null;
+  if (mode === 'smoke' && grep) throw failure('UI_ACCEPTANCE_GREP is not supported in smoke mode; use isolated mode for filtered acceptance');
   const target = mode === 'smoke' ? smokeTarget(env.UI_ACCEPTANCE_BASE_URL || 'http://localhost:4000') : null;
   if (mode === 'isolated' && env.UI_ACCEPTANCE_BASE_URL) throw failure('UI_ACCEPTANCE_BASE_URL is only valid in smoke mode; isolated uses its fresh harness manifest');
   if (process.platform !== 'linux') throw failure('Run ui-acceptance with Linux/WSL Node in the same runtime as the repository');

@@ -926,15 +926,22 @@ body,
     .athena-shell__sider {
         position: fixed !important;
         z-index: 60;
-        top: calc(max(var(--athena-header-height), var(--athena-control-height)) + 1px) !important;
+        top: 0 !important;
         left: 0;
         width: min(280px, calc(100vw - 48px)) !important;
+        min-width: min(280px, calc(100vw - 48px)) !important;
         max-width: calc(100vw - 48px);
-        height: calc(100vh - max(var(--athena-header-height), var(--athena-control-height)) - 1px);
+        flex-basis: min(280px, calc(100vw - 48px)) !important;
+        height: 100vh;
+        height: 100dvh;
         box-shadow: var(--athena-shadow);
     }
 
     .athena-shell__sider.ant-layout-sider-collapsed {
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        flex-basis: 0 !important;
         border-right: 0;
         box-shadow: none;
     }
@@ -942,18 +949,18 @@ body,
     .athena-shell__mobile-close {
         position: absolute;
         z-index: 1;
-        top: 18px;
+        top: 0.625rem;
         right: 10px;
     }
 
     .athena-shell__sider .athena-brand {
-        padding-right: 52px;
+        padding-right: calc(2.75rem + 0.75rem);
     }
 
     .athena-shell__backdrop {
         position: fixed;
         z-index: 50;
-        inset: calc(max(var(--athena-header-height), var(--athena-control-height)) + 1px) 0 0;
+        inset: 0;
         padding: 0;
         border: 0;
         background: rgb(0 0 0 / 48%);
@@ -1664,6 +1671,12 @@ body,
 @media (max-width: 900px) {
     .athena-shell__sider {
         overflow: visible;
+    }
+
+    .athena-shell__sider .athena-brand {
+        height: max(var(--athena-header-height), calc(2.75rem + 1.25rem));
+        min-height: max(var(--athena-header-height), calc(2.75rem + 1.25rem));
+        flex-basis: max(var(--athena-header-height), calc(2.75rem + 1.25rem));
     }
 
     .athena-shell__sider .athena-brand__copy small {

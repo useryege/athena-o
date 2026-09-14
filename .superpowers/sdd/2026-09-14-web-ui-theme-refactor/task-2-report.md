@@ -61,3 +61,36 @@
 - T2 为 Table、Select、Modal、Dropdown、Message、Notification 提供共享字体／控件桥接，并实际覆盖账户 Dropdown、表格和 T1 控件；全组件状态矩阵、portal 与原生 Chrome zoom 的扩大验证归 T9。
 - T3–T8 继续追加真实业务页 fixture，并清理各自业务域遗留的 700–900 字重与金额列消费者。T2 未改业务排序、业务 guard、双 realm 注册、Token 可见性或 Trader Sync 页面信息结构。
 - 本任务未启动或保留独立产品服务。`http://localhost:34000` 是主代理既有 `ui-theme-refactor` 环境，保持运行；filtered acceptance 自管的 harness/PostgreSQL 均已清理。
+
+## 独立审阅修复 round 1/5
+
+基线：`408ed44716b70dbb0cb0303f555e3e8cbc03a5f6`。修复范围仅包含 `task-2-review.md` 的两个 Important finding；Minor 中既有 jsdom、Vite chunk size 与 `NO_COLOR`/`FORCE_COLOR` 警告继续据实保留，未扩大为工具链清理。
+
+### RED
+
+- `cd ui && yarn node --test --test-name-pattern='smoke mode rejects grep' scripts/acceptance-runner.test.mjs`：1 failed，新增测试收到退出码 0，证明 smoke 接受了非空 `UI_ACCEPTANCE_GREP` 却未执行过滤。
+- `UI_ACCEPTANCE_GREP='theme:drawer' make ui-acceptance`：failed，报告 `.tmp/athena-ui-acceptance/2026-09-14T16-12-24-826Z-049cbb56/report.md`；320px 会员／管理员抽屉实际 `y=65`，未覆盖顶栏。
+- 首次改为全高后再次运行同一命令：failed，报告 `.tmp/athena-ui-acceptance/2026-09-14T16-13-32-017Z-ed70d1c9/report.md`；抽屉实际 280px，暴露 Ant 内联 `min-width` 仍覆盖批准的 `viewport - 48px` 上限。
+- `UI_ACCEPTANCE_GREP='theme:core' make ui-acceptance` 的回归首轮：failed，报告 `.tmp/athena-ui-acceptance/2026-09-14T16-14-56-776Z-1827225e/report.md`；新增展开态 `min-width` 未在 collapsed 状态归零，会员／管理员隐藏侧栏仍占 280px。
+
+### 修复
+
+- preflight 明确拒绝 smoke mode 与非空 `UI_ACCEPTANCE_GREP` 的组合，拒绝发生在浏览器探测、报告目录和任何服务副作用之前；不新增 filtered smoke 模式。
+- 900px 及以下抽屉与 backdrop 改为从 `y=0` 覆盖动态视口全高；展开宽度同时约束 `width`、`min-width` 与 `flex-basis` 为 `min(280px, 100vw - 48px)`，折叠态四项归零。
+- 手机品牌行高度采用 `max(64px, 2.75rem + 1.25rem)`，关闭按钮上下各保留 `.625rem`；根字号 32px 时 88px 关闭目标完整落在 128px 品牌行内，首个导航组位于其后。
+- 共用 Playwright 边界助手验证抽屉与 backdrop 的 y、宽、高，以及关闭按钮包含关系和首个导航组不重叠。390px 会员／管理员既有流程、320px 双 realm 新场景和 720px/root32 场景均复用该断言，并保留初始焦点、Escape、inert 与关闭回焦检查。
+
+### GREEN 与证据
+
+| 命令 | 结果 |
+| --- | --- |
+| `cd ui && yarn node --test --test-name-pattern='smoke mode rejects grep' scripts/acceptance-runner.test.mjs` | 1/1 passed。 |
+| `UI_ACCEPTANCE_MODE=smoke UI_ACCEPTANCE_BASE_URL=http://127.0.0.1:34000 UI_ACCEPTANCE_GREP='no matching smoke case' make ui-acceptance` | 按契约退出 2，精确输出 `UI_ACCEPTANCE_GREP is not supported in smoke mode; use isolated mode for filtered acceptance`；未创建 evidence，未访问或控制既有服务。 |
+| `cd ui && yarn node --test scripts/acceptance-runner.test.mjs` | 43/43 passed。 |
+| `UI_ACCEPTANCE_GREP='theme:drawer' make ui-acceptance` | passed；root 与 `/athena` 的 320px member/admin 共 4 个场景通过，清理通过。报告 `.tmp/athena-ui-acceptance/2026-09-14T16-14-17-105Z-9b838e13/report.md`。 |
+| `UI_ACCEPTANCE_GREP='theme:core' make ui-acceptance` | passed；root 与 `/athena` 各 5/5，覆盖 390px member/admin 与 720px/root32，清理通过。报告 `.tmp/athena-ui-acceptance/2026-09-14T16-15-40-599Z-14c141b5/report.md`。 |
+| `cd ui && yarn lint` | passed。 |
+| `cd ui && yarn build` | passed；保留审阅已记账的既有 chunk size warning。 |
+| `git diff --check` | passed。 |
+
+更新后的 200% 浏览器截图：`.tmp/athena-ui-acceptance/2026-09-14T16-15-40-599Z-14c141b5/root/ui-fixtures/artifacts/theme-refactor-theme-core--27260-follow-200-root-text-sizing-ui-fixtures/member-shell-root-200.png`。人工核对显示抽屉覆盖左侧完整视口，放大关闭目标位于品牌行内，首个导航组和底部 Help/workspace 均无覆盖。

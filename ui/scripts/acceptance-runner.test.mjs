@@ -295,6 +295,15 @@ test('smoke mode rejects a11y suite before browser or service side effects', asy
   assert.deepEqual(await f.events(), []);
 });
 
+test('smoke mode rejects grep before browser, evidence, or service side effects', async t => {
+  const f = await fixture(t, {UI_ACCEPTANCE_MODE: 'smoke', UI_ACCEPTANCE_GREP: 'no matching smoke case'});
+  const result = await f.start().done;
+  assert.notEqual(result.code, 0);
+  assert.match(result.stderr, /grep.*smoke|smoke.*grep/i);
+  assert.deepEqual(await f.events(), []);
+  assert.equal(await fs.stat(path.join(f.root, '.tmp')).catch(() => null), null);
+});
+
 test('a11y infrastructure failure stops before a second harness and cleans resources', async t => {
   const f = await fixture(t, {UI_ACCEPTANCE_SUITE: 'a11y', FAIL: 'startup-timeout'});
   const result = await f.start().done;
