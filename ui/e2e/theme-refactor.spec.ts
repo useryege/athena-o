@@ -916,3 +916,5 @@ for (const size of [
 import './theme-refactor/foundations';
 
 import './theme-refactor/markets';
+
+import './theme-refactor/worm-assets-combinations';

@@ -467,10 +467,10 @@ const AppRoutes = (props: {access: AccessState; settings: AuthSettings; loggingO
             <Routes>
                 <Route path='/' element={<Navigate replace={true} to={pending ? '/account/access' : '/account/profile'} />} />
                 <Route path='/wallet' element={moduleRoute(AccountDataModule.Wallet, <WalletsPage />)} />
-                <Route path='/worm-trading' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingPage />)} />
-                <Route path='/worm-trading/combinations' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationsPage />)} />
-                <Route path='/worm-trading/combinations/new' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationBuilderPage />)} />
-                <Route path='/worm-trading/combinations/:id/edit' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationBuilderPage />)} />
+                <Route path='/worm-trading' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingPage key={identityKey} />)} />
+                <Route path='/worm-trading/combinations' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationsPage key={identityKey} />)} />
+                <Route path='/worm-trading/combinations/new' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationBuilderPage key={identityKey} />)} />
+                <Route path='/worm-trading/combinations/:id/edit' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationBuilderPage key={identityKey} />)} />
                 <Route path='/worm-trading/combinations/:id/execute' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionPreviewPage />)} />
                 <Route path='/worm-trading/executions' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionsPage />)} />
                 <Route path='/worm-trading/executions/:id' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionDetailPage />)} />

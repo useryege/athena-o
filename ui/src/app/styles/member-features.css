@@ -649,8 +649,8 @@
     padding: 18px 20px;
     border: 1px solid var(--athena-border);
     border-radius: 12px;
-    background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--athena-blue) 8%, transparent), transparent 18rem), var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    background: var(--athena-panel);
+    box-shadow: none;
 }
 
 .worm-trading-runtime__heading {
@@ -681,7 +681,7 @@
 
 .worm-trading-runtime__heading > span > .anticon {
     color: var(--athena-primary);
-    font-size: 17px;
+    font-size: 1.0625rem;
 }
 
 .worm-trading-runtime__heading .ant-tag {
@@ -707,8 +707,8 @@
 
 .worm-trading-runtime__facts dt {
     color: var(--athena-muted);
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
     line-height: 1.2;
 }
 
@@ -717,9 +717,9 @@
     margin: 0;
     overflow: hidden;
     color: var(--athena-text);
-    font-family: var(--athena-data-font);
-    font-size: 13px;
-    font-weight: 750;
+    font-family: var(--athena-font);
+    font-size: 0.8125rem;
+    font-weight: 500;
     line-height: 1.3;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -727,7 +727,7 @@
 
 .worm-trading-runtime__error.ant-typography {
     color: var(--athena-amber);
-    font-size: 12px;
+    font-size: 0.8125rem;
 }
 
 .worm-trading-connection-setup.ant-alert {
@@ -735,7 +735,7 @@
     margin-bottom: 20px;
     padding: 16px 18px;
     border-radius: 12px;
-    box-shadow: var(--athena-shadow-surface);
+    box-shadow: none;
 }
 
 .worm-trading-connection-setup .ant-alert-content {
@@ -770,8 +770,8 @@
 
 .worm-trading-connection-setup__progress > span {
     color: var(--athena-muted);
-    font-family: var(--athena-data-font);
-    font-size: 11px;
+    font-family: var(--athena-font);
+    font-size: 0.8125rem;
     font-variant-numeric: tabular-nums;
 }
 
@@ -796,7 +796,7 @@
     border: 1px solid var(--athena-border);
     border-radius: 12px;
     background: var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    box-shadow: none;
 }
 
 .worm-wallet-selection-summary__heading {
@@ -837,16 +837,16 @@
 
 .worm-wallet-selection-summary dt {
     color: var(--athena-muted);
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-wallet-selection-summary dd {
     margin: 0;
     color: var(--athena-text);
-    font-family: var(--athena-data-font);
-    font-size: 18px;
-    font-weight: 800;
+    font-family: var(--athena-font);
+    font-size: 1.125rem;
+    font-weight: 500;
 }
 
 .worm-wallet-selection-summary__attention {
@@ -855,7 +855,7 @@
 }
 
 .worm-wallet-selection-summary > .ant-typography {
-    font-size: 12px;
+    font-size: 0.8125rem;
 }
 
 .worm-wallet-selection-guide.ant-result,
@@ -966,7 +966,7 @@
 .worm-wallet-selection-card--selected {
     border-color: var(--athena-primary);
     background: color-mix(in srgb, var(--athena-primary) 7%, var(--athena-panel));
-    box-shadow: inset 3px 0 0 var(--athena-primary);
+    box-shadow: none;
 }
 
 .worm-wallet-selection-card--disabled {
@@ -996,7 +996,7 @@
     overflow: hidden;
     color: var(--athena-muted);
     font-family: var(--athena-data-font);
-    font-size: 10px;
+    font-size: 0.8125rem;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -1016,7 +1016,7 @@
 .worm-wallet-selection-card > small {
     grid-column: 2 / -1;
     color: var(--athena-amber);
-    font-size: 10px;
+    font-size: 0.8125rem;
     line-height: 1.4;
 }
 
@@ -1026,7 +1026,7 @@
 }
 
 .worm-wallet-selection-modal__footer > .ant-typography {
-    font-size: 12px;
+    font-size: 0.8125rem;
 }
 
 .worm-trading-balances {
@@ -1053,14 +1053,14 @@
 .worm-trading-balances__heading h2.ant-typography {
     margin: 0 0 3px;
     color: var(--athena-text);
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.3;
 }
 
 .worm-trading-balances__heading .ant-typography-secondary,
 .worm-trading-balances__refreshing.ant-typography {
     color: var(--athena-muted);
-    font-size: 12px;
+    font-size: 0.8125rem;
 }
 
 .worm-trading-balances__refreshing.ant-typography {
@@ -1084,7 +1084,7 @@
 .worm-trading-wallet__main > .ant-typography {
     min-width: 0;
     color: var(--athena-text);
-    font-size: 14px;
+    font-size: 0.875rem;
 }
 
 .worm-trading-wallet__address {
@@ -1100,7 +1100,7 @@
     overflow: hidden;
     color: inherit;
     font-family: var(--athena-data-font);
-    font-size: 11px;
+    font-size: 0.8125rem;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -1119,8 +1119,8 @@
 .worm-trading-asset strong {
     overflow: hidden;
     color: var(--athena-text);
-    font-family: var(--athena-data-font);
-    font-size: 14px;
+    font-family: var(--athena-font);
+    font-size: 0.875rem;
     font-variant-numeric: tabular-nums;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1130,7 +1130,7 @@
     min-width: 0;
     overflow: hidden;
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: 0.8125rem;
     line-height: 1.35;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1149,7 +1149,7 @@
     border-color: var(--athena-border);
     border-radius: 10px;
     background: var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    box-shadow: none;
 }
 
 .worm-trading-balance-card .ant-card-body {
@@ -1194,8 +1194,8 @@
 .worm-trading-balance-card__assets > div > span,
 .worm-trading-balance-card__mint > span {
     color: var(--athena-muted);
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-trading-balance-card__mint {
@@ -1213,7 +1213,7 @@
     overflow: hidden;
     color: var(--athena-muted);
     font-family: var(--athena-data-font);
-    font-size: 11px;
+    font-size: 0.8125rem;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -1241,7 +1241,7 @@
     max-width: 220px;
     overflow: hidden;
     color: var(--athena-muted);
-    font-size: 10px;
+    font-size: 0.8125rem;
     line-height: 1.35;
     text-overflow: ellipsis;
 }
@@ -1259,12 +1259,12 @@
 
 .worm-trading-balance-card__connection > span {
     color: var(--athena-muted);
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-trading-balance-card__connection .worm-trading-connection {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
 }
 
@@ -1295,14 +1295,14 @@
 .worm-trading-market .ant-typography {
     min-width: 0;
     color: var(--athena-text);
-    font-size: 13px;
+    font-size: 0.8125rem;
 }
 
 .worm-trading-market small {
     overflow: hidden;
     color: var(--athena-muted);
-    font-family: var(--athena-data-font);
-    font-size: 10px;
+    font-family: var(--athena-font);
+    font-size: 0.8125rem;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -1318,7 +1318,7 @@
     overflow: hidden;
     color: var(--athena-text);
     font-family: var(--athena-data-font);
-    font-size: 12px;
+    font-size: 0.8125rem;
     font-variant-numeric: tabular-nums;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1327,7 +1327,7 @@
 .worm-trading-data-pair small {
     overflow: hidden;
     color: var(--athena-muted);
-    font-size: 10px;
+    font-size: 0.8125rem;
     line-height: 1.35;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1343,7 +1343,7 @@
     border-color: var(--athena-border);
     border-radius: 10px;
     background: var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    box-shadow: none;
 }
 
 .worm-trading-activity-card .ant-card-body {
@@ -1381,8 +1381,8 @@
 
 .worm-trading-activity-card__facts dt {
     color: var(--athena-muted);
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-trading-activity-card__facts dd {
@@ -1390,9 +1390,9 @@
     margin: 0;
     overflow: hidden;
     color: var(--athena-text);
-    font-family: var(--athena-data-font);
-    font-size: 12px;
-    font-weight: 700;
+    font-family: var(--athena-font);
+    font-size: 0.8125rem;
+    font-weight: 500;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -1406,7 +1406,7 @@
     padding-top: 10px;
     border-top: 1px solid var(--athena-border);
     color: var(--athena-muted);
-    font-size: 10px;
+    font-size: 0.8125rem;
 }
 
 .worm-trading-activity-card__footer code {
@@ -1462,8 +1462,8 @@
 
 .worm-position-cash-out-confirmation dt {
     color: var(--athena-muted);
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-position-cash-out-confirmation dd {
@@ -1471,8 +1471,8 @@
     margin: 0;
     overflow-wrap: anywhere;
     color: var(--athena-text);
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-position-cash-out-confirmation .ant-typography {
@@ -1489,8 +1489,8 @@
 
 .worm-position-cash-out-batch-wallet-select .ant-checkbox-wrapper {
     color: var(--athena-text);
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-position-cash-out-batch-selection {
@@ -1513,12 +1513,12 @@
 
 .worm-position-cash-out-batch-selection strong {
     color: var(--athena-text);
-    font-size: 13px;
+    font-size: 0.8125rem;
 }
 
 .worm-position-cash-out-batch-selection span {
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: 0.8125rem;
     line-height: 1.5;
 }
 
@@ -1527,7 +1527,7 @@
     overflow: hidden;
     border-color: color-mix(in srgb, var(--athena-blue) 34%, var(--athena-border));
     background: color-mix(in srgb, var(--athena-panel-solid) 96%, var(--athena-blue) 4%);
-    box-shadow: 0 14px 34px rgb(15 23 42 / 8%);
+    box-shadow: none;
 }
 
 .worm-position-cash-out-batch-panel > .ant-card-head {
@@ -1557,7 +1557,7 @@
 
 .worm-position-cash-out-batch-panel__heading > .ant-typography,
 .worm-position-cash-out-batch-panel__heading > div > .ant-typography {
-    font-size: 11px;
+    font-size: 0.8125rem;
 }
 
 .worm-position-cash-out-batch-live-region {
@@ -1590,7 +1590,7 @@
 .worm-position-cash-out-batch-items__heading h4 {
     margin: 0;
     color: var(--athena-text);
-    font-size: 14px;
+    font-size: 0.875rem;
 }
 
 .worm-position-cash-out-batch-current__heading > div,
@@ -1602,7 +1602,7 @@
 
 .worm-position-cash-out-batch-current__heading .ant-typography,
 .worm-position-cash-out-batch-items__heading .ant-typography {
-    font-size: 11px;
+    font-size: 0.8125rem;
 }
 
 .worm-position-cash-out-batch-current__target {
@@ -1624,8 +1624,8 @@
 .worm-position-cash-out-batch-current__target small,
 .worm-position-cash-out-batch-evidence dt {
     color: var(--athena-muted);
-    font-size: 10px;
-    font-weight: 750;
+    font-size: 0.8125rem;
+    font-weight: 500;
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
@@ -1647,7 +1647,7 @@
 
 .worm-position-cash-out-batch-current__target span {
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: 0.8125rem;
 }
 
 .worm-position-cash-out-batch-evidence {
@@ -1668,8 +1668,8 @@
 
 .worm-position-cash-out-batch-evidence dd {
     margin: 0;
-    font-size: 13px;
-    font-weight: 750;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-position-cash-out-batch-evidence dd.is-positive {
@@ -1678,7 +1678,7 @@
 
 .worm-position-cash-out-batch-evidence small {
     color: var(--athena-muted);
-    font-size: 10px;
+    font-size: 0.8125rem;
 }
 
 .worm-position-cash-out-batch-items > ol {
@@ -1714,9 +1714,9 @@
     border-radius: 999px;
     background: var(--athena-bg-soft);
     color: var(--athena-muted);
-    font-family: var(--athena-data-font);
-    font-size: 10px;
-    font-weight: 750;
+    font-family: var(--athena-font);
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-position-cash-out-batch-items li > div {
@@ -1734,7 +1734,7 @@
 
 .worm-position-cash-out-batch-items li > div > span {
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: 0.8125rem;
 }
 
 .worm-position-cash-out-batch-items .ant-pagination {
@@ -1766,7 +1766,7 @@
 .worm-position-cash-out-batch-confirmation .ant-typography {
     margin: 0;
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: 0.8125rem;
     line-height: 1.55;
 }
 
@@ -1799,7 +1799,7 @@
 
 .worm-position-cash-out-batch-confirmation__wallets li strong {
     flex: none;
-    font-size: 11px;
+    font-size: 0.8125rem;
 }
 
 .worm-trading-pagination.ant-pagination {
@@ -1823,7 +1823,7 @@
 
 .worm-trading-empty .ant-empty-description {
     color: var(--athena-text);
-    font-weight: 650;
+    font-weight: 500;
 }
 
 .worm-trading-empty .ant-typography {
@@ -1895,7 +1895,7 @@
         margin: 0 -24px -24px;
         padding: 12px 24px calc(12px + env(safe-area-inset-bottom, 0px));
         background: color-mix(in srgb, var(--athena-panel-solid) 96%, transparent);
-        box-shadow: 0 -8px 18px rgb(15 23 42 / 10%);
+        box-shadow: none;
         backdrop-filter: blur(10px);
     }
 
@@ -2149,7 +2149,7 @@
     height: auto;
     padding: 0;
     overflow: hidden;
-    font-weight: 700;
+    font-weight: 500;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -2158,7 +2158,7 @@
     border-color: var(--athena-border);
     border-radius: 10px;
     background: var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    box-shadow: none;
 }
 
 .worm-combination-list-card .ant-card-body {
@@ -2185,7 +2185,7 @@
     margin: 0;
     overflow: hidden;
     color: var(--athena-text);
-    font-size: 16px;
+    font-size: 1.0rem;
     line-height: 1.35;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2220,7 +2220,7 @@
 }
 
 .worm-combination-list-card__updated.ant-typography {
-    font-size: 11px;
+    font-size: 0.8125rem;
 }
 
 .worm-combination-list-card__actions {
@@ -2232,8 +2232,8 @@
     margin-bottom: 18px;
     border-color: var(--athena-border);
     border-radius: 12px;
-    background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--athena-primary) 8%, transparent), transparent 24rem), var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    background: var(--athena-panel);
+    box-shadow: none;
 }
 
 .worm-combination-event-input .ant-card-body {
@@ -2247,7 +2247,7 @@
 .worm-combination-event-input h2.ant-typography {
     margin: 0 0 3px;
     color: var(--athena-text);
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.35;
 }
 
@@ -2261,7 +2261,7 @@
 .worm-combination-event-input__error.ant-typography {
     grid-column: 2;
     margin-top: -10px;
-    font-size: 12px;
+    font-size: 0.8125rem;
 }
 
 .worm-combination-load-alert.ant-alert {
@@ -2295,7 +2295,7 @@
     border: 1px solid var(--athena-border);
     border-radius: 12px;
     background: var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    box-shadow: none;
 }
 
 .worm-combination-event__heading {
@@ -2318,7 +2318,7 @@
     margin: 0;
     overflow: hidden;
     color: var(--athena-text);
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.35;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2331,7 +2331,7 @@
     align-items: center;
     gap: 6px 14px;
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: 0.8125rem;
     font-variant-numeric: tabular-nums;
 }
 
@@ -2382,13 +2382,13 @@
 
 .worm-combination-market--selected {
     background: color-mix(in srgb, var(--athena-primary) 5%, var(--athena-panel));
-    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--athena-primary) 75%, transparent);
+    box-shadow: none;
 }
 
 .worm-combination-market__title.ant-typography {
     min-width: 0;
     color: var(--athena-text);
-    font-size: 13px;
+    font-size: 0.8125rem;
 }
 
 .worm-combination-market__outcomes {
@@ -2404,15 +2404,15 @@
 }
 
 .worm-combination-outcome-button.ant-btn {
-    --worm-combination-outcome-color: var(--athena-green);
+    --worm-combination-outcome-color: var(--athena-primary);
 
     width: 100%;
     min-width: 0;
     height: 42px;
     padding: 0 12px;
-    border: 1px solid var(--worm-combination-outcome-color);
+    border: 1px solid var(--athena-border-strong);
     border-radius: 8px;
-    background: color-mix(in srgb, var(--worm-combination-outcome-color) 5%, var(--athena-panel));
+    background: transparent;
     color: var(--athena-text);
     line-height: 40px;
     text-align: center;
@@ -2424,7 +2424,7 @@
 }
 
 .worm-combination-outcome-button--no.ant-btn {
-    --worm-combination-outcome-color: var(--athena-red);
+    --worm-combination-outcome-color: var(--athena-primary);
 }
 
 .worm-combination-outcome-button.ant-btn:not(:disabled):hover {
@@ -2469,23 +2469,23 @@
 
 .worm-combination-outcome-choice strong {
     color: var(--athena-text);
-    font-size: 12px;
+    font-size: 0.8125rem;
 }
 
 .worm-combination-outcome-choice__check {
     display: inline-grid;
     width: 12px;
     color: var(--worm-combination-outcome-color);
-    font-size: 11px;
+    font-size: 0.8125rem;
     place-items: center;
 }
 
 .worm-combination-outcome-choice__price {
     color: var(--athena-text);
-    font-family: var(--athena-data-font);
-    font-size: 13px;
+    font-family: var(--athena-font);
+    font-size: 0.8125rem;
     font-variant-numeric: tabular-nums;
-    font-weight: 800;
+    font-weight: 500;
     white-space: nowrap;
 }
 
@@ -2495,8 +2495,8 @@
     grid-column: 1 / -1;
     flex-wrap: wrap;
     gap: 3px 12px;
-    color: var(--athena-orange);
-    font-size: 10px;
+    color: var(--athena-amber);
+    font-size: 0.8125rem;
     line-height: 1.4;
 }
 
@@ -2508,7 +2508,7 @@
     border: 1px solid var(--athena-border);
     border-radius: 12px;
     background: var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    box-shadow: none;
 }
 
 .worm-combination-summary__heading {
@@ -2528,7 +2528,7 @@
 .worm-combination-summary__heading h2.ant-typography {
     margin: 0;
     color: var(--athena-text);
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.35;
 }
 
@@ -2540,13 +2540,13 @@
     display: grid;
     gap: 6px;
     color: var(--athena-text);
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-combination-summary__name small {
     color: var(--athena-red);
-    font-size: 10px;
+    font-size: 0.8125rem;
     font-weight: 500;
 }
 
@@ -2562,14 +2562,14 @@
 .worm-combination-name-modal__field {
     gap: 7px;
     color: var(--athena-text);
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-combination-name-modal__field small {
     min-height: 17px;
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: 0.8125rem;
     font-weight: 500;
     line-height: 1.45;
 }
@@ -2620,9 +2620,9 @@
     border-radius: 50%;
     background: color-mix(in srgb, var(--athena-primary) 12%, var(--athena-bg-soft));
     color: var(--athena-primary);
-    font-family: var(--athena-data-font);
-    font-size: 11px;
-    font-weight: 800;
+    font-family: var(--athena-font);
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-combination-selection__copy {
@@ -2633,12 +2633,12 @@
 
 .worm-combination-selection__copy > .ant-typography {
     min-width: 0;
-    font-size: 11px;
+    font-size: 0.8125rem;
 }
 
 .worm-combination-selection__copy > .ant-typography-strong {
     color: var(--athena-text);
-    font-size: 12px;
+    font-size: 0.8125rem;
 }
 
 .worm-combination-selection__copy > span {
@@ -2654,13 +2654,13 @@
 }
 
 .worm-combination-selection__copy > span .ant-typography {
-    font-size: 10px;
+    font-size: 0.8125rem;
 }
 
 .worm-combination-selection__price.ant-typography {
-    font-family: var(--athena-data-font);
+    font-family: var(--athena-font);
     font-variant-numeric: tabular-nums;
-    font-weight: 800;
+    font-weight: 500;
 }
 
 .worm-combination-selection__actions {
@@ -2673,21 +2673,8 @@
     min-height: 42px;
 }
 
-.worm-combination-mobile-review {
-    display: none;
-}
 
-.worm-combination-review-drawer .worm-combination-summary {
-    padding: 0;
-    border: 0;
-    background: transparent;
-    box-shadow: none;
-}
 
-.worm-combination-review-drawer .worm-combination-summary__items {
-    max-height: none;
-    overflow: visible;
-}
 
 @media (max-width: 900px) {
     .worm-combination-event-input .ant-card-body {
@@ -2710,44 +2697,10 @@
         display: none;
     }
 
-    .worm-combination-mobile-review {
-        position: fixed;
-        z-index: 38;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        display: flex;
-        min-height: 68px;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
-        border-top: 1px solid var(--athena-border-strong);
-        background: color-mix(in srgb, var(--athena-panel-solid) 94%, transparent);
-        box-shadow: 0 -10px 30px rgb(15 23 42 / 12%);
-        backdrop-filter: blur(14px);
-    }
 
-    .worm-combination-mobile-review > span {
-        display: grid;
-        min-width: 0;
-        gap: 1px;
-    }
 
-    .worm-combination-mobile-review strong {
-        color: var(--athena-text);
-        font-family: var(--athena-data-font);
-        font-size: 17px;
-    }
 
-    .worm-combination-mobile-review small {
-        color: var(--athena-muted);
-        font-size: 10px;
-    }
 
-    .worm-combination-mobile-review .ant-btn {
-        min-height: 44px;
-    }
 
     .worm-combination-event__heading > .ant-btn,
     .worm-combination-selection__actions .ant-btn {
@@ -2811,13 +2764,7 @@
         line-height: 42px;
     }
 
-    .worm-combination-mobile-review .ant-btn {
-        flex: 1;
-    }
 
-    .worm-combination-review-drawer .ant-drawer-content-wrapper {
-        width: 100% !important;
-    }
 
     .worm-combination-selection .ant-card-body {
         grid-template-columns: auto minmax(0, 1fr);
@@ -4989,3 +4936,212 @@
 .world-cup-corners-table-panel .resource-table.ant-table-wrapper, .world-cup-corners-table-panel .resource-table .ant-table, .world-cup-corners-table-panel .resource-table .ant-table-container, .world-cup-corners-table-panel .resource-table-compact { border:0; border-radius:0; box-shadow:none; }
 
 .managed-oo-parser .ant-input-number-input { font-size:var(--athena-type-control); min-height:2.75rem; }
+
+/* Worm Assets and saved combinations: approved v22 structure with v23 type and states. */
+.worm-assets-wallet-panel,
+.worm-assets-activity-panel { border: 1px solid var(--athena-border); border-radius: 16px; background: var(--athena-panel); min-width: 0; overflow: hidden; }
+.worm-assets-navigation { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--athena-border); margin-bottom: 24px; }
+.worm-assets-navigation .ant-btn { min-height: 44px; border-radius: 0; color: var(--athena-muted); }
+.worm-assets-navigation [aria-current] { color: var(--athena-primary); border-bottom: 2px solid var(--athena-primary); }
+.worm-wallet-selection-summary { background: transparent; border: 0; border-radius: 0; margin: 0; padding: 24px; }
+.worm-wallet-selection-summary__heading > span { font-size: 1.25rem; font-weight: 600; }
+.worm-wallet-selection-summary__heading > span > .anticon { display: none; }
+.worm-wallet-selection-summary dl { display: flex; flex-wrap: wrap; gap: 16px 24px; }
+.worm-wallet-selection-summary dl > div { display: flex; gap: 4px; background: transparent; border: 0; padding: 0; }
+.worm-wallet-selection-summary dt, .worm-wallet-selection-summary dd { font-size: .8125rem; font-family: var(--athena-font); font-weight: 400; }
+.worm-trading-runtime { background: transparent; border: 0; border-top: 1px solid var(--athena-border); border-radius: 0; box-shadow: none; margin: 0 24px; padding: 20px 0; gap: 12px; }
+.worm-trading-runtime__services { display: flex; flex-wrap: wrap; gap: 20px; }
+.worm-trading-runtime__services .worm-trading-runtime__heading { border: 0; padding: 0; flex-direction: row; gap: 8px; font-size: .8125rem; }
+.worm-trading-runtime__heading strong { font-weight: 400; color: var(--athena-muted); }
+.worm-trading-runtime__heading .anticon { display: none; }
+.worm-trading-runtime__facts { margin-top: 16px; }
+.worm-trading-runtime__facts > div { background: transparent; border: 0; padding: 0; }
+.worm-trading-runtime__facts dd { white-space: normal; overflow-wrap: anywhere; font-family: var(--athena-font); }
+.worm-assets-readonly-heading { padding: 24px; }
+.worm-assets-readonly-heading h2 { font-size: 1.25rem; margin: 0 0 12px; }
+.worm-trading-balances { margin: 0; }
+.worm-trading-balances__heading { padding: 12px 24px; }
+.worm-trading-balances__heading h2 { display: none; }
+.worm-assets-wallet-columns { display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr; gap: 24px; padding: 20px 24px; border-bottom: 1px solid var(--athena-border); color: var(--athena-muted); font-size: .8125rem; }
+.worm-assets-wallet-columns > span:nth-child(2), .worm-assets-wallet-columns > span:nth-child(3) { text-align: right; }
+.worm-trading-balance-card.ant-card { background: transparent; border: 0; border-bottom: 1px solid var(--athena-border); border-radius: 0; box-shadow: none; }
+.worm-trading-balance-card > .ant-card-body { display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr; gap: 12px 24px; padding: 24px; align-items: start; }
+.worm-trading-balance-card__header { grid-column: 1; grid-row: 1; display: grid; gap: 8px; }
+.worm-trading-balance-card__header > .ant-tag { justify-self: start; }
+.worm-trading-balance-card__assets { display: contents; }
+.worm-trading-balance-card__assets > div { background: transparent; border: 0; padding: 0; text-align: right; }
+.worm-trading-balance-card__assets > div > span { display: none; }
+.worm-trading-balance-card__assets > div:nth-child(1) { grid-column: 2; grid-row: 1; }
+.worm-trading-balance-card__assets > div:nth-child(2) { grid-column: 3; grid-row: 1; }
+.worm-trading-balance-card__connection { grid-column: 4; grid-row: 1 / 3; border: 0; padding: 0; }
+.worm-trading-balance-card__connection > span { display: none; }
+.worm-trading-balance-card__connection .worm-trading-connection { display: grid; }
+.worm-position-cash-out-batch-wallet-select { grid-column: 1; grid-row: 2; padding: 0; border: 0; }
+.worm-trading-wallet { align-items: start; min-width: 0; gap: 10px; }
+.worm-trading-wallet .wallet-avatar { flex: 0 0 1.75rem; width: 1.75rem !important; height: 1.75rem !important; font-size: .8125rem !important; line-height: 1 !important; }
+.worm-trading-wallet .ant-avatar-string { position: static; transform: none !important; }
+.worm-trading-wallet__main { min-width: 0; }
+.worm-trading-wallet__address { align-items: start; gap: 4px; }
+.worm-trading-wallet__address code, .worm-wallet-selection-card__identity code { overflow-wrap: anywhere; white-space: normal; overflow: visible; text-overflow: clip; font-family: var(--athena-data-font); font-size: .8125rem; font-weight: 400; }
+.worm-trading-wallet__address .ant-btn { flex: 0 0 44px; min-width: 44px; min-height: 44px; }
+.worm-trading-asset strong { font: 500 1rem/1.5 var(--athena-font); font-variant-numeric: tabular-nums; white-space: normal; overflow-wrap: anywhere; }
+.worm-trading-asset small { font-size: .8125rem; white-space: normal; overflow-wrap: anywhere; }
+.worm-assets-balance-note { padding: 18px 24px; color: var(--athena-muted); font-size: .8125rem; }
+.worm-assets-activity-panel { margin-top: 24px; }
+.worm-assets-activity-panel > .ant-tabs > .ant-tabs-nav { margin: 0; padding: 0 24px; }
+.worm-trading-activity-card.ant-card { background: transparent; border: 0; border-bottom: 1px solid var(--athena-border); border-radius: 0; box-shadow: none; }
+.worm-trading-activity-card > .ant-card-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; padding: 24px; }
+.worm-trading-market { grid-column: 1; grid-row: 1; }
+.worm-trading-market > .ant-avatar { display: none; }
+.worm-trading-market .ant-typography { white-space: normal; font-size: 1rem; font-weight: 500; }
+.worm-trading-market small { display: block; margin-top: 8px; font-size: .8125rem; white-space: normal; overflow-wrap: anywhere; }
+.worm-trading-activity-card__tags { grid-column: 1; grid-row: 2; }
+.worm-trading-activity-card__tags > span:first-child { color: var(--athena-muted); font-size: .8125rem; }
+.worm-position-cash-out-card-action { grid-column: 2; grid-row: 1 / 3; }
+.worm-trading-activity-card__facts { grid-column: 1 / -1; grid-template-columns: repeat(4,minmax(0,1fr)); margin: 0; gap: 24px; }
+.worm-trading-activity-card__facts > div { background: transparent; border: 0; padding: 0; }
+.worm-trading-activity-card__facts dt { font-size: .8125rem; font-weight: 400; }
+.worm-trading-activity-card__facts dd { font: 400 .9375rem/1.5 var(--athena-font); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; white-space: normal; }
+.worm-trading-activity-evidence { grid-column: 1 / -1; font-size: .8125rem; color: var(--athena-muted); overflow-wrap: anywhere; }
+.worm-trading-activity-evidence summary, .worm-trading-runtime summary { cursor: pointer; min-height: 44px; display: list-item; padding: 12px 0; }
+.worm-trading-activity-evidence code { font-family: var(--athena-data-font); font-weight: 400; overflow-wrap: anywhere; white-space: normal; }
+.worm-trading-activity-card__footer { flex-wrap: wrap; font-size: .8125rem; }
+.worm-trading-activity-card__footer code { overflow: visible; white-space: normal; }
+.worm-assets-wallet-panel .ant-tag, .worm-assets-activity-panel .ant-tag, .worm-position-cash-out-batch-panel .ant-tag,
+.worm-combination-list-card .ant-tag, .worm-combination-list-description .ant-tag, .worm-combination-summary .ant-tag { font-size: .8125rem; font-weight: 400; background: transparent; border-color: var(--athena-border); }
+.athena-tag--success { color: var(--athena-green); }
+.athena-tag--info { color: var(--athena-blue); }
+.athena-tag--warning { color: var(--athena-amber); }
+.worm-combination-list-description { display: grid; gap: 12px; min-width: 0; }
+.worm-combination-list-description > div { display: flex; align-items: start; gap: 8px; font-size: .8125rem; color: var(--athena-muted); }
+.worm-combination-list-description .ant-tag { flex: none; }
+.worm-combination-list-card.ant-card { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.worm-combination-list-card__heading h3 { font-size: 1rem !important; font-weight: 500; white-space: normal; }
+.worm-combination-list-card__preview > span { align-items: start; }
+.worm-combination-list-card__actions { display: flex; gap: 8px; }
+.worm-combination-list-card__actions .ant-space-item:last-child { flex-basis: 100%; }
+.worm-combination-event-input.ant-card { border-color: var(--athena-border); background: var(--athena-panel); margin-bottom: 24px; }
+.worm-combination-event-input > .ant-card-body { display: grid; gap: 12px; padding: 24px; }
+.worm-combination-event-input label { font-size: .9375rem; }
+.worm-combination-event-input__control { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 12px; }
+.worm-combination-builder { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 24px; padding: 0; }
+.worm-combination-builder__summary { display: block; position: static; min-width: 0; }
+.worm-combination-summary { border: 1px solid var(--athena-border); border-radius: 16px; background: var(--athena-panel); padding: 24px; gap: 24px; }
+.worm-combination-summary__heading h2, .worm-combination-event__heading h2 { font-size: 1.25rem; font-weight: 600; line-height: 1.4; white-space: normal; }
+.worm-combination-summary__heading { align-items: start; }
+.worm-combination-summary__heading .ant-tag { margin: 0; }
+.worm-combination-summary__name { gap: 8px; }
+.worm-combination-summary__name > span { font-size: .9375rem; font-weight: 500; }
+.worm-combination-summary__name small { font-size: .8125rem; color: var(--athena-muted); }
+.worm-combination-summary__items { max-height: none; min-height: 0; overflow: visible; gap: 0; padding: 0; }
+.worm-combination-selection.ant-card { border: 0; border-bottom: 1px solid var(--athena-border); border-radius: 0; background: transparent; }
+.worm-combination-selection > .ant-card-body { grid-template-columns: 22px minmax(0,1fr); gap: 12px; padding: 24px 0; align-items: start; }
+.worm-combination-selection__ordinal { width: auto; height: auto; font: 400 .9375rem/1.5 var(--athena-font); color: var(--athena-muted); background: transparent; }
+.worm-combination-selection__copy { display: flex; flex-direction: column; gap: 12px; }
+.worm-combination-selection__copy > .ant-typography-secondary { order: 1; }
+.worm-combination-selection__copy > span:last-child { order: 2; }
+.worm-combination-selection__copy > .ant-typography { font-size: .9375rem; white-space: normal; }
+.worm-combination-selection__copy > .ant-typography-secondary { font-size: .8125rem; }
+.worm-combination-selection__actions { grid-column: 2; display: flex; justify-content: flex-end; gap: 8px; }
+.worm-combination-selection__actions .ant-btn { min-height: 44px; min-width: 44px; }
+.worm-combination-event { background: var(--athena-panel); border: 1px solid var(--athena-border); border-radius: 16px; box-shadow: none; }
+.worm-combination-event__heading { padding: 24px; grid-template-columns: minmax(0,1fr) auto auto; }
+.worm-combination-market { display: grid; grid-template-columns: minmax(0,1fr); padding: 28px 24px; gap: 18px; border-bottom: 1px solid var(--athena-border); }
+.worm-combination-market:last-child { border-bottom: 0; }
+.worm-combination-market--selected { background: transparent; }
+.worm-combination-market__title.ant-typography { font-size: .9375rem; line-height: 1.5; white-space: normal; font-weight: 500; }
+.worm-combination-market__outcomes { width: 100%; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.worm-combination-outcome-button.ant-btn { width: 100%; min-height: 48px; height: auto; padding: 12px; font-size: .9375rem; }
+.worm-combination-outcome-choice { display: flex; gap: 6px; min-width: 0; }
+.worm-combination-outcome-choice strong { font-size: .9375rem; font-weight: 400; }
+.worm-combination-outcome-choice__price { margin-left: auto; font: 500 .9375rem/1.5 var(--athena-font); font-variant-numeric: tabular-nums; }
+.worm-combination-market__availability { color: var(--athena-amber); font-size: .8125rem; }
+.worm-combination-summary__save { width: 100%; }
+.worm-wallet-selection-modal .ant-modal-content { display: flex; flex-direction: column; max-height: calc(100dvh - 32px); }
+.worm-wallet-selection-modal .ant-modal-body { min-height: 0; overflow: hidden; }
+.worm-wallet-selection-modal__body { min-height: 0; max-height: 55dvh; overflow-y: auto; }
+.worm-wallet-selection-modal__footer { flex-shrink: 0; }
+.worm-wallet-selection-card .wallet-avatar { flex-shrink: 0; width: 1.75rem !important; height: 1.75rem !important; font-size: .8125rem !important; line-height: 1 !important; }
+.worm-confirm-modal .ant-modal-content { max-height: calc(100dvh - 32px); display: flex; flex-direction: column; }
+.worm-confirm-modal .ant-modal-body { min-height: 0; overflow-y: auto; }
+.worm-confirm-modal .ant-modal-confirm-content { overflow-wrap: anywhere; }
+.worm-position-cash-out-batch-panel.ant-card { background: var(--athena-panel); border-color: var(--athena-border); box-shadow: none; }
+.worm-position-cash-out-batch-panel > .ant-card-head { background: transparent; }
+.worm-position-cash-out-batch-current, .worm-position-cash-out-batch-items { background: transparent; border: 0; padding: 0; }
+.worm-position-cash-out-batch-current__target strong, .worm-position-cash-out-batch-current__target code, .worm-position-cash-out-batch-current__target span,
+.worm-position-cash-out-batch-items li > div > strong, .worm-position-cash-out-batch-items li > div > span,
+.worm-position-cash-out-batch-confirmation__wallets li span { overflow-wrap: anywhere; overflow: visible; white-space: normal; }
+@media (max-width: 900px) {
+    .worm-assets-wallet-columns { display: none; }
+    .worm-trading-balance-card > .ant-card-body { display: flex; flex-direction: column; padding: 24px 20px; }
+    .worm-trading-balance-card__header { order: 0; }
+    .worm-position-cash-out-batch-wallet-select { order: 1; }
+    .worm-trading-balance-card__assets { display: grid; order: 2; grid-template-columns: repeat(2,minmax(0,1fr)); width: 100%; margin: 12px 0; gap: 20px; }
+    .worm-trading-balance-card__assets > div { grid-column: auto !important; grid-row: auto !important; text-align: left; }
+    .worm-trading-balance-card__assets > div > span { display: block; margin-bottom: 8px; }
+    .worm-trading-balance-card__connection { order: 3; }
+    .worm-trading-activity-card > .ant-card-body { display: flex; flex-direction: column; padding: 24px 20px; }
+    .worm-trading-market { order: 0; }
+    .worm-trading-activity-card__tags { order: 1; }
+    .worm-position-cash-out-card-action { order: 2; }
+    .worm-position-cash-out-card-action .ant-btn { width: 100%; }
+    .worm-trading-activity-card__facts { order: 3; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
+    .worm-trading-activity-evidence { order: 4; }
+    .worm-combination-builder { grid-template-columns: minmax(0,1fr); padding-bottom: 0; }
+    .worm-combination-builder__summary { display: block; }
+    .worm-combination-event__heading { padding: 24px 20px; }
+    .worm-combination-summary { padding: 24px 20px; }
+    .worm-combination-selection__actions { justify-content: flex-start; }
+    .worm-combination-event-input__control { grid-template-columns: minmax(0,1fr); }
+    .worm-combination-outcome-button.ant-btn { min-width: 0; padding: 10px 8px; }
+    .worm-combination-market { padding: 24px 20px; }
+    .worm-confirm-modal .ant-modal-confirm-btns { display: flex; flex-direction: column-reverse; gap: 8px; width: 100%; }
+    .worm-confirm-modal .ant-modal-confirm-btns .ant-btn { width: 100%; margin-inline-start: 0 !important; min-height: 44px; height: auto; white-space: normal; }
+    .worm-wallet-selection-modal__footer > div, .worm-combination-name-modal__actions { display: flex; flex-direction: column-reverse; gap: 8px; width: 100%; }
+    .worm-combination-name-modal__actions .ant-btn { width: 100%; }
+}
+.worm-theme-page .app-page__heading > .ant-typography-secondary { font-size: var(--athena-type-body); line-height: 1.65; }
+.worm-theme-page .app-page__header { border-bottom: 0; padding-bottom: 0; margin-bottom: 24px; }
+.worm-theme-page .ant-btn { font-weight: 500; }
+.worm-wallet-selection-summary__heading h2 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+.worm-wallet-selection-summary__attention { color: var(--athena-muted); background: transparent; }
+.worm-trading-activity-card__facts small, .worm-trading-market small { color: var(--athena-muted); font: 400 .8125rem/1.6 var(--athena-font); }
+.worm-trading-activity-card__facts .worm-value-positive { color: var(--athena-green); }
+.worm-trading-activity-card__facts .worm-value-negative { color: var(--athena-red); }
+.worm-trading-activity-card__facts .worm-value-unavailable { color: var(--athena-amber); }
+.worm-theme-page .ant-tag-success, .worm-wallet-selection-modal .ant-tag-success { color: var(--athena-green); border-color: var(--athena-border); background: transparent; }
+.worm-theme-page .ant-tag-processing, .worm-wallet-selection-modal .ant-tag-processing { color: var(--athena-blue); border-color: var(--athena-border); background: transparent; }
+.worm-theme-page .ant-tag-warning, .worm-wallet-selection-modal .ant-tag-warning { color: var(--athena-amber); border-color: var(--athena-border); background: transparent; }
+.worm-theme-page .ant-tag-error, .worm-wallet-selection-modal .ant-tag-error { color: var(--athena-red); border-color: var(--athena-border); background: transparent; }
+.worm-combination-identifiers { color: var(--athena-muted); font-size: .8125rem; overflow-wrap: anywhere; }
+.worm-combination-identifiers summary { cursor: pointer; min-height: 44px; padding: 12px 0; }
+.worm-combination-identifiers code { font-family: var(--athena-data-font); }
+.worm-combination-event-price-note { margin: 0; padding: 0 24px 24px; color: var(--athena-muted); font-size: .8125rem; line-height: 1.6; }
+.worm-combination-list-card__actions .ant-btn { width: 100%; }
+.worm-combination-list-card__actions .ant-space-item { flex: 1 1 auto; }
+.worm-combination-list-card__updated.ant-typography { font-size: .8125rem; }
+.worm-theme-page .resource-table-region { display: flex; flex-direction: column; }
+.worm-theme-page .resource-table-pagination { order: 2; border-top: 1px solid var(--athena-border); border-bottom: 0; margin-top: 0; }
+.worm-combination-back.ant-btn { margin-bottom: 20px; padding-left: 0; color: var(--athena-muted); }
+.worm-combination-outcome-button.ant-btn { line-height: 1.5; }
+.worm-combination-outcome-button.ant-btn[aria-pressed='true'] { color: var(--athena-primary); box-shadow: none; background: color-mix(in srgb, var(--athena-primary) 10%, var(--athena-panel)); border-color: var(--athena-primary); }
+.worm-combination-outcome-button.ant-btn[aria-pressed='true'] .worm-combination-outcome-choice__price { color: var(--athena-primary); }
+.worm-connection-details, .worm-balance-evidence { color: var(--athena-muted); font-size: .8125rem; overflow-wrap: anywhere; }
+.worm-connection-details summary, .worm-balance-evidence summary { cursor: pointer; min-height: 44px; padding-block: 12px; }
+.worm-activity-complete { color: var(--athena-muted); font-size: .8125rem; }
+
+.worm-combination-outcome-choice { flex-wrap: wrap; }
+.worm-wallet-selection-modal .ant-modal-container { display: flex; flex-direction: column; max-height: calc(100dvh - 32px); }
+.worm-wallet-selection-modal__body > * { flex-shrink: 0; }
+.worm-wallet-selection-modal__grid { overflow: visible; max-height: none; flex: none; }
+.worm-confirm-modal .ant-modal-container { max-height: calc(100dvh - 32px); display: flex; flex-direction: column; }
+
+.worm-combination-selection__price.ant-typography, .worm-combination-outcome-choice__price { font-family: var(--athena-font); }
+.worm-trading-activity-card__facts dd small, .worm-position-cash-out-batch-evidence dd small { display: block; font-size: .8125rem; color: var(--athena-muted); }
+
+.worm-position-cash-out-batch-evidence dd { font-family: var(--athena-font); font-variant-numeric: tabular-nums; }
+.worm-combination-back.ant-btn { margin: 24px 32px 0; max-width: calc(100% - 64px); }
+.worm-combination-back + .app-page { padding-top: 16px; }
+@media (max-width: 900px) {
+    .worm-combination-back.ant-btn { margin-inline: 20px; max-width: calc(100% - 40px); }
+}

@@ -8,6 +8,15 @@ const tags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
 for (const scenario of themeCases.filter(item =>
     [
+        'worm-assets',
+        'worm-assets-readonly',
+        'worm-assets-partial',
+        'worm-assets-batch-paused',
+        'worm-assets-batch-unknown',
+        'worm-combinations',
+        'worm-combinations-edit',
+        'worm-combinations-new',
+        'worm-combinations-invalid',
         'markets-hot',
         'markets-realtime',
         'markets-movers',
@@ -88,6 +97,34 @@ for (const state of [
         expect(results.violations.map(v => ({id: v.id, nodes: v.nodes.map(n => n.target)}))).toEqual([]);
         await page.mouse.move(0, 0);
         await page.screenshot({path: info.outputPath('admin-auxiliary.png'), fullPage: true, animations: 'disabled'});
+        assertThemeLedger(ledger);
+    });
+}
+
+for (const state of ['selection', 'cashout', 'leave']) {
+    test(`theme:a11y worm-dialog ${state}`, async ({page}, info) => {
+        await page.setViewportSize({width: 390, height: 844});
+        const ledger = await openThemeCase(page, state === 'selection' ? 'worm-assets-twenty' : state === 'cashout' ? 'worm-assets-cashout' : 'worm-combinations-edit');
+        if (state === 'selection') await page.getByRole('button', {name: /Manage selection/}).click();
+        else if (state === 'cashout')
+            await page
+                .getByRole('button', {name: /^Cash out YES position/})
+                .first()
+                .click();
+        else {
+            await page.getByRole('textbox', {name: 'Combination name', exact: false}).fill('Unsaved draft');
+            await page.getByRole('button', {name: /Saved combinations$/}).click();
+        }
+        await expect(page.getByRole('dialog')).toBeVisible();
+        await page.waitForTimeout(500);
+        const results = await new AxeBuilder({page}).withTags(tags).analyze();
+        const rawResult = info.outputPath('axe-results.json');
+        fs.writeFileSync(rawResult, JSON.stringify(results, null, 2));
+        await info.attach('axe-results.json', {path: rawResult, contentType: 'application/json'});
+        expect(
+            results.violations.map(v => ({id: v.id, nodes: v.nodes.map(n => n.target)})),
+            '[ATHENA_A11Y_VIOLATION] See original axe results'
+        ).toEqual([]);
         assertThemeLedger(ledger);
     });
 }

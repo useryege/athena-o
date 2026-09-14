@@ -14,11 +14,10 @@ import {
     SyncOutlined,
     WalletOutlined
 } from '@ant-design/icons';
-import {Alert, Avatar, Button, Card, Checkbox, Empty, Input, Modal, Pagination, Progress, Result, Segmented, Skeleton, Space, Tag, Tooltip, Typography} from 'antd';
-import type {ColumnsType} from 'antd/es/table';
+import {Alert, Avatar, Button, Card, Checkbox, Empty, Input, Modal, Pagination, Progress, Result, Segmented, Skeleton, Space, Tabs, Tag, Tooltip, Typography} from 'antd';
 import * as React from 'react';
 import {useLocation, useNavigate} from 'react-router-dom';
-import {AppPage, ResourceTable, useCachedAsyncData} from '../../components';
+import {AppPage, useCachedAsyncData} from '../../components';
 import {AccountDataModule} from '../../shared/access-modules';
 import {Context, useAuthorization} from '../../shared/context';
 import {formatBeijingUnixSeconds} from '../../shared/format';
@@ -132,26 +131,6 @@ const walletPresetGlyphs: Record<string, string> = {
     'moon-indigo': '☾'
 };
 
-const defaultAvatarPalettes = [
-    ['#5b21b6', '#a78bfa'],
-    ['#1d4ed8', '#60a5fa'],
-    ['#0f766e', '#2dd4bf'],
-    ['#166534', '#4ade80'],
-    ['#a16207', '#fbbf24'],
-    ['#c2410c', '#fb923c'],
-    ['#be123c', '#fb7185'],
-    ['#3730a3', '#818cf8']
-];
-
-const hashWalletAddress = (value: string) => {
-    let hash = 2166136261;
-    for (const character of value) {
-        hash ^= character.codePointAt(0) || 0;
-        hash = Math.imul(hash, 16777619);
-    }
-    return hash >>> 0;
-};
-
 const formatIntegerString = (value?: string) => {
     if (!value) {
         return '-';
@@ -163,7 +142,7 @@ const formatIntegerString = (value?: string) => {
     }
 };
 
-const shortAddress = (value?: string, head = 8, tail = 8) => (value && value.length > head + tail ? `${value.slice(0, head)}…${value.slice(-tail)}` : value || '-');
+const displayIdentity = (value?: string) => value || '-';
 
 const titleCase = (value?: string) =>
     (value || '')
@@ -181,10 +160,9 @@ const connectionWasQueried = (state: WormWalletConnectionState) => state === 'CO
 
 const WormTradingWalletAvatar = (props: {wallet: WormTradingWalletSummary; size?: number}) => {
     const presetGlyph = walletPresetGlyphs[props.wallet.avatarPresetId];
-    const palette = defaultAvatarPalettes[hashWalletAddress(props.wallet.address) % defaultAvatarPalettes.length];
     const uploaded = props.wallet.avatarKind.toLowerCase() === 'upload' && realmBoundResourceURL(props.wallet.avatarUrl);
     const className = ['wallet-avatar', presetGlyph ? `wallet-avatar--${props.wallet.avatarPresetId}` : 'wallet-avatar--generated'].join(' ');
-    const style = presetGlyph ? undefined : {background: `linear-gradient(145deg, ${palette[0]}, ${palette[1]})`};
+    const style = {background: 'var(--athena-panel-elevated)', color: 'var(--athena-muted)', border: '1px solid var(--athena-border-strong)'};
     return (
         <Avatar aria-hidden='true' className={className} size={props.size || 46} src={uploaded || undefined} style={style}>
             {presetGlyph || 'S'}
@@ -193,18 +171,28 @@ const WormTradingWalletAvatar = (props: {wallet: WormTradingWalletSummary; size?
 };
 
 const BalanceStatusTag = (props: {status: WormTradingWalletBalanceItem['status']}) => {
-    const color = props.status === 'COMPLETE' ? 'green' : props.status === 'PARTIAL' ? 'gold' : 'red';
+    const color = props.status === 'COMPLETE' ? 'success' : props.status === 'PARTIAL' ? 'warning' : 'error';
     return <Tag color={color}>{titleCase(props.status) || 'Unavailable'}</Tag>;
 };
 
 const ActivityStatusTag = (props: {status: WormTradingWalletActivityItem['status']}) => {
-    const color = props.status === 'COMPLETE' ? 'green' : props.status === 'PARTIAL' ? 'gold' : 'red';
-    return <Tag color={color}>Activity {titleCase(props.status) || 'Unavailable'}</Tag>;
+    const color = props.status === 'COMPLETE' ? 'success' : props.status === 'PARTIAL' ? 'warning' : 'error';
+    return props.status === 'COMPLETE' ? (
+        <span className='worm-activity-complete'>Activity complete</span>
+    ) : (
+        <Tag color={color}>Activity {titleCase(props.status) || 'Unavailable'}</Tag>
+    );
 };
 
 const ConnectionStatusTag = (props: {state: WormWalletConnectionState}) => {
     const color =
-        props.state === 'CONNECTED' ? 'green' : props.state === 'NOT_CONNECTED' ? 'default' : props.state === 'CONNECTING' || props.state === 'DISCONNECTING' ? 'blue' : 'gold';
+        props.state === 'CONNECTED'
+            ? 'success'
+            : props.state === 'NOT_CONNECTED'
+              ? 'default'
+              : props.state === 'CONNECTING' || props.state === 'DISCONNECTING'
+                ? 'processing'
+                : 'warning';
     return <Tag color={color}>{titleCase(props.state)}</Tag>;
 };
 
@@ -222,9 +210,21 @@ const AssetValue = (props: {asset: WormTradingAssetBalance; symbol: 'SOL' | 'USD
     return (
         <div className={available ? 'worm-trading-asset' : 'worm-trading-asset worm-trading-asset--unavailable'}>
             <Tooltip title={exact}>
-                <strong>{available ? `${optionalValue(props.asset.amount)} ${props.symbol}` : 'Unavailable'}</strong>
+                <strong className='athena-number'>{available ? optionalValue(props.asset.amount) : 'Unavailable'}</strong>
             </Tooltip>
-            <small>{detail}</small>
+            <small>
+                {available
+                    ? props.token
+                        ? `Native USDC · ${props.token.tokenAccountCount} token ${props.token.tokenAccountCount === 1 ? 'account' : 'accounts'}`
+                        : 'Confirmed'
+                    : detail}
+            </small>
+            <details className='worm-balance-evidence'>
+                <summary>Balance evidence</summary>
+                <small>
+                    {detail} · {exact}
+                </small>
+            </details>
         </div>
     );
 };
@@ -233,12 +233,10 @@ const WalletIdentity = (props: {wallet: WormTradingWalletSummary; onCopy: () => 
     <div className={props.compact ? 'worm-trading-wallet worm-trading-wallet--compact' : 'worm-trading-wallet'}>
         <WormTradingWalletAvatar wallet={props.wallet} size={props.compact ? 42 : 46} />
         <div className='worm-trading-wallet__main'>
-            <Typography.Text strong={true} ellipsis={{tooltip: props.wallet.remark || 'Solana wallet'}}>
-                {props.wallet.remark || 'Solana wallet'}
-            </Typography.Text>
+            <Typography.Text strong={true}>{props.wallet.remark || 'Solana wallet'}</Typography.Text>
             <span className='worm-trading-wallet__address'>
                 <Tooltip title={props.wallet.address}>
-                    <code>{shortAddress(props.wallet.address)}</code>
+                    <code>{displayIdentity(props.wallet.address)}</code>
                 </Tooltip>
                 <Tooltip title='Copy address'>
                     <Button type='text' size='small' aria-label={`Copy ${props.wallet.remark || 'Solana wallet'} address`} icon={<CopyOutlined />} onClick={props.onCopy} />
@@ -261,10 +259,10 @@ const RuntimeSummary = (props: {status?: WormTradingStatus; loading: boolean; er
     const runtimeState = status?.status.toLowerCase() || '';
     const ready = Boolean(status?.started && runtimeState === 'running' && status.rpcReachable && status.batchSupported && status.genesisVerified && status.usdcVerified);
     const state = !status ? 'Status unavailable' : !status.started ? 'Stopped' : runtimeState === 'configuration_error' ? 'Configuration error' : ready ? 'Ready' : 'Degraded';
-    const stateColor = ready ? 'green' : !status?.started || runtimeState === 'configuration_error' ? 'red' : 'gold';
+    const stateColor = ready ? 'success' : !status?.started || runtimeState === 'configuration_error' ? 'error' : 'warning';
     const wormState = titleCase(status?.wormAPIStatus) || (status?.credentialStoreReady ? 'Not observed' : 'Unavailable');
     const wormRuntimeState = (status?.wormAPIStatus || '').toLowerCase();
-    const wormColor = wormRuntimeState === 'running' ? 'green' : wormRuntimeState === 'configuration_error' || !status?.credentialStoreReady ? 'red' : 'gold';
+    const wormColor = wormRuntimeState === 'running' ? 'success' : wormRuntimeState === 'configuration_error' || !status?.credentialStoreReady ? 'error' : 'warning';
     return (
         <section className='worm-trading-runtime' aria-labelledby='worm-trading-runtime-heading'>
             <div className='worm-trading-runtime__services'>
@@ -285,28 +283,31 @@ const RuntimeSummary = (props: {status?: WormTradingStatus; loading: boolean; er
                     <Tag color={wormColor}>{wormState}</Tag>
                 </div>
             </div>
-            <dl className='worm-trading-runtime__facts'>
-                <div>
-                    <dt>Network</dt>
-                    <dd>{titleCase(status?.network || props.fallbackNetwork) || '-'}</dd>
-                </div>
-                <div>
-                    <dt>Commitment</dt>
-                    <dd>{titleCase(status?.commitment || props.fallbackCommitment) || '-'}</dd>
-                </div>
-                <div>
-                    <dt>Confirmed slot</dt>
-                    <dd>{formatIntegerString(status?.latestConfirmedSlot)}</dd>
-                </div>
-                <div>
-                    <dt>RPC latency</dt>
-                    <dd>{status ? `${status.latencyMS} ms` : '-'}</dd>
-                </div>
-                <div>
-                    <dt>Credential store</dt>
-                    <dd>{status ? (status.credentialStoreReady ? 'Ready' : 'Unavailable') : '-'}</dd>
-                </div>
-            </dl>
+            <details>
+                <summary>Connection details</summary>
+                <dl className='worm-trading-runtime__facts'>
+                    <div>
+                        <dt>Network</dt>
+                        <dd>{titleCase(status?.network || props.fallbackNetwork) || '-'}</dd>
+                    </div>
+                    <div>
+                        <dt>Commitment</dt>
+                        <dd>{titleCase(status?.commitment || props.fallbackCommitment) || '-'}</dd>
+                    </div>
+                    <div>
+                        <dt>Confirmed slot</dt>
+                        <dd>{formatIntegerString(status?.latestConfirmedSlot)}</dd>
+                    </div>
+                    <div>
+                        <dt>RPC latency</dt>
+                        <dd>{status ? `${status.latencyMS} ms` : '-'}</dd>
+                    </div>
+                    <div>
+                        <dt>Credential store</dt>
+                        <dd>{status ? (status.credentialStoreReady ? 'Ready' : 'Unavailable') : '-'}</dd>
+                    </div>
+                </dl>
+            </details>
             {(props.error || status?.lastErrorCategory || status?.wormAPILastErrorCategory) && (
                 <Typography.Text className='worm-trading-runtime__error'>
                     {props.error
@@ -447,16 +448,21 @@ const ConnectionSetupPanel = (props: {manager: ConnectionManager}) => {
             description={
                 <div className='worm-trading-connection-setup__body'>
                     <Typography.Paragraph>{setup.message}</Typography.Paragraph>
+                    {setup.phase === 'authorization-required' && (
+                        <Typography.Paragraph>
+                            One identity confirmation permits Worm credential management for five minutes. It does not authorize a trade or extend automatically.
+                        </Typography.Paragraph>
+                    )}
                     {setup.total > 0 && (
                         <div className='worm-trading-connection-setup__progress'>
-                            <Progress percent={percent} status={progressStatus} showInfo={false} />
+                            <Progress aria-label='Wallet connection setup progress' percent={percent} status={progressStatus} showInfo={false} />
                             <span>
                                 {setup.processed}/{setup.total} processed · {setup.succeeded} applied · {setup.failed} failed · {setup.remaining} remaining
                             </span>
                         </div>
                     )}
                     {setup.currentWallet && (
-                        <Typography.Text type='secondary'>Current wallet: {setup.currentWallet.remark || shortAddress(setup.currentWallet.address)}</Typography.Text>
+                        <Typography.Text type='secondary'>Current wallet: {setup.currentWallet.remark || displayIdentity(setup.currentWallet.address)}</Typography.Text>
                     )}
                     <span className='worm-trading-connection-setup__live' role='status' aria-live='polite' aria-atomic='true'>
                         {setup.message}
@@ -556,7 +562,7 @@ const WalletSelectionModal = (props: {
             title={
                 <div className='worm-wallet-selection-modal__title'>
                     <span>Manage Worm Trading wallets</span>
-                    <Tag color={atLimit ? 'gold' : 'blue'}>
+                    <Tag color={atLimit ? 'warning' : 'processing'}>
                         {draftWalletIDs.length}/{props.selection.maximumWallets}
                     </Tag>
                 </div>
@@ -656,7 +662,12 @@ const WalletSelectionModal = (props: {
                                 <label
                                     className={`worm-wallet-selection-card${selected ? ' worm-wallet-selection-card--selected' : ''}${disabled ? ' worm-wallet-selection-card--disabled' : ''}`}
                                     key={walletID}>
-                                    <Checkbox checked={selected} disabled={disabled} onChange={event => toggleWallet(walletID, event.target.checked)} />
+                                    <Checkbox
+                                        aria-label={`Select ${item.wallet.remark || 'Solana wallet'} ${item.wallet.address}`}
+                                        checked={selected}
+                                        disabled={disabled}
+                                        onChange={event => toggleWallet(walletID, event.target.checked)}
+                                    />
                                     <div className='worm-wallet-selection-card__identity'>
                                         <WormTradingWalletAvatar wallet={item.wallet} size={42} />
                                         <span>
@@ -664,19 +675,19 @@ const WalletSelectionModal = (props: {
                                                 {item.wallet.remark || 'Solana wallet'}
                                             </Typography.Text>
                                             <Tooltip title={item.wallet.address}>
-                                                <code>{shortAddress(item.wallet.address)}</code>
+                                                <code>{displayIdentity(item.wallet.address)}</code>
                                             </Tooltip>
                                         </span>
                                     </div>
                                     <div className='worm-wallet-selection-card__status'>
                                         {willAdd ? (
-                                            <Tag color='blue'>Will add</Tag>
+                                            <Tag color='processing'>Will add</Tag>
                                         ) : willRemove ? (
-                                            <Tag color='gold'>Will remove</Tag>
+                                            <Tag color='warning'>Will remove</Tag>
                                         ) : retiring ? (
-                                            <Tag color='gold'>Retiring</Tag>
+                                            <Tag color='warning'>Retiring</Tag>
                                         ) : null}
-                                        {item.pendingState && <Tag color='blue'>{titleCase(item.pendingState)}</Tag>}
+                                        {item.pendingState && <Tag color='processing'>{titleCase(item.pendingState)}</Tag>}
                                         <ConnectionStatusTag state={item.connection.state} />
                                     </div>
                                     {(removalLocked || legacyRemovalBlocked) && (
@@ -1078,7 +1089,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
                 setSetup(
                     progressState(
                         'partial',
-                        `${incomplete.wallet.remark || shortAddress(incomplete.wallet.address)} still requires credential cleanup. Additions remain paused until retirement completes.`,
+                        `${incomplete.wallet.remark || displayIdentity(incomplete.wallet.address)} still requires credential cleanup. Additions remain paused until retirement completes.`,
                         {retryable: true}
                     )
                 );
@@ -1105,7 +1116,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
                     setSetup(
                         progressState(
                             'blocked',
-                            `${unknown.wallet.remark || shortAddress(unknown.wallet.address)} has an unknown connection outcome. Automatic retry is blocked until the state is reviewed.`
+                            `${unknown.wallet.remark || displayIdentity(unknown.wallet.address)} has an unknown connection outcome. Automatic retry is blocked until the state is reviewed.`
                         )
                     );
                 } else if (failedWalletIDsRef.current.size > 0) {
@@ -1228,7 +1239,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
                 setSetup(
                     progressState(
                         'blocked',
-                        `${unknown.wallet.remark || shortAddress(unknown.wallet.address)} has an unknown connection outcome. Automatic retry is blocked until the state is reviewed.`,
+                        `${unknown.wallet.remark || displayIdentity(unknown.wallet.address)} has an unknown connection outcome. Automatic retry is blocked until the state is reviewed.`,
                         {retryable: false}
                     )
                 );
@@ -1344,7 +1355,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
                 setSetup(
                     progressState(
                         'blocked',
-                        `Retired wallet ${shortAddress(missingRetirement.address)} is no longer in the current Solana wallet inventory. Credential additions remain blocked until cleanup can be resolved.`
+                        `Retired wallet ${displayIdentity(missingRetirement.address)} is no longer in the current Solana wallet inventory. Credential additions remain blocked until cleanup can be resolved.`
                     )
                 );
                 return;
@@ -1587,6 +1598,7 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
             const cleanup = action === 'cleanup';
             const regenerate = action === 'regenerate';
             ctx.modal.confirm({
+                className: 'worm-confirm-modal',
                 title: cleanup ? `Retry credential cleanup for ${walletLabel}?` : `Reconnect ${walletLabel} to Worm?`,
                 content: cleanup ? (
                     <Typography.Paragraph>
@@ -1783,10 +1795,10 @@ const WalletSelectionSummary = (props: {manager: ConnectionManager}) => {
             <div className='worm-wallet-selection-summary__heading'>
                 <span>
                     <SettingOutlined aria-hidden='true' />
-                    <Typography.Text strong={true}>Worm wallets</Typography.Text>
+                    <Typography.Title level={2}>Worm wallets</Typography.Title>
                 </span>
                 <Button size='small' disabled={props.manager.operationBusy || Boolean(props.manager.selectionError)} onClick={props.manager.openSelection}>
-                    Manage selection
+                    Manage selection · {selection.selectedItems.length}/{selection.maximumWallets}
                 </Button>
             </div>
             <dl>
@@ -1893,25 +1905,28 @@ const ConnectionCell = (props: {
                 <ConnectionStatusTag state={state} />
                 {props.activityStatus && (connectionWasQueried(state) ? <ActivityStatusTag status={props.activityStatus} /> : <Tag>Activity not queried</Tag>)}
                 {props.connection.warningCode && <small>{titleCase(props.connection.warningCode)}</small>}
-                {props.connection.connectedAt > 0 && state === 'CONNECTED' && <small>Since {formatBeijingUnixSeconds(props.connection.connectedAt)}</small>}
                 {props.manager?.walletProgress.get(props.wallet.walletId) && <small>{props.manager.walletProgress.get(props.wallet.walletId)}</small>}
             </div>
-            {props.manager && actions.length > 0 && (
-                <Space size={4} wrap={true}>
-                    {actions.map(action => (
-                        <Button
-                            key={action.kind}
-                            size='small'
-                            danger={action.kind === 'cleanup'}
-                            icon={action.icon}
-                            loading={busy}
-                            disabled={props.manager.operationBusy}
-                            onClick={() => props.manager?.confirm(action.kind, props.wallet.walletId, label)}>
-                            {action.label}
-                        </Button>
-                    ))}
-                </Space>
-            )}
+            <details className='worm-connection-details'>
+                <summary>{props.manager ? 'Manage connection' : 'Connection details'}</summary>
+                {props.connection.connectedAt > 0 && <small>Connected since {formatBeijingUnixSeconds(props.connection.connectedAt)}</small>}
+                {props.manager && actions.length > 0 && (
+                    <Space size={4} wrap={true}>
+                        {actions.map(action => (
+                            <Button
+                                key={action.kind}
+                                size='small'
+                                danger={action.kind === 'cleanup'}
+                                icon={action.icon}
+                                loading={busy}
+                                disabled={props.manager.operationBusy}
+                                onClick={() => props.manager?.confirm(action.kind, props.wallet.walletId, label)}>
+                                {action.label}
+                            </Button>
+                        ))}
+                    </Space>
+                )}
+            </details>
             {busy && props.manager?.stage && <small className='worm-trading-connection__stage'>{props.manager.stage}</small>}
         </div>
     );
@@ -1936,15 +1951,15 @@ const WalletBalanceCard = (props: {
                     <Checkbox
                         checked={selected}
                         disabled={selectionDisabled}
-                        aria-label={`Include ${props.item.wallet.remark || shortAddress(props.item.wallet.address)} in Cash Out batch`}
+                        aria-label={`Include ${props.item.wallet.remark || displayIdentity(props.item.wallet.address)} in Cash Out batch`}
                         onChange={event => props.batchManager?.toggleWallet(walletID, event.target.checked)}>
-                        Include this wallet
+                        Include in Cash Out batch
                     </Checkbox>
                 </div>
             )}
             <div className='worm-trading-balance-card__header'>
                 <WalletIdentity wallet={props.item.wallet} compact={true} onCopy={props.onCopy} />
-                <BalanceStatusTag status={props.item.status} />
+                {props.item.status !== 'COMPLETE' && <BalanceStatusTag status={props.item.status} />}
             </div>
             <div className='worm-trading-balance-card__assets'>
                 <div>
@@ -2011,61 +2026,82 @@ const MarketIdentity = (props: {market: WormOpenPosition['market']}) => (
     <div className='worm-trading-market'>
         <Avatar shape='square' size={38} src={props.market.logo || undefined} icon={<ApiOutlined />} />
         <div>
-            <Typography.Text strong={true} ellipsis={{tooltip: props.market.title || props.market.conditionId}}>
-                {props.market.title || 'Untitled market'}
-            </Typography.Text>
+            <Typography.Text strong={true}>{props.market.title || 'Untitled market'}</Typography.Text>
             <small>
-                {props.market.eventTitle || shortAddress(props.market.conditionId, 7, 7)}
+                {props.market.eventTitle || displayIdentity(props.market.conditionId)}
                 {props.market.lastTradePrice ? ` · Latest ${props.market.lastTradePrice}` : ''}
             </small>
         </div>
     </div>
 );
 
-const SideTag = (props: {side: string}) => <Tag color={props.side === 'YES' ? 'green' : props.side === 'NO' ? 'red' : 'default'}>{props.side || 'Unknown'}</Tag>;
+const SideTag = (props: {side: string}) => <Tag color={props.side === 'YES' ? 'success' : props.side === 'NO' ? 'processing' : 'default'}>{props.side || 'Unknown'}</Tag>;
 
 const PositionCard = (props: {row: PositionRow; onCopy: () => void; cashOutManager?: PositionCashOutManager}) => {
     const position = props.row.position;
     return (
         <Card className='worm-trading-activity-card' size='small'>
-            <WalletIdentity wallet={props.row.wallet} compact={true} onCopy={props.onCopy} />
             <MarketIdentity market={position.market} />
             <div className='worm-trading-activity-card__tags'>
+                <span>{props.row.wallet.remark || 'Solana wallet'}</span>
                 <SideTag side={position.side} />
                 <Tag>{optionalValue(position.leverage, '×')}</Tag>
-                {position.isLiquidated && <Tag color='red'>Liquidated</Tag>}
-                {position.isClaimed && <Tag color='blue'>Claimed</Tag>}
+                {position.isLiquidated && <Tag color='error'>Liquidated</Tag>}
+                {position.isClaimed && <Tag color='processing'>Claimed</Tag>}
             </div>
             <dl className='worm-trading-activity-card__facts'>
                 <div>
                     <dt>Shares</dt>
-                    <dd>{optionalValue(position.totalShares)}</dd>
-                </div>
-                <div>
-                    <dt>Entry</dt>
-                    <dd>{optionalValue(position.averageEntryPrice)}</dd>
+                    <dd>
+                        {optionalValue(position.totalShares)}
+                        <small>Entry {optionalValue(position.averageEntryPrice)}</small>
+                    </dd>
                 </div>
                 <div>
                     <dt>Liquidity</dt>
-                    <dd>{position.userLiquidity && position.totalLiquidity ? `${position.userLiquidity} / ${position.totalLiquidity}` : '-'}</dd>
-                </div>
-                <div>
-                    <dt>Liquidation</dt>
-                    <dd>{liquidationPriceValue(position)}</dd>
+                    <dd>
+                        {optionalValue(position.userLiquidity)}
+                        <small>Total {optionalValue(position.totalLiquidity)}</small>
+                    </dd>
                 </div>
                 <div>
                     <dt>Unrealized P&amp;L</dt>
-                    <dd>{optionalValue(position.unrealizedPnL)}</dd>
+                    <dd
+                        className={
+                            position.unrealizedPnL
+                                ? Number(position.unrealizedPnL) > 0
+                                    ? 'worm-value-positive'
+                                    : Number(position.unrealizedPnL) < 0
+                                      ? 'worm-value-negative'
+                                      : ''
+                                : 'worm-value-unavailable'
+                        }>
+                        {position.unrealizedPnL ? `${Number(position.unrealizedPnL) > 0 ? '+' : ''}${position.unrealizedPnL}` : 'Unavailable'}
+                        <small>Realized {optionalValue(position.realizedPnL)}</small>
+                    </dd>
                 </div>
                 <div>
-                    <dt>Realized P&amp;L</dt>
-                    <dd>{optionalValue(position.realizedPnL)}</dd>
+                    <dt>Liquidation</dt>
+                    <dd>
+                        {liquidationPriceValue(position)}
+                        <small>Latest market price {optionalValue(position.market.lastTradePrice)}</small>
+                    </dd>
                 </div>
             </dl>
-            <div className='worm-trading-activity-card__footer'>
-                <code title={position.pubkey}>{shortAddress(position.pubkey, 7, 7)}</code>
-                <span>{formatBeijingUnixSeconds(position.createdAt) || '-'}</span>
-            </div>
+            <details className='worm-trading-activity-evidence'>
+                <summary>Wallet &amp; position evidence</summary>
+                <WalletIdentity wallet={props.row.wallet} compact={true} onCopy={props.onCopy} />
+                <div className='worm-trading-activity-card__footer'>
+                    <code title={position.pubkey}>{displayIdentity(position.pubkey)}</code>
+                    <span>{formatBeijingUnixSeconds(position.createdAt) || '-'}</span>
+                </div>
+                <div>
+                    Market <code>{position.market.conditionId}</code>
+                </div>
+                <div>
+                    Event <code>{position.market.eventConditionId}</code>
+                </div>
+            </details>
             {props.cashOutManager && (
                 <div className='worm-position-cash-out-card-action'>
                     <PositionCashOutButton row={props.row} manager={props.cashOutManager} compact={true} />
@@ -2079,9 +2115,9 @@ const RequestCard = (props: {row: RequestRow; onCopy: () => void}) => {
     const request = props.row.request;
     return (
         <Card className='worm-trading-activity-card' size='small'>
-            <WalletIdentity wallet={props.row.wallet} compact={true} onCopy={props.onCopy} />
             <MarketIdentity market={request.market} />
             <div className='worm-trading-activity-card__tags'>
+                <span>{props.row.wallet.remark || 'Solana wallet'}</span>
                 <SideTag side={request.side} />
                 <Tag>{titleCase(request.type) || 'Request'}</Tag>
                 <Tag color='processing'>{titleCase(request.state)}</Tag>
@@ -2108,10 +2144,20 @@ const RequestCard = (props: {row: RequestRow; onCopy: () => void}) => {
                     <dd>{titleCase(request.orderState) || '-'}</dd>
                 </div>
             </dl>
-            <div className='worm-trading-activity-card__footer'>
-                <code title={request.pubkey}>{shortAddress(request.pubkey, 7, 7)}</code>
-                <span>{formatBeijingUnixSeconds(request.createdAt) || '-'}</span>
-            </div>
+            <details className='worm-trading-activity-evidence'>
+                <summary>Wallet &amp; request evidence</summary>
+                <WalletIdentity wallet={props.row.wallet} compact={true} onCopy={props.onCopy} />
+                <div className='worm-trading-activity-card__footer'>
+                    <code title={request.pubkey}>{displayIdentity(request.pubkey)}</code>
+                    <span>{formatBeijingUnixSeconds(request.createdAt) || '-'}</span>
+                </div>
+                <div>
+                    Market <code>{request.market.conditionId}</code>
+                </div>
+                <div>
+                    Event <code>{request.market.eventConditionId}</code>
+                </div>
+            </details>
         </Card>
     );
 };
@@ -2501,13 +2547,18 @@ const PositionCashOutManagement = (props: {
     const confirm = React.useCallback(
         (row: PositionRow) => {
             ctx.modal.confirm({
+                className: 'worm-confirm-modal',
                 title: 'Cash out this Worm position?',
                 content: (
                     <div className='worm-position-cash-out-confirmation'>
                         <dl>
                             <div>
                                 <dt>Wallet</dt>
-                                <dd>{row.wallet.remark || shortAddress(row.wallet.address)}</dd>
+                                <dd>
+                                    {row.wallet.remark || 'Solana wallet'}
+                                    <br />
+                                    <code>{row.wallet.address}</code>
+                                </dd>
                             </div>
                             <div>
                                 <dt>Market</dt>
@@ -2517,6 +2568,8 @@ const PositionCashOutManagement = (props: {
                                 <dt>Position</dt>
                                 <dd>
                                     {row.position.side} · {optionalValue(row.position.totalShares)} shares
+                                    <br />
+                                    <code>{row.position.pubkey}</code>
                                 </dd>
                             </div>
                         </dl>
@@ -2739,11 +2792,7 @@ const PositionCashOutManagement = (props: {
                     type='info'
                     showIcon={true}
                     title='Cash Out is still pending'
-                    description={`Worm has not yet confirmed that wallet ${shortAddress(operation.walletAddress)} position ${shortAddress(
-                        operation.positionPubkey,
-                        7,
-                        7
-                    )} is closed. Its position row may disappear while Close is processing; Pending does not mean Closed, and Athena will not resend Close.`}
+                    description={`Worm has not yet confirmed that wallet ${displayIdentity(operation.walletAddress)} position ${displayIdentity(operation.positionPubkey)} is closed. Its position row may disappear while Close is processing; Pending does not mean Closed, and Athena will not resend Close.`}
                 />
             ))}
             {unknownRows.map(({row, view}) => (
@@ -2753,11 +2802,7 @@ const PositionCashOutManagement = (props: {
                     type='error'
                     showIcon={true}
                     title='Cash Out outcome requires attention'
-                    description={`Athena cannot yet prove whether ${row.wallet.remark || shortAddress(row.wallet.address)} position ${shortAddress(
-                        row.position.pubkey,
-                        7,
-                        7
-                    )} is closed. Do not submit another Cash Out; Check status performs read-only reconciliation.`}
+                    description={`Athena cannot yet prove whether ${row.wallet.remark || displayIdentity(row.wallet.address)} position ${displayIdentity(row.position.pubkey)} is closed. Do not submit another Cash Out; Check status performs read-only reconciliation.`}
                     action={
                         view.allowedAction === 'CHECK_STATUS' ? (
                             <Button icon={<ReloadOutlined />} loading={busyKey === positionCashOutRowKey(row)} onClick={() => reconcile(row, view)}>
@@ -2777,11 +2822,7 @@ const PositionCashOutManagement = (props: {
                         type='error'
                         showIcon={true}
                         title='Cash Out outcome requires attention'
-                        description={`Athena cannot yet prove whether wallet ${shortAddress(operation.walletAddress)} position ${shortAddress(
-                            operation.positionPubkey,
-                            7,
-                            7
-                        )} is closed. Do not submit another Cash Out; Check status performs read-only reconciliation.`}
+                        description={`Athena cannot yet prove whether wallet ${displayIdentity(operation.walletAddress)} position ${displayIdentity(operation.positionPubkey)} is closed. Do not submit another Cash Out; Check status performs read-only reconciliation.`}
                         action={
                             operation.allowedActions.includes('CHECK_STATUS') ? (
                                 <Button icon={<ReloadOutlined />} loading={busyKey === key} onClick={() => void reconcileByKey(key, view)}>
@@ -2832,13 +2873,13 @@ const positionCashOutBatchReasonMessage = (reasonCode: string) => {
 
 const positionCashOutBatchStateColor = (state: WormPositionCashOutBatch['state']) => {
     if (state === 'COMPLETED') {
-        return 'green';
+        return 'success';
     }
     if (state === 'FAILED' || state === 'RECONCILIATION_REQUIRED') {
-        return 'red';
+        return 'error';
     }
     if (state === 'PAUSED' || state === 'PAUSE_REQUESTED' || state === 'AWAITING_AUTHORIZATION' || state === 'EXPIRED') {
-        return 'gold';
+        return 'warning';
     }
     if (state === 'CANCELLED' || state === 'TERMINATED') {
         return 'default';
@@ -2848,13 +2889,13 @@ const positionCashOutBatchStateColor = (state: WormPositionCashOutBatch['state']
 
 const positionCashOutBatchItemStateColor = (state: WormPositionCashOutBatchItemState) => {
     if (state === 'COMPLETED') {
-        return 'green';
+        return 'success';
     }
     if (state === 'FAILED' || state === 'RECONCILIATION_REQUIRED') {
-        return 'red';
+        return 'error';
     }
     if (state === 'AWAITING_BALANCE') {
-        return 'gold';
+        return 'warning';
     }
     if (state === 'NOT_EXECUTED') {
         return 'default';
@@ -2877,18 +2918,24 @@ const PositionCashOutBatchEvidence = (props: {baseline?: WormPositionCashOutBatc
     <dl className='worm-position-cash-out-batch-evidence'>
         <div>
             <dt>Before Close</dt>
-            <dd>{props.baseline ? formatUSDCAtomicAmount(props.baseline.atomicAmount) : 'Not captured'}</dd>
-            <small>{props.baseline ? `Confirmed slot ${formatIntegerString(props.baseline.observedSlot)}` : 'The baseline is captured immediately before dispatch.'}</small>
+            <dd>
+                {props.baseline ? formatUSDCAtomicAmount(props.baseline.atomicAmount) : 'Not captured'}
+                <small>{props.baseline ? `Confirmed slot ${formatIntegerString(props.baseline.observedSlot)}` : 'The baseline is captured immediately before dispatch.'}</small>
+            </dd>
         </div>
         <div>
             <dt>Latest observed</dt>
-            <dd>{props.observed ? formatUSDCAtomicAmount(props.observed.atomicAmount) : 'Waiting for evidence'}</dd>
-            <small>{props.observed ? `Confirmed slot ${formatIntegerString(props.observed.observedSlot)}` : 'No newer confirmed balance has been accepted.'}</small>
+            <dd>
+                {props.observed ? formatUSDCAtomicAmount(props.observed.atomicAmount) : 'Waiting for evidence'}
+                <small>{props.observed ? `Confirmed slot ${formatIntegerString(props.observed.observedSlot)}` : 'No newer confirmed balance has been accepted.'}</small>
+            </dd>
         </div>
         <div>
             <dt>Net increase</dt>
-            <dd className={props.delta && !props.delta.startsWith('-') && props.delta !== '0' ? 'is-positive' : ''}>{props.delta ? formatUSDCAtomicAmount(props.delta) : '-'}</dd>
-            <small>Must be strictly greater than zero.</small>
+            <dd className={props.delta && !props.delta.startsWith('-') && props.delta !== '0' ? 'is-positive' : ''}>
+                {props.delta ? formatUSDCAtomicAmount(props.delta) : '-'}
+                <small>Must be strictly greater than zero.</small>
+            </dd>
         </div>
     </dl>
 );
@@ -3085,6 +3132,7 @@ const PositionCashOutBatchManagement = (props: {
             };
             const reauthorizing = current.state === 'PAUSED';
             ctx.modal.confirm({
+                className: 'worm-confirm-modal',
                 width: 720,
                 title: reauthorizing ? 'Reauthorize paused Cash Out batch?' : 'Authorize serial Cash Out batch?',
                 content: (
@@ -3100,7 +3148,9 @@ const PositionCashOutBatchManagement = (props: {
                             {current.wallets.map(wallet => (
                                 <li key={wallet.walletId}>
                                     <span>
-                                        {wallet.ordinal}. {wallet.remark || shortAddress(wallet.address)}
+                                        {wallet.ordinal}. {wallet.remark || 'Solana wallet'}
+                                        <br />
+                                        <code>{wallet.address}</code>
                                     </span>
                                     <strong>{wallet.positionCount} positions</strong>
                                 </li>
@@ -3384,6 +3434,7 @@ const PositionCashOutBatchManagement = (props: {
                 <Typography.Text type='secondary'>Updated {formatBeijingUnixSeconds(batch.updatedAt)}</Typography.Text>
             </div>
             <Progress
+                aria-label='Serial Cash Out completion'
                 percent={completedPercent}
                 status={
                     batch.state === 'FAILED' || batch.state === 'RECONCILIATION_REQUIRED'
@@ -3438,19 +3489,19 @@ const PositionCashOutBatchManagement = (props: {
                     <div className='worm-position-cash-out-batch-current__target'>
                         <div>
                             <small>Wallet</small>
-                            <strong>{currentItem.walletRemark || shortAddress(currentItem.walletAddress)}</strong>
-                            <code>{shortAddress(currentItem.walletAddress)}</code>
+                            <strong>{currentItem.walletRemark || displayIdentity(currentItem.walletAddress)}</strong>
+                            <code>{displayIdentity(currentItem.walletAddress)}</code>
                         </div>
                         <div>
                             <small>Market position</small>
                             <strong>
                                 {currentItem.isYes ? 'YES' : 'NO'} · {currentItem.shares} shares
                             </strong>
-                            <span>{currentItem.marketTitle || shortAddress(currentItem.marketConditionId, 8, 8)}</span>
+                            <span>{currentItem.marketTitle || displayIdentity(currentItem.marketConditionId)}</span>
                         </div>
                         <div>
                             <small>Frozen position</small>
-                            <code title={currentItem.positionPubkey}>{shortAddress(currentItem.positionPubkey, 8, 8)}</code>
+                            <code title={currentItem.positionPubkey}>{displayIdentity(currentItem.positionPubkey)}</code>
                             <span>{formatBeijingUnixSeconds(currentItem.positionCreatedAt)}</span>
                         </div>
                     </div>
@@ -3486,9 +3537,9 @@ const PositionCashOutBatchManagement = (props: {
                             <li key={item.id} className={item.id === currentItem?.id ? 'is-current' : ''}>
                                 <span className='worm-position-cash-out-batch-items__ordinal'>{item.ordinal}</span>
                                 <div>
-                                    <strong>{item.walletRemark || shortAddress(item.walletAddress)}</strong>
+                                    <strong>{item.walletRemark || displayIdentity(item.walletAddress)}</strong>
                                     <span>
-                                        {item.isYes ? 'YES' : 'NO'} · {item.shares} shares · {item.marketTitle || shortAddress(item.marketConditionId, 8, 8)}
+                                        {item.isYes ? 'YES' : 'NO'} · {item.shares} shares · {item.marketTitle || displayIdentity(item.marketConditionId)}
                                     </span>
                                 </div>
                                 <Tag color={positionCashOutBatchItemStateColor(item.state)}>{titleCase(item.state)}</Tag>
@@ -3560,6 +3611,7 @@ const PositionCashOutBatchManagement = (props: {
                                 loading={busyAction === 'terminate'}
                                 onClick={() =>
                                     ctx.modal.confirm({
+                                        className: 'worm-confirm-modal',
                                         title: 'Terminate remaining Cash Outs?',
                                         content:
                                             'A Close already dispatched for the current position cannot be cancelled. Athena will finish its safe reconciliation and mark every later frozen position Not executed.',
@@ -3634,7 +3686,9 @@ export const WormTradingPage = () => {
     const authorization = useAuthorization();
     const {page, pageSize, setPage} = usePagedParams(wormTradingPageSize, wormTradingPageSizes);
     const currentPage = Number.isSafeInteger(page) && page > 0 ? page : 1;
-    const accountID = authorization.user.accountId;
+    const accountID = JSON.stringify([authorization.user.accountId, authorization.user.iss]);
+    const [activityTab, setActivityTab] = React.useState('positions');
+    const navigate = useNavigate();
     const canManageConnections = authorization.canWrite(AccountDataModule.WormTrading);
     const runtime = useCachedAsyncData(`worm-trading:status:${accountID}`, () => services.wormTrading.getStatus(), {
         staleTimeMs: 0,
@@ -3717,271 +3771,118 @@ export const WormTradingPage = () => {
             return <ReadOnlyWalletSelectionGuide />;
         }
         const connectionFor = (walletId: number) => manager?.connections.get(walletId) || activityByWallet.get(walletId)?.connection;
-        const balanceColumns: ColumnsType<WormTradingWalletBalanceItem> = [
-            {
-                title: 'Wallet',
-                key: 'wallet',
-                width: 330,
-                render: (_, item) => <WalletIdentity wallet={item.wallet} onCopy={() => void copyAddress(item.wallet)} />
-            },
-            {title: 'SOL', key: 'sol', width: 185, render: (_, item) => <AssetValue asset={item.sol} symbol='SOL' />},
-            {title: 'USDC', key: 'usdc', width: 210, render: (_, item) => <AssetValue asset={item.usdc} symbol='USDC' token={item.usdc} />},
-            {title: 'Balance', key: 'status', width: 125, render: (_, item) => <BalanceStatusTag status={item.status} />},
-            {
-                title: 'Worm access',
-                key: 'connection',
-                width: 230,
-                render: (_, item) => (
-                    <ConnectionCell
-                        wallet={item.wallet}
-                        connection={connectionFor(item.wallet.walletId)}
-                        activityStatus={activityByWallet.get(item.wallet.walletId)?.status}
-                        manager={manager}
-                        loading={activity.loading && !activity.data}
-                    />
-                )
-            }
-        ];
-        if (batchManager) {
-            balanceColumns.unshift({
-                title: 'Include',
-                key: 'batchSelection',
-                width: 76,
-                align: 'center',
-                render: (_, item) => (
-                    <Checkbox
-                        checked={batchManager.selectedWalletIDs.has(item.wallet.walletId)}
-                        disabled={batchManager.selectionDisabled(item.wallet.walletId)}
-                        aria-label={`Include ${item.wallet.remark || shortAddress(item.wallet.address)} in Cash Out batch`}
-                        onChange={event => batchManager.toggleWallet(item.wallet.walletId, event.target.checked)}
-                    />
-                )
-            });
-        }
-        const positionColumns: ColumnsType<PositionRow> = [
-            {title: 'Wallet', key: 'wallet', width: 245, render: (_, row) => <WalletIdentity wallet={row.wallet} onCopy={() => void copyAddress(row.wallet)} />},
-            {title: 'Market', key: 'market', width: 330, render: (_, row) => <MarketIdentity market={row.position.market} />},
-            {
-                title: 'Side / leverage',
-                key: 'side',
-                width: 145,
-                render: (_, row) => (
-                    <Space size={4}>
-                        <SideTag side={row.position.side} />
-                        <Tag>{optionalValue(row.position.leverage, '×')}</Tag>
-                    </Space>
-                )
-            },
-            {
-                title: 'Shares / entry',
-                key: 'entry',
-                width: 165,
-                render: (_, row) => (
-                    <div className='worm-trading-data-pair'>
-                        <strong>{optionalValue(row.position.totalShares)}</strong>
-                        <small>Entry {optionalValue(row.position.averageEntryPrice)}</small>
-                    </div>
-                )
-            },
-            {
-                title: 'Liquidity',
-                key: 'liquidity',
-                width: 160,
-                render: (_, row) => (
-                    <div className='worm-trading-data-pair'>
-                        <strong>{optionalValue(row.position.userLiquidity)}</strong>
-                        <small>Total {optionalValue(row.position.totalLiquidity)}</small>
-                    </div>
-                )
-            },
-            {
-                title: 'Risk / P&L',
-                key: 'pnl',
-                width: 180,
-                render: (_, row) => (
-                    <div className='worm-trading-data-pair'>
-                        <strong>UPnL {optionalValue(row.position.unrealizedPnL)}</strong>
-                        <small>
-                            Liq {liquidationPriceValue(row.position)} · Realized {optionalValue(row.position.realizedPnL)}
-                        </small>
-                    </div>
-                )
-            },
-            {
-                title: 'Position',
-                key: 'position',
-                width: 170,
-                render: (_, row) => (
-                    <div className='worm-trading-data-pair'>
-                        <code title={row.position.pubkey}>{shortAddress(row.position.pubkey, 7, 7)}</code>
-                        <small>{formatBeijingUnixSeconds(row.position.createdAt) || '-'}</small>
-                    </div>
-                )
-            }
-        ];
-        if (cashOutManager) {
-            positionColumns.push({
-                title: 'Actions',
-                key: 'actions',
-                fixed: 'right',
-                width: 185,
-                className: 'worm-position-cash-out-table-action',
-                render: (_, row) => <PositionCashOutButton row={row} manager={cashOutManager} />
-            });
-        }
-        const requestColumns: ColumnsType<RequestRow> = [
-            {title: 'Wallet', key: 'wallet', width: 245, render: (_, row) => <WalletIdentity wallet={row.wallet} onCopy={() => void copyAddress(row.wallet)} />},
-            {title: 'Market', key: 'market', width: 330, render: (_, row) => <MarketIdentity market={row.request.market} />},
-            {
-                title: 'Request state',
-                key: 'state',
-                width: 185,
-                render: (_, row) => (
-                    <div className='worm-trading-data-pair'>
-                        <strong>{titleCase(row.request.state) || '-'}</strong>
-                        <small>
-                            {titleCase(row.request.type) || 'Request'}
-                            {row.request.orderState ? ` · ${titleCase(row.request.orderState)}` : ''}
-                        </small>
-                    </div>
-                )
-            },
-            {
-                title: 'Order',
-                key: 'order',
-                width: 150,
-                render: (_, row) => (
-                    <Space size={4}>
-                        <SideTag side={row.request.side} />
-                        <Tag>{optionalValue(row.request.leverage, '×')}</Tag>
-                    </Space>
-                )
-            },
-            {
-                title: 'Funds / price',
-                key: 'funds',
-                width: 165,
-                render: (_, row) => (
-                    <div className='worm-trading-data-pair'>
-                        <strong>{optionalValue(row.request.funds)}</strong>
-                        <small>
-                            Price {optionalValue(row.request.price)} · Shares {optionalValue(row.request.shares)}
-                        </small>
-                    </div>
-                )
-            },
-            {
-                title: 'Request',
-                key: 'request',
-                width: 170,
-                render: (_, row) => (
-                    <div className='worm-trading-data-pair'>
-                        <code title={row.request.pubkey}>{shortAddress(row.request.pubkey, 7, 7)}</code>
-                        <small>{formatBeijingUnixSeconds(row.request.createdAt) || '-'}</small>
-                    </div>
-                )
-            }
-        ];
 
         return (
             <>
-                {manager && <WalletSelectionSummary manager={manager} />}
-                {manager && <ConnectionSetupPanel manager={manager} />}
-
-                <RuntimeSummary
-                    status={runtime.data}
-                    loading={runtime.loading}
-                    error={runtime.error}
-                    fallbackNetwork={balances.data?.network}
-                    fallbackCommitment={balances.data?.commitment}
-                />
-
-                {balances.error && !balances.data ? (
-                    <Result
-                        status='error'
-                        title='Wallet balances are unavailable'
-                        subTitle={requestErrorMessage(balances.error, 'The balance request failed. No wallet was treated as empty or zero.')}
-                        extra={
-                            <Button type='primary' disabled={manager?.operationBusy} onClick={refresh}>
-                                Try again
-                            </Button>
-                        }
-                    />
-                ) : balances.data && balances.data.total === 0 ? (
-                    (manager?.selection?.configured && manager.selection.selectedItems.length === 0) ||
-                    (!manager && walletSelectionSummary?.configured && walletSelectionSummary.selectedCount === 0) ? (
-                        <div className='worm-trading-empty'>
-                            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No wallets are selected for Worm Trading.'>
-                                <Typography.Paragraph type='secondary'>
-                                    {manager
-                                        ? `Choose up to ${manager.selection?.maximumWallets || MAXIMUM_WORM_TRADING_WALLETS} wallets to show their Assets and make them eligible for execution previews.`
-                                        : 'A user with Worm Trading write access can add wallets to this saved selection.'}
-                                </Typography.Paragraph>
-                                {manager && (
-                                    <Button
-                                        type='primary'
-                                        icon={<SettingOutlined />}
-                                        disabled={manager.operationBusy || Boolean(manager.selectionError)}
-                                        onClick={manager.openSelection}>
-                                        Manage Worm wallets
-                                    </Button>
-                                )}
-                            </Empty>
-                        </div>
+                <div className='worm-assets-wallet-panel'>
+                    {manager ? (
+                        <WalletSelectionSummary manager={manager} />
                     ) : (
-                        <EmptyWalletBalances />
-                    )
-                ) : (
-                    <section className='worm-trading-balances' aria-labelledby='worm-trading-balances-heading'>
-                        <div className='worm-trading-balances__heading'>
-                            <div>
-                                <Typography.Title id='worm-trading-balances-heading' level={2}>
-                                    Wallet balances
-                                </Typography.Title>
-                                <Typography.Text type='secondary'>
-                                    {balances.data ? `${balances.data.total} Solana ${balances.data.total === 1 ? 'wallet' : 'wallets'}` : 'Loading wallets'}
-                                    {balances.data?.fetchedAt ? ` · Fetched ${formatBeijingUnixSeconds(balances.data.fetchedAt)}` : ''}
-                                </Typography.Text>
-                            </div>
-                            {(balances.refreshing || activity.refreshing) && (
-                                <Typography.Text className='worm-trading-balances__refreshing' role='status' aria-live='polite'>
-                                    Refreshing wallet data…
-                                </Typography.Text>
-                            )}
+                        <div className='worm-assets-readonly-heading'>
+                            <Typography.Title level={2}>Worm wallets</Typography.Title>
+                            <Typography.Text type='secondary'>Read-only access · {walletSelectionSummary?.selectedCount ?? 'Unknown'} selected</Typography.Text>
                         </div>
-                        {balances.error && balances.data && (
-                            <Alert
-                                className='worm-trading-section-alert'
-                                type='warning'
-                                showIcon={true}
-                                title='Could not refresh balances'
-                                description={requestErrorMessage(balances.error)}
-                            />
-                        )}
-                        <ResourceTable<WormTradingWalletBalanceItem>
-                            rowKey={item => item.wallet.walletId || item.wallet.address}
-                            label='Worm Trading wallet balances and connections'
-                            items={balanceItems}
-                            loading={balances.loading && !balances.data}
-                            columns={balanceColumns}
-                            scrollX={batchManager ? 1156 : 1080}
-                            compactRender={item => (
-                                <WalletBalanceCard
-                                    item={item}
-                                    connection={connectionFor(item.wallet.walletId)}
-                                    activityStatus={activityByWallet.get(item.wallet.walletId)?.status}
-                                    manager={manager}
-                                    batchManager={batchManager}
-                                    activityLoading={activity.loading && !activity.data}
-                                    onCopy={() => void copyAddress(item.wallet)}
+                    )}
+                    {manager && <ConnectionSetupPanel manager={manager} />}
+                    <RuntimeSummary
+                        status={runtime.data}
+                        loading={runtime.loading}
+                        error={runtime.error}
+                        fallbackNetwork={balances.data?.network}
+                        fallbackCommitment={balances.data?.commitment}
+                    />
+                    {balances.error && !balances.data ? (
+                        <Result
+                            status='error'
+                            title='Wallet balances are unavailable'
+                            subTitle={requestErrorMessage(balances.error, 'The balance request failed. No wallet was treated as empty or zero.')}
+                            extra={
+                                <Button type='primary' disabled={manager?.operationBusy} onClick={refresh}>
+                                    Try again
+                                </Button>
+                            }
+                        />
+                    ) : balances.data && balances.data.total === 0 ? (
+                        (manager?.selection?.configured && manager.selection.selectedItems.length === 0) ||
+                        (!manager && walletSelectionSummary?.configured && walletSelectionSummary.selectedCount === 0) ? (
+                            <div className='worm-trading-empty'>
+                                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No wallets are selected for Worm Trading.'>
+                                    <Typography.Paragraph type='secondary'>
+                                        {manager
+                                            ? `Choose up to ${manager.selection?.maximumWallets || MAXIMUM_WORM_TRADING_WALLETS} wallets to show their Assets and make them eligible for execution previews.`
+                                            : 'A user with Worm Trading write access can add wallets to this saved selection.'}
+                                    </Typography.Paragraph>
+                                    {manager && (
+                                        <Button
+                                            type='primary'
+                                            icon={<SettingOutlined />}
+                                            disabled={manager.operationBusy || Boolean(manager.selectionError)}
+                                            onClick={manager.openSelection}>
+                                            Manage Worm wallets
+                                        </Button>
+                                    )}
+                                </Empty>
+                            </div>
+                        ) : (
+                            <EmptyWalletBalances />
+                        )
+                    ) : (
+                        <section className='worm-trading-balances' aria-labelledby='worm-trading-balances-heading'>
+                            <div className='worm-trading-balances__heading'>
+                                <div>
+                                    <Typography.Title id='worm-trading-balances-heading' level={2}>
+                                        Wallet balances
+                                    </Typography.Title>
+                                    <Typography.Text type='secondary'>
+                                        {balances.data ? `${balances.data.total} Solana ${balances.data.total === 1 ? 'wallet' : 'wallets'}` : 'Loading wallets'}
+                                        {balances.data?.fetchedAt ? ` · Fetched ${formatBeijingUnixSeconds(balances.data.fetchedAt)}` : ''}
+                                    </Typography.Text>
+                                </div>
+                                {(balances.refreshing || activity.refreshing) && (
+                                    <Typography.Text className='worm-trading-balances__refreshing' role='status' aria-live='polite'>
+                                        Refreshing wallet data…
+                                    </Typography.Text>
+                                )}
+                            </div>
+                            {balances.error && balances.data && (
+                                <Alert
+                                    className='worm-trading-section-alert'
+                                    type='warning'
+                                    showIcon={true}
+                                    title='Could not refresh balances'
+                                    description={requestErrorMessage(balances.error)}
                                 />
                             )}
-                            compactEmptyDescription='No Solana wallets are available.'
-                        />
-                        {batchManager?.selectionSummary}
-                    </section>
-                )}
+                            {balances.data ? (
+                                <div className='worm-assets-wallet-list'>
+                                    <div className='worm-assets-wallet-columns' aria-hidden='true'>
+                                        <span>Wallet</span>
+                                        <span>SOL balance</span>
+                                        <span>USDC balance</span>
+                                        <span>Worm access</span>
+                                    </div>
+                                    {balanceItems.map(item => (
+                                        <WalletBalanceCard
+                                            key={item.wallet.walletId}
+                                            item={item}
+                                            connection={connectionFor(item.wallet.walletId)}
+                                            activityStatus={activityByWallet.get(item.wallet.walletId)?.status}
+                                            manager={manager}
+                                            batchManager={batchManager}
+                                            activityLoading={activity.loading && !activity.data}
+                                            onCopy={() => void copyAddress(item.wallet)}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <Skeleton active={true} paragraph={{rows: 4}} />
+                            )}
+                            {batchManager?.selectionSummary}
+                        </section>
+                    )}
 
+                    <div className='worm-assets-balance-note'>Balances are not available-to-order limits.</div>
+                </div>
                 {batchManager?.panel}
 
                 {activity.error && (
@@ -4005,71 +3906,53 @@ export const WormTradingPage = () => {
 
                 {cashOutManager?.alerts}
 
-                <section className='worm-trading-activity' aria-labelledby='worm-trading-positions-heading'>
-                    <div className='worm-trading-balances__heading'>
-                        <div>
-                            <Typography.Title id='worm-trading-positions-heading' level={2}>
-                                Open positions
-                            </Typography.Title>
-                            <Typography.Text type='secondary'>
-                                {activity.data
-                                    ? `${activity.data.openPositionCount} visible ${activity.data.openPositionCount === 1 ? 'position' : 'positions'}`
-                                    : 'Current Worm positions by wallet'}
-                            </Typography.Text>
-                        </div>
-                        {activity.data && <ActivityStatusTag status={activity.data.status} />}
-                    </div>
-                    {activity.data && (
-                        <>
-                            <StreamNotice label='Position streams' streams={queriedActivityItems.map(item => item.positions)} />
-                            <ResourceTable<PositionRow>
-                                rowKey={row => `${row.wallet.walletId}:${row.position.pubkey}`}
-                                label='Open Worm positions'
-                                items={positionRows}
-                                loading={activity.loading && !activity.data}
-                                columns={positionColumns}
-                                scrollX={cashOutManager ? 1580 : 1395}
-                                compactRender={row => <PositionCard row={row} cashOutManager={cashOutManager} onCopy={() => void copyAddress(row.wallet)} />}
-                                compactEmptyDescription='No open positions are available for the connected wallets on this page.'
-                            />
-                        </>
-                    )}
-                </section>
-
-                <section className='worm-trading-activity' aria-labelledby='worm-trading-requests-heading'>
-                    <div className='worm-trading-balances__heading'>
-                        <div>
-                            <Typography.Title id='worm-trading-requests-heading' level={2}>
-                                In-flight requests
-                            </Typography.Title>
-                            <Typography.Text type='secondary'>
-                                {activity.data
-                                    ? `${activity.data.inFlightRequestCount} visible ${activity.data.inFlightRequestCount === 1 ? 'request' : 'requests'}`
-                                    : 'Open requests that have not reached a terminal state'}
-                                {activity.data?.fetchedAt ? ` · Fetched ${formatBeijingUnixSeconds(activity.data.fetchedAt)}` : ''}
-                            </Typography.Text>
-                        </div>
-                        {activity.refreshing && (
-                            <Typography.Text className='worm-trading-balances__refreshing' role='status' aria-live='polite'>
-                                Refreshing activity…
-                            </Typography.Text>
-                        )}
-                    </div>
-                    {activity.data && (
-                        <>
-                            <StreamNotice label='Request streams' streams={queriedActivityItems.map(item => item.requests)} />
-                            <ResourceTable<RequestRow>
-                                rowKey={row => `${row.wallet.walletId}:${row.request.pubkey}`}
-                                label='In-flight Worm position requests'
-                                items={requestRows}
-                                loading={false}
-                                columns={requestColumns}
-                                scrollX={1245}
-                                compactRender={row => <RequestCard row={row} onCopy={() => void copyAddress(row.wallet)} />}
-                                compactEmptyDescription='No in-flight position requests are available for the connected wallets on this page.'
-                            />
-                        </>
-                    )}
+                <section className='worm-assets-activity-panel' aria-label='Worm activity'>
+                    <Tabs
+                        activeKey={activityTab}
+                        onChange={setActivityTab}
+                        items={[
+                            {
+                                key: 'positions',
+                                label: `Open positions${activity.data ? ` · ${activity.data.openPositionCount}` : ''}`,
+                                children: activity.data ? (
+                                    <>
+                                        <StreamNotice label='Position streams' streams={queriedActivityItems.map(item => item.positions)} />
+                                        {positionRows.map(row => (
+                                            <PositionCard key={positionCashOutRowKey(row)} row={row} cashOutManager={cashOutManager} onCopy={() => void copyAddress(row.wallet)} />
+                                        ))}
+                                        {positionRows.length === 0 && queriedActivityItems.every(item => streamAvailable(item.positions)) && (
+                                            <Empty
+                                                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                                description={queriedActivityItems.length ? 'No open positions for the connected wallets.' : 'No connected wallets to query.'}
+                                            />
+                                        )}
+                                    </>
+                                ) : activity.loading ? (
+                                    <Skeleton active={true} />
+                                ) : null
+                            },
+                            {
+                                key: 'requests',
+                                label: `In-flight requests${activity.data ? ` · ${activity.data.inFlightRequestCount}` : ''}`,
+                                children: activity.data ? (
+                                    <>
+                                        <StreamNotice label='Request streams' streams={queriedActivityItems.map(item => item.requests)} />
+                                        {requestRows.map(row => (
+                                            <RequestCard key={`${row.wallet.walletId}:${row.request.pubkey}`} row={row} onCopy={() => void copyAddress(row.wallet)} />
+                                        ))}
+                                        {requestRows.length === 0 && queriedActivityItems.every(item => streamAvailable(item.requests)) && (
+                                            <Empty
+                                                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                                description={queriedActivityItems.length ? 'No in-flight requests for the connected wallets.' : 'No connected wallets to query.'}
+                                            />
+                                        )}
+                                    </>
+                                ) : activity.loading ? (
+                                    <Skeleton active={true} />
+                                ) : null
+                            }
+                        ]}
+                    />
                 </section>
 
                 {total > pageSize && (
@@ -4098,26 +3981,32 @@ export const WormTradingPage = () => {
     };
 
     const renderPage = (manager?: ConnectionManager, cashOutManager?: PositionCashOutManager, batchManager?: PositionCashOutBatchManager) => (
-        <AppPage
-            title='Worm Trading Assets'
-            subtitle='Review confirmed wallet balances and official Worm position activity. Balances are not Worm collateral or available-to-order limits.'
-            loading={loading || manager?.operationBusy}
-            extra={
-                manager?.selection ? (
-                    <Button icon={<SettingOutlined />} disabled={manager.operationBusy || Boolean(manager.selectionError)} onClick={manager.openSelection}>
-                        Manage Worm wallets {manager.selection.selectedItems.length}/{manager.selection.maximumWallets}
+        <div className='worm-theme-page'>
+            <AppPage
+                title='Worm Trading Assets'
+                subtitle='Confirmed wallet balances, open positions and in-flight requests.'
+                loading={loading || manager?.operationBusy}
+                onRefresh={() => {
+                    if (manager?.operationBusy) {
+                        return;
+                    }
+                    refresh();
+                    manager?.refreshInventory();
+                }}>
+                <nav className='worm-assets-navigation' aria-label='Worm Trading pages'>
+                    <Button type='text' aria-current='page'>
+                        Assets
                     </Button>
-                ) : undefined
-            }
-            onRefresh={() => {
-                if (manager?.operationBusy) {
-                    return;
-                }
-                refresh();
-                manager?.refreshInventory();
-            }}>
-            {renderContent(manager, cashOutManager, batchManager)}
-        </AppPage>
+                    <Button type='text' onClick={() => navigate('/worm-trading/combinations')}>
+                        Combinations
+                    </Button>
+                    <Button type='text' onClick={() => navigate('/worm-trading/executions')}>
+                        Executions
+                    </Button>
+                </nav>
+                {renderContent(manager, cashOutManager, batchManager)}
+            </AppPage>
+        </div>
     );
 
     return canManageConnections ? (

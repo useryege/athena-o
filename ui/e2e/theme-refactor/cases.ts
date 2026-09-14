@@ -1,3 +1,4 @@
+import wormCases from './fixtures/worm-assets-combinations.json';
 import marketCases from './fixtures/markets.json';
 import sportsCases from './fixtures/sports.json';
 import managedOOCases from './fixtures/managed-oo.json';
@@ -65,6 +66,7 @@ const authenticated = (options: {administrator?: boolean; active?: boolean} = {}
 });
 
 export const themeCases: ThemeCase[] = [
+    ...(wormCases as ThemeCase[]),
     ...(marketCases as ThemeCase[]),
     ...(sportsCases as ThemeCase[]),
     ...(managedOOCases as ThemeCase[]),
