@@ -1,9 +1,10 @@
 import {SendOutlined} from '@ant-design/icons';
-import {Button, Form, Input, Modal, Space, Tag} from 'antd';
+import {Button, Form, Input, Modal, Select, Space, Tag} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
-import {useNavigate} from 'react-router-dom';
-import {AppPage, ChoiceGroup, ResourceTable, SearchBar, useAsyncData} from '../../components';
+import {useNavigate, useLocation} from 'react-router-dom';
+import {AppPage, ResourceTable, SearchBar, useAsyncData} from '../../components';
+import {useAdminReadScope} from '../read-scope';
 import {Context} from '../../shared/context';
 import {formatBeijingDateTime} from '../../shared/format';
 import {useKeywordParam, usePagedParams} from '../../shared/pages/shared';
@@ -11,47 +12,64 @@ import {requestErrorMessage} from '../../shared/services/requests';
 import type {NotificationDelivery} from '../notification-service';
 import {adminServices as services} from '../services';
 
-const statusColor = (value: string) => {
+export const statusColor = (value: string) => {
     switch (value.toLowerCase()) {
         case 'sent':
-            return 'green';
+            return 'success';
         case 'failed':
-            return 'red';
+            return 'error';
         case 'unknown':
-            return 'orange';
+            return 'warning';
         case 'sending':
-            return 'cyan';
+            return 'processing';
         case 'cancelled':
             return 'default';
         case 'pending':
-            return 'blue';
+            return 'processing';
         default:
             return 'default';
     }
 };
 
-const severityColor = (value: string) => {
+export const severityColor = (value: string) => {
     switch (value.toLowerCase()) {
         case 'critical':
         case 'error':
-            return 'red';
+            return 'error';
         case 'warning':
-            return 'orange';
+            return 'warning';
         case 'info':
-            return 'blue';
+            return 'processing';
         default:
             return 'default';
     }
 };
 
 export const SystemNotificationsPage = () => {
+    const scope = useAdminReadScope('system-notifications');
+    return scope.isCurrent() ? (
+        <SystemNotificationsWorkspace key={scope.key} />
+    ) : (
+        <AppPage title='System Notifications' loading>
+            <p>Checking administrator access…</p>
+        </AppPage>
+    );
+};
+const SystemNotificationsWorkspace = () => {
     const ctx = React.useContext(Context);
     const navigate = useNavigate();
+    const location = useLocation();
     const [form] = Form.useForm();
-    const {page, pageSize, setPage} = usePagedParams();
+    const {page, pageSize, setPage, params, setParams} = usePagedParams();
     const [keyword, setKeyword] = useKeywordParam('keyword');
-    const [status, setStatus] = React.useState('');
-    const [telegramChat, setTelegramChat] = React.useState('');
+    const status = params.get('status') || '';
+    const telegramChat = params.get('chat') || '';
+    const setFilter = (key: string, value: string) => {
+        const next = new URLSearchParams(params);
+        value === 'all' ? next.delete(key) : next.set(key, value);
+        next.set('page', '1');
+        setParams(next);
+    };
     const [testOpen, setTestOpen] = React.useState(false);
     const [testSubmitting, setTestSubmitting] = React.useState(false);
     const testRequestRef = React.useRef<ReturnType<typeof services.adminNotifications.sendTestNotification>>();
@@ -108,29 +126,38 @@ export const SystemNotificationsPage = () => {
 
     const columns: ColumnsType<NotificationDelivery> = [
         {
-            title: 'Title',
+            title: 'Title / Topic',
             render: item => (
-                <Button type='link' onClick={() => navigate(`/notifications/${item.id}`)}>
-                    {item.title || item.topicLabel}
-                </Button>
+                <div className='system-notification-title'>
+                    <Button type='link' onClick={() => navigate(`/notifications/${item.id}${location.search}`)}>
+                        {item.title || item.topicLabel}
+                    </Button>
+                    <span>{item.topicLabel || '—'}</span>
+                </div>
             )
         },
         {title: 'Severity', dataIndex: 'severity', render: value => <Tag color={severityColor(String(value || ''))}>{value || '-'}</Tag>},
-        {title: 'Topic', dataIndex: 'topicLabel'},
-        {title: 'Telegram Chat', dataIndex: 'telegramChat'},
+        {
+            title: 'Chat / Channel',
+            render: item => (
+                <div className='system-notification-title'>
+                    <span>{item.telegramChat || '—'}</span>
+                    <span>{item.channel || '—'}</span>
+                </div>
+            )
+        },
         {title: 'Status', dataIndex: 'status', render: value => <Tag color={statusColor(String(value || ''))}>{value || '-'}</Tag>},
-        {title: 'Channel', dataIndex: 'channel'},
         {title: 'Created', render: item => formatBeijingDateTime(item.createdAt) || '-'}
     ];
 
     const compactNotification = (item: NotificationDelivery) => (
         <article className='system-notification-card'>
             <div className='system-notification-card__heading'>
-                <Button type='link' onClick={() => navigate(`/notifications/${item.id}`)}>
+                <Button type='link' onClick={() => navigate(`/notifications/${item.id}${location.search}`)}>
                     {item.title || item.topicLabel || `Notification ${item.id}`}
                 </Button>
-                <Tag color={statusColor(item.status)}>{item.status || '-'}</Tag>
             </div>
+            <p className='admin-source-note'>{item.topicLabel || '—'}</p>
             <dl>
                 <div>
                     <dt>Severity</dt>
@@ -139,12 +166,18 @@ export const SystemNotificationsPage = () => {
                     </dd>
                 </div>
                 <div>
-                    <dt>Topic</dt>
-                    <dd>{item.topicLabel || '-'}</dd>
+                    <dt>Delivery</dt>
+                    <dd>
+                        <Tag color={statusColor(item.status)}>{item.status || '—'}</Tag>
+                    </dd>
                 </div>
                 <div>
                     <dt>Telegram chat</dt>
-                    <dd>{item.telegramChat || '-'}</dd>
+                    <dd>
+                        {item.telegramChat || '-'}
+                        <br />
+                        {item.channel || '-'}
+                    </dd>
                 </div>
                 <div>
                     <dt>Created</dt>
@@ -162,32 +195,38 @@ export const SystemNotificationsPage = () => {
             error={data.error}
             onRefresh={data.reload}
             extra={
-                <Button icon={<SendOutlined />} onClick={() => setTestOpen(true)}>
+                <Button type='primary' icon={<SendOutlined aria-hidden />} onClick={() => setTestOpen(true)}>
                     Test Notification
                 </Button>
             }
             filters={
-                <Space wrap={true}>
-                    <SearchBar value={keyword} onChange={setKeyword} placeholder='Keyword' />
-                    <ChoiceGroup<string>
-                        ariaLabel='Filter by notification status'
-                        value={status || 'all'}
-                        options={[{label: 'All', value: 'all'}, ...['pending', 'sending', 'sent', 'failed', 'unknown', 'cancelled'].map(value => ({value, label: value}))]}
-                        onChange={value => {
-                            setStatus(value === 'all' ? '' : value);
-                            setPage(1, pageSize);
-                        }}
-                    />
-                    <ChoiceGroup<string>
-                        ariaLabel='Filter by Telegram chat'
-                        value={telegramChat || 'all'}
-                        options={[{label: 'All', value: 'all'}, ...['test', 'prod'].map(value => ({value, label: value}))]}
-                        onChange={value => {
-                            setTelegramChat(value === 'all' ? '' : value);
-                            setPage(1, pageSize);
-                        }}
-                    />
-                </Space>
+                <div className='system-notification-filters'>
+                    <label>
+                        Keyword
+                        <SearchBar value={keyword} onChange={setKeyword} placeholder='Search notifications' />
+                    </label>
+                    <label>
+                        Delivery status
+                        <Select
+                            aria-label='Filter by notification status'
+                            value={status || 'all'}
+                            options={[
+                                {label: 'All statuses', value: 'all'},
+                                ...['pending', 'sending', 'sent', 'failed', 'unknown', 'cancelled'].map(value => ({value, label: value}))
+                            ]}
+                            onChange={value => setFilter('status', value)}
+                        />
+                    </label>
+                    <label>
+                        Telegram chat
+                        <Select
+                            aria-label='Filter by Telegram chat'
+                            value={telegramChat || 'all'}
+                            options={[{label: 'All chats', value: 'all'}, ...['test', 'prod'].map(value => ({value, label: value}))]}
+                            onChange={value => setFilter('chat', value)}
+                        />
+                    </label>
+                </div>
             }>
             <ResourceTable
                 rowKey='id'
@@ -201,10 +240,19 @@ export const SystemNotificationsPage = () => {
                 page={page}
                 pageSize={pageSize}
                 onPageChange={setPage}
-                scrollX={1_080}
+                scrollX={760}
                 stickyHeader={true}
             />
-            <Modal open={testOpen} title='Test Notification' footer={null} closable={!testSubmitting} maskClosable={!testSubmitting} onCancel={closeTest}>
+            <Modal
+                className='admin-operation-modal'
+                keyboard={!testSubmitting}
+                open={testOpen}
+                title='Test Notification'
+                footer={null}
+                closable={!testSubmitting}
+                maskClosable={!testSubmitting}
+                onCancel={closeTest}>
+                <p>Sends to the configured test chat. Queued does not mean delivered.</p>
                 <Form form={form} layout='vertical' onFinish={sendTest}>
                     <Form.Item
                         name='topicLabel'
@@ -220,7 +268,7 @@ export const SystemNotificationsPage = () => {
                         <Button disabled={testSubmitting} onClick={closeTest}>
                             Cancel
                         </Button>
-                        <Button type='primary' htmlType='submit' icon={<SendOutlined />} loading={testSubmitting}>
+                        <Button type='primary' htmlType='submit' icon={<SendOutlined aria-hidden />} loading={testSubmitting}>
                             Send Test Notification
                         </Button>
                     </Space>

@@ -361,14 +361,19 @@ test('theme:identity missing Phantom and expired Google ticket retain recovery',
     assertThemeLedger(expiredLedger);
 });
 
-for (const viewport of [{name: 'narrow', width: 320, height: 844, rootSize: 16}, {name: 'root-200', width: 720, height: 1000, rootSize: 32}]) {
+for (const viewport of [
+    {name: 'narrow', width: 320, height: 844, rootSize: 16},
+    {name: 'root-200', width: 720, height: 1000, rootSize: 32}
+]) {
     for (const id of ['member-profile', 'member-security', 'member-notifications', 'admin-help']) {
         test(`theme:identity ${id} ${viewport.name} text and boundaries`, async ({page}, info) => {
             await page.setViewportSize(viewport);
             const ledger = await openThemeCase(page, id);
             if (viewport.rootSize === 32) {
                 const before = await page.locator('.app-page h1').evaluate(node => Number.parseFloat(getComputedStyle(node).fontSize));
-                await page.evaluate(() => {document.documentElement.style.fontSize = '32px';});
+                await page.evaluate(() => {
+                    document.documentElement.style.fontSize = '32px';
+                });
                 await expect(page.locator('.app-page h1')).toHaveCSS('font-size', `${before * 2}px`);
                 await expect(page.locator('.app-page__heading > .ant-typography-secondary')).toHaveCSS('font-size', '32px');
             }
@@ -429,13 +434,20 @@ test('theme:identity mobile AI instructions retain a visible action footer while
     const result = page.getByRole('dialog', {name: 'AI connection instructions ready'});
     await expect(result.getByText('Credential ready', {exact: true})).toBeVisible();
     await page.getByRole('alert').filter({hasText: 'Connection instructions ready'}).getByRole('button', {name: 'Close', exact: true}).click();
-    await page.evaluate(() => Promise.all(document.getAnimations().filter(animation => animation.effect?.getTiming().iterations !== Infinity).map(animation => animation.finished.catch(() => undefined))));
+    await page.evaluate(() =>
+        Promise.all(
+            document
+                .getAnimations()
+                .filter(animation => animation.effect?.getTiming().iterations !== Infinity)
+                .map(animation => animation.finished.catch(() => undefined))
+        )
+    );
     const body = result.locator('.ant-modal-body');
     const footer = result.locator('.ant-modal-footer');
     const before = await footer.boundingBox();
     expect(before!.y + before!.height).toBeLessThanOrEqual(844);
     expect(await body.evaluate(node => node.scrollHeight > node.clientHeight)).toBe(true);
-    await body.evaluate(node => node.scrollTop = node.scrollHeight);
+    await body.evaluate(node => (node.scrollTop = node.scrollHeight));
     expect((await footer.boundingBox())!.y).toBeCloseTo(before!.y, 0);
     await expect(result.getByRole('textbox')).toHaveValue(/fixture-once-only-secret-full-value/);
     expect(ledger.requests.filter(item => item.method === 'POST').map(item => item.body)).toEqual([{expiresIn: 7776000, id: 'identity-ai'}]);
@@ -464,7 +476,14 @@ test('theme:identity review mobile Profile leave confirmation stacks safe action
     const keep = dialog.getByRole('button', {name: 'Keep editing'});
     const discard = dialog.getByRole('button', {name: 'Discard and leave'});
     await expect(keep).toBeFocused();
-    await page.evaluate(() => Promise.all(document.getAnimations().filter(animation => animation.effect?.getTiming().iterations !== Infinity).map(animation => animation.finished.catch(() => undefined))));
+    await page.evaluate(() =>
+        Promise.all(
+            document
+                .getAnimations()
+                .filter(animation => animation.effect?.getTiming().iterations !== Infinity)
+                .map(animation => animation.finished.catch(() => undefined))
+        )
+    );
     const [keepBox, discardBox] = await Promise.all([keep.boundingBox(), discard.boundingBox()]);
     expect(discardBox!.y).toBeGreaterThanOrEqual(keepBox!.y + keepBox!.height + 8);
     expect(keepBox!.width).toBeGreaterThan(280);
@@ -473,7 +492,11 @@ test('theme:identity review mobile Profile leave confirmation stacks safe action
     expect(discardBox!.x + discardBox!.width).toBeCloseTo(keepBox!.x + keepBox!.width, 0);
     for (let i = 0; i < 5; i++) {
         await page.keyboard.press('Tab');
-        const focus = await dialog.evaluate(node => ({inside: node.contains(document.activeElement), active: document.activeElement?.tagName, className: document.activeElement?.className}));
+        const focus = await dialog.evaluate(node => ({
+            inside: node.contains(document.activeElement),
+            active: document.activeElement?.tagName,
+            className: document.activeElement?.className
+        }));
         expect(focus.inside, JSON.stringify({step: i, ...focus})).toBe(true);
     }
     await keep.focus();
@@ -499,40 +522,41 @@ test('theme:identity review mobile Profile leave confirmation stacks safe action
     assertThemeLedger(ledger);
 });
 
-for (const phase of ['issued', 'pending']) for (const change of ['account', 'issuer']) {
-    test(`theme:identity review Security ${change} switch clears ${phase} credential`, async ({page}) => {
-        const {themeCases} = await import('./theme-refactor/cases');
-        const {installThemeCase} = await import('./theme-refactor/routes');
-        const scenario = structuredClone(themeCases.find(item => item.id === 'member-security')!);
-        const ledger = await installThemeCase(page, scenario);
-        await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/account/security`);
-        await page.getByRole('button', {name: 'Create API key', exact: true}).click();
-        await page.getByLabel('Key ID', {exact: true}).fill('old-identity');
-        const created = new Promise<void>(resolve => {
-            const finished = (request: import('@playwright/test').Request) => {
-                if (request.method() === 'POST' && request.url().endsWith('/api/v1/account/security/tokens')) resolve();
-            };
-            page.on('requestfinished', finished);
-            page.on('requestfailed', finished);
+for (const phase of ['issued', 'pending'])
+    for (const change of ['account', 'issuer']) {
+        test(`theme:identity review Security ${change} switch clears ${phase} credential`, async ({page}) => {
+            const {themeCases} = await import('./theme-refactor/cases');
+            const {installThemeCase} = await import('./theme-refactor/routes');
+            const scenario = structuredClone(themeCases.find(item => item.id === 'member-security')!);
+            const ledger = await installThemeCase(page, scenario);
+            await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/account/security`);
+            await page.getByRole('button', {name: 'Create API key', exact: true}).click();
+            await page.getByLabel('Key ID', {exact: true}).fill('old-identity');
+            const created = new Promise<void>(resolve => {
+                const finished = (request: import('@playwright/test').Request) => {
+                    if (request.method() === 'POST' && request.url().endsWith('/api/v1/account/security/tokens')) resolve();
+                };
+                page.on('requestfinished', finished);
+                page.on('requestfailed', finished);
+            });
+            await page.getByRole('button', {name: 'Create key', exact: true}).click();
+            const result = page.getByRole('dialog', {name: 'Copy your API key now'});
+            if (phase === 'issued') await expect(result).toBeVisible();
+            else await expect.poll(() => ledger.requests.filter(item => item.method === 'POST').length).toBe(1);
+            const user = scenario.replies.find(reply => reply.path === '/api/v1/session/userinfo')!.json as any;
+            if (change === 'account') user.accountId = '33333333-3333-4333-8333-333333333333';
+            else user.iss = 'replacement-issuer';
+            user.profile.displayName = 'Replacement identity';
+            await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+            await expect(page.getByRole('heading', {name: 'Replacement identity'})).toBeVisible();
+            await created;
+            await expect(result).toBeHidden();
+            await expect(page.getByRole('dialog', {name: 'Create API key', exact: true})).toBeHidden();
+            await expect(page.locator('.account-secret-value')).toHaveCount(0);
+            expect(ledger.requests.filter(item => item.method === 'POST').map(item => item.body)).toEqual([{id: 'old-identity', expiresIn: 7776000}]);
+            assertThemeLedger(ledger);
         });
-        await page.getByRole('button', {name: 'Create key', exact: true}).click();
-        const result = page.getByRole('dialog', {name: 'Copy your API key now'});
-        if (phase === 'issued') await expect(result).toBeVisible();
-        else await expect.poll(() => ledger.requests.filter(item => item.method === 'POST').length).toBe(1);
-        const user = scenario.replies.find(reply => reply.path === '/api/v1/session/userinfo')!.json as any;
-        if (change === 'account') user.accountId = '33333333-3333-4333-8333-333333333333';
-        else user.iss = 'replacement-issuer';
-        user.profile.displayName = 'Replacement identity';
-        await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-        await expect(page.getByRole('heading', {name: 'Replacement identity'})).toBeVisible();
-        await created;
-        await expect(result).toBeHidden();
-        await expect(page.getByRole('dialog', {name: 'Create API key', exact: true})).toBeHidden();
-        await expect(page.locator('.account-secret-value')).toHaveCount(0);
-        expect(ledger.requests.filter(item => item.method === 'POST').map(item => item.body)).toEqual([{id: 'old-identity', expiresIn: 7776000}]);
-        assertThemeLedger(ledger);
-    });
-}
+    }
 
 for (const change of ['account', 'issuer']) {
     test(`theme:identity review Notifications ${change} switch destroys the old confirmation`, async ({page}) => {
@@ -554,6 +578,337 @@ for (const change of ['account', 'issuer']) {
         await expect(dialog).toBeHidden();
         await expect(page.getByText('Alex Chen (@alex_demo)', {exact: true})).toBeHidden();
         expect(ledger.requests.filter(item => item.method !== 'GET')).toEqual([]);
+        assertThemeLedger(ledger);
+    });
+}
+
+for (const viewport of [
+    {name: 'desktop', width: 1440, height: 900},
+    {name: 'mobile', width: 390, height: 844}
+]) {
+    for (const id of ['admin-accounts', 'admin-services', 'admin-gateways', 'admin-notifications', 'admin-notification-detail']) {
+        test(`theme:admin ${id} ${viewport.name} approved structure`, async ({page}, info) => {
+            await page.setViewportSize(viewport);
+            const ledger = await openThemeCase(page, id);
+            if (id === 'admin-accounts') {
+                if (viewport.name === 'mobile') {
+                    await expect(page.locator('.admin-accounts-mobile-list')).toBeVisible();
+                    await page.locator('.admin-accounts-mobile-card').first().click();
+                }
+                await expect(page.getByRole('tab', {name: 'Access', exact: true})).toHaveAttribute('aria-selected', 'true');
+                await expect(page.getByRole('tab', {name: 'Profile', exact: true})).toBeVisible();
+                await expect(page.getByRole('tab', {name: 'Identity', exact: true})).toBeVisible();
+            }
+            if (id === 'admin-services') {
+                if (viewport.name === 'desktop') await expect(page.locator('.service-health-table thead')).toBeVisible();
+                await expect(page.getByRole('tab', {name: /^Services/})).toHaveAttribute('aria-selected', 'true');
+                await expect(page.getByRole('tab', {name: /^Notifications/})).toBeVisible();
+                await expect(page.getByRole('tab', {name: /^Trader Sync/})).toBeVisible();
+                await expect(page.locator('.service-health-error').filter({hasText: 'Health check timed out'})).toBeVisible();
+            }
+            if (id === 'admin-gateways') {
+                await expect(page.getByRole('tab', {name: /^Gateways/})).toHaveAttribute('aria-selected', 'true');
+                await expect(page.getByRole('tab', {name: /^Live Probe/})).toBeVisible();
+                await expect(page.getByText('192.0.2.11:8099', {exact: true}).first()).toBeVisible();
+            }
+            if (id === 'admin-notification-detail') {
+                await expect(page.getByRole('heading', {name: 'Delivery record', exact: true})).toBeVisible();
+                await expect(page.getByRole('heading', {name: 'Delivery timeline', exact: true})).toBeVisible();
+                await expect(page.getByText('Telegram may have received this message. It will not be resent automatically.')).toBeVisible();
+            }
+            await page.mouse.move(0, 0);
+            await assertThemeLayout(page);
+            await page.screenshot({path: info.outputPath(`${id}-${viewport.name}.png`), fullPage: true, animations: 'disabled'});
+            expect(ledger.requests.filter(request => request.method !== 'GET')).toHaveLength(0);
+            assertThemeLedger(ledger);
+        });
+    }
+}
+
+test('theme:admin service health reflows by container at 720px and 200% root text', async ({page}, info) => {
+    await page.setViewportSize({width: 720, height: 900});
+    const ledger = await openThemeCase(page, 'admin-services');
+    const status = page.locator('.service-health-status').filter({hasText: 'Unreachable'});
+    const error = page.locator('.service-health-error').filter({hasText: 'Health check timed out after 5 seconds.'});
+    const font = await status.locator('.ant-tag').evaluate(element => parseFloat(getComputedStyle(element).fontSize));
+    await page.evaluate(() => (document.documentElement.style.fontSize = '200%'));
+    await expect.poll(() => status.locator('.ant-tag').evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeCloseTo(font * 2, 1);
+    await expect(page.locator('.service-health-table thead')).toBeHidden();
+    const [a, b] = await Promise.all([status.boundingBox(), error.boundingBox()]);
+    expect(b!.y).toBeGreaterThanOrEqual(a!.y + a!.height);
+    await expect(error).toHaveText('Health check timed out after 5 seconds.');
+    expect(await error.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await assertThemeLayout(page);
+    await page.mouse.move(0, 0);
+    await page.screenshot({path: info.outputPath('service-text-200.png'), fullPage: true, animations: 'disabled'});
+    assertThemeLedger(ledger);
+});
+
+for (const viewport of [
+    {name: 'desktop', width: 1440, height: 900},
+    {name: 'mobile', width: 390, height: 844}
+]) {
+    test(`theme:admin independent sources and probe diagnostics ${viewport.name}`, async ({page}, info) => {
+        await page.setViewportSize(viewport);
+        let ledger = await openThemeCase(page, 'admin-services');
+        await page.getByRole('tab', {name: /^Notifications/}).click();
+        await expect(page.getByText('55000 ms', {exact: true})).toBeVisible();
+        await expect(page.getByRole('table', {name: 'Delivery queues'})).toBeVisible();
+        await expect(page.getByText(/Last received:/)).toBeVisible();
+        await expect(page.getByText(/Last checked:/)).toBeHidden();
+        await page.mouse.move(0, 0);
+        await page.screenshot({path: info.outputPath(`notification-runtime-${viewport.name}.png`), fullPage: true, animations: 'disabled'});
+        await page.getByRole('tab', {name: /^Trader Sync/}).click();
+        await expect(page.getByText('collector-demo-07', {exact: true})).toBeVisible();
+        await expect(page.getByText('9007199254740993', {exact: true}).filter({visible: true}).first()).toBeVisible();
+        await expect(page.getByText(/As of:/)).toContainText('13:20:03');
+        await page.mouse.move(0, 0);
+        await page.screenshot({path: info.outputPath(`trader-runtime-${viewport.name}.png`), fullPage: true, animations: 'disabled'});
+        assertThemeLedger(ledger);
+        ledger = await openThemeCase(page, 'admin-gateways');
+        await page.getByRole('tab', {name: /^Live Probe/}).click();
+        await expect(page.getByRole('heading', {name: 'Latest probe'})).toBeVisible();
+        await expect(page.getByText('16 / 18', {exact: true})).toBeVisible();
+        await page.getByRole('tab', {name: 'By API Key', exact: true}).click();
+        await expect(page.getByText('key-01', {exact: true}).filter({visible: true})).toBeVisible();
+        await page.getByText('Timing & run details', {exact: true}).click();
+        await expect(page.getByText('55555555-5555-4555-8555-555555555555', {exact: true})).toBeVisible();
+        await page.getByRole('tab', {name: 'By Gateway', exact: true}).click();
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await assertThemeLayout(page);
+        await page.mouse.move(0, 0);
+        await page.screenshot({path: info.outputPath(`probe-${viewport.name}.png`), fullPage: true, animations: 'disabled'});
+        expect(ledger.requests.filter(r => r.method !== 'GET')).toHaveLength(0);
+        assertThemeLedger(ledger);
+    });
+}
+
+test('theme:admin notification filters survive detail return and test send is single flight with failure retained', async ({page}, info) => {
+    await page.setViewportSize({width: 390, height: 844});
+    const ledger = await openThemeCase(page, 'admin-notifications');
+    await page.getByLabel('Filter by notification status').click();
+    await page.locator('.ant-select-item-option[title="unknown"]').click();
+    await page.getByLabel('Filter by Telegram chat').click();
+    await page.locator('.ant-select-item-option[title="prod"]').click();
+    await page.getByRole('button', {name: 'Market movement threshold reached', exact: true}).filter({visible: true}).click();
+    await page.getByRole('button', {name: 'All notifications', exact: true}).click();
+    await expect(page).toHaveURL(/status=unknown.*chat=prod/);
+    await expect(page.locator('.system-notification-filters .ant-select').first()).toContainText('unknown');
+    await page.getByRole('button', {name: 'Test Notification', exact: true}).click();
+    const modal = page.getByRole('dialog', {name: 'Test Notification', exact: true});
+    await modal.getByLabel('Topic Label').fill('  Connectivity check  ');
+    await page.mouse.move(0, 0);
+    await page.screenshot({path: info.outputPath('test-notification-mobile.png'), animations: 'disabled'});
+    await modal.getByRole('button', {name: 'Send Test Notification', exact: true}).click();
+    await expect.poll(() => ledger.requests.filter(r => r.method === 'POST').length).toBe(1);
+    await expect(modal.getByLabel('Topic Label')).toBeDisabled();
+    await expect(modal.getByRole('button', {name: 'Cancel', exact: true})).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(modal).toBeVisible();
+    await expect(page.getByText('Test notification failed', {exact: true})).toBeVisible();
+    await expect(modal.getByLabel('Topic Label')).toHaveValue('  Connectivity check  ');
+    expect(ledger.requests.filter(r => r.method === 'POST').map(r => r.body)).toEqual([{topicLabel: 'Connectivity check'}]);
+    assertThemeLedger(ledger);
+});
+
+test('theme:admin account conflict preserves hidden Token aggregate and mobile confirmation boundaries', async ({page}, info) => {
+    await page.setViewportSize({width: 390, height: 844});
+    const ledger = await openThemeCase(page, 'admin-accounts');
+    await page.getByLabel('Search accounts').fill('mira');
+    await page.getByLabel('Search accounts').press('Enter');
+    await page.mouse.move(0, 0);
+    await page.screenshot({path: info.outputPath('accounts-directory-mobile.png'), fullPage: true, animations: 'disabled'});
+    await page.locator('.admin-accounts-mobile-card').first().click();
+    await page.getByRole('switch', {name: 'API Key access for @mira.chen'}).click();
+    await page.getByRole('button', {name: 'Save access', exact: true}).click();
+    const modal = page.getByRole('dialog');
+    const cancel = modal.getByRole('button', {name: 'Cancel', exact: true}),
+        apply = modal.getByRole('button', {name: 'Apply changes', exact: true});
+    await expect(cancel).toBeFocused();
+    await cancel.press('Shift+Tab');
+    await expect(apply).toBeFocused();
+    await apply.press('Tab');
+    await expect(cancel).toBeFocused();
+    const [a, b] = await Promise.all([cancel.boundingBox(), apply.boundingBox()]);
+    expect(b!.y).toBeGreaterThanOrEqual(a!.y + a!.height);
+    expect(b!.x).toBeCloseTo(a!.x, 0);
+    expect(b!.x + b!.width).toBeCloseTo(a!.x + a!.width, 0);
+    await page.mouse.move(0, 0);
+    await page.screenshot({path: info.outputPath('account-access-confirm-mobile.png'), animations: 'disabled'});
+    await apply.click();
+    await expect(page.getByText(/stale access draft was discarded/)).toBeVisible();
+    await expect(page.getByRole('switch', {name: 'API Key access for @mira.chen'})).toBeChecked();
+    const writes = ledger.requests.filter(r => r.method === 'PUT');
+    expect(writes).toHaveLength(1);
+    expect((writes[0].body as any).moduleAccess).toHaveLength(11);
+    expect((writes[0].body as any).moduleAccess.find((entry: any) => entry.module === 8)).toEqual({module: 8, dataAccess: 1});
+    await page.getByRole('button', {name: 'Back to accounts', exact: true}).click();
+    await expect(page.getByLabel('Search accounts')).toHaveValue('mira');
+    expect(new URL(page.url()).searchParams.get('query')).toBe('mira');
+    assertThemeLedger(ledger);
+});
+
+test('theme:admin role revalidation clears notification drafts and dialogs, then allows retry', async ({page}) => {
+    const {themeCases} = await import('./theme-refactor/cases');
+    const {installThemeCase} = await import('./theme-refactor/routes');
+    const scenario = structuredClone(themeCases.find(c => c.id === 'admin-notifications')!);
+    const role = scenario.replies.find(r => r.path === '/api/v1/session/userinfo')!;
+    role.delayMs = 1200;
+    role.status = 503;
+    role.json = {error: {message: 'role validation unavailable'}};
+    const denied = scenario.replies.find(r => r.method === 'POST')!;
+    denied.status = 403;
+    denied.delayMs = 0;
+    denied.json = {code: 7, message: 'administrator access changed', reason: 'ACCOUNT_ADMIN_REQUIRED'};
+    const ledger = await installThemeCase(page, scenario);
+    await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/admin/notifications`);
+    await page.getByRole('button', {name: 'Test Notification', exact: true}).click();
+    await page.getByLabel('Topic Label').fill('Old session draft');
+    await page.getByRole('button', {name: 'Send Test Notification', exact: true}).click();
+    await expect(page.getByRole('dialog')).toBeHidden();
+    await expect(page.getByText('Market movement threshold reached', {exact: true})).toBeHidden();
+    await expect(page.getByText('Could not verify administrator access', {exact: true})).toBeVisible();
+    await expect(page.getByRole('button', {name: /Retry/i})).toBeEnabled();
+    role.status = 200;
+    role.delayMs = 0;
+    role.json = structuredClone((scenario.replies[0].json as any).session.userInfo);
+    await page.getByRole('button', {name: /Retry/i}).click();
+    await expect(page.getByRole('button', {name: 'Test Notification', exact: true})).toBeVisible();
+    await page.getByRole('button', {name: 'Test Notification', exact: true}).click();
+    await expect(page.getByLabel('Topic Label')).toHaveValue('');
+    assertThemeLedger(ledger);
+});
+
+test('theme:admin latest running probe is followed without a new write', async ({page}) => {
+    const {themeCases} = await import('./theme-refactor/cases');
+    const {installThemeCase} = await import('./theme-refactor/routes');
+    const scenario = structuredClone(themeCases.find(c => c.id === 'admin-gateways')!);
+    const latest = scenario.replies.find(r => r.path.endsWith('/latest'))!;
+    const completed = structuredClone(latest.json as any);
+    (latest.json as any).status = 'running';
+    (latest.json as any).result = '';
+    scenario.replies.push({method: 'GET', path: `/api/v1/etherscan-gateway-probe-runs/${completed.runId}`, realm: 'admin', status: 200, json: completed, delayMs: 1000});
+    const ledger = await installThemeCase(page, scenario);
+    await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/admin/etherscan-gateways`);
+    await page.getByRole('tab', {name: /^Live Probe/}).click();
+    await expect(page.getByLabel('Interval (ms)', {exact: true})).toBeDisabled();
+    await expect(page.getByLabel('Interval (ms)', {exact: true})).toBeEnabled();
+    await expect(page.getByText('16 / 18', {exact: true})).toBeVisible();
+    expect(ledger.requests.filter(r => r.method !== 'GET')).toHaveLength(0);
+    assertThemeLedger(ledger);
+});
+
+test('theme:admin failed probe start keeps prior parameters and results and sends only once', async ({page}) => {
+    const ledger = await openThemeCase(page, 'admin-gateways');
+    await page.getByRole('tab', {name: /^Live Probe/}).click();
+    await page.getByLabel('Interval (ms)', {exact: true}).fill('25');
+    await page.getByRole('button', {name: 'Run Probe', exact: true}).click();
+    await expect(page.getByLabel('Interval (ms)', {exact: true})).toBeDisabled();
+    await expect(page.getByText('Probe failed to start', {exact: true})).toBeVisible();
+    await expect(page.getByText('16 / 18', {exact: true})).toBeVisible();
+    await expect(page.getByText(/3 API keys · 3 gateways · 6 requests \/ key · 10 ms interval/)).toBeVisible();
+    expect(ledger.requests.filter(r => r.method === 'POST').map(r => r.body)).toEqual([{interval_ms: 25, requests_per_key: 6}]);
+    assertThemeLedger(ledger);
+});
+
+test('theme:admin member API key permission cannot open administrator operations', async ({page}) => {
+    const {themeCases} = await import('./theme-refactor/cases');
+    const {installThemeCase} = await import('./theme-refactor/routes');
+    const scenario = structuredClone(themeCases.find(c => c.id === 'admin-accounts')!);
+    const user = (scenario.replies[0].json as any).session.userInfo;
+    user.administrator = false;
+    user.accountId = '11111111-1111-4111-8111-111111111111';
+    user.access.apiKeyEnabled = true;
+    const ledger = await installThemeCase(page, scenario);
+    await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/admin/accounts`);
+    await expect(page.getByRole('heading', {name: 'Administrator access required'})).toBeVisible();
+    expect(ledger.requests.filter(r => r.path !== '/api/v1/app/bootstrap')).toEqual([]);
+    assertThemeLedger(ledger);
+});
+
+test('theme:admin one unavailable source retains its own facts while another source refreshes', async ({page}) => {
+    const {themeCases} = await import('./theme-refactor/cases');
+    const {installThemeCase} = await import('./theme-refactor/routes');
+    const scenario = structuredClone(themeCases.find(c => c.id === 'admin-services')!);
+    const ledger = await installThemeCase(page, scenario);
+    await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/admin/service-status`);
+    await page.getByRole('tab', {name: /^Notifications/}).click();
+    await expect(page.getByText('55000 ms', {exact: true})).toBeVisible();
+    const time = await page.getByText(/Last received:/).textContent();
+    const notification = scenario.replies.find(r => r.path === '/api/v1/admin/notification-runtime/status')!;
+    notification.status = 503;
+    notification.json = {message: 'notification unavailable'};
+    (scenario.replies.find(r => r.path === '/api/v1/admin/trader-sync/status')!.json as any).status.asOf = '2026-09-14T06:30:00Z';
+    await page.getByRole('button', {name: 'Refresh data', exact: true}).click();
+    await expect(page.getByText('Notification runtime unavailable', {exact: true})).toBeVisible();
+    await expect(page.getByText(/Last received:/)).toHaveText(time!);
+    await expect(page.getByText('55000 ms', {exact: true})).toBeVisible();
+    await page.getByRole('tab', {name: /^Trader Sync/}).click();
+    await expect(page.getByText(/As of:/)).toContainText('14:30:00');
+    assertThemeLedger(ledger);
+});
+
+test('theme:admin a late profile save cannot overwrite a newly selected account draft', async ({page}) => {
+    const {themeCases} = await import('./theme-refactor/cases');
+    const {installThemeCase} = await import('./theme-refactor/routes');
+    const scenario = structuredClone(themeCases.find(c => c.id === 'admin-accounts')!);
+    scenario.replies.push({
+        method: 'PUT',
+        path: '/api/v1/account/11111111-1111-4111-8111-111111111111/profile',
+        realm: 'admin',
+        status: 200,
+        json: {displayName: 'Saved Mira', tier: 'ACCOUNT_TIER_STANDARD', avatarUrl: '', revision: 5},
+        delayMs: 1800
+    });
+    const ledger = await installThemeCase(page, scenario);
+    await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/admin/accounts`);
+    await page.getByRole('tab', {name: 'Profile', exact: true}).click();
+    const name = page.locator('.admin-account-profile-grid input[type="text"]:not([readonly])');
+    await name.fill('Saved Mira');
+    await page.getByRole('button', {name: 'Save name', exact: true}).click();
+    await expect.poll(() => ledger.requests.filter(r => r.method === 'PUT').length).toBe(1);
+    await page.locator('.admin-account-list__item').filter({hasText: 'Noah Park'}).click();
+    await page.getByRole('button', {name: 'Discard and switch', exact: true}).click();
+    await expect(name).toHaveValue('Noah Park');
+    await page.waitForResponse(response => response.request().method() === 'PUT' && response.url().includes('/profile'));
+    await expect(name).toHaveValue('Noah Park');
+    assertThemeLedger(ledger);
+});
+
+for (const size of [
+    {width: 1440, height: 900, scale: 1},
+    {width: 320, height: 844, scale: 2}
+]) {
+    test(`theme:admin directory search text fits at ${size.width}px root${size.scale * 100}`, async ({page}, info) => {
+        await page.setViewportSize(size);
+        const ledger = await openThemeCase(page, 'admin-accounts');
+        await page.evaluate(scale => {
+            document.documentElement.style.fontSize = `${16 * scale}px`;
+        }, size.scale);
+        const button = page.locator('.admin-account-directory-toolbar').getByRole('button', {name: 'Search', exact: true});
+        await expect(button).toBeVisible();
+        const bounds = await button.evaluate(element => {
+            const span = element.querySelector('span')!;
+            const range = document.createRange();
+            range.selectNodeContents(span);
+            const text = range.getBoundingClientRect(),
+                box = element.getBoundingClientRect();
+            return {
+                lines: new Set(Array.from(range.getClientRects()).map(rect => rect.top)).size,
+                text: {left: text.left, right: text.right, top: text.top, bottom: text.bottom},
+                box: {left: box.left, right: box.right, top: box.top, bottom: box.bottom},
+                font: parseFloat(getComputedStyle(span).fontSize)
+            };
+        });
+        expect(bounds.lines).toBe(1);
+        expect(bounds.font).toBeGreaterThanOrEqual(14 * size.scale);
+        expect(bounds.text.left).toBeGreaterThanOrEqual(bounds.box.left);
+        expect(bounds.text.right).toBeLessThanOrEqual(bounds.box.right);
+        expect(bounds.text.top).toBeGreaterThanOrEqual(bounds.box.top);
+        expect(bounds.text.bottom).toBeLessThanOrEqual(bounds.box.bottom);
+        await page.mouse.move(0, 0);
+        await assertThemeLayout(page);
+        await page.screenshot({path: info.outputPath(`admin-directory-${size.width}-root${size.scale * 100}.png`), fullPage: true, animations: 'disabled'});
         assertThemeLedger(ledger);
     });
 }

@@ -1,3 +1,4 @@
+import adminCases from './fixtures/admin-operations.json';
 import identityCases from './fixtures/identity.json';
 import type {ThemeCase, ThemeReply} from './contracts';
 
@@ -59,6 +60,7 @@ const authenticated = (options: {administrator?: boolean; active?: boolean} = {}
 
 export const themeCases: ThemeCase[] = [
     ...(identityCases as ThemeCase[]),
+    ...(adminCases as ThemeCase[]),
     {
         id: 'member-bootstrap-error',
         route: '/login',

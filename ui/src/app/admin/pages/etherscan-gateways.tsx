@@ -1,7 +1,10 @@
-import {Button, Empty, Form, InputNumber, Progress, Space, Typography} from 'antd';
+import {OperationFacts} from '../components/operation-facts';
+import {Alert, Button, Empty, Form, InputNumber, Progress, Tabs, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
-import {AppPage, MetricRow, ResourceTable, Section, StatusTag, TruncatedText, useAsyncData} from '../../components';
+import {AppPage, ResourceTable, Section, StatusTag} from '../../components';
+import {useAdminReadScope} from '../read-scope';
+import {useVisibleQuery} from '../../shared/use-visible-query';
 import {Context, useAuthorization} from '../../shared/context';
 import {formatBeijingUnixSeconds} from '../../shared/format';
 import {adminServices as services} from '../services';
@@ -165,14 +168,6 @@ const resultTag = (run?: EtherscanGatewayProbeRun) => (
 
 const TonePill = (props: {tone: ProbeTone; children: React.ReactNode}) => <span className={`etherscan-probe-pill ${toneClass(props.tone)}`}>{props.children}</span>;
 
-const ProbeKPI = (props: {label: string; value: React.ReactNode; detail?: React.ReactNode; tone?: ProbeTone}) => (
-    <div className={`etherscan-probe-kpi ${toneClass(props.tone || 'neutral')}`}>
-        <span className='etherscan-probe-kpi__label'>{props.label}</span>
-        <strong className='etherscan-probe-kpi__value'>{props.value ?? '-'}</strong>
-        {props.detail && <span className='etherscan-probe-kpi__detail'>{props.detail}</span>}
-    </div>
-);
-
 const ProbeRate = (props: {counts?: EtherscanGatewayProbeCounts; total?: number}) => {
     const tone = rowTone(props.counts);
     const rate = successRateValue(props.counts, props.total);
@@ -183,21 +178,6 @@ const ProbeRate = (props: {counts?: EtherscanGatewayProbeCounts; total?: number}
             <Typography.Text className={`etherscan-probe-rate__value ${toneClass(tone)}`}>{successRate(props.counts, props.total)}</Typography.Text>
         </div>
     );
-};
-
-const gatewayStatusRowClassName = (item: EtherscanGatewayStatus) => {
-    if (item.status === 'unreachable') {
-        return 'etherscan-probe-row--bad';
-    }
-    if (isRuntimeError(item)) {
-        return 'etherscan-probe-row--warn';
-    }
-    return '';
-};
-
-const probeSummaryRowClassName = (item: {counts: EtherscanGatewayProbeCounts}) => {
-    const tone = rowTone(item.counts);
-    return tone === 'bad' ? 'etherscan-probe-row--bad' : tone === 'warn' ? 'etherscan-probe-row--warn' : '';
 };
 
 const sampleTone = (sample: string): ProbeTone => {
@@ -219,299 +199,315 @@ const sampleTone = (sample: string): ProbeTone => {
 };
 
 export const EtherscanGatewaysPage = () => {
+    const scope = useAdminReadScope('etherscan-workspace');
+    return scope.isCurrent() ? (
+        <EtherscanWorkspace key={scope.key} />
+    ) : (
+        <AppPage title='Etherscan Gateways' loading>
+            <p>Checking administrator access…</p>
+        </AppPage>
+    );
+};
+const EtherscanWorkspace = () => {
     const authorization = useAuthorization();
+    const scope = useAdminReadScope('etherscan');
     const ctx = React.useContext(Context);
     const [form] = Form.useForm();
-    const data = useAsyncData(() => services.serviceStatus.listEtherscanGatewayStatuses(), []);
-    const latestProbe = useAsyncData(() => services.serviceStatus.getLatestEtherscanGatewayProbeRun(), []);
+    const data = useVisibleQuery(() => services.serviceStatus.listEtherscanGatewayStatuses(), useAdminReadScope('etherscan-health'), 10000);
+    const latestProbe = useVisibleQuery(() => services.serviceStatus.getLatestEtherscanGatewayProbeRun(), useAdminReadScope('etherscan-latest'), 10000);
     const [probeRun, setProbeRun] = React.useState<EtherscanGatewayProbeRun>();
     const [probeSubmitting, setProbeSubmitting] = React.useState(false);
-    const reloadRef = React.useRef(data.reload);
-    reloadRef.current = data.reload;
-    const latestProbeReloadRef = React.useRef(latestProbe.reload);
-    latestProbeReloadRef.current = latestProbe.reload;
-
+    const [startError, setStartError] = React.useState('');
+    const requestRef = React.useRef<ReturnType<typeof services.serviceStatus.runEtherscanGatewayProbe>>();
+    const mounted = React.useRef(true);
+    React.useEffect(
+        () => () => {
+            mounted.current = false;
+            requestRef.current?.abort?.();
+        },
+        []
+    );
+    const seedRun = probeRun || latestProbe.data;
+    const runScope = {...scope, key: JSON.stringify([scope.key, seedRun?.runID, seedRun?.status]), isCurrent: () => scope.isCurrent() && seedRun?.status === 'running'};
+    const polled = useVisibleQuery(() => services.serviceStatus.getEtherscanGatewayProbeRun(seedRun!.runID), runScope, 1000);
     React.useEffect(() => {
-        const timer = window.setInterval(() => reloadRef.current(), 10000);
-        return () => window.clearInterval(timer);
-    }, []);
-
+        if (polled.data && polled.data.status !== 'running') setProbeRun(polled.data);
+    }, [polled.data]);
+    const activeRun = polled.data || seedRun;
+    const probeRunning = activeRun?.status === 'running';
+    const hasProbeResult = Boolean(activeRun?.status && activeRun.status !== 'idle');
     const items = data.data?.items || [];
     const checkedAt = formatBeijingUnixSeconds(data.data?.checkedAt) || 'Not checked';
     const running = items.filter(isRunning).length;
     const unreachable = items.filter(item => item.status === 'unreachable').length;
     const errors = items.filter(isRuntimeError).length;
-    const activeRun = probeRun || latestProbe.data;
-    const hasProbeResult = Boolean(activeRun && activeRun.status && activeRun.status !== 'idle');
-    const probeRunning = activeRun?.status === 'running';
-
-    const columns: ColumnsType<EtherscanGatewayStatus> = [
-        {title: 'Address', render: item => <TruncatedText value={item.address} copyable={true} />},
-        {
-            title: 'Reachable',
-            render: item => <StatusTag value={item.reachable ? 'Yes' : 'No'} positive={item.reachable} negative={!item.reachable} />
-        },
-        {title: 'Runtime', render: runtimeTag},
-        {title: 'Latency', render: item => formatLatency(item.latencyMS)},
-        {title: 'Etherscan Base URL', render: item => <TruncatedText value={item.etherscanBaseURL} copyable={Boolean(item.etherscanBaseURL)} />},
-        {title: 'Checked', render: item => formatUnixSeconds(item.checkedAt)},
-        {title: 'Error', render: item => <TruncatedText value={item.errorMessage} copyable={Boolean(item.errorMessage)} />}
-    ];
-
-    const gatewayProbeColumns: ColumnsType<EtherscanGatewayProbeGatewaySummary> = [
-        {title: 'Gateway', render: item => <TruncatedText value={item.gateway} copyable={true} />},
-        {title: 'Result', render: item => <TonePill tone={rowTone(item.counts)}>{rowResultLabel(item.counts)}</TonePill>},
-        {title: 'Success Rate', render: item => <ProbeRate counts={item.counts} />},
-        {title: 'Success', render: item => `${item.counts.success}/${countsTotal(item.counts)}`},
-        {title: 'Failures', render: item => failureCount(item.counts)},
-        {
-            title: 'Main Cause',
-            render: item => {
-                const cause = mainFailureCause(item.counts);
-                return <TonePill tone={cause.tone}>{cause.value > 0 ? `${cause.label} ${cause.value}` : cause.label}</TonePill>;
-            }
-        }
-    ];
-
-    const keyProbeColumns: ColumnsType<EtherscanGatewayProbeKeySummary> = [
-        {title: 'Key Label', render: item => <TruncatedText value={item.keyLabel} copyable={false} />},
-        {title: 'Result', render: item => <TonePill tone={rowTone(item.counts)}>{rowResultLabel(item.counts)}</TonePill>},
-        {title: 'Success Rate', render: item => <ProbeRate counts={item.counts} />},
-        {title: 'Success', render: item => `${item.counts.success}/${countsTotal(item.counts)}`},
-        {title: 'Failures', render: item => failureCount(item.counts)},
-        {
-            title: 'Main Cause',
-            render: item => {
-                const cause = mainFailureCause(item.counts);
-                return <TonePill tone={cause.tone}>{cause.value > 0 ? `${cause.label} ${cause.value}` : cause.label}</TonePill>;
-            }
-        }
-    ];
-
-    React.useEffect(() => {
-        if (!probeRun?.runID || probeRun.status !== 'running') {
-            return;
-        }
-
-        let cancelled = false;
-        const poll = async () => {
-            try {
-                const next = await services.serviceStatus.getEtherscanGatewayProbeRun(probeRun.runID);
-                if (!cancelled) {
-                    setProbeRun(next);
-                    if (next.status !== 'running') {
-                        latestProbeReloadRef.current();
-                    }
-                }
-            } catch (err: any) {
-                if (!cancelled) {
-                    ctx.notifications.error('Probe refresh failed', err?.message || 'Could not refresh probe status.');
-                }
-            }
-        };
-        const timer = window.setInterval(poll, 1000);
-        poll();
-        return () => {
-            cancelled = true;
-            window.clearInterval(timer);
-        };
-    }, [ctx.notifications, probeRun?.runID, probeRun?.status]);
-
-    const runProbe = async (values: {intervalMS?: number; requestsPerKey?: number}) => {
-        if (!authorization.isAdmin) {
-            return;
-        }
-        const intervalMS = Number(values.intervalMS || 10);
-        const requestsPerKey = Number(values.requestsPerKey || 6);
+    const runProbe = async (values: {intervalMS: number; requestsPerKey: number}) => {
+        if (!authorization.isAdmin || !scope.isCurrent() || requestRef.current || probeRunning) return;
         setProbeSubmitting(true);
+        setStartError('');
+        const request = services.serviceStatus.runEtherscanGatewayProbe({intervalMS: values.intervalMS, requestsPerKey: values.requestsPerKey});
+        requestRef.current = request;
         try {
-            const run = await services.serviceStatus.runEtherscanGatewayProbe({intervalMS, requestsPerKey});
-            setProbeRun(run);
-            ctx.notifications.info('Probe started', run.runID);
-        } catch (err: any) {
-            ctx.notifications.error('Probe failed to start', err?.message || 'Could not start the Etherscan Gateway probe.');
+            const result = await request;
+            if (!mounted.current || !scope.isCurrent()) return;
+            setProbeRun(result);
+            ctx.notifications.info('Probe started', result.runID);
+        } catch (error: any) {
+            if (mounted.current && scope.isCurrent()) setStartError(error?.message || 'Could not start the Etherscan Gateway probe.');
         } finally {
-            setProbeSubmitting(false);
+            requestRef.current = undefined;
+            if (mounted.current && scope.isCurrent()) setProbeSubmitting(false);
         }
     };
-
-    const activeRunTone = probeTone(activeRun);
-    const activeRunMainCause = mainFailureCause(activeRun?.counts);
-    const activeRunFailures = failureCount(activeRun?.counts);
-    const activeRunRate = successRateValue(activeRun?.counts, activeRun?.total);
-    const activeRunProgressStatus = activeRunTone === 'bad' ? 'exception' : activeRunTone === 'good' ? 'success' : activeRunTone === 'running' ? 'active' : 'normal';
-
+    const summaryColumns: ColumnsType<EtherscanGatewayProbeGatewaySummary | EtherscanGatewayProbeKeySummary> = [
+        {
+            title: 'Gateway / Key',
+            render: item => (
+                <Typography.Text className='athena-identifier' copyable>
+                    {'gateway' in item ? item.gateway : item.keyLabel}
+                </Typography.Text>
+            )
+        },
+        {title: 'Result', render: item => <TonePill tone={rowTone(item.counts)}>{rowResultLabel(item.counts)}</TonePill>},
+        {title: 'Success rate', className: 'athena-numeric-column', render: item => <ProbeRate counts={item.counts} />},
+        {title: 'Success', className: 'athena-numeric-column', render: item => `${item.counts.success}/${countsTotal(item.counts)}`},
+        {title: 'Failures', className: 'athena-numeric-column', render: item => failureCount(item.counts)},
+        {
+            title: 'Main cause',
+            render: item => {
+                const cause = mainFailureCause(item.counts);
+                return (
+                    <TonePill tone={cause.tone}>
+                        {cause.label} {cause.value || ''}
+                    </TonePill>
+                );
+            }
+        }
+    ];
+    const summary = (item: EtherscanGatewayProbeGatewaySummary | EtherscanGatewayProbeKeySummary) => (
+        <article className='etherscan-summary-row'>
+            <Typography.Text className='athena-identifier' copyable>
+                {'gateway' in item ? item.gateway : item.keyLabel}
+            </Typography.Text>
+            <OperationFacts
+                columns={1}
+                items={[
+                    {label: 'Result', value: <TonePill tone={rowTone(item.counts)}>{rowResultLabel(item.counts)}</TonePill>},
+                    {label: 'Success rate', value: successRate(item.counts)},
+                    {label: 'Success', value: `${item.counts.success}/${countsTotal(item.counts)}`},
+                    {label: 'Failures', value: failureCount(item.counts)},
+                    {label: 'Main cause', value: `${mainFailureCause(item.counts).label} ${mainFailureCause(item.counts).value}`}
+                ]}
+            />
+        </article>
+    );
     return (
-        <AppPage
-            title='Etherscan Gateways'
-            subtitle={`gRPC runtime status from ETHERSCAN_GATEWAY_IPS · Last checked ${checkedAt}`}
-            loading={data.loading}
-            error={data.error}
-            onRefresh={data.reload}>
-            <Section title='Summary'>
-                <MetricRow
-                    items={[
-                        {label: 'Total', value: items.length},
-                        {label: 'Running', value: running, tone: running === items.length && items.length > 0 ? 'good' : undefined},
-                        {label: 'Unreachable', value: unreachable, tone: unreachable > 0 ? 'bad' : undefined},
-                        {label: 'Errors', value: errors, tone: errors > 0 ? 'bad' : undefined}
-                    ]}
-                />
-            </Section>
-            <Section title='Gateways'>
-                {items.length === 0 && !data.loading ? (
-                    <Empty description='No Etherscan gateway IPs configured' />
-                ) : (
-                    <ResourceTable
-                        rowKey='address'
-                        label='Etherscan gateways'
-                        items={items}
-                        columns={columns}
-                        loading={data.loading}
-                        scrollX={1320}
-                        stickyHeader={true}
-                        rowClassName={gatewayStatusRowClassName}
-                    />
-                )}
-            </Section>
-            <Section title='Live Probe'>
-                <Form form={form} layout='inline' initialValues={{intervalMS: 10, requestsPerKey: 6}} onFinish={runProbe}>
-                    <Form.Item name='intervalMS' label='Interval ms' rules={[{required: true}]}>
-                        <InputNumber min={1} max={1000} precision={0} disabled={probeSubmitting || probeRunning} style={{width: 120}} />
-                    </Form.Item>
-                    <Form.Item name='requestsPerKey' label='Requests / API key' rules={[{required: true}]}>
-                        <InputNumber min={1} max={20} precision={0} disabled={probeSubmitting || probeRunning} style={{width: 140}} />
-                    </Form.Item>
-                    <Form.Item>
-                        <Button type='primary' htmlType='submit' loading={probeSubmitting || probeRunning} disabled={!authorization.isAdmin}>
-                            Run Probe
-                        </Button>
-                    </Form.Item>
-                    <Form.Item>
-                        <Space>
-                            <Typography.Text type='secondary'>Status</Typography.Text>
-                            {resultTag(activeRun)}
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </Section>
-            {hasProbeResult && activeRun && (
-                <Section title='Probe Result'>
-                    <Space orientation='vertical' size='middle' className='etherscan-probe-stack'>
-                        <div className={`etherscan-probe-hero ${toneClass(activeRunTone)}`}>
-                            <div className='etherscan-probe-hero__main'>
-                                <TonePill tone={activeRunTone}>{probeResultLabel(activeRun)}</TonePill>
-                                <Typography.Text className='etherscan-probe-hero__title'>
-                                    Success {activeRun.counts.success}/{activeRun.total} · {successRate(activeRun.counts, activeRun.total)}
-                                </Typography.Text>
-                                <Typography.Text className={`etherscan-probe-hero__delta ${toneClass(activeRunTone)}`}>{requiredDeltaLabel(activeRun)}</Typography.Text>
-                            </div>
-                            <Typography.Text className='etherscan-probe-hero__meta'>
-                                {activeRun.keyCount} keys · {activeRun.gatewayCount} gateways · {activeRun.requestsPerKey} requests/key · {activeRun.intervalMS} ms interval
-                            </Typography.Text>
-                            {activeRun.total > 0 && (
-                                <Progress
-                                    percent={activeRunRate}
-                                    status={activeRunProgressStatus}
-                                    strokeColor={activeRunTone === 'warn' ? 'var(--athena-amber)' : undefined}
-                                    showInfo={false}
+        <AppPage title='Etherscan Gateways' subtitle='Gateway health and Etherscan request testing.' onRefresh={data.reload}>
+            <Tabs
+                className='admin-source-tabs'
+                defaultActiveKey='gateways'
+                items={[
+                    {
+                        key: 'gateways',
+                        label: (
+                            <span>
+                                Gateways<small>{data.loading ? 'Loading' : data.error ? 'Unavailable' : `${running} running · ${unreachable} unreachable`}</small>
+                            </span>
+                        ),
+                        children: (
+                            <Section title='Runtime status'>
+                                {data.error && <Alert type='error' title='Gateway health unavailable' description={data.error.message} />}
+                                {data.stale && <Alert type='warning' title='Stale gateway health — showing the last successful read' />}
+                                <p className='admin-source-note'>Last checked: {checkedAt} (UTC+8)</p>
+                                <OperationFacts
+                                    items={[
+                                        {label: 'Total', value: items.length},
+                                        {label: 'Running', value: <TonePill tone='good'>{running}</TonePill>},
+                                        {label: 'Unreachable', value: <TonePill tone={unreachable ? 'bad' : 'neutral'}>{unreachable}</TonePill>},
+                                        {label: 'Errors', value: errors}
+                                    ]}
                                 />
-                            )}
-                        </div>
-                        <div className='etherscan-probe-kpi-grid'>
-                            <ProbeKPI
-                                label='Success %'
-                                value={successRate(activeRun.counts, activeRun.total)}
-                                detail={`${activeRun.counts.success}/${activeRun.total} success`}
-                                tone={activeRunTone}
-                            />
-                            <ProbeKPI
-                                label='Success'
-                                value={`${activeRun.counts.success}/${activeRun.total}`}
-                                detail={`${activeRun.requiredSuccess} required`}
-                                tone={activeRunTone}
-                            />
-                            <ProbeKPI label='Required' value={activeRun.requiredSuccess} detail={requiredDeltaLabel(activeRun)} tone={activeRunTone} />
-                            <ProbeKPI
-                                label='Failures'
-                                value={activeRunFailures}
-                                detail={`${countsTotal(activeRun.counts)} completed`}
-                                tone={activeRunFailures > 0 ? 'warn' : 'good'}
-                            />
-                            <ProbeKPI
-                                label='Main Cause'
-                                value={activeRunMainCause.label}
-                                detail={activeRunMainCause.value > 0 ? `${activeRunMainCause.value} events` : 'no classified failures'}
-                                tone={activeRunMainCause.tone}
-                            />
-                        </div>
-                        <div className='etherscan-probe-breakdown' aria-label='Failure breakdown'>
-                            {failureCategories.map(category => {
-                                const value = activeRun.counts[category.key];
-                                const tone = value > 0 ? category.tone : 'neutral';
-                                return (
-                                    <div key={category.key} className={`etherscan-probe-breakdown__item ${toneClass(tone)}`}>
-                                        <span>{category.label}</span>
-                                        <strong>{value}</strong>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        <div className='etherscan-probe-timing'>
-                            <MetricRow
-                                items={[
-                                    {label: 'Interval', value: `${activeRun.intervalMS} ms`},
-                                    {label: 'Requests / Key', value: activeRun.requestsPerKey},
-                                    {label: 'Elapsed', value: formatDuration(activeRun.elapsedMS)},
-                                    {label: 'Start Spread', value: formatDuration(activeRun.startSpreadMS)},
-                                    {label: 'Started', value: formatUnixSeconds(activeRun.startedAt)},
-                                    {label: 'Finished', value: formatUnixSeconds(activeRun.finishedAt)}
-                                ]}
-                            />
-                        </div>
-                        {activeRun.errorMessage && <Typography.Text type='danger'>{activeRun.errorMessage}</Typography.Text>}
-                    </Space>
-                </Section>
-            )}
-            {hasProbeResult && activeRun && (
-                <Section title='By Gateway'>
-                    <ResourceTable<EtherscanGatewayProbeGatewaySummary>
-                        rowKey='gateway'
-                        label='Etherscan Gateway probe gateway summaries'
-                        items={activeRun.gatewaySummaries}
-                        columns={gatewayProbeColumns}
-                        scrollX={960}
-                        rowClassName={probeSummaryRowClassName}
-                    />
-                </Section>
-            )}
-            {hasProbeResult && activeRun && (
-                <Section title='By API Key'>
-                    <ResourceTable<EtherscanGatewayProbeKeySummary>
-                        rowKey='keyLabel'
-                        label='Etherscan Gateway probe API key summaries'
-                        items={activeRun.keySummaries}
-                        columns={keyProbeColumns}
-                        scrollX={960}
-                        rowClassName={probeSummaryRowClassName}
-                    />
-                </Section>
-            )}
-            {hasProbeResult && activeRun && activeRun.samples.length > 0 && (
-                <Section title='Error Samples'>
-                    <Space orientation='vertical' className='etherscan-probe-samples'>
-                        {activeRun.samples.map(sample => {
-                            const tone = sampleTone(sample);
-                            return (
-                                <div key={sample} className={`etherscan-probe-sample ${toneClass(tone)}`}>
-                                    <TonePill tone={tone}>{tone === 'warn' ? 'rate limit' : tone === 'bad' ? 'error' : 'sample'}</TonePill>
-                                    <TruncatedText value={sample} copyable={true} />
+                                <div className='etherscan-gateway-records'>
+                                    {items.map(item => (
+                                        <article className='etherscan-gateway-record' key={item.address}>
+                                            <div className='etherscan-gateway-facts'>
+                                                <Typography.Text className='athena-identifier' copyable>
+                                                    {item.address}
+                                                </Typography.Text>
+                                                <div>
+                                                    <span>Reachable</span>
+                                                    <StatusTag value={item.reachable ? 'Yes' : 'No'} positive={item.reachable} negative={!item.reachable} />
+                                                </div>
+                                                <div>
+                                                    <span>Runtime</span>
+                                                    {runtimeTag(item)}
+                                                </div>
+                                                <div>
+                                                    <span>Latency</span>
+                                                    <span className='athena-number'>{formatLatency(item.latencyMS)}</span>
+                                                </div>
+                                            </div>
+                                            <p className='admin-source-note'>Checked {formatUnixSeconds(item.checkedAt)} (UTC+8)</p>
+                                            <details className='admin-operation-details'>
+                                                <summary>Connection details</summary>
+                                                <Typography.Text className='athena-identifier' copyable={Boolean(item.etherscanBaseURL)}>
+                                                    {item.etherscanBaseURL || 'Base URL unavailable'}
+                                                </Typography.Text>
+                                            </details>
+                                            {item.errorMessage && (
+                                                <p className='etherscan-gateway-error'>
+                                                    <Typography.Text className='athena-identifier' type='danger' copyable>
+                                                        {item.errorMessage}
+                                                    </Typography.Text>
+                                                </p>
+                                            )}
+                                        </article>
+                                    ))}
                                 </div>
-                            );
-                        })}
-                    </Space>
-                </Section>
-            )}
+                                {!items.length && !data.loading && <Empty description='No Etherscan gateway IPs configured' />}
+                                <p className='admin-source-note'>Runtime health is separate from request test results. Open Live Probe to inspect the latest test.</p>
+                            </Section>
+                        )
+                    },
+                    {
+                        key: 'probe',
+                        label: (
+                            <span>
+                                Live Probe<small>{latestProbe.loading ? 'Loading' : latestProbe.error ? 'Unavailable' : probeResultLabel(activeRun)}</small>
+                            </span>
+                        ),
+                        children: (
+                            <>
+                                <Section title='Run a request test'>
+                                    <p>Sends requests using the configured API keys and gateways.</p>
+                                    <Form className='etherscan-probe-form' form={form} layout='vertical' initialValues={{intervalMS: 10, requestsPerKey: 6}} onFinish={runProbe}>
+                                        <Form.Item name='intervalMS' label='Interval (ms)' extra='1–1,000 ms' rules={[{required: true}]}>
+                                            <InputNumber min={1} max={1000} precision={0} disabled={probeSubmitting || probeRunning} />
+                                        </Form.Item>
+                                        <Form.Item name='requestsPerKey' label='Requests per API key' extra='1–20 requests' rules={[{required: true}]}>
+                                            <InputNumber min={1} max={20} precision={0} disabled={probeSubmitting || probeRunning} />
+                                        </Form.Item>
+                                        <Form.Item>
+                                            <Button type='primary' htmlType='submit' disabled={!authorization.isAdmin} loading={probeSubmitting || probeRunning}>
+                                                Run Probe
+                                            </Button>
+                                        </Form.Item>
+                                    </Form>
+                                    {startError && <Alert type='error' title='Probe failed to start' description={startError} />}
+                                </Section>
+                                <Section title='Latest probe' extra={resultTag(activeRun)}>
+                                    {latestProbe.error && (
+                                        <Alert
+                                            type='error'
+                                            title='Latest probe unavailable'
+                                            description={latestProbe.error.message}
+                                            action={<Button onClick={latestProbe.reload}>Retry</Button>}
+                                        />
+                                    )}
+                                    {polled.error && (
+                                        <Alert
+                                            type='error'
+                                            title='Probe refresh failed'
+                                            description={polled.error.message}
+                                            action={<Button onClick={polled.reload}>Retry</Button>}
+                                        />
+                                    )}
+                                    {!hasProbeResult && !latestProbe.loading && <Empty description='No probe has run yet' />}
+                                    {hasProbeResult && activeRun && (
+                                        <>
+                                            <p className='admin-source-note'>Finished {formatUnixSeconds(activeRun.finishedAt)} (UTC+8)</p>
+                                            <div className='etherscan-probe-result-line'>
+                                                <strong className='etherscan-probe-kpi__value'>
+                                                    {activeRun.counts.success} / {activeRun.total}
+                                                </strong>
+                                                <span>successful requests</span>
+                                                <TonePill tone={probeTone(activeRun)}>{successRate(activeRun.counts, activeRun.total)}</TonePill>
+                                            </div>
+                                            <p>
+                                                {activeRun.requiredSuccess} successful requests required · {requiredDeltaLabel(activeRun)}
+                                            </p>
+                                            <p className='admin-source-note'>
+                                                {activeRun.keyCount} API keys · {activeRun.gatewayCount} gateways · {activeRun.requestsPerKey} requests / key ·{' '}
+                                                {activeRun.intervalMS} ms interval
+                                            </p>
+                                            <h3>Failures {failureCount(activeRun.counts)}</h3>
+                                            <div className='etherscan-probe-breakdown'>
+                                                {failureCategories.map(category => (
+                                                    <div
+                                                        className={`etherscan-probe-breakdown__item ${toneClass(activeRun.counts[category.key] ? category.tone : 'neutral')}`}
+                                                        key={category.key}>
+                                                        <span>{category.label}</span>
+                                                        <strong>{activeRun.counts[category.key]}</strong>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <Tabs
+                                                defaultActiveKey='gateway'
+                                                items={[
+                                                    {
+                                                        key: 'gateway',
+                                                        label: 'By Gateway',
+                                                        children: (
+                                                            <ResourceTable<EtherscanGatewayProbeGatewaySummary | EtherscanGatewayProbeKeySummary>
+                                                                rowKey={item => ('gateway' in item ? item.gateway : item.keyLabel)}
+                                                                label='Probe gateway summaries'
+                                                                items={activeRun.gatewaySummaries}
+                                                                columns={summaryColumns}
+                                                                compactRender={summary}
+                                                            />
+                                                        )
+                                                    },
+                                                    {
+                                                        key: 'key',
+                                                        label: 'By API Key',
+                                                        children: (
+                                                            <ResourceTable<EtherscanGatewayProbeGatewaySummary | EtherscanGatewayProbeKeySummary>
+                                                                rowKey={item => ('gateway' in item ? item.gateway : item.keyLabel)}
+                                                                label='Probe API key summaries'
+                                                                items={activeRun.keySummaries}
+                                                                columns={summaryColumns}
+                                                                compactRender={summary}
+                                                            />
+                                                        )
+                                                    }
+                                                ]}
+                                            />
+                                            <p className='admin-source-note'>Row status checks failure types and the 90% threshold independently of the overall result.</p>
+                                            <details className='admin-operation-details'>
+                                                <summary>Timing &amp; run details</summary>
+                                                <OperationFacts
+                                                    items={[
+                                                        {label: 'Run ID', value: <span className='athena-identifier'>{activeRun.runID}</span>},
+                                                        {label: 'Elapsed', value: formatDuration(activeRun.elapsedMS)},
+                                                        {label: 'Start spread', value: formatDuration(activeRun.startSpreadMS)},
+                                                        {label: 'Created', value: formatUnixSeconds(activeRun.createdAt)},
+                                                        {label: 'Started', value: formatUnixSeconds(activeRun.startedAt)},
+                                                        {label: 'Finished', value: formatUnixSeconds(activeRun.finishedAt)}
+                                                    ]}
+                                                />
+                                            </details>
+                                            {activeRun.errorMessage && <Alert type='error' title={activeRun.errorMessage} />}
+                                            {activeRun.samples.length > 0 && (
+                                                <details className='admin-operation-details' open>
+                                                    <summary>Error samples</summary>
+                                                    {activeRun.samples.map(sample => (
+                                                        <div className='etherscan-probe-sample' key={sample}>
+                                                            <TonePill tone={sampleTone(sample)}>{sampleTone(sample) === 'warn' ? 'Rate limit' : 'Error'}</TonePill>
+                                                            <Typography.Text className='athena-identifier' copyable>
+                                                                {sample}
+                                                            </Typography.Text>
+                                                        </div>
+                                                    ))}
+                                                </details>
+                                            )}
+                                        </>
+                                    )}
+                                </Section>
+                            </>
+                        )
+                    }
+                ]}
+            />
         </AppPage>
     );
 };
