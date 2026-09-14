@@ -45,6 +45,17 @@ for (const viewport of [
                 await expect(page.getByText('September market basket', {exact: true}).filter({visible: true}).first()).toBeVisible();
             }
             await page.evaluate(() => document.fonts.ready);
+            if (id === 'worm-combinations-edit' || id === 'worm-combinations-new') {
+                const save = page.locator('.worm-combination-summary__save');
+                const size = await save.evaluate(el => ({
+                    height: el.getBoundingClientRect().height,
+                    width: el.getBoundingClientRect().width,
+                    disabled: (el as HTMLButtonElement).disabled
+                }));
+                await info.attach('primary-action-size.json', {body: JSON.stringify(size), contentType: 'application/json'});
+                expect(size.height, 'Save/Create must meet the strict 44px target, including disabled Create').toBeGreaterThanOrEqual(44);
+                expect(size.width).toBeGreaterThanOrEqual(44);
+            }
             await page.evaluate(() => window.scrollTo(0, 0));
             await assertThemeLayout(page);
             await page.screenshot({path: info.outputPath(`${id}-${viewport.name}.png`), fullPage: true, animations: 'disabled'});
@@ -295,7 +306,18 @@ for (const id of ['worm-assets', 'worm-combinations', 'worm-combinations-edit', 
             const ledger = await openThemeCase(page, id);
             const heading = page.getByRole('heading', {level: 1});
             const initial = await heading.evaluate(el => parseFloat(getComputedStyle(el).fontSize));
+            const hasSave = id === 'worm-combinations-edit' || id === 'worm-combinations-new';
+            const save = page.locator('.worm-combination-summary__save');
+            await page.evaluate(() => document.fonts.ready);
+            const initialSave = hasSave ? await save.evaluate(el => ({height: el.getBoundingClientRect().height, font: parseFloat(getComputedStyle(el).fontSize)})) : undefined;
             await page.evaluate(() => (document.documentElement.style.fontSize = '32px'));
+            if (initialSave) {
+                const enlarged = await save.evaluate(el => ({height: el.getBoundingClientRect().height, font: parseFloat(getComputedStyle(el).fontSize)}));
+                await info.attach('primary-action-root32.json', {body: JSON.stringify({initial: initialSave, enlarged}), contentType: 'application/json'});
+                expect(enlarged.font).toBeCloseTo(initialSave.font * 2, 1);
+                expect(enlarged.height, 'The 2.75rem primary target must grow to at least 88px at root 200%').toBeGreaterThanOrEqual(88);
+                expect(enlarged.height).toBeGreaterThanOrEqual(initialSave.height * 2);
+            }
             await expect.poll(() => heading.evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeCloseTo(initial * 2, 1);
             if (id === 'worm-assets') {
                 await expect(page.locator('.worm-trading-wallet__address code').first()).toHaveCSS('font-size', '26px');
