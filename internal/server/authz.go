@@ -100,10 +100,9 @@ var profitSharingParticipantGRPCMethods = map[string]bool{
 }
 
 var accountAuthenticatedGRPCMethods = map[string]bool{
-	"/account.AccountService/UpdateAccountPreferences": true,
-	"/account.AccountService/ListTokens":               true,
-	"/account.AccountService/CreateToken":              true,
-	"/account.AccountService/DeleteToken":              true,
+	"/account.AccountService/ListTokens":  true,
+	"/account.AccountService/CreateToken": true,
+	"/account.AccountService/DeleteToken": true,
 }
 
 var accountSelfOrAdministratorGRPCMethods = map[string]bool{
@@ -127,8 +126,8 @@ func moduleWrite(module accountaccess.Module) grpcModuleRule {
 // moduleGRPCRules is the explicit product-module authorization boundary for
 // every public business RPC. Methods missing from every boundary fail closed.
 var moduleGRPCRules = map[string]grpcModuleRule{
-	"/solana.SolanaService/ListProjects":       moduleRead(accountaccess.ModuleSolana),
-	"/solana.SolanaService/GetDiscoveryStatus": moduleRead(accountaccess.ModuleSolana),
+	"/solana.SolanaService/ListProjects":                    moduleRead(accountaccess.ModuleSolana),
+	"/solana.SolanaService/GetDiscoveryStatus":              moduleRead(accountaccess.ModuleSolana),
 	"/tradersync.TraderSyncService/ResolveTarget":           moduleRead(accountaccess.ModuleTraderSync),
 	"/tradersync.TraderSyncService/ListSubscriptions":       moduleRead(accountaccess.ModuleTraderSync),
 	"/tradersync.TraderSyncService/GetSubscription":         moduleRead(accountaccess.ModuleTraderSync),

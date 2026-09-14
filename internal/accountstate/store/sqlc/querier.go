@@ -14,7 +14,6 @@ type Querier interface {
 	AccountExists(ctx context.Context, accountID pgtype.UUID) (bool, error)
 	CountAccountDirectory(ctx context.Context, arg CountAccountDirectoryParams) (int64, error)
 	CreateAccountAPIKey(ctx context.Context, arg CreateAccountAPIKeyParams) (AccountApiKey, error)
-	CreateAccountPreferences(ctx context.Context, arg CreateAccountPreferencesParams) (CreateAccountPreferencesRow, error)
 	CreateAccountProfile(ctx context.Context, arg CreateAccountProfileParams) (CreateAccountProfileRow, error)
 	CreateAdministratorAccount(ctx context.Context, arg CreateAdministratorAccountParams) (CreateAdministratorAccountRow, error)
 	CreateDevelopmentAdministrator(ctx context.Context) (CreateDevelopmentAdministratorRow, error)
@@ -24,7 +23,6 @@ type Querier interface {
 	GetAccountAPIKeyByJTI(ctx context.Context, jti string) (GetAccountAPIKeyByJTIRow, error)
 	GetAccountAccessHead(ctx context.Context, accountID pgtype.UUID) (GetAccountAccessHeadRow, error)
 	GetAccountByIdentity(ctx context.Context, arg GetAccountByIdentityParams) (AthenaAccount, error)
-	GetAccountPreferences(ctx context.Context, accountID pgtype.UUID) (GetAccountPreferencesRow, error)
 	GetAccountProfile(ctx context.Context, accountID pgtype.UUID) (GetAccountProfileRow, error)
 	GetAccountRecord(ctx context.Context, accountID pgtype.UUID) (AthenaAccount, error)
 	GetDevelopmentAdministrator(ctx context.Context) (AthenaAccount, error)
@@ -41,7 +39,6 @@ type Querier interface {
 	RecordAccountLogin(ctx context.Context, arg RecordAccountLoginParams) (AthenaAccount, error)
 	ReplaceAccountModuleAccess(ctx context.Context, arg ReplaceAccountModuleAccessParams) (int64, error)
 	UpdateAccountAccessHead(ctx context.Context, arg UpdateAccountAccessHeadParams) (UpdateAccountAccessHeadRow, error)
-	UpdateAccountPreferences(ctx context.Context, arg UpdateAccountPreferencesParams) (UpdateAccountPreferencesRow, error)
 	UpdateAccountProfile(ctx context.Context, arg UpdateAccountProfileParams) (UpdateAccountProfileRow, error)
 	UsernameExists(ctx context.Context, username string) (bool, error)
 }

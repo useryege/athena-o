@@ -158,11 +158,6 @@ WITH inserted_account AS (
   SELECT account_id, username, 'standard', 1
   FROM inserted_account
   RETURNING account_id
-), inserted_preferences AS (
-  INSERT INTO account_preferences (account_id, theme, revision)
-  SELECT account_id, 'system', 1
-  FROM inserted_account
-  RETURNING account_id
 )
 SELECT account_id,
        username,
@@ -177,7 +172,6 @@ FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
   AND (SELECT COUNT(*) FROM inserted_modules) = 11
   AND EXISTS (SELECT 1 FROM inserted_profile)
-  AND EXISTS (SELECT 1 FROM inserted_preferences)
 `
 
 type CreateAdministratorAccountParams struct {
@@ -280,11 +274,6 @@ WITH inserted_account AS (
   SELECT account_id, username, 'standard', 1
   FROM inserted_account
   RETURNING account_id
-), inserted_preferences AS (
-  INSERT INTO account_preferences (account_id, theme, revision)
-  SELECT account_id, 'system', 1
-  FROM inserted_account
-  RETURNING account_id
 )
 SELECT account_id,
        username,
@@ -299,7 +288,6 @@ FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
   AND (SELECT COUNT(*) FROM inserted_modules) = 11
   AND EXISTS (SELECT 1 FROM inserted_profile)
-  AND EXISTS (SELECT 1 FROM inserted_preferences)
 `
 
 type CreateDevelopmentAdministratorRow struct {
@@ -390,11 +378,6 @@ WITH inserted_account AS (
   SELECT account_id, username, 'standard', 1
   FROM inserted_account
   RETURNING account_id
-), inserted_preferences AS (
-  INSERT INTO account_preferences (account_id, theme, revision)
-  SELECT account_id, 'system', 1
-  FROM inserted_account
-  RETURNING account_id
 )
 SELECT account_id,
        username,
@@ -409,7 +392,6 @@ FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
   AND (SELECT COUNT(*) FROM inserted_modules) = 11
   AND EXISTS (SELECT 1 FROM inserted_profile)
-  AND EXISTS (SELECT 1 FROM inserted_preferences)
 `
 
 type CreateDevelopmentMemberRow struct {
@@ -507,11 +489,6 @@ WITH inserted_account AS (
   SELECT account_id, username, 'standard', 1
   FROM inserted_account
   RETURNING account_id
-), inserted_preferences AS (
-  INSERT INTO account_preferences (account_id, theme, revision)
-  SELECT account_id, 'system', 1
-  FROM inserted_account
-  RETURNING account_id
 )
 SELECT account_id,
        username,
@@ -526,7 +503,6 @@ FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
   AND (SELECT COUNT(*) FROM inserted_modules) = 11
   AND EXISTS (SELECT 1 FROM inserted_profile)
-  AND EXISTS (SELECT 1 FROM inserted_preferences)
 `
 
 type CreateOrdinaryAccountParams struct {

@@ -80,12 +80,6 @@ enum AccountTier {
   ACCOUNT_TIER_PRO = 2;
 }
 
-enum AccountThemeMode {
-  ACCOUNT_THEME_MODE_UNSPECIFIED = 0;
-  ACCOUNT_THEME_MODE_SYSTEM = 1;
-  ACCOUNT_THEME_MODE_LIGHT = 2;
-  ACCOUNT_THEME_MODE_DARK = 3;
-}
 
 message AccountProfile {
   string displayName = 1;
@@ -94,10 +88,6 @@ message AccountProfile {
   uint64 revision = 4;
 }
 
-message AccountPreferences {
-  AccountThemeMode theme = 1;
-  uint64 revision = 2;
-}
 
 message UpdateAccountAccessRequest {
   string id = 1;
@@ -168,10 +158,6 @@ message UpdateAccountTierRequest {
   uint64 expectedRevision = 3;
 }
 
-message UpdateAccountPreferencesRequest {
-  AccountThemeMode theme = 1;
-  uint64 expectedRevision = 2;
-}
 
 message EmptyResponse {}
 
@@ -210,13 +196,6 @@ service AccountService {
     };
   }
 
-  // UpdateAccountPreferences changes the current account's UI preferences.
-  rpc UpdateAccountPreferences(UpdateAccountPreferencesRequest) returns (AccountPreferences) {
-    option (google.api.http) = {
-      put: "/api/v1/account/preferences"
-      body: "*"
-    };
-  }
 
   // ListTokens lists API Key metadata for the current account.
   rpc ListTokens(ListTokensRequest) returns (TokensList) {

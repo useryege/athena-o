@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "dev"
+    "version": "v1.0.0-1271-gbf752f27-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -60,39 +60,6 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/accountAccountsList"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/account/preferences": {
-      "put": {
-        "tags": [
-          "AccountService"
-        ],
-        "summary": "UpdateAccountPreferences changes the current account's UI preferences.",
-        "operationId": "AccountService_UpdateAccountPreferences",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/accountUpdateAccountPreferencesRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/accountAccountPreferences"
             }
           },
           "default": {
@@ -3790,18 +3757,6 @@
         }
       }
     },
-    "accountAccountPreferences": {
-      "type": "object",
-      "properties": {
-        "revision": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "theme": {
-          "$ref": "#/definitions/accountAccountThemeMode"
-        }
-      }
-    },
     "accountAccountProfile": {
       "type": "object",
       "properties": {
@@ -3828,16 +3783,6 @@
         "ACCOUNT_STATUS_PENDING",
         "ACCOUNT_STATUS_ACTIVE",
         "ACCOUNT_STATUS_BLOCKED"
-      ]
-    },
-    "accountAccountThemeMode": {
-      "type": "string",
-      "default": "ACCOUNT_THEME_MODE_UNSPECIFIED",
-      "enum": [
-        "ACCOUNT_THEME_MODE_UNSPECIFIED",
-        "ACCOUNT_THEME_MODE_SYSTEM",
-        "ACCOUNT_THEME_MODE_LIGHT",
-        "ACCOUNT_THEME_MODE_DARK"
       ]
     },
     "accountAccountTier": {
@@ -3912,18 +3857,6 @@
           "items": {
             "$ref": "#/definitions/accountToken"
           }
-        }
-      }
-    },
-    "accountUpdateAccountPreferencesRequest": {
-      "type": "object",
-      "properties": {
-        "expectedRevision": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "theme": {
-          "$ref": "#/definitions/accountAccountThemeMode"
         }
       }
     },
@@ -5302,9 +5235,6 @@
         },
         "loggedIn": {
           "type": "boolean"
-        },
-        "preferences": {
-          "$ref": "#/definitions/accountAccountPreferences"
         },
         "profile": {
           "$ref": "#/definitions/accountAccountProfile"

@@ -216,19 +216,6 @@ CREATE TABLE account_profile (
   CONSTRAINT account_profile_revision_check CHECK (revision > 0)
 );
 
-CREATE TABLE account_preferences (
-  account_id UUID PRIMARY KEY,
-  theme TEXT NOT NULL,
-  revision BIGINT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT account_preferences_account_fk
-    FOREIGN KEY (account_id)
-    REFERENCES athena_account (account_id)
-    ON DELETE CASCADE,
-  CONSTRAINT account_preferences_theme_check CHECK (theme IN ('system', 'light', 'dark')),
-  CONSTRAINT account_preferences_revision_check CHECK (revision > 0)
-);
 
 CREATE TABLE account_api_key (
   account_id UUID NOT NULL,
@@ -961,7 +948,6 @@ DROP TABLE notification_sender_instances;
 DROP TABLE system_notification_topics;
 
 DROP TABLE account_api_key;
-DROP TABLE account_preferences;
 DROP TABLE account_profile;
 DROP TABLE account_module_access;
 DROP TABLE account_access;

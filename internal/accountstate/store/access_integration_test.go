@@ -67,6 +67,11 @@ func TestAccountCreationQueriesReturnFirstInsertedRow(t *testing.T) {
 			if !row.id.Valid || uuid.UUID(row.id.Bytes) == uuid.Nil || row.username != tc.username || row.administrator != tc.administrator {
 				t.Fatalf("unexpected first returned account: %+v", row)
 			}
+			profile, err := q.New(db.Pool).GetAccountProfile(ctx, row.id)
+			require.NoError(t, err)
+			require.Equal(t, tc.username, profile.DisplayName)
+			require.Equal(t, "standard", profile.AccountTier)
+			require.EqualValues(t, 1, profile.Revision)
 			var modules int
 			if err := db.Pool.QueryRow(ctx, "SELECT count(*) FROM account_module_access WHERE account_id=$1", row.id).Scan(&modules); err != nil || modules != 11 {
 				t.Fatalf("returned account module rows=%d error=%v", modules, err)

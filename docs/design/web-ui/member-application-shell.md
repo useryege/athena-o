@@ -50,7 +50,7 @@ Trader Sync 只接受 `NONE` 与 `READ_WRITE`。非法持久/网关 `READ` 经 `
 
 1. 匿名访问显示 `/login`。Google OIDC 带 `athenaRealm=member`；Phantom 使用会员专属浏览器注入 SIWS。未知身份携带服务端注册 ticket 进入共享 `/register`。
 2. bootstrap 只选择 member cookie/`local-user`，返回账户、资料、偏好、角色和完整权限 aggregate。管理员在任何会员业务请求前离开；普通账户进入会员授权上下文。
-3. Pending 账户默认进入 `/account/access`，仍可使用 Profile、Appearance、Access、Help、Notifications 和 Logout，不挂载业务模块页面。Active 普通账户默认进入 `/account/profile`。
+3. Pending 账户默认进入 `/account/access`，仍可使用 Profile、Access、Help、Notifications 和 Logout，不挂载业务模块页面。Active 普通账户默认进入 `/account/profile`。
 4. 普通模块路由要求对应 READ，写控件要求 `READ_WRITE`；Profit Sharing 使用独立权益。Notifications 是直接自助例外，服务端仍要求普通交互登录并拒绝管理员/API Key。
 5. `/notifications` 读取 Bot、binding 与 attempt，显示 `Unavailable`、`Not connected`、`Waiting for Telegram`、`Link expired`、`Setup failed`、`Connected` 或 `Needs attention`。Configure 返回深链、准确 fallback command、到期倒计时和浏览器本地 Ant Design `QRCode`。
 6. 未过期 attempt 在页面可见且没有 mutation 时每 3 秒刷新；focus、`visibilitychange`、手动刷新与 mutation 恢复共用同一 single-flight read。Cancel 删除 attempt；Reconnect 在新 token 成功前保留原 binding；Disconnect 经确认后删除 binding 和 attempt。
@@ -65,7 +65,7 @@ Trader Sync 只接受 `NONE` 与 `READ_WRITE`。非法持久/网关 `READ` 经 `
 
 ## 状态与数据
 
-会员授权投影包含 account UUID、不可变 username、安全身份展示、profile、preferences、access revision、Profit Sharing 权益和完整十一模块。UUID、member realm、issuer 与 session generation 共同限定请求、缓存和 Trader Sync 内存状态；username/display name 只用于展示。
+会员授权投影包含 account UUID、不可变 username、安全身份展示、profile、access revision、Profit Sharing 权益和完整十一模块。UUID、member realm、issuer 与 session generation 共同限定请求、缓存和 Trader Sync 内存状态；username/display name 只用于展示。
 
 私钥和新签发 API Key 只存在于当前 React result state。离开页面、结束会话、改变账户或失去权限会丢弃它们并取消工作。浏览器不持久化 provider token、wallet signature、外部 subject、registration ticket、管理员断言或 HttpOnly cookie。
 

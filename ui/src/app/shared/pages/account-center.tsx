@@ -1,18 +1,8 @@
-import {
-    BgColorsOutlined,
-    ClockCircleOutlined,
-    DeleteOutlined,
-    KeyOutlined,
-    LogoutOutlined,
-    ReloadOutlined,
-    SafetyCertificateOutlined,
-    UploadOutlined,
-    UserOutlined
-} from '@ant-design/icons';
-import {Alert, Button, Form, Input, Select, Space, Tag, Typography, Upload} from 'antd';
+import {ClockCircleOutlined, DeleteOutlined, KeyOutlined, LogoutOutlined, ReloadOutlined, SafetyCertificateOutlined, UploadOutlined, UserOutlined} from '@ant-design/icons';
+import {Button, Form, Input, Select, Space, Tag, Typography, Upload} from 'antd';
 import * as React from 'react';
 import {useBlocker, useNavigate} from 'react-router-dom';
-import {AppPage, ChoiceGroup, KeyValueGrid, Section, StatusTag, useAsyncData} from '../../components';
+import {AppPage, KeyValueGrid, Section, StatusTag, useAsyncData} from '../../components';
 import {moduleAccessSummary} from '../account-access';
 import {accountAccessDisplayModules, accountDataAccessLabel} from '../access-modules';
 import {Context, useAuthorization} from '../context';
@@ -20,16 +10,13 @@ import {accountStatusForAccess, AccountStatus} from '../models';
 import {AccountAvatar, accountTierLabel, identityPresentation, identityProviderLabel} from '../account-presentation';
 import {selfAccountServices as services} from '../../session/services';
 import {requestErrorDetails, requestErrorMessage} from '../services/requests';
-import type {ThemeMode, ViewPreferences} from '../services/view-preferences-service';
-import {accountThemeLabel} from '../theme';
 import {hasControlCharacters, unicodeCharacterCount} from '../validation';
 import {boolTag} from './shared';
 
-export type AccountCenterSection = 'profile' | 'appearance' | 'security' | 'access';
+export type AccountCenterSection = 'profile' | 'security' | 'access';
 
 const accountSections: Array<{key: AccountCenterSection; label: string; description: string; icon: React.ReactNode}> = [
     {key: 'profile', label: 'Profile', description: 'Name and avatar', icon: <UserOutlined />},
-    {key: 'appearance', label: 'Appearance', description: 'Theme across devices', icon: <BgColorsOutlined />},
     {key: 'access', label: 'Access & session', description: 'Permissions and versions', icon: <KeyOutlined />}
 ];
 const memberSecuritySection = {key: 'security' as const, label: 'Security', description: 'API keys and AI connections', icon: <SafetyCertificateOutlined />};
@@ -83,14 +70,12 @@ export const AccountCenterLayout = (props: {active: AccountCenterSection; showMe
     const profile = authorization.user.profile;
     const visibleSections =
         props.showMemberSecurity && authorization.user.access.apiKeyEnabled && !authorization.isAdmin
-            ? [...accountSections.slice(0, 2), memberSecuritySection, ...accountSections.slice(2)]
+            ? [...accountSections.slice(0, 1), memberSecuritySection, ...accountSections.slice(1)]
             : accountSections;
     return (
         <AppPage
             title='Account Center'
-            subtitle={
-                props.showMemberSecurity ? 'Manage your Athena identity, appearance, API keys, and current access.' : 'Manage your Athena identity, appearance, and current access.'
-            }>
+            subtitle={props.showMemberSecurity ? 'Manage your Athena identity, API keys, and current access.' : 'Manage your Athena identity, and current access.'}>
             <div className='account-center-hero'>
                 <AccountAvatar profile={profile} username={authorization.user.username} size={64} />
                 <div className='account-center-hero__copy'>
@@ -280,40 +265,6 @@ const ProfilePage = () => {
     );
 };
 
-const AppearancePage = (props: {preferences: ViewPreferences; changing: boolean; onThemeChange: (theme: ThemeMode) => Promise<void>}) => {
-    const authorization = useAuthorization();
-    return (
-        <Section title='Appearance'>
-            <div className='account-theme-options'>
-                <div>
-                    <Typography.Text strong={true}>Color theme</Typography.Text>
-                    <Typography.Paragraph type='secondary'>
-                        This preference follows you across signed-in devices. System tracks your operating-system appearance.
-                    </Typography.Paragraph>
-                </div>
-                <ChoiceGroup<ThemeMode>
-                    className='account-theme-choice'
-                    ariaLabel='Athena color theme'
-                    value={props.preferences.theme}
-                    disabled={props.changing}
-                    options={[
-                        {value: 'system', label: 'System'},
-                        {value: 'light', label: 'Light'},
-                        {value: 'dark', label: 'Dark'}
-                    ]}
-                    onChange={theme => void props.onThemeChange(theme)}
-                />
-            </div>
-            <Alert
-                type='info'
-                showIcon={true}
-                title={`${accountThemeLabel(props.preferences.theme)} theme selected`}
-                description={`Server preference revision ${authorization.user.preferences.revision}. Sidebar, table, and sorting preferences remain local to this browser.`}
-            />
-        </Section>
-    );
-};
-
 const identityTime = (value: number) => (value > 0 ? new Date(value * 1000).toLocaleString() : 'Not yet');
 
 const PendingAccessPage = (props: {loggingOut: boolean; onLogout: () => void}) => {
@@ -344,7 +295,7 @@ const PendingAccessPage = (props: {loggingOut: boolean; onLogout: () => void}) =
                 <div className='account-access-pending__copy'>
                     <Typography.Title level={2}>{identity.pendingTitle}</Typography.Title>
                     <Typography.Paragraph>
-                        Your Athena account is ready, but an administrator has not granted business access yet. You can update your profile and appearance while you wait.
+                        Your Athena account is ready, but an administrator has not granted business access yet. You can update your profile while you wait.
                     </Typography.Paragraph>
                     <div className='account-access-pending__identity'>
                         <Typography.Text type='secondary'>{identity.label}</Typography.Text>
@@ -431,18 +382,9 @@ const AccessPage = (props: {loggingOut: boolean; onLogout: () => void}) => {
     );
 };
 
-export const AccountCenterPage = (props: {
-    section: Exclude<AccountCenterSection, 'security'>;
-    showMemberSecurity?: boolean;
-    preferences: ViewPreferences;
-    themeChanging: boolean;
-    onThemeChange: (theme: ThemeMode) => Promise<void>;
-    loggingOut: boolean;
-    onLogout: () => void;
-}) => (
+export const AccountCenterPage = (props: {section: Exclude<AccountCenterSection, 'security'>; showMemberSecurity?: boolean; loggingOut: boolean; onLogout: () => void}) => (
     <AccountCenterLayout active={props.section} showMemberSecurity={props.showMemberSecurity}>
         {props.section === 'profile' && <ProfilePage />}
-        {props.section === 'appearance' && <AppearancePage preferences={props.preferences} changing={props.themeChanging} onThemeChange={props.onThemeChange} />}
         {props.section === 'access' && <AccessPage loggingOut={props.loggingOut} onLogout={props.onLogout} />}
     </AccountCenterLayout>
 );

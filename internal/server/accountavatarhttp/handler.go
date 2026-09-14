@@ -378,7 +378,7 @@ func writeStatusError(w http.ResponseWriter, err error) {
 		return
 	}
 	reason := ""
-	if errStatus.Message() == accountcenter.ProfileRevisionConflictReason || errStatus.Message() == accountcenter.PreferencesRevisionConflictReason {
+	if errStatus.Message() == accountcenter.ProfileRevisionConflictReason {
 		reason = errStatus.Message()
 	}
 	writeError(w, httpStatus(errStatus.Code()), errStatus.Code(), reason, errStatus.Message())

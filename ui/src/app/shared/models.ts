@@ -53,7 +53,6 @@ export interface UserInfo {
     access: AccountAccess;
     identity: AccountIdentity;
     profile: AccountProfile;
-    preferences: AccountPreferences;
 }
 
 export enum AccountTier {
@@ -61,21 +60,10 @@ export enum AccountTier {
     Pro = 'ACCOUNT_TIER_PRO'
 }
 
-export enum AccountThemeMode {
-    System = 'ACCOUNT_THEME_MODE_SYSTEM',
-    Light = 'ACCOUNT_THEME_MODE_LIGHT',
-    Dark = 'ACCOUNT_THEME_MODE_DARK'
-}
-
 export interface AccountProfile {
     displayName: string;
     tier: AccountTier;
     avatarUrl: string;
-    revision: number;
-}
-
-export interface AccountPreferences {
-    theme: AccountThemeMode;
     revision: number;
 }
 
@@ -90,30 +78,10 @@ export const parseAccountTier = (value: unknown): AccountTier => {
     }
 };
 
-export const parseAccountThemeMode = (value: unknown): AccountThemeMode => {
-    switch (value) {
-        case 2:
-        case AccountThemeMode.Light:
-        case 'light':
-            return AccountThemeMode.Light;
-        case 3:
-        case AccountThemeMode.Dark:
-        case 'dark':
-            return AccountThemeMode.Dark;
-        default:
-            return AccountThemeMode.System;
-    }
-};
-
 export const parseAccountProfile = (value: any, fallbackName = ''): AccountProfile => ({
     displayName: String(value?.displayName ?? value?.display_name ?? fallbackName),
     tier: parseAccountTier(value?.tier),
     avatarUrl: String(value?.avatarUrl ?? value?.avatar_url ?? ''),
-    revision: Number(value?.revision || 0)
-});
-
-export const parseAccountPreferences = (value: any): AccountPreferences => ({
-    theme: parseAccountThemeMode(value?.theme),
     revision: Number(value?.revision || 0)
 });
 
@@ -157,8 +125,7 @@ export const parseUserInfo = (value: any): UserInfo => ({
     administrator: Boolean(value?.administrator),
     access: parseAccountAccess(value?.access),
     identity: parseAccountIdentity(value?.identity),
-    profile: parseAccountProfile(value?.profile, value?.username || ''),
-    preferences: parseAccountPreferences(value?.preferences)
+    profile: parseAccountProfile(value?.profile, value?.username || '')
 });
 
 export interface Token {

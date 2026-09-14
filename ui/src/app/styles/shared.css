@@ -1,70 +1,16 @@
+@import './tokens.css';
 /* Shared tokens, shell, primitives, and cross-realm account/domain presentation. */
 html,
 body,
 #app {
     min-height: 100%;
-    min-width: 1280px;
     margin: 0;
 }
-:root {
-    color-scheme: light;
-    --athena-bg: #f5f6f8;
-    --athena-bg-soft: #eef1f4;
-    --athena-panel: #ffffff;
-    --athena-panel-solid: #ffffff;
-    --athena-panel-elevated: #f8fafc;
-    --athena-border: #dfe4ea;
-    --athena-border-strong: #c8d0da;
-    --athena-text: #17202b;
-    --athena-muted: #5f6b7a;
-    --athena-brand: #f37430;
-    --athena-primary: #c94f2d;
-    --athena-accent: var(--athena-primary);
-    --athena-blue: #2563eb;
-    --athena-green: #168a45;
-    --athena-amber: #a85f00;
-    --athena-red: #c9363e;
-    --athena-focus: #2563eb;
-    --athena-shadow: 0 18px 48px rgba(23, 32, 43, 0.1);
-    --athena-shadow-tight: 0 8px 24px rgba(23, 32, 43, 0.08);
-    --athena-shadow-surface: 0 1px 2px rgba(23, 32, 43, 0.04);
-    --athena-sidebar-shadow: 8px 0 28px rgba(23, 32, 43, 0.05);
-    --athena-data-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
-}
-:root[data-theme='dark'] {
-    color-scheme: dark;
-    --athena-bg: #0b0f14;
-    --athena-bg-soft: #1b2632;
-    --athena-panel: #111820;
-    --athena-panel-solid: #111820;
-    --athena-panel-elevated: #16202a;
-    --athena-border: #263341;
-    --athena-border-strong: #354556;
-    --athena-text: #eef3f8;
-    --athena-muted: #94a3b8;
-    --athena-brand: #f37430;
-    --athena-primary: #e76f51;
-    --athena-blue: #3b82f6;
-    --athena-green: #22c55e;
-    --athena-amber: #f59e0b;
-    --athena-red: #ef4444;
-    --athena-focus: #60a5fa;
-    --athena-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
-    --athena-shadow-tight: 0 12px 28px rgba(0, 0, 0, 0.22);
-    --athena-shadow-surface: 0 1px 2px rgba(0, 0, 0, 0.18);
-    --athena-sidebar-shadow: 8px 0 24px rgba(0, 0, 0, 0.14);
-}
 body {
-    background: radial-gradient(circle at 88% -18%, color-mix(in srgb, var(--athena-brand) 7%, transparent), transparent 34rem), var(--athena-bg);
+    background: var(--athena-bg);
     color: var(--athena-text);
-    font-family:
-        Heebo,
-        ui-sans-serif,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        'Segoe UI',
-        sans-serif;
+    font-family: var(--athena-font);
+    font-size: var(--athena-type-body);
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
 }
@@ -716,6 +662,7 @@ body::-webkit-scrollbar-thumb,
     overflow-wrap: anywhere;
     color: var(--athena-text);
     font-family: var(--athena-data-font);
+    font-variant-ligatures: none;
 }
 .metric--good {
     border-color: color-mix(in srgb, var(--athena-green) 34%, var(--athena-border));
@@ -789,11 +736,13 @@ body::-webkit-scrollbar-thumb,
 }
 .break-value {
     font-family: var(--athena-data-font);
+    font-variant-ligatures: none;
     font-size: 12px;
 }
 .truncate-text {
     max-width: 100%;
     font-family: var(--athena-data-font);
+    font-variant-ligatures: none;
     font-size: 12px;
 }
 .truncate-text--single-line {
@@ -829,9 +778,6 @@ body::-webkit-scrollbar-thumb,
     font-weight: 600;
     border-color: var(--athena-border);
 }
-:root:not([data-theme='dark']) .athena-status-tag--positive.ant-tag {
-    color: #237804;
-}
 .ant-tabs .ant-tabs-nav {
     margin-bottom: 14px;
 }
@@ -856,26 +802,6 @@ body::-webkit-scrollbar-thumb,
 .ant-modal-header,
 .ant-drawer-header {
     border-color: var(--athena-border) !important;
-}
-.ant-input,
-.ant-input-affix-wrapper,
-.ant-input-number,
-.ant-select-selector {
-    border-color: var(--athena-border-strong) !important;
-    background: var(--athena-panel-solid) !important;
-}
-.ant-input:hover,
-.ant-input-affix-wrapper:hover,
-.ant-input-number:hover,
-.ant-select-selector:hover {
-    border-color: color-mix(in srgb, var(--athena-primary) 58%, var(--athena-border-strong)) !important;
-}
-.ant-input:focus,
-.ant-input-affix-wrapper-focused,
-.ant-input-number-focused,
-.ant-select-focused .ant-select-selector {
-    border-color: var(--athena-focus) !important;
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--athena-focus) 24%, transparent) !important;
 }
 .login-screen {
     min-height: 100vh;
@@ -1597,19 +1523,6 @@ body,
     padding-top: 14px;
     border-top: 1px solid var(--athena-border);
 }
-.account-theme-options {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 24px;
-    margin-bottom: 18px;
-}
-.account-theme-options .ant-typography {
-    margin-bottom: 0;
-}
-.account-theme-choice {
-    flex: 0 0 auto;
-}
 .account-module-summary {
     overflow: hidden;
     border: 1px solid var(--athena-border);
@@ -1741,7 +1654,6 @@ body,
 
     .account-center-hero,
 .account-profile-avatar,
-.account-theme-options,
 .account-form-footer {
         align-items: stretch;
         flex-direction: column;
@@ -1753,19 +1665,6 @@ body,
 
     .account-center-hero {
         padding: 14px;
-    }
-
-    .account-theme-choice,
-.account-theme-choice .ant-radio-button-wrapper {
-        width: 100%;
-    }
-
-    .account-theme-choice .ant-radio-button-wrapper {
-        display: inline-flex;
-        min-height: 44px;
-        flex: 1 1 0;
-        align-items: center;
-        justify-content: center;
     }
 
     .account-form-footer > .ant-space,
@@ -1790,3 +1689,64 @@ body,
         flex-direction: column;
     }
 }
+
+input[readonly]:not([disabled]), textarea[readonly]:not([disabled]), .athena-theme.ant-input[readonly]:not([disabled]) {
+  color: var(--athena-muted); background: var(--athena-panel-elevated); border-color: var(--athena-border); cursor: text;
+}
+input:disabled, textarea:disabled, select:disabled, .athena-theme.ant-input:disabled {
+  color: var(--athena-muted); background: var(--athena-panel-elevated); border-color: var(--athena-border); cursor: not-allowed; border-style: dashed;
+}
+input[readonly]:focus-visible, textarea[readonly]:focus-visible {
+  outline: 2px solid var(--athena-primary); outline-offset: 3px;
+}
+
+
+/* Ant 6 变量声明绕过 px2remTransformer，须在同一 theme key 上映射文字角色。
+   重复类提高特异性，避免 CSS-in-JS 的插入顺序改变结果；浮层也带此 key。 */
+.athena-theme.athena-theme {
+  --ant-font-size: var(--athena-type-control);
+  --ant-font-size-sm: var(--athena-type-aux);
+  --ant-font-size-lg: var(--athena-type-body);
+  --ant-font-size-xl: var(--athena-type-section);
+  --ant-font-size-heading-1: var(--athena-type-page);
+  --ant-font-size-heading-2: var(--athena-type-section);
+  --ant-font-size-heading-3: var(--athena-type-body);
+  --ant-font-size-heading-4: var(--athena-type-body);
+  --ant-font-size-heading-5: var(--athena-type-control);
+  --ant-font-size-icon: var(--athena-type-aux);
+  --ant-font-height: 1.375rem;
+  --ant-font-height-sm: 1.25rem;
+  --ant-font-height-lg: 1.5rem;
+  --ant-control-height: var(--athena-control-height);
+  --ant-control-height-sm: var(--athena-control-height);
+  --ant-control-height-lg: 3.25rem;
+  --ant-button-content-font-size: var(--athena-type-control);
+  --ant-button-content-font-size-sm: var(--athena-type-control);
+  --ant-button-content-font-size-lg: var(--athena-type-body);
+  --ant-input-input-font-size: var(--athena-type-control);
+  --ant-input-input-font-size-sm: var(--athena-type-control);
+  --ant-input-input-font-size-lg: var(--athena-type-body);
+  --ant-alert-with-description-icon-size: 1.5rem;
+  --ant-alert-default-padding: 1rem 1.25rem;
+  --ant-alert-with-description-padding: 1.25rem 1.5rem;
+  --ant-font-family-code: var(--athena-data-font);
+}
+/* 固定按钮高还须允许长文本增高。 */
+.ant-btn { min-height: 2.75rem; height: auto; white-space: normal; padding-block: .625rem; line-height: 1.55; }
+.ant-input { min-height: var(--athena-control-height); }
+.ant-btn > span { overflow-wrap: anywhere; }
+.ant-alert { min-width: 0; }
+.ant-alert-content { min-width: 0; overflow-wrap: anywhere; }
+.ant-alert .ant-alert-description { color: var(--athena-muted); }
+.ant-alert .ant-alert-title { color: var(--athena-text); }
+.ant-segmented { max-width: 100%; }
+.ant-segmented-group { flex-wrap: wrap; }
+.ant-segmented-item-label { min-height: 2.75rem; display: flex; align-items: center; white-space: normal; }
+.ant-pagination .ant-pagination-item { min-width: 2.75rem; height: auto; line-height: 2.75rem; }
+.ant-btn:focus-visible, .ant-input:focus-visible, .ant-pagination-item:focus-visible { outline: 2px solid var(--athena-primary); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .ant-btn, .ant-input, .ant-pagination-item { transition: none; } }
+
+::selection { background: var(--athena-primary); color: var(--athena-bg); }
+input, textarea { caret-color: var(--athena-primary); }
+
+.ant-app.athena-theme { font-size: var(--athena-type-body); }

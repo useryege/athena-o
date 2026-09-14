@@ -17,15 +17,6 @@ const (
 	TierPro      Tier = "pro"
 )
 
-// ThemeMode is the durable, cross-device color-scheme preference.
-type ThemeMode string
-
-const (
-	ThemeModeSystem ThemeMode = "system"
-	ThemeModeLight  ThemeMode = "light"
-	ThemeModeDark   ThemeMode = "dark"
-)
-
 // AvatarMetadata identifies one private object owned by the avatar subsystem.
 type AvatarMetadata struct {
 	ObjectKey   string
@@ -61,21 +52,13 @@ type Profile struct {
 	Revision    uint64
 }
 
-// Preferences contains private durable UI preferences for one account.
-type Preferences struct {
-	Theme    ThemeMode
-	Revision uint64
-}
-
 const (
-	ProfileRevisionConflictReason     = "ACCOUNT_PROFILE_REVISION_CONFLICT"
-	PreferencesRevisionConflictReason = "ACCOUNT_PREFERENCES_REVISION_CONFLICT"
-	ErrorDomain                       = "athena.account_center"
+	ProfileRevisionConflictReason = "ACCOUNT_PROFILE_REVISION_CONFLICT"
+	ErrorDomain                   = "athena.account_center"
 )
 
 var (
-	ErrProfileRevisionConflict     = stableError(codes.Aborted, ProfileRevisionConflictReason)
-	ErrPreferencesRevisionConflict = stableError(codes.Aborted, PreferencesRevisionConflictReason)
+	ErrProfileRevisionConflict = stableError(codes.Aborted, ProfileRevisionConflictReason)
 )
 
 func validateDisplayName(displayName string) error {
@@ -100,15 +83,6 @@ func validateTier(tier Tier) error {
 		return nil
 	default:
 		return status.Errorf(codes.InvalidArgument, "unsupported account tier %q", tier)
-	}
-}
-
-func validateThemeMode(theme ThemeMode) error {
-	switch theme {
-	case ThemeModeSystem, ThemeModeLight, ThemeModeDark:
-		return nil
-	default:
-		return status.Errorf(codes.InvalidArgument, "unsupported account theme %q", theme)
 	}
 }
 

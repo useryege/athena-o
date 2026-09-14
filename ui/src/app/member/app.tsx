@@ -6,11 +6,8 @@ import '../styles/member.css';
 import {
     ApiOutlined,
     BarChartOutlined,
-    BgColorsOutlined,
     BellOutlined,
-    CheckOutlined,
     DashboardOutlined,
-    DesktopOutlined,
     FileTextOutlined,
     HistoryOutlined,
     IdcardOutlined,
@@ -18,16 +15,14 @@ import {
     LogoutOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
-    MoonOutlined,
     PieChartOutlined,
     QuestionCircleOutlined,
     SettingOutlined,
-    SunOutlined,
     SwapOutlined,
     TrophyOutlined,
     WalletOutlined
 } from '@ant-design/icons';
-import {App as AntApp, Breadcrumb, Button, ConfigProvider, Dropdown, Layout as AntLayout, Menu, Result, Space, Spin, Tag, Tooltip, Typography} from 'antd';
+import {App as AntApp, Breadcrumb, Button, Dropdown, Layout as AntLayout, Menu, Result, Space, Spin, Tag, Tooltip, Typography} from 'antd';
 import type {MenuProps} from 'antd';
 import * as React from 'react';
 import {createBrowserRouter, Navigate, Route, RouterProvider, Routes, useLocation, useNavigate} from 'react-router-dom';
@@ -37,13 +32,12 @@ import {AccountDataAccess, AccountDataModule, accountDataModules} from '../share
 import {moduleAccessLevels, moduleAccessLevelsEqual, ModuleAccessLevels} from '../shared/account-access';
 import {accountStatusForAccess, AccountStatus, AppBootstrap, AppBootstrapSession, AppBootstrapSessionStatus, AuthSettings, UserInfo} from '../shared/models';
 import requests, {isAccountDataAccessDeniedError, isAccountMaintenanceError, requestErrorDetails, requestErrorMessage} from '../shared/services/requests';
-import type {ThemeMode, ViewPreferences} from '../shared/services/view-preferences-service';
+import type {ViewPreferences} from '../shared/services/view-preferences-service';
 import {WALLET_REAUTH_REQUIRED} from '../shared/services/wallet-service';
 import {loginPathFor, readLoginReturnTo} from '../shared/login-navigation';
 import {deploymentPath, readApplicationBaseHRef, readDeploymentBaseHRef} from '../shared/runtime-base';
 import {BrandMark, clearAsyncDataCache, setAsyncDataCacheSession} from '../components';
 import {AccountAvatar, accountTierLabel} from '../shared/account-presentation';
-import {accountThemeLabel, localThemeMode, serverThemeMode} from '../shared/theme';
 import {configureMemberSessionServices, ensureMemberBusinessServices, memberServices as services} from './services';
 import {clearTraderSyncState} from './pages/trader-sync/state';
 import {clearTelegramBindingInstructions} from './notification-storage';
@@ -249,7 +243,6 @@ const navItems = navSections.flatMap(section => section.children);
 
 const accountRouteMetadata = [
     {path: '/account/profile', section: 'Account', label: 'Profile'},
-    {path: '/account/appearance', section: 'Account', label: 'Appearance'},
     {path: '/account/security', section: 'Account', label: 'Security'},
     {path: '/account/access', section: 'Account', label: 'Access & session'},
     {path: '/help', section: 'Support', label: 'Help'}
@@ -391,11 +384,10 @@ const mergeMonotonicAccountProjection = (previous: AccessState | null, incoming:
         return incoming;
     }
     const profile = incoming.user.profile.revision < previous.user.profile.revision ? previous.user.profile : incoming.user.profile;
-    const preferences = incoming.user.preferences.revision < previous.user.preferences.revision ? previous.user.preferences : incoming.user.preferences;
-    if (profile === incoming.user.profile && preferences === incoming.user.preferences) {
+    if (profile === incoming.user.profile) {
         return incoming;
     }
-    return {...incoming, user: {...incoming.user, profile, preferences}};
+    return {...incoming, user: {...incoming.user, profile}};
 };
 
 type SessionState = {status: 'anonymous'} | {status: 'resolving'} | {status: 'authenticated'; access: AccessState} | {status: 'maintenance'} | {status: 'error'; error: Error};
@@ -451,15 +443,7 @@ const useNarrowShell = () => {
     return narrow;
 };
 
-const AppRoutes = (props: {
-    access: AccessState;
-    preferences: ViewPreferences;
-    settings: AuthSettings;
-    themeChanging: boolean;
-    onThemeChange: (theme: ThemeMode) => Promise<void>;
-    loggingOut: boolean;
-    onLogout: () => void;
-}) => {
+const AppRoutes = (props: {access: AccessState; settings: AuthSettings; loggingOut: boolean; onLogout: () => void}) => {
     const pending = isPendingAccess(props.access);
     const moduleRoute = (module: AccountDataModule, element: React.ReactElement) =>
         props.access.moduleAccess[module] >= AccountDataAccess.Read ? element : <Navigate replace={true} to='/account/access' />;
@@ -468,9 +452,6 @@ const AppRoutes = (props: {
     const profitSharingRoute = (element: React.ReactElement) => (props.access.user.access.profitSharingEnabled ? element : <Navigate replace={true} to='/account/access' />);
     const accountCenterProps = {
         showMemberSecurity: props.access.user.access.apiKeyEnabled,
-        preferences: props.preferences,
-        themeChanging: props.themeChanging,
-        onThemeChange: props.onThemeChange,
         loggingOut: props.loggingOut,
         onLogout: props.onLogout
     };
@@ -533,7 +514,6 @@ const AppRoutes = (props: {
                 />
                 <Route path='/notifications' element={<NotificationsPage />} />
                 <Route path='/account/profile' element={<AccountCenterPage section='profile' {...accountCenterProps} />} />
-                <Route path='/account/appearance' element={<AccountCenterPage section='appearance' {...accountCenterProps} />} />
                 <Route path='/account/security' element={props.access.user.access.apiKeyEnabled ? <AccountSecurityPage /> : <Navigate replace={true} to='/account/access' />} />
                 <Route path='/account/access' element={<AccountCenterPage section='access' {...accountCenterProps} />} />
                 <Route path='/profit-sharing' element={profitSharingRoute(<ProfitSharingRoundsPage />)} />
@@ -556,7 +536,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
     const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
     const [accessRefreshedAt, setAccessRefreshedAt] = React.useState(initialAccess ? Date.now() : 0);
     const [accountMenuOpen, setAccountMenuOpen] = React.useState(false);
-    const [themeChanging, setThemeChanging] = React.useState(false);
     const [loggingOut, setLoggingOut] = React.useState(false);
     const sidebarRef = React.useRef<HTMLDivElement>(null);
     const shellBackgroundRef = React.useRef<HTMLElement>(null);
@@ -587,7 +566,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         requests.invalidatePendingRequestErrors();
         requests.endAuthorizationSession();
         setAccountMenuOpen(false);
-        setThemeChanging(false);
         setLoggingOut(false);
         setSession(status === 'maintenance' ? {status: 'maintenance'} : {status: 'anonymous'});
         clearAsyncDataCache();
@@ -622,7 +600,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                 setAsyncDataCacheSession('member', user.accountId, sessionGeneration);
                 const previous = accessRef.current;
                 const next = mergeMonotonicAccountProjection(previous, loadAccessState(user));
-                services.viewPreferences.syncServerTheme(localThemeMode(next.user.preferences.theme));
                 const authorizationChanged =
                     Boolean(previous) &&
                     (previous.user.accountId !== next.user.accountId ||
@@ -763,12 +740,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
     React.useEffect(() => {
         setDesktopSidebarCollapsed(props.pref.hideSidebar);
     }, [props.pref.hideSidebar]);
-
-    React.useEffect(() => {
-        if (access) {
-            services.viewPreferences.syncServerTheme(localThemeMode(access.user.preferences.theme));
-        }
-    }, [access?.user.preferences.revision, access?.user.accountId]);
 
     React.useEffect(() => {
         if (narrowShell) {
@@ -963,61 +934,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         };
     }, [access, accessRefreshedAt, refreshAccess]);
 
-    const changeTheme = React.useCallback(
-        async (theme: ThemeMode) => {
-            const current = accessRef.current;
-            if (!current || themeChanging || localThemeMode(current.user.preferences.theme) === theme) {
-                setAccountMenuOpen(false);
-                return;
-            }
-            const generation = accessGenerationRef.current;
-            const isCurrentAccountSession = () => {
-                const latest = accessRef.current;
-                return (
-                    generation === accessGenerationRef.current &&
-                    accessRefreshAllowedRef.current &&
-                    latest !== null &&
-                    latest.user.accountId === current.user.accountId &&
-                    latest.user.iss === current.user.iss
-                );
-            };
-            setThemeChanging(true);
-            services.viewPreferences.syncServerTheme(theme);
-            try {
-                const preferences = await services.accounts.updatePreferences(serverThemeMode(theme), current.user.preferences.revision);
-                const latest = accessRef.current;
-                if (isCurrentAccountSession() && latest) {
-                    const next = mergeMonotonicAccountProjection(latest, {...latest, user: {...latest.user, preferences}});
-                    services.viewPreferences.syncServerTheme(localThemeMode(next.user.preferences.theme));
-                    accessRef.current = next;
-                    setSession({status: 'authenticated', access: next});
-                    notifications.success('Appearance updated', `${accountThemeLabel(next.user.preferences.theme)} theme is now synced across devices.`);
-                }
-            } catch (err) {
-                const latest = accessRef.current;
-                if (isCurrentAccountSession() && latest) {
-                    services.viewPreferences.syncServerTheme(localThemeMode(latest.user.preferences.theme));
-                    try {
-                        await refreshAccess(true);
-                    } catch {
-                        // Keep the last authoritative projection if a refresh is unavailable.
-                    }
-                    const refreshed = accessRef.current;
-                    if (isCurrentAccountSession() && refreshed) {
-                        services.viewPreferences.syncServerTheme(localThemeMode(refreshed.user.preferences.theme));
-                        notifications.error('Could not update appearance', requestErrorMessage(err));
-                    }
-                }
-            } finally {
-                if (generation === accessGenerationRef.current) {
-                    setThemeChanging(false);
-                    setAccountMenuOpen(false);
-                }
-            }
-        },
-        [notifications, refreshAccess, themeChanging]
-    );
-
     const logout = React.useCallback(async () => {
         if (loggingOut) {
             return;
@@ -1061,22 +977,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
               },
               {type: 'divider'},
               {key: '/account/profile', label: 'Profile', icon: <IdcardOutlined />},
-              {
-                  type: 'group',
-                  label: (
-                      <span className='athena-account-menu__label'>
-                          <span>
-                              <BgColorsOutlined /> Appearance
-                          </span>
-                          <small>{themeChanging ? 'Saving…' : accountThemeLabel(props.pref.theme)}</small>
-                      </span>
-                  ),
-                  children: [
-                      {key: 'theme:system', label: 'System', disabled: themeChanging, icon: props.pref.theme === 'system' ? <CheckOutlined /> : <DesktopOutlined />},
-                      {key: 'theme:light', label: 'Light', disabled: themeChanging, icon: props.pref.theme === 'light' ? <CheckOutlined /> : <SunOutlined />},
-                      {key: 'theme:dark', label: 'Dark', disabled: themeChanging, icon: props.pref.theme === 'dark' ? <CheckOutlined /> : <MoonOutlined />}
-                  ]
-              },
               {key: '/account/access', label: 'Access', icon: <KeyOutlined />},
               ...(access.user.access.apiKeyEnabled ? [{key: '/account/security', label: 'Security', icon: <SettingOutlined />}] : []),
               {key: '/help', label: 'Help', icon: <QuestionCircleOutlined />},
@@ -1099,10 +999,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         : [];
 
     const onAccountMenuClick: MenuProps['onClick'] = item => {
-        if (item.key.startsWith('theme:')) {
-            void changeTheme(item.key.slice('theme:'.length) as ThemeMode);
-            return;
-        }
         if (item.key === 'logout') {
             void logout();
             return;
@@ -1156,17 +1052,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
             </Routes>
         );
     } else if (access && !isLoginPath) {
-        routes = (
-            <AppRoutes
-                access={access}
-                preferences={props.pref}
-                settings={props.settings}
-                themeChanging={themeChanging}
-                onThemeChange={changeTheme}
-                loggingOut={loggingOut}
-                onLogout={() => void logout()}
-            />
-        );
+        routes = <AppRoutes access={access} settings={props.settings} loggingOut={loggingOut} onLogout={() => void logout()} />;
     } else {
         routes = <div className='athena-boot'>Loading Athena...</div>;
     }
@@ -1331,13 +1217,9 @@ export const MemberApp = () => {
 };
 
 const RegistrationBootstrap = () => (
-    <ConfigProvider>
-        <AntApp>
-            <React.Suspense fallback={<div className='athena-boot'>Loading registration…</div>}>
-                <RegisterPage />
-            </React.Suspense>
-        </AntApp>
-    </ConfigProvider>
+    <React.Suspense fallback={<div className='athena-boot'>Loading registration…</div>}>
+        <RegisterPage />
+    </React.Suspense>
 );
 
 const AppEntry = () => {

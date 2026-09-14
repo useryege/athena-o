@@ -217,20 +217,6 @@ func ToAPIAccountProfile(accountID string, profile accountcenter.Profile) *accou
 	}
 }
 
-// ToAPIAccountPreferences projects the current account's private UI preferences.
-func ToAPIAccountPreferences(preferences accountcenter.Preferences) *account.AccountPreferences {
-	theme := account.AccountThemeMode_ACCOUNT_THEME_MODE_UNSPECIFIED
-	switch preferences.Theme {
-	case accountcenter.ThemeModeSystem:
-		theme = account.AccountThemeMode_ACCOUNT_THEME_MODE_SYSTEM
-	case accountcenter.ThemeModeLight:
-		theme = account.AccountThemeMode_ACCOUNT_THEME_MODE_LIGHT
-	case accountcenter.ThemeModeDark:
-		theme = account.AccountThemeMode_ACCOUNT_THEME_MODE_DARK
-	}
-	return &account.AccountPreferences{Theme: theme, Revision: preferences.Revision}
-}
-
 func canViewAccount(ctx context.Context, accountID string) bool {
 	return accountID == session.GetUserIdentifier(ctx)
 }
@@ -420,26 +406,6 @@ func (s *Server) UpdateAccountTier(ctx context.Context, r *account.UpdateAccount
 		return nil, err
 	}
 	return ToAPIAccountProfile(accountID, profile), nil
-}
-
-func (s *Server) UpdateAccountPreferences(ctx context.Context, r *account.UpdateAccountPreferencesRequest) (*account.AccountPreferences, error) {
-	accountID := session.GetUserIdentifier(ctx)
-	var theme accountcenter.ThemeMode
-	switch r.Theme {
-	case account.AccountThemeMode_ACCOUNT_THEME_MODE_SYSTEM:
-		theme = accountcenter.ThemeModeSystem
-	case account.AccountThemeMode_ACCOUNT_THEME_MODE_LIGHT:
-		theme = accountcenter.ThemeModeLight
-	case account.AccountThemeMode_ACCOUNT_THEME_MODE_DARK:
-		theme = accountcenter.ThemeModeDark
-	default:
-		return nil, status.Errorf(codes.InvalidArgument, "unsupported account theme %d", r.Theme)
-	}
-	preferences, err := s.accountCenter.UpdatePreferences(ctx, accountID, theme, r.ExpectedRevision)
-	if err != nil {
-		return nil, err
-	}
-	return ToAPIAccountPreferences(preferences), nil
 }
 
 // ListTokens returns API Key metadata only for the current authenticated account.

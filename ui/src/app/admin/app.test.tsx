@@ -14,7 +14,7 @@ let mockLoad: () => Promise<string>;
 const mockUser = () => parseUserInfo({accountId: 'admin-A', iss: 'issuer-one', loggedIn: true, administrator: true, username: 'admin'});
 jest.mock('../session/bootstrap', () => ({
     SessionBootstrap: ({children}: any) =>
-        children({session: {status: AppBootstrapSessionStatus.Authenticated, userInfo: mockUser()}, settings: {}}, {theme: 'light', hideSidebar: false})
+        children({session: {status: AppBootstrapSessionStatus.Authenticated, userInfo: mockUser()}, settings: {}}, {hideSidebar: false})
 }));
 jest.mock('./routes', () => ({
     ...jest.requireActual('./routes'),

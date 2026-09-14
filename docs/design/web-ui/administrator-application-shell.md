@@ -49,7 +49,7 @@
 6. 管理员 Trader Sync 路由为 `/admin/trader-sync/subscriptions` 与 `/admin/trader-sync/subscriptions/:id`，并与 `/admin/service-status` 互链。列表 filter 先保留 draft，只有 Apply 才生效；accountId trim、wallet trim 并小写，includeCancelled=true 表示当前与已取消全部，默认 pageSize=50。
 7. Trader Sync 列表 Previous 使用本页真实输入 cursor，Next 使用响应 nextCursor，不推算 total。只显示用户安全身份、完整钱包、生命周期、观察、活动数和关联逻辑 delivery 数；不同订阅行的 Associated deliveries 不可求和。详情无备注、完整活动、消息正文、逐条 delivery 或 Pause/Resume/Cancel/Resend。
 8. Service Status 对 Services、Notification Runtime、Trader Sync 各维护独立 10 秒可见 single-flight；hidden 不发新请求，visible/focus 和手动 Refresh 使用同一 reload。某一来源 pending/失败不阻塞其余来源，失败保留该来源最后成功值、时间和 stale 提示。
-9. Profile、Appearance、Access、Help 只操作当前管理员 UUID；管理员应用不创建 API Key。Logout 只撤销/清除 `athena.token.admin`，会员会话不受影响。
+9. Profile、Access、Help 只操作当前管理员 UUID；管理员应用不创建 API Key。Logout 只撤销/清除 `athena.token.admin`，会员会话不受影响。
 
 其他路由为 `/admin/profit-sharing`、`/admin/profit-sharing/:slug`、`/admin/etherscan-gateways`、`/admin/notifications`、`/admin/notifications/:id`、`/admin/account/profile`、`/admin/account/appearance`、`/admin/account/access` 与 `/admin/help`。管理路由都位于 `/admin` 应用根下。
 
@@ -63,7 +63,7 @@
 
 ## 数据与 Service Status 语义
 
-管理员授权投影包含 account UUID、持久管理员角色、profile、preferences、安全 provider 身份、access revision 和登录专用 aggregate。请求/cache key 包含 admin realm、viewer UUID、issuer 与 generation；持久 UI key 使用 `athena.admin.*`，不读取会员 drafts、filters、return positions 或 feature cache。
+管理员授权投影包含 account UUID、持久管理员角色、profile、安全 provider 身份、access revision 和登录专用 aggregate。请求/cache key 包含 admin realm、viewer UUID、issuer 与 generation；持久 UI key 使用 `athena.admin.*`，不读取会员 drafts、filters、return positions 或 feature cache。
 
 Trader Sync Summary DTO 从源头白名单化：ID 与计数保持 string，不经 JavaScript number；缺值显示 `Unavailable`/`Unknown`，raw 不可观测不补 0。健康六态为 pending_baseline、healthy、interrupted、paused、permission_disabled、cancelled；healthy 显示 `Monitoring`，interrupted 显示 `Monitoring interrupted`。
 

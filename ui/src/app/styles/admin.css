@@ -2,9 +2,9 @@
 @import './admin-features.css';
 
 .athena-admin-shell .athena-brand__copy strong {
-    color: var(--athena-accent, #e76f51);
+    color: var(--athena-accent);
 }
 
 .admin-login-screen .login-panel {
-    border-top: 3px solid var(--athena-accent, #e76f51);
+    border-top: 3px solid var(--athena-accent);
 }

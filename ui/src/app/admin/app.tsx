@@ -6,18 +6,14 @@ import '../styles/admin.css';
 import {
     ApiOutlined,
     BellOutlined,
-    CheckOutlined,
-    DesktopOutlined,
     HeartOutlined,
     IdcardOutlined,
     KeyOutlined,
     LogoutOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
-    MoonOutlined,
     PieChartOutlined,
     QuestionCircleOutlined,
-    SunOutlined,
     TeamOutlined,
     RadarChartOutlined
 } from '@ant-design/icons';
@@ -33,8 +29,7 @@ import {AppBootstrap, AppBootstrapSessionStatus, UserInfo} from '../shared/model
 import {readAdminLoginReturnTo} from '../shared/login-navigation';
 import {deploymentPath, readApplicationBaseHRef, readDeploymentBaseHRef} from '../shared/runtime-base';
 import requests, {isAccountMaintenanceError, requestErrorDetails, requestErrorMessage} from '../shared/services/requests';
-import type {ThemeMode, ViewPreferences} from '../shared/services/view-preferences-service';
-import {accountThemeLabel, localThemeMode, serverThemeMode} from '../shared/theme';
+import type {ViewPreferences} from '../shared/services/view-preferences-service';
 import {BrandMark, clearAsyncDataCache, setAsyncDataCacheSession} from '../components';
 import {SessionBootstrap} from '../session/bootstrap';
 import {
@@ -83,7 +78,6 @@ const routeMetadata = [
     {path: '/etherscan-gateways', section: 'System', label: 'Etherscan Gateways'},
     {path: '/notifications', section: 'System', label: 'Notifications'},
     {path: '/account/profile', section: 'Account', label: 'Profile'},
-    {path: '/account/appearance', section: 'Account', label: 'Appearance'},
     {path: '/account/access', section: 'Account', label: 'Access & session'},
     {path: '/help', section: 'Support', label: 'Help'}
 ];
@@ -144,18 +138,8 @@ const AdminNotFoundPage = () => {
     return <Result status='404' title='Page not found' extra={<Button onClick={() => navigate('/accounts')}>Return to accounts</Button>} />;
 };
 
-const AdminRoutes = (props: {
-    preferences: ViewPreferences;
-    settings: AppBootstrap['settings'];
-    themeChanging: boolean;
-    onThemeChange: (theme: ThemeMode) => Promise<void>;
-    loggingOut: boolean;
-    onLogout: () => void;
-}) => {
+const AdminRoutes = (props: {settings: AppBootstrap['settings']; loggingOut: boolean; onLogout: () => void}) => {
     const accountProps = {
-        preferences: props.preferences,
-        themeChanging: props.themeChanging,
-        onThemeChange: props.onThemeChange,
         loggingOut: props.loggingOut,
         onLogout: props.onLogout
     };
@@ -173,7 +157,6 @@ const AdminRoutes = (props: {
                 <Route path='/notifications' element={<SystemNotificationsPage />} />
                 <Route path='/notifications/:id' element={<SystemNotificationDetailPage />} />
                 <Route path='/account/profile' element={<AccountCenterPage section='profile' {...accountProps} />} />
-                <Route path='/account/appearance' element={<AccountCenterPage section='appearance' {...accountProps} />} />
                 <Route path='/account/access' element={<AccountCenterPage section='access' {...accountProps} />} />
                 <Route path='/help' element={<HelpPage help={props.settings.help} />} />
                 <Route path='*' element={<AdminNotFoundPage />} />
@@ -210,7 +193,6 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
     const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = React.useState(props.preferences.hideSidebar);
     const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
     const [accountMenuOpen, setAccountMenuOpen] = React.useState(false);
-    const [themeChanging, setThemeChanging] = React.useState(false);
     const [loggingOut, setLoggingOut] = React.useState(false);
     const [lastCheckedAt, setLastCheckedAt] = React.useState(Date.now());
     const moduleAccess = React.useMemo(() => moduleAccessLevels(user.access), [user.access]);
@@ -251,7 +233,6 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
         const sessionGeneration = requests.beginAuthorizationSession(latest.accountId);
         setAsyncDataCacheSession('admin', latest.accountId, sessionGeneration);
         setLastCheckedAt(Date.now());
-        services.viewPreferences.syncServerTheme(localThemeMode(latest.preferences.theme));
     }, [location.hash, location.pathname, location.search]);
 
     const recheckAdminAccess = React.useCallback(() => {
@@ -295,27 +276,6 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
         const info = routeInfo(location.pathname);
         document.title = info ? `${info.label} · Athena Admin` : 'Athena Admin';
     }, [location.pathname]);
-
-    const changeTheme = async (theme: ThemeMode) => {
-        if (themeChanging || localThemeMode(user.preferences.theme) === theme) {
-            setAccountMenuOpen(false);
-            return;
-        }
-        setThemeChanging(true);
-        services.viewPreferences.syncServerTheme(theme);
-        try {
-            const preferences = await services.accounts.updatePreferences(serverThemeMode(theme), user.preferences.revision);
-            setUser(current => ({...current, preferences}));
-            services.viewPreferences.syncServerTheme(localThemeMode(preferences.theme));
-            notifications.success('Appearance updated', `${accountThemeLabel(preferences.theme)} theme is now synced across devices.`);
-        } catch (error) {
-            services.viewPreferences.syncServerTheme(localThemeMode(user.preferences.theme));
-            notifications.error('Could not update appearance', requestErrorMessage(error));
-        } finally {
-            setThemeChanging(false);
-            setAccountMenuOpen(false);
-        }
-    };
 
     const logout = async () => {
         if (loggingOut) {
@@ -372,15 +332,6 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
         },
         {type: 'divider'},
         {key: '/account/profile', label: 'Profile', icon: <IdcardOutlined />},
-        {
-            type: 'group',
-            label: `Appearance · ${themeChanging ? 'Saving…' : accountThemeLabel(props.preferences.theme)}`,
-            children: [
-                {key: 'theme:system', label: 'System', icon: props.preferences.theme === 'system' ? <CheckOutlined /> : <DesktopOutlined />},
-                {key: 'theme:light', label: 'Light', icon: props.preferences.theme === 'light' ? <CheckOutlined /> : <SunOutlined />},
-                {key: 'theme:dark', label: 'Dark', icon: props.preferences.theme === 'dark' ? <CheckOutlined /> : <MoonOutlined />}
-            ]
-        },
         {key: '/account/access', label: 'Access', icon: <KeyOutlined />},
         {key: '/help', label: 'Help', icon: <QuestionCircleOutlined />},
         {type: 'divider'},
@@ -401,9 +352,7 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
     ];
 
     const onAccountMenuClick: MenuProps['onClick'] = item => {
-        if (item.key.startsWith('theme:')) {
-            void changeTheme(item.key.slice('theme:'.length) as ThemeMode);
-        } else if (item.key === 'logout') {
+        if (item.key === 'logout') {
             void logout();
         } else if (item.key.startsWith('/')) {
             setAccountMenuOpen(false);
@@ -530,14 +479,7 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
                                     </div>
                                 </section>
                             ) : (
-                                <AdminRoutes
-                                    preferences={props.preferences}
-                                    settings={props.settings}
-                                    themeChanging={themeChanging}
-                                    onThemeChange={changeTheme}
-                                    loggingOut={loggingOut}
-                                    onLogout={() => void logout()}
-                                />
+                                <AdminRoutes settings={props.settings} loggingOut={loggingOut} onLogout={() => void logout()} />
                             )}
                         </Layout.Content>
                     </Layout>

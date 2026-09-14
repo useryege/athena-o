@@ -101,12 +101,9 @@ components keep one neutral class contract.
 
 `StatusTag` in the neutral display components uses
 `athena-status-tag--positive` only when `positive` is true and `negative` is
-false. In the light theme, `shared.css` sets its text to `#237804` against
-Ant Design's existing `#f6ffed` background (approximately 5.44:1 contrast).
-The dark theme retains Ant Design's palette. Negative/default tags and the
-existing Trader Sync local text overrides retain their styles; this rule does
-not override all green Ant Design tags. Keep ordinary status text at least
-4.5:1 in the rendered page and verify both themes with the existing a11y suite.
+false. The shared single dark theme defines the approved semantic success text,
+background, and border roles. Theme colors come from `styles/tokens.css` and
+`AthenaThemeProvider`; rendered contrast is checked in browser acceptance.
 
 ## Runtime Flow
 
@@ -162,8 +159,8 @@ UUID, session generation, module or capability, and read/write mode. Cache keys
 include realm, viewer UUID, and session generation; a generation change clears
 the previous session's entries before the next realm is activated. Realm-
 specific persistent keys use
-`athena.member.*` or `athena.admin.*`; only explicitly neutral preferences such
-as theme presentation may be shared.
+`athena.member.*` or `athena.admin.*`; the fixed dark theme and local fonts are shared presentation, while browser view
+preferences remain realm-scoped.
 
 The HTML base values are deployment output, not account state. They are
 normalized to leading- and trailing-slash path values and never derived from a
