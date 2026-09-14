@@ -226,17 +226,12 @@
 }
 .trader-sync-add .ant-btn-primary:not(:disabled),
 .trader-sync-view.ant-btn-primary:not(:disabled) {
-    color: #fff;
+    color: var(--athena-bg);
     background: var(--athena-primary);
     border-color: var(--athena-primary);
 }
 .trader-sync-cancel-modal .ant-btn-primary.ant-btn-dangerous:not(:disabled) {
-    color: #fff;
+    color: var(--athena-bg);
     background: var(--athena-red);
     border-color: var(--athena-red);
-}
-html[data-theme='dark'] .trader-sync-add .ant-btn-primary:not(:disabled),
-html[data-theme='dark'] .trader-sync-view.ant-btn-primary:not(:disabled),
-html[data-theme='dark'] .trader-sync-cancel-modal .ant-btn-primary.ant-btn-dangerous:not(:disabled) {
-    color: var(--athena-bg);
 }

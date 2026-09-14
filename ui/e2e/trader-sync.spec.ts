@@ -460,3 +460,37 @@ test('administrator newer 401 fences an older successful permission response', a
         state.releaseUserInfo?.();
     }
 });
+
+test('single dark Trader Sync button roles', async ({page}, info) => {
+    await installTraderSyncRoutes(page, 'monitoring');
+    for (const width of [1440, 390]) {
+        await page.setViewportSize({width, height: 900});
+        await page.goto(memberPath('/trader-sync/add'));
+        await page.getByLabel('Wallet address or Polymarket profile URL').fill('0x000000000000000000000000000000000000002a');
+        // Styling is fixed dark and does not need a conditional root marker.
+        await page.locator('html').evaluate(element => element.removeAttribute('data-theme'));
+        const add = page.getByRole('button', {name: 'Resolve trader', exact: true});
+        await expect(add).toBeEnabled();
+        await expect(add).toHaveCSS('color', 'rgb(6, 8, 11)');
+        await expect(add).toHaveCSS('background-color', 'rgb(0, 255, 167)');
+        await page.screenshot({path: info.outputPath(`trader-add-${width}.png`), fullPage: true});
+
+        await page.goto(memberPath('/trader-sync/subscriptions'));
+        const view = page.locator('.trader-sync-view').first();
+        await expect(view).toBeVisible();
+        await page.locator('html').evaluate(element => element.removeAttribute('data-theme'));
+        await expect(view).toHaveCSS('color', 'rgb(6, 8, 11)');
+        await expect(view).toHaveCSS('background-color', 'rgb(0, 255, 167)');
+        await page.screenshot({path: info.outputPath(`trader-view-${width}.png`), fullPage: true});
+
+        await page.goto(memberPath(`/trader-sync/subscriptions/${subscriptionID}`));
+        await page.getByRole('button', {name: 'Cancel subscription', exact: true}).click();
+        await page.locator('html').evaluate(element => element.removeAttribute('data-theme'));
+        const cancel = page.locator('.trader-sync-cancel-modal .ant-btn-primary.ant-btn-dangerous');
+        await expect(cancel).toBeVisible();
+        await expect(cancel).toHaveCSS('color', 'rgb(6, 8, 11)');
+        await expect(cancel).toHaveCSS('background-color', 'rgb(245, 140, 155)');
+        await page.getByRole('dialog').screenshot({path: info.outputPath(`trader-cancel-${width}.png`)});
+        await page.keyboard.press('Escape');
+    }
+});
