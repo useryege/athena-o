@@ -1,8 +1,8 @@
-import {CheckCircleOutlined, ClockCircleOutlined, LockOutlined, TrophyOutlined} from '@ant-design/icons';
+import {LockOutlined, TrophyOutlined} from '@ant-design/icons';
 import {Alert, Card, Progress, Radio, Space, Tag, Typography} from 'antd';
 import * as React from 'react';
-import {useBlocker} from 'react-router-dom';
-import {Context} from '../context';
+import {Link, useBlocker} from 'react-router-dom';
+import {Context, type ModalApi, type ModalHandle} from '../context';
 import {ProfitSharingRoundPhase} from '../services/profit-sharing-service';
 import type {ProfitSharingProposal, ProfitSharingProposalItem, ProfitSharingResult, ProfitSharingRound} from '../services/profit-sharing-service';
 
@@ -24,12 +24,53 @@ export const ProfitSharingPhaseTag = (props: {phase: ProfitSharingRoundPhase}) =
         props.phase === ProfitSharingRoundPhase.Collecting
             ? 'processing'
             : props.phase === ProfitSharingRoundPhase.Voting
-              ? 'gold'
+              ? 'warning'
               : props.phase === ProfitSharingRoundPhase.Closed
-                ? 'green'
+                ? 'success'
                 : 'default';
     return <Tag color={color}>{profitSharingPhaseLabel(props.phase)}</Tag>;
 };
+
+export const ProfitSharingRoundLink = ({round}: {round: ProfitSharingRound}) => (
+    <div className='profit-sharing-round-title'>
+        <Link className='foundation-record-link' to={`/profit-sharing/${encodeURIComponent(round.slug)}`}>
+            {round.title}
+        </Link>
+        <span className='athena-identifier'>/{round.slug}</span>
+    </div>
+);
+
+export const ProfitSharingRoundRecord = ({round, admin = false}: {round: ProfitSharingRound; admin?: boolean}) => (
+    <article className='profit-sharing-round-card'>
+        <ProfitSharingRoundLink round={round} />
+        <dl>
+            <div>
+                <dt>Phase</dt>
+                <dd>
+                    <ProfitSharingPhaseTag phase={round.phase} />
+                </dd>
+            </div>
+            {admin && (
+                <div>
+                    <dt>Participants</dt>
+                    <dd>{round.participantCount}</dd>
+                </div>
+            )}
+            <div>
+                <dt>{admin ? 'Submitted' : 'Proposals'}</dt>
+                <dd>
+                    {round.submittedCount} / {round.participantCount}
+                </dd>
+            </div>
+            <div>
+                <dt>{admin ? 'Voted' : 'Votes'}</dt>
+                <dd>
+                    {round.phase === ProfitSharingRoundPhase.Voting || round.phase === ProfitSharingRoundPhase.Closed ? `${round.votedCount} / ${round.participantCount}` : '—'}
+                </dd>
+            </div>
+        </dl>
+    </article>
+);
 
 export const formatShareBasisPoints = (value?: number) => {
     if (value === undefined) {
@@ -45,36 +86,27 @@ export const ProfitSharingRoundMetrics = (props: {round: ProfitSharingRound}) =>
     return (
         <section className='profit-sharing-metrics' aria-label='Round progress'>
             <article className='profit-sharing-metric'>
-                <span className='profit-sharing-metric__icon' aria-hidden='true'>
-                    <ClockCircleOutlined />
-                </span>
                 <div>
                     <Typography.Text type='secondary'>Phase</Typography.Text>
                     <strong>{profitSharingPhaseLabel(round.phase)}</strong>
                 </div>
             </article>
             <article className='profit-sharing-metric'>
-                <span className='profit-sharing-metric__icon' aria-hidden='true'>
-                    <CheckCircleOutlined />
-                </span>
                 <div>
                     <Typography.Text type='secondary'>Proposals submitted</Typography.Text>
                     <strong>
                         {round.submittedCount} / {round.participantCount}
                     </strong>
-                    <Progress percent={submissionPercent} showInfo={false} size='small' />
+                    <Progress aria-label='Proposals submitted' percent={submissionPercent} showInfo={false} size='small' />
                 </div>
             </article>
             <article className='profit-sharing-metric'>
-                <span className='profit-sharing-metric__icon' aria-hidden='true'>
-                    <TrophyOutlined />
-                </span>
                 <div>
                     <Typography.Text type='secondary'>Votes submitted</Typography.Text>
                     <strong>
                         {round.votedCount} / {round.participantCount}
                     </strong>
-                    <Progress percent={votePercent} showInfo={false} size='small' />
+                    <Progress aria-label='Votes submitted' percent={votePercent} showInfo={false} size='small' />
                 </div>
             </article>
         </section>
@@ -143,9 +175,9 @@ export const ProfitSharingProposalCard = (props: {
                     )}
                 </div>
                 <Space size={6} wrap={true}>
-                    {props.proposal.isOwn && <Tag color='blue'>Your proposal</Tag>}
+                    {props.proposal.isOwn && <Tag color='processing'>Your proposal</Tag>}
                     {result?.isWinner && (
-                        <Tag color='green' icon={<TrophyOutlined />}>
+                        <Tag color='success' icon={<TrophyOutlined />}>
                             Winner
                         </Tag>
                     )}
@@ -202,8 +234,45 @@ export const ProfitSharingSealedNotice = () => (
     />
 );
 
+// Confirmations belong to this mounted identity/round, including portal content.
+export const useProfitSharingConfirm = () => {
+    const {modal} = React.useContext(Context);
+    const handles = React.useRef(new Set<ModalHandle>());
+    React.useEffect(
+        () => () => {
+            handles.current.forEach(handle => handle.destroy());
+            handles.current.clear();
+        },
+        []
+    );
+    return React.useCallback(
+        (options: Parameters<ModalApi['confirm']>[0]) => {
+            const handle = modal.confirm({
+                ...options,
+                className: 'profit-sharing-confirm',
+                focusable: {trap: true, focusTriggerAfterClose: true},
+                wrapProps: {
+                    onKeyDownCapture: event => {
+                        if (event.key !== 'Tab') return;
+                        const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not([disabled])'));
+                        const first = buttons[0];
+                        const last = buttons[buttons.length - 1];
+                        if (first && last && ((!event.shiftKey && document.activeElement === last) || (event.shiftKey && document.activeElement === first))) {
+                            event.preventDefault();
+                            (event.shiftKey ? last : first).focus();
+                        }
+                    }
+                }
+            });
+            handles.current.add(handle);
+            return handle;
+        },
+        [modal]
+    );
+};
+
 export const useProfitSharingUnsavedChanges = (dirty: boolean, message: string, onDiscard: () => void) => {
-    const ctx = React.useContext(Context);
+    const confirm = useProfitSharingConfirm();
     const blocker = useBlocker(dirty);
 
     React.useEffect(() => {
@@ -223,7 +292,8 @@ export const useProfitSharingUnsavedChanges = (dirty: boolean, message: string, 
             return;
         }
         let resolved = false;
-        const handle = ctx.modal.confirm({
+        const handle = confirm({
+            className: 'profit-sharing-confirm',
             title: 'Discard unsaved changes?',
             content: message,
             okText: 'Discard and leave',
@@ -242,5 +312,5 @@ export const useProfitSharingUnsavedChanges = (dirty: boolean, message: string, 
                 handle.destroy();
             }
         };
-    }, [blocker.state, ctx.modal, message, onDiscard]);
+    }, [blocker.state, confirm, message, onDiscard]);
 };

@@ -1,19 +1,22 @@
 import {ArrowLeftOutlined, DeleteOutlined, EditOutlined, PlusOutlined, SendOutlined, SettingOutlined, TrophyOutlined} from '@ant-design/icons';
-import {Alert, Button, Card, Empty, Form, Input, Modal, Result, Select, Space, Tag, Typography} from 'antd';
+import {Alert, Button, Empty, Form, Input, Modal, Result, Select, Space, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import {AppPage, ResourceTable, Section, useAsyncData} from '../../components';
-import {Context} from '../../shared/context';
+import {Context, useAuthorization} from '../../shared/context';
 import {adminServices as services} from '../services';
 import {ProfitSharingRoundPhase} from '../../shared/services/profit-sharing-service';
 import type {ProfitSharingParticipant, ProfitSharingParticipantDefinition, ProfitSharingRound} from '../../shared/services/profit-sharing-service';
 import {requestErrorDetails, requestErrorMessage} from '../../shared/services/requests';
 import {
     ProfitSharingPhaseTag,
+    ProfitSharingRoundLink,
+    ProfitSharingRoundRecord,
     ProfitSharingProposalGallery,
     ProfitSharingRoundMetrics,
     ProfitSharingSealedNotice,
+    useProfitSharingConfirm,
     useProfitSharingUnsavedChanges
 } from '../../shared/pages/profit-sharing-shared';
 
@@ -43,7 +46,7 @@ const useEligibleAccountOptions = () => {
             return;
         }
         setKnownOptions(current => {
-            const next = new Map(current);
+            const next = deferredSearch ? new Map(current) : new Map<string, EligibleAccountOption>();
             accounts.data.items.forEach(account => {
                 const values = [account.profile.displayName, account.identity.verifiedEmail || account.identity.solanaAddress, `@${account.username}`].filter(Boolean);
                 next.set(account.id, {
@@ -109,48 +112,20 @@ const hasDuplicateAccounts = (participants: Array<{accountId: string}>) => {
 const roundColumns: ColumnsType<ProfitSharingRound> = [
     {
         title: 'Round',
-        render: round => (
-            <div className='profit-sharing-round-title'>
-                <strong>{round.title}</strong>
-                <Typography.Text type='secondary'>/{round.slug}</Typography.Text>
-            </div>
-        )
+        render: round => <ProfitSharingRoundLink round={round} />
     },
     {title: 'Phase', width: 180, render: round => <ProfitSharingPhaseTag phase={round.phase} />},
-    {title: 'Participants', width: 130, dataIndex: 'participantCount'},
-    {title: 'Submitted', width: 140, render: round => `${round.submittedCount} / ${round.participantCount}`},
+    {title: 'Participants', align: 'right', className: 'athena-numeric-column', width: 130, dataIndex: 'participantCount'},
+    {title: 'Submitted', align: 'right', className: 'athena-numeric-column', width: 140, render: round => `${round.submittedCount} / ${round.participantCount}`},
     {
         title: 'Voted',
+        align: 'right',
+        className: 'athena-numeric-column',
         width: 140,
         render: round =>
             round.phase === ProfitSharingRoundPhase.Voting || round.phase === ProfitSharingRoundPhase.Closed ? `${round.votedCount} / ${round.participantCount}` : '—'
     }
 ];
-
-const AdminRoundCompactCard = (props: {round: ProfitSharingRound}) => (
-    <Card className='profit-sharing-round-card' size='small' title={props.round.title} extra={<ProfitSharingPhaseTag phase={props.round.phase} />}>
-        <dl>
-            <div>
-                <dt>Participants</dt>
-                <dd>{props.round.participantCount}</dd>
-            </div>
-            <div>
-                <dt>Submitted</dt>
-                <dd>
-                    {props.round.submittedCount} / {props.round.participantCount}
-                </dd>
-            </div>
-            <div>
-                <dt>Voted</dt>
-                <dd>
-                    {props.round.phase === ProfitSharingRoundPhase.Voting || props.round.phase === ProfitSharingRoundPhase.Closed
-                        ? `${props.round.votedCount} / ${props.round.participantCount}`
-                        : '—'}
-                </dd>
-            </div>
-        </dl>
-    </Card>
-);
 
 const RoundDefinitionFields = (props: {
     accountOptions: EligibleAccountOption[];
@@ -178,7 +153,7 @@ const RoundDefinitionFields = (props: {
                         {required: true, whitespace: true},
                         {pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/, message: 'Use lowercase letters, numbers, and single hyphens.'}
                     ]}>
-                    <Input disabled={props.disabled || props.slugDisabled} addonBefore='/profit-sharing/' placeholder='phase-1' />
+                    <Input disabled={props.disabled} readOnly={props.slugDisabled} addonBefore='/profit-sharing/' placeholder='phase-1' />
                 </Form.Item>
             </div>
             <div className='profit-sharing-definition__participants-heading'>
@@ -222,7 +197,7 @@ const RoundDefinitionFields = (props: {
                                     name={[field.name, 'displayName']}
                                     label='Display name'
                                     rules={[{required: true, whitespace: true}]}>
-                                    <Input disabled={true} placeholder='Selected account display name' />
+                                    <Input readOnly={true} placeholder='Selected account display name' />
                                 </Form.Item>
                                 <Form.Item
                                     {...field}
@@ -266,6 +241,8 @@ const CreateRoundModal = (props: {
     onCreated: (round: ProfitSharingRound) => void;
 }) => {
     const ctx = React.useContext(Context);
+    const confirm = useProfitSharingConfirm();
+    const formID = React.useId();
     const [form] = Form.useForm<RoundDefinitionDraft>();
     const [submitting, setSubmitting] = React.useState(false);
 
@@ -299,7 +276,8 @@ const CreateRoundModal = (props: {
             props.onClose();
             return;
         }
-        ctx.modal.confirm({
+        confirm({
+            className: 'profit-sharing-confirm',
             title: 'Discard this new round?',
             content: 'The unsaved round definition will be lost.',
             okText: 'Discard',
@@ -316,93 +294,87 @@ const CreateRoundModal = (props: {
             open={props.open}
             title='Create profit-sharing round'
             width={960}
-            footer={null}
+            footer={
+                <div className='profit-sharing-definition__footer'>
+                    <Button disabled={submitting} onClick={close}>
+                        Cancel
+                    </Button>
+                    <Button type='primary' htmlType='submit' form={formID} loading={submitting} icon={<PlusOutlined />}>
+                        Create round
+                    </Button>
+                </div>
+            }
             destroyOnHidden={true}
             closable={!submitting}
             onCancel={close}>
-            <Form form={form} layout='vertical' disabled={submitting} onFinish={submit}>
+            <Form id={formID} form={form} layout='vertical' disabled={submitting} onFinish={submit}>
                 <RoundDefinitionFields
                     accountOptions={props.accountOptions}
                     accountsLoading={props.accountsLoading}
                     disabled={submitting}
                     onAccountSearch={props.onAccountSearch}
                 />
-                <div className='profit-sharing-definition__footer'>
-                    <Button disabled={submitting} onClick={close}>
-                        Cancel
-                    </Button>
-                    <Button type='primary' htmlType='submit' loading={submitting} icon={<PlusOutlined />}>
-                        Create round
-                    </Button>
-                </div>
             </Form>
         </Modal>
     );
 };
 
-export const ProfitSharingAdminRoundsPage = () => {
+const ProfitSharingAdminRoundsPageContent = () => {
     const navigate = useNavigate();
     const rounds = useAsyncData(() => services.adminProfitSharing.listRounds(), []);
     const accounts = useEligibleAccountOptions();
     const [createOpen, setCreateOpen] = React.useState(false);
     const accountOptions = accounts.options;
     return (
-        <AppPage
-            title='Profit Sharing Administration'
-            subtitle='Create reusable rounds, monitor sealed submissions, publish proposals together, and close ballots.'
-            loading={rounds.loading}
-            error={rounds.error || accounts.error}
-            onRefresh={() => {
-                rounds.reload();
-                accounts.reload();
-            }}
-            extra={
-                <Button
-                    type='primary'
-                    icon={<PlusOutlined />}
-                    disabled={accounts.loading || Boolean(accounts.error) || accountOptions.length === 0}
-                    onClick={() => setCreateOpen(true)}>
-                    New round
-                </Button>
-            }>
-            <Section title='All rounds'>
-                <ResourceTable
-                    rowKey='slug'
-                    label='Administer profit-sharing rounds'
-                    items={rounds.data || []}
-                    columns={roundColumns}
-                    loading={rounds.loading}
-                    onItemClick={round => navigate(`/profit-sharing/${encodeURIComponent(round.slug)}`)}
-                    compactRender={round => <AdminRoundCompactCard round={round} />}
-                    compactEmptyDescription='No profit-sharing rounds have been created'
-                />
-            </Section>
-            <CreateRoundModal
-                open={createOpen}
-                accountOptions={accountOptions}
-                accountsLoading={accounts.loading}
-                onAccountSearch={accounts.search}
-                onClose={() => setCreateOpen(false)}
-                onCreated={round => {
-                    setCreateOpen(false);
-                    navigate(`/profit-sharing/${encodeURIComponent(round.slug)}`);
+        <div className='foundation-page'>
+            <AppPage
+                title='Profit Sharing Administration'
+                subtitle='Create reusable rounds, monitor sealed submissions, publish proposals together, and close ballots.'
+                loading={rounds.loading}
+                error={rounds.error || accounts.error}
+                onRefresh={() => {
+                    rounds.reload();
+                    accounts.reload();
                 }}
-            />
-        </AppPage>
+                extra={
+                    <Button type='primary' icon={<PlusOutlined />} disabled={accounts.loading || Boolean(accounts.error)} onClick={() => setCreateOpen(true)}>
+                        New round
+                    </Button>
+                }>
+                <Section title='All rounds'>
+                    <ResourceTable
+                        rowKey='slug'
+                        label='Administer profit-sharing rounds'
+                        items={rounds.data || []}
+                        columns={roundColumns}
+                        loading={rounds.loading}
+                        compactRender={round => <ProfitSharingRoundRecord round={round} admin={true} />}
+                        compactEmptyDescription='No profit-sharing rounds have been created'
+                    />
+                </Section>
+                <CreateRoundModal
+                    open={createOpen}
+                    accountOptions={accountOptions}
+                    accountsLoading={accounts.loading}
+                    onAccountSearch={accounts.search}
+                    onClose={() => setCreateOpen(false)}
+                    onCreated={round => {
+                        setCreateOpen(false);
+                        navigate(`/profit-sharing/${encodeURIComponent(round.slug)}`);
+                    }}
+                />
+            </AppPage>
+        </div>
     );
 };
 
-const ParticipantStatusCard = (props: {participant: ProfitSharingParticipant}) => (
-    <Card
-        className='profit-sharing-participant-card'
-        size='small'
-        title={props.participant.displayName || `@${props.participant.username}`}
-        extra={
-            <Tag color={props.participant.proposalStatus === 'SUBMITTED' ? 'green' : 'default'}>{props.participant.proposalStatus === 'SUBMITTED' ? 'Submitted' : 'Draft'}</Tag>
-        }>
-        <Typography.Text type='secondary'>@{props.participant.username}</Typography.Text>
-        <Typography.Paragraph>{props.participant.baselineResponsibility}</Typography.Paragraph>
-    </Card>
+const ParticipantStatusCard = ({participant}: {participant: ProfitSharingParticipant}) => (
+    <article className='profit-sharing-participant-card'>
+        <strong>{participant.displayName || `@${participant.username}`}</strong>
+        <Typography.Text type='secondary'>@{participant.username}</Typography.Text>
+        <p>{participant.baselineResponsibility}</p>
+        <Tag color={participant.proposalStatus === 'SUBMITTED' ? 'success' : 'default'}>{participant.proposalStatus === 'SUBMITTED' ? 'Submitted' : 'Draft'}</Tag>
+    </article>
 );
 
 const participantColumns: ColumnsType<ProfitSharingParticipant> = [
@@ -419,7 +391,7 @@ const participantColumns: ColumnsType<ProfitSharingParticipant> = [
     {
         title: 'Proposal status',
         width: 160,
-        render: item => <Tag color={item.proposalStatus === 'SUBMITTED' ? 'green' : 'default'}>{item.proposalStatus === 'SUBMITTED' ? 'Submitted' : 'Draft'}</Tag>
+        render: item => <Tag color={item.proposalStatus === 'SUBMITTED' ? 'success' : 'default'}>{item.proposalStatus === 'SUBMITTED' ? 'Submitted' : 'Draft'}</Tag>
     }
 ];
 
@@ -449,11 +421,12 @@ const AdminClosedResult = (props: {round: ProfitSharingRound}) => {
     );
 };
 
-export const ProfitSharingAdminRoundPage = () => {
+const ProfitSharingAdminRoundPageContent = () => {
     const params = useParams<{slug: string}>();
     const slug = params.slug || '';
     const navigate = useNavigate();
     const ctx = React.useContext(Context);
+    const confirm = useProfitSharingConfirm();
     const roundData = useAsyncData(() => services.adminProfitSharing.getRound(slug), [slug]);
     const accounts = useEligibleAccountOptions();
     const round = roundData.data;
@@ -565,7 +538,8 @@ export const ProfitSharingAdminRoundPage = () => {
         if (!config) {
             return;
         }
-        ctx.modal.confirm({
+        confirm({
+            className: 'profit-sharing-confirm',
             title: config.title,
             content: config.content,
             okText: config.okText,
@@ -607,142 +581,151 @@ export const ProfitSharingAdminRoundPage = () => {
     }
 
     return (
-        <AppPage
-            title={round?.title || 'Profit Sharing Administration'}
-            subtitle={round ? `Administer /${round.slug} · Revision ${round.revision}` : undefined}
-            loading={roundData.loading}
-            error={roundData.error || accounts.error}
-            onRefresh={() => {
-                roundData.reload();
-                accounts.reload();
-            }}
-            extra={
-                <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/profit-sharing')}>
-                    All rounds
-                </Button>
-            }>
-            {round && (
-                <>
-                    <div className='profit-sharing-round-heading'>
-                        <ProfitSharingPhaseTag phase={round.phase} />
-                        <Typography.Text type='secondary'>Round revision {round.revision}</Typography.Text>
-                    </div>
-                    <ProfitSharingRoundMetrics round={round} />
+        <div className='foundation-page'>
+            <AppPage
+                title={round?.title || 'Profit Sharing Administration'}
+                subtitle={round ? `Administer /${round.slug} · Revision ${round.revision}` : undefined}
+                loading={roundData.loading}
+                error={roundData.error || accounts.error}
+                onRefresh={() => {
+                    roundData.reload();
+                    accounts.reload();
+                }}
+                extra={
+                    <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/profit-sharing')}>
+                        All rounds
+                    </Button>
+                }>
+                {round && (
+                    <>
+                        <div className='profit-sharing-round-heading'>
+                            <ProfitSharingPhaseTag phase={round.phase} />
+                            <Typography.Text type='secondary'>Round revision {round.revision}</Typography.Text>
+                        </div>
+                        <ProfitSharingRoundMetrics round={round} />
 
-                    <Section
-                        title='Round control'
-                        extra={
-                            advanceLabel ? (
-                                <Button
-                                    type='primary'
-                                    icon={round.phase === ProfitSharingRoundPhase.Draft ? <EditOutlined /> : <SendOutlined />}
-                                    loading={saving}
-                                    disabled={!canAdvance}
-                                    onClick={advance}>
-                                    {advanceLabel}
-                                </Button>
-                            ) : (
-                                <Tag color='green'>Complete</Tag>
-                            )
-                        }>
-                        <div className='profit-sharing-admin-control'>
-                            {round.phase === ProfitSharingRoundPhase.Draft && (
+                        <Section
+                            title='Round control'
+                            extra={
+                                advanceLabel ? (
+                                    <Button
+                                        type='primary'
+                                        icon={round.phase === ProfitSharingRoundPhase.Draft ? <EditOutlined /> : <SendOutlined />}
+                                        loading={saving}
+                                        disabled={!canAdvance}
+                                        onClick={advance}>
+                                        {advanceLabel}
+                                    </Button>
+                                ) : (
+                                    <Tag color='success'>Complete</Tag>
+                                )
+                            }>
+                            <div className='profit-sharing-admin-control'>
+                                {round.phase === ProfitSharingRoundPhase.Draft && (
+                                    <Alert
+                                        type='info'
+                                        showIcon={true}
+                                        title='Finish the participant roster before opening collection.'
+                                        description={
+                                            dirty
+                                                ? 'Save or discard the current definition before opening the round.'
+                                                : rosterIsEligible
+                                                  ? 'Opening collection locks the five-person roster and creates one proposal workspace per participant.'
+                                                  : round.participantCount === 5
+                                                    ? 'Every participant must remain signed-in eligible and authorized for Profit Sharing before collection can open.'
+                                                    : `Exactly five eligible participants are required. This draft currently has ${round.participantCount}.`
+                                        }
+                                    />
+                                )}
+                                {round.phase === ProfitSharingRoundPhase.Collecting && (
+                                    <Alert
+                                        type={round.submittedCount === round.participantCount ? 'success' : 'info'}
+                                        showIcon={true}
+                                        title={round.submittedCount === round.participantCount ? 'Every participant has submitted.' : 'Waiting for all proposals.'}
+                                        description={`${round.submittedCount} of ${round.participantCount} proposals are sealed. Publishing stays disabled until all are submitted.`}
+                                    />
+                                )}
+                                {round.phase === ProfitSharingRoundPhase.Voting && (
+                                    <Alert
+                                        type={round.votedCount === round.participantCount ? 'success' : 'info'}
+                                        showIcon={true}
+                                        title={round.votedCount === round.participantCount ? 'Every participant has voted.' : 'Voting is in progress.'}
+                                        description={`${round.votedCount} of ${round.participantCount} participants have voted. Closing stays disabled until all votes are recorded.`}
+                                    />
+                                )}
+                                {round.phase === ProfitSharingRoundPhase.Closed && <Alert type='success' showIcon={true} title='This round is final and read-only.' />}
+                                {round.phase === ProfitSharingRoundPhase.Collecting && <ProfitSharingSealedNotice />}
+                            </div>
+                        </Section>
+
+                        {round.phase === ProfitSharingRoundPhase.Draft && (
+                            <Section title='Round definition'>
+                                <Form form={form} className='profit-sharing-definition' layout='vertical' disabled={saving}>
+                                    <RoundDefinitionFields
+                                        accountOptions={accountOptions}
+                                        accountsLoading={accounts.loading}
+                                        disabled={saving || Boolean(accounts.error)}
+                                        slugDisabled={true}
+                                        onAccountSearch={accounts.search}
+                                    />
+                                    <div className='profit-sharing-definition__footer'>
+                                        <Typography.Text type={dirty ? 'warning' : 'secondary'}>{dirty ? 'Unsaved round definition' : 'Definition saved'}</Typography.Text>
+                                        <Space wrap={true}>
+                                            <Button disabled={!dirty || saving} onClick={discard}>
+                                                Discard
+                                            </Button>
+                                            <Button type='primary' icon={<SettingOutlined />} loading={saving} disabled={!dirty || saving} onClick={() => void saveDefinition()}>
+                                                Save definition
+                                            </Button>
+                                        </Space>
+                                    </div>
+                                </Form>
+                            </Section>
+                        )}
+
+                        <Section title='Participant status'>
+                            <ResourceTable
+                                rowKey='accountId'
+                                label='Profit-sharing participant submission status'
+                                items={round.participants}
+                                columns={participantColumns}
+                                compactRender={participant => <ParticipantStatusCard participant={participant} />}
+                                compactEmptyDescription='No participants configured'
+                            />
+                        </Section>
+
+                        {round.phase === ProfitSharingRoundPhase.Voting && (
+                            <Section title={`Published proposals · Ballot ${round.ballotNumber || 1}`}>
                                 <Alert
+                                    className='profit-sharing-admin-proposals__notice'
                                     type='info'
                                     showIcon={true}
-                                    title='Finish the participant roster before opening collection.'
-                                    description={
-                                        dirty
-                                            ? 'Save or discard the current definition before opening the round.'
-                                            : rosterIsEligible
-                                              ? 'Opening collection locks the five-person roster and creates one proposal workspace per participant.'
-                                              : round.participantCount === 5
-                                                ? 'Every participant must remain signed-in eligible and authorized for Profit Sharing before collection can open.'
-                                                : `Exactly five eligible participants are required. This draft currently has ${round.participantCount}.`
-                                    }
+                                    title='Authors and vote totals remain hidden until the round has a winner.'
                                 />
-                            )}
-                            {round.phase === ProfitSharingRoundPhase.Collecting && (
-                                <Alert
-                                    type={round.submittedCount === round.participantCount ? 'success' : 'info'}
-                                    showIcon={true}
-                                    title={round.submittedCount === round.participantCount ? 'Every participant has submitted.' : 'Waiting for all proposals.'}
-                                    description={`${round.submittedCount} of ${round.participantCount} proposals are sealed. Publishing stays disabled until all are submitted.`}
-                                />
-                            )}
-                            {round.phase === ProfitSharingRoundPhase.Voting && (
-                                <Alert
-                                    type={round.votedCount === round.participantCount ? 'success' : 'info'}
-                                    showIcon={true}
-                                    title={round.votedCount === round.participantCount ? 'Every participant has voted.' : 'Voting is in progress.'}
-                                    description={`${round.votedCount} of ${round.participantCount} participants have voted. Closing stays disabled until all votes are recorded.`}
-                                />
-                            )}
-                            {round.phase === ProfitSharingRoundPhase.Closed && <Alert type='success' showIcon={true} title='This round is final and read-only.' />}
-                        </div>
-                    </Section>
+                                {round.proposals.length > 0 ? (
+                                    <ProfitSharingProposalGallery proposals={round.proposals} />
+                                ) : (
+                                    <Empty description='No published proposals are available' />
+                                )}
+                            </Section>
+                        )}
 
-                    {round.phase === ProfitSharingRoundPhase.Draft && (
-                        <Section title='Round definition'>
-                            <Form form={form} className='profit-sharing-definition' layout='vertical' disabled={saving}>
-                                <RoundDefinitionFields
-                                    accountOptions={accountOptions}
-                                    accountsLoading={accounts.loading}
-                                    disabled={saving || Boolean(accounts.error)}
-                                    slugDisabled={true}
-                                    onAccountSearch={accounts.search}
-                                />
-                                <div className='profit-sharing-definition__footer'>
-                                    <Typography.Text type={dirty ? 'warning' : 'secondary'}>{dirty ? 'Unsaved round definition' : 'Definition saved'}</Typography.Text>
-                                    <Space wrap={true}>
-                                        <Button disabled={!dirty || saving} onClick={discard}>
-                                            Discard
-                                        </Button>
-                                        <Button type='primary' icon={<SettingOutlined />} loading={saving} disabled={!dirty || saving} onClick={() => void saveDefinition()}>
-                                            Save definition
-                                        </Button>
-                                    </Space>
-                                </div>
-                            </Form>
-                        </Section>
-                    )}
-
-                    <Section title='Participant status'>
-                        <ResourceTable
-                            rowKey='accountId'
-                            label='Profit-sharing participant submission status'
-                            items={round.participants}
-                            columns={participantColumns}
-                            compactRender={participant => <ParticipantStatusCard participant={participant} />}
-                            compactEmptyDescription='No participants configured'
-                        />
-                    </Section>
-
-                    {round.phase === ProfitSharingRoundPhase.Collecting && (
-                        <Section title='Sealed proposals'>
-                            <ProfitSharingSealedNotice />
-                        </Section>
-                    )}
-
-                    {round.phase === ProfitSharingRoundPhase.Voting && (
-                        <Section title={`Published proposals · Ballot ${round.ballotNumber || 1}`}>
-                            <Alert
-                                className='profit-sharing-admin-proposals__notice'
-                                type='info'
-                                showIcon={true}
-                                title='Authors and vote totals remain hidden until the round has a winner.'
-                            />
-                            {round.proposals.length > 0 ? (
-                                <ProfitSharingProposalGallery proposals={round.proposals} />
-                            ) : (
-                                <Empty description='No published proposals are available' />
-                            )}
-                        </Section>
-                    )}
-
-                    {round.phase === ProfitSharingRoundPhase.Closed && <AdminClosedResult round={round} />}
-                </>
-            )}
-        </AppPage>
+                        {round.phase === ProfitSharingRoundPhase.Closed && <AdminClosedResult round={round} />}
+                    </>
+                )}
+            </AppPage>
+        </div>
     );
+};
+
+export const ProfitSharingAdminRoundsPage = () => {
+    const authorization = useAuthorization();
+    const {slug = ''} = useParams<{slug: string}>();
+    return <ProfitSharingAdminRoundsPageContent key={JSON.stringify([authorization.user.accountId, authorization.user.iss, slug])} />;
+};
+
+export const ProfitSharingAdminRoundPage = () => {
+    const authorization = useAuthorization();
+    const {slug = ''} = useParams<{slug: string}>();
+    return <ProfitSharingAdminRoundPageContent key={JSON.stringify([authorization.user.accountId, authorization.user.iss, slug])} />;
 };

@@ -174,3 +174,20 @@ test.each([
     expect(text).toContain(sourceLabel);
     expect(text).not.toContain('Pump.fun');
 });
+
+// A failed scanner read must not hide a simultaneous candidate failure or its retry.
+test('keeps scanner and candidate failures independent and retries only their source', async () => {
+    jest.mocked(services.solana.listProjects).mockRejectedValueOnce(new Error('Candidates unavailable'));
+    jest.mocked(services.solana.getDiscoveryStatus).mockRejectedValueOnce(new Error('Scanner unavailable'));
+    await act(async () => {
+        tree = renderer.create(<SolanaPage />);
+    });
+    await flush();
+    expect(JSON.stringify(tree.toJSON())).toContain('Candidates unavailable');
+    expect(JSON.stringify(tree.toJSON())).toContain('Scanner unavailable');
+    await act(async () => tree.root.findByProps({'aria-label': 'Retry discovery status'}).props.onClick());
+    await flush();
+    expect(services.solana.getDiscoveryStatus).toHaveBeenCalledTimes(2);
+    expect(services.solana.listProjects).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(tree.toJSON())).toContain('Candidates unavailable');
+});

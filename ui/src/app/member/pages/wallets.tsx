@@ -1,30 +1,8 @@
 import {CopyOutlined, DeleteOutlined, EditOutlined, EyeOutlined, ImportOutlined, PlusOutlined, SafetyCertificateOutlined, UploadOutlined} from '@ant-design/icons';
-import {
-    Alert,
-    Avatar,
-    Button,
-    Card,
-    Checkbox,
-    Descriptions,
-    Drawer,
-    Dropdown,
-    Empty,
-    Form,
-    Input,
-    InputNumber,
-    Modal,
-    Pagination,
-    Skeleton,
-    Space,
-    Tag,
-    Tooltip,
-    Typography,
-    Upload
-} from 'antd';
-import type {MenuProps} from 'antd';
+import {Alert, Avatar, Button, Checkbox, Descriptions, Form, Input, InputNumber, Modal, Pagination, Space, Tag, Tooltip, Typography, Upload} from 'antd';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
-import {AppPage, AsyncState, ChoiceGroup, SearchBar, useAsyncData} from '../../components';
+import {AppPage, ChoiceGroup, ResourceTable, TruncatedText, useAsyncData} from '../../components';
 import {AccountDataModule} from '../../shared/access-modules';
 import {Context, useAuthorization} from '../../shared/context';
 import {AccountIdentityProvider} from '../../shared/models';
@@ -32,7 +10,6 @@ import {SensitiveWriteScope, useSensitiveWriteLease} from '../../shared/sensitiv
 import {memberServices as services} from '../services';
 import {
     CreateWalletResult,
-    ListWalletsResult,
     WALLET_LOGIN_SESSION_REQUIRED,
     WALLET_REAUTH_REQUIRED,
     WALLET_REAUTH_UNAVAILABLE,
@@ -192,7 +169,7 @@ const WalletAvatar = (props: {item: Pick<WalletItem, 'walletType' | 'address' | 
     const palette = defaultAvatarPalettes[hashWallet(`${props.item.walletType}:${props.item.address}`) % defaultAvatarPalettes.length];
     const fallback = props.item.walletType === 'SOLANA' ? 'S' : 'E';
     const className = ['wallet-avatar', preset ? `wallet-avatar--${props.item.avatarPresetId}` : 'wallet-avatar--generated'].join(' ');
-    const style = preset ? undefined : {background: `linear-gradient(145deg, ${palette[0]}, ${palette[1]})`};
+    const style = preset ? undefined : {background: `color-mix(in srgb, ${palette[0]} 16%, var(--athena-panel))`, color: palette[1]};
     const uploaded = props.item.avatarKind === 'upload' && realmBoundResourceURL(props.item.avatarUrl);
     return (
         <Avatar className={className} size={props.size || 52} src={uploaded || undefined} style={style}>
@@ -246,6 +223,7 @@ const WalletCreateImportModal = (props: {
     onCancel: () => void;
     onSubmit: (mode: 'create' | 'import', values: WalletFormValues) => void;
 }) => {
+    const formID = React.useId();
     const [form] = Form.useForm<WalletFormValues>();
     const walletType = Form.useWatch('walletType', form) || 'EVM';
     const createCount = Form.useWatch('count', form) || 1;
@@ -282,12 +260,21 @@ const WalletCreateImportModal = (props: {
             open={Boolean(props.mode)}
             title={title}
             width={600}
-            footer={null}
+            footer={
+                <div className='wallet-modal-actions'>
+                    <Button disabled={props.submitting} onClick={props.onCancel}>
+                        Cancel
+                    </Button>
+                    <Button type='primary' htmlType='submit' form={formID} loading={props.submitting}>
+                        {submitLabel}
+                    </Button>
+                </div>
+            }
             mask={{closable: !props.submitting}}
             closable={!props.submitting}
             keyboard={!props.submitting}
             onCancel={props.onCancel}>
-            <Form form={form} layout='vertical' preserve={false} requiredMark='optional' onFinish={values => props.mode && props.onSubmit(props.mode, values)}>
+            <Form id={formID} form={form} layout='vertical' preserve={false} requiredMark='optional' onFinish={values => props.mode && props.onSubmit(props.mode, values)}>
                 <Form.Item name='walletType' label='Wallet type' rules={[{required: true, message: 'Choose a wallet type.'}]}>
                     <ChoiceGroup<WalletType> ariaLabel='Wallet type' className='choice-group--form' options={walletTypeOptions} disabled={props.submitting} />
                 </Form.Item>
@@ -315,6 +302,7 @@ const WalletCreateImportModal = (props: {
                     <Form.Item
                         name='privateKeys'
                         label='Private keys'
+                        required={true}
                         validateTrigger={['onChange', 'onBlur']}
                         rules={[
                             {
@@ -396,14 +384,6 @@ const WalletCreateImportModal = (props: {
                     }>
                     <AvatarPresetPicker disabled={props.submitting} />
                 </Form.Item>
-                <div className='wallet-modal-actions'>
-                    <Button disabled={props.submitting} onClick={props.onCancel}>
-                        Cancel
-                    </Button>
-                    <Button type='primary' htmlType='submit' loading={props.submitting}>
-                        {submitLabel}
-                    </Button>
-                </div>
             </Form>
         </Modal>
     );
@@ -553,7 +533,7 @@ const emptyWallet: WalletItem = {
     updatedAt: ''
 };
 
-const WalletDetailDrawer = (props: {
+const WalletDetailModal = (props: {
     item?: WalletItem;
     canWrite: boolean;
     operation?: 'remark' | 'avatar';
@@ -587,19 +567,13 @@ const WalletDetailDrawer = (props: {
 
     const item = props.item;
     return (
-        <Drawer
-            rootClassName='wallet-detail-drawer'
-            size={520}
+        <Modal
+            className='wallet-detail-modal'
+            width={640}
             open={Boolean(item)}
             title='Wallet Details'
-            onClose={props.onClose}
-            extra={
-                item ? (
-                    <Tooltip title='Copy address'>
-                        <Button type='text' aria-label='Copy wallet address' icon={<CopyOutlined />} onClick={() => props.onCopy('Address', item.address)} />
-                    </Tooltip>
-                ) : null
-            }>
+            onCancel={props.onClose}
+            footer={<Button onClick={props.onClose}>Close</Button>}>
             {item && (
                 <div className='wallet-detail'>
                     <div className='wallet-detail__identity'>
@@ -607,7 +581,7 @@ const WalletDetailDrawer = (props: {
                         <div>
                             <Typography.Title level={3}>{item.remark}</Typography.Title>
                             <Space size='small' wrap={true}>
-                                <Tag color={item.walletType === 'SOLANA' ? 'purple' : 'blue'}>{item.walletType === 'SOLANA' ? 'Solana' : 'EVM'}</Tag>
+                                <Tag>{item.walletType === 'SOLANA' ? 'Solana' : 'EVM'}</Tag>
                                 <Tag>{item.source === 'imported' ? 'Imported' : 'Created in Athena'}</Tag>
                             </Space>
                         </div>
@@ -732,7 +706,7 @@ const WalletDetailDrawer = (props: {
                     </section>
                 </div>
             )}
-        </Drawer>
+        </Modal>
     );
 };
 
@@ -1186,7 +1160,7 @@ const WalletWriteSurface = React.forwardRef<
 
     return (
         <>
-            <WalletDetailDrawer
+            <WalletDetailModal
                 item={props.selected}
                 canWrite={true}
                 operation={operation}
@@ -1213,83 +1187,42 @@ const WalletWriteSurface = React.forwardRef<
     );
 });
 
-const WalletCard = (props: {item: WalletItem; selected: boolean; onOpen: () => void; onCopy: () => void}) => {
-    const openOnKeyboard = (event: React.KeyboardEvent<HTMLDivElement>) => {
-        if (event.target !== event.currentTarget) {
-            return;
-        }
-        if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            props.onOpen();
-        }
-    };
-    return (
-        <Card
-            className={props.selected ? 'wallet-card wallet-card--selected' : 'wallet-card'}
-            role='button'
-            tabIndex={0}
-            aria-label={`Open ${props.item.remark} wallet`}
-            aria-current={props.selected || undefined}
-            onClick={props.onOpen}
-            onKeyDown={openOnKeyboard}>
-            <div className='wallet-card__topline'>
-                <WalletAvatar item={props.item} size={54} />
-                <div className='wallet-card__title'>
-                    <Typography.Text strong={true}>{props.item.remark}</Typography.Text>
-                    <Tag color={props.item.walletType === 'SOLANA' ? 'purple' : 'blue'}>{props.item.walletType === 'SOLANA' ? 'Solana' : 'EVM'}</Tag>
-                </div>
+const WalletIdentity = (props: {item: WalletItem; onOpen: () => void; onCopy: () => void}) => (
+    <div className='wallet-record'>
+        <WalletAvatar item={props.item} size={44} />
+        <div className='wallet-record__identity'>
+            <button className='foundation-record-link' aria-label={`Open ${props.item.remark} wallet`} onClick={props.onOpen}>
+                {props.item.remark}
+            </button>
+            <div className='foundation-address'>
+                <TruncatedText value={props.item.address} />
+                <Button type='text' aria-label={`Copy ${props.item.remark} address`} icon={<CopyOutlined />} onClick={props.onCopy} />
             </div>
-            <div className='wallet-card__address'>
-                <Typography.Text ellipsis={{tooltip: props.item.address}}>{props.item.address}</Typography.Text>
-                <Tooltip title='Copy address'>
-                    <Button
-                        type='text'
-                        size='small'
-                        aria-label={`Copy ${props.item.remark} address`}
-                        icon={<CopyOutlined />}
-                        onClick={event => {
-                            event.stopPropagation();
-                            props.onCopy();
-                        }}
-                    />
-                </Tooltip>
-            </div>
-            <div className='wallet-card__footer'>
-                <span>{props.item.source === 'imported' ? 'Imported' : 'Created in Athena'}</span>
-                <span aria-hidden='true'>Open details →</span>
-            </div>
-        </Card>
-    );
-};
-
-const WalletGrid = (props: {data: AsyncState<ListWalletsResult>; selected?: WalletItem; onOpen: (item: WalletItem) => void; onCopy: (item: WalletItem) => void}) => {
-    const items = props.data.data?.items || [];
-    if (props.data.loading && !props.data.data) {
-        return (
-            <div className='wallet-grid' aria-label='Loading wallets'>
-                {Array.from({length: 6}, (_, index) => (
-                    <Card className='wallet-card wallet-card--loading' key={index}>
-                        <Skeleton active={true} avatar={true} paragraph={{rows: 2}} />
-                    </Card>
-                ))}
-            </div>
-        );
-    }
-    if (!items.length) {
-        return (
-            <div className='wallet-empty'>
-                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No wallets match these filters.' />
-            </div>
-        );
-    }
-    return (
-        <div className={props.data.loading ? 'wallet-grid wallet-grid--refreshing' : 'wallet-grid'}>
-            {items.map(item => (
-                <WalletCard key={item.id} item={item} selected={props.selected?.id === item.id} onOpen={() => props.onOpen(item)} onCopy={() => props.onCopy(item)} />
-            ))}
         </div>
-    );
-};
+    </div>
+);
+
+const WalletCompact = (props: {item: WalletItem; onOpen: () => void; onCopy: () => void}) => (
+    <article className='wallet-record-compact'>
+        <WalletIdentity {...props} />
+        <dl className='foundation-facts'>
+            <div>
+                <dt>Type</dt>
+                <dd>
+                    <Tag>{props.item.walletType === 'SOLANA' ? 'Solana' : 'EVM'}</Tag>
+                </dd>
+            </div>
+            <div>
+                <dt>Source</dt>
+                <dd>{props.item.source === 'imported' ? 'Imported' : 'Created in Athena'}</dd>
+            </div>
+            <div>
+                <dt>Created</dt>
+                <dd>{formatWalletTime(props.item.createdAt)}</dd>
+            </div>
+        </dl>
+    </article>
+);
 
 export const WalletsPage = () => {
     const ctx = React.useContext(Context);
@@ -1340,88 +1273,106 @@ export const WalletsPage = () => {
         setSelected(current => (current?.id === item.id ? item : current));
     };
 
-    const writeMenu: MenuProps['items'] = [
-        {key: 'create', label: 'Create wallets', icon: <PlusOutlined />},
-        {key: 'import', label: 'Import wallets', icon: <ImportOutlined />}
-    ];
     const writeActions = canWrite ? (
-        <>
-            <Space className='wallet-header-actions wallet-header-actions--desktop'>
-                <Button icon={<ImportOutlined />} onClick={() => writeHandle.current?.openImport()}>
-                    Import Wallets
-                </Button>
-                <Button type='primary' icon={<PlusOutlined />} onClick={() => writeHandle.current?.openCreate()}>
-                    Create Wallets
-                </Button>
-            </Space>
-            <Dropdown
-                menu={{
-                    items: writeMenu,
-                    onClick: info => (info.key === 'create' ? writeHandle.current?.openCreate() : writeHandle.current?.openImport())
-                }}
-                trigger={['click']}>
-                <Button className='wallet-header-actions--mobile' type='primary' icon={<PlusOutlined />} aria-label='Wallet actions' />
-            </Dropdown>
-        </>
+        <Space className='wallet-header-actions' wrap={true}>
+            <Button icon={<ImportOutlined />} onClick={() => writeHandle.current?.openImport()}>
+                Import Wallets
+            </Button>
+            <Button type='primary' icon={<PlusOutlined />} onClick={() => writeHandle.current?.openCreate()}>
+                Create Wallets
+            </Button>
+        </Space>
     ) : null;
 
     return (
-        <AppPage
-            title='Wallets'
-            subtitle='Create and manage your private EVM and Solana wallets. Only your account can access them.'
-            loading={data.loading}
-            error={data.error}
-            onRefresh={data.reload}
-            extra={writeActions}
-            filters={
-                <div className='wallet-filters'>
-                    <SearchBar value={query} onChange={setQuery} placeholder='Search remark or address' />
-                    <ChoiceGroup<string>
-                        ariaLabel='Filter by wallet type'
-                        value={walletType || 'all'}
-                        options={[{label: 'All', value: 'all'}, ...walletTypeOptions]}
-                        onChange={selectWalletType}
+        <div className='foundation-page'>
+            <AppPage
+                title='Wallets'
+                subtitle='Create and manage your private EVM and Solana wallets. Only your account can access them.'
+                loading={data.loading}
+                error={data.error}
+                onRefresh={data.reload}
+                extra={writeActions}>
+                <section className='section-panel wallet-list' aria-label='Private wallets'>
+                    <div className='wallet-filters foundation-filters'>
+                        <label className='wallet-search'>
+                            Remark or address
+                            <Input.Search
+                                className='search-bar'
+                                aria-label='Search remark or address'
+                                value={query}
+                                onChange={event => setQuery(event.target.value)}
+                                placeholder='Search your wallets'
+                                enterButton={<Button>Search</Button>}
+                            />
+                        </label>
+                        <div>
+                            <span className='foundation-filter-label'>Wallet type</span>
+                            <ChoiceGroup<string>
+                                ariaLabel='Filter by wallet type'
+                                value={walletType || 'all'}
+                                options={[{label: 'All', value: 'all'}, ...walletTypeOptions]}
+                                onChange={selectWalletType}
+                            />
+                        </div>
+                    </div>
+                    <ResourceTable<WalletItem>
+                        rowKey='id'
+                        label='Private wallets'
+                        items={data.data?.items || []}
+                        loading={data.loading}
+                        columns={[
+                            {
+                                title: 'Wallet / Address',
+                                width: '48%',
+                                render: item => <WalletIdentity item={item} onOpen={() => setSelected(item)} onCopy={() => void notifyCopy(item)} />
+                            },
+                            {title: 'Type', width: '12%', render: item => <Tag>{item.walletType === 'SOLANA' ? 'Solana' : 'EVM'}</Tag>},
+                            {title: 'Source', width: '20%', render: item => (item.source === 'imported' ? 'Imported' : 'Created in Athena')},
+                            {title: 'Created', width: '20%', render: item => formatWalletTime(item.createdAt)}
+                        ]}
+                        compactRender={item => <WalletCompact item={item} onOpen={() => setSelected(item)} onCopy={() => void notifyCopy(item)} />}
+                        compactEmptyDescription='No wallets match these filters.'
                     />
-                </div>
-            }>
-            <div className='wallet-page-summary'>
-                <span>
-                    <SafetyCertificateOutlined /> Wallet keys are encrypted at rest
-                </span>
-                {data.data && <Typography.Text type='secondary'>{data.data.total} wallets</Typography.Text>}
-            </div>
-            <WalletGrid data={data} selected={selected} onOpen={setSelected} onCopy={item => void notifyCopy(item)} />
-            {(data.data?.total || 0) > pageSize && (
-                <Pagination
-                    className='wallet-pagination'
-                    responsive={true}
-                    current={page}
-                    pageSize={pageSize}
-                    total={data.data?.total || 0}
-                    pageSizeOptions={walletPageSizes}
-                    showSizeChanger={true}
-                    showTotal={total => `${total} wallets`}
-                    onChange={setPage}
-                />
-            )}
-            {canWrite ? (
-                <SensitiveWriteScope module={AccountDataModule.Wallet}>
-                    <WalletWriteSurface ref={writeHandle} selected={selected} onSelectedChange={setSelected} onWalletChanged={updateSelectedWallet} onReload={data.reload} />
-                </SensitiveWriteScope>
-            ) : (
-                <WalletDetailDrawer
-                    item={selected}
-                    canWrite={false}
-                    revealing={false}
-                    onClose={() => setSelected(undefined)}
-                    onCopy={(label, value) => {
-                        void copyText(value).then(
-                            () => ctx.notifications.success(`${label} copied`),
-                            () => ctx.notifications.error(`Could not copy ${label.toLowerCase()}`)
-                        );
-                    }}
-                />
-            )}
-        </AppPage>
+                    <div className='wallet-page-summary'>
+                        <span>
+                            <SafetyCertificateOutlined /> Wallet keys are encrypted at rest
+                        </span>
+                        {data.data && <Typography.Text type='secondary'>{data.data.total} wallets · Private to your account</Typography.Text>}
+                    </div>
+                    {(data.data?.total || 0) > pageSize && (
+                        <Pagination
+                            className='wallet-pagination'
+                            responsive={true}
+                            current={page}
+                            pageSize={pageSize}
+                            total={data.data?.total || 0}
+                            pageSizeOptions={walletPageSizes}
+                            showSizeChanger={true}
+                            showTotal={total => `${total} wallets`}
+                            onChange={setPage}
+                        />
+                    )}
+                </section>
+                {canWrite ? (
+                    <SensitiveWriteScope module={AccountDataModule.Wallet}>
+                        <WalletWriteSurface ref={writeHandle} selected={selected} onSelectedChange={setSelected} onWalletChanged={updateSelectedWallet} onReload={data.reload} />
+                    </SensitiveWriteScope>
+                ) : (
+                    <WalletDetailModal
+                        item={selected}
+                        canWrite={false}
+                        revealing={false}
+                        onClose={() => setSelected(undefined)}
+                        onCopy={(label, value) => {
+                            void copyText(value).then(
+                                () => ctx.notifications.success(`${label} copied`),
+                                () => ctx.notifications.error(`Could not copy ${label.toLowerCase()}`)
+                            );
+                        }}
+                    />
+                )}
+            </AppPage>
+        </div>
     );
 };

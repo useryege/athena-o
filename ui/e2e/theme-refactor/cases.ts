@@ -1,3 +1,6 @@
+import walletCases from './fixtures/wallets.json';
+import solanaCases from './fixtures/solana.json';
+import governanceCases from './fixtures/governance.json';
 import adminCases from './fixtures/admin-operations.json';
 import identityCases from './fixtures/identity.json';
 import type {ThemeCase, ThemeReply} from './contracts';
@@ -60,6 +63,9 @@ const authenticated = (options: {administrator?: boolean; active?: boolean} = {}
 
 export const themeCases: ThemeCase[] = [
     ...(identityCases as ThemeCase[]),
+    ...(walletCases as ThemeCase[]),
+    ...(solanaCases as ThemeCase[]),
+    ...(governanceCases as ThemeCase[]),
     ...(adminCases as ThemeCase[]),
     {
         id: 'member-bootstrap-error',

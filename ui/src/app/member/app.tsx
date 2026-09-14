@@ -31,7 +31,13 @@ import {AuthorizationCtx, Provider} from '../shared/context';
 import {AccountDataAccess, AccountDataModule, accountDataModules} from '../shared/access-modules';
 import {moduleAccessLevels, moduleAccessLevelsEqual, ModuleAccessLevels} from '../shared/account-access';
 import {accountStatusForAccess, AccountStatus, AppBootstrap, AppBootstrapSession, AppBootstrapSessionStatus, AuthSettings, UserInfo} from '../shared/models';
-import requests, {isAccountDataAccessDeniedError, isAccountMaintenanceError, requestErrorDetails, requestErrorMessage} from '../shared/services/requests';
+import requests, {
+    isAccountDataAccessDeniedError,
+    isAccountProfitSharingAccessDeniedError,
+    isAccountMaintenanceError,
+    requestErrorDetails,
+    requestErrorMessage
+} from '../shared/services/requests';
 import type {ViewPreferences} from '../shared/services/view-preferences-service';
 import {WALLET_REAUTH_REQUIRED} from '../shared/services/wallet-service';
 import {loginPathFor, readLoginReturnTo} from '../shared/login-navigation';
@@ -871,7 +877,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
             if (isLoginPath) {
                 return;
             }
-            if (isAccountDataAccessDeniedError(err)) {
+            if (isAccountDataAccessDeniedError(err) || isAccountProfitSharingAccessDeniedError(err)) {
                 void refreshAfterAccessDenied();
                 return;
             }

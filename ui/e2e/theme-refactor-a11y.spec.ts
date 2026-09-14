@@ -8,6 +8,14 @@ const tags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
 for (const scenario of themeCases.filter(item =>
     [
+        'foundations-wallets',
+        'foundations-solana',
+        'foundations-member-rounds',
+        'foundations-member-collecting',
+        'foundations-member-voting',
+        'foundations-admin-rounds',
+        'foundations-admin-collecting',
+        'foundations-admin-draft',
         'admin-accounts',
         'admin-services',
         'admin-gateways',

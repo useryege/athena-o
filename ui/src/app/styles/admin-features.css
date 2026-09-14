@@ -6,7 +6,7 @@
 }
 .profit-sharing-definition__participants-heading h3 {
     margin: 0 0 3px;
-    font-size: 16px;
+    font-size: var(--athena-type-body);
 }
 .profit-sharing-definition__footer {
     padding-top: 14px;
@@ -61,8 +61,8 @@
     border-radius: 50%;
     background: var(--athena-bg-soft);
     color: var(--athena-muted);
-    font-size: 12px;
-    font-weight: 800;
+    font-size: var(--athena-type-aux);
+    font-weight: 600;
 }
 .profit-sharing-definition-participant__remove {
     margin-top: 29px;
@@ -357,3 +357,31 @@
 .account-entitlement-control { display: grid; justify-items: end; gap: .5rem; flex-shrink: 0; }
 .account-entitlement-control .ant-typography-secondary { font-size: var(--athena-type-aux); }
 .admin-account-detail .ant-avatar, .admin-account-list .ant-avatar, .admin-accounts-mobile-list .ant-avatar { background: var(--athena-panel-elevated); color: var(--athena-text); border: 1px solid var(--athena-border); }
+
+/* v19 governance lifecycle and editable draft roster. */
+.profit-sharing-participant-card { display: grid; gap: .375rem; padding: .5rem 0; border: 0; border-radius: 0; background: transparent; }
+.profit-sharing-participant-card > strong { font-weight: 600; }
+.profit-sharing-participant-card p { margin: .5rem 0; color: var(--athena-muted); overflow-wrap: anywhere; }
+.profit-sharing-participant-card > .ant-tag { justify-self: end; }
+.profit-sharing-definition__participants-heading h3 { font-size: var(--athena-type-section); font-weight: 600; }
+.profit-sharing-definition-participant { grid-template-columns: 2rem minmax(0, .6fr) minmax(0, .6fr) minmax(0, 1fr) 2.75rem; border-inline: 0; border-top: 0; border-radius: 0; padding: 1rem 0; }
+.profit-sharing-definition-participant__order { font-weight: 400; font-size: var(--athena-type-aux); }
+.profit-sharing-definition-participant__remove { min-width: 2.75rem; min-height: 2.75rem; }
+.profit-sharing-definition__footer { box-shadow: none; backdrop-filter: none; background: var(--athena-panel); }
+@media (max-width: 1100px) {
+    .profit-sharing-definition-participant { grid-template-columns: 2rem minmax(0, 1fr) 2.75rem; grid-template-areas: 'order account remove' '. name .' '. responsibility .'; }
+    .profit-sharing-definition-participant__order { grid-area: order; }
+    .profit-sharing-definition-participant__account { grid-area: account; }
+    .profit-sharing-definition-participant__name { grid-area: name; }
+    .profit-sharing-definition-participant__responsibility { grid-area: responsibility; }
+    .profit-sharing-definition-participant__remove { grid-area: remove; }
+}
+@media (max-width: 900px) {
+    .profit-sharing-definition__footer { flex-direction: column; align-items: stretch; position: static; margin: 0; padding-inline: 0; }
+    .profit-sharing-definition__footer > .ant-space { display: flex; flex-direction: column; align-items: stretch; }
+    .profit-sharing-definition__footer button { width: 100%; }
+    .profit-sharing-definition-participant { grid-template-columns: minmax(0, 1fr) 2.75rem; grid-template-areas: 'order remove' 'account account' 'name name' 'responsibility responsibility'; }
+    .profit-sharing-definition-participant__order, .profit-sharing-definition-participant__remove { margin-top: 0; }
+}
+.profit-sharing-definition-modal .ant-modal-body { max-height: min(65vh, 42rem); }
+.profit-sharing-definition-modal .profit-sharing-definition__footer { position: static; padding: 0; margin: 0; border-top: 0; }

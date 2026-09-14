@@ -912,3 +912,5 @@ for (const size of [
         assertThemeLedger(ledger);
     });
 }
+
+import './theme-refactor/foundations';

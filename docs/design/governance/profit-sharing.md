@@ -157,6 +157,25 @@ username, display name, role, and eligibility come through the API Server.
 - Collection privacy, blind voting, author/tally visibility, revision CAS, and
   runoff rules remain phase-consistent.
 
+## Web presentation and draft ownership
+
+The member list/detail follow the approved v20 layouts and the administrator
+list/detail follow v19, using the v23 shared dark theme and relative type sizes.
+Compact lists keep native round links and full slugs. Collection remains sealed;
+voting remains anonymous; closed rounds display the published result.
+
+Local drafts and confirmation dialogs belong to the account UUID, issuer, realm,
+and round slug. Changing that identity or route discards their local state.
+The member shell refreshes authorization on
+`ACCOUNT_PROFIT_SHARING_ACCESS_DENIED`, so revoked entitlement removes proposal
+and vote editing promptly. Failed writes retain an editable draft; revision
+conflicts discard it and reload the authoritative proposal.
+
+Administrators can create a draft with zero to five participants, including when
+the eligible account directory is empty. Opening collection still requires exactly
+five distinct eligible accounts. An unfiltered directory refresh replaces the
+known eligibility set so a removed account cannot leave the Open action enabled.
+
 ## Failure Recovery
 
 Account directory or profile failure prevents canonical draft projection.
