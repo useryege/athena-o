@@ -7,6 +7,7 @@ import {parseUserInfo} from '../../shared/models';
 import {clearTraderSyncState, readAddDraft, saveAddDraft} from './trader-sync/state';
 import {ensureMemberBusinessServices, memberServices as services} from '../services';
 import {normalizeResolvedTarget} from '../trader-sync-models';
+import {readTelegramBindingInstructions} from '../notification-storage';
 import fixture from '../testdata/trader-sync/resolve-saved-note-existing.json';
 
 const ctx = {
@@ -162,4 +163,29 @@ test('disconnect confirmation names the current identity and focuses Keep connec
     expect(options.content).toContain('Tester (@tester)');
     expect(options.cancelText).toBe('Keep connected');
     expect(options.autoFocusButton).toBe('cancel');
+});
+
+test('unmount destroys the old disconnect confirmation and its stale callback cannot write', async () => {
+    const disconnect = jest.spyOn(services.memberNotifications, 'disconnectTelegram').mockResolvedValue(undefined);
+    await mount('/trader-sync/add');
+    act(() => tree.root.findAllByType(Button).find(item => item.props.children === 'Disconnect')!.props.onClick());
+    const confirmation = (ctx.modal.confirm.mock.calls.at(-1) as any)[0];
+    const handle = ctx.modal.confirm.mock.results.at(-1)!.value;
+    act(() => tree.unmount());
+    expect(handle.destroy).toHaveBeenCalledTimes(1);
+    await act(async () => confirmation.onOk());
+    expect(disconnect).not.toHaveBeenCalled();
+});
+
+test('unmount aborts pending setup and a late response cannot store the old one-time instructions', async () => {
+    let finish!: (value: any) => void;
+    const pending = Object.assign(new Promise<any>(resolve => finish = resolve), {abort: jest.fn()});
+    jest.spyOn(services.memberNotifications, 'beginTelegramBinding').mockReturnValue(pending);
+    await mount('/trader-sync/add');
+    act(() => tree.root.findAllByType(Button).find(item => item.props.children === 'Reconnect')!.props.onClick());
+    act(() => tree.unmount());
+    expect(pending.abort).toHaveBeenCalledTimes(1);
+    await act(async () => finish({attempt: {id: 'old-attempt', status: 'pending', expiresAt: '2099-01-01T00:00:00Z', failureReason: ''}, botUsername: 'bot', deepLink: 'https://t.me/bot?start=old', fallbackCommand: '/start old-private-command'}));
+    expect(readTelegramBindingInstructions()).toBeUndefined();
+    expect(ctx.notifications.success).not.toHaveBeenCalledWith('Telegram setup started', expect.anything());
 });

@@ -444,6 +444,7 @@ const useNarrowShell = () => {
 };
 
 const AppRoutes = (props: {access: AccessState; settings: AuthSettings; loggingOut: boolean; onLogout: () => void}) => {
+    const identityKey = JSON.stringify([props.access.user.accountId, props.access.user.iss]);
     const pending = isPendingAccess(props.access);
     const moduleRoute = (module: AccountDataModule, element: React.ReactElement) =>
         props.access.moduleAccess[module] >= AccountDataAccess.Read ? element : <Navigate replace={true} to='/account/access' />;
@@ -512,10 +513,13 @@ const AppRoutes = (props: {access: AccessState; settings: AuthSettings; loggingO
                         <TraderSyncSummaryPage key={JSON.stringify([props.access.user.accountId, props.access.user.iss])} ownerId={props.access.user.accountId} />
                     )}
                 />
-                <Route path='/notifications' element={<NotificationsPage />} />
-                <Route path='/account/profile' element={<AccountCenterPage section='profile' {...accountCenterProps} />} />
-                <Route path='/account/security' element={props.access.user.access.apiKeyEnabled ? <AccountSecurityPage /> : <Navigate replace={true} to='/account/access' />} />
-                <Route path='/account/access' element={<AccountCenterPage section='access' {...accountCenterProps} />} />
+                <Route path='/notifications' element={<NotificationsPage key={identityKey} />} />
+                <Route path='/account/profile' element={<AccountCenterPage key={identityKey} section='profile' {...accountCenterProps} />} />
+                <Route
+                    path='/account/security'
+                    element={props.access.user.access.apiKeyEnabled ? <AccountSecurityPage key={identityKey} /> : <Navigate replace={true} to='/account/access' />}
+                />
+                <Route path='/account/access' element={<AccountCenterPage key={identityKey} section='access' {...accountCenterProps} />} />
                 <Route path='/profit-sharing' element={profitSharingRoute(<ProfitSharingRoundsPage />)} />
                 <Route path='/profit-sharing/:slug' element={profitSharingRoute(<ProfitSharingRoundPage />)} />
                 <Route path='/help' element={<HelpPage help={props.settings.help} />} />

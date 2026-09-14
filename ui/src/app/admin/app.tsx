@@ -145,6 +145,8 @@ const AdminNotFoundPage = () => {
 };
 
 const AdminRoutes = (props: {settings: AppBootstrap['settings']; loggingOut: boolean; onLogout: () => void}) => {
+    const {user} = React.useContext(AuthorizationCtx);
+    const identityKey = JSON.stringify([user.accountId, user.iss]);
     const accountProps = {
         loggingOut: props.loggingOut,
         onLogout: props.onLogout
@@ -162,8 +164,8 @@ const AdminRoutes = (props: {settings: AppBootstrap['settings']; loggingOut: boo
                 <Route path='/etherscan-gateways' element={<EtherscanGatewaysPage />} />
                 <Route path='/notifications' element={<SystemNotificationsPage />} />
                 <Route path='/notifications/:id' element={<SystemNotificationDetailPage />} />
-                <Route path='/account/profile' element={<AccountCenterPage section='profile' {...accountProps} />} />
-                <Route path='/account/access' element={<AccountCenterPage section='access' {...accountProps} />} />
+                <Route path='/account/profile' element={<AccountCenterPage key={identityKey} section='profile' {...accountProps} />} />
+                <Route path='/account/access' element={<AccountCenterPage key={identityKey} section='access' {...accountProps} />} />
                 <Route path='/help' element={<HelpPage help={props.settings.help} />} />
                 <Route path='*' element={<AdminNotFoundPage />} />
             </Routes>

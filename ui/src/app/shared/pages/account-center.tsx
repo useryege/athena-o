@@ -44,6 +44,20 @@ const useUnsavedChanges = (dirty: boolean, reset: () => void, savedName: string,
         let resolved = false;
         const handle = ctx.modal.confirm({
             title: 'Discard unsaved profile changes?',
+            className: 'account-profile-leave-confirm',
+            focusable: {trap: true, focusTriggerAfterClose: true},
+            wrapProps: {
+                onKeyDownCapture: event => {
+                    if (event.key !== 'Tab') return;
+                    const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not([disabled])'));
+                    const first = buttons[0];
+                    const last = buttons[buttons.length - 1];
+                    if (first && last && ((!event.shiftKey && document.activeElement === last) || (event.shiftKey && document.activeElement === first))) {
+                        event.preventDefault();
+                        (event.shiftKey ? last : first).focus();
+                    }
+                }
+            },
             content: (
                 <>
                     <p>Your current changes have not been saved.</p>
@@ -144,6 +158,13 @@ const ProfilePage = () => {
     const ctx = React.useContext(Context);
     const username = authorization.user.username;
     const accountId = authorization.user.accountId;
+    const mountedRef = React.useRef(true);
+    React.useLayoutEffect(() => {
+        mountedRef.current = true;
+        return () => {
+            mountedRef.current = false;
+        };
+    }, []);
     const [profile, setProfile] = React.useState(authorization.user.profile);
     const [displayName, setDisplayName] = React.useState(profile.displayName);
     const [saving, setSaving] = React.useState(false);
@@ -171,19 +192,23 @@ const ProfilePage = () => {
         setSaving(true);
         try {
             const updated = await services.accounts.updateProfile(accountId, normalizedDisplayName, profile.revision);
+            if (!mountedRef.current) return;
             setProfile(updated);
             setDisplayName(updated.displayName);
             await authorization.refresh();
+            if (!mountedRef.current) return;
             ctx.notifications.success('Profile updated');
         } catch (err) {
+            if (!mountedRef.current) return;
             if (requestErrorDetails(err).status === 409) {
                 await authorization.refresh();
+                if (!mountedRef.current) return;
                 ctx.notifications.warning('Profile changed elsewhere', 'Your display-name draft was kept. Review the latest profile before saving again.');
             } else {
                 ctx.notifications.error('Could not update profile', requestErrorMessage(err));
             }
         } finally {
-            setSaving(false);
+            if (mountedRef.current) setSaving(false);
         }
     };
 
@@ -204,18 +229,22 @@ const ProfilePage = () => {
             const updated = file
                 ? await services.accounts.uploadAvatar(accountId, username, file, profile.revision)
                 : await services.accounts.deleteAvatar(accountId, username, profile.revision);
+            if (!mountedRef.current) return;
             setProfile(updated);
             await authorization.refresh();
+            if (!mountedRef.current) return;
             ctx.notifications.success(file ? 'Avatar updated' : 'Avatar removed');
         } catch (err) {
+            if (!mountedRef.current) return;
             if (requestErrorDetails(err).status === 409) {
                 await authorization.refresh();
+                if (!mountedRef.current) return;
                 ctx.notifications.warning('Profile changed elsewhere', 'The latest profile is being reloaded. Try the avatar change again.');
             } else {
                 ctx.notifications.error(file ? 'Could not upload avatar' : 'Could not remove avatar', requestErrorMessage(err));
             }
         } finally {
-            setUploading(false);
+            if (mountedRef.current) setUploading(false);
         }
     };
 

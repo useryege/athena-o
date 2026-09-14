@@ -272,6 +272,9 @@ test('theme:identity profile draft survives conflict and leave dialog compares s
     await expect(dialog.getByText('Latest saved name', {exact: true})).toBeVisible();
     await expect(dialog.getByText('My unsaved draft', {exact: true})).toBeVisible();
     await expect(dialog.getByRole('button', {name: 'Keep editing'})).toBeFocused();
+    const keepBox = await dialog.getByRole('button', {name: 'Keep editing'}).boundingBox();
+    const discardBox = await dialog.getByRole('button', {name: 'Discard and leave'}).boundingBox();
+    expect(keepBox!.y).toBeCloseTo(discardBox!.y, 0);
     await page.keyboard.press('Escape');
     await expect(input).toHaveValue('My unsaved draft');
     await page.getByRole('button', {name: 'Reset', exact: true}).click();
@@ -444,3 +447,111 @@ test('theme:identity mobile AI instructions retain a visible action footer while
     expect(credentialChecks).toBe(1);
     assertThemeLedger(ledger);
 });
+
+test('theme:identity review mobile Profile leave confirmation stacks safe actions and restores focus', async ({page}, info) => {
+    await page.setViewportSize({width: 390, height: 844});
+    const {themeCases} = await import('./theme-refactor/cases');
+    const {installThemeCase} = await import('./theme-refactor/routes');
+    const scenario = structuredClone(themeCases.find(item => item.id === 'member-profile')!);
+    const ledger = await installThemeCase(page, scenario);
+    await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/account/profile`);
+    await page.getByLabel('Display name', {exact: true}).fill('Unsaved mobile name');
+    const section = page.getByRole('combobox', {name: 'Account section'});
+    await section.focus();
+    await page.keyboard.press('ArrowDown');
+    await page.locator('.ant-select-item-option[title="Access & session"]').click();
+    const dialog = page.getByRole('dialog', {name: 'Discard unsaved profile changes?'});
+    const keep = dialog.getByRole('button', {name: 'Keep editing'});
+    const discard = dialog.getByRole('button', {name: 'Discard and leave'});
+    await expect(keep).toBeFocused();
+    await page.evaluate(() => Promise.all(document.getAnimations().filter(animation => animation.effect?.getTiming().iterations !== Infinity).map(animation => animation.finished.catch(() => undefined))));
+    const [keepBox, discardBox] = await Promise.all([keep.boundingBox(), discard.boundingBox()]);
+    expect(discardBox!.y).toBeGreaterThanOrEqual(keepBox!.y + keepBox!.height + 8);
+    expect(keepBox!.width).toBeGreaterThan(280);
+    expect(discardBox!.width).toBeCloseTo(keepBox!.width, 0);
+    for (let i = 0; i < 5; i++) {
+        await page.keyboard.press('Tab');
+        const focus = await dialog.evaluate(node => ({inside: node.contains(document.activeElement), active: document.activeElement?.tagName, className: document.activeElement?.className}));
+        expect(focus.inside, JSON.stringify({step: i, ...focus})).toBe(true);
+    }
+    await keep.focus();
+    await page.keyboard.press('Shift+Tab');
+    await expect(discard).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(keep).toBeFocused();
+    await page.mouse.move(0, 0);
+    await page.screenshot({path: info.outputPath('profile-leave-mobile.png'), animations: 'disabled'});
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(section).toBeFocused();
+    await expect(page.getByLabel('Display name', {exact: true})).toHaveValue('Unsaved mobile name');
+    await section.press('ArrowDown');
+    await page.locator('.ant-select-item-option[title="Access & session"]').click();
+    await expect(dialog).toBeVisible();
+    const replacement = scenario.replies.find(reply => reply.path === '/api/v1/session/userinfo')!.json as any;
+    replacement.iss = 'replacement-issuer';
+    replacement.profile.displayName = 'Replacement profile';
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await expect(dialog).toBeHidden();
+    await expect(page.getByLabel('Display name', {exact: true})).toHaveValue('Replacement profile');
+    assertThemeLedger(ledger);
+});
+
+for (const phase of ['issued', 'pending']) for (const change of ['account', 'issuer']) {
+    test(`theme:identity review Security ${change} switch clears ${phase} credential`, async ({page}) => {
+        const {themeCases} = await import('./theme-refactor/cases');
+        const {installThemeCase} = await import('./theme-refactor/routes');
+        const scenario = structuredClone(themeCases.find(item => item.id === 'member-security')!);
+        const ledger = await installThemeCase(page, scenario);
+        await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/account/security`);
+        await page.getByRole('button', {name: 'Create API key', exact: true}).click();
+        await page.getByLabel('Key ID', {exact: true}).fill('old-identity');
+        const created = new Promise<void>(resolve => {
+            const finished = (request: import('@playwright/test').Request) => {
+                if (request.method() === 'POST' && request.url().endsWith('/api/v1/account/security/tokens')) resolve();
+            };
+            page.on('requestfinished', finished);
+            page.on('requestfailed', finished);
+        });
+        await page.getByRole('button', {name: 'Create key', exact: true}).click();
+        const result = page.getByRole('dialog', {name: 'Copy your API key now'});
+        if (phase === 'issued') await expect(result).toBeVisible();
+        else await expect.poll(() => ledger.requests.filter(item => item.method === 'POST').length).toBe(1);
+        const user = scenario.replies.find(reply => reply.path === '/api/v1/session/userinfo')!.json as any;
+        if (change === 'account') user.accountId = '33333333-3333-4333-8333-333333333333';
+        else user.iss = 'replacement-issuer';
+        user.profile.displayName = 'Replacement identity';
+        await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+        await expect(page.getByRole('heading', {name: 'Replacement identity'})).toBeVisible();
+        await created;
+        await expect(result).toBeHidden();
+        await expect(page.getByRole('dialog', {name: 'Create API key', exact: true})).toBeHidden();
+        await expect(page.locator('.account-secret-value')).toHaveCount(0);
+        expect(ledger.requests.filter(item => item.method === 'POST').map(item => item.body)).toEqual([{id: 'old-identity', expiresIn: 7776000}]);
+        assertThemeLedger(ledger);
+    });
+}
+
+for (const change of ['account', 'issuer']) {
+    test(`theme:identity review Notifications ${change} switch destroys the old confirmation`, async ({page}) => {
+        const {themeCases} = await import('./theme-refactor/cases');
+        const {installThemeCase} = await import('./theme-refactor/routes');
+        const scenario = structuredClone(themeCases.find(item => item.id === 'member-notifications')!);
+        const user = structuredClone((scenario.replies.find(reply => reply.path.endsWith('/bootstrap'))!.json as any).session.userInfo);
+        scenario.replies.push({method: 'GET', path: '/api/v1/session/userinfo', realm: 'member', status: 200, json: user});
+        const ledger = await installThemeCase(page, scenario);
+        await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/notifications`);
+        await page.getByRole('button', {name: 'Disconnect', exact: true}).click();
+        const dialog = page.getByRole('dialog', {name: 'Disconnect Telegram?'});
+        await expect(dialog).toBeVisible();
+        if (change === 'account') user.accountId = '33333333-3333-4333-8333-333333333333';
+        else user.iss = 'replacement-issuer';
+        const settings = scenario.replies.find(reply => reply.method === 'GET' && reply.path.endsWith('/notification-bindings/telegram'))!;
+        settings.json = {botAvailable: true, botUsername: 'fixture_bot'};
+        await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+        await expect(dialog).toBeHidden();
+        await expect(page.getByText('Alex Chen (@alex_demo)', {exact: true})).toBeHidden();
+        expect(ledger.requests.filter(item => item.method !== 'GET')).toEqual([]);
+        assertThemeLedger(ledger);
+    });
+}

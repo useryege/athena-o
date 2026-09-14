@@ -1731,3 +1731,8 @@ input, textarea { caret-color: var(--athena-primary); }
 .account-profile-form .ant-form-item { margin-bottom: 24px; }
 .account-profile-form .ant-form-item-extra, .account-profile-form .ant-form-item-explain { padding-top: 8px; font-size: .8125rem; }
 .account-profile-identity .ant-space-item:has(.ant-upload-wrapper) { width: 100%; }
+
+@media (max-width: 600px) {
+    .account-profile-leave-confirm .ant-modal-confirm-btns { display: flex; flex-direction: column; gap: 12px; }
+    .account-profile-leave-confirm .ant-modal-confirm-btns .ant-btn { width: 100%; margin-inline-start: 0; }
+}

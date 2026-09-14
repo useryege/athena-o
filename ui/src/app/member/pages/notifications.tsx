@@ -200,7 +200,7 @@ export const NotificationsPage = () => {
     }, [countdownAttemptId, expiryMilliseconds]);
 
     const beginSetup = async () => {
-        if (action || actionRequestRef.current) {
+        if (!mountedRef.current || action || actionRequestRef.current) {
             return;
         }
         setAction(settings?.attempt ? 'restart' : 'begin');
@@ -238,7 +238,7 @@ export const NotificationsPage = () => {
     };
 
     const cancelSetup = async () => {
-        if (action || actionRequestRef.current) {
+        if (!mountedRef.current || action || actionRequestRef.current) {
             return;
         }
         setAction('cancel');
@@ -270,7 +270,7 @@ export const NotificationsPage = () => {
     };
 
     const disconnect = async () => {
-        if (action || actionRequestRef.current) {
+        if (!mountedRef.current || action || actionRequestRef.current) {
             return;
         }
         setAction('disconnect');
