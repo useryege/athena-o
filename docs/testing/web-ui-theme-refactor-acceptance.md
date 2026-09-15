@@ -1,8 +1,8 @@
 # 全站前端主题重构实施与验收
 
-正式实现、约定验收以及 T1–T10／整分支独立审阅均已完成。最终生产版本为 `78e473b79122441771f1c4ed27c9b15019d875d4`；T9 基线 `20167913` 之后只增加删除确认生命周期修正。临时环境已停止并保留数据；一次通知待最后执行，准确状态见本文[交付状态与环境收尾](#交付状态与环境收尾)。
+正式实现、约定验收以及 T1–T10／整分支独立审阅均已完成。最终生产版本为 `78e473b79122441771f1c4ed27c9b15019d875d4`；T9 基线 `20167913` 之后只增加删除确认生命周期修正。临时环境已停止并保留数据；完成通知已发送一次、SMTP接受，准确状态见本文[交付状态与环境收尾](#交付状态与环境收尾)。
 
-本报告区分设计批准、正式实现、受控页面、真实读取和外部未验证项。[最终证据入口](../../.tmp/ui-theme-refactor/task-9/final-delivery-20167913.json)、[T9 完整实施报告](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-report.md)及[独立 T9 审阅](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-review.md)保留原始结果与修正过程；阶段中的待办描述属于当时状态，不覆盖本报告的最终实施结论。
+本报告区分设计批准、正式实现、受控页面、真实读取和外部未验证项。[T9证据入口](../../.tmp/ui-theme-refactor/task-9/final-delivery-20167913.json)、[T9 完整实施报告](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-report.md)及[独立 T9 审阅](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-review.md)保留原始结果与修正过程；阶段中的待办描述属于当时状态，不覆盖本报告的最终实施结论。
 
 ## 实施范围与当前契约
 
@@ -113,7 +113,7 @@ T10 的[文档与映射检查](../../.tmp/ui-theme-refactor/t10-document-checks.
 | 源码及生成物整分支审阅 | 完整审阅发现的唯一I1已修正，唯一一次定向复审Approved；无开放Critical／Important |
 | 最后真实 smoke | `27c3480e`，系统Chrome149，两realm各1通过，exit0、run／cleanup passed |
 | 临时环境最终停止 | 已完成；进程、端口、4容器停止，4数据卷与容器完整保留；16个其他容器状态不变 |
-| 一次完成邮件 | 待最后文档／证据核对后执行，当前未发送 |
+| 一次完成邮件 | 从本工作区根调用一次 `make notify-task-complete`，使用默认 `.env`；exit0，SMTP第2次接受。见[通知记录](../../.tmp/ui-theme-refactor/completion-notification-result.json)；不表示已读 |
 | 分支整合 | 保留本地 `codex/ui-theme-refactor` 及本工作区，未 push／merge；原工作区其他任务文件未操作 |
 
 最后运行属于 `/home/yege/work/athena/.worktrees/ui-theme-refactor`，`INSTANCE=ui-theme-refactor`，RunID `fd48b901-e7e4-4136-b71d-117c7991fe57`，session23686，supervisor PID4098212。UI `http://127.0.0.1:34000`、API `http://127.0.0.1:38080`现均停止；日志 [start.log](../../.tmp/ui-theme-refactor/final-review-runtime/start.log)、[readiness](../../.tmp/ui-theme-refactor/final-review-runtime/readiness.json)和[smoke](../../.tmp/ui-theme-refactor/final-review-runtime/smoke.log)保留。
@@ -127,4 +127,4 @@ T10 的[文档与映射检查](../../.tmp/ui-theme-refactor/t10-document-checks.
 | 数据资源 | 保留主实例PG／Redis／MinIO和独立测试PG共4容器、4数据卷；未reset、删除数据库或数据卷 |
 | 其他环境 | 16个非本任务容器在停止窗口状态、启动时间、卷不变；原工作区4000／其他worktree24000未由本任务操作或重启。原进程在关机后已退出，当前归属与监听以快照为准 |
 
-最终停止的[前后进程／端口／资源验证](../../.tmp/ui-theme-refactor/final-stop/after.json)为passed、errors为空；[其他容器窗口比较](../../.tmp/ui-theme-refactor/final-stop/docker-after.json)无变化，[环境登记](../../.tmp/ui-theme-refactor/environment.json)已更新为stopped。证据、截图、数据库和工作区均保留，通知只在全部必要工作和文档核对后执行一次。
+最终停止的[前后进程／端口／资源验证](../../.tmp/ui-theme-refactor/final-stop/after.json)为passed、errors为空；[其他容器窗口比较](../../.tmp/ui-theme-refactor/final-stop/docker-after.json)无变化，[环境登记](../../.tmp/ui-theme-refactor/environment.json)已更新为stopped。证据、截图、数据库和工作区均保留；完成通知在全部必要工作和文档核对后执行一次，SMTP已接受，未重复调用。
