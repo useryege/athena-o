@@ -9,11 +9,10 @@ import {
     SafetyCertificateOutlined,
     SearchOutlined
 } from '@ant-design/icons';
-import {Alert, Avatar, Button, Card, Checkbox, Drawer, Empty, Input, Progress, Space, Steps, Tag, Tooltip, Typography} from 'antd';
-import type {ColumnsType} from 'antd/es/table';
+import {Alert, Avatar, Button, Card, Checkbox, Drawer, Empty, Input, Pagination, Progress, Skeleton, Space, Steps, Tag, Tooltip, Typography} from 'antd';
 import * as React from 'react';
 import {Navigate, useNavigate, useParams, useSearchParams} from 'react-router-dom';
-import {AppPage, ResourceTable, useAsyncData} from '../../components';
+import {AppPage, ChoiceGroup, useAsyncData} from '../../components';
 import {AccountDataModule} from '../../shared/access-modules';
 import {Context, useAuthorization} from '../../shared/context';
 import {formatBeijingUnixSeconds} from '../../shared/format';
@@ -23,8 +22,6 @@ import {
     ListWormTradingWalletConnectionsResult,
     WormExecutionPlan,
     WormExecutionPlanItem,
-    WormExecutionPlanStep,
-    WormExecutionPlanWallet,
     WormMarketCombination,
     WormTradingWalletConnectionItem,
     WormTradingWalletSelection,
@@ -33,7 +30,6 @@ import {
 import {MAXIMUM_WORM_TRADING_WALLETS} from '../../shared/services/worm-trading-service';
 import {realmBoundResourceURL, requestErrorDetails, requestErrorMessage} from '../../shared/services/requests';
 import {wormExecutionMandatoryGuardDefinitions} from './worm-execution-preflight';
-import {short} from '../../shared/pages/shared';
 
 const connectionPageSize = 100;
 const stepPageSizes = [20, 50, 100];
@@ -61,7 +57,6 @@ const titleCase = (value: string) =>
 
 const displayCode = (value: string, fallback = 'Unavailable') => titleCase(value) || fallback;
 const displayUSDC = (value: string) => (value ? `${value} USDC` : '—');
-const displayBalance = (value: string, symbol: 'SOL' | 'USDC') => (value ? `${value} ${symbol}` : 'Unavailable');
 const connectionLabel = (state: string) => titleCase(state) || 'Unknown';
 const marketEstimateSummary = (item?: WormExecutionPlanItem) => {
     if (!item) {
@@ -74,7 +69,6 @@ const marketEstimateSummary = (item?: WormExecutionPlanItem) => {
     ];
     return parts.filter(Boolean).join(' · ');
 };
-const reasonPriority = ['MARKET_POSITION_EXISTS', 'WALLET_REQUEST_IN_FLIGHT', 'MARKET_UNAVAILABLE', 'ESTIMATE_REJECTED', 'INSUFFICIENT_USDC', 'SKIPPED_AFTER_INSUFFICIENT_USDC'];
 
 interface ExecutionPlanIntent {
     accountId: string;
@@ -117,29 +111,8 @@ const walletPresetGlyphs: Record<string, string> = {
     'moon-indigo': '☾'
 };
 
-const avatarPalettes = [
-    ['#5b21b6', '#a78bfa'],
-    ['#1d4ed8', '#60a5fa'],
-    ['#0f766e', '#2dd4bf'],
-    ['#166534', '#4ade80'],
-    ['#a16207', '#fbbf24'],
-    ['#c2410c', '#fb923c'],
-    ['#be123c', '#fb7185'],
-    ['#3730a3', '#818cf8']
-];
-
-const walletPaletteIndex = (address: string) => {
-    let hash = 2166136261;
-    for (const character of address) {
-        hash ^= character.codePointAt(0) || 0;
-        hash = Math.imul(hash, 16777619);
-    }
-    return (hash >>> 0) % avatarPalettes.length;
-};
-
 const ExecutionWalletAvatar = (props: {wallet: WormTradingWalletSummary; size?: number}) => {
     const glyph = walletPresetGlyphs[props.wallet.avatarPresetId];
-    const palette = avatarPalettes[walletPaletteIndex(props.wallet.address)];
     const uploaded = props.wallet.avatarKind.toLowerCase() === 'upload' && realmBoundResourceURL(props.wallet.avatarUrl);
     return (
         <Avatar
@@ -147,7 +120,7 @@ const ExecutionWalletAvatar = (props: {wallet: WormTradingWalletSummary; size?: 
             className={`wallet-avatar ${glyph ? `wallet-avatar--${props.wallet.avatarPresetId}` : 'wallet-avatar--generated'}`}
             size={props.size || 44}
             src={uploaded || undefined}
-            style={glyph ? undefined : {background: `linear-gradient(145deg, ${palette[0]}, ${palette[1]})`}}>
+            style={{background: 'var(--athena-panel-elevated)', color: 'var(--athena-muted)', border: '1px solid var(--athena-border-strong)'}}>
             {glyph || 'S'}
         </Avatar>
     );
@@ -157,11 +130,9 @@ const WalletIdentity = (props: {wallet: WormTradingWalletSummary; compact?: bool
     <div className='worm-preview-wallet-identity'>
         <ExecutionWalletAvatar wallet={props.wallet} size={props.compact ? 36 : 44} />
         <div>
-            <Typography.Text strong={true} ellipsis={{tooltip: props.wallet.remark || 'Solana wallet'}}>
-                {props.wallet.remark || 'Solana wallet'}
-            </Typography.Text>
+            <Typography.Text strong={true}>{props.wallet.remark || 'Solana wallet'}</Typography.Text>
             <Tooltip title={props.wallet.address}>
-                <code>{short(props.wallet.address, 8, 7)}</code>
+                <code>{props.wallet.address}</code>
             </Tooltip>
         </div>
     </div>
@@ -334,12 +305,12 @@ const CombinationStep = (props: {combination: WormMarketCombination; onContinue:
                         <Typography.Text strong={true}>{item.marketTitle}</Typography.Text>
                         <Typography.Text type='secondary'>{item.eventTitle}</Typography.Text>
                     </div>
-                    <Tag color={item.side === 'YES' ? 'green' : 'blue'}>{item.side}</Tag>
+                    <Tag className='worm-outcome'>{item.side}</Tag>
                 </div>
             ))}
         </div>
         <div className='worm-preview-step-actions'>
-            <Button type='primary' icon={<ArrowRightOutlined />} onClick={props.onContinue}>
+            <Button type='primary' icon={<ArrowRightOutlined aria-hidden='true' />} onClick={props.onContinue}>
                 Choose Wallets
             </Button>
         </div>
@@ -351,9 +322,14 @@ const WalletChoiceCard = (props: {item: WormTradingWalletConnectionItem; selecte
     const disabled = !connected || (!props.selected && props.limitReached);
     return (
         <label className={`worm-preview-wallet-choice${props.selected ? ' worm-preview-wallet-choice--selected' : ''}${disabled ? ' worm-preview-wallet-choice--disabled' : ''}`}>
-            <Checkbox checked={props.selected} disabled={disabled} onChange={event => props.onChange(event.target.checked)} />
+            <Checkbox
+                aria-label={`${props.item.wallet.remark || 'Solana wallet'} ${props.item.wallet.address}`}
+                checked={props.selected}
+                disabled={disabled}
+                onChange={event => props.onChange(event.target.checked)}
+            />
             <WalletIdentity wallet={props.item.wallet} />
-            <Tag color={connected ? 'green' : 'default'}>{connectionLabel(props.item.connection.state)}</Tag>
+            <Tag className={`worm-status worm-status--${connected ? 'success' : 'default'}`}>{connectionLabel(props.item.connection.state)}</Tag>
             {!connected && <small>Connect this Wallet on Assets before creating a preview.</small>}
             {connected && !props.selected && props.limitReached && <small>Deselect another Wallet before adding this one.</small>}
         </label>
@@ -367,7 +343,7 @@ const SelectedWallets = (props: {items: WormTradingWalletConnectionItem[]; onMov
                 <Typography.Title level={2}>Execution order</Typography.Title>
                 <Typography.Text type='secondary'>{props.items.length} selected</Typography.Text>
             </div>
-            <Tag color={props.items.length > 0 ? 'processing' : 'default'}>{props.items.length}</Tag>
+            <Tag className='worm-status worm-status--info'>{props.items.length}</Tag>
         </div>
         <div className='worm-preview-wallet-order__items'>
             {props.items.length === 0 ? (
@@ -382,7 +358,7 @@ const SelectedWallets = (props: {items: WormTradingWalletConnectionItem[]; onMov
                                 <Button
                                     type='text'
                                     size='small'
-                                    icon={<ArrowUpOutlined />}
+                                    icon={<ArrowUpOutlined aria-hidden='true' />}
                                     aria-label={`Move ${item.wallet.remark || 'Wallet'} earlier`}
                                     disabled={index === 0}
                                     onClick={() => props.onMove(index, -1)}
@@ -392,7 +368,7 @@ const SelectedWallets = (props: {items: WormTradingWalletConnectionItem[]; onMov
                                 <Button
                                     type='text'
                                     size='small'
-                                    icon={<ArrowDownOutlined />}
+                                    icon={<ArrowDownOutlined aria-hidden='true' />}
                                     aria-label={`Move ${item.wallet.remark || 'Wallet'} later`}
                                     disabled={index === props.items.length - 1}
                                     onClick={() => props.onMove(index, 1)}
@@ -403,7 +379,7 @@ const SelectedWallets = (props: {items: WormTradingWalletConnectionItem[]; onMov
                                     type='text'
                                     size='small'
                                     danger={true}
-                                    icon={<CloseOutlined />}
+                                    icon={<CloseOutlined aria-hidden='true' />}
                                     aria-label={`Remove ${item.wallet.remark || 'Wallet'}`}
                                     onClick={() => props.onRemove(item.wallet.walletId)}
                                 />
@@ -495,6 +471,7 @@ const WalletsStep = (props: {
                         </Space>
                     </div>
                     <Input
+                        aria-label='Search Wallet name or address'
                         allowClear={true}
                         prefix={<SearchOutlined />}
                         placeholder='Search Wallet name or address'
@@ -508,7 +485,7 @@ const WalletsStep = (props: {
                             title='Wallet inventory unavailable'
                             description={requestErrorMessage(props.error, 'Could not load the account Wallets.')}
                             action={
-                                <Button size='small' icon={<ReloadOutlined />} onClick={props.onReload}>
+                                <Button size='small' icon={<ReloadOutlined aria-hidden='true' />} onClick={props.onReload}>
                                     Retry
                                 </Button>
                             }
@@ -556,7 +533,7 @@ const WalletsStep = (props: {
                     <div className='worm-preview-wallet-grid' aria-busy={props.loading || undefined}>
                         {props.loading ? (
                             Array.from({length: 4}, (_, index) => <Card key={index} loading={true} />)
-                        ) : visibleItems.length === 0 ? (
+                        ) : props.error ? null : visibleItems.length === 0 ? (
                             <Empty
                                 image={Empty.PRESENTED_IMAGE_SIMPLE}
                                 description={props.inventory.length === 0 ? 'No selected and connected Wallets are eligible.' : 'No Wallets match this search.'}
@@ -582,19 +559,19 @@ const WalletsStep = (props: {
                 <aside className='worm-preview-wallet-order-desktop'>{selectedSummary}</aside>
             </div>
             <div className='worm-preview-step-actions worm-preview-step-actions--split worm-preview-wallet-actions'>
-                <Button icon={<ArrowLeftOutlined />} onClick={props.onBack}>
+                <Button icon={<ArrowLeftOutlined aria-hidden='true' />} onClick={props.onBack}>
                     Combination
                 </Button>
                 <Button
                     type='primary'
-                    icon={<ArrowRightOutlined />}
+                    icon={<ArrowRightOutlined aria-hidden='true' />}
                     disabled={props.selectedIDs.length === 0 || props.selectedIDs.length > props.maximumWallets || props.loading || Boolean(props.error)}
                     onClick={props.onContinue}>
                     Continue to checks
                 </Button>
             </div>
             <div className='worm-preview-mobile-order'>
-                <Button type='text' icon={<ArrowLeftOutlined />} aria-label='Back to combination' onClick={props.onBack} />
+                <Button type='text' icon={<ArrowLeftOutlined aria-hidden='true' />} aria-label='Back to combination' onClick={props.onBack} />
                 <span>
                     <strong>{props.selectedIDs.length}</strong>
                     <small>Wallets selected</small>
@@ -623,7 +600,7 @@ const MandatoryGuards = (props: {idPrefix: string}) => (
                 </Typography.Text>
                 <Typography.Text type='secondary'>Both guards are always enforced again immediately before Athena sends a Worm Open request.</Typography.Text>
             </div>
-            <Tag color='blue'>Always on</Tag>
+            <Tag className='worm-status worm-status--info'>Always on</Tag>
         </div>
         <section className='worm-preview-guard-group' aria-labelledby={`${props.idPrefix}-mandatory-heading`}>
             <div className='worm-preview-guard-list'>
@@ -634,7 +611,7 @@ const MandatoryGuards = (props: {idPrefix: string}) => (
                             <Typography.Text strong={true}>{definition.title}</Typography.Text>
                             <Typography.Text type='secondary'>{definition.description}</Typography.Text>
                         </span>
-                        <Tag color='blue'>Always on</Tag>
+                        <Tag className='worm-status worm-status--info'>Always on</Tag>
                     </div>
                 ))}
             </div>
@@ -657,14 +634,14 @@ const ChecksStep = (props: {creating: boolean; selectedWalletCount: number; onBa
                 </Typography.Title>
                 <Typography.Text type='secondary'>Review the two always-on exposure guards for the fixed market-order, 1× execution flow.</Typography.Text>
             </div>
-            <Tag color='processing'>{props.selectedWalletCount} Wallets</Tag>
+            <Tag className='worm-status worm-status--info'>{props.selectedWalletCount} Wallets</Tag>
         </div>
         <MandatoryGuards idPrefix='worm-preview-checks' />
         <div className='worm-preview-step-actions worm-preview-step-actions--split worm-preview-check-actions'>
-            <Button icon={<ArrowLeftOutlined />} disabled={props.creating} onClick={props.onBack}>
+            <Button icon={<ArrowLeftOutlined aria-hidden='true' />} disabled={props.creating} onClick={props.onBack}>
                 Wallets
             </Button>
-            <Button type='primary' icon={<FileSearchOutlined />} loading={props.creating} disabled={props.selectedWalletCount === 0} onClick={props.onCreate}>
+            <Button type='primary' icon={<FileSearchOutlined aria-hidden='true' />} loading={props.creating} disabled={props.selectedWalletCount === 0} onClick={props.onCreate}>
                 Build read-only preview
             </Button>
         </div>
@@ -718,7 +695,8 @@ const PlanStateAlert = (props: {plan: WormExecutionPlan}) => {
     }
     return (
         <Alert
-            type='success'
+            type='info'
+            className='worm-preview-ready-state'
             showIcon={true}
             title='Read-only preview ready'
             description={`The snapshot expires at ${formatBeijingUnixSeconds(props.plan.expiresAt) || 'the server-defined time'}. This read-only preview cannot start an order.`}
@@ -727,18 +705,6 @@ const PlanStateAlert = (props: {plan: WormExecutionPlan}) => {
 };
 
 const planProgress = (plan: WormExecutionPlan) => (plan.totalStepCount > 0 ? Math.min(100, Math.round((plan.completedStepCount / plan.totalStepCount) * 100)) : 0);
-const planPresentationStatus = (plan: WormExecutionPlan) => {
-    if (plan.state === 'BUILDING') {
-        return {label: 'Building', color: 'blue'};
-    }
-    if (plan.state === 'FAILED') {
-        return {label: 'Failed', color: 'red'};
-    }
-    if (plan.state === 'EXPIRED') {
-        return {label: 'Expired', color: 'gold'};
-    }
-    return plan.usabilityCode ? {label: 'Preview built', color: 'gold'} : {label: 'Preview ready', color: 'green'};
-};
 const planLiveStatus = (plan: WormExecutionPlan) =>
     plan.state === 'BUILDING'
         ? `Building execution preview. ${plan.completedStepCount} of ${plan.totalStepCount} steps classified.`
@@ -750,166 +716,91 @@ const planLiveStatus = (plan: WormExecutionPlan) =>
             ? 'Execution preview expired.'
             : `Execution preview failed. ${displayCode(plan.failureCode)}.`;
 
-const PlanChecksSummary = (props: {canRerun: boolean; changing: boolean; disabled: boolean; onRerun: () => void}) => (
-    <Card
-        size='small'
-        className='worm-preview-checks-summary'
-        title='Mandatory execution guards'
-        extra={
-            props.canRerun ? (
-                <Button size='small' type='primary' icon={<ReloadOutlined />} loading={props.changing} disabled={props.disabled} onClick={props.onRerun}>
-                    Re-run preview
-                </Button>
-            ) : undefined
-        }>
-        <div className='worm-preview-checks-summary__body'>
-            <div className='worm-preview-checks-summary__rules' aria-label='Mandatory execution guards'>
-                {wormExecutionMandatoryGuardDefinitions.map(definition => (
-                    <Tag key={definition.key} color='blue'>
-                        Always on · {definition.title}
-                    </Tag>
-                ))}
-            </div>
-            <Typography.Text type='secondary'>Athena submits only market orders at fixed 1× leverage. Both exposure guards remain active during live execution.</Typography.Text>
-        </div>
-    </Card>
-);
-
-const PlanSummary = (props: {plan: WormExecutionPlan}) => {
-    const totalsAvailable = props.plan.state === 'READY' || props.plan.state === 'EXPIRED';
-    const presentationStatus = planPresentationStatus(props.plan);
+const PlanSummary = (props: {plan: WormExecutionPlan; canRerun: boolean; changing: boolean; onRerun: () => void}) => {
+    const plan = props.plan;
+    const totalsAvailable = plan.state === 'READY' || plan.state === 'EXPIRED';
     return (
-        <>
+        <div className='worm-preview-summary'>
             <div className='worm-preview-plan-header'>
                 <div>
-                    <Typography.Title level={2}>{props.plan.combinationName}</Typography.Title>
+                    <Typography.Title level={2}>{plan.combinationName}</Typography.Title>
                     <Typography.Text type='secondary'>
-                        Combination revision {props.plan.combinationRevision} · Wallet selection revision {props.plan.walletSelectionRevision} · Plan {short(props.plan.id, 10, 8)}
+                        Combination revision {plan.combinationRevision} · Wallet selection revision {plan.walletSelectionRevision}
                     </Typography.Text>
                 </div>
-                <Tag color={presentationStatus.color}>{presentationStatus.label}</Tag>
+                {props.canRerun && (
+                    <Button icon={<ReloadOutlined aria-hidden='true' />} loading={props.changing} disabled={plan.state === 'BUILDING'} onClick={props.onRerun}>
+                        Re-run preview
+                    </Button>
+                )}
             </div>
-            <div className='worm-preview-live-status' role='status' aria-live='polite'>
-                {planLiveStatus(props.plan)}
-            </div>
-            <PlanStateAlert plan={props.plan} />
-            {props.plan.state === 'BUILDING' && (
+            {plan.state === 'BUILDING' && (
                 <div className='worm-preview-build-progress'>
-                    <Progress percent={planProgress(props.plan)} status='active' />
+                    <Progress percent={planProgress(plan)} status='active' />
                     <Typography.Text type='secondary'>
-                        {props.plan.completedStepCount} of {props.plan.totalStepCount} steps classified
+                        {plan.completedStepCount} of {plan.totalStepCount} steps classified
                     </Typography.Text>
                 </div>
             )}
-            <Typography.Text id='worm-preview-actionable-totals-note' type='secondary'>
-                Collateral, opening fee, and USDC totals include actionable steps only.
-            </Typography.Text>
-            <dl className='worm-preview-metrics' aria-describedby='worm-preview-actionable-totals-note'>
+            <dl className='worm-preview-metrics'>
                 <div>
-                    <dt>Wallets</dt>
-                    <dd>{props.plan.walletCount}</dd>
+                    <dt>Wallets / markets</dt>
+                    <dd>
+                        {plan.walletCount} / {plan.itemCount}
+                    </dd>
                 </div>
                 <div>
-                    <dt>Markets</dt>
-                    <dd>{props.plan.itemCount}</dd>
+                    <dt>Steps</dt>
+                    <dd>{totalsAvailable ? `${plan.readyStepCount} ready / ${plan.skippedStepCount} skipped` : `${plan.totalStepCount} awaiting classification`}</dd>
                 </div>
                 <div>
-                    <dt>Total steps</dt>
-                    <dd>{props.plan.totalStepCount}</dd>
+                    <dt>Collateral + estimated fee</dt>
+                    <dd>{totalsAvailable ? `${plan.maximumCollateral || '—'} + ${plan.openingFeeEstimate || '—'} USDC` : '—'}</dd>
                 </div>
                 <div>
-                    <dt>Actionable</dt>
-                    <dd>{props.plan.readyStepCount}</dd>
-                </div>
-                <div>
-                    <dt>Skipped</dt>
-                    <dd>{props.plan.skippedStepCount}</dd>
-                </div>
-                <div>
-                    <dt>Actionable collateral</dt>
-                    <dd>{totalsAvailable ? displayUSDC(props.plan.maximumCollateral) : '—'}</dd>
-                </div>
-                <div>
-                    <dt>Actionable opening fees</dt>
-                    <dd>{totalsAvailable ? displayUSDC(props.plan.openingFeeEstimate) : '—'}</dd>
-                </div>
-                <div>
-                    <dt>Actionable USDC needed</dt>
-                    <dd>{totalsAvailable ? displayUSDC(props.plan.totalUSDCNeeded) : '—'}</dd>
+                    <dt>Total USDC needed</dt>
+                    <dd>{totalsAvailable ? displayUSDC(plan.totalUSDCNeeded) : '—'}</dd>
                 </div>
             </dl>
-            {Object.entries(props.plan.reasonCounts).some(([reasonCode, count]) => reasonCode !== 'READY' && count > 0) && (
-                <div className='worm-preview-reason-counts' aria-label='Skipped step reasons'>
-                    {Object.entries(props.plan.reasonCounts)
-                        .filter(([reasonCode, count]) => reasonCode !== 'READY' && count > 0)
-                        .sort(([left], [right]) => {
-                            const leftIndex = reasonPriority.indexOf(left);
-                            const rightIndex = reasonPriority.indexOf(right);
-                            return (leftIndex < 0 ? reasonPriority.length : leftIndex) - (rightIndex < 0 ? reasonPriority.length : rightIndex) || left.localeCompare(right);
-                        })
-                        .map(([reasonCode, count]) => (
-                            <div key={reasonCode}>
-                                <span>{displayCode(reasonCode)}</span>
-                                <strong>{count}</strong>
-                            </div>
+            <p className='worm-execution-note'>Market orders · 1× leverage. Collateral, opening fee, and USDC totals include actionable steps only.</p>
+            <p className='worm-execution-note'>Always on: target-market position guard and wallet-wide in-flight request guard.</p>
+            <p className='worm-execution-note'>
+                SOL is informational here. Exact transaction fees and rent are unavailable from Estimate. Live execution requires positive SOL; Athena does not inspect the returned
+                transaction or bind its actual chain spend.
+            </p>
+            <details className='worm-step-evidence'>
+                <summary>Mandatory guards &amp; snapshot identity</summary>
+                {wormExecutionMandatoryGuardDefinitions.map(definition => (
+                    <p key={definition.key}>
+                        <strong>{definition.title} · Always on.</strong> {definition.description}
+                    </p>
+                ))}
+                <dl>
+                    <div>
+                        <dt>Plan ID</dt>
+                        <dd className='athena-identifier'>{plan.id}</dd>
+                    </div>
+                    <div>
+                        <dt>Combination ID</dt>
+                        <dd className='athena-identifier'>{plan.combinationId}</dd>
+                    </div>
+                </dl>
+                <p>
+                    Requested {formatBeijingUnixSeconds(plan.requestedAt)} · Updated {formatBeijingUnixSeconds(plan.updatedAt)} UTC+8
+                </p>
+                <div aria-label='Skipped step reasons'>
+                    {Object.entries(plan.reasonCounts)
+                        .filter(([reason, count]) => reason !== 'READY' && count > 0)
+                        .map(([reason, count]) => (
+                            <p key={reason}>
+                                {displayCode(reason)} · {count}
+                            </p>
                         ))}
                 </div>
-            )}
-            {props.plan.wallets.length > 0 && (
-                <div className='worm-preview-balance-strip'>
-                    {props.plan.wallets.map(wallet => (
-                        <div key={wallet.wallet.walletId}>
-                            <span>{wallet.ordinal}</span>
-                            <WalletIdentity wallet={wallet.wallet} compact={true} />
-                            <dl>
-                                <div>
-                                    <dt>USDC</dt>
-                                    <dd>{displayBalance(wallet.usdc.amount, 'USDC')}</dd>
-                                </div>
-                                <div>
-                                    <dt>SOL</dt>
-                                    <dd>{displayBalance(wallet.sol.amount, 'SOL')}</dd>
-                                </div>
-                            </dl>
-                        </div>
-                    ))}
-                </div>
-            )}
-            <Alert
-                type='info'
-                showIcon={true}
-                title='SOL is informational in Preview'
-                description='Worm does not expose exact transaction fees or account rent through Estimate. Live execution refreshes the SOL balance and requires a positive balance, but Athena does not inspect Worm’s returned transaction or cryptographically bind its actual chain spend.'
-            />
-        </>
+            </details>
+        </div>
     );
 };
-
-const PlanStepCard = (props: {step: WormExecutionPlanStep; wallet?: WormExecutionPlanWallet; item?: WormExecutionPlanItem}) => (
-    <Card className='worm-preview-step-card' size='small'>
-        <div className='worm-preview-step-card__heading'>
-            <span>{props.step.ordinal}</span>
-            <Tag color={props.step.disposition === 'READY' ? 'green' : 'default'}>
-                {props.step.disposition === 'READY' ? 'Actionable' : displayCode(props.step.reasonCode, 'Skipped')}
-            </Tag>
-        </div>
-        {props.wallet && <WalletIdentity wallet={props.wallet.wallet} compact={true} />}
-        <div className='worm-preview-step-card__market'>
-            <Typography.Text strong={true}>{props.item?.marketTitle || `Market ${props.step.itemOrdinal}`}</Typography.Text>
-            <span>
-                {props.item && <Tag color={props.item.side === 'YES' ? 'green' : 'blue'}>{props.item.side}</Tag>}
-                <Typography.Text type='secondary'>{props.item?.eventTitle || ''}</Typography.Text>
-            </span>
-            {props.item && <Typography.Text type='secondary'>{marketEstimateSummary(props.item)}</Typography.Text>}
-        </div>
-        <div className='worm-preview-step-card__balance'>
-            <span>Projected USDC</span>
-            <strong>
-                {props.step.projectedUsdcBefore || '—'} → {props.step.projectedUsdcAfter || '—'}
-            </strong>
-        </div>
-    </Card>
-);
 
 const PlanSteps = (props: {plan: WormExecutionPlan}) => {
     const [page, setPage] = React.useState(1);
@@ -919,94 +810,116 @@ const PlanSteps = (props: {plan: WormExecutionPlan}) => {
         setPageSize(50);
     }, [props.plan.id]);
     const data = useAsyncData(() => services.wormTrading.listExecutionPlanSteps(props.plan.id, page, pageSize), [props.plan.id, page, pageSize, props.plan.updatedAt]);
-    const walletByOrdinal = (ordinal: number) => props.plan.wallets.find(wallet => wallet.ordinal === ordinal);
-    const itemByOrdinal = (ordinal: number) => props.plan.items.find(item => item.ordinal === ordinal);
-    const columns: ColumnsType<WormExecutionPlanStep> = [
-        {title: '#', width: 72, dataIndex: 'ordinal'},
-        {
-            title: 'Wallet',
-            width: 250,
-            render: step => {
-                const wallet = walletByOrdinal(step.walletOrdinal);
-                return wallet ? <WalletIdentity wallet={wallet.wallet} compact={true} /> : `Wallet ${step.walletOrdinal}`;
-            }
-        },
-        {
-            title: 'Market and outcome',
-            render: step => {
-                const item = itemByOrdinal(step.itemOrdinal);
-                return (
-                    <div className='worm-preview-step-market'>
-                        <Typography.Text strong={true}>{item?.marketTitle || `Market ${step.itemOrdinal}`}</Typography.Text>
-                        <span>
-                            {item && <Tag color={item.side === 'YES' ? 'green' : 'blue'}>{item.side}</Tag>}
-                            <Typography.Text type='secondary'>{item?.eventTitle || ''}</Typography.Text>
-                        </span>
-                        {item && <Typography.Text type='secondary'>{marketEstimateSummary(item)}</Typography.Text>}
-                    </div>
-                );
-            }
-        },
-        {
-            title: 'Preview result',
-            width: 220,
-            render: step => (
-                <div className='worm-preview-step-result'>
-                    <Tag color={step.disposition === 'READY' ? 'green' : 'default'}>{step.disposition === 'READY' ? 'Actionable' : 'Skipped'}</Tag>
-                    <Typography.Text type='secondary'>{step.disposition === 'READY' ? 'Actionable at preview funds' : displayCode(step.reasonCode)}</Typography.Text>
-                </div>
-            )
-        },
-        {
-            title: 'Projected USDC',
-            width: 190,
-            render: step => (
-                <span className='worm-preview-step-usdc'>
-                    {step.projectedUsdcBefore || '—'} → {step.projectedUsdcAfter || '—'}
-                </span>
-            )
-        }
-    ];
     return (
-        <section className='worm-preview-steps' aria-labelledby='worm-preview-steps-heading'>
-            <div className='worm-preview-section-heading'>
-                <div>
-                    <Typography.Title id='worm-preview-steps-heading' level={2}>
-                        Wallet-major step preview
-                    </Typography.Title>
-                    <Typography.Text type='secondary'>Each Wallet is evaluated across every market before Athena moves to the next Wallet.</Typography.Text>
-                </div>
-            </div>
+        <section className='worm-preview-steps' aria-label='Wallet-major step preview'>
             {data.error && (
                 <Alert
                     type='error'
-                    showIcon={true}
-                    title='Could not load preview steps'
+                    showIcon
+                    title={data.data ? 'Preview steps are stale' : 'Could not load preview steps'}
                     description={requestErrorMessage(data.error)}
-                    action={
-                        <Button size='small' onClick={data.reload}>
-                            Retry
-                        </Button>
-                    }
+                    action={<Button onClick={data.reload}>Retry</Button>}
                 />
             )}
-            <ResourceTable<WormExecutionPlanStep>
-                rowKey='ordinal'
-                label='Execution preview steps'
-                items={data.data?.items || []}
-                columns={columns}
-                loading={data.loading}
-                total={data.data?.total}
-                page={page}
-                pageSize={pageSize}
-                pageSizeOptions={stepPageSizes}
-                onPageChange={(nextPage, nextPageSize) => {
-                    setPage(nextPage);
-                    setPageSize(nextPageSize);
-                }}
-                compactEmptyDescription='No classified steps are available.'
-                compactRender={step => <PlanStepCard step={step} wallet={walletByOrdinal(step.walletOrdinal)} item={itemByOrdinal(step.itemOrdinal)} />}
-            />
+            {!data.data ? (
+                data.loading ? (
+                    <Skeleton active />
+                ) : null
+            ) : (
+                <>
+                    {data.data.items.length === 0 ? (
+                        <Empty description='No classified steps are available.' />
+                    ) : (
+                        props.plan.wallets
+                            .filter(wallet => data.data!.items.some(step => step.walletOrdinal === wallet.ordinal))
+                            .map(wallet => {
+                                const steps = data.data!.items.filter(step => step.walletOrdinal === wallet.ordinal);
+                                return (
+                                    <section key={wallet.ordinal} className='worm-preview-wallet-section' aria-label={`Steps for ${wallet.wallet.remark || wallet.wallet.address}`}>
+                                        <div className='worm-preview-wallet-section-heading'>
+                                            <div>
+                                                <Typography.Title level={3}>{wallet.wallet.remark || 'Solana wallet'}</Typography.Title>
+                                                <Tag className={`worm-status worm-status--${wallet.connection?.state === 'CONNECTED' ? 'success' : 'warning'}`}>
+                                                    {wallet.connection ? connectionLabel(wallet.connection.state) : 'Not observed'}
+                                                </Tag>
+                                            </div>
+                                            <span className='worm-execution-note'>
+                                                USDC {wallet.usdc.amount || '—'} · SOL {wallet.sol.amount || '—'}
+                                            </span>
+                                        </div>
+                                        <code className='athena-identifier'>{wallet.wallet.address}</code>
+                                        <ol className='worm-preview-grouped-steps'>
+                                            {steps.map(step => {
+                                                const item = props.plan.items.find(candidate => candidate.ordinal === step.itemOrdinal);
+                                                return (
+                                                    <li key={step.ordinal}>
+                                                        <span className='worm-execution-note'>{step.ordinal}</span>
+                                                        <div>
+                                                            <Typography.Text strong>{item?.marketTitle || `Market ${step.itemOrdinal}`}</Typography.Text>
+                                                            <p className='worm-execution-note'>
+                                                                {item?.side || 'Unavailable'} · {item?.backend || 'Unavailable'} · {item?.leverage || '—'}×
+                                                            </p>
+                                                        </div>
+                                                        <div>
+                                                            <Tag className={`worm-status worm-status--${step.disposition === 'READY' ? 'success' : 'warning'}`}>
+                                                                {step.disposition === 'READY' ? 'Ready' : 'Skipped'}
+                                                            </Tag>
+                                                            {step.reasonCode && <p className='worm-execution-note'>{displayCode(step.reasonCode)}</p>}
+                                                        </div>
+                                                        <div className='worm-preview-step-funds athena-numeric'>
+                                                            {step.disposition === 'READY' ? displayUSDC(item?.estimate?.userFundsNeeded || '') : 'No funds deducted'}
+                                                            <p className='worm-execution-note'>{item ? marketEstimateSummary(item) : 'Estimate unavailable'}</p>
+                                                        </div>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ol>
+                                        <details className='worm-step-evidence'>
+                                            <summary>Wallet projection &amp; reasons</summary>
+                                            <p className='worm-execution-note'>
+                                                Current page · {steps.filter(step => step.disposition === 'READY').length} ready /{' '}
+                                                {steps.filter(step => step.disposition === 'SKIPPED').length} skipped
+                                            </p>
+                                            {steps.map(step => {
+                                                const item = props.plan.items.find(candidate => candidate.ordinal === step.itemOrdinal);
+                                                return (
+                                                    <div key={step.ordinal}>
+                                                        <p>
+                                                            Step {step.ordinal} · Projected USDC {step.projectedUsdcBefore || '—'} → {step.projectedUsdcAfter || '—'}
+                                                        </p>
+                                                        <p className='athena-identifier'>
+                                                            Market {item?.marketConditionId || 'Unavailable'} · Event {item?.eventConditionId || 'Unavailable'}
+                                                        </p>
+                                                        {item?.estimate && (
+                                                            <p>
+                                                                Estimate fully filled: {item.estimate.isFullyFilled ? 'Yes' : 'No'} · Shares {item.estimate.totalShares} · Average
+                                                                price {item.estimate.averagePrice}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </details>
+                                    </section>
+                                );
+                            })
+                    )}
+                    <div className='worm-preview-pagination'>
+                        <span className='worm-execution-note'>Wallet-major order · {data.data.total} steps</span>
+                        <Pagination size='small' current={page} pageSize={pageSize} total={data.data.total} showSizeChanger={false} onChange={setPage} />
+                        <ChoiceGroup<number>
+                            ariaLabel='Steps per page'
+                            size='small'
+                            value={pageSize}
+                            options={stepPageSizes.map(value => ({label: String(value), value}))}
+                            onChange={value => {
+                                setPage(1);
+                                setPageSize(value);
+                            }}
+                        />
+                    </div>
+                </>
+            )}
         </section>
     );
 };
@@ -1056,7 +969,7 @@ const ReviewStep = (props: {
                     type='warning'
                     showIcon={true}
                     title='Could not refresh preview status'
-                    description='The last confirmed preview remains visible.'
+                    description='The last confirmed preview remains visible and is stale. Refresh before preparing a Run.'
                     action={
                         <Button size='small' onClick={props.onRetryStatus}>
                             Retry
@@ -1072,38 +985,40 @@ const ReviewStep = (props: {
                     description='This immutable preview remains available for review, but it cannot be prepared as a live execution. Re-run it against the current saved Wallet selection.'
                 />
             )}
-            <PlanChecksSummary
-                canRerun={props.canRerun}
-                changing={props.creating}
-                disabled={!props.canRerun || props.plan.state === 'BUILDING' || props.preparing}
-                onRerun={props.onRerun}
-            />
-            <PlanSummary plan={props.plan} />
-            {props.plan.state !== 'BUILDING' && <PlanSteps plan={props.plan} />}
-            <Alert
-                className='worm-preview-read-only'
-                type='warning'
-                showIcon={true}
-                title='This preview remains read-only'
-                description='Preparing a live execution only freezes this reviewed plan. It does not sign in to Worm, ask a Wallet to sign, create a position request, or submit an order.'
-            />
-            <div className='worm-preview-step-actions worm-preview-step-actions--split'>
-                <Button icon={<ArrowLeftOutlined />} onClick={props.onBack}>
-                    Saved combinations
-                </Button>
-                <Space wrap={true}>
-                    {props.canWrite && (
-                        <Button
-                            type='primary'
-                            icon={<SafetyCertificateOutlined />}
-                            loading={props.preparing}
-                            disabled={!props.canPrepare || props.creating}
-                            onClick={props.onPrepare}>
-                            Prepare live execution
-                        </Button>
-                    )}
-                </Space>
+            <div className='worm-preview-live-status' role='status' aria-live='polite'>
+                {planLiveStatus(props.plan)}
             </div>
+            <PlanStateAlert plan={props.plan} />
+            <div className='worm-preview-plan-panel'>
+                <PlanSummary plan={props.plan} canRerun={props.canRerun} changing={props.creating || props.preparing} onRerun={props.onRerun} />
+                {(props.plan.state === 'READY' || props.plan.state === 'EXPIRED') && <PlanSteps plan={props.plan} />}
+            </div>
+            <section className='worm-preview-prepare-panel worm-preview-read-only' aria-labelledby='worm-prepare-heading'>
+                <Typography.Title id='worm-prepare-heading' level={2}>
+                    Prepare live execution
+                </Typography.Title>
+                <p className='worm-execution-note'>
+                    Create a Run to freeze this reviewed plan. You will authorize separately on the execution detail page. Creating a Run does not sign in to Worm, request a wallet
+                    signature, create a position request or submit an order.
+                </p>
+                <div className='worm-preview-step-actions worm-preview-step-actions--split'>
+                    <Button icon={<ArrowLeftOutlined aria-hidden='true' />} onClick={props.onBack}>
+                        Saved combinations
+                    </Button>
+                    <Space wrap={true}>
+                        {props.canWrite && (
+                            <Button
+                                type='primary'
+                                icon={<SafetyCertificateOutlined aria-hidden='true' />}
+                                loading={props.preparing}
+                                disabled={!props.canPrepare || props.creating}
+                                onClick={props.onPrepare}>
+                                Prepare live execution
+                            </Button>
+                        )}
+                    </Space>
+                </div>
+            </section>
         </div>
     );
 };
@@ -1141,6 +1056,8 @@ export const WormTradingExecutionPreviewPage = () => {
         () => () => {
             createRequestRef.current?.abort?.();
             prepareRequestRef.current?.abort?.();
+            createRequestRef.current = undefined;
+            prepareRequestRef.current = undefined;
         },
         []
     );
@@ -1362,7 +1279,21 @@ export const WormTradingExecutionPreviewPage = () => {
 
     const prepareLiveExecution = async () => {
         const current = plan;
-        if (!current || preparing || current.state !== 'READY' || current.usabilityCode || current.readyStepCount <= 0 || current.expiresAt * 1_000 <= Date.now()) {
+        if (
+            !current ||
+            !canWriteRef.current ||
+            preparing ||
+            prepareRequestRef.current ||
+            planError ||
+            combination.error ||
+            inventory.error ||
+            combination.data?.revision !== current.combinationRevision ||
+            inventory.data?.selection.revision !== current.walletSelectionRevision ||
+            current.state !== 'READY' ||
+            current.usabilityCode ||
+            current.readyStepCount <= 0 ||
+            current.expiresAt * 1_000 <= Date.now()
+        ) {
             return;
         }
         setPreparing(true);
@@ -1419,77 +1350,78 @@ export const WormTradingExecutionPreviewPage = () => {
 
     const combinationError = workflowStep < 3 ? combination.error : undefined;
     return (
-        <AppPage
-            title='Worm Trading Execution Preview'
-            subtitle={
-                canWrite
-                    ? 'Select configured and connected Wallets and build a read-only, wallet-major preview. No Worm order, draft, signature, or transaction is created.'
-                    : 'Review this read-only, wallet-major preview. No Worm order, draft, signature, or transaction is created.'
-            }
-            loading={workflowStep === 0 && combination.loading}
-            error={combinationError}
-            onRefresh={workflowStep === 0 ? combination.reload : undefined}
-            extra={
-                <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/worm-trading/combinations')}>
-                    Saved combinations
-                </Button>
-            }>
-            <Steps
-                className='worm-preview-workflow'
-                current={workflowStep}
-                responsive={true}
-                items={[
-                    {title: 'Combination', content: 'Confirm market order'},
-                    {title: 'Wallets', content: 'Select and order'},
-                    {title: 'Checks', content: 'Confirm guards'},
-                    {title: 'Review', content: 'Read-only preflight'}
-                ]}
-            />
-            {workflowStep === 0 && combination.data && <CombinationStep combination={combination.data} onContinue={() => setWorkflowStep(1)} />}
-            {workflowStep === 1 && (
-                <WalletsStep
-                    inventory={inventory.data?.items || []}
-                    configured={inventory.data?.configured || false}
-                    selectedWalletCount={inventory.data?.selectedWalletCount || 0}
-                    unavailableSelectedWalletCount={inventory.data?.unavailableSelectedWalletCount || 0}
-                    maximumWallets={inventory.data?.maximumWallets || MAXIMUM_WORM_TRADING_WALLETS}
-                    loading={inventory.loading}
-                    error={inventory.error}
-                    selectedIDs={selectedIDs}
-                    onSelectedIDsChange={setSelectedIDs}
-                    onBack={() => setWorkflowStep(0)}
-                    onContinue={() => setWorkflowStep(2)}
-                    onReload={inventory.reload}
-                    onOpenAssets={() => navigate('/worm-trading')}
+        <div className='worm-execution-theme'>
+            <Button className='worm-execution-back' type='text' icon={<ArrowLeftOutlined aria-hidden='true' />} onClick={() => navigate('/worm-trading/combinations')}>
+                Saved combinations
+            </Button>
+            <AppPage
+                title='Worm Trading Execution Preview'
+                subtitle={
+                    canWrite
+                        ? 'Select configured and connected Wallets and build a read-only, wallet-major preview. No Worm order, draft, signature, or transaction is created.'
+                        : 'Review this read-only, wallet-major preview. No Worm order, draft, signature, or transaction is created.'
+                }
+                loading={workflowStep === 0 && combination.loading}
+                error={combinationError}
+                onRefresh={workflowStep === 0 ? combination.reload : undefined}>
+                <Steps
+                    className='worm-preview-workflow'
+                    current={workflowStep}
+                    responsive={true}
+                    items={[{title: 'Combination'}, {title: 'Wallets'}, {title: 'Checks'}, {title: 'Review'}]}
                 />
-            )}
-            {workflowStep === 2 && (
-                <ChecksStep creating={creating} selectedWalletCount={selectedIDs.length} onBack={() => setWorkflowStep(1)} onCreate={() => void createPlan(selectedIDs)} />
-            )}
-            {workflowStep === 3 && (
-                <ReviewStep
-                    plan={plan}
-                    loading={planLoading}
-                    error={planError}
-                    creating={creating}
-                    preparing={preparing}
-                    canWrite={canWrite}
-                    canRerun={canWrite && Boolean(combination.data && (plan?.wallets.length || selectedIDs.length))}
-                    canPrepare={
-                        canWrite &&
-                        plan?.state === 'READY' &&
-                        !plan.usabilityCode &&
-                        plan.readyStepCount > 0 &&
-                        plan.expiresAt * 1_000 > Date.now() &&
-                        inventory.data?.selection.revision === plan.walletSelectionRevision
-                    }
-                    walletSelectionChanged={Boolean(canWrite && plan && inventory.data?.selection.configured && inventory.data.selection.revision !== plan.walletSelectionRevision)}
-                    onRetryStatus={() => setPlanReload(value => value + 1)}
-                    onBack={() => navigate('/worm-trading/combinations')}
-                    onRerun={() => void rerunPlan()}
-                    onPrepare={() => void prepareLiveExecution()}
-                />
-            )}
-        </AppPage>
+                {workflowStep === 0 && combination.data && <CombinationStep combination={combination.data} onContinue={() => setWorkflowStep(1)} />}
+                {workflowStep === 1 && (
+                    <WalletsStep
+                        inventory={inventory.data?.items || []}
+                        configured={inventory.data?.configured || false}
+                        selectedWalletCount={inventory.data?.selectedWalletCount || 0}
+                        unavailableSelectedWalletCount={inventory.data?.unavailableSelectedWalletCount || 0}
+                        maximumWallets={inventory.data?.maximumWallets || MAXIMUM_WORM_TRADING_WALLETS}
+                        loading={inventory.loading}
+                        error={inventory.error}
+                        selectedIDs={selectedIDs}
+                        onSelectedIDsChange={setSelectedIDs}
+                        onBack={() => setWorkflowStep(0)}
+                        onContinue={() => setWorkflowStep(2)}
+                        onReload={inventory.reload}
+                        onOpenAssets={() => navigate('/worm-trading')}
+                    />
+                )}
+                {workflowStep === 2 && (
+                    <ChecksStep creating={creating} selectedWalletCount={selectedIDs.length} onBack={() => setWorkflowStep(1)} onCreate={() => void createPlan(selectedIDs)} />
+                )}
+                {workflowStep === 3 && (
+                    <ReviewStep
+                        plan={plan}
+                        loading={planLoading}
+                        error={planError}
+                        creating={creating}
+                        preparing={preparing}
+                        canWrite={canWrite}
+                        canRerun={canWrite && Boolean(combination.data && (plan?.wallets.length || selectedIDs.length))}
+                        canPrepare={
+                            canWrite &&
+                            plan?.state === 'READY' &&
+                            !planError &&
+                            !combination.error &&
+                            !inventory.error &&
+                            combination.data?.revision === plan.combinationRevision &&
+                            !plan.usabilityCode &&
+                            plan.readyStepCount > 0 &&
+                            plan.expiresAt * 1_000 > Date.now() &&
+                            inventory.data?.selection.revision === plan.walletSelectionRevision
+                        }
+                        walletSelectionChanged={Boolean(
+                            canWrite && plan && inventory.data?.selection.configured && inventory.data.selection.revision !== plan.walletSelectionRevision
+                        )}
+                        onRetryStatus={() => setPlanReload(value => value + 1)}
+                        onBack={() => navigate('/worm-trading/combinations')}
+                        onRerun={() => void rerunPlan()}
+                        onPrepare={() => void prepareLiveExecution()}
+                    />
+                )}
+            </AppPage>
+        </div>
     );
 };

@@ -471,9 +471,9 @@ const AppRoutes = (props: {access: AccessState; settings: AuthSettings; loggingO
                 <Route path='/worm-trading/combinations' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationsPage key={identityKey} />)} />
                 <Route path='/worm-trading/combinations/new' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationBuilderPage key={identityKey} />)} />
                 <Route path='/worm-trading/combinations/:id/edit' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationBuilderPage key={identityKey} />)} />
-                <Route path='/worm-trading/combinations/:id/execute' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionPreviewPage />)} />
-                <Route path='/worm-trading/executions' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionsPage />)} />
-                <Route path='/worm-trading/executions/:id' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionDetailPage />)} />
+                <Route path='/worm-trading/combinations/:id/execute' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionPreviewPage key={identityKey} />)} />
+                <Route path='/worm-trading/executions' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionsPage key={identityKey} />)} />
+                <Route path='/worm-trading/executions/:id' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionDetailPage key={identityKey} />)} />
                 <Route path='/market-radar' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarHotPage key={identityKey} />)} />
                 <Route path='/market-radar/realtime' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarRealtimePage key={identityKey} />)} />
                 <Route path='/market-radar/movers' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarMoversPage key={identityKey} />)} />

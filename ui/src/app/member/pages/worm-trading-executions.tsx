@@ -9,11 +9,11 @@ import {
     SafetyCertificateOutlined,
     StopOutlined
 } from '@ant-design/icons';
-import {Alert, Button, Card, Descriptions, Empty, Progress, Space, Tag, Tooltip, Typography} from 'antd';
+import {Alert, Button, Card, Descriptions, Empty, Progress, Skeleton, Space, Tag, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import * as React from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
-import {AppPage, ResourceTable, useAsyncData} from '../../components';
+import {AppPage, ResourceTable, Section, useAsyncData} from '../../components';
 import {AccountDataModule} from '../../shared/access-modules';
 import {Context, useAuthorization} from '../../shared/context';
 import {formatBeijingUnixSeconds} from '../../shared/format';
@@ -29,7 +29,7 @@ import {
     WormExecutionStepState
 } from '../../shared/services/worm-trading-service';
 import {requestErrorDetails, requestErrorMessage} from '../../shared/services/requests';
-import {short, usePagedParams} from '../../shared/pages/shared';
+import {usePagedParams} from '../../shared/pages/shared';
 import {wormExecutionMandatoryGuardDefinitions} from './worm-execution-preflight';
 
 const runPageSizes = [20, 50, 100];
@@ -58,7 +58,7 @@ const runStatusColor = (state: WormExecutionRunState) => {
             return 'error';
         case 'AUTHORIZED':
         case 'RUNNING':
-            return 'processing';
+            return 'info';
         case 'PAUSE_REQUESTED':
         case 'PAUSED':
         case 'TERMINATE_REQUESTED':
@@ -86,16 +86,16 @@ const stepStatusColor = (state: WormExecutionStepState) => {
         case 'SIGNING':
         case 'FINALIZING':
         case 'AWAITING_COMPLETION':
-            return 'processing';
+            return 'info';
         default:
             return 'default';
     }
 };
 
-const RunStatusTag = ({state}: {state: WormExecutionRunState}) => <Tag color={runStatusColor(state)}>{displayCode(state)}</Tag>;
+const RunStatusTag = ({state}: {state: WormExecutionRunState}) => <Tag className={`worm-status worm-status--${runStatusColor(state)}`}>{displayCode(state)}</Tag>;
 const stepStatusLabel = (step: WormExecutionRunStep) =>
     step.state === 'COMPLETED' && step.completionSource === 'OPEN_POSITION' ? 'Completed · Open position observed' : displayCode(step.state);
-const StepStatusTag = ({step}: {step: WormExecutionRunStep}) => <Tag color={stepStatusColor(step.state)}>{stepStatusLabel(step)}</Tag>;
+const StepStatusTag = ({step}: {step: WormExecutionRunStep}) => <Tag className={`worm-status worm-status--${stepStatusColor(step.state)}`}>{stepStatusLabel(step)}</Tag>;
 const runProgress = (run: WormExecutionRun) => (run.counts.total > 0 ? Math.round((run.counts.terminal / run.counts.total) * 100) : 0);
 const sideLabel = (step: WormExecutionRunStep) => step.side;
 
@@ -124,22 +124,43 @@ const executionRunMatchesIntent = (run: WormExecutionRun, intent: ExecutionRunIn
     run.id === intent.id && run.planId === intent.planId && run.combinationId === intent.combinationId && run.combinationRevision === intent.combinationRevision;
 
 const RunListCard = ({run, onOpen}: {run: WormExecutionRun; onOpen: () => void}) => (
-    <Card size='small' className='worm-execution-list-card'>
-        <div className='worm-execution-list-card__heading'>
+    <div className='worm-execution-list-card'>
+        <Typography.Text strong>{run.combinationName}</Typography.Text>
+        <code className='athena-identifier'>{run.id}</code>
+        <RunStatusTag state={run.state} />
+        {run.state === 'AWAITING_AUTHORIZATION' && <Typography.Text type='secondary'>Frozen · No order submitted</Typography.Text>}
+        <div className='worm-execution-list-facts'>
             <div>
-                <Typography.Text strong={true}>{run.combinationName}</Typography.Text>
-                <Typography.Text type='secondary'>Run {short(run.id, 8, 6)}</Typography.Text>
+                <span>Step progress</span>
+                <RunProgress run={run} />
             </div>
-            <RunStatusTag state={run.state} />
+            <div>
+                <span>Updated · UTC+8</span>
+                <span>{formatBeijingUnixSeconds(run.updatedAt) || '—'}</span>
+            </div>
         </div>
-        <Progress percent={runProgress(run)} size='small' status={run.state === 'FAILED' || run.state === 'RECONCILIATION_REQUIRED' ? 'exception' : 'normal'} />
-        <Typography.Text type='secondary'>
-            {run.counts.terminal} of {run.counts.total} steps terminal · {run.counts.completed} completed
-        </Typography.Text>
-        <Button block={true} onClick={onOpen}>
+        <Button block onClick={onOpen}>
             View execution
         </Button>
-    </Card>
+    </div>
+);
+
+const RunProgress = ({run}: {run: WormExecutionRun}) => (
+    <div className='worm-execution-progress-cell'>
+        <span>
+            {run.counts.terminal} of {run.counts.total} terminal
+        </span>
+        <Progress
+            aria-label={`${run.counts.terminal} of ${run.counts.total} steps terminal`}
+            strokeColor='var(--athena-muted)'
+            percent={runProgress(run)}
+            size='small'
+            showInfo={false}
+        />
+        <Typography.Text type='secondary'>
+            {run.counts.completed} completed · {run.counts.skipped} skipped
+        </Typography.Text>
+    </div>
 );
 
 const ExecutionEmptyState = (props: {accountID: string; accessRevision: number; canWrite: boolean}) => {
@@ -162,7 +183,7 @@ const ExecutionEmptyState = (props: {accountID: string; accessRevision: number; 
         );
         actions = (
             <Space wrap={true}>
-                <Button icon={<ReloadOutlined />} onClick={combinations.reload}>
+                <Button icon={<ReloadOutlined aria-hidden='true' />} onClick={combinations.reload}>
                     Retry
                 </Button>
                 <Button onClick={() => navigate('/worm-trading/combinations')}>Open combinations</Button>
@@ -217,67 +238,76 @@ export const WormTradingExecutionsPage = () => {
     const items = data.data?.items || [];
     const columns: ColumnsType<WormExecutionRun> = [
         {
-            title: 'Combination',
+            title: 'Combination / Run',
             render: run => (
-                <Button type='link' className='worm-execution-name-link' onClick={() => navigate(`/worm-trading/executions/${encodeURIComponent(run.id)}`)}>
-                    {run.combinationName}
-                </Button>
-            )
-        },
-        {title: 'Status', width: 190, render: run => <RunStatusTag state={run.state} />},
-        {
-            title: 'Progress',
-            width: 230,
-            render: run => (
-                <div className='worm-execution-progress-cell'>
-                    <Progress percent={runProgress(run)} size='small' showInfo={false} />
-                    <Typography.Text type='secondary'>
-                        {run.counts.terminal}/{run.counts.total}
-                    </Typography.Text>
+                <div className='worm-execution-list-identity'>
+                    <Button type='link' className='worm-execution-name-link' onClick={() => navigate(`/worm-trading/executions/${encodeURIComponent(run.id)}`)}>
+                        {run.combinationName}
+                    </Button>
+                    <code className='athena-identifier'>{run.id}</code>
                 </div>
             )
         },
-        {title: 'Completed', width: 110, render: run => run.counts.completed},
-        {title: 'Updated', width: 190, render: run => formatBeijingUnixSeconds(run.updatedAt) || '—'},
         {
-            title: 'Action',
-            width: 140,
-            render: run => <Button onClick={() => navigate(`/worm-trading/executions/${encodeURIComponent(run.id)}`)}>View</Button>
-        }
+            title: 'Status',
+            width: 220,
+            render: run => (
+                <div>
+                    <RunStatusTag state={run.state} />
+                    {run.state === 'AWAITING_AUTHORIZATION' && <p className='worm-execution-note'>Frozen · No order submitted</p>}
+                </div>
+            )
+        },
+        {title: 'Step progress', width: 230, render: run => <RunProgress run={run} />},
+        {title: 'Updated · UTC+8', width: 180, render: run => formatBeijingUnixSeconds(run.updatedAt) || '—'},
+        {title: 'Action', width: 100, render: run => <Button onClick={() => navigate(`/worm-trading/executions/${encodeURIComponent(run.id)}`)}>View</Button>}
     ];
     const empty = !data.loading && !data.error && (data.data?.total || 0) === 0;
     return (
-        <AppPage
-            title='Worm Trading Executions'
-            subtitle='Review live execution runs prepared from actionable previews. Runs are permanent and cannot be deleted.'
-            loading={data.loading}
-            error={data.error}
-            onRefresh={data.reload}>
-            {empty ? (
-                <ExecutionEmptyState
-                    key={`${authorization.user.accountId}:${authorization.revision}`}
-                    accountID={authorization.user.accountId}
-                    accessRevision={authorization.revision}
-                    canWrite={canWrite}
-                />
-            ) : (
-                <ResourceTable<WormExecutionRun>
-                    rowKey='id'
-                    label='Worm execution history'
-                    items={items}
-                    columns={columns}
-                    loading={data.loading}
-                    total={data.data?.total}
-                    page={page}
-                    pageSize={pageSize}
-                    pageSizeOptions={runPageSizes}
-                    onPageChange={setPage}
-                    scrollX={1050}
-                    compactEmptyDescription='No executions on this page'
-                    compactRender={run => <RunListCard run={run} onOpen={() => navigate(`/worm-trading/executions/${encodeURIComponent(run.id)}`)} />}
-                />
-            )}
-        </AppPage>
+        <div className='worm-execution-theme'>
+            <AppPage
+                title='Worm Trading Executions'
+                subtitle='Frozen runs, their progress and permanent execution history.'
+                loading={data.loading}
+                error={data.error}
+                onRefresh={data.reload}>
+                {data.error && data.data && (
+                    <Alert type='warning' showIcon title='Execution history is stale' description='Showing the last confirmed response. Refresh to check current state.' />
+                )}
+                {!data.data ? (
+                    data.loading ? (
+                        <Skeleton active />
+                    ) : null
+                ) : empty ? (
+                    <ExecutionEmptyState
+                        key={`${authorization.user.accountId}:${authorization.revision}`}
+                        accountID={authorization.user.accountId}
+                        accessRevision={authorization.revision}
+                        canWrite={canWrite}
+                    />
+                ) : (
+                    <ResourceTable<WormExecutionRun>
+                        rowKey='id'
+                        label='Worm execution history'
+                        items={items}
+                        columns={columns}
+                        loading={data.loading}
+                        total={data.data?.total}
+                        page={page}
+                        pageSize={pageSize}
+                        pageSizeOptions={runPageSizes}
+                        onPageChange={setPage}
+                        scrollX={950}
+                        compactEmptyDescription='No executions on this page'
+                        compactRender={run => <RunListCard run={run} onOpen={() => navigate(`/worm-trading/executions/${encodeURIComponent(run.id)}`)} />}
+                    />
+                )}
+                <p className='worm-execution-note'>
+                    Runs are prepared from actionable previews. Creating a Run freezes intent; it does not submit an order. Terminal counts include skipped, failed and not-executed
+                    steps.
+                </p>
+            </AppPage>
+        </div>
     );
 };
 
@@ -332,13 +362,13 @@ const CurrentStepPanel = ({step}: {step?: WormExecutionRunStep}) => {
             <div className='worm-execution-current-card__headline'>
                 <div>
                     <Typography.Text strong={true}>Step {step.ordinal}</Typography.Text>
-                    <Typography.Text type='secondary'>{step.wallet.remark || short(step.wallet.address, 8, 6)}</Typography.Text>
+                    <Typography.Text type='secondary'>{step.wallet.remark || step.wallet.address}</Typography.Text>
                 </div>
                 <StepStatusTag step={step} />
             </div>
             <Typography.Title level={4}>{step.market.marketTitle}</Typography.Title>
             <Space wrap={true}>
-                <Tag color={sideLabel(step) === 'YES' ? 'green' : 'red'}>{sideLabel(step)}</Tag>
+                <Tag className='worm-outcome'>{sideLabel(step)}</Tag>
                 <Tag>{step.funds} USDC</Tag>
                 <Tag>{step.leverage}×</Tag>
             </Space>
@@ -352,123 +382,232 @@ const CurrentStepPanel = ({step}: {step?: WormExecutionRunStep}) => {
     );
 };
 
+const StepEvidence = ({step}: {step: WormExecutionRunStep}) => (
+    <details className='worm-step-evidence'>
+        <summary>Identity and evidence · Step {step.ordinal}</summary>
+        <dl>
+            <div>
+                <dt>Step ID</dt>
+                <dd className='athena-identifier'>{step.id}</dd>
+            </div>
+            <div>
+                <dt>Wallet address</dt>
+                <dd className='athena-identifier'>{step.wallet.address}</dd>
+            </div>
+            <div>
+                <dt>Event ID</dt>
+                <dd className='athena-identifier'>{step.market.eventConditionId}</dd>
+            </div>
+            <div>
+                <dt>Market ID</dt>
+                <dd className='athena-identifier'>{step.market.marketConditionId}</dd>
+            </div>
+            <div>
+                <dt>Worm request ID</dt>
+                <dd className='athena-identifier'>{step.positionRequestId || 'Not assigned'}</dd>
+            </div>
+            <div>
+                <dt>Provider / order state</dt>
+                <dd>
+                    {displayCode(step.providerState, 'Not observed')} / {displayCode(step.providerOrderState, 'Not observed')}
+                </dd>
+            </div>
+            {step.completionSource === 'OPEN_POSITION' && (
+                <>
+                    <div>
+                        <dt>Completion source</dt>
+                        <dd>Open position observed</dd>
+                    </div>
+                    <div>
+                        <dt>Position public key</dt>
+                        <dd className='athena-identifier'>{step.completionPositionPubkey}</dd>
+                    </div>
+                    <div>
+                        <dt>Position request public key</dt>
+                        <dd className='athena-identifier'>{step.completionPositionRequestPubkey || 'Not provided'}</dd>
+                    </div>
+                    <div>
+                        <dt>Position created · UTC+8</dt>
+                        <dd>{formatBeijingUnixSeconds(step.completionPositionCreatedAt)}</dd>
+                    </div>
+                    <div>
+                        <dt>Completion observed · UTC+8</dt>
+                        <dd>{formatBeijingUnixSeconds(step.completedAt) || '—'}</dd>
+                    </div>
+                </>
+            )}
+            <div>
+                <dt>Last update · UTC+8</dt>
+                <dd>{formatBeijingUnixSeconds(step.updatedAt) || '—'}</dd>
+            </div>
+        </dl>
+    </details>
+);
+
 const StepCard = ({step}: {step: WormExecutionRunStep}) => (
-    <Card size='small' className='worm-execution-step-card'>
-        <div className='worm-execution-step-card__heading'>
-            <Typography.Text strong={true}>Step {step.ordinal}</Typography.Text>
-            <StepStatusTag step={step} />
-        </div>
-        <Typography.Text>{step.market.marketTitle}</Typography.Text>
-        <Typography.Text type='secondary'>{step.wallet.remark || short(step.wallet.address, 8, 6)}</Typography.Text>
-        <Space wrap={true}>
-            <Tag color={sideLabel(step) === 'YES' ? 'green' : 'red'}>{sideLabel(step)}</Tag>
-            <Tag>{step.funds} USDC</Tag>
-        </Space>
-        {(step.reasonCode || step.providerState) && (
-            <Typography.Text type='secondary'>{step.reasonCode ? displayCode(step.reasonCode) : `Provider: ${displayCode(step.providerState)}`}</Typography.Text>
-        )}
-    </Card>
+    <div className='worm-execution-step-card'>
+        <span className='worm-execution-note'>Step {step.ordinal}</span>
+        <Typography.Text strong>{step.wallet.remark || 'Solana wallet'}</Typography.Text>
+        <Typography.Text strong>{step.market.marketTitle}</Typography.Text>
+        <span className='worm-execution-note'>
+            {step.market.backend} · {step.side}
+        </span>
+        <span className='athena-numeric'>{step.funds ? `${step.funds} USDC` : 'Unavailable'}</span>
+        <span className='worm-execution-note'>Market · {step.leverage}×</span>
+        <StepStatusTag step={step} />
+        {step.reasonCode && <span className='worm-execution-note'>{displayCode(step.reasonCode)}</span>}
+        <StepEvidence step={step} />
+    </div>
 );
 
 const ExecutionSteps = ({run}: {run: WormExecutionRun}) => {
     const {page, pageSize, setPage} = usePagedParams(50, stepPageSizes);
     const data = useAsyncData(() => services.wormTrading.listExecutionRunSteps(run.id, page, pageSize), [run.id, run.updatedAt, page, pageSize]);
     const columns: ColumnsType<WormExecutionRunStep> = [
-        {title: '#', dataIndex: 'ordinal', width: 70},
-        {title: 'Wallet', width: 190, render: step => step.wallet.remark || short(step.wallet.address, 8, 6)},
-        {title: 'Market', render: step => step.market.marketTitle},
-        {title: 'Side', width: 90, render: step => <Tag color={sideLabel(step) === 'YES' ? 'green' : 'red'}>{sideLabel(step)}</Tag>},
-        {title: 'Funds', width: 120, render: step => `${step.funds} USDC`},
-        {title: 'State', width: 190, render: step => <StepStatusTag step={step} />},
-        {title: 'Reason', width: 220, render: step => displayCode(step.reasonCode)},
-        {title: 'Worm request ID', width: 170, render: step => step.positionRequestId || '—'}
+        {
+            title: 'Step / Wallet',
+            width: 170,
+            render: step => (
+                <div>
+                    <span className='worm-execution-note'>Step {step.ordinal}</span>
+                    <p>{step.wallet.remark || 'Solana wallet'}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Market / Evidence',
+            render: step => (
+                <div>
+                    <Typography.Text strong>{step.market.marketTitle}</Typography.Text>
+                    <p className='worm-execution-note'>
+                        {step.market.backend} · {step.side}
+                    </p>
+                    <StepEvidence step={step} />
+                </div>
+            )
+        },
+        {
+            title: 'Funds',
+            width: 140,
+            className: 'athena-numeric-column',
+            align: 'right',
+            render: step => (
+                <div>
+                    <span className='athena-numeric'>{step.funds ? `${step.funds} USDC` : 'Unavailable'}</span>
+                    <p className='worm-execution-note'>Market · {step.leverage}×</p>
+                </div>
+            )
+        },
+        {
+            title: 'State',
+            width: 210,
+            render: step => (
+                <div>
+                    <StepStatusTag step={step} />
+                    {step.reasonCode && <p className='worm-execution-note'>{displayCode(step.reasonCode)}</p>}
+                </div>
+            )
+        }
     ];
     return (
-        <Card
-            className='worm-execution-steps-card'
+        <Section
             title='Steps'
             extra={
-                <Button size='small' icon={<ReloadOutlined />} loading={data.loading} onClick={data.reload}>
-                    Refresh
+                <Button icon={<ReloadOutlined aria-hidden='true' />} loading={data.loading} onClick={data.reload}>
+                    Refresh steps
                 </Button>
             }>
-            {data.error && (
-                <Alert type='warning' showIcon={true} title='Could not refresh steps' description={requestErrorMessage(data.error, 'The last step page remains visible.')} />
+            <p className='worm-execution-note'>Wallet order first. Expand a step for identity and evidence.</p>
+            {data.error && <Alert type='warning' showIcon title={data.data ? 'Steps are stale' : 'Could not load steps'} description={requestErrorMessage(data.error)} />}
+            {!data.data ? (
+                data.loading ? (
+                    <Skeleton active />
+                ) : null
+            ) : (
+                <ResourceTable<WormExecutionRunStep>
+                    rowKey='ordinal'
+                    label='Worm execution steps'
+                    items={data.data.items}
+                    columns={columns}
+                    loading={data.loading}
+                    total={data.data.total}
+                    page={page}
+                    pageSize={pageSize}
+                    pageSizeOptions={stepPageSizes}
+                    onPageChange={setPage}
+                    scrollX={900}
+                    compactRender={step => <StepCard step={step} />}
+                    compactEmptyDescription='No steps on this page'
+                />
             )}
-            <ResourceTable<WormExecutionRunStep>
-                rowKey='ordinal'
-                label='Worm execution steps'
-                items={data.data?.items || []}
-                columns={columns}
-                loading={data.loading}
-                total={data.data?.total}
-                page={page}
-                pageSize={pageSize}
-                pageSizeOptions={stepPageSizes}
-                onPageChange={setPage}
-                scrollX={1250}
-                compactRender={step => <StepCard step={step} />}
-                compactEmptyDescription='No steps on this page'
-            />
+        </Section>
+    );
+};
+
+const RunSummary = ({run}: {run: WormExecutionRun}) => {
+    const navigate = useNavigate();
+    return (
+        <Card className='worm-execution-summary-card'>
+            <div className='worm-execution-summary-card__heading'>
+                <div>
+                    <Typography.Title level={2}>{run.combinationName}</Typography.Title>
+                    <code className='athena-identifier'>{run.id}</code>
+                </div>
+                <RunStatusTag state={run.state} />
+            </div>
+            <div className='worm-execution-stat-grid'>
+                <div>
+                    <span>Frozen combination</span>
+                    <strong>Revision {run.combinationRevision}</strong>
+                </div>
+                <div>
+                    <span>Order type</span>
+                    <strong>Market · 1×</strong>
+                </div>
+                <div>
+                    <span>Prepared · UTC+8</span>
+                    <strong>{formatBeijingUnixSeconds(run.requestedAt)}</strong>
+                </div>
+            </div>
+            <div className='worm-execution-progress-heading'>
+                <span>
+                    {run.counts.terminal} of {run.counts.total} steps terminal
+                </span>
+                <span>Completed (open position observed): {run.counts.completed}</span>
+            </div>
+            <Progress aria-label={`${run.counts.terminal} of ${run.counts.total} steps terminal`} strokeColor='var(--athena-muted)' percent={runProgress(run)} showInfo={false} />
+            <p className='worm-execution-counts'>
+                {run.counts.actionable} initially actionable · {run.counts.skipped} skipped · {run.counts.satisfied} satisfied · {run.counts.failed} failed ·{' '}
+                {run.counts.notExecuted} not executed
+            </p>
+            <Button type='link' onClick={() => navigate('/worm-trading/combinations')}>
+                Saved combinations
+            </Button>
+            <details className='worm-step-evidence'>
+                <summary>Frozen snapshot identity</summary>
+                <dl>
+                    <div>
+                        <dt>Plan ID</dt>
+                        <dd className='athena-identifier'>{run.planId}</dd>
+                    </div>
+                    <div>
+                        <dt>Combination ID</dt>
+                        <dd className='athena-identifier'>{run.combinationId}</dd>
+                    </div>
+                </dl>
+            </details>
         </Card>
     );
 };
 
-const RunSummary = ({run}: {run: WormExecutionRun}) => (
-    <Card className='worm-execution-summary-card'>
-        <div className='worm-execution-summary-card__heading'>
-            <div>
-                <Typography.Text type='secondary'>Run {short(run.id, 8, 6)}</Typography.Text>
-                <Typography.Title level={3}>{run.combinationName}</Typography.Title>
-            </div>
-            <RunStatusTag state={run.state} />
-        </div>
-        <Progress
-            percent={runProgress(run)}
-            status={run.state === 'FAILED' || run.state === 'RECONCILIATION_REQUIRED' ? 'exception' : run.state === 'COMPLETED' ? 'success' : 'normal'}
-        />
-        <div className='worm-execution-stat-grid'>
-            <div>
-                <span>Total</span>
-                <strong>{run.counts.total}</strong>
-            </div>
-            <div>
-                <span>Actionable</span>
-                <strong>{run.counts.actionable}</strong>
-            </div>
-            <div>
-                <span>Completed</span>
-                <strong>{run.counts.completed}</strong>
-            </div>
-            <div>
-                <span>Satisfied</span>
-                <strong>{run.counts.satisfied}</strong>
-            </div>
-            <div>
-                <span>Skipped</span>
-                <strong>{run.counts.skipped}</strong>
-            </div>
-            <div>
-                <span>Failed</span>
-                <strong>{run.counts.failed}</strong>
-            </div>
-        </div>
-    </Card>
-);
-
 const RunMandatoryGuards = () => (
-    <div className='worm-execution-preflight-checks'>
-        <div>
-            <Typography.Text strong={true}>Mandatory execution guards</Typography.Text>
-            <Typography.Text type='secondary'>Both guards are always applied during fresh preflight and immediately before Worm Open.</Typography.Text>
-        </div>
-        <div className='worm-execution-preflight-checks__tags'>
-            {wormExecutionMandatoryGuardDefinitions.map(definition => (
-                <Tag key={definition.key} color='blue'>
-                    Always on · {definition.title}
-                </Tag>
-            ))}
-        </div>
+    <div className='worm-execution-guard-copy'>
+        {wormExecutionMandatoryGuardDefinitions.map(definition => (
+            <div key={definition.key}>
+                <strong>{definition.title} · Always on</strong>
+                <p className='worm-execution-note'>{definition.description}</p>
+            </div>
+        ))}
     </div>
 );
 
@@ -485,9 +624,6 @@ const stateAlert = (run: WormExecutionRun) => {
     }
     if (run.state === 'PAUSED' || run.state === 'PAUSE_REQUESTED') {
         return {type: 'warning' as const, title: displayCode(run.state), description: displayCode(run.pauseCode, 'No new step will start.')};
-    }
-    if (run.state === 'AWAITING_AUTHORIZATION') {
-        return {type: 'warning' as const, title: 'Authorization required', description: 'Authorize this frozen run before Athena can sign or submit any Worm request.'};
     }
     if (run.state === 'COMPLETED') {
         return {type: 'success' as const, title: 'Execution completed', description: 'Every frozen step reached a terminal result.'};
@@ -533,6 +669,23 @@ export const WormTradingExecutionDetailPage = () => {
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState<Error>();
     const [operation, setOperation] = React.useState('');
+    const operationRef = React.useRef(false);
+    const scope = JSON.stringify([authorization.user.accountId, authorization.user.iss, authorization.revision, id, canWrite]);
+    const scopeRef = React.useRef(scope);
+    scopeRef.current = scope;
+    const mountedRef = React.useRef(true);
+    const dialogRef = React.useRef<{destroy(): void}>();
+    React.useEffect(() => {
+        mountedRef.current = true;
+        operationRef.current = false;
+        setOperation('');
+        return () => {
+            mountedRef.current = false;
+            dialogRef.current?.destroy();
+        };
+    }, [scope]);
+    const operationCurrent = () => mountedRef.current && scopeRef.current === scope;
+
     const [driverActive, setDriverActive] = React.useState(false);
     const [driverInterruption, setDriverInterruption] = React.useState<ExecutionDriverInterruption>();
     const driverActiveRef = React.useRef(false);
@@ -731,13 +884,23 @@ export const WormTradingExecutionDetailPage = () => {
 
     const runCommand = async (action: 'start' | 'continue' | 'pause' | 'terminate') => {
         let current = runRef.current;
-        if (!current || operation) return;
+        if (
+            !current ||
+            operationRef.current ||
+            !canWrite ||
+            !operationCurrent() ||
+            !current.allowedActions.includes(action === 'continue' ? 'CONTINUE' : (action.toUpperCase() as WormExecutionAllowedAction))
+        )
+            return;
+        operationRef.current = true;
         setOperation(action);
         try {
             if (action === 'pause' || action === 'terminate') {
                 stopDriver();
                 await waitForDriverToSettle();
+                if (!operationCurrent()) return;
                 current = await fetchRun();
+                if (!operationCurrent()) return;
                 publishRun(current);
             }
             const command = {commandId: newCommandID(), expectedRevision: current.revision};
@@ -755,6 +918,7 @@ export const WormTradingExecutionDetailPage = () => {
                 default:
                     result = await services.wormTrading.terminateExecutionRun(current.id, command);
             }
+            if (!operationCurrent()) return;
             publishRun(result.run);
             setDriverInterruption(undefined);
             if (action === 'start' || action === 'continue') {
@@ -770,6 +934,7 @@ export const WormTradingExecutionDetailPage = () => {
                 );
             }
         } catch (reason) {
+            if (!operationCurrent()) return;
             ctx.notifications.error(`Could not ${action} execution`, requestErrorMessage(reason, 'The execution state was not changed.'));
             try {
                 await loadRun();
@@ -777,7 +942,10 @@ export const WormTradingExecutionDetailPage = () => {
                 // Keep the command error visible.
             }
         } finally {
-            setOperation('');
+            if (operationCurrent()) {
+                operationRef.current = false;
+                setOperation('');
+            }
         }
     };
 
@@ -790,7 +958,8 @@ export const WormTradingExecutionDetailPage = () => {
 
     const authorize = async () => {
         const current = runRef.current;
-        if (!current || operation) return;
+        if (!current || operationRef.current || !canWrite || !operationCurrent() || !current.allowedActions.includes('AUTHORIZE')) return;
+        operationRef.current = true;
         const command = {commandId: newCommandID(), expectedRevision: current.revision};
         const identity = authorization.user.identity;
         if (identity.provider === AccountIdentityProvider.Google) {
@@ -805,17 +974,22 @@ export const WormTradingExecutionDetailPage = () => {
                 const provider = phantomProvider();
                 if (!provider?.isPhantom) throw new Error('Phantom is required to authorize this execution.');
                 const connected = provider.publicKey ? {publicKey: provider.publicKey} : await provider.connect();
+                if (!operationCurrent()) return;
                 if (connected.publicKey.toString() !== identity.solanaAddress) throw new Error('Phantom is connected to a different login address.');
                 const challenge = await services.wormTrading.createSolanaExecutionAuthorizationChallenge(current.id, command);
+                if (!operationCurrent()) return;
                 const signed = await provider.signMessage(new TextEncoder().encode(challenge.message), 'utf8');
+                if (!operationCurrent()) return;
                 next = await services.wormTrading.verifySolanaExecutionAuthorization(current.id, rawBase64URL(signed.signature));
             } else {
                 next = await services.wormTrading.authorizeDevelopmentExecutionRun(current.id, command);
             }
+            if (!operationCurrent()) return;
             publishRun(next);
             setDriverInterruption(undefined);
             ctx.notifications.success('Execution authorized', 'Review the frozen run, then start it explicitly.');
         } catch (reason) {
+            if (!operationCurrent()) return;
             ctx.notifications.error('Could not authorize execution', requestErrorMessage(reason, 'No execution authorization was recorded.'));
             try {
                 await loadRun();
@@ -823,14 +997,19 @@ export const WormTradingExecutionDetailPage = () => {
                 // Keep the authorization error visible.
             }
         } finally {
-            setOperation('');
+            if (operationCurrent()) {
+                operationRef.current = false;
+                setOperation('');
+            }
         }
     };
 
     const confirmAuthorize = () => {
         const current = runRef.current;
         if (!current) return;
-        ctx.modal.confirm({
+        dialogRef.current = ctx.modal.confirm({
+            className: 'worm-execution-confirm',
+            width: 'min(36rem, calc(100vw - 2rem))',
             title: 'Authorize this live Worm execution?',
             content: (
                 <div className='worm-execution-authorization-copy'>
@@ -854,19 +1033,25 @@ export const WormTradingExecutionDetailPage = () => {
     const reconcile = async () => {
         const current = runRef.current;
         const step = current?.currentStep;
-        if (!current || !step || operation) return;
+        if (!current || !step || operationRef.current || !canWrite || !operationCurrent() || !current.allowedActions.includes('RECONCILE')) return;
+        operationRef.current = true;
         setOperation('reconcile');
         try {
             const result = await services.wormTrading.reconcileExecutionStep(current.id, step.id, {
                 commandId: newCommandID(),
                 expectedRevision: current.revision
             });
+            if (!operationCurrent()) return;
             publishRun(result.run);
             setDriverInterruption(undefined);
         } catch (reason) {
+            if (!operationCurrent()) return;
             ctx.notifications.error('Could not check authoritative status', requestErrorMessage(reason, 'No Worm mutation was replayed.'));
         } finally {
-            setOperation('');
+            if (operationCurrent()) {
+                operationRef.current = false;
+                setOperation('');
+            }
         }
     };
 
@@ -874,25 +1059,25 @@ export const WormTradingExecutionDetailPage = () => {
         const has = (action: WormExecutionAllowedAction) => current.allowedActions.includes(action);
         if (has('AUTHORIZE'))
             return (
-                <Button type='primary' icon={<SafetyCertificateOutlined />} loading={operation === 'authorize'} onClick={confirmAuthorize}>
+                <Button type='primary' icon={<SafetyCertificateOutlined aria-hidden='true' />} loading={operation === 'authorize'} onClick={confirmAuthorize}>
                     Authorize
                 </Button>
             );
         if (has('START'))
             return (
-                <Button type='primary' icon={<PlayCircleOutlined />} loading={operation === 'start'} onClick={() => void runCommand('start')}>
+                <Button type='primary' icon={<PlayCircleOutlined aria-hidden='true' />} loading={operation === 'start'} onClick={() => void runCommand('start')}>
                     Start
                 </Button>
             );
         if (has('PAUSE'))
             return (
-                <Button type='primary' icon={<PauseCircleOutlined />} loading={operation === 'pause'} onClick={() => void runCommand('pause')}>
+                <Button type='primary' icon={<PauseCircleOutlined aria-hidden='true' />} loading={operation === 'pause'} onClick={() => void runCommand('pause')}>
                     {recoveryRequired ? 'Pause and review' : 'Pause'}
                 </Button>
             );
         if (has('CONTINUE'))
             return (
-                <Button type='primary' icon={<PlayCircleOutlined />} loading={operation === 'continue'} onClick={() => void runCommand('continue')}>
+                <Button type='primary' icon={<PlayCircleOutlined aria-hidden='true' />} loading={operation === 'continue'} onClick={() => void runCommand('continue')}>
                     Continue
                 </Button>
             );
@@ -902,97 +1087,108 @@ export const WormTradingExecutionDetailPage = () => {
     const alert = run ? stateAlert(run) : undefined;
     const recoveryAlert = run ? driverRecoveryAlert(run, driverInterruption) : undefined;
     const recoveryRequired = Boolean(recoveryAlert);
+    const actions = run && canWrite && !error && (
+        <div className='worm-execution-sticky-actions'>
+            <div className='worm-execution-sticky-actions__state'>
+                {driverActive ? <ClockCircleOutlined spin={true} /> : run.state === 'COMPLETED' ? <CheckCircleOutlined /> : null}
+                <span>{driverActive ? 'Waiting for the current authoritative step result' : displayCode(run.state)}</span>
+            </div>
+            <Space>
+                {run.allowedActions.includes('TERMINATE') && (
+                    <Tooltip title='Does not cancel an already submitted Worm request'>
+                        <Button
+                            danger={true}
+                            icon={<StopOutlined aria-hidden='true' />}
+                            disabled={Boolean(operation) && operation !== 'terminate'}
+                            loading={operation === 'terminate'}
+                            onClick={() =>
+                                (dialogRef.current = ctx.modal.confirm({
+                                    className: 'worm-execution-confirm',
+                                    width: 'min(36rem, calc(100vw - 2rem))',
+                                    okButtonProps: {danger: true},
+                                    autoFocusButton: 'cancel',
+                                    title: 'Terminate this execution?',
+                                    content:
+                                        'Unstarted steps become Not executed. Any step already sent to Worm continues to an authoritative result or unknown state; Athena will not cancel it.',
+                                    okText: 'Terminate execution',
+                                    onOk: () => runCommand('terminate')
+                                }))
+                            }>
+                            Terminate
+                        </Button>
+                    </Tooltip>
+                )}
+                {primaryAction(run, recoveryRequired)}
+            </Space>
+        </div>
+    );
     return (
-        <AppPage
-            title='Worm Trading Execution'
-            subtitle='One Wallet × Market step runs at a time. Refreshing or leaving this page never starts the next step.'
-            loading={loading}
-            error={error}
-            onRefresh={() => {
-                void refreshRun();
-            }}
-            extra={
-                <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/worm-trading/executions')}>
-                    Executions
-                </Button>
-            }>
-            {run && (
-                <div className='worm-execution-detail'>
-                    <div className='worm-execution-live-region' aria-live='polite'>
-                        {driverActive
-                            ? `Execution driver active. ${run.counts.terminal} of ${run.counts.total} steps are terminal.`
-                            : `${displayCode(run.state)}. ${run.counts.terminal} of ${run.counts.total} steps are terminal.`}
-                    </div>
-                    {alert && <Alert type={alert.type} showIcon={true} title={alert.title} description={alert.description} />}
-                    {recoveryAlert && <Alert type='warning' showIcon={true} title={recoveryAlert.title} description={recoveryAlert.description} />}
-                    <RunSummary run={run} />
-                    <Card className='worm-execution-control-card' title='Authorization and control'>
-                        <Alert
-                            type='warning'
-                            showIcon={true}
-                            title='Worm transaction trust boundary'
-                            description='Athena signs the exact Solana transaction returned by Worm. The frozen funds request is capped at 10 USDC per step, but the signer does not inspect programs, accounts, instructions, or independently prove the actual chain spend.'
-                        />
-                        <RunMandatoryGuards />
-                        <Descriptions size='small' column={{xs: 1, sm: 2, lg: 3}}>
-                            <Descriptions.Item label='Authorization'>
-                                {run.authorization.requiresReauthorization ? 'Fresh proof required' : displayCode(run.authorization.state)}
-                            </Descriptions.Item>
-                            <Descriptions.Item label='Proof'>{displayCode(run.authorization.proofKind)}</Descriptions.Item>
-                            <Descriptions.Item label='Coordinator'>{driverActive ? 'This tab is driving' : displayCode(run.coordinator.state, 'Inactive')}</Descriptions.Item>
-                        </Descriptions>
-                    </Card>
-                    {run.blockCode && run.allowedActions.includes('RECONCILE') && (
-                        <Alert
-                            className='worm-execution-unknown-alert'
-                            type='error'
-                            showIcon={true}
-                            icon={<ExclamationCircleOutlined />}
-                            title='Mutation outcome unknown'
-                            description='This Wallet and market remain isolated. Athena will only perform authoritative read checks; Open, Finalize, and cancel are never replayed automatically.'
-                            action={
-                                <Button icon={<ReloadOutlined />} loading={operation === 'reconcile'} onClick={() => void reconcile()}>
-                                    Check authoritative status
-                                </Button>
-                            }
-                        />
-                    )}
-                    <CurrentStepPanel step={run.currentStep} />
-                    <ExecutionSteps run={run} />
-                    <div className='worm-execution-action-spacer' aria-hidden='true' />
-                    {canWrite && (
-                        <div className='worm-execution-sticky-actions'>
-                            <div className='worm-execution-sticky-actions__state'>
-                                {driverActive ? <ClockCircleOutlined spin={true} /> : run.state === 'COMPLETED' ? <CheckCircleOutlined /> : null}
-                                <span>{driverActive ? 'Waiting for the current authoritative step result' : displayCode(run.state)}</span>
-                            </div>
-                            <Space>
-                                {run.allowedActions.includes('TERMINATE') && (
-                                    <Tooltip title='Does not cancel an already submitted Worm request'>
-                                        <Button
-                                            danger={true}
-                                            icon={<StopOutlined />}
-                                            disabled={Boolean(operation) && operation !== 'terminate'}
-                                            loading={operation === 'terminate'}
-                                            onClick={() =>
-                                                ctx.modal.confirm({
-                                                    title: 'Terminate this execution?',
-                                                    content:
-                                                        'Unstarted steps become Not executed. Any step already sent to Worm continues to an authoritative result or unknown state; Athena will not cancel it.',
-                                                    okText: 'Terminate execution',
-                                                    onOk: () => runCommand('terminate')
-                                                })
-                                            }>
-                                            Terminate
-                                        </Button>
-                                    </Tooltip>
-                                )}
-                                {primaryAction(run, recoveryRequired)}
-                            </Space>
+        <div className='worm-execution-theme'>
+            <Button className='worm-execution-back' type='text' icon={<ArrowLeftOutlined aria-hidden='true' />} onClick={() => navigate('/worm-trading/executions')}>
+                All executions
+            </Button>
+            <AppPage
+                title='Worm Trading Execution'
+                subtitle='Review the frozen intent, authorize this Run, then start explicitly.'
+                loading={loading}
+                error={error}
+                onRefresh={() => {
+                    void refreshRun();
+                }}>
+                {error && run && <Alert type='warning' showIcon title='Execution status is stale' description='Showing the last confirmed Run. Refresh before acting.' />}
+                {run && (
+                    <div className='worm-execution-detail'>
+                        <div className='worm-execution-live-region' aria-live='polite'>
+                            {driverActive
+                                ? `Execution driver active. ${run.counts.terminal} of ${run.counts.total} steps are terminal.`
+                                : `${displayCode(run.state)}. ${run.counts.terminal} of ${run.counts.total} steps are terminal.`}
                         </div>
-                    )}
-                </div>
-            )}
-        </AppPage>
+                        {alert && <Alert type={alert.type} showIcon={true} title={alert.title} description={alert.description} />}
+                        {recoveryAlert && <Alert type='warning' showIcon={true} title={recoveryAlert.title} description={recoveryAlert.description} />}
+                        <RunSummary run={run} />
+                        <Card
+                            className='worm-execution-control-card'
+                            title={run.state === 'AWAITING_AUTHORIZATION' ? 'Authorize this frozen Run' : 'Authorization and control'}
+                            extra={actions}>
+                            <p className='worm-execution-note'>Preparing this Run submitted no order. Authorize separately, then choose Start.</p>
+                            <p className='worm-execution-note'>
+                                <strong>Worm transaction trust boundary.</strong> Athena signs the exact Solana transaction returned by Worm. The frozen funds request is capped at
+                                10 USDC per step, but the signer does not inspect programs, accounts, instructions, or independently prove the actual chain spend.
+                            </p>
+                            <RunMandatoryGuards />
+                            <p className='worm-execution-note'>Run updated · {formatBeijingUnixSeconds(run.updatedAt)} UTC+8</p>
+                            <Descriptions size='small' column={{xs: 1, sm: 2, lg: 3}}>
+                                <Descriptions.Item label='Authorization'>
+                                    {run.authorization.requiresReauthorization ? 'Fresh proof required' : displayCode(run.authorization.state)}
+                                </Descriptions.Item>
+                                <Descriptions.Item label='Proof'>{displayCode(run.authorization.proofKind)}</Descriptions.Item>
+                                <Descriptions.Item label='Coordinator'>{driverActive ? 'This tab is driving' : displayCode(run.coordinator.state, 'Inactive')}</Descriptions.Item>
+                            </Descriptions>
+                        </Card>
+                        {run.blockCode && run.allowedActions.includes('RECONCILE') && (
+                            <Alert
+                                className='worm-execution-unknown-alert'
+                                type='error'
+                                showIcon={true}
+                                icon={<ExclamationCircleOutlined aria-hidden='true' />}
+                                title='Mutation outcome unknown'
+                                description='This Wallet and market remain isolated. Athena will only perform authoritative read checks; Open, Finalize, and cancel are never replayed automatically.'
+                                action={
+                                    canWrite &&
+                                    !error && (
+                                        <Button icon={<ReloadOutlined aria-hidden='true' />} loading={operation === 'reconcile'} onClick={() => void reconcile()}>
+                                            Check authoritative status
+                                        </Button>
+                                    )
+                                }
+                            />
+                        )}
+                        <CurrentStepPanel step={run.currentStep} />
+                        <ExecutionSteps run={run} />
+                        <div className='worm-execution-action-spacer' aria-hidden='true' />
+                    </div>
+                )}
+            </AppPage>
+        </div>
     );
 };

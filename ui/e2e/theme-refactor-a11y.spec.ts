@@ -94,7 +94,10 @@ for (const state of [
         const rawResult = info.outputPath('axe-results.json');
         fs.writeFileSync(rawResult, JSON.stringify(results, null, 2));
         await info.attach('axe-results.json', {path: rawResult, contentType: 'application/json'});
-        expect(results.violations.map(v => ({id: v.id, nodes: v.nodes.map(n => n.target)}))).toEqual([]);
+        expect(
+            results.violations.map(v => ({id: v.id, nodes: v.nodes.map(n => n.target)})),
+            '[ATHENA_A11Y_VIOLATION] See original axe results'
+        ).toEqual([]);
         await page.mouse.move(0, 0);
         await page.screenshot({path: info.outputPath('admin-auxiliary.png'), fullPage: true, animations: 'disabled'});
         assertThemeLedger(ledger);
@@ -121,6 +124,41 @@ for (const state of ['selection', 'cashout', 'leave']) {
         const rawResult = info.outputPath('axe-results.json');
         fs.writeFileSync(rawResult, JSON.stringify(results, null, 2));
         await info.attach('axe-results.json', {path: rawResult, contentType: 'application/json'});
+        expect(
+            results.violations.map(v => ({id: v.id, nodes: v.nodes.map(n => n.target)})),
+            '[ATHENA_A11Y_VIOLATION] See original axe results'
+        ).toEqual([]);
+        assertThemeLedger(ledger);
+    });
+}
+
+for (const id of ['worm-preview', 'worm-executions', 'worm-execution-detail', 'worm-execution-unknown', 'worm-execution-authorized']) {
+    test(`theme:worm-executions a11y ${id}`, async ({page}, info) => {
+        await page.setViewportSize({width: 390, height: 844});
+        await page.clock.setFixedTime(new Date('2026-09-14T08:00:30Z'));
+        const ledger = await openThemeCase(page, id);
+        await page.evaluate(() => document.fonts.ready);
+        await assertThemeLayout(page);
+        const results = await new AxeBuilder({page}).withTags(tags).analyze();
+        fs.writeFileSync(info.outputPath('axe-results.json'), JSON.stringify(results, null, 2));
+        await info.attach('axe-results.json', {path: info.outputPath('axe-results.json'), contentType: 'application/json'});
+        expect(
+            results.violations.map(v => ({id: v.id, nodes: v.nodes.map(n => n.target)})),
+            '[ATHENA_A11Y_VIOLATION] See original axe results'
+        ).toEqual([]);
+        assertThemeLedger(ledger);
+    });
+}
+for (const action of ['Authorize', 'Terminate']) {
+    test(`theme:worm-executions a11y ${action} dialog`, async ({page}, info) => {
+        await page.setViewportSize({width: 390, height: 844});
+        const ledger = await openThemeCase(page, 'worm-execution-detail');
+        await page.getByRole('button', {name: action, exact: true}).click();
+        await expect(page.getByRole('dialog')).toBeVisible();
+        await page.waitForTimeout(500);
+        const results = await new AxeBuilder({page}).withTags(tags).analyze();
+        fs.writeFileSync(info.outputPath('axe-results.json'), JSON.stringify(results, null, 2));
+        await info.attach('axe-results.json', {path: info.outputPath('axe-results.json'), contentType: 'application/json'});
         expect(
             results.violations.map(v => ({id: v.id, nodes: v.nodes.map(n => n.target)})),
             '[ATHENA_A11Y_VIOLATION] See original axe results'
