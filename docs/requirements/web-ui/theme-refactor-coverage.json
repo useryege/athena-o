@@ -1,6 +1,6 @@
 {
   "checked_at": "2026-09-15",
-  "status": "implementation_and_t9_acceptance_complete_final_delivery_pending",
+  "status": "implementation_acceptance_review_and_environment_closure_complete_notification_pending",
   "scope": "当前 React 入口与已批准主视觉；Trader Sync 仅承接共享主题影响与回归，独立 Token/Nansen 接入保持原计划。",
   "counts": {
     "routing_state": 4,
@@ -921,10 +921,10 @@
       }
     }
   ],
-  "implementation_sha": "20167913b4384559e60740b75480592a33c08179",
+  "implementation_sha": "78e473b79122441771f1c4ed27c9b15019d875d4",
   "evidence_path_base": "repository_root",
   "delivery_status_document": "docs/testing/web-ui-theme-refactor-acceptance.md#交付状态与环境收尾",
-  "evidence_version_policy": "e7ec272b unfiltered acceptance1018; 82f25ad8 semantic38/unfiltered a11y176/native38/real56/auth4/fonts; 20167913 affected acceptance14/a11y24/native1/smoke2. Baselines are not reruns on final SHA.",
+  "evidence_version_policy": "e7ec272b unfiltered acceptance1018; 82f25ad8 semantic38/unfiltered a11y176/native38/real56/auth4/fonts; 20167913 affected acceptance14/a11y24/native1/smoke2. Baselines are not reruns on final SHA. 78e473b7 final-review delete-lifecycle fix: Jest38/420, affected acceptance40, real system-Chrome smoke2; one production logic file and two tests, no CSS/DOM delta.",
   "shared_registration_admin_variant": {
     "route": "/register?athenaRealm=admin",
     "counted_as_new_route": false,
@@ -1005,5 +1005,19 @@
       "pointer": "/states/S14",
       "entries": 40
     }
+  },
+  "final_review_fix": {
+    "route": "/worm-trading/combinations",
+    "state_ids": [
+      "S2",
+      "S3",
+      "S4",
+      "S11"
+    ],
+    "source_sha": "78e473b79122441771f1c4ed27c9b15019d875d4",
+    "report": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/final-fix-report.md",
+    "review": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/final-branch-rereview-1.md",
+    "index": ".tmp/ui-theme-refactor/final-delivery-78e473b7.json",
+    "note": "Supplemental lifecycle regression; original versioned route/state pointers remain unchanged."
   }
 }

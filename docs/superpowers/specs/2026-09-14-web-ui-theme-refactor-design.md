@@ -1,6 +1,6 @@
 # 全站单一深色 UI 重构技术方案
 
-> 状态：本方案已按用户确认计划实施，T1–T9 完成并通过独立任务审阅，实现版本 `20167913`。最终审阅、环境停止和通知状态以[交付记录](../../testing/web-ui-theme-refactor-acceptance.md#交付状态与环境收尾)为准。下文保留设计选择与持续契约；批准资产和实际验收分别留证。
+> 状态：本方案已按用户确认计划实施并完成约定验收，T1–T10 与整分支独立审阅通过；最终生产 `78e473b7`。临时环境已停止并保留数据，版本化证据和通知状态以[交付记录](../../testing/web-ui-theme-refactor-acceptance.md#交付状态与环境收尾)为准。下文保留设计选择与持续契约；批准资产和实际验收分别留证。
 
 ## 目标与范围
 
@@ -131,6 +131,8 @@ HTML 在样式加载前只内联深色背景和正文色，两份入口值必须
 
 T1 已完成主题专用 SQL、proto、HTTP／OpenAPI 和前端模型清理，并修正聚合头像 HTTP 消费者；T3 修复既有手写 access JSON 遗漏的 API Key／Profit Sharing 两字段，双向四组合边界测试及真实 bootstrap 均留证。T9 修复 Help 的本地 ReDoc 资源交付，并核对嵌入产物字节；没有新增 Token 接口或导航。
 
-最终语义修正包含字段命名／角色、单一 label、空表与成功空态区分、链接下划线、Steps 对比、选择弹窗文字边界，以及 Checkbox／Radio／Switch 选中图形的非文字对比。最后 `20167913` 只修改三份生产主题／样式文件及相关测试，Close 完整目标在 root16／32 和原生缩放下分别验证。既有 `encoding/json` 对非 presence proto3 字段的合法 false／0 省略语义保持，不一律改成 Unknown，也不将所有缺失数字填零。
+最终语义修正包含字段命名／角色、单一 label、空表与成功空态区分、链接下划线、Steps 对比、选择弹窗文字边界，以及 Checkbox／Radio／Switch 选中图形的非文字对比。T9 最后 `20167913` 只修改三份生产主题／样式文件及相关测试，Close 完整目标在 root16／32 和原生缩放下分别验证。既有 `encoding/json` 对非 presence proto3 字段的合法 false／0 省略语义保持，不一律改成 Unknown，也不将所有缺失数字填零。
 
 完整技术、生成契约及失败修正证据见[验收报告](../../testing/web-ui-theme-refactor-acceptance.md)及其中 T1–T9 稳定报告索引。原批准字体许可保持原字节，JetBrains Mono OFL 第 21 行尾空格，以及固定 ReDoc bundle／LICENSE 的上游空白，均作为完整 diff 检查提示保留，准确排除范围及 hash 见验收记录。
+
+最终整分支审阅发现的组合删除确认生命周期已在 `78e473b7` 修正：身份／权限或页面作用域失效即销毁确认，发送前复核完整作用域并保持单飞，迟到 success/error/finally 不影响新作用域。未改变服务端 owner/CAS；13 项集成测试、两部署局部40项和真实 smoke2通过，完整审阅与定向复审见[交付记录](../../testing/web-ui-theme-refactor-acceptance.md)。

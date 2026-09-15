@@ -94,7 +94,7 @@ make notify-task-complete \
 
 ### Impeccable Integration
 
-- 当前正式实施已完成 T1–T9 并通过独立任务审阅（`20167913`）；单一深色、主题偏好清理及 37 条改版入口已落实。最终审阅／环境停止／通知以[实施与验收记录](docs/testing/web-ui-theme-refactor-acceptance.md#交付状态与环境收尾)为准。以下 v1–v23 条目保留设计批准时点事实；“批准时尚未改版”不表示当前代码未实施。Trader Sync 八条专页只承接共享回归，Service Status 页签已改版；共享 T1／T2 依赖完成，Token 独立接入未开启。
+- 当前正式实施、约定验收及 T1–T10／整分支独立审阅已完成（最终生产 `78e473b7`）；单一深色、主题偏好清理及 37 条改版入口已落实。临时环境已按归属停止并保留数据，通知状态以[实施与验收记录](docs/testing/web-ui-theme-refactor-acceptance.md#交付状态与环境收尾)为准。以下 v1–v23 条目保留设计批准时点事实；“批准时尚未改版”不表示当前代码未实施。Trader Sync 八条专页只承接共享回归，Service Status 页签已改版；共享 T1／T2 依赖完成，Token 独立接入未开启。
 
 - Use Superpowers to guide the development process and Impeccable for UI/UX expertise under `ui/`. Read the relevant requirements, `docs/design/web-ui/` documents, and current React/CSS implementation as context.
 - 全站 UI 的主要视觉参考已明确为 Nansen，其中主题与配色搭配是用户特别强调的核心审美偏好。后续设计、重构与视觉验收必须读取并遵循[全站视觉主题需求](docs/requirements/web-ui/visual-theme.md)，整体对照其近黑背景、深色面板、白／灰文字、青绿色强调与边框的颜色关系，以及文字、空间与交互风格，采用单一深色主题；具体效果按用户逐项确认的设计落实。原有橙色／双主题仅描述重构前实现，不能当作新设计方向。

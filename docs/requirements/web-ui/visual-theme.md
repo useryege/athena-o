@@ -1,6 +1,6 @@
 # 全站 UI 视觉主题重构需求
 
-> 当前实施：单一深色正式源码已落实，T1–T9 完成并通过独立任务审阅；实现版本 `20167913`。37 条改版入口、2 条 Appearance 删除、4 条默认／兜底和 8 条 Trader Sync 共享影响回归已完成相应验证。最终审阅、环境收尾与通知状态统一见[实施与验收记录](../../testing/web-ui-theme-refactor-acceptance.md#交付状态与环境收尾)。
+> 当前实施：单一深色正式源码、约定验收及 T1–T10／整分支独立审阅已完成；最终生产 `78e473b7`。37 条改版入口、2 条 Appearance 删除、4 条默认／兜底和 8 条 Trader Sync 共享影响回归已完成相应验证。临时环境已停止并保留数据，版本化证据、外部未验证项与通知状态统一见[实施与验收记录](../../testing/web-ui-theme-refactor-acceptance.md#交付状态与环境收尾)。
 >
 > 设计依据：Nansen 方向、v1–v22 已批准范围及[一致性修订契约](theme-consistency-contract.md)／[v23](previews/theme-consistency-v23/README.md)继续有效。本文各版本章节记录批准时点的材料与限制，不是当前实现进度。625 份批准资产（包括预览目录两份 README）保留原字节，静态原型通过不替代正式 React 或真实接入证据。
 >

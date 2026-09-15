@@ -1,6 +1,6 @@
 # 全站前端主题重构实施与验收
 
-正式实现与 T9 约定验收已完成，T1–T9 独立任务审阅均通过。生产版本为 `20167913b4384559e60740b75480592a33c08179`；T10 只同步长期文档。最终独立审阅、环境收尾和通知尚待控制代理执行，准确状态统一在本文[交付状态与环境收尾](#交付状态与环境收尾)。
+正式实现、约定验收以及 T1–T10／整分支独立审阅均已完成。最终生产版本为 `78e473b79122441771f1c4ed27c9b15019d875d4`；T9 基线 `20167913` 之后只增加删除确认生命周期修正。临时环境已停止并保留数据；一次通知待最后执行，准确状态见本文[交付状态与环境收尾](#交付状态与环境收尾)。
 
 本报告区分设计批准、正式实现、受控页面、真实读取和外部未验证项。[最终证据入口](../../.tmp/ui-theme-refactor/task-9/final-delivery-20167913.json)、[T9 完整实施报告](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-report.md)及[独立 T9 审阅](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-review.md)保留原始结果与修正过程；阶段中的待办描述属于当时状态，不覆盖本报告的最终实施结论。
 
@@ -25,7 +25,7 @@
 
 ## 有版本的正式验证
 
-最后提交只修改三份生产主题／样式文件的 Close 定位和 Checkbox／Radio／Switch 选中图形，另有对应测试。完整基线与后续受影响范围复验共同构成最终证据；没有在 `20167913` 重新执行全部 1018／176／38／56 项。
+T9 最后 `20167913` 只修改三份生产主题／样式文件的 Close 定位和 Checkbox／Radio／Switch 选中图形，另有对应测试。整分支最终 `78e473b7` 只修改一个生产逻辑文件和两个测试文件，无 CSS／DOM 差量；完整基线与受影响范围复验共同构成证据，没有在最后提交重新执行全部1018／176／38／56项。
 
 | 代码版本／模式 | 实际结果 | 原始证据 |
 | --- | --- | --- |
@@ -36,13 +36,15 @@
 | `20167913` 受影响 a11y | 两部署 12+12=24 passed，0 failed／skipped／flaky，退出 0，run／cleanup passed；原始 axe 违规 0，14 条 color-contrast incomplete 保留 | 同上，run `8bacc9c1`；`filtered=true`，12 个场景与完整 grep 见原始清单 |
 | `20167913` 真实 smoke | 会员／管理员 2 passed，0 failed／skipped／flaky，退出 0，run／cleanup passed；系统 Google Chrome 149.0.7827.53 | 同上，run `14599154`；`mode=smoke`，正确实例 UI 34000 |
 | `20167913` lint／Jest／build | lint 含 12 配置测试、tsc、eslint 通过；37 suites／407 tests passed；Vite build 通过 | [lint](../../.tmp/ui-theme-refactor/task-9/control-lint-final.log)、[Jest](../../.tmp/ui-theme-refactor/task-9/control-jest-final.log)、[build](../../.tmp/ui-theme-refactor/task-9/control-build-final.log) |
+| `78e473b7` 最终修正验证 | Jest38 suites／420 tests、lint、build通过；两部署局部20+20=40 passed，0 skipped／unexpected／flaky，run／cleanup passed | [实施与原始日志](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/final-fix-report.md)，[正式清单](../../.tmp/ui-theme-refactor/final-official-78e473b7.json)，run `3e935a7b`，filtered=true |
+| `78e473b7` 最后真实 smoke | 系统 Google Chrome149，会员／管理员2 passed，exit0；0 skipped／unexpected／flaky，run／cleanup passed | 同上，run `27c3480e`，mode=smoke、filtered=false；[实例与账户](../../.tmp/ui-theme-refactor/final-review-runtime/readiness.json)、[修改 chunk](../../.tmp/ui-theme-refactor/final-review-runtime/affected-chunk.json)与当前构建匹配 |
 | 后端／生成消费合同基线 | 54 tests/subtests passed，0 failed／skipped，另 3 包无测试；40 个相关源 hash 与复验一致 | [后端复验](../../.tmp/ui-theme-refactor/t9-backend-after-recovery/results.json)、[82 父核对](../../.tmp/ui-theme-refactor/t9-parent-verified-82f25ad8-summary.json)；201 无 Go／proto／生成合同变化 |
 
 完整模式使用 `env -u UI_ACCEPTANCE_GREP make ui-acceptance` 和 `env -u UI_ACCEPTANCE_GREP make ui-a11y`。真实 smoke 的入口是 `make ui-acceptance UI_ACCEPTANCE_MODE=smoke UI_ACCEPTANCE_BASE_URL=http://127.0.0.1:34000`，不是 `MODE`／`BASE_URL`。所有正式清单保留原始命令、mode、suite、grep、filtered、匹配数量和 cleanup；早期旧 schema 缺少的标记保持 null，不推断为无过滤。
 
 ## 视觉、状态与无障碍证据
 
-[最终逐页面索引](../../.tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json)覆盖 38 主场景及 76 张批准 desktop／mobile 图。四条件为 1440×900、390×844、320×844、720×1000 且 root32；每页先核实际字体，再看边界。批准图与正式 React 有人工对应，不使用不同 DOM 的像素差充当验收门槛。e7 主矩阵、82 新 152 项主图及 201 受影响差量分别标注，不覆盖历史图片。
+[最终逐页面索引](../../.tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json)覆盖38主场景及76个批准 desktop／mobile 图片引用（74份唯一图片，共享注册复用）。四条件为 1440×900、390×844、320×844、720×1000 且 root32；每页先核实际字体，再看边界。批准图与正式 React 有人工对应，不使用不同 DOM 的像素差充当验收门槛。e7 主矩阵、82 新 152 项主图及 201 受影响差量分别标注，不覆盖历史图片。
 
 [状态索引](../../.tmp/ui-theme-refactor/task-9/state-coverage-20167913.json)逐条列 S1–S14、2 条 Appearance／4 条路由规则／8 条 Trader Sync、82 语义差量和 201 控件结果。每条记录给出原始 results.json、深度优先 spec 索引、标题和状态；覆盖清单的 JSON pointer 提供稳定入口。
 
@@ -62,7 +64,7 @@ Help 的 llms.txt／AI 说明资源实际可读；固定 ReDoc 2.4.0 本地 bund
 
 ## 历史失败与独立任务审阅
 
-[完整历史清单](../../.tmp/ui-theme-refactor/all-official-runs-after-t9-20167913.json)保留 72 次正式 run：47 passed、25 failed；cleanup 66 passed、6 failed。失败轮、主动取消、工具假设错误和后续修复不被重写为成功，也不将中间 smoke／预检替代最终结果。六项 cleanup failed 都有后续实际退出补证：
+[完整历史清单](../../.tmp/ui-theme-refactor/all-official-runs-final-78e473b7.json)保留76次正式 run：49 passed、27 failed；cleanup70 passed、6 failed。失败轮、主动取消、工具假设错误和后续修复不被重写为成功，也不将中间 smoke／预检替代最终结果。六项 cleanup failed 都有后续实际退出补证：
 
 | 原始失败 | 资源补证与处置 |
 | --- | --- |
@@ -71,6 +73,8 @@ Help 的 llms.txt／AI 说明资源实际可读；固定 ReDoc 2.4.0 本地 bund
 | T9 `12cedf1c` | [退出补证](../../.tmp/ui-theme-refactor/task-9-full-1-cleanup-resolution.json)：root fixtures 480 passed／18 failed，未进入 live／prefix，后续修正并全量通过 |
 | T9 `8188df63` | [主动取消记录](../../.tmp/ui-theme-refactor/task-9/acceptance-frozen-1-interrupted.json)：退出 130，325 条 console passed 但无正式 results，不计整轮通过 |
 | 父误模式 `ab5c3e32` | [命令纠正及退出补证](../../.tmp/ui-theme-refactor/smoke-command-correction-cleanup-20167913.json)：实际 isolated，SIGINT／runner130／make2，确切 PID／端口／label PG 无残留；正确 smoke 为 `14599154` |
+
+最终 I1 波次另保留 `47451e37` 定位错误中断和 `d461751f` 合成 total 不一致失败，三次局部运行 raw cleanup均passed，实际PID／端口／label PG退出补证见[修正报告](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/final-fix-report.md)。修正仅限测试准备，最终 `3e935a7b` 才是40项通过；没有覆盖失败原件。
 
 新增原生弹窗工具首轮强制 animation:none 使 Ant 关闭不能完成，失败目录保留；工具恢复正常 motion 后 1/1 通过，未改产品或放宽条件。其余失败、修正和有限验证详情保留在各稳定任务报告，父移交的[阶段记录](../../.tmp/ui-theme-refactor/acceptance-progress-before-t10.md)只作历史补充。
 
@@ -85,8 +89,10 @@ Help 的 llms.txt／AI 说明资源实际可读；固定 ReDoc 2.4.0 本地 bund
 | T7 | [Worm 资产／组合报告](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-7-report.md)，[最终复审](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-7-rereview-1.md) |
 | T8 | [Worm 执行报告](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-8-report.md)，[最终复审](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-8-rereview-1.md) |
 | T9 | [整体验收报告](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-report.md)，[独立审阅 Approved](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-review.md) |
+| T10 | [文档报告](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-10-report.md)，[定向复审](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-10-rereview-1.md) |
+| 整分支 | [完整初审](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/final-branch-review.md)，[I1修正](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/final-fix-report.md)，[唯一一次定向复审 Approved](../../.tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/final-branch-rereview-1.md) |
 
-T1–T9 最终审阅无 Critical／Important。T9 两项 Minor 保留：6 条 jsdom navigation／scrollTo 的 console.error（测试环境能力限制，未静音）和最大 chunk 820.627 kB 的 Vite >500 kB 提示。Jest／build 通过不等于日志没有提示；真实跳转／滚动由浏览器证据补充。
+T1–T10 及整分支最终审阅无开放 Critical／Important。T9 两项 Minor 保留：6 条 jsdom navigation／scrollTo 的 console.error（测试环境能力限制，未静音）和最大 chunk 820.627 kB 的 Vite >500 kB 提示。最后38 suites／420 tests仍保留这6条噪音。整分支第三项Minor是大型 fixture 的重复基线，已核重点合同无因此导致的错误通过，留作独立测试维护。Jest／build通过不等于日志没有提示，真实跳转／滚动由浏览器补充。
 
 ## 文档、资产与证据完整性
 
@@ -94,27 +100,31 @@ T1–T9 最终审阅无 Critical／Important。T9 两项 Minor 保留：6 条 js
 
 T10 的[文档与映射检查](../../.tmp/ui-theme-refactor/t10-document-checks.json)核对全部修改文档本地链接、51 条入口／38 主场景／S1–S14 精确证据归属；[批准资产复核](../../.tmp/ui-theme-refactor/approved-assets-t10.json)保留实际哈希结果。文档 `git diff --check` 退出 0。完整分支检查退出 2：JetBrainsMono-OFL.txt 第 21 行尾空格；固定 ReDoc 上游 LICENSE 第 3 行尾空格／第 22 行 EOF 空行；redoc.standalone.js 第 1801 行尾空格。仅排除 OFL 的检查仍退出 2，保留后两项；再仅排除这三份经 SHA 验证的上游原件，补充检查退出 0。完整与两次排除检查均保存原始输出，不称全分支无提示，也不修改许可／vendor 原字节。
 
+执行记录已按[84文件哈希清单](../../.tmp/ui-theme-refactor/sdd-archive/complete-archive-manifest.json)完整归档，本计划临时SDD目录已移除，两个误跟踪报告在归档后从Git清理。10项执行裁定及原始失败／修正记录全部保留；[收尾文档预核对](../../.tmp/ui-theme-refactor/closure-docs-pre-archive.json)也保留原始范围和结果。
+
 ## 交付状态与环境收尾
 
-以下为控制代理最后统一更新的状态区；上文实现版本和历史证据无需改写成新的运行结果。
+[最终交付索引](../../.tmp/ui-theme-refactor/final-delivery-78e473b7.json)汇集最后生产提交、原始结果和收尾；[源码核对](../../.tmp/ui-theme-refactor/final-source-78e473b7.json)验证164路径（含21删除），相对201只差一个生产文件与两个测试文件。版本等价检查不代表重新执行产品测试。
 
 | 项目 | 当前事实 |
 | --- | --- |
-| 正式实现／T9 验收 | 已完成，生产版本 `20167913`；T1–T9 独立任务审阅通过 |
-| T10 长期文档 | 已同步；独立任务审阅待执行 |
-| 源码及生成物整分支独立审阅 | 待执行，包含 API 清理、realm、精度、陈旧结果及破坏性操作边界 |
-| 主实例最终停止／验证 | 待控制代理在审阅后执行；当前仍供必要审阅使用，未获长期保留指令 |
-| 一次完成邮件 | 未发送；全部计划、审阅与收尾完成后才运行仓库通知命令 |
-| 分支整合 | 未 push／merge；保留本地分支及工作区 |
+| 正式实现／必要验收 | 已完成，最终生产 `78e473b7`；37改版、2删除、4规则、8 Trader Sync共享回归 |
+| T10 长期文档 | 已同步，独立复审通过；最终事实由本节汇总 |
+| 源码及生成物整分支审阅 | 完整审阅发现的唯一I1已修正，唯一一次定向复审Approved；无开放Critical／Important |
+| 最后真实 smoke | `27c3480e`，系统Chrome149，两realm各1通过，exit0、run／cleanup passed |
+| 临时环境最终停止 | 已完成；进程、端口、4容器停止，4数据卷与容器完整保留；16个其他容器状态不变 |
+| 一次完成邮件 | 待最后文档／证据核对后执行，当前未发送 |
+| 分支整合 | 保留本地 `codex/ui-theme-refactor` 及本工作区，未 push／merge；原工作区其他任务文件未操作 |
 
-最新归属见[环境登记](../../.tmp/ui-theme-refactor/environment.json)与[readiness](../../.tmp/ui-theme-refactor/t9-controls-final-runtime/readiness.json)：同 worktree、`INSTANCE=ui-theme-refactor`，RunID `422550b0-362d-43ea-921f-4044837a3f34`，session `99824`，supervisor PID `3231802`，日志 [start.log](../../.tmp/ui-theme-refactor/t9-controls-final-runtime/start.log)。UI `http://127.0.0.1:34000`、API `http://127.0.0.1:38080`，七进程身份和两 realm 原账户均核对，嵌入 JS／CSS 匹配冻结构建。
+最后运行属于 `/home/yege/work/athena/.worktrees/ui-theme-refactor`，`INSTANCE=ui-theme-refactor`，RunID `fd48b901-e7e4-4136-b71d-117c7991fe57`，session23686，supervisor PID4098212。UI `http://127.0.0.1:34000`、API `http://127.0.0.1:38080`现均停止；日志 [start.log](../../.tmp/ui-theme-refactor/final-review-runtime/start.log)、[readiness](../../.tmp/ui-theme-refactor/final-review-runtime/readiness.json)和[smoke](../../.tmp/ui-theme-refactor/final-review-runtime/smoke.log)保留。
 
-| 本任务资源 | 当前处置／准确停止入口 |
+| 本任务资源 | 实际处置及停止入口 |
 | --- | --- |
-| 主实例及所属服务 | 仍运行供审阅；从上述 worktree 执行 `make stop INSTANCE=ui-theme-refactor`，再按运行身份核对七进程、端口和所属容器停止，保留数据库／卷 |
-| 独立测试数据库 `athena-ui-theme-tests` | 当前运行，`127.0.0.1:54648`；最终 `docker stop athena-ui-theme-tests`，保留容器／数据 |
-| Telegram loopback 替身 | 当前运行，端口 39931、session 81052；读取 [identity](../../.tmp/ui-theme-refactor/telegram-fixture.json) 校验 PID／启动身份后执行 `kill -TERM <verified-pid>`，核端口释放；日志 [telegram-fixture.log](../../.tmp/ui-theme-refactor/recovery-2026-09-15/telegram-fixture.log) |
-| 执行者临时 preview／隔离资源 | 已结束；T9 [临时 preview 清理](../../.tmp/ui-theme-refactor/task-9/temporary-preview-cleanup.json)、[最终控件 preview 清理](../../.tmp/ui-theme-refactor/task-9/control-preview-cleanup-20167913.json)，历史六项 raw cleanup failed 的退出补证见上表 |
-| 既有用户／其他任务环境 | 保持原样，主工作区 4000 与 trader-sync-independent 24000 不属于本次停止目标；[原归属快照](../../.tmp/ui-theme-refactor/preserved-environments-snapshot.json)保留 |
+| 主实例及所属服务 | 从本工作区执行 `make stop INSTANCE=ui-theme-refactor`，exit0；session23686退出0，所属七进程及进程组退出、端口释放。日志 [make-stop.log](../../.tmp/ui-theme-refactor/final-stop/make-stop.log) |
+| 独立测试PG `athena-ui-theme-tests` | 核准确ID／label后 `docker stop athena-ui-theme-tests`，exit0；54648释放，容器／原数据卷保留。[停止记录](../../.tmp/ui-theme-refactor/final-stop/test-postgres-stop.json) |
+| Telegram loopback替身 | 核PID109992、boot／启动时间／exe／cwd后 `kill -TERM 109992`；session81052退出143为预期SIGTERM，39931释放。[身份和信号记录](../../.tmp/ui-theme-refactor/final-stop/telegram-stop.json)，[运行日志](../../.tmp/ui-theme-refactor/recovery-2026-09-15/telegram-fixture.log) |
+| 临时preview／隔离验收 | 已结束，历史六项cleanup failed补证及最终波次三份退出证明均保留；没有保留运行中的任务测试实例 |
+| 数据资源 | 保留主实例PG／Redis／MinIO和独立测试PG共4容器、4数据卷；未reset、删除数据库或数据卷 |
+| 其他环境 | 16个非本任务容器在停止窗口状态、启动时间、卷不变；原工作区4000／其他worktree24000未由本任务操作或重启。原进程在关机后已退出，当前归属与监听以快照为准 |
 
-最终停止必须先核归属，再执行停止和实际退出校验；当前 readiness／cleanup 报告不代替主实例最后停止证据。T10 不启停服务、不发送邮件，也不清除数据库、数据卷或原始验收证据。
+最终停止的[前后进程／端口／资源验证](../../.tmp/ui-theme-refactor/final-stop/after.json)为passed、errors为空；[其他容器窗口比较](../../.tmp/ui-theme-refactor/final-stop/docker-after.json)无变化，[环境登记](../../.tmp/ui-theme-refactor/environment.json)已更新为stopped。证据、截图、数据库和工作区均保留，通知只在全部必要工作和文档核对后执行一次。

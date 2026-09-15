@@ -114,7 +114,7 @@
 
 ## 核对结论与后续
 
-本轮路由已全部归类，继承状态有明确实施与验证归属；没有以“未逐图确认”新增审批。T1–T9 已按[方案](../../superpowers/specs/2026-09-14-web-ui-theme-refactor-design.md)与[计划](../../superpowers/plans/2026-09-14-web-ui-theme-refactor.md)完成正式 UI、相关后端／数据库变更及约定验收，并通过独立任务审阅；实际版本、结果与未验证边界见下节及总验收记录。T10 独立复审、全分支审阅和环境／通知收尾仍待父任务完成，当前不宣称整个计划已关闭。
+本轮路由已全部归类，继承状态有明确实施与验证归属；没有以“未逐图确认”新增审批。T1–T10 已按[方案](../../superpowers/specs/2026-09-14-web-ui-theme-refactor-design.md)与[计划](../../superpowers/plans/2026-09-14-web-ui-theme-refactor.md)完成正式 UI、相关后端／数据库变更及约定验收，并通过独立任务和整分支审阅。最终生产 `78e473b7`，临时环境已停止并保留数据；实际版本、外部未验证范围及通知状态见[总验收记录](../../testing/web-ui-theme-refactor-acceptance.md)。
 
 ## 实际验收归属
 
@@ -125,3 +125,5 @@
 完整 acceptance 1018 的版本为 `e7ec272b`；`82f25ad8` 提供新主图／语义差量 38、无过滤 a11y 176、native 38、真实呈现 56、认证边界 4 与实际字体；`20167913` 仅对最终 Close 与选中图形修正复验 acceptance 14、a11y 24、native 弹窗 1、smoke 2。没有把整套基线改记成 201 重跑。
 
 真实呈现 56 是 24 次业务 GET 成功、22 次未启用来源 503 和 10 次没有业务 GET，另有 10 个来源页签及 2 项 Help 资源。Worm 编辑／预览／执行详情、会员／管理员轮次详情、管理员通知详情共六项缺少真实成功记录；其成功状态由受控正式 React 验证。外部 OAuth／provider／签名和实体手机软键盘未验证，详见[总验收记录](../../testing/web-ui-theme-refactor-acceptance.md)。
+
+最后整分支 I1 修正 `78e473b7` 仅修改组合列表删除逻辑及两个测试文件，无 CSS／DOM 差量；13 项新增集成测试、全 Jest 38 suites／420 tests、两部署局部40项和真实 smoke2通过。[最终交付索引](../../../.tmp/ui-theme-refactor/final-delivery-78e473b7.json)将其与原 e7／82／201 证据分开，旧主图与 a11y 保留原 SHA。76 个批准图引用对应74份唯一图片，共享注册复用图片，逐项哈希不变。
