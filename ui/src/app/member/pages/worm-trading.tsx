@@ -2550,7 +2550,7 @@ const PositionCashOutManagement = (props: {
                 className: 'worm-confirm-modal',
                 title: 'Cash out this Worm position?',
                 content: (
-                    <div className='worm-position-cash-out-confirmation'>
+                    <div className='worm-position-cash-out-confirmation' tabIndex={0} role='region' aria-label='Cash out position details'>
                         <dl>
                             <div>
                                 <dt>Wallet</dt>

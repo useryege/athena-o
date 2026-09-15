@@ -3944,7 +3944,7 @@
 }
 
 .account-ai-connect-action.ant-btn {
-    min-height: 40px;
+    min-height: 2.75rem;
 }
 
 .account-ai-authority-alert {
@@ -5016,7 +5016,7 @@
 .worm-combination-list-description > div { display: flex; align-items: start; gap: 8px; font-size: .8125rem; color: var(--athena-muted); }
 .worm-combination-list-description .ant-tag { flex: none; }
 .worm-combination-list-card.ant-card { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-.worm-combination-list-card__heading h3 { font-size: 1rem !important; font-weight: 500; white-space: normal; }
+.worm-combination-list-card__heading h3.ant-typography { font-size: 1rem; font-weight: 500; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
 .worm-combination-list-card__preview > span { align-items: start; }
 .worm-combination-list-card__actions { display: flex; gap: 8px; }
 .worm-combination-list-card__actions .ant-space-item:last-child { flex-basis: 100%; }

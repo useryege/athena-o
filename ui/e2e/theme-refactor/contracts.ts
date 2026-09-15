@@ -13,6 +13,8 @@ export interface ThemeCase {
     realm: 'member' | 'admin';
     heading: string;
     replies: ThemeReply[];
+    /** Anonymous registration authority belongs to its HttpOnly ticket, not the URL. */
+    registrationTicket?: {realm: 'member' | 'admin'};
 }
 
 export interface ThemeLedger {

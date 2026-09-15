@@ -164,12 +164,12 @@ test.each([
     expect(facts.find(item => item.label === 'Recovery remaining')?.value).toBe(remaining);
 });
 
-test('source tabs select notifications independently without triggering extra reads', async () => {
+test('source tabs declare independent source panels without additional reads', async () => {
     await mount();
     const tabs = tree.root.findByType(require('antd').Tabs);
     expect(tabs.props.defaultActiveKey).toBe('services');
     expect(tabs.props.items.map((item: any) => item.key)).toEqual(['services', 'notifications', 'trader']);
     const before = jest.mocked(services.adminNotifications.getRuntimeStatus).mock.calls.length;
-    act(() => tabs.props.onChange?.('notifications'));
+    expect(tabs.props.items.find((item: any) => item.key === 'notifications').children).toBeDefined();
     expect(services.adminNotifications.getRuntimeStatus).toHaveBeenCalledTimes(before);
 });

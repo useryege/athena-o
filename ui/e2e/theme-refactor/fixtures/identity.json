@@ -31,7 +31,7 @@
   },
   {
     "id": "member-register",
-    "route": "/register?realm=member",
+    "route": "/register?athenaRealm=member",
     "realm": "member",
     "heading": "Choose a username",
     "replies": [
@@ -58,7 +58,10 @@
         "status": 200,
         "method": "GET"
       }
-    ]
+    ],
+    "registrationTicket": {
+      "realm": "member"
+    }
   },
   {
     "id": "member-profile",
@@ -435,7 +438,7 @@
   },
   {
     "id": "admin-register",
-    "route": "/register?realm=admin",
+    "route": "/register?athenaRealm=admin",
     "realm": "admin",
     "heading": "Choose a username",
     "replies": [
@@ -462,7 +465,10 @@
         "status": 200,
         "method": "GET"
       }
-    ]
+    ],
+    "registrationTicket": {
+      "realm": "admin"
+    }
   },
   {
     "id": "admin-profile",

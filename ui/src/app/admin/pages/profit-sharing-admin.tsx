@@ -220,7 +220,7 @@ const RoundDefinitionFields = (props: {
                         ))}
                         <Button
                             block={true}
-                            icon={<PlusOutlined />}
+                            icon={<PlusOutlined aria-hidden />}
                             disabled={props.disabled || fields.length >= 5}
                             onClick={() => add({accountId: '', username: '', displayName: '', baselineResponsibility: '', sortOrder: fields.length + 1})}>
                             Add participant
@@ -299,7 +299,7 @@ const CreateRoundModal = (props: {
                     <Button disabled={submitting} onClick={close}>
                         Cancel
                     </Button>
-                    <Button type='primary' htmlType='submit' form={formID} loading={submitting} icon={<PlusOutlined />}>
+                    <Button type='primary' htmlType='submit' form={formID} loading={submitting} icon={<PlusOutlined aria-hidden />}>
                         Create round
                     </Button>
                 </div>
@@ -332,12 +332,13 @@ const ProfitSharingAdminRoundsPageContent = () => {
                 subtitle='Create reusable rounds, monitor sealed submissions, publish proposals together, and close ballots.'
                 loading={rounds.loading}
                 error={rounds.error || accounts.error}
+                stale={Boolean(rounds.error && rounds.data)}
                 onRefresh={() => {
                     rounds.reload();
                     accounts.reload();
                 }}
                 extra={
-                    <Button type='primary' icon={<PlusOutlined />} disabled={accounts.loading || Boolean(accounts.error)} onClick={() => setCreateOpen(true)}>
+                    <Button type='primary' icon={<PlusOutlined aria-hidden />} disabled={accounts.loading || Boolean(accounts.error)} onClick={() => setCreateOpen(true)}>
                         New round
                     </Button>
                 }>
@@ -348,6 +349,7 @@ const ProfitSharingAdminRoundsPageContent = () => {
                         items={rounds.data || []}
                         columns={roundColumns}
                         loading={rounds.loading}
+                        hasData={rounds.data !== undefined}
                         compactRender={round => <ProfitSharingRoundRecord round={round} admin={true} />}
                         compactEmptyDescription='No profit-sharing rounds have been created'
                     />

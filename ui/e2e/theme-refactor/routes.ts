@@ -24,8 +24,7 @@ const relativePath = (pathname: string) => {
     return pathname.startsWith(`${prefix}/`) ? pathname.slice(prefix.length) : undefined;
 };
 
-const requestRealm = (page: Page, url: URL, headers: Record<string, string>) =>
-    headers['x-athena-application-realm'] || url.searchParams.get('realm') || (url.pathname.includes('/auth/') ? new URL(page.url()).searchParams.get('realm') || undefined : undefined);
+const requestRealm = (url: URL, headers: Record<string, string>) => headers['x-athena-application-realm'] || url.searchParams.get('realm') || undefined;
 
 const validateReply = (reply: ThemeReply) => {
     if (!/^(GET|POST|PUT|PATCH|DELETE)$/.test(reply.method) || !reply.path.startsWith('/') || reply.path.includes('?') || reply.path.includes('#')) {
@@ -43,6 +42,21 @@ export async function installThemeCase(page: Page, scenario: ThemeCase): Promise
     const prior = installedRoutes.get(page);
     if (prior) await page.unroute('**/*', prior);
     const ledger: ThemeLedger = {requests: [], unexpected: []};
+    const ticketValue = `theme-registration-${scenario.registrationTicket?.realm}`;
+    if (scenario.registrationTicket) {
+        await page
+            .context()
+            .addCookies([
+                {
+                    name: 'athena.registration',
+                    value: ticketValue,
+                    domain: new URL(baseOrigin()).hostname,
+                    path: deploymentPath('/auth/registration'),
+                    httpOnly: true,
+                    sameSite: 'Lax'
+                }
+            ]);
+    }
     const handler = async (route: Route) => {
         const request = route.request();
         const url = new URL(request.url());
@@ -69,7 +83,15 @@ export async function installThemeCase(page: Page, scenario: ThemeCase): Promise
             await route.continue();
             return;
         }
-        const realm = requestRealm(page, url, request.headers());
+        // Real registration uses a browser-bound HttpOnly ticket. URL/header claims cannot choose its authority.
+        const registration = relative === '/auth/registration' || relative.startsWith('/auth/registration/');
+        const cookies = registration ? await page.context().cookies(request.url()) : [];
+        const sentHeaders = await request.allHeaders();
+        const realm = registration
+            ? scenario.registrationTicket && sentHeaders.cookie?.split(';').some(cookie => cookie.trim() === `athena.registration=${ticketValue}`) && cookies.some(cookie => cookie.name === 'athena.registration' && cookie.value === ticketValue && cookie.httpOnly)
+                ? scenario.registrationTicket.realm
+                : undefined
+            : requestRealm(url, request.headers());
         const recorded = {method: request.method(), path: relative, query: url.search, realm, body: bodyOf(request)};
         ledger.requests.push(recorded);
         const reply = scenario.replies.find(item => item.method === recorded.method && item.path === recorded.path && item.realm === recorded.realm);
@@ -114,16 +136,12 @@ export async function assertThemeLayout(page: Page): Promise<void> {
         );
         const undersized = controls
             .map(element => ({label: element.getAttribute('aria-label') || element.textContent?.trim() || element.tagName, rect: element.getBoundingClientRect()}))
-            .filter(item => item.rect.width < 43.5 || item.rect.height < 43.5)
+            .filter(item => item.rect.width < 43.99 || item.rect.height < 43.99)
             .map(item => `${item.label} (${item.rect.width}x${item.rect.height})`);
         const header = document.querySelector<HTMLElement>('.athena-shell__header');
         const pageHeader = document.querySelector<HTMLElement>('.app-page__header');
         const overlaps = Boolean(
-            header &&
-                pageHeader &&
-                visible(header) &&
-                visible(pageHeader) &&
-                header.getBoundingClientRect().bottom > pageHeader.getBoundingClientRect().top + 1
+            header && pageHeader && visible(header) && visible(pageHeader) && header.getBoundingClientRect().bottom > pageHeader.getBoundingClientRect().top + 1
         );
         return {
             rootOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,

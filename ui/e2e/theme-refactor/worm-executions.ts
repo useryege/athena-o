@@ -324,6 +324,7 @@ for (const count of [1, 20])
         await page.getByRole('button', {name: 'Continue to checks', exact: true}).click();
         await page.getByRole('button', {name: 'Build read-only preview', exact: true}).dblclick();
         await expect(page.getByText('Worm wallet selection changed', {exact: true})).toBeVisible();
+        await expect.poll(() => ledger.requests.filter(request => request.method === 'GET' && request.path === '/api/v1/worm-trading/wallet-connections').length).toBe(2);
         executionLedger(
             ledger,
             [

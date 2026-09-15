@@ -476,8 +476,7 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
                                 <BrandMark size='small' />
                                 {!sidebarCollapsed && (
                                     <span className='athena-brand__copy'>
-                                        <strong>Athena Admin</strong>
-                                        <small>Administration Console</small>
+                                        <strong>ATHENA</strong>
                                     </span>
                                 )}
                             </div>

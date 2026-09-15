@@ -1,6 +1,6 @@
 import {OperationFacts} from '../components/operation-facts';
 import './trader-sync/trader-sync.css';
-import {Alert, Empty, Spin, Tabs, Tag} from 'antd';
+import {Alert, Button, Empty, Spin, Tabs, Tag} from 'antd';
 import {Link} from 'react-router-dom';
 import {useVisibleQuery, type AbortablePromise} from '../../shared/use-visible-query';
 import {useAdminReadScope} from '../read-scope';
@@ -101,8 +101,18 @@ export const ServiceStatusPage = () => {
                         ),
                         forceRender: true,
                         children: (
-                            <Section title='Services' extra={<span>{data.data?.items.length || 0} services</span>}>
-                                {data.error && <Alert type='error' showIcon title='Service health unavailable' description={data.error.message} />}
+                            <Section
+                                title='Services'
+                                extra={<span>{data.data ? `${data.data.items.length} services` : data.loading ? 'Loading services' : 'Service count unavailable'}</span>}>
+                                {data.error && (
+                                    <Alert
+                                        type='error'
+                                        showIcon
+                                        title='Service health unavailable'
+                                        description={data.error.message}
+                                        action={<Button onClick={data.reload}>Retry</Button>}
+                                    />
+                                )}
                                 {data.stale && <Alert type='warning' title='Stale service health — showing the last successful read' />}
                                 <p>Last checked: {checkedAt} (UTC+8)</p>
                                 <div className='service-health-container'>
@@ -127,7 +137,7 @@ export const ServiceStatusPage = () => {
                                         </tbody>
                                     </table>
                                 </div>
-                                {!data.loading && !data.data?.items.length && <Empty description='No service health records' />}
+                                {!data.loading && data.data && !data.data.items.length && <Empty description='No service health records' />}
                                 <p className='admin-source-note'>gRPC health checks · Service connectivity is separate from runtime activity.</p>
                             </Section>
                         )
@@ -153,7 +163,13 @@ export const ServiceStatusPage = () => {
                                     ) : null
                                 }>
                                 {notificationRuntime.error && (
-                                    <Alert type='error' showIcon={true} title='Notification runtime unavailable' description={notificationRuntime.error.message} />
+                                    <Alert
+                                        type='error'
+                                        showIcon={true}
+                                        title='Notification runtime unavailable'
+                                        description={notificationRuntime.error.message}
+                                        action={<Button onClick={notificationRuntime.reload}>Retry</Button>}
+                                    />
                                 )}
                                 {notificationRuntime.stale && <Alert type='warning' title='Stale notification runtime — showing the last successful read' />}
                                 <p>
@@ -266,7 +282,15 @@ export const ServiceStatusPage = () => {
                         forceRender: true,
                         children: (
                             <Section title='Trader Sync' extra={<Link to='/trader-sync/subscriptions'>Subscription summaries</Link>}>
-                                {traderRuntime.error && <Alert type='error' showIcon={true} title='Trader Sync runtime unavailable' description={traderRuntime.error.message} />}
+                                {traderRuntime.error && (
+                                    <Alert
+                                        type='error'
+                                        showIcon={true}
+                                        title='Trader Sync runtime unavailable'
+                                        description={traderRuntime.error.message}
+                                        action={<Button onClick={traderRuntime.reload}>Retry</Button>}
+                                    />
+                                )}
                                 {traderRuntime.stale && <Alert type='warning' title='Stale Trader Sync runtime — showing the last successful read' />}
                                 <p>As of: {formatBeijingDateTime(trader?.asOf) || 'Unavailable'} (UTC+8)</p>
                                 {trader && (

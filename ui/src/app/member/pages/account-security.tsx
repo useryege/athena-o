@@ -299,9 +299,14 @@ const SecurityPage = () => {
                 title='API keys'
                 extra={
                     mayUseAPIKeys ? (
-                        <Button icon={<PlusOutlined aria-hidden={true} />} onClick={() => openTokenCreation('apiKey')}>
-                            Create API key
-                        </Button>
+                        <Space wrap>
+                            <Button aria-label='Refresh API keys' onClick={tokens.reload} loading={tokens.loading}>
+                                Refresh
+                            </Button>
+                            <Button icon={<PlusOutlined aria-hidden={true} />} onClick={() => openTokenCreation('apiKey')}>
+                                Create API key
+                            </Button>
+                        </Space>
                     ) : undefined
                 }>
                 {!mayUseAPIKeys ? (
@@ -309,13 +314,22 @@ const SecurityPage = () => {
                 ) : (
                     <>
                         {tokens.error && (
-                            <Alert className='account-security-warning' type='error' showIcon={true} title='Could not load API keys' description={tokens.error.message} />
+                            <Alert
+                                className='account-security-warning'
+                                type='error'
+                                showIcon={true}
+                                title='Could not load API keys'
+                                description={tokens.error.message}
+                                action={<Button onClick={tokens.reload}>Retry</Button>}
+                            />
                         )}
+                        {tokens.error && tokens.data && <Alert type='warning' title='Stale API keys — showing the last successful read' />}
                         <ResourceTable<Token>
                             rowKey='id'
                             label='Your API keys'
                             items={visibleTokens}
                             loading={tokens.loading}
+                            hasData={tokens.data !== undefined}
                             columns={[
                                 {title: 'ID', dataIndex: 'id'},
                                 {title: 'Issued', align: 'right', render: item => tokenTime(item.issuedAt)},

@@ -1,0 +1,572 @@
+[
+  {
+    "id": "foundations-wallets",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-wallets-v20-desktop.png",
+        "sha256": "cb1ce8fbaf524e0cc8bc17068cc06b6fce77d92becbb9a7df802c189d31f4168"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-wallets-v20-mobile.png",
+        "sha256": "44e23ffec8c7c014549b59cb0a7942b6cf19c8ec2bc37e82bf45884a439b7488"
+      }
+    ]
+  },
+  {
+    "id": "worm-assets",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-worm-assets-v22-desktop.png",
+        "sha256": "17360976fbebb06944a605583e64b85a4574151f48e3bf244923af1c40056fb2"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-worm-assets-v22-mobile.png",
+        "sha256": "9498f123877bff4f804d3e0742b7796a239aa6124ef9d0dc0697da4d67ffd243"
+      }
+    ]
+  },
+  {
+    "id": "worm-combinations",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-worm-combinations-v22-list-desktop.png",
+        "sha256": "dc0994ea9a0bfab68530f093bbaa2562e5996a4e2d1da16c0a8c273faf84bfea"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-worm-combinations-v22-list-mobile.png",
+        "sha256": "7a593d745a1c2f2e2e874b3826f3da09d17fbd3d823822da0f0bcf4b401cd60a"
+      }
+    ]
+  },
+  {
+    "id": "worm-combinations-new",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-worm-combinations-v22-editor-desktop.png",
+        "sha256": "9386a17dd2604492e0e0b3948f01083c25c3b6fc29f55d9618110defac76b31d"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-worm-combinations-v22-editor-mobile.png",
+        "sha256": "8a9d51e7d8f2e5b05a90cabc6f9ba9cc2b805b76d68eec4b2f53ecd1b56b0159"
+      }
+    ]
+  },
+  {
+    "id": "worm-combinations-edit",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-worm-combinations-v22-editor-desktop.png",
+        "sha256": "9386a17dd2604492e0e0b3948f01083c25c3b6fc29f55d9618110defac76b31d"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-worm-combinations-v22-editor-mobile.png",
+        "sha256": "8a9d51e7d8f2e5b05a90cabc6f9ba9cc2b805b76d68eec4b2f53ecd1b56b0159"
+      }
+    ]
+  },
+  {
+    "id": "worm-preview",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-worm-combinations-v22-preview-desktop.png",
+        "sha256": "0f6e879384bda051a308fc19c7b3cc41c24020488fbe851286e4108270991f5f"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-worm-combinations-v22-preview-mobile.png",
+        "sha256": "03ba5a4eecfb49c45db3844a603035bb2cf4e4af06870d1ef7655211835e96c3"
+      }
+    ]
+  },
+  {
+    "id": "worm-executions",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-worm-executions-v22-list-desktop.png",
+        "sha256": "bf8bd11e842df619601c7d374b5a7ba876bc3a7296233fb23d5029e0c4226051"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-worm-executions-v22-list-mobile.png",
+        "sha256": "dfca52c9e0d89e35c70c63d458d82888351800b19a3f7ff4b9c67125b9cb12c9"
+      }
+    ]
+  },
+  {
+    "id": "worm-execution-detail",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-worm-executions-v22-detail-desktop.png",
+        "sha256": "2d3fc6c5f1e90d0d13ac6063fa3c8907bc4d5a69856885703b146beb8ee80799"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-worm-executions-v22-detail-mobile.png",
+        "sha256": "07d33aed1be164fdfa4afb7e8d7d37cfaef5b2f6ec0e2a662edd54a91885b65a"
+      }
+    ]
+  },
+  {
+    "id": "markets-hot",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-market-radar-v21-hot-desktop.png",
+        "sha256": "5a8bc16c43110ad950908ed24ed9d7cd1abbe0a2d38c059e4dc4f3537b7b67d0"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-market-radar-v21-hot-mobile.png",
+        "sha256": "d5ee4f552678acd416b6081a443519213e99ca9cb9a83e1e58e5146e2e7b32e9"
+      }
+    ]
+  },
+  {
+    "id": "markets-realtime",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-market-radar-v21-realtime-desktop.png",
+        "sha256": "ee78c187e23672a111966d423d62e9f60d4baefe72c0349417d0982ebfbdc198"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-market-radar-v21-realtime-mobile.png",
+        "sha256": "d078861161a44f357c019363021db571202114ccd0e75a4451ebaeab6f038e22"
+      }
+    ]
+  },
+  {
+    "id": "markets-movers",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-market-radar-v21-movers-desktop.png",
+        "sha256": "7dbc0b3702dd3929440303359e6927744b0415d8dc6a0e4315aa88fa278c6d0c"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-market-radar-v21-movers-mobile.png",
+        "sha256": "7fc4dbf618b50e950780c3bc52c25822f0218808fa97c025f9cae88884a2b047"
+      }
+    ]
+  },
+  {
+    "id": "foundations-solana",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-solana-v20-desktop.png",
+        "sha256": "55aabcb1aa09c69bd51d27938ac8cfb3677d99020cbda722df052f60e5d3d579"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-solana-v20-mobile.png",
+        "sha256": "67493e9c73a9ec158b4615c1996eb230cf721d37799c21d0ad91688e5b4e36f2"
+      }
+    ]
+  },
+  {
+    "id": "markets-live",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-sports-v21-live-desktop.png",
+        "sha256": "2f1146db8f5ffc12dd960d28759f8e563106ffdab199cb2fa4706032cbde9b04"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-sports-v21-live-mobile.png",
+        "sha256": "9173ee276bb2d4b41b88be5664fcdccae7431ff6d41aaae8cb931dbd3496ae88"
+      }
+    ]
+  },
+  {
+    "id": "markets-history",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-sports-v21-history-desktop.png",
+        "sha256": "05d0692f2c6ec25ea6a7bd83f7b05341a69c7b43b2c67a07199ff7a5858a71cd"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-sports-v21-history-mobile.png",
+        "sha256": "0fed611b4cb30964dc8b5b67cf0f5129af653ad7edfd0e09d886fda89640027a"
+      }
+    ]
+  },
+  {
+    "id": "markets-corners",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-sports-v21-corners-desktop.png",
+        "sha256": "dd9a826ac9deaf31b3bf2cdf014283338801f307dd848be109b8df97fbc206de"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-sports-v21-corners-mobile.png",
+        "sha256": "3011d037986c4da137dfb593a557cea0a834dcb7a2230d1effe65088f070284f"
+      }
+    ]
+  },
+  {
+    "id": "markets-proposals",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-managed-oo-v21-proposals-desktop.png",
+        "sha256": "264acdf9689379d35675df1b1129b33a94f8efe605629e4dca3f9f4b107dd40a"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-managed-oo-v21-proposals-mobile.png",
+        "sha256": "f3a512030fc0cde0e89b1c738f4706eadda5c524e132f8f4d05b706fb435f311"
+      }
+    ]
+  },
+  {
+    "id": "markets-disputes",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-managed-oo-v21-disputes-desktop.png",
+        "sha256": "e46fba650ae8af094bced695fba515f7bbb5e57fcb7db169284775c0526a60ae"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-managed-oo-v21-disputes-mobile.png",
+        "sha256": "2f7d07f839758e1b6cf103230fd1cfed6b091678cd53862fbf11f194eecee44e"
+      }
+    ]
+  },
+  {
+    "id": "member-notifications",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-notifications-v10-desktop.png",
+        "sha256": "1ff08cf8fc745dd4613b8cb29f467ccea140181a40d29f1826acfca07e2bc3a1"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-notifications-v10-mobile.png",
+        "sha256": "fb0185225314169e3cdabe7cb7c22a2b4cc126937a919d797a5601bcc2ff8252"
+      }
+    ]
+  },
+  {
+    "id": "member-profile",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-account-profile-v11-desktop.png",
+        "sha256": "f9ef263185208fe163d3e90018e49132667f01f71c93d4137d652a81a1d1c36d"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-account-profile-v11-mobile-edited.png",
+        "sha256": "3115d52474eaf62322bc20d7934a08f67f0eeec735fcfb7362da9c39a06158c1"
+      }
+    ]
+  },
+  {
+    "id": "member-security",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-account-security-v12-desktop.png",
+        "sha256": "22bddc1c4cbd9ecbae07125422e5a8855b99630cb602dc373573a243626e2934"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-account-security-v12-mobile.png",
+        "sha256": "b3e16a30029649b55d24c2fec195403206974f7f086baa04f9f7c63e5a180e88"
+      }
+    ]
+  },
+  {
+    "id": "member-access",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-account-access-v13-desktop.png",
+        "sha256": "5aa0a219cd07d77738234fa113ec96031c95064dbd1b7515d139c1cde586d000"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-account-access-v13-mobile.png",
+        "sha256": "90d43307a48f179c55043ce329051c71053ba82d6447b6d3d91d64149a637b5d"
+      }
+    ]
+  },
+  {
+    "id": "foundations-member-rounds",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-member-profit-sharing-v20-list-desktop.png",
+        "sha256": "aa8581b74270fd421c5204352effa14ba4552e5e9257b0ea2f00c75625917a10"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-member-profit-sharing-v20-list-mobile.png",
+        "sha256": "a47938dfab00f861c9ca5affab13aad0d59e67feaa759033a74a5f7e4c17015d"
+      }
+    ]
+  },
+  {
+    "id": "foundations-member-collecting",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-member-profit-sharing-v20-detail-desktop.png",
+        "sha256": "094c623fa1aa3a42025e17b4e4ba9289fbda6de0b3777fa14e627dbfb150d16b"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-member-profit-sharing-v20-detail-mobile.png",
+        "sha256": "5456a289c3d27bab45a39d2d194176504593b589fd69f764dd759daebbd4472e"
+      }
+    ]
+  },
+  {
+    "id": "member-help",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-common-adaptations-v22-member-help-desktop.png",
+        "sha256": "a3301d397c00a81fb87df78c6ca79c237647bfed3c7cb8241ee101153886b5c3"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-common-adaptations-v22-member-help-mobile.png",
+        "sha256": "a588078195f691956010cdfa6d41a465b2dcf5285d6e5660d085c76ec8cf700c"
+      }
+    ]
+  },
+  {
+    "id": "member-login",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-auth-v14-login-desktop.png",
+        "sha256": "e7d6f03777c018c7e90d5032f5752c5da2d0c87960cb87eab90898fcd4eea4a2"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-auth-v14-login-mobile.png",
+        "sha256": "0bb59c997fcc6776e4edab1e53d165c56d1948ca33406f9ee53baebed3304694"
+      }
+    ]
+  },
+  {
+    "id": "member-register",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-auth-v14-register-desktop.png",
+        "sha256": "2f5619afc2523d02a14775ef7e35b3d8a027d8a04e16d651d4e3ccc566a35fca"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-auth-v14-register-mobile.png",
+        "sha256": "2f29b35d4469702bfb4c11d5fef84c1d64d668e2500d652d6766fe3f000cf769"
+      }
+    ]
+  },
+  {
+    "id": "admin-accounts",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-admin-accounts-v15-desktop.png",
+        "sha256": "a6dd8e17c8d94258176592580aa88f5d91e7a9b68165ce9a8d1adcf491c986d6"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-admin-accounts-v15-mobile-list.png",
+        "sha256": "e55aebc01ae17cc53afb6405d267974382d4983cc3b0ec8a84d327e798a664a6"
+      }
+    ]
+  },
+  {
+    "id": "foundations-admin-rounds",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-admin-profit-sharing-v19-list-desktop.png",
+        "sha256": "d18b77165c727fc1c75f409a6f33cb0393e35f9ffc5e657cf4d02ed3dc5e1f77"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-admin-profit-sharing-v19-list-mobile.png",
+        "sha256": "1262751af94494fc3e2b0e605752d123342fdb0f15beb3650f451a7c9df3864a"
+      }
+    ]
+  },
+  {
+    "id": "foundations-admin-collecting",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-admin-profit-sharing-v19-detail-desktop.png",
+        "sha256": "6a45eb75b490018ae2a4b7b6b00e39d51b13570140f10d8d23316b7d7cf43d8c"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-admin-profit-sharing-v19-detail-mobile.png",
+        "sha256": "fae04b2b1096f1f9b2668cac46d630b1f5063081bfeed026d4ad41fc5063cc61"
+      }
+    ]
+  },
+  {
+    "id": "admin-services",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-service-status-v16-services-desktop.png",
+        "sha256": "12ad491b5b450a8b070c510ae00150fa38706ae081aea6605bf116d941e609f5"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-service-status-v16-services-mobile.png",
+        "sha256": "f29164b7353b2964376152a75cebc1e92957d07a053427b7145268a8747a67af"
+      }
+    ]
+  },
+  {
+    "id": "admin-gateways",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-etherscan-gateways-v17-gateways-desktop.png",
+        "sha256": "c54917f05f1fab73af5c9ce0dbfea8765bf24dbe868e1f34896329447f091f8c"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-etherscan-gateways-v17-gateways-mobile.png",
+        "sha256": "05f08586549d52d76f429d7c4228706e7a0cacd19f75fe5b1080c4e1ee083bc4"
+      }
+    ]
+  },
+  {
+    "id": "admin-notifications",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-system-notifications-v18-list-desktop.png",
+        "sha256": "51501d7a537eb75574d52b7b05fbaef1c961c358a159881e963dfcbce6e509e6"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-system-notifications-v18-list-mobile.png",
+        "sha256": "4a564eca4e03a3f53fa4aeb6090b0704138bdde80948d07922a451f64edfe754"
+      }
+    ]
+  },
+  {
+    "id": "admin-notification-detail",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-system-notifications-v18-detail-desktop.png",
+        "sha256": "7e72029ddbaec7c48e8b9b606743ba87eb27d418d4503fd0c8fe55b250a2d75b"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-system-notifications-v18-detail-mobile.png",
+        "sha256": "68a0595c153b21ca79b3ed3a18ad25389a5cade5c2a9616b31dd56d0c1e78433"
+      }
+    ]
+  },
+  {
+    "id": "admin-profile",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-common-adaptations-v22-profile-desktop.png",
+        "sha256": "0a02918feb7f0d0912931599ffd61dd1ba81966416b6fc3b08441bdf504e1b43"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-common-adaptations-v22-profile-mobile.png",
+        "sha256": "bdbca6b8f207b5344d3175db06fd862b9b2a663de6d160cbf7214bcae6b6a24c"
+      }
+    ]
+  },
+  {
+    "id": "admin-access",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-common-adaptations-v22-access-desktop.png",
+        "sha256": "12c1c72368a41f61e079be7c9b80ee6672e5633da8aec493e8339ed0ae77ef56"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-common-adaptations-v22-access-mobile.png",
+        "sha256": "c79ca8fee9ae0e85b6f869b10a3521b56637a787168e10b1818b26d8de9aaaec"
+      }
+    ]
+  },
+  {
+    "id": "admin-help",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-common-adaptations-v22-admin-help-desktop.png",
+        "sha256": "98f2a410183b14648e21a8a90e32db0c88bef76d8ba2f25fe1d3ba61cce4e772"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-common-adaptations-v22-admin-help-mobile.png",
+        "sha256": "e9981f6bb102ce4a037d57eb564ac6252fd023ea654b6224613f8e4b650ecad2"
+      }
+    ]
+  },
+  {
+    "id": "admin-login",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-common-adaptations-v22-login-desktop.png",
+        "sha256": "3f9a20bb5d31a88aa0e7fce7065f21267d7ef076947a5a38bcbda4a58d881f78"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-common-adaptations-v22-login-mobile.png",
+        "sha256": "1001475902b926966640f608fc8d1fbcbc62dc0c8ea77a8c571adf77943bd9fe"
+      }
+    ]
+  },
+  {
+    "id": "admin-register",
+    "references": [
+      {
+        "view": "desktop",
+        "file": "docs/requirements/web-ui/previews/theme-common-adaptations-v22-register-desktop.png",
+        "sha256": "c0890fc33ff839e4bf4d80f2b06f13890a3ce014660ac9a5ac8721c612787525"
+      },
+      {
+        "view": "mobile",
+        "file": "docs/requirements/web-ui/previews/theme-common-adaptations-v22-register-mobile.png",
+        "sha256": "afcce223018eade01e53390df8dc92cec0ca5a87b247be599db9f83f6b7f75bf"
+      }
+    ]
+  }
+]

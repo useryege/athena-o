@@ -1124,8 +1124,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                         <BrandMark size='small' />
                         {!sidebarCollapsed && (
                             <span className='athena-brand__copy'>
-                                <strong>Athena</strong>
-                                <small>Operations Console</small>
+                                <strong>ATHENA</strong>
                             </span>
                         )}
                     </div>

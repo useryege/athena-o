@@ -11,6 +11,8 @@ export const ResourceTable = <T,>(props: {
     items: T[];
     columns: ColumnsType<T>;
     loading?: boolean;
+    /** Whether this source has completed a successful read (including an empty result). */
+    hasData?: boolean;
     page?: number;
     pageSize?: number;
     pageSizeOptions?: number[];
@@ -87,6 +89,14 @@ export const ResourceTable = <T,>(props: {
     const pageSizeOptions = props.pageSizeOptions || PAGE_SIZE_OPTIONS;
     const currentPage = props.page || 1;
     const currentPageSize = props.pageSize || pageSizeOptions[0];
+
+    if (props.hasData === false) {
+        return props.loading ? (
+            <div role='status' aria-label='Loading items'>
+                <Skeleton active />
+            </div>
+        ) : null;
+    }
 
     return (
         <div className={regionClassName} role='region' aria-label={props.label || 'Data table'} aria-busy={props.loading || undefined}>

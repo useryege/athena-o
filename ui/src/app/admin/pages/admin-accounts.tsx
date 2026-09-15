@@ -547,6 +547,7 @@ const AdminAccountsWorkspace = ({isCurrent}: {isCurrent: () => boolean}) => {
             subtitle='Search registered Google or Phantom identities and grant sign-in, API Key, Profit Sharing, and module access.'
             loading={accounts.loading}
             error={accounts.error}
+            stale={Boolean(accounts.error && accounts.data)}
             onRefresh={accounts.reload}>
             <div className={mobileAccountId ? 'admin-account-directory-toolbar admin-account-directory-toolbar--hidden' : 'admin-account-directory-toolbar'}>
                 <Input.Search
@@ -583,7 +584,11 @@ const AdminAccountsWorkspace = ({isCurrent}: {isCurrent: () => boolean}) => {
                 <div className='admin-accounts-mobile-list__heading'>
                     <Typography.Title level={2}>Accounts</Typography.Title>
                     <Typography.Text type='secondary'>
-                        {accounts.data?.totalSize || 0} registered {accounts.data?.totalSize === 1 ? 'identity' : 'identities'}
+                        {accounts.data
+                            ? `${accounts.data.totalSize || 0} registered ${accounts.data.totalSize === 1 ? 'identity' : 'identities'}`
+                            : accounts.loading
+                              ? 'Loading accounts'
+                              : 'Accounts unavailable'}
                     </Typography.Text>
                 </div>
                 <div className='admin-accounts-mobile-list__items'>
@@ -605,16 +610,16 @@ const AdminAccountsWorkspace = ({isCurrent}: {isCurrent: () => boolean}) => {
                                 </span>
                             </button>
                         ))
-                    ) : (
+                    ) : accounts.data && !accounts.loading ? (
                         <Empty description='No accounts match these filters' />
-                    )}
+                    ) : null}
                 </div>
             </div>
             <div className={mobileAccountId ? 'admin-accounts-layout admin-accounts-layout--mobile-detail' : 'admin-accounts-layout'}>
                 <aside className='admin-account-list' aria-label='Athena accounts'>
                     <div className='admin-account-list__heading'>
                         <strong>Accounts</strong>
-                        <span>{accounts.data?.totalSize || 0}</span>
+                        <span>{accounts.data ? accounts.data.totalSize || 0 : '—'}</span>
                     </div>
                     <div className='admin-account-list__items'>
                         {items.length > 0 ? (
@@ -638,9 +643,9 @@ const AdminAccountsWorkspace = ({isCurrent}: {isCurrent: () => boolean}) => {
                                     {accountStatus(account)}
                                 </button>
                             ))
-                        ) : (
+                        ) : accounts.data && !accounts.loading ? (
                             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No accounts' />
-                        )}
+                        ) : null}
                     </div>
                 </aside>
                 <div className='admin-account-detail'>

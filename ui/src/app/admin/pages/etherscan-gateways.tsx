@@ -316,17 +316,21 @@ const EtherscanWorkspace = () => {
                         ),
                         children: (
                             <Section title='Runtime status'>
-                                {data.error && <Alert type='error' title='Gateway health unavailable' description={data.error.message} />}
+                                {data.error && (
+                                    <Alert type='error' title='Gateway health unavailable' description={data.error.message} action={<Button onClick={data.reload}>Retry</Button>} />
+                                )}
                                 {data.stale && <Alert type='warning' title='Stale gateway health — showing the last successful read' />}
                                 <p className='admin-source-note'>Last checked: {checkedAt} (UTC+8)</p>
-                                <OperationFacts
-                                    items={[
-                                        {label: 'Total', value: items.length},
-                                        {label: 'Running', value: <TonePill tone='good'>{running}</TonePill>},
-                                        {label: 'Unreachable', value: <TonePill tone={unreachable ? 'bad' : 'neutral'}>{unreachable}</TonePill>},
-                                        {label: 'Errors', value: errors}
-                                    ]}
-                                />
+                                {data.data && (
+                                    <OperationFacts
+                                        items={[
+                                            {label: 'Total', value: items.length},
+                                            {label: 'Running', value: <TonePill tone='good'>{running}</TonePill>},
+                                            {label: 'Unreachable', value: <TonePill tone={unreachable ? 'bad' : 'neutral'}>{unreachable}</TonePill>},
+                                            {label: 'Errors', value: errors}
+                                        ]}
+                                    />
+                                )}
                                 <div className='etherscan-gateway-records'>
                                     {items.map(item => (
                                         <article className='etherscan-gateway-record' key={item.address}>
@@ -364,7 +368,7 @@ const EtherscanWorkspace = () => {
                                         </article>
                                     ))}
                                 </div>
-                                {!items.length && !data.loading && <Empty description='No Etherscan gateway IPs configured' />}
+                                {data.data && !items.length && !data.loading && <Empty description='No Etherscan gateway IPs configured' />}
                                 <p className='admin-source-note'>Runtime health is separate from request test results. Open Live Probe to inspect the latest test.</p>
                             </Section>
                         )
@@ -412,7 +416,7 @@ const EtherscanWorkspace = () => {
                                             action={<Button onClick={polled.reload}>Retry</Button>}
                                         />
                                     )}
-                                    {!hasProbeResult && !latestProbe.loading && <Empty description='No probe has run yet' />}
+                                    {!hasProbeResult && !latestProbe.loading && !latestProbe.error && <Empty description='No probe has run yet' />}
                                     {hasProbeResult && activeRun && (
                                         <>
                                             <p className='admin-source-note'>Finished {formatUnixSeconds(activeRun.finishedAt)} (UTC+8)</p>

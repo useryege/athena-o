@@ -2,7 +2,7 @@ import {expect, test} from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import fs from 'node:fs';
 import {themeCases} from './theme-refactor/cases';
-import {assertThemeLayout, assertThemeLedger, openThemeCase} from './theme-refactor/routes';
+import {assertThemeLayout, assertThemeLedger, installThemeCase, openThemeCase} from './theme-refactor/routes';
 
 const tags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
@@ -89,6 +89,8 @@ for (const state of [
         else if (state.id === 'admin-notifications') await page.getByRole('button', {name: 'Test Notification', exact: true}).click();
         else await page.getByRole('tab', {name: new RegExp(`^${state.tab}`)}).click();
         if (state.id === 'markets-proposals') await page.evaluate(() => window.scrollTo(0, 0));
+        if (state.id === 'admin-notifications')
+            await expect(page.getByRole('dialog')).not.toHaveClass(/(?:^|\s)ant-zoom-(?:appear|enter)(?:-active)?(?:\s|$)/);
         await assertThemeLayout(page);
         const results = await new AxeBuilder({page}).withTags(tags).analyze();
         const rawResult = info.outputPath('axe-results.json');
@@ -119,7 +121,13 @@ for (const state of ['selection', 'cashout', 'leave']) {
             await page.getByRole('button', {name: /Saved combinations$/}).click();
         }
         await expect(page.getByRole('dialog')).toBeVisible();
-        await page.waitForTimeout(500);
+        await expect(page.getByRole('dialog')).not.toHaveClass(/(?:^|\s)ant-zoom-(?:appear|enter)(?:-active)?(?:\s|$)/);
+        if (state === 'cashout') {
+            await page.getByRole('region', {name: 'Cash out position details'}).focus();
+            await expect(page.getByRole('region', {name: 'Cash out position details'})).toBeFocused();
+            await page.keyboard.press('End');
+            await expect.poll(() => page.locator('.ant-modal-confirm-body').evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+        }
         const results = await new AxeBuilder({page}).withTags(tags).analyze();
         const rawResult = info.outputPath('axe-results.json');
         fs.writeFileSync(rawResult, JSON.stringify(results, null, 2));
@@ -166,3 +174,45 @@ for (const action of ['Authorize', 'Terminate']) {
         assertThemeLedger(ledger);
     });
 }
+
+for (const [id, failedPath] of [
+    ['member-security', '/api/v1/account/security/tokens'],
+    ['admin-accounts', '/api/v1/account'],
+    ['admin-services', '/api/v1/service-statuses'],
+    ['admin-gateways', '/api/v1/etherscan-gateway-statuses'],
+    ['admin-notifications', '/api/v1/admin/system-notification-deliveries'],
+    ['foundations-wallets', '/api/v1/wallets'],
+    ['foundations-member-rounds', '/api/v1/profit-sharing/rounds'],
+    ['foundations-admin-rounds', '/api/v1/profit-sharing/rounds']
+]) {
+    test(`theme:a11y first error ${id}`, async ({page}, info) => {
+        const scenario = structuredClone(themeCases.find(item => item.id === id)!);
+        Object.assign(scenario.replies.find(item => item.path === failedPath && item.method === 'GET')!, {status: 503, json: {message: 'Controlled read unavailable'}});
+        await page.setViewportSize({width: 390, height: 844});
+        const ledger = await installThemeCase(page, scenario);
+        await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}${scenario.route}`);
+        await expect(page.getByText('Controlled read unavailable', {exact: true})).toBeVisible();
+        await page.evaluate(() => document.fonts.ready);
+        const results = await new AxeBuilder({page}).withTags(tags).analyze();
+        fs.writeFileSync(info.outputPath('axe-results.json'), JSON.stringify(results, null, 2));
+        await info.attach('axe-results.json', {path: info.outputPath('axe-results.json'), contentType: 'application/json'});
+        expect(results.violations.map(v => ({id: v.id, nodes: v.nodes.map(n => n.target)}))).toEqual([]);
+        assertThemeLedger(ledger);
+    });
+}
+
+test('theme:a11y profile unsaved confirmation', async ({page}, info) => {
+    await page.setViewportSize({width: 390, height: 844});
+    const ledger = await openThemeCase(page, 'member-profile');
+    await page.getByLabel('Display name', {exact: true}).fill('Unsaved research name');
+    await page.getByLabel('Account section').click();
+    await page.getByText('Access & session', {exact: true}).filter({visible: true}).click();
+    const modal = page.getByRole('dialog');
+    await expect(modal).toBeVisible();
+    await expect(modal).not.toHaveClass(/ant-zoom-(?:appear|enter)/);
+    const results = await new AxeBuilder({page}).withTags(tags).analyze();
+    fs.writeFileSync(info.outputPath('axe-results.json'), JSON.stringify(results, null, 2));
+    await info.attach('axe-results.json', {path: info.outputPath('axe-results.json'), contentType: 'application/json'});
+    expect(results.violations.map(v => ({id: v.id, nodes: v.nodes.map(n => n.target)}))).toEqual([]);
+    assertThemeLedger(ledger);
+});

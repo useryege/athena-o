@@ -193,6 +193,7 @@ const SystemNotificationsWorkspace = () => {
             subtitle='Inspect Telegram delivery records and send an operational connectivity test.'
             loading={data.loading}
             error={data.error}
+            stale={Boolean(data.error && data.data)}
             onRefresh={data.reload}
             extra={
                 <Button type='primary' icon={<SendOutlined aria-hidden />} onClick={() => setTestOpen(true)}>
@@ -236,6 +237,7 @@ const SystemNotificationsWorkspace = () => {
                 compactRender={compactNotification}
                 compactEmptyDescription='No system notification deliveries'
                 loading={data.loading}
+                hasData={data.data !== undefined}
                 total={data.data?.total}
                 page={page}
                 pageSize={pageSize}

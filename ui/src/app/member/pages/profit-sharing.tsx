@@ -77,6 +77,7 @@ const ProfitSharingRoundsPageContent = () => {
                 subtitle='Submit and compare complete responsibility and profit-sharing proposals across reusable rounds.'
                 loading={rounds.loading}
                 error={rounds.error}
+                stale={Boolean(rounds.error && rounds.data)}
                 onRefresh={rounds.reload}>
                 <Section title='Rounds'>
                     <ResourceTable
@@ -85,6 +86,7 @@ const ProfitSharingRoundsPageContent = () => {
                         items={rounds.data || []}
                         columns={roundColumns}
                         loading={rounds.loading}
+                        hasData={rounds.data !== undefined}
                         compactRender={round => <ProfitSharingRoundRecord round={round} />}
                         compactEmptyDescription='No profit-sharing rounds are available'
                     />

@@ -1291,6 +1291,7 @@ export const WalletsPage = () => {
                 subtitle='Create and manage your private EVM and Solana wallets. Only your account can access them.'
                 loading={data.loading}
                 error={data.error}
+                stale={Boolean(data.error && data.data)}
                 onRefresh={data.reload}
                 extra={writeActions}>
                 <section className='section-panel wallet-list' aria-label='Private wallets'>
@@ -1321,6 +1322,7 @@ export const WalletsPage = () => {
                         label='Private wallets'
                         items={data.data?.items || []}
                         loading={data.loading}
+                        hasData={data.data !== undefined}
                         columns={[
                             {
                                 title: 'Wallet / Address',

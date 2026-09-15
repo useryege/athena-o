@@ -1,5 +1,6 @@
+import {themeCases} from './theme-refactor/cases';
 import {expect, test, type Locator, type Page} from '@playwright/test';
-import {assertThemeLayout, assertThemeLedger, openThemeCase} from './theme-refactor/routes';
+import {assertThemeLayout, assertThemeLedger, installThemeCase, openThemeCase} from './theme-refactor/routes';
 
 const assertFullHeightMobileDrawer = async (page: Page, drawer: Locator) => {
     const viewport = page.viewportSize();
@@ -247,8 +248,6 @@ for (const viewport of [
 }
 
 test('theme:identity profile draft survives conflict and leave dialog compares saved and draft', async ({page}) => {
-    const {themeCases} = await import('./theme-refactor/cases');
-    const {installThemeCase} = await import('./theme-refactor/routes');
     const scenario = structuredClone(themeCases.find(item => item.id === 'member-profile')!);
     scenario.replies.push({
         method: 'PUT',
@@ -350,8 +349,6 @@ test('theme:identity missing Phantom and expired Google ticket retain recovery',
     await expect(page.getByText('Phantom is not installed in this browser.', {exact: true})).toBeVisible();
     expect(ledger.requests.filter(item => item.method !== 'GET')).toEqual([]);
     assertThemeLedger(ledger);
-    const {themeCases} = await import('./theme-refactor/cases');
-    const {installThemeCase} = await import('./theme-refactor/routes');
     const scenario = structuredClone(themeCases.find(item => item.id === 'member-register')!);
     scenario.replies[0] = {...scenario.replies[0], status: 410, json: {reason: 'registration_expired'}};
     const expiredLedger = await installThemeCase(page, scenario);
@@ -462,8 +459,6 @@ test('theme:identity mobile AI instructions retain a visible action footer while
 
 test('theme:identity review mobile Profile leave confirmation stacks safe actions and restores focus', async ({page}, info) => {
     await page.setViewportSize({width: 390, height: 844});
-    const {themeCases} = await import('./theme-refactor/cases');
-    const {installThemeCase} = await import('./theme-refactor/routes');
     const scenario = structuredClone(themeCases.find(item => item.id === 'member-profile')!);
     const ledger = await installThemeCase(page, scenario);
     await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/account/profile`);
@@ -525,8 +520,6 @@ test('theme:identity review mobile Profile leave confirmation stacks safe action
 for (const phase of ['issued', 'pending'])
     for (const change of ['account', 'issuer']) {
         test(`theme:identity review Security ${change} switch clears ${phase} credential`, async ({page}) => {
-            const {themeCases} = await import('./theme-refactor/cases');
-            const {installThemeCase} = await import('./theme-refactor/routes');
             const scenario = structuredClone(themeCases.find(item => item.id === 'member-security')!);
             const ledger = await installThemeCase(page, scenario);
             await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/account/security`);
@@ -560,8 +553,6 @@ for (const phase of ['issued', 'pending'])
 
 for (const change of ['account', 'issuer']) {
     test(`theme:identity review Notifications ${change} switch destroys the old confirmation`, async ({page}) => {
-        const {themeCases} = await import('./theme-refactor/cases');
-        const {installThemeCase} = await import('./theme-refactor/routes');
         const scenario = structuredClone(themeCases.find(item => item.id === 'member-notifications')!);
         const user = structuredClone((scenario.replies.find(reply => reply.path.endsWith('/bootstrap'))!.json as any).session.userInfo);
         scenario.replies.push({method: 'GET', path: '/api/v1/session/userinfo', realm: 'member', status: 200, json: user});
@@ -749,8 +740,6 @@ test('theme:admin account conflict preserves hidden Token aggregate and mobile c
 });
 
 test('theme:admin role revalidation clears notification drafts and dialogs, then allows retry', async ({page}) => {
-    const {themeCases} = await import('./theme-refactor/cases');
-    const {installThemeCase} = await import('./theme-refactor/routes');
     const scenario = structuredClone(themeCases.find(c => c.id === 'admin-notifications')!);
     const role = scenario.replies.find(r => r.path === '/api/v1/session/userinfo')!;
     role.delayMs = 1200;
@@ -780,8 +769,6 @@ test('theme:admin role revalidation clears notification drafts and dialogs, then
 });
 
 test('theme:admin latest running probe is followed without a new write', async ({page}) => {
-    const {themeCases} = await import('./theme-refactor/cases');
-    const {installThemeCase} = await import('./theme-refactor/routes');
     const scenario = structuredClone(themeCases.find(c => c.id === 'admin-gateways')!);
     const latest = scenario.replies.find(r => r.path.endsWith('/latest'))!;
     const completed = structuredClone(latest.json as any);
@@ -812,8 +799,6 @@ test('theme:admin failed probe start keeps prior parameters and results and send
 });
 
 test('theme:admin member API key permission cannot open administrator operations', async ({page}) => {
-    const {themeCases} = await import('./theme-refactor/cases');
-    const {installThemeCase} = await import('./theme-refactor/routes');
     const scenario = structuredClone(themeCases.find(c => c.id === 'admin-accounts')!);
     const user = (scenario.replies[0].json as any).session.userInfo;
     user.administrator = false;
@@ -827,8 +812,6 @@ test('theme:admin member API key permission cannot open administrator operations
 });
 
 test('theme:admin one unavailable source retains its own facts while another source refreshes', async ({page}) => {
-    const {themeCases} = await import('./theme-refactor/cases');
-    const {installThemeCase} = await import('./theme-refactor/routes');
     const scenario = structuredClone(themeCases.find(c => c.id === 'admin-services')!);
     const ledger = await installThemeCase(page, scenario);
     await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/admin/service-status`);
@@ -849,8 +832,6 @@ test('theme:admin one unavailable source retains its own facts while another sou
 });
 
 test('theme:admin a late profile save cannot overwrite a newly selected account draft', async ({page}) => {
-    const {themeCases} = await import('./theme-refactor/cases');
-    const {installThemeCase} = await import('./theme-refactor/routes');
     const scenario = structuredClone(themeCases.find(c => c.id === 'admin-accounts')!);
     scenario.replies.push({
         method: 'PUT',
@@ -920,3 +901,32 @@ import './theme-refactor/markets';
 import './theme-refactor/worm-assets-combinations';
 
 import './theme-refactor/worm-executions';
+
+import './theme-refactor/read-states';
+
+import './theme-refactor/registration-contract';
+
+import './theme-refactor/final-matrix';
+
+import './theme-refactor/confirm-frame';
+
+test('theme:core complete navigation labels fit the approved rail and refresh keeps its text', async ({page}) => {
+    await page.setViewportSize({width: 1440, height: 900});
+    const ledger = await openThemeCase(page, 'worm-combinations');
+    await expect(page.locator('.athena-shell__sider')).toHaveCSS('width', '224px');
+    await expect(page.locator('.athena-brand__copy')).toHaveText('ATHENA');
+    const label = page.locator('.athena-shell__sider .ant-menu-title-content').filter({hasText: 'Combinations'});
+    await expect(label).toHaveCount(1);
+    const bounds = await label.evaluate(element => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const text = range.getBoundingClientRect(),
+            box = element.getBoundingClientRect();
+        return {left: text.left, right: text.right, boxLeft: box.left, boxRight: box.right, overflow: getComputedStyle(element).textOverflow};
+    });
+    expect(bounds.overflow).toBe('clip');
+    expect(bounds.left).toBeGreaterThanOrEqual(bounds.boxLeft);
+    expect(bounds.right).toBeLessThanOrEqual(bounds.boxRight);
+    await expect(page.getByRole('button', {name: 'reload Refresh', exact: true})).toContainText('Refresh');
+    assertThemeLedger(ledger);
+});

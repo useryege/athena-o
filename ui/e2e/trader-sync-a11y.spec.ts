@@ -47,6 +47,7 @@ const states: Array<{name: string; fixture: string; route: string; ready: (page:
         route: '/admin/service-status',
         ready: async page => {
             await expect(page.getByRole('heading', {name: 'Service Status', exact: true, level: 1})).toBeVisible();
+            await page.getByRole('tab', {name: /^Trader Sync/}).click();
             await expect(page.getByText('synthetic_window', {exact: true}).filter({visible: true})).toBeVisible();
         }
     }
@@ -65,7 +66,7 @@ for (const state of states)
                 await installTraderSyncRoutes(page, state.fixture);
                 await page.goto(memberPath(state.route));
                 await state.ready(page);
-                await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+                await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
                 const results = await new AxeBuilder({page}).withTags(tags).analyze();
                 const rawResult = info.outputPath('axe-results.json');
