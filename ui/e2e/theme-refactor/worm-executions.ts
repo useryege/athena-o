@@ -379,3 +379,38 @@ for (const size of [
         await capture(page, info, 'preview-control-words');
         executionLedger(ledger);
     });
+
+for (const state of ['completed', 'unknown'] as const)
+    for (const action of ['pause', 'terminate'] as const)
+        test(`theme:worm-executions refreshed permission ${action} after ${state}`, async ({page}) => {
+            const data = executionScenario('worm-execution-running');
+            const latestData = executionScenario('worm-execution-' + state);
+            const latest = structuredClone(runReply(latestData).json) as any;
+            latest.revision = 17;
+            latest.updatedAt = Math.max(latest.updatedAt, (runReply(data).json as any).updatedAt + 1);
+            const sends = state === 'unknown' && action === 'terminate';
+            const path = `/api/v1/worm-trading/executions/${latest.id}:${action}`;
+            const result = {...latest, revision: 18, state: 'TERMINATE_REQUESTED', allowedActions: []};
+            if (sends) post(data, path, {run: result});
+            const ledger = await executionOpen(page, data);
+            await expect(page.getByRole('button', {name: 'Pause', exact: true})).toBeVisible();
+            runReply(data).json = latest;
+            stepReply(data).json = stepReply(latestData).json;
+            await page.getByRole('button', {name: action === 'pause' ? 'Pause' : 'Terminate', exact: true}).click();
+            if (action === 'terminate') await page.getByRole('dialog').getByRole('button', {name: 'Terminate execution', exact: true}).click();
+            await expect(
+                page
+                    .getByText(sends ? 'Terminate Requested' : state === 'completed' ? 'Completed' : 'Reconciliation Required', {exact: true})
+                    .filter({visible: true})
+                    .first()
+            ).toBeVisible();
+            await expect(page.getByText(`Could not ${action} execution`, {exact: true})).toHaveCount(0);
+            if (state === 'unknown' && action === 'pause') {
+                await expect(page.getByRole('button', {name: 'Terminate', exact: true})).toBeEnabled();
+                await expect(page.getByRole('button', {name: 'Check authoritative status', exact: true})).toBeEnabled();
+            }
+            executionLedger(ledger, sends ? [{path, body: commandBody(17)}] : [], [
+                `/api/v1/worm-trading/executions/${latest.id}`,
+                `/api/v1/worm-trading/executions/${latest.id}/steps`
+            ]);
+        });

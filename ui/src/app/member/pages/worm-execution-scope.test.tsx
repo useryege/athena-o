@@ -103,7 +103,7 @@ const authorization = {
 };
 let confirmation: any;
 const notifications = {success: jest.fn(), error: jest.fn(), warning: jest.fn(), info: jest.fn()};
-const directMount = async () => {
+const directMount = async (openAuthorization = true) => {
     Object.values(notifications).forEach(fn => fn.mockClear());
     await act(async () => {
         tree = renderer.create(
@@ -132,7 +132,7 @@ const directMount = async () => {
             </MemoryRouter></StyleProvider>
         );
     });
-    act(() =>
+    if (openAuthorization) act(() =>
         tree.root
             .findAllByType(Button)
             .find(button => button.props.children === 'Authorize')!
@@ -233,4 +233,37 @@ test('late Prepare rejection after leaving cannot announce an error', async () =
 test('Prepare blocks a changed combination before a plan usability refresh', async () => {
     const button = await previewMount(8);
     expect(button.props.disabled).toBe(true);
+});
+
+
+test.each([
+    {action: 'pause', state: 'COMPLETED', allowedActions: [], sends: false},
+    {action: 'terminate', state: 'COMPLETED', allowedActions: [], sends: false},
+    {action: 'pause', state: 'RECONCILIATION_REQUIRED', allowedActions: ['TERMINATE', 'RECONCILE'], sends: false},
+    {action: 'terminate', state: 'RECONCILIATION_REQUIRED', allowedActions: ['TERMINATE', 'RECONCILE'], sends: true}
+])('$action rechecks latest allowedActions after convergence to $state', async ({action, state, allowedActions, sends}) => {
+    const initial = {...normalizedRun, state: 'RUNNING', allowedActions: ['PAUSE', 'TERMINATE']};
+    const latest = {...normalizedRun, state, allowedActions, revision: 17};
+    jest.mocked(services.wormTrading.getExecutionRun).mockResolvedValue(initial);
+    const pause = jest.spyOn(services.wormTrading, 'pauseExecutionRun').mockResolvedValue({run: latest} as any);
+    const terminate = jest.spyOn(services.wormTrading, 'terminateExecutionRun').mockResolvedValue({run: latest} as any);
+    await directMount(false);
+    jest.mocked(services.wormTrading.getExecutionRun).mockResolvedValue(latest);
+    await act(async () => {
+        tree.root.findAllByType(Button).find(button => typeof button.props.children === 'string' && (action === 'pause' ? button.props.children.startsWith('Pause') : button.props.children === 'Terminate'))!.props.onClick();
+        if (action === 'terminate') await confirmation.onOk();
+    });
+    expect(services.wormTrading.getExecutionRun).toHaveBeenCalledTimes(2);
+    expect(pause).not.toHaveBeenCalled();
+    if (sends) {
+        expect(terminate).toHaveBeenCalledTimes(1);
+        expect(terminate).toHaveBeenCalledWith(latest.id, {commandId: expect.any(String), expectedRevision: 17});
+    } else expect(terminate).not.toHaveBeenCalled();
+    expect(JSON.stringify(tree.toJSON())).toContain(state === 'COMPLETED' ? 'Completed' : 'Reconciliation Required');
+    expect(notifications.error).not.toHaveBeenCalled();
+    if (allowedActions.includes('TERMINATE')) {
+        const remaining = tree.root.findAllByType(Button).find(button => button.props.children === 'Terminate')!;
+        expect(remaining.props.disabled).toBe(false);
+        expect(remaining.props.loading).toBe(false);
+    }
 });

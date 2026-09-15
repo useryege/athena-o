@@ -884,14 +884,8 @@ export const WormTradingExecutionDetailPage = () => {
 
     const runCommand = async (action: 'start' | 'continue' | 'pause' | 'terminate') => {
         let current = runRef.current;
-        if (
-            !current ||
-            operationRef.current ||
-            !canWrite ||
-            !operationCurrent() ||
-            !current.allowedActions.includes(action === 'continue' ? 'CONTINUE' : (action.toUpperCase() as WormExecutionAllowedAction))
-        )
-            return;
+        const requiredAction = action === 'continue' ? 'CONTINUE' : (action.toUpperCase() as WormExecutionAllowedAction);
+        if (!current || operationRef.current || !canWrite || !operationCurrent() || !current.allowedActions.includes(requiredAction)) return;
         operationRef.current = true;
         setOperation(action);
         try {
@@ -902,6 +896,7 @@ export const WormTradingExecutionDetailPage = () => {
                 current = await fetchRun();
                 if (!operationCurrent()) return;
                 publishRun(current);
+                if (!current.allowedActions.includes(requiredAction)) return;
             }
             const command = {commandId: newCommandID(), expectedRevision: current.revision};
             let result: WormExecutionCommandResult;
