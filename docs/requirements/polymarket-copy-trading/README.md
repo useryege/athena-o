@@ -19,11 +19,13 @@
 | 能力 | 文档 | 状态 | 关联技术设计 |
 | --- | --- | --- | --- |
 | 第一阶段：Activity Alerts（目标账户订阅与活动通知） | [目标账户订阅与活动通知需求](target-trade-monitoring-notifications.md) | `已确认`（业务边界已逐项确认） | [Activity Alerts 后端技术设计](../../design/trading/trader-sync-activity-alerts.md)（已实现）；[UI 设计](../../design/web-ui/trader-sync-activity-alerts.md)（已实现）；[验收记录](../../testing/trader-sync-activity-alerts-acceptance.md) |
-| 交易板块：初版手动交易 | [交易需求](copy-trading.md)：钱包绑定与启用、用户到 Polymarket 入金、通知后在 ATHENA 手动市价买卖、全部持仓与买卖历史、下单记录与来源追溯、结算领取；普通市场与 Neg Risk 单个选项支持执行，Combo 仅展示 | `已确认`（包括校验补充的外部入金方式，尚未实现） | [总体设计提案](../../design/trading/polymarket-manual-trading.md)（设计中，服务与页面组织尚待审阅）；[平台校验](manual-trading-contract-verification.md)已完成官方契约与公开样本核对，账户入金一致性、私有执行和完整覆盖待实测 |
+| 交易板块：初版手动交易 | [交易需求](copy-trading.md)：钱包绑定与启用、用户到 Polymarket 入金、通知后在 ATHENA 手动市价买卖、全部持仓与买卖历史、下单记录与来源追溯、结算领取；普通市场与 Neg Risk 单个选项支持执行，Combo 仅展示 | `已确认`（包括校验补充的外部入金方式，尚未实现） | [总体设计提案](../../design/trading/polymarket-manual-trading.md)设计中，一个独立交易服务的分工、账户接入顺序、[单客户端登录的新登录替换规则](../identity-access/single-client-login.md)、共用 Trader Sync 权限、交易结果仅在页面／历史展示及目标卖出活动的对应持仓入口已确认，会话与交易接收边界及执行契约继续细化；[下单／持仓／历史](../../design/web-ui/trader-sync-manual-trading.md)的页面组织与主要交互已确认，其余详细设计继续推进；[平台校验](manual-trading-contract-verification.md)已完成官方契约与公开样本核对，账户入金一致性、私有执行和完整覆盖待实测 |
 
 后端完整规格见[2026-09-10 后端设计 spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-design.md)，已获用户整体确认。[UI spec](../../superpowers/specs/2026-09-10-trader-sync-activity-alerts-ui-design.md)也已整体确认。[21项前后端联合实现计划](../../superpowers/plans/2026-09-10-trader-sync-activity-alerts.md)的产品源码、页面、运行时组合和相关验收已经落实；最终证据与外部限制以长期验收记录为准。
 
 ## 数据源可行性资料
+
+用户于 2026-09-15 明确后续无需关注 Combo，允许按需更换公开地址。后续校验聚焦普通市场与 Neg Risk 单个选项；已保存的 Combo 样本和差异仅作为参考，不继续专项追查或作为设计推进前提。
 
 [timetowander 公开账户复核](timetowander-public-account-verification-2026-09-14.md)使用用户提供、仅授权只读的朋友资料页，核准公开交易账户并对照持仓、两页成交、固定 24 小时成交和 Combo。补证了默认成交角色筛选遗漏、CLOSED 中仍有小额余量及 Combo 市场字段差异；不验证该账户的托管、控制权或交易执行。
 

@@ -10,13 +10,15 @@ web
 
 ATHENA 有独立的普通会员与管理员应用。会员使用被授予权限的业务模块；管理员管理账户授权及各模块允许的运行概要。两种身份的页面、会话和业务数据边界分别维护。
 
+[单客户端登录要求](docs/requirements/identity-access/single-client-login.md)已确认：同一账号只允许一个客户端有效登录，新客户端登录成功后旧登录立即失效。该规则按现有账号边界应用，不合并独立的会员与管理员账号；当前会话实现尚未落实此约束。
+
 Trader Sync 的第一阶段能力是 Activity Alerts。用户人工选择低频 Polymarket 交易者，及时查看目标正在交易的市场、Outcome、方向和公开事实，再自行判断是否前往市场操作。管理员在本功能中只查看安全概要，不查看用户私有备注、完整活动或逐条消息。
 
 ## Product Purpose
 
 ATHENA 是面向区块链与预测市场的情报分析平台，通过 Web UI、API 和通知服务提供市场与链上数据。本文件为界面工作提供上下文，业务细则仍以相关长期需求和获批 spec 为准。
 
-Trader Sync 第一阶段提供目标确认、独立订阅、实时成交活动和 Telegram 私聊提醒，Activity Alerts 不执行交易、签名或钱包操作。[交易板块初版需求](docs/requirements/polymarket-copy-trading/copy-trading.md)已逐项确认：事前一对一钱包绑定并由用户确认启用交易，用户自行到 Polymarket 为对应交易账户入金；收到通知后，用户在电脑或手机上的 ATHENA 内自行确认金额并提交市价订单。买入本金与手续费分开，手动买入次数由用户决定，初版不自动跟单。展示钱包全部持仓与买卖历史，保留本系统提交后的拒绝、失败、待核对记录和原始目标活动关联；普通市场及 Neg Risk 单个选项支持手动买卖与结算领取，Combo 仅展示持仓和历史。[平台校验](docs/requirements/polymarket-copy-trading/manual-trading-contract-verification.md)已完成官方契约与公开样本核对，账户入金一致性、私有执行与完整数据覆盖待实测。已进入[交易总体设计讨论](docs/design/trading/polymarket-manual-trading.md)，服务划分与页面组织为首轮提案，详细接口及完整交互尚需细化，交易代码未实现。
+Trader Sync 第一阶段提供目标确认、独立订阅、实时成交活动和 Telegram 私聊提醒，Activity Alerts 不执行交易、签名或钱包操作。[交易板块初版需求](docs/requirements/polymarket-copy-trading/copy-trading.md)已逐项确认：事前一对一钱包绑定并由用户确认启用交易，用户自行到 Polymarket 为对应交易账户入金；收到通知后，用户在电脑或手机上的 ATHENA 内自行确认金额并提交市价订单。买入本金与手续费分开，手动买入次数由用户决定，初版不自动跟单。用户已选择自己的买入、卖出与领取结果仅在操作页和历史展示，不额外发送结果通知；目标成交提醒继续发送。目标卖出活动提供当前绑定钱包中同一市场、同一选项的对应持仓入口，可继续由用户核对并手动卖出。展示钱包全部持仓与买卖历史，保留本系统提交后的拒绝、失败、待核对记录和原始目标活动关联；普通市场及 Neg Risk 单个选项支持手动买卖与结算领取，Combo 仅展示持仓和历史。[平台校验](docs/requirements/polymarket-copy-trading/manual-trading-contract-verification.md)已完成官方契约与公开样本核对，账户入金一致性、私有执行与完整数据覆盖待实测。已进入[交易总体设计讨论](docs/design/trading/polymarket-manual-trading.md)，用户已于 2026-09-15 确认页面组织：交易继续位于 Trader Sync，目标详情管理交易钱包，活动进入买入，独立提供持仓与历史，买卖使用统一确认页。[三页的主要交互](docs/design/web-ui/trader-sync-manual-trading.md)也已逐项确认，包括报价核对与同页提交、持仓分组及本系统记录／成交历史两个视图；一个独立交易服务的分工也已确认，由其承接绑定、账户准备、执行和资产同步，与监控、通知及 Wallet 分开协作；账户接入按优先复用已有账户、核准尚无对应账户后再主动启用创建的顺序处理，查询不明或暂不支持时不自动新建，该顺序已确认；同一账号单客户端登录、新登录使旧登录立即失效也已确认；用户已选择交易共用现有 Trader Sync 权限，不增加独立交易开关，钱包操作权限、归属、主动启用及逐笔确认继续独立核验；会话与交易接收边界、详细接口、其余页面状态与正式视觉继续设计，登录新约束与交易代码未实现。
 
 ## Operating Context
 

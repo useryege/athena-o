@@ -2,6 +2,8 @@
 
 > 设计状态：已实现
 
+> 新增目标：用户已确认[单客户端登录](../../requirements/identity-access/single-client-login.md)，新登录生效后旧登录立即失效。现有凭据能力仍按本文记录的源码实现；该新增账号级会话约束尚未实现，独立记录在[单客户端登录目标设计](single-client-login.md)。
+
 ## Scope
 
 Account Credentials owns Athena's stable UUID account identity, immutable public

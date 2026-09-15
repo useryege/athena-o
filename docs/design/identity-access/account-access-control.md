@@ -2,6 +2,10 @@
 
 > 设计状态：已实现
 
+> 新增目标：[单客户端登录](../../requirements/identity-access/single-client-login.md)已确认，新登录生效后旧登录立即失效，由[单客户端登录目标设计](single-client-login.md)承接。该账号级会话约束尚未实现；本文既有模块权限与 realm 边界继续有效。
+
+> 交易目标：用户已确认[手动交易共用现有 Trader Sync 权限](../trading/polymarket-manual-trading.md#shared-trader-sync-access)，钱包操作权限和归属继续独立核验。该交易能力尚未实现；当前模块矩阵仍按下文所列源码运行。
+
 ## 范围
 
 账户访问控制负责 ATHENA 的持久授权模型：外部登录开关、独立 API Key 与 Profit Sharing 权益、完整十一模块矩阵、revision 乐观更新、Pending/Active/Blocked 状态、RPC 鉴权，以及会员与管理员应用的严格边界。所有聚合和权限查找使用稳定账户 UUID。Wallet 操作还叠加凭据能力约束；精确行所有权由 Wallet 服务独立核验。
