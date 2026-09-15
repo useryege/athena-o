@@ -155,7 +155,7 @@ curl -H 'X-Athena-Application-Realm: admin' http://localhost:4000/api/v1/app/boo
 An unknown identity first lands on `/register`. Google registrations display verified
 email; Phantom registrations display a copyable Solana address. After the user chooses an
 available permanent username and account creation succeeds, the new account lands on
-`/account/access`. It can use Profile, Appearance, Access, Help, and Logout, but starts no
+`/account/access`. It can use Profile, Access, Help, and Logout, but starts no
 business requests until the administrator grants a module or Profit Sharing access. API
 Key management appears only when its independent entitlement is enabled.
 

@@ -1,6 +1,6 @@
 # 全站主题重构覆盖清单
 
-> 状态：2026-09-14 已完成当前路由与设计依据的逐项映射，正式 UI 重构尚未开始。用户“好”承接 v22 确认后的覆盖核对及实施计划整理。清单中的“已映射”不表示浏览器或真实业务验收通过。
+> 状态：51 项入口／规则已逐项核对，37 条改版、2 条删除、4 条既有路由规则和 8 条 Trader Sync 共享回归已完成 T9 验证；T1–T9 独立任务审阅通过。最终审阅、环境收尾和通知见[交付状态](../../testing/web-ui-theme-refactor-acceptance.md#交付状态与环境收尾)。设计批准、源码实施、受控状态和真实接入采用独立证据，不相互替代。
 
 本清单将此前逐项确认的视觉设计映射到当前 `ui/`。本轮三批 18 个业务页面的主视觉和六项共用适配已确认；其余既有页面使用对应 v10–v19 记录。没有发现本轮需要重新逐页确认的新增页面。常规状态按已确认规则实施并验证，不增加逐图审批。
 
@@ -115,3 +115,13 @@
 ## 核对结论与后续
 
 本轮路由已全部归类，继承状态有明确实施与验证归属；没有以“未逐图确认”新增审批。技术实现按[方案](../../superpowers/specs/2026-09-14-web-ui-theme-refactor-design.md)与[计划](../../superpowers/plans/2026-09-14-web-ui-theme-refactor.md)推进，实际通过情况由实施验收报告记录。当前没有执行正式 UI、后端、数据库变更或浏览器验收。
+
+## 实际验收归属
+
+[机器清单](theme-refactor-coverage.json)每条 `routes[].evidence` 指向 T1–T9 稳定报告以及最终 JSON 的精确 pointer／case ID；改版路线指向[逐页面证据](../../../.tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json)的 38 个主场景（37 条入口加共享注册 admin 变体）。每场景包含批准图、四条件正式 React、人工看图和版本明确的原生缩放／axe 映射。
+
+2 条 Appearance、4 条默认／未知和 8 条 Trader Sync 专页分别指向[状态证据](../../../.tmp/ui-theme-refactor/task-9/state-coverage-20167913.json)的 `appearanceAndFallbacks`、`traderSyncEightRoutes`；S1–S14 均由 `state_evidence` 指向各自原始测试归属。规则库存检查只核路由存在性，不替代浏览器证据。
+
+完整 acceptance 1018 的版本为 `e7ec272b`；`82f25ad8` 提供新主图／语义差量 38、无过滤 a11y 176、native 38、真实呈现 56、认证边界 4 与实际字体；`20167913` 仅对最终 Close 与选中图形修正复验 acceptance 14、a11y 24、native 弹窗 1、smoke 2。没有把整套基线改记成 201 重跑。
+
+真实呈现 56 是 24 次业务 GET 成功、22 次未启用来源 503 和 10 次没有业务 GET，另有 10 个来源页签及 2 项 Help 资源。Worm 编辑／预览／执行详情、会员／管理员轮次详情、管理员通知详情共六项缺少真实成功记录；其成功状态由受控正式 React 验证。外部 OAuth／provider／签名和实体手机软键盘未验证，详见[总验收记录](../../testing/web-ui-theme-refactor-acceptance.md)。

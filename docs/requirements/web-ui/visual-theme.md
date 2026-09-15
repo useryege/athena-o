@@ -1,12 +1,12 @@
 # 全站 UI 视觉主题重构需求
 
-> 需求状态：本轮展示主视觉已确认，覆盖归属已核对，技术方案与实施计划已整理。Nansen 单一深色方向、v1–v5 共用视觉基准及 v6–v22 各确认记录所展示的页面视觉已确认。本轮其余 18 个业务页面按[4／8／6 三批安排](remaining-pages-plan.md)完成，[v20 四页](member-foundations-batch-proposal.md)、[v21 八页](market-intelligence-batch-proposal.md)、[v22 六个 Worm 页面及六项共用适配](worm-and-common-batch-proposal.md)均已整批确认。Trader Sync 专属页面暂缓重排，正式主题重构尚未实现。
+> 当前实施：单一深色正式源码已落实，T1–T9 完成并通过独立任务审阅；实现版本 `20167913`。37 条改版入口、2 条 Appearance 删除、4 条默认／兜底和 8 条 Trader Sync 共享影响回归已完成相应验证。最终审阅、环境收尾与通知状态统一见[实施与验收记录](../../testing/web-ui-theme-refactor-acceptance.md#交付状态与环境收尾)。
 >
-> 当前交付：v1–v22 各确认记录内的共用基准和页面提案，以及[当前入口与状态覆盖](theme-refactor-coverage.md)、[技术方案](../../superpowers/specs/2026-09-14-web-ui-theme-refactor-design.md)和[实施计划](../../superpowers/plans/2026-09-14-web-ui-theme-refactor.md)。共享主题对暂缓页面的影响纳入回归；本轮没有完成正式 UI 或真实业务验收。
+> 设计依据：Nansen 方向、v1–v22 已批准范围及[一致性修订契约](theme-consistency-contract.md)／[v23](previews/theme-consistency-v23/README.md)继续有效。本文各版本章节记录批准时点的材料与限制，不是当前实现进度。625 份批准资产（包括预览目录两份 README）保留原字节，静态原型通过不替代正式 React 或真实接入证据。
 >
-> 总体审阅修订：用户已要求先修复一致性问题，新增[共用修订契约](theme-consistency-contract.md)和 [v23 修订稿与验证](previews/theme-consistency-v23/README.md)。执行时将最终颜色、字号放大、选中／只读、数字列及图标修正应用于共享层；原 v1–v22 及 Token v1 的确认原件保持。全站与 Token 两份计划已经明确共用主题的前置依赖。
+> 范围与实现：[覆盖清单](theme-refactor-coverage.md)、[技术方案](../../superpowers/specs/2026-09-14-web-ui-theme-refactor-design.md)、[实施计划](../../superpowers/plans/2026-09-14-web-ui-theme-refactor.md)。Trader Sync 专属页面暂缓重排，Service Status 的 Trader Sync 页签已改版。共享 T1／T2 已完成；Token／Nansen 接入与导航仍归独立计划，未在本次开启。
 >
-> 关联现状：[共享应用壳](../../design/web-ui/application-shell.md)、[会员应用壳](../../design/web-ui/member-application-shell.md)、[管理员应用壳](../../design/web-ui/administrator-application-shell.md)、[账户资料与偏好](../../design/identity-access/account-profile-and-preferences.md)。这些文档中的已实现行为不等于本次目标已经落地。
+> 当前契约：[共享应用壳](../../design/web-ui/application-shell.md)、[会员应用壳](../../design/web-ui/member-application-shell.md)、[管理员应用壳](../../design/web-ui/administrator-application-shell.md)、[账户资料与本地偏好](../../design/identity-access/account-profile-and-preferences.md)。验收有准确版本与外部边界，不宣称全部真实交易或身份供应商均通过。
 
 ## 背景与问题
 
@@ -20,7 +20,7 @@ ATHENA 当前已有实际业务界面、主题配置和共享组件。本次从�
 
 **本轮主旨是重构 ATHENA 当前 `ui/` 下的全站前端界面。** 用户再次明确：所有 UI 设计均围绕现有前端改版展开，覆盖会员端、管理员端及其共享视觉系统，以 Nansen 为主要参考，统一主题、配色、字体、布局、组件和交互状态。
 
-钱包样板用于具体展示和确认可复用规则；页面提案已经覆盖本轮现有页面，实施与验收安排见 coverage／spec／plan。此目标说明不改变现有业务与权限语义，也不表示已开始正式 UI 改造或要求更换技术栈。当前处于总体审阅修订与实施准备阶段；Trader Sync 专属重排继续暂缓。
+钱包样板用于具体展示和确认可复用规则；页面提案已经覆盖本轮现有页面，实施与验收安排见 coverage／spec／plan。此目标说明不改变现有业务与权限语义，不要求更换技术栈。正式实现及相应验收已完成，最终交付收尾状态见总报告；Trader Sync 专属重排继续暂缓。
 
 > ATHENA 采用单一深色主题，以近黑背景、青绿色强调色、清晰的文字与数据层级、克制的边框和动效，形成统一的专业链上分析平台风格。
 
@@ -32,7 +32,7 @@ ATHENA 当前已有实际业务界面、主题配置和共享组件。本次从�
 
 - Nansen 是全站主题设计与视觉验收的主要参考；应逐项对照配色、字体层次、面板、空间安排和交互细节，而不是仅把界面改成深色后泛称为科技风。
 - 页面与组件设计应结合本项目的业务内容，提交能够对应参考特征的视觉效果，按用户逐项确认结果落实。
-- 现有橙色主题及双主题实现只说明当前代码状态，不是继续沿用旧风格的设计约束。
+- 原有橙色主题及双主题描述的是重构前代码状态，不是继续沿用旧风格的设计约束。
 - 以本轮记录的参考证据和后续用户确认的视觉样例为依据。Nansen 官网以后改版，不自动改变 ATHENA 已确认的设计。
 - 已确认的 v1 基础配色与主次按钮层级、v2 字体与数字排版、v3 导航／页头／页面密度、v4 第一组通用组件与状态见下节；其余页面、组件和动效仍按后续逐项确认范围落实。
 
@@ -44,7 +44,7 @@ ATHENA 当前已有实际业务界面、主题配置和共享组件。本次从�
 
 | 维度 | 已确认方向 | 当前落实依据 |
 | --- | --- | --- |
-| 主题模式 | 全站统一为单一深色主题，取消明暗切换 | 技术方案与 T1 已明确偏好、接口和持久化清理；尚未实施 |
+| 主题模式 | 全站统一为单一深色主题，取消明暗切换 | T1 已完成入口、偏好、接口和持久化清理；profile／access 契约保留 |
 | 页面背景 | 沿用 v1 近黑背景、深色面板和分隔层次 | v1–v22 页面依据与修订契约，浮层消费同一 Provider |
 | 强调色 | 青绿色 `#00FFA7`；沿用主次按钮与 v4 反馈语义 | 最终绘制、hover／active 和业务语义按修订契约验证 |
 | 文字与数据 | Inter、JetBrains Mono、v2 字号与数字对齐 | 保留各业务精度；实际字号增幅、局部重排和跨平台中文回退纳入验收 |
@@ -111,7 +111,7 @@ ATHENA 当前已有实际业务界面、主题配置和共享组件。本次从�
 
 完整钱包、备注和公开名称、结算时间继续直接显示；当前 Telegram 绑定、活动投递结果、监控中断和 finality 异常保持各自层级。沿用 Trader Sync 的 UTC+8 日期、50／100 条与 Previous／Next 规则。具体参数、保留字段与确认边界见[首页视觉基准](trader-sync-home-proposal.md)和 [v6 确认记录](previews/theme-trader-sync-v6-approval.json)。
 
-当前版与新主题采用同一批演示数据，截图是本页改版依据。其他展开态截图、全部网络和权限状态、完整交互及其他页面不因本次认可整体视为已确认。原始 HTML、截图与审阅记录保持原样，正式 `ui/` 尚未改版。
+当前版与新主题采用同一批演示数据，截图是本页改版依据。其他展开态截图、全部网络和权限状态、完整交互及其他页面不因本次认可整体视为已确认。原始 HTML、截图与审阅记录保持原样，批准时正式 `ui/` 尚未改版。
 
 ### v7 现有添加交易员页（展示视觉已确认）
 
@@ -119,7 +119,7 @@ ATHENA 当前已有实际业务界面、主题配置和共享组件。本次从�
 
 已展示的默认 1Y 金额与曲线、六周期控件、备注、确认有效期、配额和已连接 Telegram 的视觉层级作为本页基准。具体参数与边界见[添加页视觉基准](trader-sync-add-proposal.md)和 [v7 确认记录](previews/theme-trader-add-v7-approval.json)。
 
-初始输入、过期、缺失、精确曲线值等辅助截图未逐图确认；完整交互、业务/API 契约及其他页面不因本次反馈整体视为已确认。原始 HTML、截图、演示数据、检查和审阅记录保持原样，正式 `ui/` 尚未改版。
+初始输入、过期、缺失、精确曲线值等辅助截图未逐图确认；完整交互、业务/API 契约及其他页面不因本次反馈整体视为已确认。原始 HTML、截图、演示数据、检查和审阅记录保持原样，批准时正式 `ui/` 尚未改版。
 
 ### v8 现有订阅管理列表（展示视觉已确认）
 
@@ -127,7 +127,7 @@ ATHENA 当前已有实际业务界面、主题配置和共享组件。本次从�
 
 已展示的 Current / Cancelled 控件、3 / 10 当前配额、资料更新时间、完整钱包、监控两项时间、六类旧通知计数及队列保留说明的视觉层级作为本页基准；正常监控、暂停与中断，以及通知失败／未知各自保持清楚的状态表达。具体参数及边界见[订阅列表视觉基准](trader-sync-subscriptions-proposal.md)与 [v8 确认记录](previews/theme-trader-subscriptions-v8-approval.json)。
 
-Cancelled 列表、空态、加载及失败等辅助截图未逐图确认；视图切换、复制、分页、权限、网络和写操作的完整流程不因截图反馈整体视为已确认。原始 HTML、截图、数据、检查与审阅记录保持原样，正式 `ui/` 尚未改版。
+Cancelled 列表、空态、加载及失败等辅助截图未逐图确认；视图切换、复制、分页、权限、网络和写操作的完整流程不因截图反馈整体视为已确认。原始 HTML、截图、数据、检查与审阅记录保持原样，批准时正式 `ui/` 尚未改版。
 
 ### v9 现有订阅详情（展示视觉及默认摘要已确认）
 
@@ -143,13 +143,13 @@ Cancelled 列表、空态、加载及失败等辅助截图未逐图确认；视�
 
 原型覆盖连接、设置中、重连、其他标签页、到期、失败、不可达、Bot 不可用、加载／错误和解绑确认。审阅后 Expired／Failed 恢复区只有一个主要 Create new link；Failed 徽标使用错误色，到期与需要注意使用琥珀色。Bot 不可用时禁用 Configure／Reconnect，已有绑定仍允许 Disconnect；不可达时保留绑定。完整截图与检查见[样板索引](previews/README.md)。
 
-v10 已确认所展示的已连接桌面／手机及桌面重新连接视觉，范围见 [确认记录](previews/theme-notifications-v10-approval.json)。其余辅助状态未逐图确认。原型只使用固定虚构 fixture 和 `example.invalid` 二维码，连接、重连、取消设置、刷新、打开 Telegram 和确认解绑等业务动作仅显示本地 notice；复制、导航折叠、样例状态切换与弹窗开关保留本地交互；它没有验证真实 API、竞态、3 秒轮询、倒计时、`sessionStorage`、账户切换、Bot 可用性、条件式 Trader Sync 返回或 owner 草稿。正式 `ui/` 未修改，现有错误来源和状态处理在后续实现中必须保留。
+v10 已确认所展示的已连接桌面／手机及桌面重新连接视觉，范围见 [确认记录](previews/theme-notifications-v10-approval.json)。其余辅助状态未逐图确认。原型只使用固定虚构 fixture 和 `example.invalid` 二维码，连接、重连、取消设置、刷新、打开 Telegram 和确认解绑等业务动作仅显示本地 notice；复制、导航折叠、样例状态切换与弹窗开关保留本地交互；它没有验证真实 API、竞态、3 秒轮询、倒计时、`sessionStorage`、账户切换、Bot 可用性、条件式 Trader Sync 返回或 owner 草稿。批准时正式 `ui/` 未修改，现有错误来源和状态处理在后续实现中必须保留。
 
 ### v11 Account Center / Profile 页面（所展示视觉已确认）
 
 [Account Center / Profile 视觉提案](account-profile-proposal.md)延续 v1–v10 的单一深色、Inter、表单反馈和确认弹窗规则，把当前重复的保存身份、首字母头像和编辑区域合并为一个 Profile 面板。桌面保留账户局部导航，手机使用 Account section 选择器；Username 保持只读，Display name 独立编辑，Standard 只作展示，名称状态和 Reset／Save 紧随表单。Appearance 从目标单一深色界面移除，非主题浏览器偏好继续保留；Security 仍只对启用 API Key 的普通会员显示。
 
-当前 React 与 v11 使用同一无头像虚构 fixture，以真实首字母 `A` 回退对照。12 张最终原型图覆盖默认、编辑、无效输入、冲突、保存／上传错误、离开确认、320px 和 200% 文字；2 张当前 React 对比图只观察到 bootstrap GET。四个视口检查通过，独立审阅对全部 14 张图片处置为 `ship`，未提出需要修正的视觉问题。该处置只说明本地原型达到审阅交付标准。用户另对桌面资料页、手机编辑状态及手机离开确认反馈“舒服”，展示范围见 [v11 确认记录](previews/theme-account-profile-v11-approval.json)；其他辅助状态未逐图确认，正式 `ui/` 未修改。真实资料与头像写入、CAS、已有头像 Remove、身份切换、授权、路由／`beforeunload` 和管理员视觉仍需后续实现与验收，详见[审阅记录](previews/theme-account-profile-v11-review.json)。
+当前 React 与 v11 使用同一无头像虚构 fixture，以真实首字母 `A` 回退对照。12 张最终原型图覆盖默认、编辑、无效输入、冲突、保存／上传错误、离开确认、320px 和 200% 文字；2 张当前 React 对比图只观察到 bootstrap GET。四个视口检查通过，独立审阅对全部 14 张图片处置为 `ship`，未提出需要修正的视觉问题。该处置只说明本地原型达到审阅交付标准。用户另对桌面资料页、手机编辑状态及手机离开确认反馈“舒服”，展示范围见 [v11 确认记录](previews/theme-account-profile-v11-approval.json)；其他辅助状态未逐图确认，批准时正式 `ui/` 未修改。真实资料与头像写入、CAS、已有头像 Remove、身份切换、授权、路由／`beforeunload` 和管理员视觉仍需后续实现与验收，详见[审阅记录](previews/theme-account-profile-v11-review.json)。
 
 ### v12 Account Center / Security 页面（所展示视觉已确认）
 
@@ -165,7 +165,7 @@ v10 已确认所展示的已连接桌面／手机及桌面重新连接视觉，�
 
 Pending 清楚区分 Google／Phantom 已验证身份与尚未开通的业务访问，并保留刷新与退出。判定仍严格遵循现有模型：禁用登录为 Blocked；管理员、Profit Sharing 或任意非空模块 grant 为 Active；API Key 单独启用不构成 Active。本次 Pending 演示数据没有启用 API Key，因此截图不显示 Security，但现有规则仍允许为启用 API Key 的普通会员显示 Security。
 
-9 张最终原型图与 3 张当前 React 对照图均有 Playwright 来源记录。四个视口检查通过，独立审阅覆盖全部 12 张图、源码契约与浏览器证据并处置为 `ship`，未提出需要修正的视觉问题。该结论只覆盖视觉提案。用户另对桌面／手机默认页及手机 Google 待授权页反馈“舒服”，范围见 [v13 确认记录](previews/theme-account-access-v13-approval.json)；其他辅助状态未逐图确认，正式 `ui/` 未修改。原型只执行本地状态切换、展开、复制、忙碌、错误恢复和退出提示，不执行真实轮询、授权检查、授权变更或退出；正式实现仍须保留 15 秒／焦点刷新、真实错误、身份／realm 防护、账户切换、权限竞态与退出行为，详见[审阅记录](previews/theme-account-access-v13-review.json)。
+9 张最终原型图与 3 张当前 React 对照图均有 Playwright 来源记录。四个视口检查通过，独立审阅覆盖全部 12 张图、源码契约与浏览器证据并处置为 `ship`，未提出需要修正的视觉问题。该结论只覆盖视觉提案。用户另对桌面／手机默认页及手机 Google 待授权页反馈“舒服”，范围见 [v13 确认记录](previews/theme-account-access-v13-approval.json)；其他辅助状态未逐图确认，批准时正式 `ui/` 未修改。原型只执行本地状态切换、展开、复制、忙碌、错误恢复和退出提示，不执行真实轮询、授权检查、授权变更或退出；正式实现仍须保留 15 秒／焦点刷新、真实错误、身份／realm 防护、账户切换、权限竞态与退出行为，详见[审阅记录](previews/theme-account-access-v13-review.json)。
 
 ### v14 会员登录与注册页面（所展示视觉已确认）
 
@@ -200,23 +200,18 @@ Google 与 Phantom 继续作为独立身份，Phantom 只使用浏览器注入�
 
 需要单独核对的边界包括：系统偏好为浅色、旧浏览器缓存含主题设置、账户仍保存旧偏好、登录前后切换、会员与管理员入口、部署子路径、长数据和较窄视口。具体技术清理方式留给技术设计，不为保留旧明暗模式新增兼容路径。
 
-## 当前实现与目标差距
+## 当前正式实现
 
-以下记录当前源码事实，便于后续实现者定位影响；本次没有修改这些实现。
+| 当前契约 | 实现与验证依据 |
+| --- | --- |
+| 两份 HTML 首屏固定深色；入口级 Provider 覆盖 bootstrap、登录、注册、错误及业务页 | [tokens.css](../../../ui/src/app/styles/tokens.css)、[AthenaThemeProvider](../../../ui/src/app/shared/athena-theme.tsx)、[会员 HTML](../../../ui/src/app/index.html)、[管理员 HTML](../../../ui/src/app/admin/index.html) |
+| 单一颜色角色、Inter 正文／数字、JetBrains Mono 地址／哈希与本地 OFL 字体 | [最终色角色](../../../ui/src/app/shared/athena-color-roles.ts)、[字体](../../../ui/src/assets/fonts.css)；实际字体、原生 200% 缩放与根字号 200% 分开取证 |
+| 两端 Appearance、theme 模型、系统监听、账户主题 API／schema／生成投影全部删除 | [账户资料与本地偏好](../../design/identity-access/account-profile-and-preferences.md)；旧 URL 落既有 404，无主题兼容重定向 |
+| realm 独立本地偏好保留页大小、排序、侧栏、banner 和返回位置 | [ViewPreferencesService](../../../ui/src/app/shared/services/view-preferences-service.ts) 读写仅接受当前字段，不再读写或跨设备同步 theme |
+| 身份／自助、运维、钱包／Solana／治理、市场／赛事／Managed OO、Worm 按批准页面重排 | [51 项入口与 S1–S14 状态](theme-refactor-coverage.md)及[正式验收](../../testing/web-ui-theme-refactor-acceptance.md) |
+| 8 条 Trader Sync 专页保留业务布局，共享主题／字体／壳已生效并回归；Status 页签已重排 | [Trader Sync UI 设计](../../design/web-ui/trader-sync-activity-alerts.md)仍拥有业务契约；逐路由证据见覆盖清单 |
 
-| 当前事实 | 后续需要处理的范围 | 依据 |
-| --- | --- | --- |
-| 使用浅色与深色两套 CSS 变量，橙色系作为当前主色 | 将共享变量和局部规则统一到确认后的视觉系统 | [shared.css](../../../ui/src/app/styles/shared.css) |
-| Ant Design 配置按明暗选择颜色，当前正文 14px、字体为 Heebo／系统字体 | 对齐组件颜色、字体、尺寸及交互状态 | [bootstrap.tsx](../../../ui/src/app/session/bootstrap.tsx) |
-| 两套 HTML 在 React 启动前读取各自的浏览器偏好与系统颜色，确定首屏主题 | 同步处理页面初始化，避免只改 React 后仍出现浅色首屏 | [会员 HTML](../../../ui/src/app/index.html)、[管理员 HTML](../../../ui/src/app/admin/index.html) |
-| 浏览器有主题偏好、系统颜色识别和本地保存逻辑 | 取消主题选择及不再需要的系统跟随、同步行为 | [view-preferences-service.ts](../../../ui/src/app/shared/services/view-preferences-service.ts)、[theme.ts](../../../ui/src/app/shared/theme.ts) |
-| 账户中心暴露外观设置；账户偏好持久化主题并通过接口读写 | 核对页面入口、API、模型和存储的清理范围，保持其他账户资料功能正常 | [account-center.tsx](../../../ui/src/app/shared/pages/account-center.tsx)、[账户资料与偏好](../../design/identity-access/account-profile-and-preferences.md) |
-| 会员 Security 已实现 API Key 创建、列表、撤销及 Connect AI 一次性说明，当前视觉仍属于旧主题 | 按 v12 已确认展示范围改版，同时保留账户归属、完整权限、一次性 secret、真实错误与异步防陈旧语义 | [account-security.tsx](../../../ui/src/app/member/pages/account-security.tsx)、[security-service.ts](../../../ui/src/app/member/security-service.ts)、[ai-connection.ts](../../../ui/src/app/shared/ai-connection.ts)、[账户凭据](../../design/identity-access/account-credentials.md) |
-| Trader Sync 已实现橙色、Heebo 和深浅主题，并有自身布局及验收记录 | 主题与字体按本文确认基准更新，参考 v3 壳层布局；该业务页面的适配和动效继续确认，已有业务流程继续有效 | [Trader Sync UI 设计](../../design/web-ui/trader-sync-activity-alerts.md) |
-
-当前账户偏好功能及其文档仍是现状事实。浏览器偏好还保存侧栏、页大小和排序等非主题设置，后续只清理主题相关内容，保留仍有效的其他偏好。会员和管理员分别使用自己的本地偏好；账户主题通过服务端保存、在后续读取时应用，不据此宣称存在实时跨设备主题广播。
-
-后续完成实现时，应同步替换相关主题设计、生成契约、测试和使用说明；不能仅隐藏开关而留下仍能改变界面外观的旧路径。具体方案在完成视觉设计后纳入任务 spec 与执行计划。
+原始值精度、profile／access CAS、realm 与身份代际、撤权清理、陈旧结果、单飞和破坏性操作门槛保持当前业务契约。真实本地读取与受控成功状态分开记录；未启用服务的 503 不算业务读取成功，缺少真实记录的详情不以 fixture 冒充真实成功。
 
 ## 参考证据与适用边界
 
@@ -250,15 +245,15 @@ Google 与 Phantom 继续作为独立身份，Phantom 只使用浏览器注入�
 | 图表效果 | v7 默认 1Y P/L 展示视觉已确认 | [添加页视觉基准](trader-sync-add-proposal.md)中的默认金额、曲线与六周期控件；精确值展开、缺失及其他周期结果未逐图确认，其他业务图表仍待讨论 |
 | 动效与装饰素材 | 本轮范围已写入方案 | 沿已确认页面，补充反馈与 reduced-motion；额外展示素材属后续独立需求 |
 | 覆盖范围与交付验收 | 已整理，待实施验证 | [51 项入口及状态矩阵](theme-refactor-coverage.md)、技术方案、T1–T10 命令与完成标准 |
-| 总体审阅一致性修订 | 已授权修复 | [修订契约](theme-consistency-contract.md)与 [v23 证据](previews/theme-consistency-v23/README.md)，正式源码仍未改版 |
+| 总体审阅一致性修订 | 已授权修复 | [修订契约](theme-consistency-contract.md)与 [v23 证据](previews/theme-consistency-v23/README.md)，批准时正式源码仍未改版 |
 
 v1 配色、v2 字体与数字排版、[v3 导航／页头／页面密度](layout-proposal.md)、[v4 第一组通用组件与状态](components-proposal.md)的展示视觉均已确认，样板、截图、浏览器检查与确认记录已保存。[v5 下拉菜单、表格筛选与分页](list-controls-proposal.md)所展示的视觉也已获得认可。[v6 Trader Sync 首页](trader-sync-home-proposal.md)作为第一张现有业务页面，已通过同演示数据的前后对照确认整页效果及辅助信息默认折叠；后续继续其他页面设计，正式 UI 仍未改版。
 
-[v7 添加交易员页](trader-sync-add-proposal.md)的桌面／手机完整截图也已获认可，确认布局、密度与操作层级。当前 React 与新主题使用相同演示数据；输入态、P/L 精确值与缺失、确认过期样例继续作为辅助证据保存，未逐图确认。当前确认范围以 [v7 确认记录](previews/theme-trader-add-v7-approval.json)为准，正式前端尚未改版。
+[v7 添加交易员页](trader-sync-add-proposal.md)的桌面／手机完整截图也已获认可，确认布局、密度与操作层级。当前 React 与新主题使用相同演示数据；输入态、P/L 精确值与缺失、确认过期样例继续作为辅助证据保存，未逐图确认。当前确认范围以 [v7 确认记录](previews/theme-trader-add-v7-approval.json)为准，批准时正式前端尚未改版。
 
-[v8 订阅管理列表](trader-sync-subscriptions-proposal.md)的桌面／手机 Current 完整截图已获认可，确认信息密度、状态区分和手机分组。前后对照使用相同演示数据；Cancelled 列表及其他辅助状态未逐图确认，当前范围见 [v8 确认记录](previews/theme-trader-subscriptions-v8-approval.json)。后续继续其他页面设计，正式前端尚未改版。
+[v8 订阅管理列表](trader-sync-subscriptions-proposal.md)的桌面／手机 Current 完整截图已获认可，确认信息密度、状态区分和手机分组。前后对照使用相同演示数据；Cancelled 列表及其他辅助状态未逐图确认，当前范围见 [v8 确认记录](previews/theme-trader-subscriptions-v8-approval.json)。后续继续其他页面设计，批准时正式前端尚未改版。
 
-[v9 订阅详情](trader-sync-subscription-detail-proposal.md)所展示的桌面／手机布局、操作层级、手机取消弹窗和历史默认摘要方式已确认，范围见 [v9 确认记录](previews/theme-trader-detail-v9-approval.json)。[v10 Notifications](notifications-proposal.md)的已连接桌面／手机及桌面重新连接视觉已确认，具体范围见 [v10 确认记录](previews/theme-notifications-v10-approval.json)；未直接展示的辅助状态未逐图确认，正式前端尚未改版。
+[v9 订阅详情](trader-sync-subscription-detail-proposal.md)所展示的桌面／手机布局、操作层级、手机取消弹窗和历史默认摘要方式已确认，范围见 [v9 确认记录](previews/theme-trader-detail-v9-approval.json)。[v10 Notifications](notifications-proposal.md)的已连接桌面／手机及桌面重新连接视觉已确认，具体范围见 [v10 确认记录](previews/theme-notifications-v10-approval.json)；未直接展示的辅助状态未逐图确认，批准时正式前端尚未改版。
 
 [v11 Account Center / Profile](account-profile-proposal.md)所展示的桌面资料页、手机编辑状态与手机离开确认视觉已获用户认可，范围见 [v11 确认记录](previews/theme-account-profile-v11-approval.json)。其他辅助状态和管理员页面未逐图确认；原始[审阅记录](previews/theme-account-profile-v11-review.json)保留当时的待确认状态，当前确认以本需求和确认记录为准，正式前端仍未改版。
 
@@ -310,17 +305,17 @@ v16 已形成 11 张提案图、2 张当前 React 对照图和本地证据，独
 
 | 项目 | 状态 | 确认范围或下一步 |
 | --- | --- | --- |
-| 管理员 Service Status | v16 所展示视觉已确认 | 审阅 [Services 桌面](previews/theme-service-status-v16-services-desktop.png)、[Notifications 桌面](previews/theme-service-status-v16-notification-desktop.png)、[Services 手机](previews/theme-service-status-v16-services-mobile.png)和 [Trader Sync 手机](previews/theme-service-status-v16-trader-mobile.png)；按 [v16 确认记录](previews/theme-service-status-v16-approval.json)所展示范围执行，其他辅助状态继续确认，正式 UI 尚未改版 |
+| 管理员 Service Status | v16 所展示视觉已确认 | 审阅 [Services 桌面](previews/theme-service-status-v16-services-desktop.png)、[Notifications 桌面](previews/theme-service-status-v16-notification-desktop.png)、[Services 手机](previews/theme-service-status-v16-services-mobile.png)和 [Trader Sync 手机](previews/theme-service-status-v16-trader-mobile.png)；按 [v16 确认记录](previews/theme-service-status-v16-approval.json)所展示范围执行，其他辅助状态继续确认，批准时正式 UI 尚未改版 |
 
 ## v17 管理员 Etherscan Gateways（所展示视觉已确认）
 
 [管理员 Etherscan Gateways 视觉提案](etherscan-gateways-proposal.md)沿用已确认的 Nansen 单一深色主题、Inter／JetBrains Mono、管理员应用壳和语义状态色，将网关运行状态与实际请求测试分为 `Gateways`／`Live Probe` 两个独立来源页签。网关地址、运行状态、延迟、检查时间和错误直接可读，Base URL 按需展开；Probe 保留两个既有参数、服务端整体结果、gateway／API key 汇总、七种失败分类、时序和错误样本。手机使用纵向记录，320px 进一步两列重排。
 
-v17 已形成 10 张提案图、2 张当前 React 对照图和本地验证证据。四种尺寸下 202 项样板断言通过；当前 React 使用同一合成 GET fixture，1 项 Playwright 通过且没有 POST。独立审阅处置为 `ship`，只表示静态材料可交用户判断。用户另对四张主图反馈“舒服”，所展示 Gateways 与 Live Probe 的桌面／手机视觉已确认，具体范围见 [v17 确认记录](previews/theme-etherscan-gateways-v17-approval.json)；其他辅助状态未逐图确认，原始审阅保留提交时的待审阅状态。正式 `ui/` 尚未改版，真实探针、权限、轮询、竞态、额度与 full-stack smoke 未由本轮验证。
+v17 已形成 10 张提案图、2 张当前 React 对照图和本地验证证据。四种尺寸下 202 项样板断言通过；当前 React 使用同一合成 GET fixture，1 项 Playwright 通过且没有 POST。独立审阅处置为 `ship`，只表示静态材料可交用户判断。用户另对四张主图反馈“舒服”，所展示 Gateways 与 Live Probe 的桌面／手机视觉已确认，具体范围见 [v17 确认记录](previews/theme-etherscan-gateways-v17-approval.json)；其他辅助状态未逐图确认，原始审阅保留提交时的待审阅状态。批准时正式 `ui/` 尚未改版，真实探针、权限、轮询、竞态、额度与 full-stack smoke 未由本轮验证。
 
 | 项目 | 状态 | 确认范围或下一步 |
 | --- | --- | --- |
-| 管理员 Etherscan Gateways | v17 所展示视觉已确认 | 审阅 [Gateways 桌面](previews/theme-etherscan-gateways-v17-gateways-desktop.png)、[Live Probe 桌面](previews/theme-etherscan-gateways-v17-probe-desktop.png)、[Gateways 手机](previews/theme-etherscan-gateways-v17-gateways-mobile.png)和 [Live Probe 手机](previews/theme-etherscan-gateways-v17-probe-mobile.png)；按 [v17 确认记录](previews/theme-etherscan-gateways-v17-approval.json)所展示范围执行，其他辅助状态继续确认，正式 UI 尚未改版 |
+| 管理员 Etherscan Gateways | v17 所展示视觉已确认 | 审阅 [Gateways 桌面](previews/theme-etherscan-gateways-v17-gateways-desktop.png)、[Live Probe 桌面](previews/theme-etherscan-gateways-v17-probe-desktop.png)、[Gateways 手机](previews/theme-etherscan-gateways-v17-gateways-mobile.png)和 [Live Probe 手机](previews/theme-etherscan-gateways-v17-probe-mobile.png)；按 [v17 确认记录](previews/theme-etherscan-gateways-v17-approval.json)所展示范围执行，其他辅助状态继续确认，批准时正式 UI 尚未改版 |
 
 
 ## 确认方式：按设计差异分组
@@ -339,11 +334,11 @@ v17 已形成 10 张提案图、2 张当前 React 对照图和本地验证证据
 
 [系统通知列表与详情视觉提案](system-notifications-proposal.md)沿用已确认的 Nansen 单一深色主题、Inter／JetBrains Mono、语义反馈色与管理员应用壳。列表将七个现有字段组织为五列，手机改为分隔记录；详情按消息、投递结果、五个独立时间和默认收起的标识排列，完整保留 17 个投影字段。Unknown 明确表示 Telegram 可能已经收到且不会自动重发；Test Notification 的 queued 只表示进入 pending，不表示送达。
 
-v18 已形成 7 张提案图、4 张当前 React 对照图和本地证据。四种尺寸下 194 项样板断言通过；当前 React 只使用合成 GET，1 项 Playwright 通过且没有 POST。独立审阅处置为 `ship`，只表示静态材料可交用户判断。v18 所展示列表／详情与桌面／手机视觉已确认；正式 `ui/` 尚未改版，真实权限、Telegram 投递、异步行为和 full-stack smoke 未在本轮验证；常规辅助状态沿用既有规则完成覆盖与验证，不增加逐图审批。
+v18 已形成 7 张提案图、4 张当前 React 对照图和本地证据。四种尺寸下 194 项样板断言通过；当前 React 只使用合成 GET，1 项 Playwright 通过且没有 POST。独立审阅处置为 `ship`，只表示静态材料可交用户判断。v18 所展示列表／详情与桌面／手机视觉已确认；批准时正式 `ui/` 尚未改版，真实权限、Telegram 投递、异步行为和 full-stack smoke 未在本轮验证；常规辅助状态沿用既有规则完成覆盖与验证，不增加逐图审批。
 
 | 项目 | 状态 | 确认范围或下一步 |
 | --- | --- | --- |
-| 管理员系统通知列表与详情 | v18 所展示视觉已确认 | 已确认 [列表桌面](previews/theme-system-notifications-v18-list-desktop.png)、[详情桌面](previews/theme-system-notifications-v18-detail-desktop.png)、[列表手机](previews/theme-system-notifications-v18-list-mobile.png)和 [详情手机](previews/theme-system-notifications-v18-detail-mobile.png)；沿用已确认的筛选、正文、真实投递结果与时间层级，常规辅助状态由实现者验证，正式 UI 尚未改版 |
+| 管理员系统通知列表与详情 | v18 所展示视觉已确认 | 已确认 [列表桌面](previews/theme-system-notifications-v18-list-desktop.png)、[详情桌面](previews/theme-system-notifications-v18-detail-desktop.png)、[列表手机](previews/theme-system-notifications-v18-list-mobile.png)和 [详情手机](previews/theme-system-notifications-v18-detail-mobile.png)；沿用已确认的筛选、正文、真实投递结果与时间层级，常规辅助状态由实现者验证，批准时正式 UI 尚未改版 |
 
 用户已对四张主图反馈“舒服”，具体范围见 [v18 确认记录](previews/theme-system-notifications-v18-approval.json)。原始审阅与资产保持不变；本次认可不表示正式 UI 已实施。
 
@@ -355,11 +350,11 @@ v18 已形成 7 张提案图、4 张当前 React 对照图和本地证据。四�
 
 Trader Sync 保留完整身份与钱包、生命周期／当前观察／历史中断边界、精确字符串计数和不透明 cursor，只提供管理员只读概要。Profit Sharing 保留 Draft → Collecting → Voting → Closed、sealed／匿名边界、exact-five Open 门槛和 0–5 人 Create／Draft roster。创建手机图的文档位于顶部，但弹窗正文滚动 206px 到 roster 控件，并保持底部操作可见。
 
-本批 14 张提案图、8 张当前 React 对照图均有来源证据。独立 reviewer 经 1 个修正批后最终处置为 `ship`，只表示静态材料可交付。四页八张主图所展示视觉已确认；正式 `ui/` 尚未改版，真实权限、后端读写、竞态和 full-stack smoke 未在本轮验证。
+本批 14 张提案图、8 张当前 React 对照图均有来源证据。独立 reviewer 经 1 个修正批后最终处置为 `ship`，只表示静态材料可交付。四页八张主图所展示视觉已确认；批准时正式 `ui/` 尚未改版，真实权限、后端读写、竞态和 full-stack smoke 未在本轮验证。
 
 | 项目 | 状态 | 确认范围或下一步 |
 | --- | --- | --- |
-| 管理员 Trader Sync 与 Profit Sharing 四页 | v19 所展示视觉已确认 | 已确认两个列表、两个详情的[八张桌面／手机主图](admin-business-batch-proposal.md#原型截图与审阅材料)；辅助状态由实现者沿既有规则验证，不增加逐图审批，正式 UI 尚未改版 |
+| 管理员 Trader Sync 与 Profit Sharing 四页 | v19 所展示视觉已确认 | 已确认两个列表、两个详情的[八张桌面／手机主图](admin-business-batch-proposal.md#原型截图与审阅材料)；辅助状态由实现者沿既有规则验证，不增加逐图审批，批准时正式 UI 尚未改版 |
 
 用户于 2026-09-14 明确确认本批无须调整，范围见 [v19 确认记录](previews/theme-admin-batch-v19-approval.json)。原始原型、截图与审阅记录保持不变；辅助状态按既定规则验证，不追加逐图审批，正式前端后续按本批视觉基准实施。
 
@@ -367,7 +362,7 @@ Trader Sync 保留完整身份与钱包、生命周期／当前观察／历史�
 
 [v20 会员基础业务页面集中视觉提案](member-foundations-batch-proposal.md)覆盖 Wallets 私有钱包管理、Solana 发行候选列表、会员 Profit Sharing 轮次列表与详情四个实际页面，提供八张桌面／手机主图、十一张辅助图及八张当前 React 对照图。它沿用已确认的 Nansen 单一深色、Inter／JetBrains Mono、会员导航和分隔记录；Wallets 以名称及完整地址为主，Solana 分开表达候选、扫描状态与来源，Profit Sharing 按草稿／封存、匿名投票和结果组织个人任务。
 
-用户于 2026-09-14 明确反馈“没问题，审批通过”，整批确认四页八张主图，范围见 [v20 确认记录](previews/theme-member-foundations-v20-approval.json)。原型、截图及 [v20 审阅记录](previews/theme-member-foundations-v20-review.json)保持原字节；审阅 JSON 的 `awaiting_user_review` 为交付时历史状态。辅助状态继续沿既定规则覆盖与验证。静态原型及合成 GET 对照不证明真实身份、密钥、采集、提交／投票、权限或全栈流程，正式 `ui/` 尚未改版。
+用户于 2026-09-14 明确反馈“没问题，审批通过”，整批确认四页八张主图，范围见 [v20 确认记录](previews/theme-member-foundations-v20-approval.json)。原型、截图及 [v20 审阅记录](previews/theme-member-foundations-v20-review.json)保持原字节；审阅 JSON 的 `awaiting_user_review` 为交付时历史状态。辅助状态继续沿既定规则覆盖与验证。静态原型及合成 GET 对照不证明真实身份、密钥、采集、提交／投票、权限或全栈流程，批准时正式 `ui/` 尚未改版。
 
 ## 本轮其余页面安排
 
@@ -379,7 +374,7 @@ Trader Sync 保留完整身份与钱包、生命周期／当前观察／历史�
 
 [v21 集中视觉提案](market-intelligence-batch-proposal.md)覆盖 Market Radar 热门／实时／涨跌榜、Sports Live／History、World Cup Corners 与 Managed OO 提案／争议八个实际页面，沿用 v20 已确认主题及共用规则。八页提供 16 张桌面／手机主图、29 张辅助图和 16 张当前 React 合成对照，共 61 张，辅助状态不逐图新增审批。
 
-独立首次审阅覆盖全部 61 图，唯一 Sports 来源重复箭头问题经一个修正批关闭；最终审阅只复核 14 张修正图及相关回归，结合初审得出 `ship`。用户随后于 2026-09-14 对八页十六张主图反馈“确认”，整批确认所展示视觉，范围见 [v21 确认记录](previews/theme-market-intelligence-v21-approval.json)。原型及[批次记录](previews/theme-market-intelligence-v21-review.json)保留原字节，其中 `awaiting_user_review` 表示交付时历史状态；本次批准由独立确认记录承接。辅助状态沿既定规则覆盖与验证，不补写逐图审批。局部原型与截获合成数据不证明真实供应商、扫描／同步、鉴权／权限、竞态或全栈流程；正式 `ui/` 未改版。第三批 [v22 六页和共用适配](worm-and-common-batch-proposal.md)随后也已获整批确认，当前已完成[覆盖归属核对](theme-refactor-coverage.md)并整理正式技术方案与实施计划，代码与真实验收尚未开始。
+独立首次审阅覆盖全部 61 图，唯一 Sports 来源重复箭头问题经一个修正批关闭；最终审阅只复核 14 张修正图及相关回归，结合初审得出 `ship`。用户随后于 2026-09-14 对八页十六张主图反馈“确认”，整批确认所展示视觉，范围见 [v21 确认记录](previews/theme-market-intelligence-v21-approval.json)。原型及[批次记录](previews/theme-market-intelligence-v21-review.json)保留原字节，其中 `awaiting_user_review` 表示交付时历史状态；本次批准由独立确认记录承接。辅助状态沿既定规则覆盖与验证，不补写逐图审批。局部原型与截获合成数据不证明真实供应商、扫描／同步、鉴权／权限、竞态或全栈流程；批准时正式 `ui/` 未改版。第三批 [v22 六页和共用适配](worm-and-common-batch-proposal.md)随后也已获整批确认，当前已完成[覆盖归属核对](theme-refactor-coverage.md)并整理正式技术方案与实施计划，批准时代码与真实验收尚未开始。
 
 ## v22 Worm Trading 与共用页面（展示视觉已确认）
 
@@ -389,4 +384,4 @@ Trader Sync 保留完整身份与钱包、生命周期／当前观察／历史�
 
 用户于 2026-09-14 对二十四张主图反馈“确认✅”，整批确认布局、信息密度、阅读顺序、操作层级与既定 Nansen 主题搭配，范围见 [v22 确认记录](previews/theme-worm-and-common-v22-approval.json)。138 份交付原型、截图、数据、检查及审阅记录保持原字节；辅助图不补写成用户逐图看过，也不追加常规状态审批。
 
-每页已覆盖桌面、手机、320px 与 200% 字号，十一张原生弹窗保留真实视口。未展示的 Help 动态配置分支仍沿既定规则覆盖与验证，不新增逐状态审批。真实后台、身份、权限、资源、凭据及交易均未验证，正式 `ui/` 未改版；本任务未启停服务。总覆盖和实施准备见[覆盖清单](theme-refactor-coverage.md)及[技术方案](../../superpowers/specs/2026-09-14-web-ui-theme-refactor-design.md)；Trader Sync 专属布局暂缓，独立 Token／Nansen 钱包设计保持不变。
+每页已覆盖桌面、手机、320px 与 200% 字号，十一张原生弹窗保留真实视口。未展示的 Help 动态配置分支仍沿既定规则覆盖与验证，不新增逐状态审批。真实后台、身份、权限、资源、凭据及交易均未验证，批准时正式 `ui/` 未改版；本任务未启停服务。总覆盖和实施准备见[覆盖清单](theme-refactor-coverage.md)及[技术方案](../../superpowers/specs/2026-09-14-web-ui-theme-refactor-design.md)；Trader Sync 专属布局暂缓，独立 Token／Nansen 钱包设计保持不变。

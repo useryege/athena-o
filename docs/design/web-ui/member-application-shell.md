@@ -8,6 +8,14 @@
 
 共享部署与会话边界见[应用壳](application-shell.md)；管理员账户管理、Profit Sharing 治理和系统运维见[管理员应用壳](administrator-application-shell.md)。Notifications 是普通账户自助页面，不公开系统投递历史或测试发送。
 
+## 单一深色与验收边界
+
+两份 HTML 固定深色首屏，入口级 `AthenaThemeProvider` 在 bootstrap 前提供统一 token 和本地 Inter／JetBrains Mono；系统 light／dark 输入均不改变外观。桌面侧栏 224px、顶栏 64px、内容边距 32px，900px 以下使用手机抽屉和 20px 外侧间距。Ant 字号 rem 桥接、弹窗滚动正文／固定操作区及完整关闭目标沿共用实现。
+
+两端 Appearance 已删除并使用各自既有 404；主题不是账户或浏览器偏好。分页、排序、侧栏、banner 和返回位置仍按 realm 隔离。37 条改版入口已实现，8 条 Trader Sync 专页仅共享主题回归；管理员 Service Status 的 Trader Sync 页签已按 v16 重排。Token 导航未开启。
+
+正式 React、原生浏览器缩放、真实本地读取与外部未验证项分别见[验收记录](../../testing/web-ui-theme-refactor-acceptance.md)；完整基线与最终差量使用各自提交，不把设计批准或 fixture 成功当真实供应商成功。
+
 ## 源码入口
 
 | 职责 | 源码 | 关键符号 |
@@ -73,7 +81,7 @@ Telegram 服务端拥有 binding/attempt。浏览器只在标签页键 `athena.m
 
 Trader Sync 的订阅、活动、通知证据均由 owner-scoped API 提供；这不扩展为通用账户通知历史。日期和时间明确按 UTC+8 展示，活动结束日期转换为 `[from,to)` 的次日边界。金额、ID 和 revision 保留字符串精度。
 
-会员持久键使用 `athena.member.*`。主题可以跨应用共享，但会员 filter、draft、return position 和 feature cache 不供管理员使用；Trader Sync 会话只在内存中存在，reload 后不承诺恢复。
+会员持久键使用 `athena.member.*`。固定深色与字体为共享展示；会员 filter、draft、return position 和 feature cache 不供管理员使用；Trader Sync 会话只在内存中存在，reload 后不承诺恢复。
 
 ## 配置与不变量
 

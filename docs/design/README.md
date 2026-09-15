@@ -6,9 +6,9 @@
 
 目录中既有的 `web-ui/` 文档继续作为界面架构说明维护。前后端新任务均使用 Superpowers；具体界面设计仍遵循根 `AGENTS.md` 中适用的 UI 约定。
 
-全站 UI 的[视觉主题重构目标](../requirements/web-ui/visual-theme.md)已确认采用 Nansen 单一深色、Inter／JetBrains Mono 及 v1–v5 共用基准；v6–v22 各记录所展示页面视觉已确认，[v20 四个会员业务页面](../requirements/web-ui/member-foundations-batch-proposal.md)、[v21 八页](../requirements/web-ui/market-intelligence-batch-proposal.md)、[v22 Worm 六页及六项共用适配](../requirements/web-ui/worm-and-common-batch-proposal.md)均已整批确认。[其余页面安排](../requirements/web-ui/remaining-pages-plan.md)按 4／8／6 三批覆盖本轮 18 页／19 条路由，排除 Trader Sync，并直接沿用已独立确认的 [Nansen 钱包战绩 v1](../requirements/token/wallet-analytics-page-proposal.md)。[总入口与继承状态](../requirements/web-ui/theme-refactor-coverage.md)已完成归属核对，[技术方案](../superpowers/specs/2026-09-14-web-ui-theme-refactor-design.md)及[实施计划](../superpowers/plans/2026-09-14-web-ui-theme-refactor.md)已整理。既有业务、权限与数据契约保持有效，正式主题重构尚未实现；下列已实现文档中的明暗模式、橙色主题和账户主题偏好继续描述当前代码。
+全站 UI 已按 Nansen 单一深色、Inter／JetBrains Mono、v1–v22 批准视觉及 [v23 一致性契约](../requirements/web-ui/theme-consistency-contract.md)完成正式实现和 T9 验收；T1–T9 独立任务审阅通过。37 条改版入口、2 条 Appearance 删除、4 条路由规则及 8 条 Trader Sync 共享影响回归见[覆盖清单](../requirements/web-ui/theme-refactor-coverage.md)。Service Status 的 Trader Sync 页签已重排；专属八路由布局暂缓。共享 T1／T2 已完成，Token 独立功能未开启。
 
-总体审阅修正见[一致性契约](../requirements/web-ui/theme-consistency-contract.md)和 [v23 参考及验证](../requirements/web-ui/previews/theme-consistency-v23/README.md)。两份实施计划已锁定共同主题依赖，正式源代码仍未改版。
+当前设计文档描述固定深色和 realm 独立的本地视图偏好，账户主题 API／schema 已删除。[验收记录](../testing/web-ui-theme-refactor-acceptance.md)区分正式实现、受控状态、真实读取和外部未验证边界；最终审阅／环境停止／通知状态集中在该记录。下列 v1–v23 提案条目保留批准时点历史，不代表当前代码仍未实施。技术约束见[方案](../superpowers/specs/2026-09-14-web-ui-theme-refactor-design.md)与[实施计划](../superpowers/plans/2026-09-14-web-ui-theme-refactor.md)。
 
 聊天记录不是跨任务事实来源。长期有效的技术决定应同步到对应设计文档，并与 [`docs/requirements/`](../requirements/README.md) 中的相关需求及任务规格按需互相链接。
 
@@ -44,7 +44,7 @@
 | Identity and Access | Realm-bound browser Google Authorization Code flow, PKCE, one-time OAuth state, administrator admission, anonymous username registration, and independent member/admin cookie issuance | [Google OIDC Login](identity-access/google-oidc-login.md) | `已实现` |
 | Identity and Access | Browser-injected Phantom Solana authentication, one-time SIWS challenges, Ed25519 verification, and wallet-first username registration | [Solana Wallet Authentication](identity-access/solana-wallet-authentication.md) | `已实现` |
 | Identity and Access | Realm-to-persisted-role session binding, credential-specific Wallet and Worm-selection rules, login, API Key, Profit Sharing, eleven-module access, Pending state, and transactional administrator control | [Account Access Control](identity-access/account-access-control.md) | `已实现` |
-| Identity and Access | UUID-owned display profiles, immutable username presentation, display-only tiers, and cross-device theme preferences | [Account Profile and Local View Preferences](identity-access/account-profile-and-preferences.md) | `已实现` |
+| Identity and Access | UUID-owned display profiles, immutable username presentation, display-only tiers, and realm-scoped browser-local view preferences | [Account Profile and Local View Preferences](identity-access/account-profile-and-preferences.md) | `已实现` |
 | Identity and Access | Private account and Wallet avatar validation, S3-compatible object storage, distinct authorization, authenticated delivery, and orphan recovery | [Account and Wallet Avatar Storage](identity-access/account-avatar-storage.md) | `已实现` |
 | Identity and Access | UUID-owned EVM and Solana custody, canonical key handling, owner-only safe metadata, persisted owner-resolved Worm Wallet selection, and separate purpose-bound Worm credential and live-execution signers | [Wallet Ownership and Custody](identity-access/wallet-ownership.md) | `已实现` |
 | Identity and Access | Independent Wallet-reveal and Worm-credential leases plus selection-reconciliation, exact-Run, and exact-position-Cash-Out proof boundaries; rate-limited Google/Solana reauthentication; and durable intent-bound authorization | [Wallet Secret and Worm Credential Reauthentication](identity-access/wallet-secret-reauthentication.md) | `已实现` |
@@ -118,19 +118,19 @@
 
 | 子系统 | 能力 | 文档 | 状态 |
 | --- | --- | --- | --- |
-| Web UI | 管理员 Service Status 三来源页签、来源状态、完整诊断及响应式记录布局 | [v16 视觉提案](../requirements/web-ui/service-status-proposal.md) | `设计中`，v16 所展示的 Services 桌面／手机、Notifications 桌面和 Trader Sync 手机视觉已确认，按[确认记录](../requirements/web-ui/previews/theme-service-status-v16-approval.json)执行；不改变已实现的[管理员应用壳](web-ui/administrator-application-shell.md)三来源 10 秒可见 single-flight、缓存、时间、错误隔离和授权契约，正式 `ui/` 未修改 |
+| Web UI | 管理员 Service Status 三来源页签、来源状态、完整诊断及响应式记录布局 | [v16 视觉提案](../requirements/web-ui/service-status-proposal.md) | `展示视觉已确认`，v16 所展示的 Services 桌面／手机、Notifications 桌面和 Trader Sync 手机视觉已确认，按[确认记录](../requirements/web-ui/previews/theme-service-status-v16-approval.json)执行；不改变已实现的[管理员应用壳](web-ui/administrator-application-shell.md)三来源 10 秒可见 single-flight、缓存、时间、错误隔离和授权契约，批准时正式 `ui/` 未修改 |
 
 ## v17 索引补充
 
 | 子系统 | 能力 | 文档 | 状态 |
 | --- | --- | --- | --- |
-| Web UI | 管理员 Etherscan 网关健康与 Live Probe 独立来源、结果汇总、诊断展开及响应式记录布局 | [v17 视觉提案](../requirements/web-ui/etherscan-gateways-proposal.md) | `设计中`，v17 所展示 Gateways 与 Live Probe 的桌面／手机视觉已确认，按[确认记录](../requirements/web-ui/previews/theme-etherscan-gateways-v17-approval.json)执行；其他辅助状态未逐图确认，不改变已实现的[管理员应用壳](web-ui/administrator-application-shell.md)与 [Etherscan Manager](blockchain-data/etherscan-manager.md)权限、配置、探针请求或服务端结果契约，正式 `ui/` 未修改 |
+| Web UI | 管理员 Etherscan 网关健康与 Live Probe 独立来源、结果汇总、诊断展开及响应式记录布局 | [v17 视觉提案](../requirements/web-ui/etherscan-gateways-proposal.md) | `展示视觉已确认`，v17 所展示 Gateways 与 Live Probe 的桌面／手机视觉已确认，按[确认记录](../requirements/web-ui/previews/theme-etherscan-gateways-v17-approval.json)执行；其他辅助状态未逐图确认，不改变已实现的[管理员应用壳](web-ui/administrator-application-shell.md)与 [Etherscan Manager](blockchain-data/etherscan-manager.md)权限、配置、探针请求或服务端结果契约，批准时正式 `ui/` 未修改 |
 
 ## v18 索引补充
 
 | 子系统 | 能力 | 文档 | 状态 |
 | --- | --- | --- | --- |
-| Web UI | 管理员系统通知列表筛选、详情阅读、测试通知弹窗与响应式记录布局 | [v18 视觉提案](../requirements/web-ui/system-notifications-proposal.md) | `设计中`，所展示列表／详情及桌面／手机视觉已确认；常规辅助状态由实现者验证，不新增逐图审批；不改变已实现的[管理员应用壳](web-ui/administrator-application-shell.md)与[系统通知操作](notifications/system-notification-operations.md)权限、投递或数据契约，正式 `ui/` 未修改 |
+| Web UI | 管理员系统通知列表筛选、详情阅读、测试通知弹窗与响应式记录布局 | [v18 视觉提案](../requirements/web-ui/system-notifications-proposal.md) | `展示视觉已确认`，所展示列表／详情及桌面／手机视觉已确认；常规辅助状态由实现者验证，不新增逐图审批；不改变已实现的[管理员应用壳](web-ui/administrator-application-shell.md)与[系统通知操作](notifications/system-notification-operations.md)权限、投递或数据契约，批准时正式 `ui/` 未修改 |
 
 用户已对四张主图反馈“舒服”，具体范围见 [v18 确认记录](../requirements/web-ui/previews/theme-system-notifications-v18-approval.json)。原始审阅与资产保持不变；本次认可不表示正式 UI 已实施。
 
@@ -138,7 +138,7 @@
 
 | 子系统 | 能力 | 文档 | 状态 |
 | --- | --- | --- | --- |
-| Web UI | 管理员 Trader Sync 订阅列表／概要与 Profit Sharing 轮次列表／详情的集中视觉批次 | [v19 视觉提案](../requirements/web-ui/admin-business-batch-proposal.md) | `设计中`，四页八张桌面／手机主图所展示视觉已确认；辅助状态由实现者验证，不新增逐图审批；不改变已实现的 [Trader Sync](web-ui/trader-sync-activity-alerts.md) 与 [Profit Sharing](governance/profit-sharing.md)权限、数据和治理契约，正式 `ui/` 未修改 |
+| Web UI | 管理员 Trader Sync 订阅列表／概要与 Profit Sharing 轮次列表／详情的集中视觉批次 | [v19 视觉提案](../requirements/web-ui/admin-business-batch-proposal.md) | `设计中`，四页八张桌面／手机主图所展示视觉已确认；辅助状态由实现者验证，不新增逐图审批；不改变已实现的 [Trader Sync](web-ui/trader-sync-activity-alerts.md) 与 [Profit Sharing](governance/profit-sharing.md)权限、数据和治理契约，批准时正式 `ui/` 未修改 |
 
 用户于 2026-09-14 明确确认本批无须调整，范围见 [v19 确认记录](../requirements/web-ui/previews/theme-admin-batch-v19-approval.json)。原始原型、截图与审阅记录保持不变；辅助状态按既定规则验证，不追加逐图审批，正式前端后续按本批视觉基准实施。
 
@@ -146,9 +146,9 @@
 
 | 子系统 | 能力 | 文档 | 状态 |
 | --- | --- | --- | --- |
-| Web UI | Wallets 私有元数据、Solana 发行候选、会员 Profit Sharing 轮次列表与阶段详情的集中视觉批次 | [v20 视觉提案](../requirements/web-ui/member-foundations-batch-proposal.md) | `展示视觉已确认`，四页八张主图已整批确认，见 [v20 确认记录](../requirements/web-ui/previews/theme-member-foundations-v20-approval.json)。沿用现有[钱包托管](identity-access/wallet-ownership.md)、[Solana 列表](web-ui/solana-discovery.md)和 [Profit Sharing](governance/profit-sharing.md)契约，正式主题未实现 |
-| Web UI | 本轮其余业务页面与共用适配的视觉覆盖 | [其余页面视觉定稿安排](../requirements/web-ui/remaining-pages-plan.md) | 18 页／19 条路由，分 4／8／6 三批；三批主视觉及 v22 六项共用适配均已整批确认，总路由与继承状态归属已映射，正式重构尚未开始 |
-| Web UI | Market Radar 三页、Sports 三页与 Managed OO 两页的集中视觉批次 | [v21 视觉提案](../requirements/web-ui/market-intelligence-batch-proposal.md) | `展示视觉已确认`，八页十六张主图已整批确认，见 [v21 确认记录](../requirements/web-ui/previews/theme-market-intelligence-v21-approval.json)；辅助状态继续覆盖，正式 UI 实施与真实业务验收尚未完成 |
-| Web UI | Worm 资产、组合与执行流程及管理员自助／Help 的集中视觉批次 | [v22 视觉提案](../requirements/web-ui/worm-and-common-batch-proposal.md) | `展示视觉已确认`，六个业务页面及六项共用界面差异的 24 张主图已整批确认，见 [v22 确认记录](../requirements/web-ui/previews/theme-worm-and-common-v22-approval.json)；反馈属于状态覆盖，不追加逐图审批。总覆盖与实施计划已整理，正式重构及真实交易尚未验收 |
+| Web UI | Wallets 私有元数据、Solana 发行候选、会员 Profit Sharing 轮次列表与阶段详情的集中视觉批次 | [v20 视觉提案](../requirements/web-ui/member-foundations-batch-proposal.md) | `展示视觉已确认`，四页八张主图已整批确认，见 [v20 确认记录](../requirements/web-ui/previews/theme-member-foundations-v20-approval.json)。沿用现有[钱包托管](identity-access/wallet-ownership.md)、[Solana 列表](web-ui/solana-discovery.md)和 [Profit Sharing](governance/profit-sharing.md)契约，批准时正式主题未实现 |
+| Web UI | 本轮其余业务页面与共用适配的视觉覆盖 | [其余页面视觉定稿安排](../requirements/web-ui/remaining-pages-plan.md) | 18 页／19 条路由，分 4／8／6 三批；三批主视觉及 v22 六项共用适配均已整批确认，总路由与继承状态归属已映射，批准时正式重构尚未开始 |
+| Web UI | Market Radar 三页、Sports 三页与 Managed OO 两页的集中视觉批次 | [v21 视觉提案](../requirements/web-ui/market-intelligence-batch-proposal.md) | `展示视觉已确认`，八页十六张主图已整批确认，见 [v21 确认记录](../requirements/web-ui/previews/theme-market-intelligence-v21-approval.json)；辅助状态继续覆盖，批准时正式 UI 实施与真实业务验收尚未完成 |
+| Web UI | Worm 资产、组合与执行流程及管理员自助／Help 的集中视觉批次 | [v22 视觉提案](../requirements/web-ui/worm-and-common-batch-proposal.md) | `展示视觉已确认`，六个业务页面及六项共用界面差异的 24 张主图已整批确认，见 [v22 确认记录](../requirements/web-ui/previews/theme-worm-and-common-v22-approval.json)；反馈属于状态覆盖，不追加逐图审批。总覆盖与实施计划已整理，批准时正式重构及真实交易尚未验收 |
 
 Trader Sync 本轮排除；独立确认的 [Nansen 钱包战绩 v1](../requirements/token/wallet-analytics-page-proposal.md)直接沿用。本批静态原型、合成 GET 对照与视觉审阅不证明真实身份、钱包写入、采集、治理命令、权限或全栈验收通过。

@@ -96,6 +96,27 @@ Avatar bytes remain private S3 objects. Public profile projections expose only
 an authenticated UUID route such as `/api/v1/account/{id}/avatar?v={revision}`.
 The revision is a cache buster; it is not an object-store key or credential.
 
+## Theme removal and generated contracts
+
+The theme-only `AccountPreferences`/`AccountThemeMode`, update RPC/HTTP route,
+UserInfo projection, storage queries, account-creation CTE fields, and initial
+schema table were removed together. SQL/sqlc, schema contract, proto, gateway,
+OpenAPI, and browser models were regenerated from their owners. Profile CAS,
+access revision, and session generation remain independent. The aggregate
+avatar HTTP consumer was also corrected; the full API build and real bootstrap
+were verified after that correction.
+
+`ViewPreferencesService` accepts only `version`, `pageSizes`, `sortOptions`,
+`hideBannerContent`, `hideSidebar`, and `position` during both read and write.
+A legacy theme field cannot select a theme or survive the next preference save;
+other supported values remain. Appearance URLs use each realm's existing 404.
+
+New-schema verification used a dedicated task database and managed instance;
+existing development databases and volumes were preserved. This change does
+not supply a historical schema migration or authorize resetting another database.
+See the [implementation and acceptance record](../../testing/web-ui-theme-refactor-acceptance.md)
+for T1 contract evidence and final versioned results.
+
 ## Configuration
 
 Profile has no per-account environment settings. Tier starts as Standard. Object-store configuration belongs to

@@ -8,6 +8,14 @@
 
 共享部署与会话边界见[应用壳](application-shell.md)；普通账户业务路由和模块授权见[会员应用壳](member-application-shell.md)。
 
+## 单一深色与验收边界
+
+两份 HTML 固定深色首屏，入口级 `AthenaThemeProvider` 在 bootstrap 前提供统一 token 和本地 Inter／JetBrains Mono；系统 light／dark 输入均不改变外观。桌面侧栏 224px、顶栏 64px、内容边距 32px，900px 以下使用手机抽屉和 20px 外侧间距。Ant 字号 rem 桥接、弹窗滚动正文／固定操作区及完整关闭目标沿共用实现。
+
+两端 Appearance 已删除并使用各自既有 404；主题不是账户或浏览器偏好。分页、排序、侧栏、banner 和返回位置仍按 realm 隔离。37 条改版入口已实现，8 条 Trader Sync 专页仅共享主题回归；管理员 Service Status 的 Trader Sync 页签已按 v16 重排。Token 导航未开启。
+
+正式 React、原生浏览器缩放、真实本地读取与外部未验证项分别见[验收记录](../../testing/web-ui-theme-refactor-acceptance.md)；完整基线与最终差量使用各自提交，不把设计批准或 fixture 成功当真实供应商成功。
+
 ## 源码入口
 
 | 职责 | 源码 | 关键符号 |
