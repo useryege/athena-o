@@ -8,6 +8,14 @@
 
 共享部署与会话边界见[应用壳](application-shell.md)；管理员账户管理、Profit Sharing 治理和系统运维见[管理员应用壳](administrator-application-shell.md)。Notifications 是普通账户自助页面，不公开系统投递历史或测试发送。
 
+## 单一深色与验收边界
+
+两份 HTML 固定深色首屏，入口级 `AthenaThemeProvider` 在 bootstrap 前提供统一 token 和本地 Inter／JetBrains Mono；系统 light／dark 输入均不改变外观。桌面侧栏 224px、顶栏 64px、内容边距 32px，900px 以下使用手机抽屉和 20px 外侧间距。Ant 字号 rem 桥接、弹窗滚动正文／固定操作区及完整关闭目标沿共用实现。
+
+两端 Appearance 已删除并使用各自既有 404；主题不是账户或浏览器偏好。分页、排序、侧栏、banner 和返回位置仍按 realm 隔离。37 条改版入口已实现，8 条 Trader Sync 专页仅共享主题回归；管理员 Service Status 的 Trader Sync 页签已按 v16 重排。Token 导航未开启。
+
+正式 React、原生浏览器缩放、真实本地读取与外部未验证项分别见[验收记录](../../testing/web-ui-theme-refactor-acceptance.md)；完整基线与最终差量使用各自提交，不把设计批准或 fixture 成功当真实供应商成功。
+
 ## 源码入口
 
 | 职责 | 源码 | 关键符号 |
@@ -50,7 +58,7 @@ Trader Sync 只接受 `NONE` 与 `READ_WRITE`。非法持久/网关 `READ` 经 `
 
 1. 匿名访问显示 `/login`。Google OIDC 带 `athenaRealm=member`；Phantom 使用会员专属浏览器注入 SIWS。未知身份携带服务端注册 ticket 进入共享 `/register`。
 2. bootstrap 只选择 member cookie/`local-user`，返回账户、资料、偏好、角色和完整权限 aggregate。管理员在任何会员业务请求前离开；普通账户进入会员授权上下文。
-3. Pending 账户默认进入 `/account/access`，仍可使用 Profile、Appearance、Access、Help、Notifications 和 Logout，不挂载业务模块页面。Active 普通账户默认进入 `/account/profile`。
+3. Pending 账户默认进入 `/account/access`，仍可使用 Profile、Access、Help、Notifications 和 Logout，不挂载业务模块页面。Active 普通账户默认进入 `/account/profile`。
 4. 普通模块路由要求对应 READ，写控件要求 `READ_WRITE`；Profit Sharing 使用独立权益。Notifications 是直接自助例外，服务端仍要求普通交互登录并拒绝管理员/API Key。
 5. `/notifications` 读取 Bot、binding 与 attempt，显示 `Unavailable`、`Not connected`、`Waiting for Telegram`、`Link expired`、`Setup failed`、`Connected` 或 `Needs attention`。Configure 返回深链、准确 fallback command、到期倒计时和浏览器本地 Ant Design `QRCode`。
 6. 未过期 attempt 在页面可见且没有 mutation 时每 3 秒刷新；focus、`visibilitychange`、手动刷新与 mutation 恢复共用同一 single-flight read。Cancel 删除 attempt；Reconnect 在新 token 成功前保留原 binding；Disconnect 经确认后删除 binding 和 attempt。
@@ -65,7 +73,7 @@ Trader Sync 只接受 `NONE` 与 `READ_WRITE`。非法持久/网关 `READ` 经 `
 
 ## 状态与数据
 
-会员授权投影包含 account UUID、不可变 username、安全身份展示、profile、preferences、access revision、Profit Sharing 权益和完整十一模块。UUID、member realm、issuer 与 session generation 共同限定请求、缓存和 Trader Sync 内存状态；username/display name 只用于展示。
+会员授权投影包含 account UUID、不可变 username、安全身份展示、profile、access revision、Profit Sharing 权益和完整十一模块。UUID、member realm、issuer 与 session generation 共同限定请求、缓存和 Trader Sync 内存状态；username/display name 只用于展示。
 
 私钥和新签发 API Key 只存在于当前 React result state。离开页面、结束会话、改变账户或失去权限会丢弃它们并取消工作。浏览器不持久化 provider token、wallet signature、外部 subject、registration ticket、管理员断言或 HttpOnly cookie。
 
@@ -73,7 +81,7 @@ Telegram 服务端拥有 binding/attempt。浏览器只在标签页键 `athena.m
 
 Trader Sync 的订阅、活动、通知证据均由 owner-scoped API 提供；这不扩展为通用账户通知历史。日期和时间明确按 UTC+8 展示，活动结束日期转换为 `[from,to)` 的次日边界。金额、ID 和 revision 保留字符串精度。
 
-会员持久键使用 `athena.member.*`。主题可以跨应用共享，但会员 filter、draft、return position 和 feature cache 不供管理员使用；Trader Sync 会话只在内存中存在，reload 后不承诺恢复。
+会员持久键使用 `athena.member.*`。固定深色与字体为共享展示；会员 filter、draft、return position 和 feature cache 不供管理员使用；Trader Sync 会话只在内存中存在，reload 后不承诺恢复。
 
 ## 配置与不变量
 

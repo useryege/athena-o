@@ -1,3 +1,4 @@
+import {recordAxeReview} from './theme-refactor/axe-review';
 import {test, expect, type Page} from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import fs from 'node:fs';
@@ -47,6 +48,7 @@ const states: Array<{name: string; fixture: string; route: string; ready: (page:
         route: '/admin/service-status',
         ready: async page => {
             await expect(page.getByRole('heading', {name: 'Service Status', exact: true, level: 1})).toBeVisible();
+            await page.getByRole('tab', {name: /^Trader Sync/}).click();
             await expect(page.getByText('synthetic_window', {exact: true}).filter({visible: true})).toBeVisible();
         }
     }
@@ -65,11 +67,13 @@ for (const state of states)
                 await installTraderSyncRoutes(page, state.fixture);
                 await page.goto(memberPath(state.route));
                 await state.ready(page);
-                await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+                await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
                 const results = await new AxeBuilder({page}).withTags(tags).analyze();
+
                 const rawResult = info.outputPath('axe-results.json');
                 fs.writeFileSync(rawResult, JSON.stringify(results, null, 2));
+                await recordAxeReview(page, results, info);
                 await info.attach('axe-results.json', {path: rawResult, contentType: 'application/json'});
                 expect(
                     results.violations.map(violation => ({id: violation.id, impact: violation.impact, nodes: violation.nodes.map(node => node.target)})),

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import renderer, {act} from 'react-test-renderer';
-import {Button} from 'antd';
+import {Button, Input} from 'antd';
 import {AuthorizationCtx, useAuthorization, type AuthorizationState} from '../shared/context';
 import {parseUserInfo, AppBootstrapSessionStatus} from '../shared/models';
 import {useVisibleQuery} from '../shared/use-visible-query';
@@ -9,18 +9,23 @@ import requests from '../shared/services/requests';
 import {adminServices as services, ensureAdminBusinessServices} from './services';
 import {AdminApp} from './app';
 
+let mockRealProfile = false;
 let mockAuth: AuthorizationState;
 let mockLoad: () => Promise<string>;
 const mockUser = () => parseUserInfo({accountId: 'admin-A', iss: 'issuer-one', loggedIn: true, administrator: true, username: 'admin'});
 jest.mock('../session/bootstrap', () => ({
     SessionBootstrap: ({children}: any) =>
-        children({session: {status: AppBootstrapSessionStatus.Authenticated, userInfo: mockUser()}, settings: {}}, {theme: 'light', hideSidebar: false})
+        children({session: {status: AppBootstrapSessionStatus.Authenticated, userInfo: mockUser()}, settings: {}}, {hideSidebar: false})
 }));
 jest.mock('./routes', () => ({
     ...jest.requireActual('./routes'),
-    AccountCenterPage: () => {
+    AccountCenterPage: (props: any) => {
         mockAuth = useAuthorization();
         const data = useVisibleQuery(mockLoad, useAdminReadScope('shell-test'), 10000);
+        if (mockRealProfile) {
+            const Page = jest.requireActual('../shared/pages/account-center').AccountCenterPage;
+            return <Page {...props} />;
+        }
         return <span>{data.data}</span>;
     }
 }));
@@ -37,6 +42,7 @@ const late = () => {
     return {promise, resolve};
 };
 beforeEach(() => {
+    mockRealProfile = false;
     window.matchMedia = jest
         .fn()
         .mockImplementation(query => ({
@@ -65,6 +71,19 @@ test('real Shell clears cached data when refresh discovers logout before redirec
     jest.mocked(services.users.get).mockResolvedValue(parseUserInfo({loggedIn: false}));
     await act(async () => mockAuth.refresh());
     expect(text()).not.toContain('cached administrator summary');
+});
+test('administrator identity control belongs to the top bar and the desktop navigation uses the approved width', async () => {
+    await mount();
+    const header = tree.root.findByProps({className: 'athena-shell__header'});
+    const sider = tree.root.findByProps({className: 'athena-shell__sider'});
+    expect(header.findAllByProps({'aria-label': 'Open account menu'})).toHaveLength(1);
+    expect(sider.findAllByProps({'aria-label': 'Open account menu'})).toHaveLength(0);
+    expect(sider.props.width).toBe(224);
+});
+test('removed administrator Appearance URL uses the existing not-found fallback', async () => {
+    window.history.replaceState({}, '', '/account/appearance');
+    await mount();
+    expect(text()).toContain('Page not found');
 });
 test('real Shell swaps same-account issuer, fences old reads and reopens only the new scope', async () => {
     const pending = late();
@@ -216,4 +235,16 @@ test('a pending role recheck retry cannot reopen data after a newer known 401', 
     await act(async () => tree.root.findAllByType(Button).find(button => button.props.children === 'Retry access check')!.props.onClick());
     await act(async () => {(requests.get('/recheck-newer-401') as any).emit('error', {status: 401}); resolve(mockUser());});
     expect(text()).not.toContain('cached administrator summary');
+});
+
+ test.each([['admin-B', 'issuer-one'], ['admin-A', 'issuer-two']])('real administrator Profile drops same-revision draft on %s/%s', async (accountId, iss) => {
+    mockRealProfile = true;
+    await mount();
+    const input = () => tree.root.findAllByType(Input).find(item => item.props.id === 'profile-display-name')!;
+    await act(async () => input().props.onChange({target: {value: 'Private admin draft'}}));
+    jest.mocked(services.users.get).mockResolvedValue(parseUserInfo({loggedIn: true, administrator: true, accountId, iss, username: 'replacement-admin', profile: {displayName: 'Replacement admin', revision: 0}}));
+    await act(async () => mockAuth.refresh());
+    expect(input().props.value).toBe('Replacement admin');
+    expect(text()).not.toContain('Private admin draft');
+    expect(tree.root.findAllByType(Button).find(item => item.props.children === 'Save profile')!.props.disabled).toBe(true);
 });

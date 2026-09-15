@@ -63,14 +63,6 @@ type AccountNotificationDelivery struct {
 	ActivityID               pgtype.Int8
 }
 
-type AccountPreference struct {
-	AccountID pgtype.UUID
-	Theme     string
-	Revision  int64
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-}
-
 type AccountProfile struct {
 	AccountID         pgtype.UUID
 	DisplayName       string

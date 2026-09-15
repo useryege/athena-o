@@ -26,6 +26,8 @@ subsequent [Worm Order Execution](worm-order-execution.md) Run consumes one
 usable preview and holds a lock that prevents this source template from being
 updated or deleted until the Run reaches a safe terminal boundary.
 
+The T7 theme implementation scopes draft state and pending callbacks to account, issuer, authorization revision, and edit route. Identity or route replacement discards the old private draft and suppresses late save navigation and notifications.
+
 ## Source Locations
 
 | Concern | Source | Key symbols |
@@ -120,17 +122,16 @@ Executions detail route.
    once in the current template. The two outcome controls are independent
    pressed buttons because the valid state includes neither side being selected.
    Pressing the selected side again removes that market, while choosing its
-   opposite side replaces the prior side at the same ordinal. YES uses the
-   green semantic treatment and NO uses red; a check mark, stronger tint, and
-   thicker outline distinguish selection without relying only on color. Remove,
+   opposite side replaces the prior side at the same ordinal. Both unselected directions use neutral borders; either selected direction uses
+   the approved mint accent and dark mint background. A check mark and pressed
+   state distinguish selection without relying only on color. Remove,
    toggle-off, and move-up/down rebuild contiguous one-based ordinals.
 7. Desktop renders each Event as compact market rows in the main column and a
-   sticky Current combination summary in the second column. A normal row shows
+   Current combination summary in the second column. A normal row shows
    only the market title and YES/NO choices with the last-trade price in cents;
-   it does not expose the market logo, Condition ID, normal state,
-   backend, or maximum leverage. At 520 px and below, the title occupies its own
-   row, the two choices become equal-width controls below it, and a sticky
-   selected-count control opens the same summary in a Drawer. Prices use at most
+   it keeps the full Condition ID in expandable evidence and hides the market logo, normal state,
+   backend, or maximum leverage. At 900 px and below, the title occupies its own
+   row, the two choices become equal-width controls below it, and the Current combination summary follows the Events in document order. Prices use at most
    one decimal cent without a trailing `.0`. YES is rounded once and the visible
    NO value is derived from it, so the displayed pair remains complementary at
    `100¢`; a tooltip preserves each complete USDC-per-share decimal and states
@@ -355,7 +356,7 @@ key, signature, draft, transaction, or raw provider payload.
 - [ ] Catalog completeness, bounded concurrency, stable unavailable codes, complementary last-trade prices, and no-estimate boundary remain current.
 - [ ] Save-time server refetch, membership/selectability checks, and trusted snapshot projection remain current.
 - [ ] Owner/name uniqueness, item uniqueness/order, revision CAS, and transaction boundaries remain current.
-- [ ] Compact market rows, hidden normal metadata, cents/tooltips, Event refresh, desktop summary, mobile Drawer, keyboard, focus, and touch behavior remain current.
+- [ ] Compact market rows, hidden normal metadata, cents/tooltips, Event refresh, desktop summary, inline mobile summary, keyboard, focus, and touch behavior remain current.
 - [ ] Wallet, credential, estimate, signature, draft, transaction, and Worm mutation paths remain outside this capability.
 - [ ] Preview remains a contextual read-only consumer, while a prepared live Run freezes the exact revision and blocks template update/delete until safe terminal closure.
 - [ ] Source links and named symbols resolve to the implementation.

@@ -181,6 +181,12 @@ export const isAccountDataAccessDeniedError = (error: unknown): boolean => {
     return details.status === 403 && (details.reason === ACCOUNT_DATA_ACCESS_DENIED_REASON || (details.code === 7 && details.message === ACCOUNT_DATA_ACCESS_DENIED_REASON));
 };
 
+export const isAccountProfitSharingAccessDeniedError = (error: unknown): boolean => {
+    const details = requestErrorDetails(error);
+    const reason = 'ACCOUNT_PROFIT_SHARING_ACCESS_DENIED';
+    return details.status === 403 && (details.reason === reason || (details.code === 7 && details.message === reason));
+};
+
 const normalizeRequestError = <T>(error: T): T => {
     const details = requestErrorDetails(error);
     if (details.message && isRecord(error)) {

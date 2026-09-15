@@ -10,14 +10,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Store persists profile and preference aggregates with independent CAS revisions.
+// Store persists profiles with optimistic concurrency revisions.
 type Store interface {
 	AccountExists(ctx context.Context, accountID string) (bool, error)
 	GetProfile(ctx context.Context, accountID string) (Profile, bool, error)
 	ListAvatarObjectKeys(ctx context.Context) ([]string, error)
 	UpdateProfile(ctx context.Context, accountID string, next Profile, expectedRevision uint64) (Profile, error)
-	GetPreferences(ctx context.Context, accountID string) (Preferences, bool, error)
-	UpdatePreferences(ctx context.Context, accountID string, next Preferences, expectedRevision uint64) (Preferences, error)
 }
 
 // Manager provides uncached account-center state for durable accounts.
@@ -75,26 +73,6 @@ func (m *Manager) ListAvatarObjectKeys(ctx context.Context) ([]string, error) {
 	return m.store.ListAvatarObjectKeys(ctx)
 }
 
-func (m *Manager) GetPreferences(ctx context.Context, accountID string) (Preferences, error) {
-	if err := m.requireAccount(ctx, accountID); err != nil {
-		return Preferences{}, err
-	}
-	preferences, found, err := m.store.GetPreferences(ctx, accountID)
-	if err != nil {
-		return Preferences{}, err
-	}
-	if !found {
-		return Preferences{}, fmt.Errorf("account %q has no persisted preferences", accountID)
-	}
-	if preferences.Revision == 0 {
-		return Preferences{}, fmt.Errorf("account %q has persisted preferences revision 0", accountID)
-	}
-	if err := validateThemeMode(preferences.Theme); err != nil {
-		return Preferences{}, fmt.Errorf("account %q has invalid persisted preferences: %w", accountID, err)
-	}
-	return preferences, nil
-}
-
 func (m *Manager) UpdateDisplayName(ctx context.Context, accountID, displayName string, expectedRevision uint64) (Profile, error) {
 	displayName = strings.TrimSpace(displayName)
 	if err := validateDisplayName(displayName); err != nil {
@@ -148,22 +126,4 @@ func (m *Manager) updateProfile(ctx context.Context, accountID string, expectedR
 		return Profile{}, err
 	}
 	return m.store.UpdateProfile(ctx, accountID, current, expectedRevision)
-}
-
-func (m *Manager) UpdatePreferences(ctx context.Context, accountID string, theme ThemeMode, expectedRevision uint64) (Preferences, error) {
-	if expectedRevision >= math.MaxInt64 {
-		return Preferences{}, status.Error(codes.InvalidArgument, "account preferences revision is out of range")
-	}
-	if err := validateThemeMode(theme); err != nil {
-		return Preferences{}, err
-	}
-	current, err := m.GetPreferences(ctx, accountID)
-	if err != nil {
-		return Preferences{}, err
-	}
-	if current.Revision != expectedRevision {
-		return Preferences{}, ErrPreferencesRevisionConflict
-	}
-	current.Theme = theme
-	return m.store.UpdatePreferences(ctx, accountID, current, expectedRevision)
 }

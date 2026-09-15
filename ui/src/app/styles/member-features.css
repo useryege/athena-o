@@ -234,7 +234,7 @@
     gap: 12px;
     margin: 0 2px 14px;
     color: var(--athena-muted);
-    font-size: 12px;
+    font-size: var(--athena-type-aux);
 }
 
 .wallet-page-summary > span {
@@ -243,139 +243,11 @@
     gap: 7px;
 }
 
-.wallet-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-    transition: opacity 150ms ease;
-}
-
-.wallet-grid--refreshing {
-    opacity: 0.62;
-    pointer-events: none;
-}
-
-.wallet-card.ant-card {
-    min-width: 0;
-    overflow: hidden;
-    border-color: var(--athena-border);
-    border-radius: 12px;
-    background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--athena-brand) 7%, transparent), transparent 11rem), var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
-    cursor: pointer;
-    transition:
-        border-color 150ms ease,
-        box-shadow 150ms ease,
-        transform 150ms ease;
-}
-
-.wallet-card.ant-card:hover,
-.wallet-card.ant-card:focus-visible,
-.wallet-card--selected.ant-card {
-    border-color: color-mix(in srgb, var(--athena-primary) 58%, var(--athena-border));
-    box-shadow: var(--athena-shadow-tight);
-    transform: translateY(-2px);
-}
-
-.wallet-card--selected.ant-card {
-    box-shadow:
-        0 0 0 1px color-mix(in srgb, var(--athena-primary) 36%, transparent),
-        var(--athena-shadow-tight);
-}
-
-.wallet-card .ant-card-body {
-    display: grid;
-    gap: 18px;
-    min-height: 188px;
-    padding: 20px;
-}
-
-.wallet-card--loading.ant-card {
-    cursor: default;
-}
-
-.wallet-card__topline {
-    display: flex;
-    align-items: center;
-    gap: 13px;
-    min-width: 0;
-}
-
-.wallet-card__title {
-    display: flex;
-    min-width: 0;
-    flex: 1;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.wallet-card__title > .ant-typography {
-    min-width: 0;
-    overflow: hidden;
-    color: var(--athena-text);
-    font-size: 16px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.wallet-card__title .ant-tag {
-    flex: 0 0 auto;
-    margin-inline-end: 0;
-}
-
-.wallet-card__address {
-    display: flex;
-    min-width: 0;
-    align-items: center;
-    gap: 6px;
-    padding: 9px 8px 9px 12px;
-    border: 1px solid var(--athena-border);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--athena-bg-soft) 74%, transparent);
-}
-
-.wallet-card__address > .ant-typography {
-    min-width: 0;
-    flex: 1;
-    color: var(--athena-muted);
-    font-family: var(--athena-data-font);
-    font-size: 12px;
-}
-
-.wallet-card__footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    color: var(--athena-muted);
-    font-size: 12px;
-}
-
-.wallet-card__footer span:last-child {
-    color: var(--athena-primary);
-    font-weight: 600;
-}
-
-.wallet-empty {
-    display: grid;
-    min-height: 280px;
-    place-items: center;
-    border: 1px dashed var(--athena-border-strong);
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--athena-panel) 72%, transparent);
-}
-
-.wallet-pagination.ant-pagination {
-    justify-content: flex-end;
-    margin-top: 20px;
-}
-
 .wallet-avatar.ant-avatar {
     flex: 0 0 auto;
     border: 1px solid rgb(255 255 255 / 42%);
     color: #fff;
-    font-weight: 800;
+    font-weight: 600;
     box-shadow: 0 5px 14px rgb(15 23 42 / 18%);
 }
 
@@ -436,7 +308,7 @@
     color: var(--athena-muted);
     cursor: pointer;
     font: inherit;
-    font-size: 11px;
+    font-size: var(--athena-type-aux);
     transition:
         border-color 150ms ease,
         background-color 150ms ease,
@@ -483,7 +355,7 @@
     margin: 0 0 7px;
     overflow: hidden;
     color: var(--athena-text);
-    font-size: 20px;
+    font-size: var(--athena-type-section);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -497,7 +369,7 @@
 .wallet-detail__section-heading h4.ant-typography {
     margin: 0 0 12px;
     color: var(--athena-text);
-    font-size: 15px;
+    font-size: var(--athena-type-body);
 }
 
 .wallet-detail__section-heading {
@@ -516,7 +388,7 @@
     max-width: 310px;
     overflow-wrap: anywhere;
     font-family: var(--athena-data-font);
-    font-size: 12px;
+    font-size: var(--athena-type-aux);
 }
 
 .wallet-avatar-actions {
@@ -525,7 +397,7 @@
 
 .wallet-avatar-help.ant-typography {
     margin: 10px 0 0;
-    font-size: 12px;
+    font-size: var(--athena-type-aux);
 }
 
 .wallet-detail__secret {
@@ -537,7 +409,7 @@
 }
 
 .wallet-detail__secret > .ant-typography-secondary {
-    font-size: 12px;
+    font-size: var(--athena-type-aux);
     line-height: 1.55;
 }
 
@@ -546,7 +418,7 @@
     min-height: 20px;
     margin-top: 9px;
     color: var(--athena-muted);
-    font-size: 12px;
+    font-size: var(--athena-type-aux);
 }
 
 .wallet-modal-actions {
@@ -569,7 +441,7 @@
     min-height: 176px;
     overflow-x: auto;
     font-family: var(--athena-data-font);
-    font-size: 12px;
+    font-size: var(--athena-type-aux);
     line-height: 1.55;
     resize: vertical;
     white-space: pre;
@@ -584,7 +456,7 @@
     width: fit-content;
     color: var(--athena-muted);
     font-family: var(--athena-data-font);
-    font-size: 11px;
+    font-size: var(--athena-type-aux);
     font-variant-numeric: tabular-nums;
 }
 
@@ -635,7 +507,7 @@
 .wallet-secret-field .ant-input,
 .wallet-secret-field .ant-input-password input {
     font-family: var(--athena-data-font);
-    font-size: 12px;
+    font-size: var(--athena-type-aux);
 }
 
 .wallet-secret-heading {
@@ -661,20 +533,11 @@
     color: var(--athena-muted);
 }
 
-.wallet-header-actions--mobile.ant-btn {
-    display: none;
-}
 
-@media (max-width: 1250px) {
-    .wallet-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
+
 
 @media (max-width: 720px) {
-    .wallet-grid {
-        grid-template-columns: minmax(0, 1fr);
-    }
+
 
     .wallet-filters {
         align-items: stretch;
@@ -691,20 +554,8 @@
         text-align: center;
     }
 
-    .wallet-detail-drawer .ant-drawer-content-wrapper {
-        width: 100% !important;
-        max-width: 100vw;
-    }
 
-    .wallet-header-actions--desktop.ant-space {
-        display: none;
-    }
 
-    .wallet-header-actions--mobile.ant-btn {
-        display: inline-flex;
-        min-width: 44px;
-        min-height: 44px;
-    }
 
     .wallet-pagination.ant-pagination {
         width: 100%;
@@ -742,14 +593,7 @@
         min-height: 42px;
     }
 
-    .wallet-card .ant-card-body {
-        min-height: 176px;
-        padding: 17px;
-    }
 
-    .wallet-card__footer span:last-child {
-        display: none;
-    }
 
     .wallet-avatar-picker,
     .wallet-avatar-picker--compact {
@@ -805,8 +649,8 @@
     padding: 18px 20px;
     border: 1px solid var(--athena-border);
     border-radius: 12px;
-    background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--athena-blue) 8%, transparent), transparent 18rem), var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    background: var(--athena-panel);
+    box-shadow: none;
 }
 
 .worm-trading-runtime__heading {
@@ -837,7 +681,7 @@
 
 .worm-trading-runtime__heading > span > .anticon {
     color: var(--athena-primary);
-    font-size: 17px;
+    font-size: 1.0625rem;
 }
 
 .worm-trading-runtime__heading .ant-tag {
@@ -863,8 +707,8 @@
 
 .worm-trading-runtime__facts dt {
     color: var(--athena-muted);
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
     line-height: 1.2;
 }
 
@@ -873,9 +717,9 @@
     margin: 0;
     overflow: hidden;
     color: var(--athena-text);
-    font-family: var(--athena-data-font);
-    font-size: 13px;
-    font-weight: 750;
+    font-family: var(--athena-font);
+    font-size: 0.8125rem;
+    font-weight: 500;
     line-height: 1.3;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -883,7 +727,7 @@
 
 .worm-trading-runtime__error.ant-typography {
     color: var(--athena-amber);
-    font-size: 12px;
+    font-size: 0.8125rem;
 }
 
 .worm-trading-connection-setup.ant-alert {
@@ -891,7 +735,7 @@
     margin-bottom: 20px;
     padding: 16px 18px;
     border-radius: 12px;
-    box-shadow: var(--athena-shadow-surface);
+    box-shadow: none;
 }
 
 .worm-trading-connection-setup .ant-alert-content {
@@ -926,8 +770,8 @@
 
 .worm-trading-connection-setup__progress > span {
     color: var(--athena-muted);
-    font-family: var(--athena-data-font);
-    font-size: 11px;
+    font-family: var(--athena-font);
+    font-size: 0.8125rem;
     font-variant-numeric: tabular-nums;
 }
 
@@ -952,7 +796,7 @@
     border: 1px solid var(--athena-border);
     border-radius: 12px;
     background: var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    box-shadow: none;
 }
 
 .worm-wallet-selection-summary__heading {
@@ -993,16 +837,16 @@
 
 .worm-wallet-selection-summary dt {
     color: var(--athena-muted);
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-wallet-selection-summary dd {
     margin: 0;
     color: var(--athena-text);
-    font-family: var(--athena-data-font);
-    font-size: 18px;
-    font-weight: 800;
+    font-family: var(--athena-font);
+    font-size: 1.125rem;
+    font-weight: 500;
 }
 
 .worm-wallet-selection-summary__attention {
@@ -1011,7 +855,7 @@
 }
 
 .worm-wallet-selection-summary > .ant-typography {
-    font-size: 12px;
+    font-size: 0.8125rem;
 }
 
 .worm-wallet-selection-guide.ant-result,
@@ -1043,8 +887,11 @@
 
 .worm-wallet-selection-modal__title {
     justify-content: space-between;
-    padding-right: 8px;
+    flex-wrap: wrap;
+    padding-right: 2.75rem;
 }
+
+.worm-wallet-selection-modal .ant-modal-close { width: 2.75rem; height: 2.75rem; inset-block-start: .5rem; inset-inline-end: .5rem; }
 
 .worm-wallet-selection-modal__title .ant-tag {
     margin-inline-end: 0;
@@ -1092,7 +939,7 @@
     padding: 34px 16px;
 }
 
-.worm-wallet-selection-card {
+.worm-wallet-selection-card.ant-checkbox-wrapper {
     display: grid;
     min-width: 0;
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1119,10 +966,10 @@
     outline-offset: 2px;
 }
 
-.worm-wallet-selection-card--selected {
+.worm-wallet-selection-card--selected.ant-checkbox-wrapper {
     border-color: var(--athena-primary);
     background: color-mix(in srgb, var(--athena-primary) 7%, var(--athena-panel));
-    box-shadow: inset 3px 0 0 var(--athena-primary);
+    box-shadow: none;
 }
 
 .worm-wallet-selection-card--disabled {
@@ -1152,14 +999,14 @@
     overflow: hidden;
     color: var(--athena-muted);
     font-family: var(--athena-data-font);
-    font-size: 10px;
+    font-size: 0.8125rem;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .worm-wallet-selection-card__status {
     display: flex;
-    max-width: 132px;
+    max-width: 8.25rem;
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 4px;
@@ -1169,10 +1016,10 @@
     margin-inline-end: 0;
 }
 
-.worm-wallet-selection-card > small {
+.worm-wallet-selection-card small {
     grid-column: 2 / -1;
     color: var(--athena-amber);
-    font-size: 10px;
+    font-size: 0.8125rem;
     line-height: 1.4;
 }
 
@@ -1182,7 +1029,7 @@
 }
 
 .worm-wallet-selection-modal__footer > .ant-typography {
-    font-size: 12px;
+    font-size: 0.8125rem;
 }
 
 .worm-trading-balances {
@@ -1209,14 +1056,14 @@
 .worm-trading-balances__heading h2.ant-typography {
     margin: 0 0 3px;
     color: var(--athena-text);
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.3;
 }
 
 .worm-trading-balances__heading .ant-typography-secondary,
 .worm-trading-balances__refreshing.ant-typography {
     color: var(--athena-muted);
-    font-size: 12px;
+    font-size: 0.8125rem;
 }
 
 .worm-trading-balances__refreshing.ant-typography {
@@ -1240,7 +1087,7 @@
 .worm-trading-wallet__main > .ant-typography {
     min-width: 0;
     color: var(--athena-text);
-    font-size: 14px;
+    font-size: 0.875rem;
 }
 
 .worm-trading-wallet__address {
@@ -1256,7 +1103,7 @@
     overflow: hidden;
     color: inherit;
     font-family: var(--athena-data-font);
-    font-size: 11px;
+    font-size: 0.8125rem;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -1275,8 +1122,8 @@
 .worm-trading-asset strong {
     overflow: hidden;
     color: var(--athena-text);
-    font-family: var(--athena-data-font);
-    font-size: 14px;
+    font-family: var(--athena-font);
+    font-size: 0.875rem;
     font-variant-numeric: tabular-nums;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1286,7 +1133,7 @@
     min-width: 0;
     overflow: hidden;
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: 0.8125rem;
     line-height: 1.35;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1305,7 +1152,7 @@
     border-color: var(--athena-border);
     border-radius: 10px;
     background: var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    box-shadow: none;
 }
 
 .worm-trading-balance-card .ant-card-body {
@@ -1350,8 +1197,8 @@
 .worm-trading-balance-card__assets > div > span,
 .worm-trading-balance-card__mint > span {
     color: var(--athena-muted);
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-trading-balance-card__mint {
@@ -1369,7 +1216,7 @@
     overflow: hidden;
     color: var(--athena-muted);
     font-family: var(--athena-data-font);
-    font-size: 11px;
+    font-size: 0.8125rem;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -1397,7 +1244,7 @@
     max-width: 220px;
     overflow: hidden;
     color: var(--athena-muted);
-    font-size: 10px;
+    font-size: 0.8125rem;
     line-height: 1.35;
     text-overflow: ellipsis;
 }
@@ -1415,12 +1262,12 @@
 
 .worm-trading-balance-card__connection > span {
     color: var(--athena-muted);
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-trading-balance-card__connection .worm-trading-connection {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
 }
 
@@ -1451,14 +1298,14 @@
 .worm-trading-market .ant-typography {
     min-width: 0;
     color: var(--athena-text);
-    font-size: 13px;
+    font-size: 0.8125rem;
 }
 
 .worm-trading-market small {
     overflow: hidden;
     color: var(--athena-muted);
-    font-family: var(--athena-data-font);
-    font-size: 10px;
+    font-family: var(--athena-font);
+    font-size: 0.8125rem;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -1474,7 +1321,7 @@
     overflow: hidden;
     color: var(--athena-text);
     font-family: var(--athena-data-font);
-    font-size: 12px;
+    font-size: 0.8125rem;
     font-variant-numeric: tabular-nums;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1483,7 +1330,7 @@
 .worm-trading-data-pair small {
     overflow: hidden;
     color: var(--athena-muted);
-    font-size: 10px;
+    font-size: 0.8125rem;
     line-height: 1.35;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1499,7 +1346,7 @@
     border-color: var(--athena-border);
     border-radius: 10px;
     background: var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    box-shadow: none;
 }
 
 .worm-trading-activity-card .ant-card-body {
@@ -1537,8 +1384,8 @@
 
 .worm-trading-activity-card__facts dt {
     color: var(--athena-muted);
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-trading-activity-card__facts dd {
@@ -1546,9 +1393,9 @@
     margin: 0;
     overflow: hidden;
     color: var(--athena-text);
-    font-family: var(--athena-data-font);
-    font-size: 12px;
-    font-weight: 700;
+    font-family: var(--athena-font);
+    font-size: 0.8125rem;
+    font-weight: 500;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -1562,7 +1409,7 @@
     padding-top: 10px;
     border-top: 1px solid var(--athena-border);
     color: var(--athena-muted);
-    font-size: 10px;
+    font-size: 0.8125rem;
 }
 
 .worm-trading-activity-card__footer code {
@@ -1618,8 +1465,8 @@
 
 .worm-position-cash-out-confirmation dt {
     color: var(--athena-muted);
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-position-cash-out-confirmation dd {
@@ -1627,8 +1474,8 @@
     margin: 0;
     overflow-wrap: anywhere;
     color: var(--athena-text);
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-position-cash-out-confirmation .ant-typography {
@@ -1645,8 +1492,8 @@
 
 .worm-position-cash-out-batch-wallet-select .ant-checkbox-wrapper {
     color: var(--athena-text);
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-position-cash-out-batch-selection {
@@ -1669,12 +1516,12 @@
 
 .worm-position-cash-out-batch-selection strong {
     color: var(--athena-text);
-    font-size: 13px;
+    font-size: 0.8125rem;
 }
 
 .worm-position-cash-out-batch-selection span {
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: 0.8125rem;
     line-height: 1.5;
 }
 
@@ -1683,7 +1530,7 @@
     overflow: hidden;
     border-color: color-mix(in srgb, var(--athena-blue) 34%, var(--athena-border));
     background: color-mix(in srgb, var(--athena-panel-solid) 96%, var(--athena-blue) 4%);
-    box-shadow: 0 14px 34px rgb(15 23 42 / 8%);
+    box-shadow: none;
 }
 
 .worm-position-cash-out-batch-panel > .ant-card-head {
@@ -1713,7 +1560,7 @@
 
 .worm-position-cash-out-batch-panel__heading > .ant-typography,
 .worm-position-cash-out-batch-panel__heading > div > .ant-typography {
-    font-size: 11px;
+    font-size: 0.8125rem;
 }
 
 .worm-position-cash-out-batch-live-region {
@@ -1746,7 +1593,7 @@
 .worm-position-cash-out-batch-items__heading h4 {
     margin: 0;
     color: var(--athena-text);
-    font-size: 14px;
+    font-size: 0.875rem;
 }
 
 .worm-position-cash-out-batch-current__heading > div,
@@ -1758,7 +1605,7 @@
 
 .worm-position-cash-out-batch-current__heading .ant-typography,
 .worm-position-cash-out-batch-items__heading .ant-typography {
-    font-size: 11px;
+    font-size: 0.8125rem;
 }
 
 .worm-position-cash-out-batch-current__target {
@@ -1780,8 +1627,8 @@
 .worm-position-cash-out-batch-current__target small,
 .worm-position-cash-out-batch-evidence dt {
     color: var(--athena-muted);
-    font-size: 10px;
-    font-weight: 750;
+    font-size: 0.8125rem;
+    font-weight: 500;
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
@@ -1803,7 +1650,7 @@
 
 .worm-position-cash-out-batch-current__target span {
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: 0.8125rem;
 }
 
 .worm-position-cash-out-batch-evidence {
@@ -1824,8 +1671,8 @@
 
 .worm-position-cash-out-batch-evidence dd {
     margin: 0;
-    font-size: 13px;
-    font-weight: 750;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-position-cash-out-batch-evidence dd.is-positive {
@@ -1834,7 +1681,7 @@
 
 .worm-position-cash-out-batch-evidence small {
     color: var(--athena-muted);
-    font-size: 10px;
+    font-size: 0.8125rem;
 }
 
 .worm-position-cash-out-batch-items > ol {
@@ -1870,9 +1717,9 @@
     border-radius: 999px;
     background: var(--athena-bg-soft);
     color: var(--athena-muted);
-    font-family: var(--athena-data-font);
-    font-size: 10px;
-    font-weight: 750;
+    font-family: var(--athena-font);
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-position-cash-out-batch-items li > div {
@@ -1890,7 +1737,7 @@
 
 .worm-position-cash-out-batch-items li > div > span {
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: 0.8125rem;
 }
 
 .worm-position-cash-out-batch-items .ant-pagination {
@@ -1922,7 +1769,7 @@
 .worm-position-cash-out-batch-confirmation .ant-typography {
     margin: 0;
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: 0.8125rem;
     line-height: 1.55;
 }
 
@@ -1955,7 +1802,7 @@
 
 .worm-position-cash-out-batch-confirmation__wallets li strong {
     flex: none;
-    font-size: 11px;
+    font-size: 0.8125rem;
 }
 
 .worm-trading-pagination.ant-pagination {
@@ -1979,7 +1826,7 @@
 
 .worm-trading-empty .ant-empty-description {
     color: var(--athena-text);
-    font-weight: 650;
+    font-weight: 500;
 }
 
 .worm-trading-empty .ant-typography {
@@ -2051,7 +1898,7 @@
         margin: 0 -24px -24px;
         padding: 12px 24px calc(12px + env(safe-area-inset-bottom, 0px));
         background: color-mix(in srgb, var(--athena-panel-solid) 96%, transparent);
-        box-shadow: 0 -8px 18px rgb(15 23 42 / 10%);
+        box-shadow: none;
         backdrop-filter: blur(10px);
     }
 
@@ -2115,7 +1962,7 @@
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .worm-wallet-selection-card {
+    .worm-wallet-selection-card.ant-checkbox-wrapper {
         min-height: 88px;
     }
 
@@ -2168,12 +2015,12 @@
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .worm-wallet-selection-card {
+    .worm-wallet-selection-card.ant-checkbox-wrapper {
         grid-template-columns: auto minmax(0, 1fr);
     }
 
     .worm-wallet-selection-card__status,
-    .worm-wallet-selection-card > small {
+    .worm-wallet-selection-card small {
         grid-column: 2;
         max-width: none;
         justify-content: flex-start;
@@ -2305,7 +2152,7 @@
     height: auto;
     padding: 0;
     overflow: hidden;
-    font-weight: 700;
+    font-weight: 500;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -2314,7 +2161,7 @@
     border-color: var(--athena-border);
     border-radius: 10px;
     background: var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    box-shadow: none;
 }
 
 .worm-combination-list-card .ant-card-body {
@@ -2341,7 +2188,7 @@
     margin: 0;
     overflow: hidden;
     color: var(--athena-text);
-    font-size: 16px;
+    font-size: 1.0rem;
     line-height: 1.35;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2376,7 +2223,7 @@
 }
 
 .worm-combination-list-card__updated.ant-typography {
-    font-size: 11px;
+    font-size: 0.8125rem;
 }
 
 .worm-combination-list-card__actions {
@@ -2388,8 +2235,8 @@
     margin-bottom: 18px;
     border-color: var(--athena-border);
     border-radius: 12px;
-    background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--athena-primary) 8%, transparent), transparent 24rem), var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    background: var(--athena-panel);
+    box-shadow: none;
 }
 
 .worm-combination-event-input .ant-card-body {
@@ -2403,7 +2250,7 @@
 .worm-combination-event-input h2.ant-typography {
     margin: 0 0 3px;
     color: var(--athena-text);
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.35;
 }
 
@@ -2417,7 +2264,7 @@
 .worm-combination-event-input__error.ant-typography {
     grid-column: 2;
     margin-top: -10px;
-    font-size: 12px;
+    font-size: 0.8125rem;
 }
 
 .worm-combination-load-alert.ant-alert {
@@ -2451,7 +2298,7 @@
     border: 1px solid var(--athena-border);
     border-radius: 12px;
     background: var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    box-shadow: none;
 }
 
 .worm-combination-event__heading {
@@ -2474,7 +2321,7 @@
     margin: 0;
     overflow: hidden;
     color: var(--athena-text);
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.35;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2487,7 +2334,7 @@
     align-items: center;
     gap: 6px 14px;
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: 0.8125rem;
     font-variant-numeric: tabular-nums;
 }
 
@@ -2538,13 +2385,13 @@
 
 .worm-combination-market--selected {
     background: color-mix(in srgb, var(--athena-primary) 5%, var(--athena-panel));
-    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--athena-primary) 75%, transparent);
+    box-shadow: none;
 }
 
 .worm-combination-market__title.ant-typography {
     min-width: 0;
     color: var(--athena-text);
-    font-size: 13px;
+    font-size: 0.8125rem;
 }
 
 .worm-combination-market__outcomes {
@@ -2560,15 +2407,15 @@
 }
 
 .worm-combination-outcome-button.ant-btn {
-    --worm-combination-outcome-color: var(--athena-green);
+    --worm-combination-outcome-color: var(--athena-primary);
 
     width: 100%;
     min-width: 0;
     height: 42px;
     padding: 0 12px;
-    border: 1px solid var(--worm-combination-outcome-color);
+    border: 1px solid var(--athena-border-strong);
     border-radius: 8px;
-    background: color-mix(in srgb, var(--worm-combination-outcome-color) 5%, var(--athena-panel));
+    background: transparent;
     color: var(--athena-text);
     line-height: 40px;
     text-align: center;
@@ -2580,7 +2427,7 @@
 }
 
 .worm-combination-outcome-button--no.ant-btn {
-    --worm-combination-outcome-color: var(--athena-red);
+    --worm-combination-outcome-color: var(--athena-primary);
 }
 
 .worm-combination-outcome-button.ant-btn:not(:disabled):hover {
@@ -2625,23 +2472,23 @@
 
 .worm-combination-outcome-choice strong {
     color: var(--athena-text);
-    font-size: 12px;
+    font-size: 0.8125rem;
 }
 
 .worm-combination-outcome-choice__check {
     display: inline-grid;
     width: 12px;
     color: var(--worm-combination-outcome-color);
-    font-size: 11px;
+    font-size: 0.8125rem;
     place-items: center;
 }
 
 .worm-combination-outcome-choice__price {
     color: var(--athena-text);
-    font-family: var(--athena-data-font);
-    font-size: 13px;
+    font-family: var(--athena-font);
+    font-size: 0.8125rem;
     font-variant-numeric: tabular-nums;
-    font-weight: 800;
+    font-weight: 500;
     white-space: nowrap;
 }
 
@@ -2651,8 +2498,8 @@
     grid-column: 1 / -1;
     flex-wrap: wrap;
     gap: 3px 12px;
-    color: var(--athena-orange);
-    font-size: 10px;
+    color: var(--athena-amber);
+    font-size: 0.8125rem;
     line-height: 1.4;
 }
 
@@ -2664,7 +2511,7 @@
     border: 1px solid var(--athena-border);
     border-radius: 12px;
     background: var(--athena-panel);
-    box-shadow: var(--athena-shadow-surface);
+    box-shadow: none;
 }
 
 .worm-combination-summary__heading {
@@ -2684,7 +2531,7 @@
 .worm-combination-summary__heading h2.ant-typography {
     margin: 0;
     color: var(--athena-text);
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.35;
 }
 
@@ -2696,13 +2543,13 @@
     display: grid;
     gap: 6px;
     color: var(--athena-text);
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-combination-summary__name small {
     color: var(--athena-red);
-    font-size: 10px;
+    font-size: 0.8125rem;
     font-weight: 500;
 }
 
@@ -2718,14 +2565,14 @@
 .worm-combination-name-modal__field {
     gap: 7px;
     color: var(--athena-text);
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-combination-name-modal__field small {
     min-height: 17px;
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: 0.8125rem;
     font-weight: 500;
     line-height: 1.45;
 }
@@ -2776,9 +2623,9 @@
     border-radius: 50%;
     background: color-mix(in srgb, var(--athena-primary) 12%, var(--athena-bg-soft));
     color: var(--athena-primary);
-    font-family: var(--athena-data-font);
-    font-size: 11px;
-    font-weight: 800;
+    font-family: var(--athena-font);
+    font-size: 0.8125rem;
+    font-weight: 500;
 }
 
 .worm-combination-selection__copy {
@@ -2789,12 +2636,12 @@
 
 .worm-combination-selection__copy > .ant-typography {
     min-width: 0;
-    font-size: 11px;
+    font-size: 0.8125rem;
 }
 
 .worm-combination-selection__copy > .ant-typography-strong {
     color: var(--athena-text);
-    font-size: 12px;
+    font-size: 0.8125rem;
 }
 
 .worm-combination-selection__copy > span {
@@ -2810,13 +2657,13 @@
 }
 
 .worm-combination-selection__copy > span .ant-typography {
-    font-size: 10px;
+    font-size: 0.8125rem;
 }
 
 .worm-combination-selection__price.ant-typography {
-    font-family: var(--athena-data-font);
+    font-family: var(--athena-font);
     font-variant-numeric: tabular-nums;
-    font-weight: 800;
+    font-weight: 500;
 }
 
 .worm-combination-selection__actions {
@@ -2826,24 +2673,11 @@
 
 .worm-combination-summary__save.ant-btn {
     width: 100%;
-    min-height: 42px;
+    min-height: 2.75rem;
 }
 
-.worm-combination-mobile-review {
-    display: none;
-}
 
-.worm-combination-review-drawer .worm-combination-summary {
-    padding: 0;
-    border: 0;
-    background: transparent;
-    box-shadow: none;
-}
 
-.worm-combination-review-drawer .worm-combination-summary__items {
-    max-height: none;
-    overflow: visible;
-}
 
 @media (max-width: 900px) {
     .worm-combination-event-input .ant-card-body {
@@ -2866,44 +2700,10 @@
         display: none;
     }
 
-    .worm-combination-mobile-review {
-        position: fixed;
-        z-index: 38;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        display: flex;
-        min-height: 68px;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
-        border-top: 1px solid var(--athena-border-strong);
-        background: color-mix(in srgb, var(--athena-panel-solid) 94%, transparent);
-        box-shadow: 0 -10px 30px rgb(15 23 42 / 12%);
-        backdrop-filter: blur(14px);
-    }
 
-    .worm-combination-mobile-review > span {
-        display: grid;
-        min-width: 0;
-        gap: 1px;
-    }
 
-    .worm-combination-mobile-review strong {
-        color: var(--athena-text);
-        font-family: var(--athena-data-font);
-        font-size: 17px;
-    }
 
-    .worm-combination-mobile-review small {
-        color: var(--athena-muted);
-        font-size: 10px;
-    }
 
-    .worm-combination-mobile-review .ant-btn {
-        min-height: 44px;
-    }
 
     .worm-combination-event__heading > .ant-btn,
     .worm-combination-selection__actions .ant-btn {
@@ -2967,13 +2767,7 @@
         line-height: 42px;
     }
 
-    .worm-combination-mobile-review .ant-btn {
-        flex: 1;
-    }
 
-    .worm-combination-review-drawer .ant-drawer-content-wrapper {
-        width: 100% !important;
-    }
 
     .worm-combination-selection .ant-card-body {
         grid-template-columns: auto minmax(0, 1fr);
@@ -3091,7 +2885,7 @@
 .worm-preview-check-card--mandatory > svg {
     margin-top: 3px;
     color: var(--athena-primary);
-    font-size: 15px;
+    font-size: var(--athena-type-body);
 }
 
 .worm-preview-checks-summary.ant-card {
@@ -3143,7 +2937,7 @@
 .worm-preview-wallet-order__heading h2.ant-typography {
     margin: 0;
     color: var(--athena-text);
-    font-size: 18px;
+    font-size: var(--athena-type-section);
     line-height: 1.35;
 }
 
@@ -3188,8 +2982,8 @@
     background: color-mix(in srgb, var(--athena-primary) 12%, var(--athena-bg-soft));
     color: var(--athena-primary);
     font-family: var(--athena-data-font);
-    font-size: 11px;
-    font-weight: 800;
+    font-size: var(--athena-type-aux);
+    font-weight: 600;
 }
 
 .worm-preview-combination-item > div {
@@ -3291,7 +3085,7 @@
 .worm-preview-wallet-choice > small {
     grid-column: 2 / -1;
     color: var(--athena-muted);
-    font-size: 10px;
+    font-size: var(--athena-type-aux);
 }
 
 .worm-preview-wallet-identity {
@@ -3315,7 +3109,7 @@
 .worm-preview-wallet-identity code {
     color: var(--athena-muted);
     font-family: var(--athena-data-font);
-    font-size: 10px;
+    font-size: var(--athena-type-aux);
 }
 
 .worm-preview-wallet-order-desktop {
@@ -3406,7 +3200,7 @@
 
 .worm-preview-build-progress .ant-typography {
     font-family: var(--athena-data-font);
-    font-size: 11px;
+    font-size: var(--athena-type-aux);
 }
 
 .worm-preview-metrics {
@@ -3430,8 +3224,8 @@
 .worm-preview-metrics dt,
 .worm-preview-balance-strip dt {
     color: var(--athena-muted);
-    font-size: 10px;
-    font-weight: 700;
+    font-size: var(--athena-type-aux);
+    font-weight: 600;
     letter-spacing: 0.03em;
     text-transform: uppercase;
 }
@@ -3443,9 +3237,9 @@
     overflow: hidden;
     color: var(--athena-text);
     font-family: var(--athena-data-font);
-    font-size: 16px;
+    font-size: var(--athena-type-body);
     font-variant-numeric: tabular-nums;
-    font-weight: 800;
+    font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -3470,14 +3264,14 @@
     border-radius: 999px;
     background: var(--athena-panel);
     color: var(--athena-muted);
-    font-size: 10px;
+    font-size: var(--athena-type-aux);
 }
 
 .worm-preview-reason-counts strong {
     min-width: 20px;
     color: var(--athena-text);
     font-family: var(--athena-data-font);
-    font-size: 11px;
+    font-size: var(--athena-type-aux);
     text-align: center;
 }
 
@@ -3505,7 +3299,7 @@
 }
 
 .worm-preview-balance-strip dd {
-    font-size: 12px;
+    font-size: var(--athena-type-aux);
 }
 
 .worm-preview-steps {
@@ -3536,9 +3330,9 @@
 
 .worm-preview-step-usdc {
     font-family: var(--athena-data-font);
-    font-size: 11px;
+    font-size: var(--athena-type-aux);
     font-variant-numeric: tabular-nums;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .worm-preview-step-card.ant-card {
@@ -3583,7 +3377,7 @@
     padding-top: 10px;
     border-top: 1px solid var(--athena-border);
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: var(--athena-type-aux);
 }
 
 .worm-preview-step-card__balance strong {
@@ -3601,11 +3395,11 @@
 
 .worm-preview-review-loading h2.ant-typography {
     margin: 0;
-    font-size: 18px;
+    font-size: var(--athena-type-section);
 }
 
 .worm-preview-read-only.ant-alert {
-    border-color: color-mix(in srgb, var(--athena-orange) 45%, var(--athena-border));
+    border-color: color-mix(in srgb, var(--athena-blue) 45%, var(--athena-border));
 }
 
 @media (max-width: 1100px) {
@@ -3674,12 +3468,12 @@
     .worm-preview-mobile-order strong {
         color: var(--athena-text);
         font-family: var(--athena-data-font);
-        font-size: 17px;
+        font-size: var(--athena-type-body);
     }
 
     .worm-preview-mobile-order small {
         color: var(--athena-muted);
-        font-size: 10px;
+        font-size: var(--athena-type-aux);
     }
 
     .worm-preview-mobile-order .ant-btn {
@@ -3817,760 +3611,145 @@
     }
 }
 
-.sports-history-sync,
-.sports-live-card {
-    box-shadow: var(--athena-shadow-surface);
-}
-
-.world-cup-corners-notice {
-    margin-bottom: 18px;
-    border-color: color-mix(in srgb, var(--athena-blue) 34%, var(--athena-border));
-    background: color-mix(in srgb, var(--athena-blue) 7%, var(--athena-panel-solid));
-}
-
-.world-cup-corners-kpis {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
-    margin-bottom: 18px;
-}
-
-.world-cup-corners-kpi {
-    position: relative;
-    display: grid;
-    align-content: center;
-    min-width: 0;
-    min-height: 112px;
-    gap: 4px;
-    padding: 16px 18px;
-    overflow: hidden;
-    border: 1px solid var(--athena-border);
-    border-radius: 8px;
-    background: var(--athena-panel-solid);
-    box-shadow: var(--athena-shadow-surface);
-}
-
-.world-cup-corners-kpi::before {
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 4px;
-    content: '';
-    background: var(--athena-blue);
-}
-
-.world-cup-corners-kpi--good::before {
-    background: var(--athena-green);
-}
-
-.world-cup-corners-kpi__label {
-    color: var(--athena-muted);
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    line-height: 1.2;
-    text-transform: uppercase;
-}
-
-.world-cup-corners-kpi__value {
-    color: var(--athena-text);
-    font-family: var(--athena-data-font);
-    font-size: 28px;
-    font-weight: 900;
-    font-variant-numeric: tabular-nums;
-    line-height: 1.1;
-}
-
-.world-cup-corners-kpi--good .world-cup-corners-kpi__value {
-    color: var(--athena-green);
-}
-
-.world-cup-corners-kpi__detail {
-    color: var(--athena-muted);
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1.3;
-}
-
-.world-cup-corners-stage-panel,
-.world-cup-corners-table-panel {
-    margin-bottom: 18px;
-    overflow: hidden;
-    border: 1px solid var(--athena-border);
-    border-radius: 8px;
-    background: var(--athena-panel-solid);
-    box-shadow: var(--athena-shadow-surface);
-}
-
-.world-cup-corners-section-header,
-.world-cup-corners-table-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    min-width: 0;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--athena-border);
-    background: color-mix(in srgb, var(--athena-panel-elevated) 72%, var(--athena-panel-solid));
-}
-
-.world-cup-corners-section-header h2,
-.world-cup-corners-table-header h2 {
-    margin: 0 0 2px;
-    color: var(--athena-text);
-    font-size: 15px;
-    font-weight: 800;
-    line-height: 1.25;
-}
-
-.world-cup-corners-section-header .ant-typography-secondary,
-.world-cup-corners-table-header .ant-typography-secondary {
-    color: var(--athena-muted);
-    font-size: 12px;
-}
-
-.world-cup-corners-stage-list {
-    display: grid;
-    gap: 12px;
-    padding: 16px;
-}
-
-.world-cup-corners-stage-row {
-    display: grid;
-    grid-template-columns: 150px minmax(220px, 1fr) 96px;
-    align-items: center;
-    gap: 14px;
-    min-width: 0;
-}
-
-.world-cup-corners-stage-row__label {
-    color: var(--athena-text);
-    font-size: 13px;
-    font-weight: 750;
-}
-
-.world-cup-corners-stage-row__progress {
-    min-width: 0;
-    line-height: 1;
-}
-
-.world-cup-corners-stage-row__progress .ant-progress-inner {
-    border-radius: 4px;
-}
-
-.world-cup-corners-stage-row__progress .ant-progress-bg {
-    border-radius: 4px;
-}
-
-.world-cup-corners-stage-row__value {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: baseline;
-    gap: 7px;
-    color: var(--athena-text);
-    font-family: var(--athena-data-font);
-    font-variant-numeric: tabular-nums;
-}
-
-.world-cup-corners-stage-row__value strong {
-    font-size: 13px;
-    text-align: right;
-}
-
-.world-cup-corners-stage-row__value small {
-    color: var(--athena-muted);
-    font-size: 11px;
-}
-
-.world-cup-corners-table-header {
-    align-items: flex-end;
-}
-
-.world-cup-corners-filters {
-    justify-content: flex-end;
-}
-
-.world-cup-corners-filters .ant-input-affix-wrapper {
-    width: 210px;
-}
-
-.world-cup-corners-filters .choice-group {
-    justify-content: flex-end;
-}
-
-.world-cup-corners-table-panel .resource-table.ant-table-wrapper,
-.world-cup-corners-table-panel .resource-table .ant-table {
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-}
-
-.world-cup-corners-table-panel .resource-table .ant-table-thead > tr > th {
-    background: color-mix(in srgb, var(--athena-panel-elevated) 52%, var(--athena-panel-solid));
-}
-
-.world-cup-corners-match {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    gap: 7px;
-    color: var(--athena-muted);
-}
-
-.world-cup-corners-match strong {
-    min-width: 0;
-    overflow: hidden;
-    color: var(--athena-text);
-    font-weight: 750;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.world-cup-corners-score {
-    display: inline-grid;
-    justify-items: center;
-    gap: 2px;
-    color: var(--athena-text);
-    font-family: var(--athena-data-font);
-    font-size: 13px;
-    font-weight: 900;
-    font-variant-numeric: tabular-nums;
-}
-
-.world-cup-corners-score__penalties {
-    color: var(--athena-muted);
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.02em;
-}
-
-.world-cup-corners-number {
-    color: var(--athena-text);
-    font-family: var(--athena-data-font);
-    font-size: 13px;
-    font-variant-numeric: tabular-nums;
-}
-
-.world-cup-corners-number--strong {
-    font-size: 14px;
-    font-weight: 900;
-}
-
-.world-cup-corners-result {
-    min-width: 48px;
-    margin-inline-end: 0;
-    text-align: center;
-}
-
-.world-cup-corners-footnote {
-    max-width: 980px;
-    margin: 0 2px !important;
-    color: var(--athena-muted) !important;
-    font-size: 12px;
-    line-height: 1.5;
-}
-
-.sports-live-list {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 14px;
-}
-
-.sports-live-sections {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 18px;
-}
-
-.sports-history-sync {
-    display: grid;
-    gap: 6px;
-    margin-bottom: 18px;
-    padding: 12px 14px;
-    border: 1px solid var(--athena-border);
-    border-left-width: 3px;
-    border-radius: 8px;
-    background: var(--athena-panel);
-}
-
-.sports-history-sync--syncing {
-    border-left-color: var(--athena-blue);
-    background: color-mix(in srgb, var(--athena-blue) 8%, var(--athena-panel-solid));
-}
-
-.sports-history-sync--succeeded {
-    border-left-color: var(--athena-green);
-    background: color-mix(in srgb, var(--athena-green) 8%, var(--athena-panel-solid));
-}
-
-.sports-history-sync--failed {
-    border-left-color: var(--athena-red);
-    background: color-mix(in srgb, var(--athena-red) 8%, var(--athena-panel-solid));
-}
-
-.sports-history-actions {
-    align-items: center;
-}
-
-.sports-history-actions .ant-switch {
-    flex: 0 0 auto;
-}
-
-.sports-live-section {
-    min-width: 0;
-}
-
-.sports-live-section__header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-    min-width: 0;
-    padding: 0 2px 10px;
-}
-
-.sports-live-section__header h5 {
-    margin: 0;
-    min-width: 0;
-    overflow-wrap: anywhere;
-    color: var(--athena-text);
-    font-size: 15px;
-    font-weight: 900;
-    letter-spacing: 0;
-}
-
-.sports-live-section__count {
-    flex: 0 0 auto;
-    font-size: 12px;
-    font-weight: 800;
-}
-
-.sports-live-section__body {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 14px;
-}
-
-.sports-live-card {
-    display: grid;
-    grid-template-columns: minmax(320px, 0.76fr) minmax(480px, 1.24fr);
-    gap: 18px;
-    align-items: center;
-    min-width: 0;
-    padding: 16px;
-    border: 1px solid var(--athena-border);
-    border-radius: 8px;
-    background: var(--athena-panel);
-}
-
-.sports-live-card__info-column {
-    display: grid;
-    align-content: center;
-    min-width: 0;
-    gap: 14px;
-}
-
-.sports-live-card__info {
-    display: grid;
-    align-content: center;
-    min-width: 0;
-    gap: 12px;
-}
-
-.sports-live-card__title-line {
-    display: inline-flex;
-    align-items: center;
-    flex-wrap: wrap;
-    min-width: 0;
-    max-width: 100%;
-    gap: 6px;
-    vertical-align: top;
-}
-
-.sports-live-card .card-title__main > .ant-typography:first-child {
-    overflow: visible;
-    text-overflow: clip;
-    white-space: normal;
-}
-
-.sports-live-card__title-text {
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow-wrap: anywhere;
-}
-
-.sports-live-card__title-line .ant-btn {
-    flex: 0 0 auto;
-}
-
-.sports-live-stage {
-    display: grid;
-    min-width: 0;
-    gap: 4px;
-    padding: 11px 12px;
-    border-left: 4px solid var(--athena-green);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--athena-green) 10%, var(--athena-panel-solid));
-}
-
-.sports-live-stage__label {
-    color: var(--athena-muted);
-    font-size: 10px;
-    font-weight: 900;
-    line-height: 1;
-    text-transform: uppercase;
-}
-
-.sports-live-stage__value {
-    min-width: 0;
-    overflow-wrap: anywhere;
-    color: var(--athena-text);
-    font-size: 26px !important;
-    font-weight: 900 !important;
-    line-height: 1.04;
-    font-family: var(--athena-data-font);
-}
-
-.sports-live-stage__meta {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--athena-muted);
-    font-size: 12px;
-    font-weight: 800;
-    line-height: 1.2;
-}
-
-.sports-live-scoreboard {
-    display: grid;
-    min-width: 0;
-    gap: 3px;
-    padding: 10px 12px;
-    border-left: 4px solid var(--athena-accent);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--athena-accent) 10%, var(--athena-panel-solid));
-}
-
-.sports-live-scoreboard__label {
-    color: var(--athena-muted);
-    font-size: 10px;
-    font-weight: 900;
-    line-height: 1;
-    text-transform: uppercase;
-}
-
-.sports-live-scoreboard__value {
-    min-width: 0;
-    overflow-wrap: anywhere;
-    color: var(--athena-text);
-    font-size: 30px !important;
-    font-weight: 900 !important;
-    line-height: 1.02;
-    font-family: var(--athena-data-font);
-    font-variant-numeric: tabular-nums;
-}
-
-.sports-live-card__stats {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    min-width: 0;
-}
-
-.sports-live-card__stat {
-    display: grid;
-    min-width: 0;
-    gap: 2px;
-    padding: 9px 10px;
-    border: 1px solid var(--athena-border);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--athena-bg-soft) 40%, var(--athena-panel-solid));
-}
-
-.sports-live-card__stat-label {
-    color: var(--athena-muted);
-    font-size: 11px;
-    font-weight: 800;
-    line-height: 1.15;
-}
-
-.sports-live-card__stat-value {
-    min-width: 0;
-    overflow-wrap: anywhere;
-    color: var(--athena-text);
-    font-size: 13px;
-    font-weight: 900;
-    line-height: 1.18;
-    font-family: var(--athena-data-font);
-    font-variant-numeric: tabular-nums;
-}
-
-.sports-history-times {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-}
-
-.sports-history-time {
-    display: grid;
-    min-width: 0;
-    gap: 3px;
-    padding: 9px 10px;
-    border: 1px solid var(--athena-border);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--athena-bg-soft) 40%, var(--athena-panel-solid));
-}
-
-.sports-history-time__value {
-    min-width: 0;
-    overflow-wrap: anywhere;
-    color: var(--athena-text);
-    font-size: 12px;
-    font-weight: 900;
-    line-height: 1.2;
-    font-family: var(--athena-data-font);
-}
-
-.sports-history-status {
-    border-left-color: var(--athena-accent);
-    background: color-mix(in srgb, var(--athena-accent) 10%, var(--athena-panel-solid));
-}
-
-.sports-live-chart {
-    display: grid;
-    align-items: center;
-    min-width: 0;
-    min-height: 190px;
-    padding: 6px 0;
-}
-
-.sports-live-chart--empty {
-    place-items: center;
-    border: 1px dashed var(--athena-border);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--athena-bg-soft) 42%, transparent);
-}
-
-.sports-live-chart__svg {
-    width: 100%;
-    min-width: 0;
-    height: auto;
-    display: block;
-    overflow: hidden;
-    cursor: crosshair;
-    touch-action: pan-y;
-}
-
-.sports-live-chart--scratch .sports-live-chart__svg {
-    cursor: ew-resize;
-    touch-action: none;
-}
-
-.sports-live-chart__scratch-cover {
-    fill: color-mix(in srgb, var(--athena-bg-soft) 72%, var(--athena-panel-solid));
-    opacity: 0.96;
-    pointer-events: none;
-}
-
-.sports-live-chart__scratch-edge {
-    stroke: color-mix(in srgb, var(--athena-primary) 72%, var(--athena-text));
-    stroke-width: 2;
-    stroke-dasharray: 5 5;
-    vector-effect: non-scaling-stroke;
-    pointer-events: none;
-}
-
-.sports-live-chart__grid line {
-    stroke: color-mix(in srgb, var(--athena-muted) 20%, transparent);
-    stroke-dasharray: 2 6;
-    stroke-width: 1;
-}
-
-.sports-live-chart__grid text {
-    fill: var(--athena-muted);
-    font-size: 13px;
-    font-weight: 700;
-    text-anchor: end;
-}
-
-.sports-live-chart__line {
-    fill: none;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 3;
-    vector-effect: non-scaling-stroke;
-}
-
-.sports-live-chart__series--blue {
-    color: var(--athena-blue);
-}
-
-.sports-live-chart__series--gold {
-    color: var(--athena-amber);
-}
-
-.sports-live-chart__series--red {
-    color: var(--athena-red);
-}
-
-.sports-live-chart__series--green {
-    color: var(--athena-green);
-}
-
-.sports-live-chart__series--blue .sports-live-chart__line {
-    stroke: var(--athena-blue);
-}
-
-.sports-live-chart__series--gold .sports-live-chart__line {
-    stroke: var(--athena-amber);
-}
-
-.sports-live-chart__series--red .sports-live-chart__line {
-    stroke: var(--athena-red);
-}
-
-.sports-live-chart__series--green .sports-live-chart__line {
-    stroke: var(--athena-green);
-}
-
-.sports-live-chart__dot {
-    fill: currentColor;
-}
-
-.sports-live-chart__selection {
-    pointer-events: none;
-}
-
-.sports-live-chart__selection-guide {
-    stroke: color-mix(in srgb, var(--athena-muted) 62%, transparent);
-    stroke-dasharray: 4 5;
-    stroke-width: 1;
-    vector-effect: non-scaling-stroke;
-}
-
-.sports-live-chart__selection-time {
-    fill: var(--athena-muted);
-    font-size: 13px;
-    font-weight: 800;
-    font-family: var(--athena-data-font);
-    text-anchor: middle;
-}
-
-.sports-live-chart__selection-connector {
-    stroke: currentColor;
-    stroke-width: 1.5;
-    opacity: 0.55;
-    vector-effect: non-scaling-stroke;
-}
-
-.sports-live-chart__selection-halo {
-    fill: color-mix(in srgb, currentColor 22%, transparent);
-    stroke: color-mix(in srgb, var(--athena-panel-solid) 84%, transparent);
-    stroke-width: 2;
-    vector-effect: non-scaling-stroke;
-}
-
-.sports-live-chart__selection-dot {
-    fill: currentColor;
-    stroke: var(--athena-panel-solid);
-    stroke-width: 2;
-    vector-effect: non-scaling-stroke;
-}
-
-.sports-live-chart__selection-name {
-    fill: currentColor;
-    font-size: 14px;
-    font-weight: 900;
-}
-
-.sports-live-chart__selection-price {
-    fill: currentColor;
-    font-size: 27px;
-    font-weight: 900;
-    font-family: var(--athena-data-font);
-    font-variant-numeric: tabular-nums;
-}
-
-.sports-live-chart__endpoint-name {
-    fill: currentColor;
-    font-size: 17px;
-    font-weight: 900;
-}
-
-.sports-live-chart__endpoint-value {
-    fill: currentColor;
-    font-size: 34px;
-    font-weight: 900;
-    font-family: var(--athena-data-font);
-}
-
-.sports-live-moneyline {
-    display: grid;
-    min-width: 0;
-    align-content: center;
-    padding-top: 14px;
-    border-top: 1px solid var(--athena-border);
-}
-
-.sports-live-moneyline__rows {
-    display: grid;
-    gap: 14px;
-    min-width: 0;
-}
-
-.sports-live-moneyline__row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    min-width: 0;
-    gap: 14px;
-}
-
-.sports-live-moneyline__team {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    gap: 14px;
-}
-
-.sports-live-moneyline__logo {
-    width: 44px;
-    height: 44px;
-    object-fit: contain;
-    flex: 0 0 auto;
-}
-
-.sports-live-moneyline__badge {
-    display: inline-grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    flex: 0 0 auto;
-    border: 1px solid color-mix(in srgb, var(--athena-red) 45%, var(--athena-border));
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--athena-red) 12%, var(--athena-panel-solid));
-    color: var(--athena-red);
-    font-size: 16px;
-    font-weight: 900;
-    line-height: 1;
-}
-
-.sports-live-moneyline__name {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--athena-text);
-    font-size: 15px;
-    font-weight: 800;
-}
-
-.sports-live-moneyline__price {
-    color: var(--athena-accent);
-    font-size: 17px;
-    font-weight: 900;
-    font-family: var(--athena-data-font);
-    font-variant-numeric: tabular-nums;
+/* Market intelligence: v21 reading order, v23 shared roles. */
+.radar-snapshot { display:flex; gap:1rem 1.5rem; flex-wrap:wrap; padding:1.25rem 0; border-top:1px solid var(--athena-border); color:var(--athena-muted); font-size:var(--athena-type-aux); }
+.radar-up, .radar-connected { color:var(--athena-green); }
+.radar-down { color:var(--athena-red); }
+.radar-warmup { color:var(--athena-amber); }
+.radar-description { color:var(--athena-muted); font-size:var(--athena-type-aux); line-height:1.6; margin:0 0 1.25rem; }
+.radar-list .ant-table-thead { display:none; }
+.radar-list .ant-table-cell { padding:0 !important; }
+.radar-list .resource-table-compact__item { padding:0; }
+.radar-record { padding:1.5rem 0; min-width:0; }
+.radar-record__main { display:grid; grid-template-columns:minmax(0, .9fr) minmax(0, 1fr); gap:1.5rem; }
+.radar-heading { display:flex; flex-direction:column; gap:.5rem; min-width:0; overflow-wrap:anywhere; }
+.radar-heading strong { font-size:var(--athena-type-body); font-weight:600; }
+.radar-heading > span, .radar-updated { color:var(--athena-muted); font-size:var(--athena-type-aux); }
+.radar-hot-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; margin:0; }
+.radar-metric { min-width:0; }
+.radar-metric dt, .market-fact-grid dt { font-size:var(--athena-type-aux); color:var(--athena-muted); margin-bottom:.5rem; }
+.radar-metric dd, .market-fact-grid dd { margin:0; overflow-wrap:anywhere; }
+.radar-hot-metrics .athena-numeric-column dd, .radar-hot-metrics .athena-numeric-column dt { text-align:right; }
+.radar-record__meta { display:flex; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin:1rem 0; }
+.radar-outcomes { display:flex; gap:1rem; font-size:var(--athena-type-aux); }
+.radar-outcomes b { font-weight:500; }
+.radar-activity { display:flex; gap:1rem; flex-wrap:wrap; margin:0; font-size:var(--athena-type-aux); }
+.radar-activity .radar-metric { display:flex; gap:.375rem; }
+.radar-activity dt { margin:0; }
+.radar-facts { font-size:var(--athena-type-aux); }
+.radar-facts summary, .sports-event-sources summary { color:var(--athena-muted); cursor:pointer; padding:.75rem 0; min-height:2.75rem; }
+.radar-facts dl, .market-fact-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.25rem; margin:1rem 0; }
+.radar-windows { min-width:0; overflow-x:auto; margin-top:1rem; }
+.radar-windows table { width:100%; border-collapse:collapse; font-size:var(--athena-type-aux); }
+.radar-windows th { font-weight:400; color:var(--athena-muted); }
+.radar-windows td, .radar-windows th { padding:.5rem .375rem !important; text-align:right; white-space:normal; }
+.radar-windows th:first-child { text-align:left; }
+.radar-windows tbody th { color:var(--athena-text); }
+.sports-live-sections { display:grid; gap:2rem; }
+.sports-live-section__header { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin:0 0 1rem; }
+.sports-live-section__header h5 { margin:0; font-size:var(--athena-type-section); font-weight:600; }
+.sports-live-section__count { font-size:var(--athena-type-aux); }
+.sports-live-section__body { display:grid; gap:1.5rem; }
+.sports-live-card { display:grid; grid-template-columns:minmax(0,.76fr) minmax(0,1.24fr); border:1px solid var(--athena-border); border-radius:1rem; background:var(--athena-panel); min-width:0; container-type:inline-size; }
+.sports-live-card__info-column { padding:1.5rem; border-right:1px solid var(--athena-border); min-width:0; }
+.sports-live-card__info { display:grid; gap:1.5rem; }
+.sports-live-card__title-line { display:flex; align-items:start; gap:1rem; justify-content:space-between; white-space:normal; }
+.sports-live-card__title-text { min-width:0; overflow-wrap:anywhere; font-size:var(--athena-type-section); font-weight:600; }
+.sports-live-card .card-title__main > .ant-typography:first-child { white-space:normal; overflow:visible; }
+.sports-live-card__title-line .ant-btn { flex:none; width:2.75rem; height:2.75rem; border:1px solid var(--athena-border-strong); }
+.sports-live-stage, .sports-live-scoreboard { display:flex; flex-wrap:wrap; align-items:baseline; gap:.5rem 1rem; }
+.sports-live-stage__label, .sports-live-scoreboard__label, .sports-live-card__stat-label, .sports-live-stage__meta { color:var(--athena-muted); font-size:var(--athena-type-aux); }
+.sports-live-stage__value { font-size:var(--athena-type-control); font-weight:500; }
+.sports-live-scoreboard__value { font-size:1.5rem; font-weight:600; font-variant-numeric:tabular-nums; }
+.sports-live-card__stats, .sports-history-times { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.sports-live-card__stat, .sports-history-time { display:grid; gap:.5rem; min-width:0; }
+.sports-live-card__stat-value, .sports-history-time__value { font-size:var(--athena-type-control); font-weight:500; overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
+.sports-live-moneyline { border-top:1px solid var(--athena-border); padding-top:1rem; margin-top:1.5rem; }
+.sports-live-moneyline__rows { display:grid; gap:1rem; margin-top:1rem; }
+.sports-live-moneyline__row { display:flex; justify-content:space-between; align-items:center; gap:1rem; }
+.sports-live-moneyline__team { display:flex; align-items:center; gap:.5rem; min-width:0; }
+.sports-live-moneyline__logo { width:1.5rem; height:1.5rem; object-fit:contain; }
+.sports-live-moneyline__badge { display:none; }
+.sports-live-moneyline__name { overflow-wrap:anywhere; font-size:var(--athena-type-control); }
+.sports-live-moneyline__price { font-size:var(--athena-type-body); font-weight:600; font-variant-numeric:tabular-nums; }
+.sports-live-chart { min-width:0; padding:1.5rem; align-self:center; }
+.sports-live-chart--empty { min-height:12rem; display:grid; place-items:center; }
+.sports-chart-heading { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:.5rem; }
+.sports-chart-heading strong { font-size:var(--athena-type-body); font-weight:600; }
+.sports-chart-heading > span, .sports-chart-times, .sports-chart-selection { font-size:var(--athena-type-aux); color:var(--athena-muted); }
+.sports-chart-legend { display:flex; flex-wrap:wrap; gap:1rem; margin:1rem 0; font-size:var(--athena-type-aux); }
+.sports-chart-legend > span { display:flex; align-items:center; gap:.5rem; }
+.sports-chart-legend i { width:1rem; border-top:3px solid currentColor; }
+.sports-chart-tone-0 { color:var(--athena-chart-blue); }
+.sports-chart-tone-1 { color:var(--athena-chart-gold); }
+.sports-chart-tone-2 { color:var(--athena-chart-purple); }
+.sports-chart-tone-3 { color:var(--athena-green); }
+.sports-chart-plot { position:relative; padding-left:2.75rem; }
+.sports-chart-axis { position:absolute; inset:0 auto 0 0; display:flex; flex-direction:column; justify-content:space-between; font-size:var(--athena-type-aux); color:var(--athena-muted); }
+.sports-live-chart__svg { display:block; width:100%; height:13.75rem; min-width:0; overflow:visible; }
+.sports-live-chart__line { fill:none; stroke:currentColor; stroke-width:2; vector-effect:non-scaling-stroke; }
+.sports-chart-grid { stroke:var(--athena-border); stroke-width:1; vector-effect:non-scaling-stroke; }
+.sports-chart-times { display:flex; justify-content:space-between; gap:1rem; margin-top:.75rem; }
+.sports-chart-times span { max-width:48%; }
+.sports-live-chart input[type=range] { width:100%; min-width:0; min-height:2.75rem; margin:1rem 0; accent-color:var(--athena-primary); }
+.sports-chart-selection { display:grid; gap:.5rem; }
+.sports-chart-selection > div { display:flex; flex-wrap:wrap; gap:.5rem 1rem; color:var(--athena-text); }
+.sports-chart-selection b { font-weight:500; }
+.sports-event-sources { grid-column:1/-1; border-top:1px solid var(--athena-border); padding:0 1.5rem; min-width:0; font-size:var(--athena-type-aux); }
+.sports-history-sync { display:flex; flex-wrap:wrap; gap:1rem; padding:1rem 1.25rem; border:1px solid var(--athena-border); border-radius:.75rem; background:var(--athena-panel); margin-bottom:2rem; }
+.sports-history-sync--failed { color:var(--athena-red); }
+.sports-history-sync--syncing { color:var(--athena-blue); }
+.world-cup-corners-notice { margin-bottom:1.5rem; }
+.world-cup-corners-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1.5rem; padding:1.5rem 0; margin-bottom:1.5rem; border-block:1px solid var(--athena-border); }
+.world-cup-corners-kpi { display:grid; gap:.5rem; min-width:0; }
+.world-cup-corners-kpi__label, .world-cup-corners-kpi__detail { font-size:var(--athena-type-aux); color:var(--athena-muted); }
+.world-cup-corners-kpi__value { font-size:1.5rem; font-weight:600; font-variant-numeric:tabular-nums; }
+.world-cup-corners-stage-panel, .world-cup-corners-table-panel { border:1px solid var(--athena-border); border-radius:1rem; background:var(--athena-panel); padding:1.5rem; margin-bottom:1.5rem; min-width:0; container-type:inline-size; }
+.world-cup-corners-section-header h2, .world-cup-corners-table-header h2 { margin:0 0 .5rem; font-size:var(--athena-type-section); font-weight:600; }
+.world-cup-corners-section-header .ant-typography-secondary, .world-cup-corners-table-header .ant-typography-secondary { font-size:var(--athena-type-aux); }
+.world-cup-corners-stage-list { display:grid; gap:1.5rem; margin-top:1.5rem; }
+.world-cup-corners-stage-row { display:grid; grid-template-columns:10rem minmax(0,1fr) 7rem; align-items:center; gap:1rem; }
+.world-cup-corners-stage-row__label { font-size:var(--athena-type-control); }
+.world-cup-corners-stage-row__value { display:flex; gap:.5rem; justify-content:end; font-size:var(--athena-type-aux); font-variant-numeric:tabular-nums; }
+.world-cup-corners-stage-row__value strong { font-weight:500; }
+.world-cup-corners-stage-row__value small { color:var(--athena-muted); font-size:inherit; }
+.world-cup-corners-filters { display:flex; flex-wrap:wrap; align-items:end; gap:1rem; margin:1.25rem 0; }
+.world-cup-corners-filters label { display:grid; gap:.5rem; flex:1 1 12rem; min-width:0; font-size:var(--athena-type-control); }
+.world-cup-corners-filters .ant-input-affix-wrapper { width:100%; }
+.world-cup-corners-match { overflow-wrap:anywhere; }
+.world-cup-corners-match strong { font-weight:600; }
+.world-cup-corners-score { display:grid; gap:.375rem; font-variant-numeric:tabular-nums; }
+.world-cup-corners-score__penalties { font-size:var(--athena-type-aux); color:var(--athena-muted); }
+.world-cup-corners-number { font-variant-numeric:tabular-nums; }
+.world-cup-corners-result { font-size:var(--athena-type-aux); }
+.world-cup-corners-footnote { font-size:var(--athena-type-aux); color:var(--athena-muted); line-height:1.6; }
+.market-fact-grid { font-size:var(--athena-type-control); }
+.managed-oo-tabs { display:flex; gap:1.5rem; border-bottom:1px solid var(--athena-border); margin-bottom:1.5rem; }
+.managed-oo-tabs a { display:block; padding:.75rem 0; min-height:2.75rem; color:var(--athena-muted); }
+.managed-oo-tabs a[aria-current=page] { color:var(--athena-primary); border-bottom:2px solid var(--athena-primary); }
+.managed-oo-parser { display:flex; flex-wrap:wrap; align-items:end; gap:1rem; }
+.managed-oo-parser label { display:grid; gap:.5rem; min-width:0; }
+.managed-oo-parser .ant-input-number { width:100%; min-width:0; }
+.managed-oo-record { min-width:0; overflow-wrap:anywhere; }
+.managed-oo-record h3 { font-size:var(--athena-type-body); font-weight:600; margin:0 0 .75rem; }
+.managed-oo-price { font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.managed-oo-address { display:grid; gap:.75rem; min-width:0; }
+.managed-oo-drawer .ant-drawer-body { overflow:auto; }
+@container (max-width: 44rem) {
+    .world-cup-corners-stage-row { grid-template-columns:1fr auto; gap:.5rem; }
+    .world-cup-corners-stage-row__progress { grid-row:2; grid-column:1/-1; }
+}
+@media (max-width: 1100px) {
+    .radar-record__main { grid-template-columns:1fr; }
+}
+@media (max-width: 900px) {
+    .sports-live-card { grid-template-columns:1fr; }
+    .sports-live-card__info-column { border-right:0; border-bottom:1px solid var(--athena-border); }
+    .radar-facts dl, .market-fact-grid { grid-template-columns:1fr; }
+    .radar-hot-metrics dt, .radar-hot-metrics dd { text-align:left; }
+    .radar-record__meta { flex-direction:column; }
+    .world-cup-corners-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .managed-oo-parser, .managed-oo-parser label, .managed-oo-parser > button { width:100%; }
 }
 
 .login-phantom-button img {
@@ -4585,52 +3764,9 @@
     text-align: center;
 }
 
-.registration-screen {
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
-    padding: 24px;
-    background: radial-gradient(circle at 50% 0, color-mix(in srgb, var(--athena-brand) 11%, transparent), transparent 30rem),
-        linear-gradient(180deg, color-mix(in srgb, var(--athena-panel) 48%, transparent), transparent 44%), var(--athena-bg);
-}
-
-.registration-panel {
-    width: min(100%, 460px);
-    border-color: var(--athena-border);
-    border-radius: 10px;
-    background: var(--athena-panel);
-    box-shadow: var(--athena-shadow);
-}
-
-.registration-panel .ant-card-body {
-    padding: 32px;
-}
-
-.registration-panel__header {
-    display: grid;
-    justify-items: center;
-    gap: 14px;
-    margin-bottom: 24px;
-    text-align: center;
-}
-
-.registration-panel__header h2.ant-typography,
-.registration-panel__header .ant-typography {
-    margin: 0;
-}
-
-.registration-panel__header h2.ant-typography {
-    color: var(--athena-text);
-    font-size: 26px;
-    line-height: 1.2;
-    letter-spacing: -0.015em;
-}
-
-.registration-panel__header .ant-typography-secondary {
-    margin-top: 5px;
-    font-size: 13px;
-}
-
+.registration-panel__header { margin-bottom: 26px; text-align: left; }
+.registration-panel__header h1.ant-typography { margin: 0 0 12px; font-size: 1.75rem; line-height: 1.3; }
+.registration-panel__header .ant-typography-secondary { margin: 0; font-size: 1rem; }
 .registration-panel__loading,
 .registration-panel__failure {
     display: grid;
@@ -4643,17 +3779,7 @@
     justify-items: center;
 }
 
-.registration-identity {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 14px 16px;
-    border: 1px solid var(--athena-border);
-    border-radius: 8px;
-    background: var(--athena-panel-elevated);
-}
-
+.registration-identity { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px 0; border-block: 1px solid var(--athena-border); }
 .registration-identity > div {
     display: grid;
     gap: 2px;
@@ -4821,7 +3947,7 @@
 }
 
 .account-ai-connect-action.ant-btn {
-    min-height: 40px;
+    min-height: 2.75rem;
 }
 
 .account-ai-authority-alert {
@@ -4939,14 +4065,7 @@
 }
 
 @media (max-width: 520px) {
-    .registration-screen {
-        align-items: start;
-        padding: 12px;
-    }
 
-    .registration-panel {
-        margin-top: max(12px, env(safe-area-inset-top, 0px));
-    }
 
     .registration-panel .ant-card-body {
         padding: 24px;
@@ -5021,7 +4140,7 @@
 
 .profit-sharing-editor__intro h2 {
     margin: 0 0 3px;
-    font-size: 16px;
+    font-size: var(--athena-type-body);
 }
 
 .profit-sharing-editor__rows {
@@ -5044,8 +4163,8 @@
     border-bottom: 1px solid var(--athena-border);
     background: var(--athena-panel-elevated);
     color: var(--athena-muted);
-    font-size: 11px;
-    font-weight: 750;
+    font-size: var(--athena-type-aux);
+    font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }
@@ -5073,7 +4192,7 @@
 
 .profit-sharing-editor-row__member small {
     color: var(--athena-muted);
-    font-size: 11px;
+    font-size: var(--athena-type-aux);
 }
 
 .profit-sharing-editor-row label {
@@ -5085,8 +4204,8 @@
 .profit-sharing-editor-row label > span:first-child {
     display: none;
     color: var(--athena-muted);
-    font-size: 11px;
-    font-weight: 700;
+    font-size: var(--athena-type-aux);
+    font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
@@ -5637,3 +4756,556 @@
     gap: 12px;
     overflow-wrap: anywhere;
 }
+
+/* Identity settings consume the shared dark surfaces; metadata stays in rows. */
+.registration-identity__value.ant-typography { font-size: .875rem; font-weight: 600; }
+.registration-identity .ant-typography-secondary, .registration-form__permanence, .registration-username-status { font-size: .8125rem; }
+.account-ai-connect__copy { gap: 12px; max-width: 75ch; }
+.account-token-card { display: grid; justify-content: stretch; border: 0; border-radius: 0; padding: 20px 0; background: transparent; }
+.account-token-card > div { gap: 14px; }
+.account-token-card dl { display: grid; gap: 12px; margin: 0; }
+.account-token-card dl > div { display: grid; grid-template-columns: 4rem minmax(0, 1fr); gap: 4px; }
+.account-token-card dt { color: var(--athena-muted); font-size: .8125rem; }
+.account-token-card dd { margin: 0; font-variant-numeric: tabular-nums; }
+.account-token-card > button { justify-self: start; width: auto; }
+.account-center-content .resource-table-compact__item { border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+.account-ai-verification__copy strong { font-size: .875rem; }
+.account-ai-verification__copy small, .account-ai-instructions { font-size: .8125rem; }
+.account-ai-result-modal .ant-modal-container { max-height: calc(100dvh - 48px); display: flex; flex-direction: column; }
+.account-ai-result-modal .ant-modal-body { min-height: 0; overflow-y: auto; }
+.account-ai-result-modal .ant-modal-footer { flex-shrink: 0; }
+.telegram-channel-card { grid-template-columns: minmax(0, 1fr) auto; padding: 24px; border-color: var(--athena-border); border-radius: 14px; background: var(--athena-panel); box-shadow: none; }
+.telegram-channel-card__heading { justify-content: space-between; }
+.telegram-channel-card__heading .ant-typography { font-size: 1.125rem; }
+.telegram-channel-card__heading-title { display: flex; align-items: center; gap: 12px; }
+.telegram-channel-card__heading-title > .anticon { color: var(--athena-muted); font-size: 1.25rem; }
+.telegram-channel-card__copy { grid-column: 1 / -1; }
+.telegram-channel-card__copy > .ant-typography { margin: 12px 0 24px; }
+.telegram-connection-details { margin: 0; }
+.telegram-connection-details dt { font-size: .8125rem; font-weight: 400; letter-spacing: normal; text-transform: none; }
+.telegram-connection-details dd { font-size: .875rem; font-weight: 400; }
+.telegram-channel-card__consequences { grid-column: 1 / -1; border-top: 1px solid var(--athena-border); padding-top: 20px; margin: 4px 0 0 !important; font-size: .8125rem; }
+.telegram-channel-card__actions { grid-column: 2; }
+.telegram-fallback-command code { user-select: text; overflow-wrap: anywhere; }
+@media (max-width: 800px) {
+    .telegram-channel-card { grid-template-columns: minmax(0, 1fr); padding: 20px; }
+    .telegram-channel-card__heading { align-items: flex-start; flex-wrap: wrap; }
+    .telegram-channel-card__actions { grid-column: 1; width: 100%; justify-content: stretch; }
+    .telegram-channel-card__actions > .ant-space-item { flex: 1 1 max-content; width: auto; }
+    .telegram-channel-card__actions button { width: 100%; }
+    .telegram-connection-details { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+    .account-center-content .section-panel__header { flex-wrap: wrap; }
+    .account-center-content .section-panel__extra, .account-center-content .section-panel__extra > button { width: 100%; }
+}
+.login-panel__wallet-note.ant-typography { display: flex; align-items: baseline; gap: 8px; text-align: left; font-size: .8125rem; line-height: 1.7; margin: 4px 0 0; }
+.registration-form__field > label { font-size: .875rem; font-weight: 500; }
+.registration-identity .ant-typography-secondary { font-weight: 400; }
+.registration-username-input.ant-input-affix-wrapper { padding-block: 0; min-height: 3rem; font-size: .875rem; background: var(--athena-bg); }
+.registration-username-input.ant-input-affix-wrapper > input.ant-input { min-height: 0; background: transparent; }
+.registration-username-input--available.ant-input-affix-wrapper { box-shadow: none; }
+.registration-username-input__prefix { font-family: var(--athena-font); font-weight: 400; }
+.registration-form__permanence.ant-typography { font-size: .8125rem; }
+.account-center-content .resource-table-compact { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.account-center-content .resource-table-compact__item { padding: 0; }
+.account-center-content .resource-table-compact__item + .resource-table-compact__item { border-top: 1px solid var(--athena-border); }
+.account-ai-connect__copy > .ant-typography { font-size: .875rem; line-height: 1.7; }
+.telegram-delivery > h2.ant-typography { font-size: 1.25rem; font-weight: 600; margin: 0 0 16px; }
+.telegram-setup-layout, .telegram-setup-steps { min-width: 0; }
+@media (max-width: 600px) { .registration-panel__header h1.ant-typography { font-size: 1.5rem; } }
+.account-center-content .resource-table .ant-table { border-radius: 0; box-shadow: none; }
+.account-center-content .resource-table .ant-table-container { border: 0; }
+.account-center-content .resource-table .ant-table-thead > tr > th { background: transparent; text-transform: none; letter-spacing: normal; font-weight: 400; font-size: .8125rem; }
+.account-center-content .resource-table .ant-table-thead > tr > th::before { display: none; }
+.telegram-channel-card__heading { flex-direction: row; }
+.app-page:has(.telegram-delivery) > .app-page__header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; }
+.app-page:has(.telegram-delivery) .app-page__heading { display: contents; }
+.app-page:has(.telegram-delivery) .app-page__heading > h1 { grid-column: 1; grid-row: 1; }
+.app-page:has(.telegram-delivery) .app-page__heading > .ant-typography-secondary { grid-column: 1 / -1; grid-row: 2; }
+.app-page:has(.telegram-delivery) .app-page__actions { grid-column: 2; grid-row: 1; max-width: none; }
+.account-ai-result-modal.ant-modal { top: 24px; padding-bottom: 0; }
+
+/* v20 Wallets and saved Solana candidates. */
+.wallet-filters { margin: 0; align-items: end; gap: 1.25rem; }
+.wallet-search { flex: 1; min-width: 0; }
+.wallet-list > .resource-table-region { padding: 0 1.5rem; }
+.wallet-record { display: flex; align-items: flex-start; gap: .875rem; min-width: 0; }
+.wallet-record > .wallet-avatar { flex: 0 0 auto; margin-top: .5rem; }
+.wallet-record__identity { flex: 1; min-width: 0; }
+.wallet-record-compact { display: grid; gap: 1rem; }
+.wallet-record-compact .foundation-facts { grid-template-columns: minmax(0, 1fr); }
+.wallet-record-compact .foundation-facts > div { display: flex; align-items: baseline; gap: .75rem; }
+.wallet-record-compact .foundation-facts dd { margin: 0; }
+.wallet-page-summary { flex-wrap: wrap; gap: 1rem; padding: 1.25rem 1.5rem; margin: 0; border-top: 1px solid var(--athena-border); }
+.wallet-header-actions { flex-wrap: wrap; }
+.wallet-detail-modal .ant-modal-body { max-height: 65vh; overflow-y: auto; }
+.wallet-detail-modal .wallet-detail__identity { align-items: flex-start; }
+.wallet-detail-modal .wallet-detail__identity h3 { font-size: var(--athena-type-section); white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+.wallet-avatar-option { min-height: 2.75rem; }
+.wallet-modal-actions { flex-wrap: wrap; }
+.solana-candidates > .resource-table-region { padding: 0 1.5rem; }
+.solana-candidates .resource-table table { table-layout: fixed; }
+.solana-candidates .foundation-note { margin: 0; padding: 1.25rem 1.5rem; border-top: 1px solid var(--athena-border); }
+.solana-discovery-facts { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.solana-token-identity { display: grid; gap: .375rem; min-width: 0; }
+.solana-token-identity > .ant-typography { white-space: normal; overflow-wrap: anywhere; }
+.solana-candidate { display: grid; gap: 1.25rem; }
+.solana-candidate > .foundation-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.solana-transaction > span { display: block; margin-bottom: .5rem; color: var(--athena-muted); font-size: var(--athena-type-aux); }
+.solana-candidates td .foundation-address { flex-wrap: wrap; }
+.solana-candidates td .foundation-address > .athena-identifier { flex-basis: 100%; }
+.profit-sharing-editor__intro h2 { font-size: var(--athena-type-section); font-weight: 600; }
+.profit-sharing-editor__rows { border-inline: 0; border-radius: 0; overflow: visible; }
+.profit-sharing-editor__header, .profit-sharing-editor-row { grid-template-columns: minmax(0, .4fr) minmax(0, 1fr) minmax(7rem, .2fr); }
+.profit-sharing-editor__header { font-size: var(--athena-type-aux); font-weight: 400; background: transparent; text-transform: none; letter-spacing: normal; }
+.profit-sharing-editor-row { padding: 1.25rem 0; }
+.profit-sharing-editor-row__member strong, .profit-sharing-editor-row__member small { overflow: visible; white-space: normal; overflow-wrap: anywhere; }
+.profit-sharing-editor-row__member strong { font-weight: 600; }
+.profit-sharing-editor-row label > span:first-child { font-size: var(--athena-type-aux); font-weight: 400; text-transform: none; letter-spacing: normal; }
+.profit-sharing-editor-row__share .ant-input-number { min-width: 0; }
+.profit-sharing-editor__footer { position: static; margin: 0; box-shadow: none; backdrop-filter: none; }
+@media (max-width: 900px) {
+    .wallet-filters { align-items: stretch; flex-direction: column; }
+    .wallet-header-actions { width: 100%; }
+    .wallet-list > .resource-table-region, .solana-candidates > .resource-table-region { padding: 0 1.25rem; }
+    .wallet-page-summary { padding: 1.25rem; }
+    .solana-discovery-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .profit-sharing-editor-row { grid-template-columns: minmax(0, 1fr); }
+    .profit-sharing-editor-row__member { grid-column: auto; }
+    .profit-sharing-editor__footer { flex-direction: column; align-items: stretch; padding: 1rem 0 0; }
+    .profit-sharing-editor__footer > .ant-space { display: flex; flex-direction: column; align-items: stretch; }
+    .profit-sharing-editor__footer button { width: 100%; }
+}
+.wallet-filters .wallet-search { display: block; flex: 1; width: auto; }
+.wallet-filters .wallet-search .search-bar { display: flex; width: 100%; max-width: none; margin-top: .5rem; }
+.wallet-search .ant-input-search-btn { min-width: 5.5rem; white-space: nowrap; }
+.wallet-search .ant-input-group-addon { width: 1%; }
+.wallet-search .ant-input-search-btn > span { white-space: nowrap; }
+.wallet-search .ant-input-search-btn.ant-btn-primary { background: var(--athena-panel); border-color: var(--athena-border-strong); color: var(--athena-text); }
+.wallet-search .ant-input-search-btn.ant-btn-primary:hover { border-color: var(--athena-primary); color: var(--athena-primary); }
+@media (max-width: 900px) {
+    .wallet-header-actions { gap: .5rem; }
+    .wallet-header-actions .ant-btn { padding-inline: .75rem; }
+}
+.wallet-create-import-modal .ant-modal-body { max-height: min(65vh, 42rem); overflow-y: auto; }
+.wallet-create-import-modal .wallet-modal-actions { margin: 0; padding: 0; }
+.wallet-detail-modal .ant-modal-footer { padding-top: 1rem; }
+@media (max-width: 900px) {
+    .wallet-create-import-modal .wallet-modal-actions { flex-direction: column; gap: .75rem; }
+    .wallet-create-import-modal .wallet-modal-actions .ant-btn { width: 100%; margin-inline-start: 0; }
+}
+.solana-source--error { color: var(--athena-amber); }
+
+.wallet-search .ant-input-search-btn { flex: 0 0 auto; }
+
+/* Final capture corrections: one panel per source, semantic numeric alignment. */
+.radar-list .resource-table-region { border:0; border-radius:0; display:flex; flex-direction:column; }
+.radar-list .resource-table-pagination { order:2; border-top:1px solid var(--athena-border); border-bottom:0; }
+.radar-list .resource-table-compact__items { border:0; border-radius:0; }
+.radar-heading img { width:2.5rem; height:2.5rem; object-fit:cover; border-radius:.5rem; }
+.radar-record__main .radar-windows { margin-top:0; }
+.radar-hot-metrics + .radar-windows { margin-top:1rem; }
+.sports-event-heading { grid-column:1/-1; display:flex; justify-content:space-between; align-items:start; gap:1rem; padding:1.25rem 1.5rem; border-bottom:1px solid var(--athena-border); }
+.sports-event-heading h3 { margin:0; min-width:0; overflow-wrap:anywhere; font-size:var(--athena-type-section); font-weight:600; }
+.sports-event-heading .ant-btn { flex:none; min-width:2.75rem; min-height:2.75rem; border:1px solid var(--athena-border-strong); }
+.world-cup-corners-table-panel .resource-table-region, .world-cup-corners-table-panel .resource-table-compact__items { border:0; border-radius:0; }
+.world-cup-corners-table-panel .resource-table-compact__item { padding:1.5rem 0; }
+.world-cup-corners-table-panel .market-fact-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+@media (max-width:900px) {
+ .radar-hot-metrics .athena-numeric-column dt, .radar-hot-metrics .athena-numeric-column dd { text-align:left; }
+ .radar-record__main .radar-hot-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (min-width:901px) {
+ .sports-live-card:has(.sports-chart-heading) .sports-live-card__info-column { align-self:stretch; }
+}
+
+.market-intelligence-page .app-page__heading > .ant-typography-secondary { font-size:1rem; line-height:1.6; }
+.market-intelligence-page .section-panel { border-radius:1rem; box-shadow:none; }
+.market-intelligence-page .section-panel__header { padding:1.5rem 1.5rem .75rem; background:var(--athena-panel); border-bottom:0; }
+.market-intelligence-page .section-panel__body { padding:0 1.5rem; }
+.market-intelligence-page .section-panel__extra { color:var(--athena-muted); font-size:var(--athena-type-aux); }
+.radar-page .radar-snapshot > :first-child { margin-right:auto; }
+.radar-page .radar-snapshot { border-top:0; }
+.radar-list .resource-table.ant-table-wrapper, .radar-list .resource-table .ant-table, .radar-list .resource-table .ant-table-container, .radar-list .resource-table-compact { border:0; border-radius:0; box-shadow:none; }
+.radar-list .resource-table-pagination { margin-top:0; }
+.sports-page .radar-snapshot { padding:1rem 1.25rem; border:1px solid var(--athena-border); border-radius:.75rem; background:var(--athena-panel); margin-bottom:1.5rem; }
+.managed-oo-page .section-panel__body { padding-bottom:1.5rem; }
+.managed-oo-page .resource-table-region { padding:1.5rem; border:1px solid var(--athena-border); border-radius:1rem; background:var(--athena-panel); display:flex; flex-direction:column; }
+.managed-oo-page .resource-table-pagination { order:2; }
+.managed-oo-page .resource-table.ant-table-wrapper, .managed-oo-page .resource-table .ant-table, .managed-oo-page .resource-table-compact { border:0; box-shadow:none; }
+.managed-oo-page .resource-table-compact__item { padding:1.5rem 0; }
+
+.market-intelligence-page .resource-table-pagination { border:0; border-top:1px solid var(--athena-border); border-radius:0; background:transparent; }
+
+.world-cup-corners-table-panel .resource-table.ant-table-wrapper, .world-cup-corners-table-panel .resource-table .ant-table, .world-cup-corners-table-panel .resource-table .ant-table-container, .world-cup-corners-table-panel .resource-table-compact { border:0; border-radius:0; box-shadow:none; }
+
+.managed-oo-parser .ant-input-number-input { font-size:var(--athena-type-control); min-height:2.75rem; }
+
+/* Worm Assets and saved combinations: approved v22 structure with v23 type and states. */
+.worm-assets-wallet-panel,
+.worm-assets-activity-panel { border: 1px solid var(--athena-border); border-radius: 16px; background: var(--athena-panel); min-width: 0; overflow: hidden; }
+.worm-assets-navigation { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--athena-border); margin-bottom: 24px; }
+.worm-assets-navigation .ant-btn { min-height: 44px; border-radius: 0; color: var(--athena-muted); }
+.worm-assets-navigation [aria-current] { color: var(--athena-primary); border-bottom: 2px solid var(--athena-primary); }
+.worm-wallet-selection-summary { background: transparent; border: 0; border-radius: 0; margin: 0; padding: 24px; }
+.worm-wallet-selection-summary__heading > span { font-size: 1.25rem; font-weight: 600; }
+.worm-wallet-selection-summary__heading > span > .anticon { display: none; }
+.worm-wallet-selection-summary dl { display: flex; flex-wrap: wrap; gap: 16px 24px; }
+.worm-wallet-selection-summary dl > div { display: flex; gap: 4px; background: transparent; border: 0; padding: 0; }
+.worm-wallet-selection-summary dt, .worm-wallet-selection-summary dd { font-size: .8125rem; font-family: var(--athena-font); font-weight: 400; }
+.worm-trading-runtime { background: transparent; border: 0; border-top: 1px solid var(--athena-border); border-radius: 0; box-shadow: none; margin: 0 24px; padding: 20px 0; gap: 12px; }
+.worm-trading-runtime__services { display: flex; flex-wrap: wrap; gap: 20px; }
+.worm-trading-runtime__services .worm-trading-runtime__heading { border: 0; padding: 0; flex-direction: row; gap: 8px; font-size: .8125rem; }
+.worm-trading-runtime__heading strong { font-weight: 400; color: var(--athena-muted); }
+.worm-trading-runtime__heading .anticon { display: none; }
+.worm-trading-runtime__facts { margin-top: 16px; }
+.worm-trading-runtime__facts > div { background: transparent; border: 0; padding: 0; }
+.worm-trading-runtime__facts dd { white-space: normal; overflow-wrap: anywhere; font-family: var(--athena-font); }
+.worm-assets-readonly-heading { padding: 24px; }
+.worm-assets-readonly-heading h2 { font-size: 1.25rem; margin: 0 0 12px; }
+.worm-trading-balances { margin: 0; }
+.worm-trading-balances__heading { padding: 12px 24px; }
+.worm-trading-balances__heading h2 { display: none; }
+.worm-assets-wallet-columns { display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr; gap: 24px; padding: 20px 24px; border-bottom: 1px solid var(--athena-border); color: var(--athena-muted); font-size: .8125rem; }
+.worm-assets-wallet-columns > span:nth-child(2), .worm-assets-wallet-columns > span:nth-child(3) { text-align: right; }
+.worm-trading-balance-card.ant-card { background: transparent; border: 0; border-bottom: 1px solid var(--athena-border); border-radius: 0; box-shadow: none; }
+.worm-trading-balance-card > .ant-card-body { display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr; gap: 12px 24px; padding: 24px; align-items: start; }
+.worm-trading-balance-card__header { grid-column: 1; grid-row: 1; display: grid; gap: 8px; }
+.worm-trading-balance-card__header > .ant-tag { justify-self: start; }
+.worm-trading-balance-card__assets { display: contents; }
+.worm-trading-balance-card__assets > div { background: transparent; border: 0; padding: 0; text-align: right; }
+.worm-trading-balance-card__assets > div > span { display: none; }
+.worm-trading-balance-card__assets > div:nth-child(1) { grid-column: 2; grid-row: 1; }
+.worm-trading-balance-card__assets > div:nth-child(2) { grid-column: 3; grid-row: 1; }
+.worm-trading-balance-card__connection { grid-column: 4; grid-row: 1 / 3; border: 0; padding: 0; }
+.worm-trading-balance-card__connection > span { display: none; }
+.worm-trading-balance-card__connection .worm-trading-connection { display: grid; }
+.worm-position-cash-out-batch-wallet-select { grid-column: 1; grid-row: 2; padding: 0; border: 0; }
+.worm-trading-wallet { align-items: start; min-width: 0; gap: 10px; }
+.worm-trading-wallet .wallet-avatar { flex: 0 0 1.75rem; width: 1.75rem !important; height: 1.75rem !important; font-size: .8125rem !important; line-height: 1 !important; }
+.worm-trading-wallet .ant-avatar-string { position: static; transform: none !important; }
+.worm-trading-wallet__main { min-width: 0; }
+.worm-trading-wallet__address { align-items: start; gap: 4px; }
+.worm-trading-wallet__address code, .worm-wallet-selection-card__identity code { overflow-wrap: anywhere; white-space: normal; overflow: visible; text-overflow: clip; font-family: var(--athena-data-font); font-size: .8125rem; font-weight: 400; }
+.worm-trading-wallet__address .ant-btn { flex: 0 0 44px; min-width: 44px; min-height: 44px; }
+.worm-trading-asset strong { font: 500 1rem/1.5 var(--athena-font); font-variant-numeric: tabular-nums; white-space: normal; overflow-wrap: anywhere; }
+.worm-trading-asset small { font-size: .8125rem; white-space: normal; overflow-wrap: anywhere; }
+.worm-assets-balance-note { padding: 18px 24px; color: var(--athena-muted); font-size: .8125rem; }
+.worm-assets-activity-panel { margin-top: 24px; }
+.worm-assets-activity-panel > .ant-tabs > .ant-tabs-nav { margin: 0; padding: 0 24px; }
+.worm-trading-activity-card.ant-card { background: transparent; border: 0; border-bottom: 1px solid var(--athena-border); border-radius: 0; box-shadow: none; }
+.worm-trading-activity-card > .ant-card-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; padding: 24px; }
+.worm-trading-market { grid-column: 1; grid-row: 1; }
+.worm-trading-market > .ant-avatar { display: none; }
+.worm-trading-market .ant-typography { white-space: normal; font-size: 1rem; font-weight: 500; }
+.worm-trading-market small { display: block; margin-top: 8px; font-size: .8125rem; white-space: normal; overflow-wrap: anywhere; }
+.worm-trading-activity-card__tags { grid-column: 1; grid-row: 2; }
+.worm-trading-activity-card__tags > span:first-child { color: var(--athena-muted); font-size: .8125rem; }
+.worm-position-cash-out-card-action { grid-column: 2; grid-row: 1 / 3; }
+.worm-trading-activity-card__facts { grid-column: 1 / -1; grid-template-columns: repeat(4,minmax(0,1fr)); margin: 0; gap: 24px; }
+.worm-trading-activity-card__facts > div { background: transparent; border: 0; padding: 0; }
+.worm-trading-activity-card__facts dt { font-size: .8125rem; font-weight: 400; }
+.worm-trading-activity-card__facts dd { font: 400 .9375rem/1.5 var(--athena-font); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; white-space: normal; }
+.worm-trading-activity-evidence { grid-column: 1 / -1; font-size: .8125rem; color: var(--athena-muted); overflow-wrap: anywhere; }
+.worm-trading-activity-evidence summary, .worm-trading-runtime summary { cursor: pointer; min-height: 44px; display: list-item; padding: 12px 0; }
+.worm-trading-activity-evidence code { font-family: var(--athena-data-font); font-weight: 400; overflow-wrap: anywhere; white-space: normal; }
+.worm-trading-activity-card__footer { flex-wrap: wrap; font-size: .8125rem; }
+.worm-trading-activity-card__footer code { overflow: visible; white-space: normal; }
+.worm-assets-wallet-panel .ant-tag, .worm-assets-activity-panel .ant-tag, .worm-position-cash-out-batch-panel .ant-tag,
+.worm-combination-list-card .ant-tag, .worm-combination-list-description .ant-tag, .worm-combination-summary .ant-tag { font-size: .8125rem; font-weight: 400; background: transparent; border-color: var(--athena-border); }
+.athena-tag--success { color: var(--athena-green); }
+.athena-tag--info { color: var(--athena-blue); }
+.athena-tag--warning { color: var(--athena-amber); }
+.worm-combination-list-description { display: grid; gap: 12px; min-width: 0; }
+.worm-combination-list-description > div { display: flex; align-items: start; gap: 8px; font-size: .8125rem; color: var(--athena-muted); }
+.worm-combination-list-description .ant-tag { flex: none; }
+.worm-combination-list-card.ant-card { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.worm-combination-list-card__heading h3.ant-typography { font-size: 1rem; font-weight: 500; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.worm-combination-list-card__preview > span { align-items: start; }
+.worm-combination-list-card__actions { display: flex; gap: 8px; }
+.worm-combination-list-card__actions .ant-space-item:last-child { flex-basis: 100%; }
+.worm-combination-event-input.ant-card { border-color: var(--athena-border); background: var(--athena-panel); margin-bottom: 24px; }
+.worm-combination-event-input > .ant-card-body { display: grid; gap: 12px; padding: 24px; }
+.worm-combination-event-input label { font-size: .9375rem; }
+.worm-combination-event-input__control { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 12px; }
+.worm-combination-builder { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 24px; padding: 0; }
+.worm-combination-builder__summary { display: block; position: static; min-width: 0; }
+.worm-combination-summary { border: 1px solid var(--athena-border); border-radius: 16px; background: var(--athena-panel); padding: 24px; gap: 24px; }
+.worm-combination-summary__heading h2, .worm-combination-event__heading h2 { font-size: 1.25rem; font-weight: 600; line-height: 1.4; white-space: normal; }
+.worm-combination-summary__heading { align-items: start; }
+.worm-combination-summary__heading .ant-tag { margin: 0; }
+.worm-combination-summary__name { gap: 8px; }
+.worm-combination-summary__name > span { font-size: .9375rem; font-weight: 500; }
+.worm-combination-summary__name small { font-size: .8125rem; color: var(--athena-muted); }
+.worm-combination-summary__items { max-height: none; min-height: 0; overflow: visible; gap: 0; padding: 0; }
+.worm-combination-selection.ant-card { border: 0; border-bottom: 1px solid var(--athena-border); border-radius: 0; background: transparent; }
+.worm-combination-selection > .ant-card-body { grid-template-columns: 22px minmax(0,1fr); gap: 12px; padding: 24px 0; align-items: start; }
+.worm-combination-selection__ordinal { width: auto; height: auto; font: 400 .9375rem/1.5 var(--athena-font); color: var(--athena-muted); background: transparent; }
+.worm-combination-selection__copy { display: flex; flex-direction: column; gap: 12px; }
+.worm-combination-selection__copy > .ant-typography-secondary { order: 1; }
+.worm-combination-selection__copy > span:last-child { order: 2; }
+.worm-combination-selection__copy > .ant-typography { font-size: .9375rem; white-space: normal; }
+.worm-combination-selection__copy > .ant-typography-secondary { font-size: .8125rem; }
+.worm-combination-selection__actions { grid-column: 2; display: flex; justify-content: flex-end; gap: 8px; }
+.worm-combination-selection__actions .ant-btn { min-height: 44px; min-width: 44px; }
+.worm-combination-event { background: var(--athena-panel); border: 1px solid var(--athena-border); border-radius: 16px; box-shadow: none; }
+.worm-combination-event__heading { padding: 24px; grid-template-columns: minmax(0,1fr) auto auto; }
+.worm-combination-market { display: grid; grid-template-columns: minmax(0,1fr); padding: 28px 24px; gap: 18px; border-bottom: 1px solid var(--athena-border); }
+.worm-combination-market:last-child { border-bottom: 0; }
+.worm-combination-market--selected { background: transparent; }
+.worm-combination-market__title.ant-typography { font-size: .9375rem; line-height: 1.5; white-space: normal; font-weight: 500; }
+.worm-combination-market__outcomes { width: 100%; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.worm-combination-outcome-button.ant-btn { width: 100%; min-height: 48px; height: auto; padding: 12px; font-size: .9375rem; }
+.worm-combination-outcome-choice { display: flex; gap: 6px; min-width: 0; }
+.worm-combination-outcome-choice strong { font-size: .9375rem; font-weight: 400; }
+.worm-combination-outcome-choice__price { margin-left: auto; font: 500 .9375rem/1.5 var(--athena-font); font-variant-numeric: tabular-nums; }
+.worm-combination-market__availability { color: var(--athena-amber); font-size: .8125rem; }
+.worm-combination-summary__save { width: 100%; }
+.worm-wallet-selection-modal .ant-modal-content { display: flex; flex-direction: column; max-height: calc(100dvh - 32px); }
+.worm-wallet-selection-modal .ant-modal-body { min-height: 0; overflow: hidden; }
+.worm-wallet-selection-modal__body { min-height: 0; max-height: 55dvh; overflow-y: auto; }
+.worm-wallet-selection-modal__footer { flex-shrink: 0; }
+.worm-wallet-selection-card .wallet-avatar { flex-shrink: 0; width: 1.75rem !important; height: 1.75rem !important; font-size: .8125rem !important; line-height: 1 !important; }
+.worm-confirm-modal .ant-modal-content { max-height: calc(100dvh - 32px); display: flex; flex-direction: column; }
+.worm-confirm-modal .ant-modal-body { min-height: 0; overflow-y: auto; }
+.worm-confirm-modal .ant-modal-confirm-content { overflow-wrap: anywhere; }
+.worm-position-cash-out-batch-panel.ant-card { background: var(--athena-panel); border-color: var(--athena-border); box-shadow: none; }
+.worm-position-cash-out-batch-panel > .ant-card-head { background: transparent; }
+.worm-position-cash-out-batch-current, .worm-position-cash-out-batch-items { background: transparent; border: 0; padding: 0; }
+.worm-position-cash-out-batch-current__target strong, .worm-position-cash-out-batch-current__target code, .worm-position-cash-out-batch-current__target span,
+.worm-position-cash-out-batch-items li > div > strong, .worm-position-cash-out-batch-items li > div > span,
+.worm-position-cash-out-batch-confirmation__wallets li span { overflow-wrap: anywhere; overflow: visible; white-space: normal; }
+@media (max-width: 900px) {
+    .worm-assets-wallet-columns { display: none; }
+    .worm-trading-balance-card > .ant-card-body { display: flex; flex-direction: column; padding: 24px 20px; }
+    .worm-trading-balance-card__header { order: 0; }
+    .worm-position-cash-out-batch-wallet-select { order: 1; }
+    .worm-trading-balance-card__assets { display: grid; order: 2; grid-template-columns: repeat(2,minmax(0,1fr)); width: 100%; margin: 12px 0; gap: 20px; }
+    .worm-trading-balance-card__assets > div { grid-column: auto !important; grid-row: auto !important; text-align: left; }
+    .worm-trading-balance-card__assets > div > span { display: block; margin-bottom: 8px; }
+    .worm-trading-balance-card__connection { order: 3; }
+    .worm-trading-activity-card > .ant-card-body { display: flex; flex-direction: column; padding: 24px 20px; }
+    .worm-trading-market { order: 0; }
+    .worm-trading-activity-card__tags { order: 1; }
+    .worm-position-cash-out-card-action { order: 2; }
+    .worm-position-cash-out-card-action .ant-btn { width: 100%; }
+    .worm-trading-activity-card__facts { order: 3; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
+    .worm-trading-activity-evidence { order: 4; }
+    .worm-combination-builder { grid-template-columns: minmax(0,1fr); padding-bottom: 0; }
+    .worm-combination-builder__summary { display: block; }
+    .worm-combination-event__heading { padding: 24px 20px; }
+    .worm-combination-summary { padding: 24px 20px; }
+    .worm-combination-selection__actions { justify-content: flex-start; }
+    .worm-combination-event-input__control { grid-template-columns: minmax(0,1fr); }
+    .worm-combination-outcome-button.ant-btn { min-width: 0; padding: 10px 8px; }
+    .worm-combination-market { padding: 24px 20px; }
+    .worm-confirm-modal .ant-modal-confirm-btns { display: flex; flex-direction: column-reverse; gap: 8px; width: 100%; }
+    .worm-confirm-modal .ant-modal-confirm-btns .ant-btn { width: 100%; margin-inline-start: 0 !important; min-height: 44px; height: auto; white-space: normal; }
+    .worm-wallet-selection-modal__footer > div, .worm-combination-name-modal__actions { display: flex; flex-direction: column-reverse; gap: 8px; width: 100%; }
+    .worm-combination-name-modal__actions .ant-btn { width: 100%; }
+}
+.worm-theme-page .app-page__heading > .ant-typography-secondary { font-size: var(--athena-type-body); line-height: 1.65; }
+.worm-theme-page .app-page__header { border-bottom: 0; padding-bottom: 0; margin-bottom: 24px; }
+.worm-theme-page .ant-btn { font-weight: 500; }
+.worm-wallet-selection-summary__heading h2 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+.worm-wallet-selection-summary__attention { color: var(--athena-muted); background: transparent; }
+.worm-trading-activity-card__facts small, .worm-trading-market small { color: var(--athena-muted); font: 400 .8125rem/1.6 var(--athena-font); }
+.worm-trading-activity-card__facts .worm-value-positive { color: var(--athena-green); }
+.worm-trading-activity-card__facts .worm-value-negative { color: var(--athena-red); }
+.worm-trading-activity-card__facts .worm-value-unavailable { color: var(--athena-amber); }
+.worm-theme-page .ant-tag-success, .worm-wallet-selection-modal .ant-tag-success { color: var(--athena-green); border-color: var(--athena-border); background: transparent; }
+.worm-theme-page .ant-tag-processing, .worm-wallet-selection-modal .ant-tag-processing { color: var(--athena-blue); border-color: var(--athena-border); background: transparent; }
+.worm-theme-page .ant-tag-warning, .worm-wallet-selection-modal .ant-tag-warning { color: var(--athena-amber); border-color: var(--athena-border); background: transparent; }
+.worm-theme-page .ant-tag-error, .worm-wallet-selection-modal .ant-tag-error { color: var(--athena-red); border-color: var(--athena-border); background: transparent; }
+.worm-combination-identifiers { color: var(--athena-muted); font-size: .8125rem; overflow-wrap: anywhere; }
+.worm-combination-identifiers summary { cursor: pointer; min-height: 44px; padding: 12px 0; }
+.worm-combination-identifiers code { font-family: var(--athena-data-font); }
+.worm-combination-event-price-note { margin: 0; padding: 0 24px 24px; color: var(--athena-muted); font-size: .8125rem; line-height: 1.6; }
+.worm-combination-list-card__actions .ant-btn { width: 100%; }
+.worm-combination-list-card__actions .ant-space-item { flex: 1 1 auto; }
+.worm-combination-list-card__updated.ant-typography { font-size: .8125rem; }
+.worm-theme-page .resource-table-region { display: flex; flex-direction: column; }
+.worm-theme-page .resource-table-pagination { order: 2; border-top: 1px solid var(--athena-border); border-bottom: 0; margin-top: 0; }
+.worm-combination-back.ant-btn { margin-bottom: 20px; padding-left: 0; color: var(--athena-muted); }
+.worm-combination-outcome-button.ant-btn { line-height: 1.5; }
+.worm-combination-outcome-button.ant-btn[aria-pressed='true'] { color: var(--athena-primary); box-shadow: none; background: color-mix(in srgb, var(--athena-primary) 10%, var(--athena-panel)); border-color: var(--athena-primary); }
+.worm-combination-outcome-button.ant-btn[aria-pressed='true'] .worm-combination-outcome-choice__price { color: var(--athena-primary); }
+.worm-connection-details, .worm-balance-evidence { color: var(--athena-muted); font-size: .8125rem; overflow-wrap: anywhere; }
+.worm-connection-details summary, .worm-balance-evidence summary { cursor: pointer; min-height: 44px; padding-block: 12px; }
+.worm-activity-complete { color: var(--athena-muted); font-size: .8125rem; }
+
+.worm-combination-outcome-choice { flex-wrap: wrap; }
+.worm-wallet-selection-modal .ant-modal-container { display: flex; flex-direction: column; max-height: calc(100dvh - 32px); }
+.worm-wallet-selection-modal__body > * { flex-shrink: 0; }
+.worm-wallet-selection-modal__grid { overflow: visible; max-height: none; flex: none; }
+.worm-confirm-modal .ant-modal-container { max-height: calc(100dvh - 32px); display: flex; flex-direction: column; }
+
+.worm-combination-selection__price.ant-typography, .worm-combination-outcome-choice__price { font-family: var(--athena-font); }
+.worm-trading-activity-card__facts dd small, .worm-position-cash-out-batch-evidence dd small { display: block; font-size: .8125rem; color: var(--athena-muted); }
+
+.worm-position-cash-out-batch-evidence dd { font-family: var(--athena-font); font-variant-numeric: tabular-nums; }
+.worm-combination-back.ant-btn { margin: 24px 32px 0; max-width: calc(100% - 64px); }
+.worm-combination-back + .app-page { padding-top: 16px; }
+@media (max-width: 900px) {
+    .worm-combination-back.ant-btn { margin-inline: 20px; max-width: calc(100% - 40px); }
+}
+
+/* T8: frozen previews and execution history share the approved Worm surface. */
+.worm-execution-theme { min-width: 0; }
+.worm-execution-theme .ant-typography { overflow-wrap: anywhere; }
+.worm-execution-theme :is(h2.ant-typography, h3.ant-typography, h4.ant-typography, .ant-card-head-title) { font-size: var(--athena-type-section); font-weight: 600; white-space: normal; }
+.worm-execution-theme strong { font-weight: 600; }
+.worm-execution-theme :is(code, .athena-identifier) { font-family: var(--athena-data-font); font-size: var(--athena-type-aux); font-weight: 400; overflow-wrap: anywhere; white-space: normal; }
+.worm-execution-theme :is(.athena-numeric, .worm-preview-metrics dd, .worm-preview-step-usdc, .worm-execution-counts, .worm-execution-progress-cell) { font-family: var(--athena-font); font-variant-numeric: tabular-nums lining-nums; overflow-wrap: anywhere; }
+.worm-execution-theme .ant-card { box-shadow: none; }
+.worm-execution-theme .worm-status.ant-tag, .worm-execution-theme .worm-outcome.ant-tag { width: fit-content; max-width: 100%; margin: 0; white-space: normal; font-size: var(--athena-type-aux); background: transparent; border-color: var(--athena-border); color: var(--athena-muted); }
+.worm-execution-theme .worm-status--success.ant-tag { color: var(--athena-green); }
+.worm-execution-theme .worm-status--warning.ant-tag { color: var(--athena-amber); }
+.worm-execution-theme .worm-status--error.ant-tag { color: var(--athena-red); }
+.worm-execution-theme .worm-status--info.ant-tag { color: var(--athena-blue); }
+.worm-execution-theme .worm-outcome.ant-tag { color: var(--athena-muted); }
+.worm-execution-theme .worm-preview-read-only.ant-alert { border-color: var(--athena-blue-border); background: var(--athena-blue-bg); }
+.worm-execution-theme .worm-execution-unknown-alert.ant-alert { border-color: var(--athena-red-border); }
+.worm-execution-theme .worm-execution-detail { min-width: 0; gap: 1.5rem; }
+.worm-execution-theme .worm-execution-name-link.ant-btn-link { white-space: normal; overflow: visible; text-overflow: clip; font-weight: 600; color: var(--athena-text); min-height: 2.75rem; line-height: 1.5; }
+.worm-execution-list-identity, .worm-execution-list-card, .worm-execution-step-card { display: grid; min-width: 0; gap: 0.75rem; }
+.worm-execution-list-card, .worm-execution-step-card { padding: 1.25rem 0; border-bottom: 1px solid var(--athena-border); box-shadow: none; }
+.worm-execution-theme .resource-table-compact { gap: 0; }
+.worm-execution-theme .worm-execution-progress-cell { grid-template-columns: minmax(0, 1fr); gap: 0.5rem; }
+.worm-execution-note { color: var(--athena-muted); font-size: var(--athena-type-aux); line-height: 1.6; margin: 0.5rem 0; }
+.worm-execution-list-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.worm-execution-list-facts > div { display: grid; align-content: start; min-width: 0; gap: 0.75rem; }
+.worm-execution-list-facts > div > span:first-child { color: var(--athena-muted); font-size: var(--athena-type-aux); }
+.worm-execution-theme .worm-execution-stat-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: 1.5rem; margin: 1.5rem 0; }
+.worm-execution-theme .worm-execution-stat-grid > div { padding: 0; border: 0; background: none; gap: 0.5rem; }
+.worm-execution-theme .worm-execution-stat-grid span { font-size: var(--athena-type-aux); text-transform: none; letter-spacing: normal; }
+.worm-execution-theme .worm-execution-stat-grid strong { font-family: var(--athena-font); font-size: var(--athena-type-body); font-weight: 500; }
+.worm-execution-progress-heading { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.worm-execution-counts { color: var(--athena-muted); font-size: var(--athena-type-aux); }
+.worm-step-evidence { margin-top: 1rem; min-width: 0; font-size: var(--athena-type-aux); }
+.worm-step-evidence summary { color: var(--athena-muted); cursor: pointer; min-height: 2.75rem; padding: 0.75rem 0; overflow-wrap: anywhere; }
+.worm-step-evidence summary:focus-visible { outline: 2px solid var(--athena-focus); outline-offset: 2px; }
+.worm-step-evidence dl { display: grid; gap: 1rem; margin: 0.75rem 0; }
+.worm-step-evidence dl > div { min-width: 0; }
+.worm-step-evidence dt { color: var(--athena-muted); margin-bottom: 0.375rem; }
+.worm-step-evidence dd { margin: 0; overflow-wrap: anywhere; }
+.worm-execution-theme .worm-execution-sticky-actions { margin: 0; padding: 1rem; padding-bottom: max(1rem, env(safe-area-inset-bottom)); background: var(--athena-panel); box-shadow: none; backdrop-filter: none; flex-wrap: wrap; }
+.worm-execution-theme .worm-execution-sticky-actions__state { font-size: var(--athena-type-aux); }
+.worm-execution-theme .worm-execution-sticky-actions__state span { white-space: normal; overflow: visible; }
+.worm-execution-theme .worm-execution-sticky-actions > .ant-space { flex-wrap: wrap; }
+.worm-execution-theme .worm-execution-action-spacer { height: 1rem; }
+.worm-execution-theme .worm-preview-plan-header { align-items: start; }
+.worm-execution-theme .worm-preview-metrics { grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); }
+.worm-execution-theme .worm-preview-metrics :is(dt,dd) { text-transform: none; letter-spacing: normal; }
+.worm-execution-theme .worm-preview-metrics dd { font-size: var(--athena-type-body); font-weight: 500; }
+.worm-execution-theme .worm-preview-wallet-identity { min-width: 0; }
+.worm-execution-theme .worm-preview-wallet-identity > div { min-width: 0; }
+.worm-execution-theme .worm-preview-wallet-identity code { overflow: visible; text-overflow: clip; white-space: normal; }
+.worm-execution-theme .worm-preview-balance-strip > div { min-width: 0; }
+.worm-execution-theme .worm-preview-balance-strip dd { font-family: var(--athena-font); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.worm-execution-theme .worm-preview-steps { min-width: 0; }
+.worm-execution-theme .worm-preview-step-card.ant-card { border: 0; border-bottom: 1px solid var(--athena-border); border-radius: 0; }
+.worm-execution-theme .worm-preview-step-card__balance strong { font-family: var(--athena-font); }
+.worm-execution-theme .worm-preview-workflow.ant-steps { margin-bottom: 1.5rem; }
+.worm-execution-theme .worm-preview-workflow .ant-steps-item-description { display: none; }
+.worm-execution-confirm .ant-modal-content { max-height: calc(100dvh - 2rem); overflow: hidden; display: flex; flex-direction: column; }
+.worm-execution-confirm .ant-modal-body { min-height: 0; overflow-y: auto; }
+.worm-execution-confirm .ant-modal-confirm-body { min-width: 0; }
+.worm-execution-confirm .ant-modal-confirm-content { max-height: calc(100dvh - 18rem); overflow-y: auto; }
+.worm-execution-confirm .ant-modal-confirm-btns { flex-shrink: 0; }
+@media (max-width: 900px) {
+    .worm-execution-theme .worm-execution-summary-card__heading { flex-direction: column; }
+    .worm-execution-theme .worm-execution-sticky-actions { align-items: stretch; }
+    .worm-execution-theme .worm-execution-sticky-actions > .ant-space { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); width: 100%; }
+    .worm-execution-theme .worm-execution-sticky-actions .ant-btn { width: 100%; }
+}
+@media (max-width: 600px) {
+    .worm-execution-theme .worm-preview-workflow.ant-steps { flex-direction: row; }
+    .worm-execution-theme .worm-preview-workflow .ant-steps-item { flex: 1; min-width: 0; }
+    .worm-execution-theme .worm-preview-workflow .ant-steps-item-title { font-size: var(--athena-type-aux); }
+    .worm-execution-theme .worm-preview-workflow .ant-steps-item-container { flex-direction: column; align-items: flex-start; }
+    .worm-execution-theme .worm-preview-workflow .ant-steps-item-tail { display: none; }
+    .worm-execution-theme .worm-preview-wallet-choice { grid-template-columns: auto minmax(0, 1fr); }
+    .worm-execution-theme .worm-preview-wallet-choice > .ant-tag { grid-column: 2; }
+    .worm-execution-theme .worm-preview-mobile-order { flex-wrap: wrap; padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+    .worm-execution-theme .worm-preview-balance-strip > div { grid-template-columns: minmax(0, 1fr); }
+    .worm-execution-theme .worm-preview-balance-strip dl { grid-column: auto; }
+    .worm-execution-theme .worm-execution-list-facts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); }
+    .worm-execution-confirm .ant-modal-confirm-btns { display: flex; flex-direction: column-reverse; gap: 0.75rem; }
+    .worm-execution-confirm .ant-modal-confirm-btns .ant-btn { width: 100%; margin-inline-start: 0 !important; }
+}
+
+/* Approved v22 reading order: one frozen panel, then grouped wallet steps. */
+.worm-execution-back.ant-btn { margin: 1rem 32px 0; padding-inline: 0; color: var(--athena-muted); }
+.worm-preview-plan-panel, .worm-preview-prepare-panel { min-width: 0; border: 1px solid var(--athena-border); border-radius: 0.75rem; background: var(--athena-panel); }
+.worm-preview-summary, .worm-preview-prepare-panel { padding: 1.5rem; }
+.worm-execution-theme .worm-preview-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 1.5rem 0; padding-top: 1.5rem; border-top: 1px solid var(--athena-border); }
+.worm-execution-theme .worm-preview-metrics > div { padding: 0; background: none; border: 0; border-radius: 0; }
+.worm-execution-theme .worm-preview-metrics dd { overflow: visible; white-space: normal; text-overflow: clip; }
+.worm-preview-wallet-section { min-width: 0; padding: 1.5rem; border-top: 1px solid var(--athena-border); }
+.worm-preview-wallet-section-heading { display: flex; justify-content: space-between; align-items: start; gap: 1rem; flex-wrap: wrap; }
+.worm-preview-wallet-section-heading > div { display: flex; align-items: center; gap: 0.75rem; }
+.worm-execution-theme .worm-preview-wallet-section-heading h3.ant-typography { margin: 0; font-size: var(--athena-type-body); }
+.worm-preview-wallet-section > code { display: block; margin: 0.75rem 0 1.5rem; }
+.worm-preview-grouped-steps { margin: 0; padding: 0; list-style: none; }
+.worm-preview-grouped-steps > li { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr) minmax(6rem, 0.3fr) minmax(10rem, 0.4fr); gap: 1rem; padding: 1rem 0; border-top: 1px solid var(--athena-border); }
+.worm-preview-grouped-steps > li > div { min-width: 0; }
+.worm-preview-step-funds { text-align: right; font-size: var(--athena-type-control); }
+.worm-preview-pagination { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; padding: 1.25rem; border-top: 1px solid var(--athena-border); }
+.worm-execution-theme .worm-preview-ready-state.ant-alert { background: var(--athena-panel); border-color: var(--athena-border); }
+.worm-execution-theme .worm-preview-read-only { border-color: var(--athena-border); background: var(--athena-panel); }
+.worm-execution-theme .worm-preview-workflow.ant-steps { padding: 0 0 1rem; border: 0; border-bottom: 1px solid var(--athena-border); border-radius: 0; background: transparent; }
+.worm-execution-theme .worm-preview-workflow .ant-steps-item-icon { width: 1.25rem; height: 1.25rem; font-size: var(--athena-type-aux); line-height: 1.25rem; }
+.worm-execution-theme .worm-execution-name-link.ant-btn-link { justify-content: flex-start; }
+.worm-execution-theme .resource-table-region { display: flex; flex-direction: column; }
+.worm-execution-theme .resource-table-pagination { order: 2; border-top: 1px solid var(--athena-border); border-bottom: 0; }
+.worm-execution-theme .resource-table-compact__item { padding: 0 1.25rem; border: 0; border-radius: 0; background: transparent; }
+.worm-execution-theme .resource-table-compact__items { gap: 0; }
+.worm-execution-theme .worm-execution-step-card { gap: 0.25rem; }
+.worm-execution-theme .worm-execution-step-card .worm-step-evidence { margin-top: 0.5rem; }
+.worm-execution-guard-copy { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 1.5rem; font-size: var(--athena-type-control); }
+.worm-execution-theme .worm-execution-control-card .ant-card-body { gap: 0.75rem; }
+@media (max-width: 900px) {
+    .worm-execution-back.ant-btn { margin-inline: 20px; }
+    .worm-execution-theme .worm-preview-metrics { grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); }
+    .worm-preview-grouped-steps > li { grid-template-columns: 1.5rem minmax(0, 1fr); }
+    .worm-preview-grouped-steps > li > div { grid-column: 2; }
+    .worm-preview-step-funds { text-align: left; }
+    .worm-preview-summary, .worm-preview-prepare-panel, .worm-preview-wallet-section { padding: 1.25rem; }
+    .worm-execution-theme .worm-execution-stat-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); }
+}
+.worm-execution-theme .worm-execution-sticky-actions { position: static; min-height: 0; padding: 0; border: 0; background: transparent; }
+.worm-execution-theme .worm-execution-sticky-actions__state { display: none; }
+.worm-execution-theme .worm-execution-control-card .ant-card-head { background: transparent; }
+.worm-execution-theme .worm-execution-control-card .ant-card-head-wrapper { gap: 1.25rem; flex-wrap: wrap; }
+@media (max-width: 900px) {
+    .worm-execution-theme .worm-execution-sticky-actions { position: fixed; inset: auto 0 0; padding: 1rem 20px; padding-bottom: max(1rem, env(safe-area-inset-bottom)); background: var(--athena-panel); border-top: 1px solid var(--athena-border); }
+    .worm-execution-theme .worm-execution-action-spacer { height: 10rem; }
+}
+.worm-execution-theme .worm-preview-plan-header { flex-wrap: wrap; gap: 1.25rem; }
+.worm-execution-theme .worm-preview-plan-header > div { flex: 1 1 15rem; }
+.worm-execution-theme .worm-preview-plan-header > .ant-btn { flex: 0 0 auto; max-width: 100%; overflow-wrap: normal; word-break: normal; }
+@media (max-width: 900px) {
+    .worm-execution-theme .worm-preview-workflow.ant-steps { display: flex; flex-flow: row wrap; gap: 1rem 0.5rem; }
+    .worm-execution-theme .worm-preview-workflow .ant-steps-item { flex: 1 1 4rem; min-width: max-content; padding: 0; }
+    .worm-execution-theme .worm-preview-workflow .ant-steps-item-wrapper { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .worm-execution-theme .worm-preview-workflow .ant-steps-item-section { padding: 0; }
+    .worm-execution-theme .worm-preview-workflow .ant-steps-item-title { white-space: nowrap; overflow-wrap: normal; word-break: normal; font-size: var(--athena-type-aux); }
+    .worm-execution-theme .worm-preview-workflow .ant-steps-item-rail { display: none; }
+}
+@media (max-width: 900px) {
+    .worm-execution-theme .worm-execution-unknown-alert.ant-alert { flex-wrap: wrap; align-items: flex-start; }
+    .worm-execution-theme .worm-execution-unknown-alert .ant-alert-section { flex: 1 1 calc(100% - 2rem); }
+    .worm-execution-theme .worm-execution-unknown-alert .ant-alert-actions { flex: 1 1 100%; margin: 1rem 0 0; }
+    .worm-execution-theme .worm-execution-unknown-alert .ant-alert-actions .ant-btn { width: 100%; overflow-wrap: normal; word-break: normal; }
+}
+@media (max-width: 480px) {
+    .worm-execution-theme .worm-preview-prepare-panel .worm-preview-step-actions { display: flex; flex-direction: column; align-items: stretch; }
+    .worm-execution-theme .worm-preview-prepare-panel .ant-space-item,
+    .worm-execution-theme .worm-preview-prepare-panel .ant-btn { width: 100%; }
+    .worm-execution-theme .worm-preview-prepare-panel .ant-btn { overflow-wrap: normal; word-break: normal; }
+}
+
+.worm-wallet-selection-card > .ant-checkbox-label { display: contents; }
+.worm-execution-theme .worm-preview-workflow .ant-steps-item-process .ant-steps-item-icon-number { color: var(--athena-bg); }
+
+.world-cup-corners-notice .ant-typography-link, .world-cup-corners-notice .ant-typography-link:hover, .world-cup-corners-notice .ant-typography-link:focus { text-decoration: underline; text-underline-offset: .15em; }

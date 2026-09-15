@@ -79,7 +79,7 @@ registration page does not initialize the authenticated application shell.
 The durable identity key is `(google, sub, realm)`, represented in PostgreSQL by
 `(identity_provider, identity_subject, administrator)`. One Google subject may
 therefore have a member persona and the single administrator persona. They have
-independent UUIDs, globally distinct usernames, profiles, preferences, access,
+independent UUIDs, globally distinct usernames, profiles, access,
 API Keys, Wallets, and business data. Entering the member login with the
 configured administrator email still resolves or creates only the ordinary
 member persona; email never causes a member-realm login to switch personas.

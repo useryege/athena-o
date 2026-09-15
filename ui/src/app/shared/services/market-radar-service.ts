@@ -133,6 +133,15 @@ export interface ListMarketRadarMoversResult {
     candidateCount?: number;
 }
 
+// encoding/json omits zero-valued proto3 int32 counters in these response envelopes.
+// This default does not apply to nested amounts, prices or timestamps.
+const readResponseCount = (item: Record<string, unknown>, ...names: string[]) => {
+    const name = names.find(key => Object.prototype.hasOwnProperty.call(item, key));
+    if (name === undefined) return 0;
+    const value = item[name];
+    return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 2147483647 ? value : undefined;
+};
+
 const normalizeHotMarketToken = (item: any): MarketRadarHotMarketTokenItem => ({
     tokenId: readString(item, 'tokenId', 'token_id'),
     outcome: readString(item, 'outcome'),
@@ -256,9 +265,9 @@ export class MarketRadarService {
                 items: (body.items || []).map(normalizeHotMarket),
                 fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at'),
                 stale: readBoolean(body, 'stale'),
-                monitoredMarkets: readNumber(body, 'monitoredMarkets', 'monitored_markets'),
-                monitoredTokens: readNumber(body, 'monitoredTokens', 'monitored_tokens'),
-                candidateCount: readNumber(body, 'candidateCount', 'candidate_count')
+                monitoredMarkets: readResponseCount(body, 'monitoredMarkets', 'monitored_markets'),
+                monitoredTokens: readResponseCount(body, 'monitoredTokens', 'monitored_tokens'),
+                candidateCount: readResponseCount(body, 'candidateCount', 'candidate_count')
             };
         }) as Promise<ListMarketRadarHotMarketsResult> & {abort?: () => void};
         promise.abort = () => req.abort();
@@ -273,11 +282,11 @@ export class MarketRadarService {
                 items: (body.items || []).map(normalizeRealtimeMarket),
                 fetchedAt: readNumber(body, 'fetchedAt', 'fetched_at'),
                 stale: readBoolean(body, 'stale'),
-                subscribedMarkets: readNumber(body, 'subscribedMarkets', 'subscribed_markets'),
-                subscribedTokens: readNumber(body, 'subscribedTokens', 'subscribed_tokens'),
+                subscribedMarkets: readResponseCount(body, 'subscribedMarkets', 'subscribed_markets'),
+                subscribedTokens: readResponseCount(body, 'subscribedTokens', 'subscribed_tokens'),
                 connected: readBoolean(body, 'connected'),
                 lastEventAt: readNumber(body, 'lastEventAt', 'last_event_at'),
-                candidateCount: readNumber(body, 'candidateCount', 'candidate_count')
+                candidateCount: readResponseCount(body, 'candidateCount', 'candidate_count')
             };
         }) as Promise<ListMarketRadarRealtimeMarketsResult> & {abort?: () => void};
         promise.abort = () => req.abort();
@@ -294,9 +303,9 @@ export class MarketRadarService {
                 stale: readBoolean(body, 'stale'),
                 connected: readBoolean(body, 'connected'),
                 lastEventAt: readNumber(body, 'lastEventAt', 'last_event_at'),
-                monitoredMarkets: readNumber(body, 'monitoredMarkets', 'monitored_markets'),
-                monitoredTokens: readNumber(body, 'monitoredTokens', 'monitored_tokens'),
-                candidateCount: readNumber(body, 'candidateCount', 'candidate_count')
+                monitoredMarkets: readResponseCount(body, 'monitoredMarkets', 'monitored_markets'),
+                monitoredTokens: readResponseCount(body, 'monitoredTokens', 'monitored_tokens'),
+                candidateCount: readResponseCount(body, 'candidateCount', 'candidate_count')
             };
         }) as Promise<ListMarketRadarMoversResult> & {abort?: () => void};
         promise.abort = () => req.abort();

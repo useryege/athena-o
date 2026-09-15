@@ -11,30 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createAccountPreferences = `-- name: CreateAccountPreferences :one
-INSERT INTO account_preferences (account_id, theme, revision)
-VALUES ($1::uuid, $2::text, 1)
-ON CONFLICT (account_id) DO NOTHING
-RETURNING theme, revision
-`
-
-type CreateAccountPreferencesParams struct {
-	AccountID pgtype.UUID
-	Theme     string
-}
-
-type CreateAccountPreferencesRow struct {
-	Theme    string
-	Revision int64
-}
-
-func (q *Queries) CreateAccountPreferences(ctx context.Context, arg CreateAccountPreferencesParams) (CreateAccountPreferencesRow, error) {
-	row := q.db.QueryRow(ctx, createAccountPreferences, arg.AccountID, arg.Theme)
-	var i CreateAccountPreferencesRow
-	err := row.Scan(&i.Theme, &i.Revision)
-	return i, err
-}
-
 const createAccountProfile = `-- name: CreateAccountProfile :one
 INSERT INTO account_profile (
   account_id, display_name, account_tier, avatar_object_key,
@@ -98,24 +74,6 @@ func (q *Queries) CreateAccountProfile(ctx context.Context, arg CreateAccountPro
 	return i, err
 }
 
-const getAccountPreferences = `-- name: GetAccountPreferences :one
-SELECT theme, revision
-FROM account_preferences
-WHERE account_id = $1::uuid
-`
-
-type GetAccountPreferencesRow struct {
-	Theme    string
-	Revision int64
-}
-
-func (q *Queries) GetAccountPreferences(ctx context.Context, accountID pgtype.UUID) (GetAccountPreferencesRow, error) {
-	row := q.db.QueryRow(ctx, getAccountPreferences, accountID)
-	var i GetAccountPreferencesRow
-	err := row.Scan(&i.Theme, &i.Revision)
-	return i, err
-}
-
 const getAccountProfile = `-- name: GetAccountProfile :one
 SELECT display_name, account_tier, avatar_object_key, avatar_content_type,
        avatar_etag, avatar_size_bytes, revision
@@ -173,35 +131,6 @@ func (q *Queries) ListAvatarObjectKeys(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 	return items, nil
-}
-
-const updateAccountPreferences = `-- name: UpdateAccountPreferences :one
-UPDATE account_preferences
-SET theme = $1::text,
-    revision = account_preferences.revision + 1,
-    updated_at = NOW()
-WHERE account_id = $2::uuid
-  AND $3::bigint > 0
-  AND revision = $3::bigint
-RETURNING theme, revision
-`
-
-type UpdateAccountPreferencesParams struct {
-	Theme            string
-	AccountID        pgtype.UUID
-	ExpectedRevision int64
-}
-
-type UpdateAccountPreferencesRow struct {
-	Theme    string
-	Revision int64
-}
-
-func (q *Queries) UpdateAccountPreferences(ctx context.Context, arg UpdateAccountPreferencesParams) (UpdateAccountPreferencesRow, error) {
-	row := q.db.QueryRow(ctx, updateAccountPreferences, arg.Theme, arg.AccountID, arg.ExpectedRevision)
-	var i UpdateAccountPreferencesRow
-	err := row.Scan(&i.Theme, &i.Revision)
-	return i, err
 }
 
 const updateAccountProfile = `-- name: UpdateAccountProfile :one

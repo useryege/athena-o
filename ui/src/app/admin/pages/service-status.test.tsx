@@ -8,6 +8,17 @@ import {beginAdminReadSession, endAdminReadSession} from '../read-scope';
 import {ServiceStatusPage} from './service-status';
 import {adminServices as services, configureAdminSessionServices, ensureAdminBusinessServices} from '../services';
 import {normalizeRuntimeStatus} from '../trader-sync-models';
+// Renderer has no real layout nodes; tab visibility/keyboard behavior is covered by theme:admin Playwright.
+jest.mock('antd', () => ({
+    ...jest.requireActual('antd'),
+    Tabs: (props: any) => (
+        <div>
+            {props.items.map((item: any) => (
+                <div key={item.key}>{item.children}</div>
+            ))}
+        </div>
+    )
+}));
 configureAdminSessionServices();
 ensureAdminBusinessServices();
 const user = parseUserInfo({accountId: 'admin-A', iss: 'issuer', loggedIn: true, administrator: true});
@@ -47,16 +58,14 @@ const mount = async () => {
     });
 };
 beforeEach(() => {
-    window.matchMedia = jest
-        .fn()
-        .mockImplementation(query => ({
-            matches: false,
-            media: query,
-            addListener: jest.fn(),
-            removeListener: jest.fn(),
-            addEventListener: jest.fn(),
-            removeEventListener: jest.fn()
-        }));
+    window.matchMedia = jest.fn().mockImplementation(query => ({
+        matches: false,
+        media: query,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn()
+    }));
     jest.spyOn(services.adminTraderSync, 'getRuntimeStatus').mockResolvedValue(runtime);
     jest.useFakeTimers();
     visible = true;
@@ -151,6 +160,16 @@ test.each([
     await mount();
     const section = tree.root.findAllByType(require('../../components').Section).find(item => item.props.title === 'Notification Runtime')!;
     expect(section.props.extra.props.children).toBe(status);
-    const facts = section.findAllByType(require('../../components').KeyValueGrid).flatMap(grid => grid.props.items);
+    const facts = section.findAllByType(require('../components/operation-facts').OperationFacts).flatMap(grid => grid.props.items);
     expect(facts.find(item => item.label === 'Recovery remaining')?.value).toBe(remaining);
+});
+
+test('source tabs declare independent source panels without additional reads', async () => {
+    await mount();
+    const tabs = tree.root.findByType(require('antd').Tabs);
+    expect(tabs.props.defaultActiveKey).toBe('services');
+    expect(tabs.props.items.map((item: any) => item.key)).toEqual(['services', 'notifications', 'trader']);
+    const before = jest.mocked(services.adminNotifications.getRuntimeStatus).mock.calls.length;
+    expect(tabs.props.items.find((item: any) => item.key === 'notifications').children).toBeDefined();
+    expect(services.adminNotifications.getRuntimeStatus).toHaveBeenCalledTimes(before);
 });

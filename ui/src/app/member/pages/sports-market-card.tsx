@@ -1,7 +1,7 @@
 import {LinkOutlined} from '@ant-design/icons';
 import {Button, Tooltip, Typography} from 'antd';
 import * as React from 'react';
-import {CardTitle} from '../../components';
+import {TruncatedText} from '../../components';
 import {formatBeijingDateTime, formatBeijingUnixSeconds} from '../../shared/format';
 import {SportsLiveEventCardItem, SportsHistoryEventCardItem, SportsLiveMarketCardItem, SportsPriceHistorySeriesItem, SportsLiveTeamItem} from '../../shared/services/sports-models';
 import {fmtNumber} from '../../shared/pages/shared';
@@ -161,16 +161,8 @@ const fifwcMoneylineOutcomeOptions = (item: SportsLiveEventCardItem): SportsLive
         })
         .sort((left, right) => left.sortOrder - right.sortOrder);
 
-const resolvedPriceHistory = (history: SportsPriceHistorySeriesItem[] = [], option: SportsLiveDisplayOption, index: number) => {
-    const marketKey = normalizedTeamKey(option.marketKey);
-    const outcomeKey = normalizedTeamKey(option.historyOutcome);
-    const matched = history.find(item => normalizedTeamKey(item.marketKey) === marketKey && normalizedTeamKey(item.outcome) === outcomeKey);
-    if (matched) {
-        return matched;
-    }
-    const marketMatched = history.find(item => normalizedTeamKey(item.marketKey) === marketKey);
-    return marketMatched || history[index];
-};
+const resolvedPriceHistory = (history: SportsPriceHistorySeriesItem[] = [], option: SportsLiveDisplayOption) =>
+    history.find(item => item.marketKey === option.marketKey && normalizedTeamKey(item.outcome) === normalizedTeamKey(option.historyOutcome));
 
 const polymarketEventURL = (item: SportsLiveEventCardItem) => {
     const slug = item.slug.trim();
@@ -198,38 +190,19 @@ const PolymarketEventLink = (props: {item: SportsLiveEventCardItem}) => {
     );
 };
 
-const chartPercent = (value?: number) => {
-    if (value === undefined || !Number.isFinite(value)) {
-        return '-';
-    }
-    return `${Math.round(value * 100)}%`;
-};
+const axisTime = (timestamp: number) =>
+    new Intl.DateTimeFormat('en-GB', {timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', hour12: false}).format(new Date(timestamp * 1000));
+const axisDate = (timestamp: number) =>
+    new Intl.DateTimeFormat('en-CA', {timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit'}).format(new Date(timestamp * 1000));
 
-const chartOutcomeLabel = (value: string) => (value.length > 16 ? `${value.slice(0, 15)}...` : value);
-const chartSelectionLabel = (value: string) => (value.length > 20 ? `${value.slice(0, 19)}...` : value);
-const chartSelectionPercent = (value: number) => `${(value * 100).toFixed(1)}%`;
-const chartSelectionTime = (timestamp: number) => formatBeijingUnixSeconds(timestamp) || '-';
-const chartTones = ['blue', 'gold', 'red', 'green'];
 const displayOptionKey = (option: SportsLiveDisplayOption) => `${option.marketKey}:${option.historyOutcome}:${option.label}`;
-
-const latestPrice = (series?: SportsPriceHistorySeriesItem) => {
-    const prices = series?.prices || [];
-    for (let index = prices.length - 1; index >= 0; index -= 1) {
-        const value = prices[index];
-        if (Number.isFinite(value)) {
-            return value;
-        }
-    }
-    return undefined;
-};
-
 const pricePoints = (series?: SportsPriceHistorySeriesItem) =>
     (series?.prices || [])
-        .map((price, index) => ({
-            price,
-            timestamp: series?.timestamps[index] || index
-        }))
-        .filter(point => Number.isFinite(point.price) && Number.isFinite(point.timestamp));
+        .flatMap((price, index) => {
+            const timestamp = series?.timestamps[index];
+            return Number.isFinite(price) && timestamp !== undefined && Number.isFinite(timestamp) ? [{price, timestamp}] : [];
+        })
+        .sort((a, b) => a.timestamp - b.timestamp);
 
 export const sportsLiveCardHistory = (item: SportsLiveEventCardItem, historyByMarketKey: Map<string, SportsPriceHistorySeriesItem[]>) => {
     const markets = isFifwcSportsLiveEvent(item) ? moneylineMarkets(item) : [legacyMoneylineMarket(item)];
@@ -239,16 +212,8 @@ export const sportsLiveCardHistory = (item: SportsLiveEventCardItem, historyByMa
 const SportsLiveEventInfoSection = (props: {item: SportsLiveEventCardItem}) => {
     const stageValue = props.item.period || props.item.gameStatus || props.item.elapsed;
     const stageMeta = [props.item.elapsed, props.item.gameStatus].filter(value => value && value !== stageValue).join(' · ');
-    const title = (
-        <span className='sports-live-card__title-line'>
-            <span className='sports-live-card__title-text'>{props.item.title}</span>
-            <PolymarketEventLink item={props.item} />
-        </span>
-    );
-
     return (
         <div className='sports-live-card__info'>
-            <CardTitle title={title} subtitle={props.item.slug} image={props.item.image} />
             {stageValue && (
                 <div className='sports-live-stage'>
                     <Typography.Text className='sports-live-stage__label'>Live Stage</Typography.Text>
@@ -284,276 +249,124 @@ const SportsLiveEventInfoSection = (props: {item: SportsLiveEventCardItem}) => {
     );
 };
 
-const SportsLiveTrendSection = (props: {options: SportsLiveDisplayOption[]; history?: SportsPriceHistorySeriesItem[]; scratchMode?: boolean; scratchResetVersion?: number}) => {
-    const [selectedTimestamp, setSelectedTimestamp] = React.useState<number>();
-    const [scratchRevealX, setScratchRevealX] = React.useState(0);
-    const chartId = React.useId().replace(/:/g, '');
-    const scratchClipId = `sports-live-chart-scratch-${chartId}`;
-    const scratchActive = props.scratchMode === true;
-    const series = props.options
-        .map((option, index) => {
-            const history = resolvedPriceHistory(props.history, option, index);
-            const points = pricePoints(history);
-            return {
-                key: displayOptionKey(option),
-                option,
-                points,
-                latest: latestPrice(history),
-                tone: chartTones[index % chartTones.length]
-            };
-        })
-        .filter(item => item.points.length > 1);
-
-    const timestamps = series.flatMap(item => item.points.map(point => point.timestamp));
-
+const SportsLiveTrendSection = (props: {
+    options: SportsLiveDisplayOption[];
+    history?: SportsPriceHistorySeriesItem[];
+    historyState?: 'loading' | 'failed';
+    scratchMode?: boolean;
+    scratchResetVersion?: number;
+}) => {
+    const [selected, setSelected] = React.useState<number>();
+    const [revealed, setRevealed] = React.useState(0);
+    const clipId = React.useId().replace(/:/g, '');
     React.useEffect(() => {
-        if (scratchActive) {
-            setScratchRevealX(0);
-            setSelectedTimestamp(undefined);
-        }
-    }, [scratchActive, props.scratchResetVersion]);
-
-    if (series.length === 0 || timestamps.length === 0) {
+        setSelected(undefined);
+        setRevealed(0);
+    }, [props.scratchMode, props.scratchResetVersion]);
+    const series = props.options.map((option, index) => ({option, index, points: pricePoints(resolvedPriceHistory(props.history, option))})).filter(item => item.points.length > 1);
+    if (!series.length)
         return (
             <div className='sports-live-chart sports-live-chart--empty'>
-                <Typography.Text type='secondary'>No history</Typography.Text>
+                <Typography.Text type='secondary'>
+                    {props.historyState === 'failed' ? 'History unavailable' : props.historyState === 'loading' ? 'Loading history…' : 'No history'}
+                </Typography.Text>
             </div>
         );
-    }
-
-    const width = 720;
-    const height = 220;
-    const padding = {top: 18, right: 16, bottom: 28, left: 16};
-    const axisLabelX = width - 8;
-    const axisGuideEnd = width - 30;
-    const endpointLabelX = width - 190;
-    const plotRight = endpointLabelX - 18;
-    const yTicks = [1, 0.75, 0.5, 0.25, 0];
-    const minTs = Math.min(...timestamps);
-    const maxTs = Math.max(...timestamps);
-    const xRange = Math.max(maxTs - minTs, 1);
-    const chartWidth = plotRight - padding.left;
-    const chartHeight = height - padding.top - padding.bottom;
-    const xFor = (timestamp: number) => padding.left + ((timestamp - minTs) / xRange) * chartWidth;
-    const yFor = (price: number) => padding.top + (1 - Math.min(1, Math.max(0, price))) * chartHeight;
-    const labelYFor = (price: number) => Math.min(height - padding.bottom - 30, Math.max(padding.top + 16, yFor(price)));
-    const pathFor = (points: Array<{price: number; timestamp: number}>) =>
-        points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${xFor(point.timestamp).toFixed(2)} ${yFor(point.price).toFixed(2)}`).join(' ');
-    const chartPointerPosition = (element: SVGSVGElement, clientX: number, clientY: number) => {
-        const bounds = element.getBoundingClientRect();
-        if (bounds.width <= 0 || bounds.height <= 0) {
-            return undefined;
-        }
-        const pointerX = ((clientX - bounds.left) / bounds.width) * width;
-        const pointerY = ((clientY - bounds.top) / bounds.height) * height;
-        return {pointerX, pointerY};
+    const times = series.flatMap(item => item.points.map(point => point.timestamp));
+    const min = Math.min(...times),
+        max = Math.max(...times);
+    const width = 640,
+        height = 220;
+    const x = (timestamp: number) => ((timestamp - min) / Math.max(max - min, 1)) * width;
+    const y = (price: number) => (1 - Math.min(1, Math.max(0, price))) * height;
+    const current = selected === undefined ? max : Math.max(min, Math.min(max, selected));
+    const choose = (timestamp: number) => {
+        setSelected(timestamp);
+        if (props.scratchMode) setRevealed(previous => Math.max(previous, (timestamp - min) / Math.max(max - min, 1)));
     };
-    const revealScratchAt = (element: SVGSVGElement, clientX: number, clientY: number) => {
-        const position = chartPointerPosition(element, clientX, clientY);
-        if (!position || position.pointerY < 0 || position.pointerY > height) {
-            return;
-        }
-        const nextX = Math.min(width, Math.max(0, position.pointerX));
-        setScratchRevealX(current => Math.max(current, nextX));
-    };
-    const selectNearestTime = (element: SVGSVGElement, clientX: number, clientY: number) => {
-        const position = chartPointerPosition(element, clientX, clientY);
-        if (!position) {
-            return;
-        }
-        const {pointerX, pointerY} = position;
-        if (pointerX < padding.left || pointerX > plotRight || pointerY < padding.top || pointerY > height - padding.bottom) {
-            setSelectedTimestamp(undefined);
-            return;
-        }
-
-        const pointerTimestamp = minTs + ((pointerX - padding.left) / chartWidth) * xRange;
-        let nearestTimestamp = timestamps[0];
-        timestamps.forEach(timestamp => {
-            if (Math.abs(timestamp - pointerTimestamp) < Math.abs(nearestTimestamp - pointerTimestamp)) {
-                nearestTimestamp = timestamp;
-            }
-        });
-        setSelectedTimestamp(current => (current === nearestTimestamp ? current : nearestTimestamp));
-    };
-    const endpointItems = series.map(item => {
-        const lastPoint = item.points[item.points.length - 1];
-        const latest = item.latest ?? lastPoint.price;
-        return {
-            ...item,
-            lastPoint,
-            latest,
-            labelY: labelYFor(latest)
-        };
-    });
-    if (endpointItems.length > 1) {
-        const minGap = 38;
-        const minY = padding.top + 16;
-        const maxY = height - padding.bottom - 30;
-        const sorted = [...endpointItems].sort((left, right) => left.labelY - right.labelY);
-        sorted[0].labelY = Math.max(minY, sorted[0].labelY);
-        for (let index = 1; index < sorted.length; index += 1) {
-            sorted[index].labelY = Math.max(sorted[index].labelY, sorted[index - 1].labelY + minGap);
-        }
-        const overflow = sorted[sorted.length - 1].labelY - maxY;
-        if (overflow > 0) {
-            sorted.forEach(item => {
-                item.labelY = Math.max(minY, item.labelY - overflow);
-            });
-        }
-    }
-    const selectedX = selectedTimestamp === undefined ? 0 : xFor(selectedTimestamp);
-    const scratchCanLabelLeft = scratchActive && selectedX > padding.left + 180;
-    const labelsOnLeft = scratchCanLabelLeft || (!scratchActive && selectedX > plotRight - 184);
-    const selectionLabelX = labelsOnLeft ? selectedX - 16 : selectedX + 16;
-    const selectionTextAnchor = labelsOnLeft ? ('end' as const) : ('start' as const);
-    const selectionItems =
-        selectedTimestamp === undefined
-            ? []
-            : series.map(item => {
-                  const point = item.points.reduce((nearest, candidate) =>
-                      Math.abs(candidate.timestamp - selectedTimestamp) < Math.abs(nearest.timestamp - selectedTimestamp) ? candidate : nearest
-                  );
-                  const pointY = yFor(point.price);
-                  return {
-                      ...item,
-                      point,
-                      pointY,
-                      labelY: pointY - 5
-                  };
-              });
-    if (selectionItems.length > 0) {
-        const minY = padding.top + 24;
-        const maxY = height - padding.bottom - 34;
-        const minGap = selectionItems.length > 1 ? Math.min(46, (maxY - minY) / (selectionItems.length - 1)) : 0;
-        const sorted = [...selectionItems].sort((left, right) => left.labelY - right.labelY);
-        sorted[0].labelY = Math.max(minY, sorted[0].labelY);
-        for (let index = 1; index < sorted.length; index += 1) {
-            sorted[index].labelY = Math.max(sorted[index].labelY, sorted[index - 1].labelY + minGap);
-        }
-        const overflow = sorted[sorted.length - 1].labelY - maxY;
-        if (overflow > 0) {
-            sorted.forEach(item => {
-                item.labelY -= overflow;
-            });
-        }
-        const underflow = minY - sorted[0].labelY;
-        if (underflow > 0) {
-            sorted.forEach(item => {
-                item.labelY += underflow;
-            });
-        }
-    }
-    const selectionTimeX = Math.min(width - 76, Math.max(76, selectedX));
-    const scratchRevealWidth = scratchActive ? Math.min(width, Math.max(0, scratchRevealX)) : width;
-    const scratchCoverWidth = Math.max(0, width - scratchRevealWidth);
-    const chartClassName = `sports-live-chart ${scratchActive ? 'sports-live-chart--scratch' : ''}`.trim();
-    const revealAndSelect = (element: SVGSVGElement, clientX: number, clientY: number) => {
-        if (scratchActive) {
-            revealScratchAt(element, clientX, clientY);
-        }
-        selectNearestTime(element, clientX, clientY);
-    };
-
+    const scratch = props.scratchMode === true;
     return (
-        <div className={chartClassName}>
-            <svg
-                className='sports-live-chart__svg'
-                viewBox={`0 0 ${width} ${height}`}
-                role='img'
-                aria-label='Moneyline price history'
-                onPointerDown={event => {
-                    if (scratchActive) {
-                        event.currentTarget.setPointerCapture(event.pointerId);
-                        revealAndSelect(event.currentTarget, event.clientX, event.clientY);
-                    }
-                }}
-                onPointerMove={event => {
-                    if (scratchActive || event.pointerType !== 'touch') {
-                        revealAndSelect(event.currentTarget, event.clientX, event.clientY);
-                    }
-                }}
-                onPointerLeave={event => {
-                    if (event.pointerType !== 'touch') {
-                        setSelectedTimestamp(undefined);
-                    }
-                }}
-                onPointerUp={event => {
-                    if (scratchActive || event.pointerType === 'touch') {
-                        revealAndSelect(event.currentTarget, event.clientX, event.clientY);
-                    }
-                    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                        event.currentTarget.releasePointerCapture(event.pointerId);
-                    }
-                }}>
-                <defs>
-                    <clipPath id={scratchClipId}>
-                        <rect x='0' y='0' width={scratchRevealWidth} height={height} />
-                    </clipPath>
-                </defs>
-                {scratchActive && scratchCoverWidth > 0 && (
-                    <rect className='sports-live-chart__scratch-cover' x={scratchRevealWidth} y='0' width={scratchCoverWidth} height={height} />
-                )}
-                {yTicks.map(tick => {
-                    const y = yFor(tick);
-                    return (
-                        <g className='sports-live-chart__grid' key={tick.toFixed(4)}>
-                            <line x1={padding.left} x2={axisGuideEnd} y1={y} y2={y} />
-                            <text x={axisLabelX} y={y + 4}>
-                                {chartPercent(tick)}
-                            </text>
-                        </g>
-                    );
-                })}
-                <g clipPath={scratchActive ? `url(#${scratchClipId})` : undefined}>
-                    {endpointItems.map(item => (
-                        <g className={`sports-live-chart__series sports-live-chart__series--${item.tone}`} key={displayOptionKey(item.option)}>
-                            <path className='sports-live-chart__line' d={pathFor(item.points)} />
-                            <circle className='sports-live-chart__dot' cx={xFor(item.lastPoint.timestamp)} cy={yFor(item.lastPoint.price)} r='5' />
-                            {selectedTimestamp === undefined && (
-                                <>
-                                    <text className='sports-live-chart__endpoint-name' x={endpointLabelX} y={item.labelY - 4}>
-                                        {chartOutcomeLabel(item.option.label)}
-                                    </text>
-                                    <text className='sports-live-chart__endpoint-value' x={endpointLabelX} y={item.labelY + 32}>
-                                        {chartPercent(item.latest)}
-                                    </text>
-                                </>
-                            )}
-                        </g>
+        <div className={`sports-live-chart ${scratch ? 'sports-live-chart--scratch' : ''}`}>
+            <div className='sports-chart-heading'>
+                <strong>Moneyline price history</strong>
+                <span>Price · 0–100%</span>
+            </div>
+            <div className='sports-chart-legend'>
+                {series.map(({option, index}) => (
+                    <span key={displayOptionKey(option)} className={`sports-chart-tone-${index}`}>
+                        <i aria-hidden='true' />
+                        {option.label}
+                    </span>
+                ))}
+            </div>
+            <div className='sports-chart-plot'>
+                <div className='sports-chart-axis'>
+                    <span>100%</span>
+                    <span>50%</span>
+                    <span>0%</span>
+                </div>
+                <svg
+                    className='sports-live-chart__svg'
+                    viewBox={`0 0 ${width} ${height}`}
+                    preserveAspectRatio='none'
+                    role='img'
+                    aria-label='Moneyline price history'
+                    onPointerMove={event => {
+                        if (scratch && event.buttons !== 1) return;
+                        const bounds = event.currentTarget.getBoundingClientRect();
+                        choose(min + Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width)) * (max - min));
+                    }}
+                    onPointerDown={event => {
+                        const bounds = event.currentTarget.getBoundingClientRect();
+                        choose(min + Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width)) * (max - min));
+                    }}>
+                    <defs>
+                        <clipPath id={clipId}>
+                            <rect width={scratch ? revealed * width : width} height={height} />
+                        </clipPath>
+                    </defs>
+                    {[0, 0.5, 1].map(tick => (
+                        <line key={tick} className='sports-chart-grid' x1={0} x2={width} y1={y(tick)} y2={y(tick)} />
                     ))}
-                    {selectedTimestamp !== undefined && (
-                        <g className='sports-live-chart__selection'>
-                            <line className='sports-live-chart__selection-guide' x1={selectedX} x2={selectedX} y1={padding.top} y2={height - padding.bottom} />
-                            <text className='sports-live-chart__selection-time' x={selectionTimeX} y='14'>
-                                {chartSelectionTime(selectedTimestamp)}
-                            </text>
-                            {selectionItems.map(item => (
-                                <g className={`sports-live-chart__selection-item sports-live-chart__series--${item.tone}`} key={item.key}>
-                                    <line
-                                        className='sports-live-chart__selection-connector'
-                                        x1={selectedX + (labelsOnLeft ? -7 : 7)}
-                                        x2={selectionLabelX + (labelsOnLeft ? 5 : -5)}
-                                        y1={item.pointY}
-                                        y2={item.labelY + 7}
-                                    />
-                                    <circle className='sports-live-chart__selection-halo' cx={selectedX} cy={item.pointY} r='9' />
-                                    <circle className='sports-live-chart__selection-dot' cx={selectedX} cy={item.pointY} r='4.5' />
-                                    <text className='sports-live-chart__selection-name' textAnchor={selectionTextAnchor} x={selectionLabelX} y={item.labelY}>
-                                        {chartSelectionLabel(item.option.label)}
-                                    </text>
-                                    <text className='sports-live-chart__selection-price' textAnchor={selectionTextAnchor} x={selectionLabelX} y={item.labelY + 27}>
-                                        {chartSelectionPercent(item.point.price)}
-                                    </text>
-                                </g>
-                            ))}
-                        </g>
-                    )}
-                </g>
-                {scratchActive && scratchRevealWidth > 0 && scratchRevealWidth < width && (
-                    <line className='sports-live-chart__scratch-edge' x1={scratchRevealWidth} x2={scratchRevealWidth} y1='0' y2={height} />
+                    <g clipPath={`url(#${clipId})`}>
+                        {series.map(({option, index, points}) => (
+                            <path
+                                key={displayOptionKey(option)}
+                                className={`sports-live-chart__line sports-chart-tone-${index}`}
+                                d={points.map((point, i) => `${i ? 'L' : 'M'} ${x(point.timestamp)} ${y(point.price)}`).join(' ')}
+                            />
+                        ))}
+                    </g>
+                </svg>
+            </div>
+            <div className='sports-chart-times'>
+                <span>
+                    {axisDate(min) !== axisDate(max) ? `${axisDate(min)} ` : ''}
+                    {axisTime(min)}
+                </span>
+                <span>
+                    {axisDate(min) !== axisDate(max) ? `${axisDate(max)} ` : ''}
+                    {axisTime(max)} · UTC+8
+                </span>
+            </div>
+            <input type='range' aria-label='History time' min={min} max={max} step={1} value={current} onChange={event => choose(Number(event.target.value))} />
+            <div className='sports-chart-selection'>
+                <span>Selected {formatBeijingUnixSeconds(current)} · UTC+8</span>
+                {scratch && !revealed ? (
+                    <span>Move the time slider or drag the chart to reveal history.</span>
+                ) : (
+                    <div>
+                        {series.map(({option, points}) => {
+                            const nearest = points.reduce((a, b) => (Math.abs(a.timestamp - current) <= Math.abs(b.timestamp - current) ? a : b));
+                            return (
+                                <span key={displayOptionKey(option)}>
+                                    {option.label} <b className='athena-number'>{(nearest.price * 100).toFixed(1)}%</b>
+                                </span>
+                            );
+                        })}
+                    </div>
                 )}
-            </svg>
+            </div>
         </div>
     );
 };
@@ -564,6 +377,7 @@ const SportsLiveMoneylineSection = (props: {options: SportsLiveDisplayOption[]})
     }
     return (
         <div className='sports-live-moneyline'>
+            <span className='sports-live-card__stat-label'>Moneyline snapshot · Price</span>
             <div className='sports-live-moneyline__rows'>
                 {props.options.map(option => (
                     <div className='sports-live-moneyline__row' key={displayOptionKey(option)}>
@@ -588,47 +402,90 @@ const SportsLiveEventCardFrame = (props: {
     item: SportsLiveEventCardItem;
     options: SportsLiveDisplayOption[];
     history?: SportsPriceHistorySeriesItem[];
+    historyState?: 'loading' | 'failed';
     scratchMode?: boolean;
     scratchResetVersion?: number;
     info?: React.ReactNode;
     className?: string;
 }) => (
     <article className={`sports-live-card ${props.className || ''}`.trim()}>
+        <header className='sports-event-heading'>
+            <h3>{props.item.title}</h3>
+            <PolymarketEventLink item={props.item} />
+        </header>
         <div className='sports-live-card__info-column'>
             {props.info || <SportsLiveEventInfoSection item={props.item} />}
             <SportsLiveMoneylineSection options={props.options} />
         </div>
-        <SportsLiveTrendSection options={props.options} history={props.history} scratchMode={props.scratchMode} scratchResetVersion={props.scratchResetVersion} />
+        <SportsLiveTrendSection
+            options={props.options}
+            history={props.history}
+            historyState={props.historyState}
+            scratchMode={props.scratchMode}
+            scratchResetVersion={props.scratchResetVersion}
+        />
+        <details className='sports-event-sources'>
+            <summary>Event identifiers &amp; source</summary>
+            <dl className='market-fact-grid'>
+                <div>
+                    <dt>Event key</dt>
+                    <dd>
+                        <TruncatedText value={props.item.eventKey} copyable />
+                    </dd>
+                </div>
+                <div>
+                    <dt>Event ID</dt>
+                    <dd>
+                        <TruncatedText value={props.item.eventId} copyable />
+                    </dd>
+                </div>
+                <div>
+                    <dt>Event slug</dt>
+                    <dd>
+                        <TruncatedText value={props.item.slug} copyable />
+                    </dd>
+                </div>
+                {props.item.markets.map(market => (
+                    <React.Fragment key={market.marketKey}>
+                        <div>
+                            <dt>Market key</dt>
+                            <dd>
+                                <TruncatedText value={market.marketKey} copyable />
+                            </dd>
+                        </div>
+                        <div>
+                            <dt>Condition ID</dt>
+                            <dd>
+                                <TruncatedText value={market.conditionId} copyable />
+                            </dd>
+                        </div>
+                    </React.Fragment>
+                ))}
+            </dl>
+        </details>
     </article>
 );
 
-export const FifwcSportsLiveEventCard = (props: {item: SportsLiveEventCardItem; history?: SportsPriceHistorySeriesItem[]}) => (
-    <SportsLiveEventCardFrame item={props.item} options={fifwcMoneylineOutcomeOptions(props.item)} history={props.history} />
+export const FifwcSportsLiveEventCard = (props: {item: SportsLiveEventCardItem; history?: SportsPriceHistorySeriesItem[]; historyState?: 'loading' | 'failed'}) => (
+    <SportsLiveEventCardFrame item={props.item} options={fifwcMoneylineOutcomeOptions(props.item)} history={props.history} historyState={props.historyState} />
 );
 
-export const LegacySportsLiveEventCard = (props: {item: SportsLiveEventCardItem; history?: SportsPriceHistorySeriesItem[]}) => (
-    <SportsLiveEventCardFrame item={props.item} options={legacyMoneylineOptions(props.item)} history={props.history} />
+export const LegacySportsLiveEventCard = (props: {item: SportsLiveEventCardItem; history?: SportsPriceHistorySeriesItem[]; historyState?: 'loading' | 'failed'}) => (
+    <SportsLiveEventCardFrame item={props.item} options={legacyMoneylineOptions(props.item)} history={props.history} historyState={props.historyState} />
 );
 
-export const SportsLiveEventCard = (props: {item: SportsLiveEventCardItem; history?: SportsPriceHistorySeriesItem[]}) => {
+export const SportsLiveEventCard = (props: {item: SportsLiveEventCardItem; history?: SportsPriceHistorySeriesItem[]; historyState?: 'loading' | 'failed'}) => {
     if (isFifwcSportsLiveEvent(props.item)) {
-        return <FifwcSportsLiveEventCard item={props.item} history={props.history} />;
+        return <FifwcSportsLiveEventCard item={props.item} history={props.history} historyState={props.historyState} />;
     }
-    return <LegacySportsLiveEventCard item={props.item} history={props.history} />;
+    return <LegacySportsLiveEventCard item={props.item} history={props.history} historyState={props.historyState} />;
 };
 
 const sportsHistoryTime = (value?: string) => formatBeijingDateTime(value) || '-';
 
 const SportsHistoryEventInfoSection = (props: {item: SportsHistoryEventCardItem}) => {
-    const title = (
-        <span className='sports-live-card__title-line'>
-            <span className='sports-live-card__title-text'>{props.item.title}</span>
-            <PolymarketEventLink item={props.item} />
-        </span>
-    );
     return (
         <div className='sports-live-card__info'>
-            <CardTitle title={title} subtitle={props.item.slug} image={props.item.image} />
             <div className='sports-history-times'>
                 <div className='sports-history-time'>
                     <Typography.Text className='sports-live-card__stat-label'>Started</Typography.Text>
@@ -678,6 +535,7 @@ const SportsHistoryEventInfoSection = (props: {item: SportsHistoryEventCardItem}
 export const SportsHistoryEventCard = (props: {
     item: SportsHistoryEventCardItem;
     history?: SportsPriceHistorySeriesItem[];
+    historyState?: 'loading' | 'failed';
     scratchMode?: boolean;
     scratchResetVersion?: number;
 }) => (
@@ -686,6 +544,7 @@ export const SportsHistoryEventCard = (props: {
         item={props.item}
         options={legacyMoneylineOptions(props.item)}
         history={props.history}
+        historyState={props.historyState}
         scratchMode={props.scratchMode}
         scratchResetVersion={props.scratchResetVersion}
         info={<SportsHistoryEventInfoSection item={props.item} />}

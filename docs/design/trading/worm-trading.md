@@ -661,11 +661,10 @@ secret remain inside Worm Trading memory and its encrypted database columns.
 19. The builder may retain markets from multiple Events. Selecting the other
     direction for the same Market Condition ID replaces the existing selection;
     it cannot create a duplicate. Up/down controls rewrite contiguous ordinals
-    in React memory. Desktop uses compact title-and-YES/NO rows beside a sticky
+    in React memory. Desktop uses compact title-and-YES/NO rows beside a
     combination summary; normal state, backend, leverage, logo, and market ID
-    metadata are not rendered. Compact layouts place two equal-width choices
-    below the title and use a selected-count action that opens the summary
-    Drawer. Prices are shown in cents with complete USDC-per-share last-trade
+    metadata are hidden by default, with the full market ID in expandable evidence. Compact layouts place two equal-width choices
+    below the title and show the ordered combination summary after the Events. Prices are shown in cents with complete USDC-per-share last-trade
     values and their non-executable meaning available in a tooltip.
 20. Each loaded Event exposes one manual Refresh action and its Athena catalog
     fetch time. A successful refresh updates the Event and Current combination

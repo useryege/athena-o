@@ -72,12 +72,7 @@ func ProjectUserInfo(ctx context.Context, accessController *accountaccess.Contro
 	if err != nil {
 		return nil, err
 	}
-	preferences, err := accountCenter.GetPreferences(ctx, response.AccountId)
-	if err != nil {
-		return nil, err
-	}
 	response.Profile = accountserver.ToAPIAccountProfile(response.AccountId, profile)
-	response.Preferences = accountserver.ToAPIAccountPreferences(preferences)
 	response.Identity = accountserver.ToAPIAccountIdentity(identity)
 	return response, nil
 }

@@ -5,23 +5,19 @@ import '../styles/admin.css';
 
 import {
     ApiOutlined,
+    AppstoreOutlined,
     BellOutlined,
-    CheckOutlined,
-    DesktopOutlined,
-    HeartOutlined,
     IdcardOutlined,
     KeyOutlined,
+    LineChartOutlined,
     LogoutOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
-    MoonOutlined,
     PieChartOutlined,
     QuestionCircleOutlined,
-    SunOutlined,
-    TeamOutlined,
-    RadarChartOutlined
+    SwapOutlined
 } from '@ant-design/icons';
-import {App as AntApp, Breadcrumb, Button, Dropdown, Layout, Menu, Result, Space, Spin, Tag, Tooltip} from 'antd';
+import {App as AntApp, Breadcrumb, Button, Dropdown, Layout, Menu, Result, Space, Spin, Tag, Tooltip, Typography} from 'antd';
 import type {MenuProps} from 'antd';
 import * as React from 'react';
 import {createBrowserRouter, Navigate, Route, RouterProvider, Routes, useLocation, useNavigate} from 'react-router-dom';
@@ -33,8 +29,7 @@ import {AppBootstrap, AppBootstrapSessionStatus, UserInfo} from '../shared/model
 import {readAdminLoginReturnTo} from '../shared/login-navigation';
 import {deploymentPath, readApplicationBaseHRef, readDeploymentBaseHRef} from '../shared/runtime-base';
 import requests, {isAccountMaintenanceError, requestErrorDetails, requestErrorMessage} from '../shared/services/requests';
-import type {ThemeMode, ViewPreferences} from '../shared/services/view-preferences-service';
-import {accountThemeLabel, localThemeMode, serverThemeMode} from '../shared/theme';
+import type {ViewPreferences} from '../shared/services/view-preferences-service';
 import {BrandMark, clearAsyncDataCache, setAsyncDataCacheSession} from '../components';
 import {SessionBootstrap} from '../session/bootstrap';
 import {
@@ -59,18 +54,24 @@ services.viewPreferences.init();
 requests.setBaseHRef(readDeploymentBaseHRef());
 requests.configureAuthorizationRealm('admin');
 
+const adminMenuItem = (key: string, label: string, icon: React.ReactNode) => ({
+    key,
+    label,
+    icon
+});
+
 const adminSections: MenuProps['items'] = [
-    {type: 'group', key: 'account-admin', label: 'Account Admin', children: [{key: '/accounts', label: 'Accounts', icon: <TeamOutlined />}]},
-    {type: 'group', key: 'governance', label: 'Governance', children: [{key: '/profit-sharing', label: 'Profit Sharing', icon: <PieChartOutlined />}]},
+    {type: 'group', key: 'account-admin', label: 'Account Admin', children: [adminMenuItem('/accounts', 'Accounts', <AppstoreOutlined />)]},
+    {type: 'group', key: 'governance', label: 'Governance', children: [adminMenuItem('/profit-sharing', 'Profit Sharing', <PieChartOutlined />)]},
     {
         type: 'group',
         key: 'system',
         label: 'System',
         children: [
-            {key: '/trader-sync/subscriptions', label: 'Trader Sync', icon: <RadarChartOutlined />},
-            {key: '/service-status', label: 'Service Status', icon: <HeartOutlined />},
-            {key: '/etherscan-gateways', label: 'Etherscan Gateways', icon: <ApiOutlined />},
-            {key: '/notifications', label: 'Notifications', icon: <BellOutlined />}
+            adminMenuItem('/trader-sync/subscriptions', 'Trader Sync', <SwapOutlined />),
+            adminMenuItem('/service-status', 'Service Status', <LineChartOutlined />),
+            adminMenuItem('/etherscan-gateways', 'Etherscan Gateways', <ApiOutlined />),
+            adminMenuItem('/notifications', 'Notifications', <BellOutlined />)
         ]
     }
 ];
@@ -83,7 +84,6 @@ const routeMetadata = [
     {path: '/etherscan-gateways', section: 'System', label: 'Etherscan Gateways'},
     {path: '/notifications', section: 'System', label: 'Notifications'},
     {path: '/account/profile', section: 'Account', label: 'Profile'},
-    {path: '/account/appearance', section: 'Account', label: 'Appearance'},
     {path: '/account/access', section: 'Account', label: 'Access & session'},
     {path: '/help', section: 'Support', label: 'Help'}
 ];
@@ -129,7 +129,7 @@ const useNarrowShell = () => {
 const AdminForbiddenPage = () => (
     <Result
         status='403'
-        title='Administrator access required'
+        title={<Typography.Title level={1}>Administrator access required</Typography.Title>}
         subTitle='This account can use the Athena member workspace but is not allowed to open Athena Admin.'
         extra={
             <Button type='primary' onClick={() => window.location.assign(deploymentPath(''))}>
@@ -144,18 +144,10 @@ const AdminNotFoundPage = () => {
     return <Result status='404' title='Page not found' extra={<Button onClick={() => navigate('/accounts')}>Return to accounts</Button>} />;
 };
 
-const AdminRoutes = (props: {
-    preferences: ViewPreferences;
-    settings: AppBootstrap['settings'];
-    themeChanging: boolean;
-    onThemeChange: (theme: ThemeMode) => Promise<void>;
-    loggingOut: boolean;
-    onLogout: () => void;
-}) => {
+const AdminRoutes = (props: {settings: AppBootstrap['settings']; loggingOut: boolean; onLogout: () => void}) => {
+    const {user} = React.useContext(AuthorizationCtx);
+    const identityKey = JSON.stringify([user.accountId, user.iss]);
     const accountProps = {
-        preferences: props.preferences,
-        themeChanging: props.themeChanging,
-        onThemeChange: props.onThemeChange,
         loggingOut: props.loggingOut,
         onLogout: props.onLogout
     };
@@ -172,9 +164,8 @@ const AdminRoutes = (props: {
                 <Route path='/etherscan-gateways' element={<EtherscanGatewaysPage />} />
                 <Route path='/notifications' element={<SystemNotificationsPage />} />
                 <Route path='/notifications/:id' element={<SystemNotificationDetailPage />} />
-                <Route path='/account/profile' element={<AccountCenterPage section='profile' {...accountProps} />} />
-                <Route path='/account/appearance' element={<AccountCenterPage section='appearance' {...accountProps} />} />
-                <Route path='/account/access' element={<AccountCenterPage section='access' {...accountProps} />} />
+                <Route path='/account/profile' element={<AccountCenterPage key={identityKey} section='profile' {...accountProps} />} />
+                <Route path='/account/access' element={<AccountCenterPage key={identityKey} section='access' {...accountProps} />} />
                 <Route path='/help' element={<HelpPage help={props.settings.help} />} />
                 <Route path='*' element={<AdminNotFoundPage />} />
             </Routes>
@@ -210,15 +201,89 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
     const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = React.useState(props.preferences.hideSidebar);
     const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
     const [accountMenuOpen, setAccountMenuOpen] = React.useState(false);
-    const [themeChanging, setThemeChanging] = React.useState(false);
     const [loggingOut, setLoggingOut] = React.useState(false);
+    const sidebarRef = React.useRef<HTMLDivElement>(null);
+    const shellBackgroundRef = React.useRef<HTMLElement>(null);
+    const mobileSidebarToggleRef = React.useRef<HTMLButtonElement>(null);
     const [lastCheckedAt, setLastCheckedAt] = React.useState(Date.now());
     const moduleAccess = React.useMemo(() => moduleAccessLevels(user.access), [user.access]);
     const sidebarCollapsed = narrowShell ? !mobileSidebarOpen : desktopSidebarCollapsed;
+    const expandedSidebarWidth = narrowShell ? 280 : 224;
 
     React.useEffect(() => {
         setMobileSidebarOpen(false);
     }, [location.pathname]);
+
+    React.useEffect(() => {
+        if (!accountMenuOpen) return;
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setAccountMenuOpen(false);
+        };
+        document.addEventListener('keydown', closeOnEscape, true);
+        return () => document.removeEventListener('keydown', closeOnEscape, true);
+    }, [accountMenuOpen]);
+
+    React.useLayoutEffect(() => {
+        if (!narrowShell || !mobileSidebarOpen) return;
+        const sidebar = sidebarRef.current;
+        const background = shellBackgroundRef.current;
+        const focusInitialControl = () => sidebar?.querySelector<HTMLElement>('.athena-shell__mobile-close, .athena-brand, [role="menuitem"]')?.focus();
+        let focusFrame = 0;
+        const focusWhenVisible = () => {
+            if (sidebar && getComputedStyle(sidebar).visibility !== 'hidden' && sidebar.getClientRects().length > 0) {
+                focusInitialControl();
+                return;
+            }
+            focusFrame = window.requestAnimationFrame(focusWhenVisible);
+        };
+        focusFrame = window.requestAnimationFrame(focusWhenVisible);
+        background?.setAttribute('inert', '');
+        background?.setAttribute('aria-hidden', 'true');
+        const previousBodyOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        const handleDialogKeyboard = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                setMobileSidebarOpen(false);
+                return;
+            }
+            if (event.key !== 'Tab' || !sidebar) return;
+            const focusable = Array.from(
+                sidebar.querySelectorAll<HTMLElement>(
+                    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [role="menuitem"], [tabindex]:not([tabindex="-1"])'
+                )
+            ).filter(item => item.getClientRects().length > 0 && item.getAttribute('aria-hidden') !== 'true');
+            if (focusable.length === 0) {
+                event.preventDefault();
+                return;
+            }
+            const activeIndex = focusable.findIndex(item => item === document.activeElement);
+            const nextIndex = event.shiftKey
+                ? activeIndex <= 0
+                    ? focusable.length - 1
+                    : activeIndex - 1
+                : activeIndex < 0 || activeIndex === focusable.length - 1
+                  ? 0
+                  : activeIndex + 1;
+            event.preventDefault();
+            focusable[nextIndex].focus();
+        };
+        document.addEventListener('keydown', handleDialogKeyboard, true);
+        return () => {
+            document.body.style.overflow = previousBodyOverflow;
+            window.cancelAnimationFrame(focusFrame);
+            background?.removeAttribute('inert');
+            background?.removeAttribute('aria-hidden');
+            document.removeEventListener('keydown', handleDialogKeyboard, true);
+            window.requestAnimationFrame(() => mobileSidebarToggleRef.current?.focus());
+        };
+    }, [mobileSidebarOpen, narrowShell]);
+
+    React.useLayoutEffect(() => {
+        const navigation = sidebarRef.current?.querySelector('#athena-admin-navigation');
+        navigation?.querySelectorAll('[aria-current="page"]').forEach(item => item.removeAttribute('aria-current'));
+        navigation?.querySelector('.ant-menu-item-selected')?.setAttribute('aria-current', 'page');
+    }, [location.pathname, mobileSidebarOpen, narrowShell]);
 
     const notifications = React.useMemo(
         () => ({
@@ -251,7 +316,6 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
         const sessionGeneration = requests.beginAuthorizationSession(latest.accountId);
         setAsyncDataCacheSession('admin', latest.accountId, sessionGeneration);
         setLastCheckedAt(Date.now());
-        services.viewPreferences.syncServerTheme(localThemeMode(latest.preferences.theme));
     }, [location.hash, location.pathname, location.search]);
 
     const recheckAdminAccess = React.useCallback(() => {
@@ -295,27 +359,6 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
         const info = routeInfo(location.pathname);
         document.title = info ? `${info.label} · Athena Admin` : 'Athena Admin';
     }, [location.pathname]);
-
-    const changeTheme = async (theme: ThemeMode) => {
-        if (themeChanging || localThemeMode(user.preferences.theme) === theme) {
-            setAccountMenuOpen(false);
-            return;
-        }
-        setThemeChanging(true);
-        services.viewPreferences.syncServerTheme(theme);
-        try {
-            const preferences = await services.accounts.updatePreferences(serverThemeMode(theme), user.preferences.revision);
-            setUser(current => ({...current, preferences}));
-            services.viewPreferences.syncServerTheme(localThemeMode(preferences.theme));
-            notifications.success('Appearance updated', `${accountThemeLabel(preferences.theme)} theme is now synced across devices.`);
-        } catch (error) {
-            services.viewPreferences.syncServerTheme(localThemeMode(user.preferences.theme));
-            notifications.error('Could not update appearance', requestErrorMessage(error));
-        } finally {
-            setThemeChanging(false);
-            setAccountMenuOpen(false);
-        }
-    };
 
     const logout = async () => {
         if (loggingOut) {
@@ -372,15 +415,6 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
         },
         {type: 'divider'},
         {key: '/account/profile', label: 'Profile', icon: <IdcardOutlined />},
-        {
-            type: 'group',
-            label: `Appearance · ${themeChanging ? 'Saving…' : accountThemeLabel(props.preferences.theme)}`,
-            children: [
-                {key: 'theme:system', label: 'System', icon: props.preferences.theme === 'system' ? <CheckOutlined /> : <DesktopOutlined />},
-                {key: 'theme:light', label: 'Light', icon: props.preferences.theme === 'light' ? <CheckOutlined /> : <SunOutlined />},
-                {key: 'theme:dark', label: 'Dark', icon: props.preferences.theme === 'dark' ? <CheckOutlined /> : <MoonOutlined />}
-            ]
-        },
         {key: '/account/access', label: 'Access', icon: <KeyOutlined />},
         {key: '/help', label: 'Help', icon: <QuestionCircleOutlined />},
         {type: 'divider'},
@@ -401,9 +435,7 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
     ];
 
     const onAccountMenuClick: MenuProps['onClick'] = item => {
-        if (item.key.startsWith('theme:')) {
-            void changeTheme(item.key.slice('theme:'.length) as ThemeMode);
-        } else if (item.key === 'logout') {
+        if (item.key === 'logout') {
             void logout();
         } else if (item.key.startsWith('/')) {
             setAccountMenuOpen(false);
@@ -414,7 +446,7 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
     return (
         <Provider value={contextValue}>
             <AuthorizationCtx.Provider value={authorizationValue}>
-                <Layout className='athena-shell athena-admin-shell'>
+                <Layout className='athena-shell athena-admin-shell' style={{'--athena-sidebar-width': `${expandedSidebarWidth}px`} as React.CSSProperties}>
                     <a className='athena-skip-link' href='#athena-main' aria-hidden={narrowShell && mobileSidebarOpen} tabIndex={narrowShell && mobileSidebarOpen ? -1 : undefined}>
                         Skip to main content
                     </a>
@@ -424,7 +456,8 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
                         collapsed={sidebarCollapsed}
                         collapsedWidth={narrowShell ? 0 : 72}
                         trigger={null}
-                        width={272}
+                        width={expandedSidebarWidth}
+                        ref={sidebarRef}
                         role={narrowShell && mobileSidebarOpen ? 'dialog' : undefined}
                         aria-modal={narrowShell && mobileSidebarOpen ? true : undefined}
                         aria-label={narrowShell && mobileSidebarOpen ? 'Administration navigation' : undefined}
@@ -443,8 +476,7 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
                                 <BrandMark size='small' />
                                 {!sidebarCollapsed && (
                                     <span className='athena-brand__copy'>
-                                        <strong>Athena Admin</strong>
-                                        <small>Administration Console</small>
+                                        <strong>ATHENA</strong>
                                     </span>
                                 )}
                             </div>
@@ -463,35 +495,38 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
                             )}
                         </nav>
                         {(!narrowShell || mobileSidebarOpen) && (
-                            <div className='athena-sidebar-footer'>
-                                <Dropdown
-                                    open={accountMenuOpen}
-                                    trigger={['click']}
-                                    placement='topLeft'
-                                    classNames={{root: 'athena-account-menu'}}
-                                    menu={{items: accountMenuItems, onClick: onAccountMenuClick, selectable: false}}
-                                    onOpenChange={setAccountMenuOpen}>
-                                    <button className='athena-account-trigger' type='button' aria-label='Open account menu' aria-expanded={accountMenuOpen}>
-                                        <AccountAvatar profile={user.profile} username={user.username} size={38} />
-                                        {!sidebarCollapsed && (
-                                            <span className='athena-account-trigger__copy'>
-                                                <strong>{user.profile.displayName || user.username}</strong>
-                                                <small>@{user.username}</small>
-                                            </span>
-                                        )}
-                                    </button>
-                                </Dropdown>
+                            <div className='athena-sidebar-bottom'>
+                                <Button
+                                    type='text'
+                                    icon={<QuestionCircleOutlined />}
+                                    aria-label='Help'
+                                    aria-current={location.pathname === '/help' ? 'page' : undefined}
+                                    onClick={() => {
+                                        setMobileSidebarOpen(false);
+                                        navigate('/help');
+                                    }}>
+                                    <span className='athena-sidebar-bottom__label'>Help</span>
+                                </Button>
+                                {!sidebarCollapsed && <p>Administration console</p>}
                             </div>
                         )}
                     </Layout.Sider>
                     {narrowShell && mobileSidebarOpen && (
-                        <button className='athena-shell__backdrop' type='button' aria-label='Close navigation' tabIndex={-1} onClick={() => setMobileSidebarOpen(false)} />
+                        <button
+                            className='athena-shell__backdrop'
+                            type='button'
+                            aria-label='Close navigation'
+                            aria-hidden='true'
+                            tabIndex={-1}
+                            onClick={() => setMobileSidebarOpen(false)}
+                        />
                     )}
-                    <Layout>
+                    <Layout ref={shellBackgroundRef}>
                         <Layout.Header className='athena-shell__header'>
                             <div className='athena-shell__header-left'>
-                                <Tooltip title={sidebarCollapsed ? 'Open navigation' : 'Close navigation'}>
+                                <Tooltip title={narrowShell ? undefined : sidebarCollapsed ? 'Open navigation' : 'Close navigation'}>
                                     <Button
+                                        ref={mobileSidebarToggleRef}
                                         className='athena-shell__sidebar-toggle'
                                         type='text'
                                         aria-label={sidebarCollapsed ? 'Open navigation' : 'Close navigation'}
@@ -510,6 +545,27 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
                                     />
                                 </Tooltip>
                                 <Breadcrumb className='athena-shell__breadcrumb' items={info ? [{title: info.section}, {title: info.label}] : []} />
+                            </div>
+                            <div className='athena-shell__header-actions'>
+                                <Dropdown
+                                    open={accountMenuOpen}
+                                    trigger={['click']}
+                                    placement='bottomRight'
+                                    classNames={{root: 'athena-account-menu'}}
+                                    destroyOnHidden={true}
+                                    menu={{items: accountMenuItems, onClick: onAccountMenuClick, selectable: false}}
+                                    onOpenChange={setAccountMenuOpen}>
+                                    <button className='athena-account-trigger' type='button' aria-label='Open account menu' aria-haspopup='menu' aria-expanded={accountMenuOpen}>
+                                        <AccountAvatar className='athena-account-avatar' profile={user.profile} username={user.username} size={28} />
+                                        <span className='athena-account-trigger__copy'>
+                                            <strong>{user.profile.displayName || user.username}</strong>
+                                            <small>@{user.username}</small>
+                                        </span>
+                                        <span className='athena-account-trigger__more' aria-hidden='true'>
+                                            •••
+                                        </span>
+                                    </button>
+                                </Dropdown>
                             </div>
                         </Layout.Header>
                         <Layout.Content className='athena-shell__content' id='athena-main' tabIndex={-1}>
@@ -530,14 +586,7 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
                                     </div>
                                 </section>
                             ) : (
-                                <AdminRoutes
-                                    preferences={props.preferences}
-                                    settings={props.settings}
-                                    themeChanging={themeChanging}
-                                    onThemeChange={changeTheme}
-                                    loggingOut={loggingOut}
-                                    onLogout={() => void logout()}
-                                />
+                                <AdminRoutes settings={props.settings} loggingOut={loggingOut} onLogout={() => void logout()} />
                             )}
                         </Layout.Content>
                     </Layout>

@@ -1,8 +1,9 @@
+import {OperationFacts} from '../components/operation-facts';
 import {ArrowLeftOutlined, CheckOutlined, DeleteOutlined, SaveOutlined, UploadOutlined} from '@ant-design/icons';
-import {Alert, Button, Empty, Form, Input, Pagination, Select, Space, Switch, Tag, Typography, Upload} from 'antd';
+import {Alert, Button, Empty, Form, Input, Pagination, Select, Space, Switch, Tabs, Tag, Typography, Upload} from 'antd';
 import * as React from 'react';
 import {useBlocker, useSearchParams} from 'react-router-dom';
-import {AppPage, ChoiceGroup, KeyValueGrid, Section, StatusTag, useAsyncData} from '../../components';
+import {AppPage, ChoiceGroup, Section, StatusTag, useAsyncData} from '../../components';
 import {accountAccessEqual, cloneAccountAccess, moduleAccessLevel, moduleAccessSummary, replaceModuleAccess} from '../../shared/account-access';
 import {
     allowedAccessLevels,
@@ -14,11 +15,12 @@ import {
     accountDataModules
 } from '../../shared/access-modules';
 import {Context, useAuthorization} from '../../shared/context';
-import {accountStatusForAccess, Account, AccountAccess, AccountProfile, AccountStatus, AccountTier} from '../../shared/models';
+import {accountStatusForAccess, Account, AccountAccess, AccountProfile, AccountStatus, AccountTier, parseAccountStatus} from '../../shared/models';
 import {AccountAvatar, accountTierLabel, identityPresentation, identityProviderLabel} from '../../shared/account-presentation';
 import {adminServices as services} from '../services';
 import type {AccountsPage} from '../accounts-service';
 import {requestErrorDetails, requestErrorMessage} from '../../shared/services/requests';
+import {useAdminReadScope} from '../read-scope';
 import {hasControlCharacters, unicodeCharacterCount} from '../../shared/validation';
 
 const effectiveAccountStatus = (account: Account) =>
@@ -90,14 +92,10 @@ export const AccountAccessEditor = (props: {
                         <Typography.Paragraph type='secondary'>{item.description}</Typography.Paragraph>
                     </div>
                     {props.editable ? (
-                        <Switch
-                            aria-label={`${item.label} for @${props.account.username}`}
-                            checked={item.checked}
-                            disabled={props.updating}
-                            checkedChildren='Enabled'
-                            unCheckedChildren='Disabled'
-                            onChange={item.onChange}
-                        />
+                        <div className='account-entitlement-control'>
+                            <Switch aria-label={`${item.label} for @${props.account.username}`} checked={item.checked} disabled={props.updating} onChange={item.onChange} />
+                            <Typography.Text type='secondary'>{item.checked ? 'Enabled' : 'Disabled'}</Typography.Text>
+                        </div>
                     ) : (
                         <StatusTag value={item.checked ? 'Enabled' : 'Disabled'} positive={item.checked} negative={!item.checked} />
                     )}
@@ -115,18 +113,19 @@ export const AccountAccessEditor = (props: {
                                 const value = moduleAccessLevel(props.access, definition.module);
                                 return (
                                     <div className='account-access-module' key={definition.module}>
-                                        <div className='account-access-module__copy'>
-                                            <Space size={6} wrap={true}>
-                                                <Typography.Text strong={true}>{definition.label}</Typography.Text>
-                                                {definition.apiOnly && <Tag>API only</Tag>}
-                                            </Space>
+                                        <details className='account-access-module__copy'>
+                                            <summary>
+                                                <Space size={6} wrap={true}>
+                                                    <Typography.Text strong={true}>{definition.label}</Typography.Text>
+                                                    {definition.apiOnly && <Tag>API only</Tag>}
+                                                </Space>
+                                            </summary>
                                             <Typography.Text type='secondary'>{definition.description}</Typography.Text>
-                                        </div>
+                                        </details>
                                         {props.editable ? (
-                                            <ChoiceGroup<AccountDataAccess>
+                                            <Select<AccountDataAccess>
                                                 className='account-access-module__choice'
-                                                size='small'
-                                                ariaLabel={`${definition.label} data access for @${props.account.username}`}
+                                                aria-label={`${definition.label} data access for @${props.account.username}`}
                                                 value={value}
                                                 options={moduleOptions(definition)}
                                                 disabled={props.updating}
@@ -153,7 +152,7 @@ export const AccountAccessEditor = (props: {
                     <Button disabled={!props.dirty || props.updating} onClick={props.onReset}>
                         Reset
                     </Button>
-                    <Button type='primary' icon={<SaveOutlined />} loading={props.updating} disabled={!props.dirty || props.updating} onClick={props.onSave}>
+                    <Button type='primary' icon={<SaveOutlined aria-hidden />} loading={props.updating} disabled={!props.dirty || props.updating} onClick={props.onSave}>
                         Save access
                     </Button>
                 </Space>
@@ -163,18 +162,70 @@ export const AccountAccessEditor = (props: {
 );
 
 export const AdminAccountsPage = () => {
+    const scope = useAdminReadScope('account-directory');
+    return scope.isCurrent() ? (
+        <AdminAccountsWorkspace key={scope.key} isCurrent={scope.isCurrent} />
+    ) : (
+        <AppPage title='Account Administration' loading>
+            <p>Checking administrator access…</p>
+        </AppPage>
+    );
+};
+
+const AdminAccountsWorkspace = ({isCurrent}: {isCurrent: () => boolean}) => {
     const ctx = React.useContext(Context);
     const authorization = useAuthorization();
+    const confirmationHandles = React.useRef<Array<{destroy(): void}>>([]);
+    React.useEffect(
+        () => () => {
+            for (const handle of confirmationHandles.current) handle.destroy();
+        },
+        []
+    );
+    const confirm: typeof ctx.modal.confirm = options => {
+        const handle = ctx.modal.confirm({
+            ...options,
+            focusable: {trap: true, focusTriggerAfterClose: true},
+            wrapProps: {
+                onKeyDownCapture: event => {
+                    if (event.key !== 'Tab') return;
+                    const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not([disabled])'));
+                    const first = buttons[0],
+                        last = buttons[buttons.length - 1];
+                    if (first && last && ((!event.shiftKey && document.activeElement === last) || (event.shiftKey && document.activeElement === first))) {
+                        event.preventDefault();
+                        (event.shiftKey ? last : first).focus();
+                    }
+                }
+            }
+        });
+        confirmationHandles.current.push(handle);
+        return handle;
+    };
     const [searchParams, setSearchParams] = useSearchParams();
     const mobileAccountId = searchParams.get('account') || '';
-    const [queryDraft, setQueryDraft] = React.useState('');
-    const [query, setQuery] = React.useState('');
-    const [status, setStatus] = React.useState<AccountStatus | undefined>();
-    const [page, setPage] = React.useState(1);
-    const [pageSize, setPageSize] = React.useState(50);
+    const [queryDraft, setQueryDraft] = React.useState(searchParams.get('query') || '');
+    const [query, setQuery] = React.useState(searchParams.get('query') || '');
+    const [status, setStatus] = React.useState<AccountStatus | undefined>(searchParams.has('status') ? parseAccountStatus(searchParams.get('status')) : undefined);
+    const [page, setPage] = React.useState(Number(searchParams.get('page')) || 1);
+    const [pageSize, setPageSize] = React.useState(Number(searchParams.get('pageSize')) || 50);
+    const updateSearch = (values: Record<string, string>) =>
+        setSearchParams(previous => {
+            const next = new URLSearchParams(previous);
+            for (const [key, value] of Object.entries(values)) {
+                if (value) next.set(key, value);
+                else next.delete(key);
+            }
+            return next;
+        });
     const accounts = useAsyncData<AccountsPage>(() => services.adminAccounts.list({query, status, page, pageSize}), [query, status, page, pageSize]);
     const [items, setItems] = React.useState<Account[]>([]);
     const [selectedId, setSelectedId] = React.useState('');
+    // A request belongs to this selection, even if the directory later returns to the same account.
+    const selectionRef = React.useRef({id: selectedId});
+    if (selectionRef.current.id !== selectedId) selectionRef.current = {id: selectedId};
+    const selection = selectionRef.current;
+    const isSelectedCurrent = () => isCurrent() && selectionRef.current === selection;
     const [displayName, setDisplayName] = React.useState('');
     const [tier, setTier] = React.useState<AccountTier>(AccountTier.Standard);
     const [accessDraft, setAccessDraft] = React.useState<AccountAccess>();
@@ -198,7 +249,14 @@ export const AdminAccountsPage = () => {
 
     React.useEffect(() => {
         if (accounts.data && mobileAccountId && !accounts.data.items.some(account => account.id === mobileAccountId)) {
-            setSearchParams({}, {replace: true});
+            setSearchParams(
+                previous => {
+                    const next = new URLSearchParams(previous);
+                    next.delete('account');
+                    return next;
+                },
+                {replace: true}
+            );
         }
     }, [accounts.data, mobileAccountId, setSearchParams]);
 
@@ -221,6 +279,10 @@ export const AdminAccountsPage = () => {
 
     React.useEffect(() => {
         loadDraft(selected);
+        setSavingProfile(false);
+        setSavingTier(false);
+        setSavingAccess(false);
+        setUploadingAvatar(false);
     }, [selected?.id]);
 
     const changeListScope = (change: () => void) => {
@@ -228,7 +290,9 @@ export const AdminAccountsPage = () => {
             change();
             return;
         }
-        ctx.modal.confirm({
+        confirm({
+            className: 'admin-operation-confirm',
+            autoFocusButton: 'cancel',
             title: `Discard changes for @${selected?.username || 'account'}?`,
             content: 'Filtering or paging the account directory will discard the current drafts.',
             okText: 'Discard and continue',
@@ -244,12 +308,14 @@ export const AdminAccountsPage = () => {
             const next = value.trim();
             setQueryDraft(next);
             setQuery(next);
+            updateSearch({query: next, page: '1'});
             setPage(1);
         });
 
     const filterAccounts = (nextStatus?: AccountStatus) =>
         changeListScope(() => {
             setStatus(nextStatus);
+            updateSearch({status: nextStatus ? String(nextStatus) : '', page: '1'});
             setPage(1);
         });
 
@@ -257,6 +323,7 @@ export const AdminAccountsPage = () => {
         changeListScope(() => {
             setPage(nextPageSize === pageSize ? nextPage : 1);
             setPageSize(nextPageSize);
+            updateSearch({page: String(nextPageSize === pageSize ? nextPage : 1), pageSize: String(nextPageSize)});
         });
 
     React.useEffect(() => {
@@ -276,7 +343,9 @@ export const AdminAccountsPage = () => {
             return;
         }
         let resolved = false;
-        const handle = ctx.modal.confirm({
+        const handle = confirm({
+            className: 'admin-operation-confirm',
+            autoFocusButton: 'cancel',
             title: 'Discard unsaved account changes?',
             content: selected ? `Changes for @${selected.username} have not been saved.` : undefined,
             okText: 'Discard and leave',
@@ -301,14 +370,16 @@ export const AdminAccountsPage = () => {
         const choose = () => {
             setSelectedId(id);
             if (openMobileDetail) {
-                setSearchParams({account: id});
+                updateSearch({account: id});
             }
         };
         if (!dirty) {
             choose();
             return;
         }
-        ctx.modal.confirm({
+        confirm({
+            className: 'admin-operation-confirm',
+            autoFocusButton: 'cancel',
             title: `Discard changes for @${selected?.username || 'account'}?`,
             content: 'Open the selected account after discarding the current drafts.',
             okText: 'Discard and switch',
@@ -325,6 +396,7 @@ export const AdminAccountsPage = () => {
             return undefined;
         }
         const latest = await services.adminAccounts.get(selected.id);
+        if (!isSelectedCurrent()) return undefined;
         setItems(current => current.map(account => (account.id === latest.id ? latest : account)));
         ctx.notifications.warning('Account changed elsewhere', message);
         return latest;
@@ -337,17 +409,19 @@ export const AdminAccountsPage = () => {
         setSavingProfile(true);
         try {
             const profile = await services.adminAccounts.updateProfile(selected.id, displayName.trim(), selected.profile.revision);
+            if (!isSelectedCurrent()) return;
             replaceProfile(selected.id, profile);
             setDisplayName(profile.displayName);
             ctx.notifications.success('Account profile updated', `@${selected.username}`);
         } catch (err) {
+            if (!isSelectedCurrent()) return;
             if (requestErrorDetails(err).status === 409) {
                 await conflict('The latest profile was reloaded. Your display-name draft was kept; review it before saving again.');
             } else {
                 ctx.notifications.error('Could not update account profile', requestErrorMessage(err));
             }
         } finally {
-            setSavingProfile(false);
+            if (isSelectedCurrent()) setSavingProfile(false);
         }
     };
 
@@ -358,10 +432,12 @@ export const AdminAccountsPage = () => {
         setSavingTier(true);
         try {
             const profile = await services.adminAccounts.updateTier(selected.id, tier, selected.profile.revision);
+            if (!isSelectedCurrent()) return;
             replaceProfile(selected.id, profile);
             setTier(profile.tier);
             ctx.notifications.success('Account tier updated', `@${selected.username} is now ${accountTierLabel(profile.tier)}.`);
         } catch (err) {
+            if (!isSelectedCurrent()) return;
             if (requestErrorDetails(err).status === 409) {
                 const latest = await conflict('The latest profile was reloaded. Choose the tier again before saving.');
                 if (latest) {
@@ -371,7 +447,7 @@ export const AdminAccountsPage = () => {
                 ctx.notifications.error('Could not update account tier', requestErrorMessage(err));
             }
         } finally {
-            setSavingTier(false);
+            if (isSelectedCurrent()) setSavingTier(false);
         }
     };
 
@@ -388,16 +464,18 @@ export const AdminAccountsPage = () => {
             const profile = file
                 ? await services.adminAccounts.uploadAvatar(selected.id, selected.username, file, selected.profile.revision)
                 : await services.adminAccounts.deleteAvatar(selected.id, selected.username, selected.profile.revision);
+            if (!isSelectedCurrent()) return;
             replaceProfile(selected.id, profile);
             ctx.notifications.success(file ? 'Account avatar updated' : 'Account avatar removed', `@${selected.username}`);
         } catch (err) {
+            if (!isSelectedCurrent()) return;
             if (requestErrorDetails(err).status === 409) {
                 await conflict('The latest profile is being reloaded. Try the avatar change again.');
             } else {
                 ctx.notifications.error(file ? 'Could not upload avatar' : 'Could not remove avatar', requestErrorMessage(err));
             }
         } finally {
-            setUploadingAvatar(false);
+            if (isSelectedCurrent()) setUploadingAvatar(false);
         }
     };
 
@@ -408,11 +486,13 @@ export const AdminAccountsPage = () => {
         setSavingAccess(true);
         try {
             const updated = await services.adminAccounts.updateAccess(selected.id, accessDraft);
+            if (!isSelectedCurrent()) return;
             setItems(current => current.map(account => (account.id === updated.id ? updated : account)));
             setAccessDraft(cloneAccountAccess(updated.access));
             ctx.notifications.success('Account access updated', `@${updated.username}: ${moduleAccessSummary(updated.access)}.`);
             accounts.reload();
         } catch (err) {
+            if (!isSelectedCurrent()) return;
             if (requestErrorDetails(err).status === 409) {
                 const latest = await conflict('The authoritative access was reloaded and the stale access draft was discarded.');
                 if (latest) {
@@ -422,7 +502,7 @@ export const AdminAccountsPage = () => {
                 ctx.notifications.error('Could not update account access', requestErrorMessage(err, 'Your access draft has been kept.'));
             }
         } finally {
-            setSavingAccess(false);
+            if (isSelectedCurrent()) setSavingAccess(false);
         }
     };
 
@@ -443,7 +523,9 @@ export const AdminAccountsPage = () => {
             void commitAccess();
             return;
         }
-        ctx.modal.confirm({
+        confirm({
+            className: 'admin-operation-confirm',
+            autoFocusButton: 'cancel',
             title: `Confirm access changes for @${selected.username}`,
             content: (
                 <ul className='account-access-confirmation'>
@@ -465,6 +547,7 @@ export const AdminAccountsPage = () => {
             subtitle='Search registered Google or Phantom identities and grant sign-in, API Key, Profit Sharing, and module access.'
             loading={accounts.loading}
             error={accounts.error}
+            stale={Boolean(accounts.error && accounts.data)}
             onRefresh={accounts.reload}>
             <div className={mobileAccountId ? 'admin-account-directory-toolbar admin-account-directory-toolbar--hidden' : 'admin-account-directory-toolbar'}>
                 <Input.Search
@@ -472,7 +555,7 @@ export const AdminAccountsPage = () => {
                     aria-label='Search accounts'
                     value={queryDraft}
                     placeholder='Search username, email, wallet address, display name, or account ID'
-                    enterButton='Search'
+                    enterButton={<span>Search</span>}
                     onChange={event => setQueryDraft(event.target.value)}
                     onSearch={searchAccounts}
                 />
@@ -501,7 +584,11 @@ export const AdminAccountsPage = () => {
                 <div className='admin-accounts-mobile-list__heading'>
                     <Typography.Title level={2}>Accounts</Typography.Title>
                     <Typography.Text type='secondary'>
-                        {accounts.data?.totalSize || 0} registered {accounts.data?.totalSize === 1 ? 'identity' : 'identities'}
+                        {accounts.data
+                            ? `${accounts.data.totalSize || 0} registered ${accounts.data.totalSize === 1 ? 'identity' : 'identities'}`
+                            : accounts.loading
+                              ? 'Loading accounts'
+                              : 'Accounts unavailable'}
                     </Typography.Text>
                 </div>
                 <div className='admin-accounts-mobile-list__items'>
@@ -523,16 +610,16 @@ export const AdminAccountsPage = () => {
                                 </span>
                             </button>
                         ))
-                    ) : (
+                    ) : accounts.data && !accounts.loading ? (
                         <Empty description='No accounts match these filters' />
-                    )}
+                    ) : null}
                 </div>
             </div>
             <div className={mobileAccountId ? 'admin-accounts-layout admin-accounts-layout--mobile-detail' : 'admin-accounts-layout'}>
                 <aside className='admin-account-list' aria-label='Athena accounts'>
                     <div className='admin-account-list__heading'>
                         <strong>Accounts</strong>
-                        <span>{accounts.data?.totalSize || 0}</span>
+                        <span>{accounts.data ? accounts.data.totalSize || 0 : '—'}</span>
                     </div>
                     <div className='admin-account-list__items'>
                         {items.length > 0 ? (
@@ -556,13 +643,13 @@ export const AdminAccountsPage = () => {
                                     {accountStatus(account)}
                                 </button>
                             ))
-                        ) : (
+                        ) : accounts.data && !accounts.loading ? (
                             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No accounts' />
-                        )}
+                        ) : null}
                     </div>
                 </aside>
                 <div className='admin-account-detail'>
-                    <Button className='admin-account-detail__mobile-back' type='text' icon={<ArrowLeftOutlined />} onClick={() => setSearchParams({})}>
+                    <Button className='admin-account-detail__mobile-back' type='text' icon={<ArrowLeftOutlined aria-hidden />} onClick={() => updateSearch({account: ''})}>
                         Back to accounts
                     </Button>
                     {!selected ? (
@@ -581,121 +668,156 @@ export const AdminAccountsPage = () => {
                                             </Typography.Text>
                                         )}
                                         {accountStatus(selected)}
-                                        {selected.administrator && <Tag color='gold'>Administrator</Tag>}
+                                        {selected.administrator && <Tag color='warning'>Administrator</Tag>}
                                     </Space>
                                 </div>
                             </div>
                             {!profileEditable && (
                                 <Alert className='admin-account-self-notice' type='info' showIcon={true} title='Manage your own profile and security in Account Center' />
                             )}
-                            <Section title='Identity'>
-                                <KeyValueGrid
-                                    items={[
-                                        {label: 'Provider', value: identityProviderLabel(selected.identity.provider)},
-                                        {
-                                            label: identityPresentation(selected.identity).label,
-                                            value: (
-                                                <Typography.Text className='account-identity-value' copyable={Boolean(accountIdentityValue(selected))}>
-                                                    {accountIdentityValue(selected) || 'Unavailable'}
-                                                </Typography.Text>
-                                            )
-                                        },
-                                        {label: 'Technical account ID', value: <Typography.Text copyable={true}>{selected.id}</Typography.Text>},
-                                        {label: 'Status', value: accountStatus(selected)},
-                                        {label: 'Created', value: identityTime(selected.identity.createdAt)},
-                                        {label: 'Last login', value: identityTime(selected.identity.lastLoginAt)}
-                                    ]}
-                                />
-                            </Section>
-                            <Section title='Profile & tier'>
-                                <div className='admin-account-profile-grid'>
-                                    <div className='admin-account-avatar-editor'>
-                                        <AccountAvatar profile={selected.profile} username={selected.username} size={80} />
-                                        <Space wrap={true}>
-                                            <Upload
-                                                accept='image/jpeg,image/png,image/webp'
-                                                disabled={!profileEditable || uploadingAvatar}
-                                                showUploadList={false}
-                                                beforeUpload={file => {
-                                                    void changeAvatar(file as File);
-                                                    return Upload.LIST_IGNORE;
-                                                }}>
-                                                <Button icon={<UploadOutlined />} loading={uploadingAvatar} disabled={!profileEditable || uploadingAvatar}>
-                                                    Upload
-                                                </Button>
-                                            </Upload>
-                                            {selected.profile.avatarUrl && (
-                                                <Button
-                                                    danger={true}
-                                                    icon={<DeleteOutlined />}
-                                                    loading={uploadingAvatar}
-                                                    disabled={!profileEditable || uploadingAvatar}
-                                                    onClick={() => void changeAvatar()}>
-                                                    Remove
-                                                </Button>
-                                            )}
-                                        </Space>
-                                    </div>
-                                    <Form layout='vertical'>
-                                        <Form.Item label='Username'>
-                                            <Input value={`@${selected.username}`} readOnly={true} />
-                                        </Form.Item>
-                                        <Form.Item label='Display name' validateStatus={!displayNameValid ? 'error' : undefined}>
-                                            <Input
-                                                value={displayName}
-                                                showCount={{formatter: info => `${unicodeCharacterCount(info.value)}/80`}}
-                                                disabled={!profileEditable}
-                                                onChange={event => setDisplayName(event.target.value)}
-                                            />
-                                        </Form.Item>
-                                        <div className='admin-account-field-actions'>
-                                            <Typography.Text type={displayNameDirty ? 'warning' : 'secondary'}>Revision {selected.profile.revision}</Typography.Text>
-                                            <Button
-                                                type='primary'
-                                                icon={<SaveOutlined />}
-                                                loading={savingProfile}
-                                                disabled={!profileEditable || !displayNameDirty || !displayNameValid}
-                                                onClick={() => void saveDisplayName()}>
-                                                Save name
-                                            </Button>
-                                        </div>
-                                        <Form.Item label='Presentation tier'>
-                                            <ChoiceGroup<AccountTier>
-                                                ariaLabel={`Presentation tier for @${selected.username}`}
-                                                value={tier}
-                                                disabled={!profileEditable || savingTier}
-                                                options={[
-                                                    {value: AccountTier.Standard, label: 'Standard'},
-                                                    {value: AccountTier.Pro, label: 'Pro'}
-                                                ]}
-                                                onChange={setTier}
-                                            />
-                                        </Form.Item>
-                                        <div className='admin-account-field-actions'>
-                                            <Typography.Text type='secondary'>Display only; does not grant access.</Typography.Text>
-                                            <Button
-                                                icon={<CheckOutlined />}
-                                                loading={savingTier}
-                                                disabled={!profileEditable || !tierDirty || displayNameDirty}
-                                                onClick={() => void saveTier()}>
-                                                Apply tier
-                                            </Button>
-                                        </div>
-                                    </Form>
-                                </div>
-                            </Section>
-                            <Section title='Authorization & module access'>
-                                <AccountAccessEditor
-                                    account={selected}
-                                    access={accessDraft || selected.access}
-                                    editable={accessEditable}
-                                    dirty={accessDirty}
-                                    updating={savingAccess}
-                                    onChange={setAccessDraft}
-                                    onSave={saveAccess}
-                                    onReset={() => setAccessDraft(cloneAccountAccess(selected.access))}
-                                />
-                            </Section>
+                            <Tabs
+                                defaultActiveKey='access'
+                                items={[
+                                    {
+                                        key: 'access',
+                                        label: 'Access',
+                                        forceRender: true,
+                                        children: (
+                                            <Section title='Account access'>
+                                                <AccountAccessEditor
+                                                    account={selected}
+                                                    access={accessDraft || selected.access}
+                                                    editable={accessEditable}
+                                                    dirty={accessDirty}
+                                                    updating={savingAccess}
+                                                    onChange={setAccessDraft}
+                                                    onSave={saveAccess}
+                                                    onReset={() => setAccessDraft(cloneAccountAccess(selected.access))}
+                                                />
+                                            </Section>
+                                        )
+                                    },
+                                    {
+                                        key: 'profile',
+                                        label: 'Profile',
+                                        forceRender: true,
+                                        children: (
+                                            <Section title='Profile & tier'>
+                                                <div className='admin-account-profile-grid'>
+                                                    <div className='admin-account-avatar-editor'>
+                                                        <AccountAvatar profile={selected.profile} username={selected.username} size={80} />
+                                                        <Space wrap={true}>
+                                                            <Upload
+                                                                accept='image/jpeg,image/png,image/webp'
+                                                                disabled={!profileEditable || uploadingAvatar}
+                                                                showUploadList={false}
+                                                                beforeUpload={file => {
+                                                                    void changeAvatar(file as File);
+                                                                    return Upload.LIST_IGNORE;
+                                                                }}>
+                                                                <Button
+                                                                    icon={<UploadOutlined aria-hidden />}
+                                                                    loading={uploadingAvatar}
+                                                                    disabled={!profileEditable || uploadingAvatar}>
+                                                                    Upload
+                                                                </Button>
+                                                            </Upload>
+                                                            {selected.profile.avatarUrl && (
+                                                                <Button
+                                                                    danger={true}
+                                                                    icon={<DeleteOutlined aria-hidden />}
+                                                                    loading={uploadingAvatar}
+                                                                    disabled={!profileEditable || uploadingAvatar}
+                                                                    onClick={() => void changeAvatar()}>
+                                                                    Remove
+                                                                </Button>
+                                                            )}
+                                                        </Space>
+                                                    </div>
+                                                    <Form layout='vertical'>
+                                                        <Form.Item label='Username' htmlFor='admin-account-username'>
+                                                            <Input id='admin-account-username' value={`@${selected.username}`} readOnly={true} />
+                                                        </Form.Item>
+                                                        <Form.Item
+                                                            label='Display name'
+                                                            htmlFor='admin-account-display-name'
+                                                            validateStatus={!displayNameValid ? 'error' : undefined}>
+                                                            <Input
+                                                                id='admin-account-display-name'
+                                                                value={displayName}
+                                                                showCount={{formatter: info => `${unicodeCharacterCount(info.value)}/80`}}
+                                                                disabled={!profileEditable}
+                                                                onChange={event => setDisplayName(event.target.value)}
+                                                            />
+                                                        </Form.Item>
+                                                        <div className='admin-account-field-actions'>
+                                                            <Typography.Text type={displayNameDirty ? 'warning' : 'secondary'}>
+                                                                Revision {selected.profile.revision}
+                                                            </Typography.Text>
+                                                            <Button
+                                                                type='primary'
+                                                                icon={<SaveOutlined aria-hidden />}
+                                                                loading={savingProfile}
+                                                                disabled={!profileEditable || !displayNameDirty || !displayNameValid}
+                                                                onClick={() => void saveDisplayName()}>
+                                                                Save name
+                                                            </Button>
+                                                        </div>
+                                                        <Form.Item label='Presentation tier'>
+                                                            <ChoiceGroup<AccountTier>
+                                                                ariaLabel={`Presentation tier for @${selected.username}`}
+                                                                value={tier}
+                                                                disabled={!profileEditable || savingTier}
+                                                                options={[
+                                                                    {value: AccountTier.Standard, label: 'Standard'},
+                                                                    {value: AccountTier.Pro, label: 'Pro'}
+                                                                ]}
+                                                                onChange={setTier}
+                                                            />
+                                                        </Form.Item>
+                                                        <div className='admin-account-field-actions'>
+                                                            <Typography.Text type='secondary'>Display only; does not grant access.</Typography.Text>
+                                                            <Button
+                                                                icon={<CheckOutlined aria-hidden />}
+                                                                loading={savingTier}
+                                                                disabled={!profileEditable || !tierDirty || displayNameDirty}
+                                                                onClick={() => void saveTier()}>
+                                                                Apply tier
+                                                            </Button>
+                                                        </div>
+                                                    </Form>
+                                                </div>
+                                            </Section>
+                                        )
+                                    },
+                                    {
+                                        key: 'identity',
+                                        label: 'Identity',
+                                        forceRender: true,
+                                        children: (
+                                            <Section title='Identity'>
+                                                <OperationFacts
+                                                    items={[
+                                                        {label: 'Provider', value: identityProviderLabel(selected.identity.provider)},
+                                                        {
+                                                            label: identityPresentation(selected.identity).label,
+                                                            value: (
+                                                                <Typography.Text className='account-identity-value' copyable={Boolean(accountIdentityValue(selected))}>
+                                                                    {accountIdentityValue(selected) || 'Unavailable'}
+                                                                </Typography.Text>
+                                                            )
+                                                        },
+                                                        {label: 'Technical account ID', value: <Typography.Text copyable={true}>{selected.id}</Typography.Text>},
+                                                        {label: 'Status', value: accountStatus(selected)},
+                                                        {label: 'Created', value: identityTime(selected.identity.createdAt)},
+                                                        {label: 'Last login', value: identityTime(selected.identity.lastLoginAt)}
+                                                    ]}
+                                                />
+                                            </Section>
+                                        )
+                                    }
+                                ]}
+                            />
                         </>
                     )}
                 </div>

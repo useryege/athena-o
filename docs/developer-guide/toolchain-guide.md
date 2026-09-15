@@ -246,8 +246,10 @@ psql -X -v ON_ERROR_STOP=1 -c '\dt'
 UI_ACCEPTANCE_CHECK_ONLY=1 make ui-a11y
 ```
 
-首批检查成员订阅列表、添加表单、取消确认弹窗和管理员同步状态页面，覆盖桌面与
-移动视口、明暗主题，以及根路径和 `/athena`。规则范围为 WCAG 2 A/AA、2.1 A/AA。
+当前检查覆盖主题重构的主页面、关键状态和弹窗，以及 Trader Sync 共享回归，覆盖桌面与
+移动视口、系统 light／dark 输入下始终保持单一深色，以及根路径和 `/athena`。规则范围为 WCAG 2 A/AA、2.1 A/AA。
+局部验证使用 `UI_ACCEPTANCE_GREP` 并在报告标记 filtered；最终无过滤运行先取消该变量。
+具体版本、匹配数量与人工复核边界见[主题重构验收](../testing/web-ui-theme-refactor-acceptance.md)。
 各场景保留 axe 原始结果；违规不会阻止后续场景及另一前缀收集，最终仍返回失败。
 报告沿用 `.tmp/athena-ui-acceptance/<run-id>/`。
 

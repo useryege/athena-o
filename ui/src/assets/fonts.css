@@ -1,35 +1,14 @@
-/* === Heebo - 300 */
 @font-face {
-	font-family: 'Heebo';
-	font-style: normal;
-	font-weight: 300;
-	font-display: swap;
-	src: local('Heebo Light'), url('./fonts/google-fonts/Heebo-Light.woff2') format('woff2');
+    font-family: Inter;
+    src: url('./fonts/athena/InterVariable.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
 }
-
-/* === Heebo - regular */
 @font-face {
-	font-family: 'Heebo';
-	font-style: normal;
-	font-weight: 400;
-	font-display: swap;
-	src: local('Heebo'), url('./fonts/google-fonts/Heebo-Regular.woff2') format('woff2');
-}
-
-/* === Heebo - 500 */
-@font-face {
-	font-family: 'Heebo';
-	font-style: normal;
-	font-weight: 500;
-	font-display: swap;
-	src: local('Heebo Medium'), url('./fonts/google-fonts/Heebo-Medium.woff2') format('woff2');
-}
-
-/* === Heebo - 700 */
-@font-face {
-	font-family: 'Heebo';
-	font-style: normal;
-	font-weight: 700;
-	font-display: swap;
-	src: local('Heebo Bold'), url('./fonts/google-fonts/Heebo-Bold.woff2') format('woff2');
+    font-family: 'JetBrains Mono';
+    src: url('./fonts/athena/JetBrainsMono-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
 }

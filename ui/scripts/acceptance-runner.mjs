@@ -141,6 +141,8 @@ async function preflight(root, env, timeouts, check, invocationCwd) {
   const suite = env.UI_ACCEPTANCE_SUITE || 'acceptance';
   if (!['acceptance', 'a11y'].includes(suite)) throw failure(`Invalid UI_ACCEPTANCE_SUITE: ${suite}`);
   if (suite === 'a11y' && mode !== 'isolated') throw failure('The a11y suite requires isolated UI_ACCEPTANCE_MODE');
+  const grep = env.UI_ACCEPTANCE_GREP || null;
+  if (mode === 'smoke' && grep) throw failure('UI_ACCEPTANCE_GREP is not supported in smoke mode; use isolated mode for filtered acceptance');
   const target = mode === 'smoke' ? smokeTarget(env.UI_ACCEPTANCE_BASE_URL || 'http://localhost:4000') : null;
   if (mode === 'isolated' && env.UI_ACCEPTANCE_BASE_URL) throw failure('UI_ACCEPTANCE_BASE_URL is only valid in smoke mode; isolated uses its fresh harness manifest');
   if (process.platform !== 'linux') throw failure('Run ui-acceptance with Linux/WSL Node in the same runtime as the repository');
@@ -197,7 +199,7 @@ async function preflight(root, env, timeouts, check, invocationCwd) {
     image = `docker.io/library/postgres:${tag}`;
     versions.postgresImage = {name: image, id: await checked(docker, ['image', 'inspect', '--format', '{{.Id}}', image], {cwd: root, env: childEnv, check}, timeouts)};
   }
-  return {mode, suite, target, ui, env: childEnv, yarn, playwrightCLI, browser, go, docker, image, versions};
+  return {mode, suite, grep, target, ui, env: childEnv, yarn, playwrightCLI, browser, go, docker, image, versions};
 }
 
 async function buildSummary(dir) {
@@ -325,7 +327,7 @@ export async function runAcceptance({root = defaultRoot, env = process.env, time
   }
   if (env.UI_ACCEPTANCE_CHECK_ONLY === '1') {
     removeSignalHandlers();
-    console.log(JSON.stringify({mode: config.mode, suite: config.suite, status: 'ready', versions: config.versions, browser: config.browser, target: config.target}));
+    console.log(JSON.stringify({mode: config.mode, suite: config.suite, filtered: Boolean(config.grep), grep: config.grep, status: 'ready', versions: config.versions, browser: config.browser, target: config.target}));
     return 0;
   }
   const runId = `${new Date().toISOString().replace(/[:.]/g, '-')}-${randomUUID().slice(0, 8)}`;
@@ -335,6 +337,8 @@ export async function runAcceptance({root = defaultRoot, env = process.env, time
     runDir,
     mode: config.mode,
     suite: config.suite,
+    filtered: Boolean(config.grep),
+    grep: config.grep,
     startedAt: new Date().toISOString(),
     status: 'running',
     versions: config.versions,
@@ -343,12 +347,15 @@ export async function runAcceptance({root = defaultRoot, env = process.env, time
     failure: null,
     testFailures: [],
     cleanup: {status: 'pending', errors: []},
-    evidence:
+    evidence: [
+      ...(config.grep ? [`filtered：局部运行 Playwright grep ${JSON.stringify(config.grep)}；不包含 live 项目，不能作为完整验收。`] : []),
+      ...(
       config.mode === 'smoke'
         ? ['smoke：仅验证既有开发环境的会员/管理员应用壳，不证明业务回归；不启停该环境。']
         : config.suite === 'a11y'
           ? ['a11y：在两个隔离部署前缀中，以受控 API fixture 扫描指定页面与状态；每个扫描保留原始 axe 结果。', '扫描违规继续收集剩余状态；基础设施故障中止并清理。']
-        : ['ui-fixtures：模拟 API 响应下的真实页面。', 'live：真实产品组件与临时 PostgreSQL；链、资料、Telegram 为本地替身。', '仅已完成的阶段构成证据；未执行的检查不能报告通过。']
+        : ['ui-fixtures：模拟 API 响应下的真实页面。', 'live：真实产品组件与临时 PostgreSQL；链、资料、Telegram 为本地替身。', '仅已完成的阶段构成证据；未执行的检查不能报告通过。'])
+    ]
   };
   let releaseLock, container, harness;
   const check = () => {
@@ -512,6 +519,7 @@ export async function runAcceptance({root = defaultRoot, env = process.env, time
             ATHENA_UI_E2E_DIR: dir,
             ATHENA_UI_DIST: snapshot,
             ATHENA_UI_E2E_PATH_PREFIX: prefix,
+            ATHENA_UI_E2E_FIXTURE_ONLY: config.grep || config.suite === 'a11y' ? '1' : undefined,
             ATHENA_TEST_PG_ADMIN_DSN: `postgres://postgres:${password}@127.0.0.1:${port}/postgres?sslmode=disable`
           },
           log: stage.log
@@ -539,10 +547,12 @@ export async function runAcceptance({root = defaultRoot, env = process.env, time
         });
         check();
         report.stages.push({name: `${name}/ready`, status: 'passed', baseURL: manifest.BaseURL, prefix, manifest: manifestFile, database: manifest.Database});
-        for (const project of config.suite === 'a11y' ? ['a11y'] : ['ui-fixtures', 'live']) {
+        const projects = config.suite === 'a11y' ? ['a11y'] : config.grep ? ['ui-fixtures'] : ['ui-fixtures', 'live'];
+        for (const project of projects) {
           const output = path.join(runDir, name, project);
           await fs.mkdir(output, {recursive: true});
-          const result = await command(`${name}/${project}`, process.execPath, [config.playwrightCLI, 'test', `--project=${project}`], {
+          const playwrightArgs = [config.playwrightCLI, 'test', `--project=${project}`, ...(config.grep ? ['--grep', config.grep] : [])];
+          const result = await command(`${name}/${project}`, process.execPath, playwrightArgs, {
             cwd: config.ui,
             collectTestFailure: config.suite === 'a11y',
             extraEnv: {
@@ -603,7 +613,7 @@ export async function runAcceptance({root = defaultRoot, env = process.env, time
       const lines = [
         '# ATHENA 浏览器验收',
         '',
-        `模式：${report.mode}；结果：${report.status}；清理：${report.cleanup.status}`,
+        `模式：${report.mode}；范围：${report.filtered ? 'filtered（局部）' : 'complete'}；结果：${report.status}；清理：${report.cleanup.status}`,
         '',
         `开始：${report.startedAt}`,
         `结束：${report.completedAt}`,

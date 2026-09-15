@@ -21,10 +21,14 @@ export interface ModalHandle {
 export interface ModalApi {
     confirm(options: {
         title: string;
+        className?: string;
+        focusable?: {trap?: boolean; focusTriggerAfterClose?: boolean};
+        wrapProps?: {onKeyDownCapture?: React.KeyboardEventHandler<HTMLDivElement>};
         content?: React.ReactNode;
         width?: number | string;
         okText?: string;
         cancelText?: string;
+        autoFocusButton?: 'ok' | 'cancel' | null;
         okButtonProps?: {danger?: boolean};
         onOk?: () => void | Promise<void>;
         onCancel?: () => void;

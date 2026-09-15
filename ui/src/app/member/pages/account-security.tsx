@@ -233,6 +233,9 @@ const SecurityPage = () => {
             title: `Revoke ${item.id}?`,
             content: 'Requests using this API key will fail immediately.',
             okText: 'Revoke key',
+            cancelText: 'Keep key',
+            autoFocusButton: 'cancel',
+            okButtonProps: {danger: true},
             onOk: async () => {
                 if (!remainsCurrentSecurityAccount()) {
                     return;
@@ -272,14 +275,11 @@ const SecurityPage = () => {
                 <Section
                     title='Connect AI'
                     extra={
-                        <Button className='account-ai-connect-action' type='primary' icon={<RobotOutlined />} onClick={() => openTokenCreation('ai')}>
+                        <Button className='account-ai-connect-action' type='primary' icon={<RobotOutlined aria-hidden={true} />} onClick={() => openTokenCreation('ai')}>
                             Connect AI
                         </Button>
                     }>
                     <div className='account-ai-connect'>
-                        <div className='account-ai-connect__icon' aria-hidden='true'>
-                            <RobotOutlined />
-                        </div>
                         <div className='account-ai-connect__copy'>
                             <Typography.Text strong={true}>Create one complete connection instruction for your AI.</Typography.Text>
                             <Typography.Paragraph type='secondary'>
@@ -299,9 +299,14 @@ const SecurityPage = () => {
                 title='API keys'
                 extra={
                     mayUseAPIKeys ? (
-                        <Button icon={<PlusOutlined />} onClick={() => openTokenCreation('apiKey')}>
-                            Create API key
-                        </Button>
+                        <Space wrap>
+                            <Button aria-label='Refresh API keys' onClick={tokens.reload} loading={tokens.loading}>
+                                Refresh
+                            </Button>
+                            <Button icon={<PlusOutlined aria-hidden={true} />} onClick={() => openTokenCreation('apiKey')}>
+                                Create API key
+                            </Button>
+                        </Space>
                     ) : undefined
                 }>
                 {!mayUseAPIKeys ? (
@@ -309,23 +314,37 @@ const SecurityPage = () => {
                 ) : (
                     <>
                         {tokens.error && (
-                            <Alert className='account-security-warning' type='error' showIcon={true} title='Could not load API keys' description={tokens.error.message} />
+                            <Alert
+                                className='account-security-warning'
+                                type='error'
+                                showIcon={true}
+                                title='Could not load API keys'
+                                description={tokens.error.message}
+                                action={<Button onClick={tokens.reload}>Retry</Button>}
+                            />
                         )}
+                        {tokens.error && tokens.data && <Alert type='warning' title='Stale API keys — showing the last successful read' />}
                         <ResourceTable<Token>
                             rowKey='id'
                             label='Your API keys'
                             items={visibleTokens}
                             loading={tokens.loading}
+                            hasData={tokens.data !== undefined}
                             columns={[
                                 {title: 'ID', dataIndex: 'id'},
-                                {title: 'Issued', render: item => tokenTime(item.issuedAt)},
-                                {title: 'Expires', render: item => tokenTime(item.expiresAt)},
+                                {title: 'Issued', align: 'right', render: item => tokenTime(item.issuedAt)},
+                                {title: 'Expires', align: 'right', render: item => tokenTime(item.expiresAt)},
                                 {
                                     title: '',
                                     width: 120,
                                     align: 'right',
                                     render: item => (
-                                        <Button danger={true} type='text' icon={<DeleteOutlined />} loading={deletingToken === item.id} onClick={() => deleteToken(item)}>
+                                        <Button
+                                            danger={true}
+                                            type='text'
+                                            icon={<DeleteOutlined aria-hidden={true} />}
+                                            loading={deletingToken === item.id}
+                                            onClick={() => deleteToken(item)}>
                                             Revoke
                                         </Button>
                                     )
@@ -335,10 +354,18 @@ const SecurityPage = () => {
                                 <div className='account-token-card'>
                                     <div>
                                         <strong>{item.id}</strong>
-                                        <Typography.Text type='secondary'>Issued {tokenTime(item.issuedAt)}</Typography.Text>
-                                        <Typography.Text type='secondary'>Expires {tokenTime(item.expiresAt)}</Typography.Text>
+                                        <dl>
+                                            <div>
+                                                <dt>Issued</dt>
+                                                <dd>{tokenTime(item.issuedAt)}</dd>
+                                            </div>
+                                            <div>
+                                                <dt>Expires</dt>
+                                                <dd>{tokenTime(item.expiresAt)}</dd>
+                                            </div>
+                                        </dl>
                                     </div>
-                                    <Button danger={true} icon={<DeleteOutlined />} loading={deletingToken === item.id} onClick={() => deleteToken(item)}>
+                                    <Button danger={true} icon={<DeleteOutlined aria-hidden={true} />} loading={deletingToken === item.id} onClick={() => deleteToken(item)}>
                                         Revoke
                                     </Button>
                                 </div>
@@ -396,13 +423,15 @@ const SecurityPage = () => {
                 maskClosable={false}
                 keyboard={false}
                 footer={
-                    <Button type='primary' icon={<CheckOutlined />} onClick={clearIssuedCredential}>
+                    <Button type='primary' icon={<CheckOutlined aria-hidden={true} />} onClick={clearIssuedCredential}>
                         Done
                     </Button>
                 }>
                 <Alert type='warning' showIcon={true} title='This secret is shown only once' description='Store it in a secure secret manager before closing this dialog.' />
                 <Input.TextArea className='account-secret-value' value={currentIssuedCredential?.secret || ''} readOnly={true} autoSize={{minRows: 4, maxRows: 8}} />
-                <Button icon={<CopyOutlined />} onClick={() => void copyValue(currentIssuedCredential?.secret || '', 'API key copied', 'Could not copy API key')}>
+                <Button
+                    icon={<CopyOutlined aria-hidden={true} />}
+                    onClick={() => void copyValue(currentIssuedCredential?.secret || '', 'API key copied', 'Could not copy API key')}>
                     Copy API key
                 </Button>
             </Modal>
@@ -414,12 +443,32 @@ const SecurityPage = () => {
                 closable={false}
                 maskClosable={false}
                 keyboard={false}
-                footer={null}>
+                footer={
+                    <div className='account-ai-result-actions'>
+                        <Space wrap={true}>
+                            <Button
+                                type='primary'
+                                icon={<CopyOutlined aria-hidden={true} />}
+                                autoFocus={true}
+                                onClick={() => void copyValue(aiConnection?.instructions || '', 'AI connection instructions copied', 'Could not copy connection instructions')}>
+                                Copy connection instructions
+                            </Button>
+                            <Button
+                                icon={<KeyOutlined aria-hidden={true} />}
+                                onClick={() => void copyValue(currentIssuedCredential?.secret || '', 'API key copied', 'Could not copy API key')}>
+                                Copy API key only
+                            </Button>
+                        </Space>
+                        <Button icon={<CheckOutlined aria-hidden={true} />} onClick={clearIssuedCredential}>
+                            Done
+                        </Button>
+                    </div>
+                }>
                 <div className={`account-ai-verification account-ai-verification--${connectionVerification.status}`} role='status' aria-live='polite' aria-atomic='true'>
                     <span className='account-ai-verification__icon' aria-hidden='true'>
-                        {connectionVerification.status === 'checking' && <LoadingOutlined spin={true} />}
-                        {connectionVerification.status === 'ready' && <CheckCircleOutlined />}
-                        {connectionVerification.status === 'failed' && <WarningOutlined />}
+                        {connectionVerification.status === 'checking' && <LoadingOutlined aria-hidden={true} spin={true} />}
+                        {connectionVerification.status === 'ready' && <CheckCircleOutlined aria-hidden={true} />}
+                        {connectionVerification.status === 'failed' && <WarningOutlined aria-hidden={true} />}
                     </span>
                     <span className='account-ai-verification__copy'>
                         <strong>
@@ -430,7 +479,7 @@ const SecurityPage = () => {
                         <small>{connectionVerification.message}</small>
                     </span>
                     {connectionVerification.status === 'failed' && (
-                        <Button size='small' icon={<ReloadOutlined />} onClick={() => setVerificationAttempt(attempt => attempt + 1)}>
+                        <Button size='small' icon={<ReloadOutlined aria-hidden={true} />} onClick={() => setVerificationAttempt(attempt => attempt + 1)}>
                             Retry
                         </Button>
                     )}
@@ -456,23 +505,6 @@ const SecurityPage = () => {
                     readOnly={true}
                     autoSize={{minRows: 12, maxRows: 18}}
                 />
-                <div className='account-ai-result-actions'>
-                    <Space wrap={true}>
-                        <Button
-                            type='primary'
-                            icon={<CopyOutlined />}
-                            autoFocus={true}
-                            onClick={() => void copyValue(aiConnection?.instructions || '', 'AI connection instructions copied', 'Could not copy connection instructions')}>
-                            Copy connection instructions
-                        </Button>
-                        <Button icon={<KeyOutlined />} onClick={() => void copyValue(currentIssuedCredential?.secret || '', 'API key copied', 'Could not copy API key')}>
-                            Copy API key only
-                        </Button>
-                    </Space>
-                    <Button icon={<CheckOutlined />} onClick={clearIssuedCredential}>
-                        Done
-                    </Button>
-                </div>
             </Modal>
         </>
     );

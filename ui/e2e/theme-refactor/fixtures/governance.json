@@ -1,0 +1,3104 @@
+[
+  {
+    "id": "foundations-member-rounds",
+    "route": "/profit-sharing",
+    "realm": "member",
+    "heading": "Profit Sharing",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/profit-sharing/rounds",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "rounds": [
+            {
+              "slug": "research-operations-q3",
+              "title": "Research Operations · Q3",
+              "phase": "COLLECTING",
+              "revision": 8,
+              "participantCount": 5,
+              "submittedCount": 4,
+              "votedCount": 0
+            },
+            {
+              "slug": "market-intelligence-q2",
+              "title": "Market Intelligence · Q2",
+              "phase": "VOTING",
+              "revision": 13,
+              "participantCount": 5,
+              "submittedCount": 5,
+              "votedCount": 4
+            },
+            {
+              "slug": "platform-foundations-q1",
+              "title": "Platform Foundations · Q1",
+              "phase": "CLOSED",
+              "revision": 18,
+              "participantCount": 5,
+              "submittedCount": 5,
+              "votedCount": 5
+            },
+            {
+              "slug": "growth-research-q4",
+              "title": "Growth Research · Q4",
+              "phase": "DRAFT",
+              "revision": 3,
+              "participantCount": 4,
+              "submittedCount": 0,
+              "votedCount": 0
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "foundations-member-collecting",
+    "route": "/profit-sharing/research-operations-q3",
+    "realm": "member",
+    "heading": "Research Operations · Q3",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/profit-sharing/rounds/research-operations-q3",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "slug": "research-operations-q3",
+          "title": "Research Operations · Q3",
+          "phase": "COLLECTING",
+          "revision": 8,
+          "participantCount": 5,
+          "submittedCount": 4,
+          "votedCount": 0,
+          "ballotNumber": 0,
+          "winnerProposalId": "",
+          "participants": [
+            {
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "displayName": "Alex Chen",
+              "baselineResponsibility": "Coordinate research priorities and final synthesis.",
+              "sortOrder": 1,
+              "proposalStatus": "DRAFT"
+            },
+            {
+              "accountId": "22222222-2222-4222-8222-222222222222",
+              "username": "mayali",
+              "displayName": "Maya Li",
+              "baselineResponsibility": "Maintain source quality and evidence review.",
+              "sortOrder": 2,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "33333333-3333-4333-8333-333333333333",
+              "username": "noahkim",
+              "displayName": "Noah Kim",
+              "baselineResponsibility": "Own data pipelines and research tooling.",
+              "sortOrder": 3,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "55555555-5555-4555-8555-555555555555",
+              "username": "priyashah",
+              "displayName": "Priya Shah",
+              "baselineResponsibility": "Lead market analysis and editorial review.",
+              "sortOrder": 4,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "66666666-6666-4666-8666-666666666666",
+              "username": "lucasreyes",
+              "displayName": "Lucas Reyes",
+              "baselineResponsibility": "Run operations, scheduling, and delivery checks.",
+              "sortOrder": 5,
+              "proposalStatus": "SUBMITTED"
+            }
+          ],
+          "proposals": [],
+          "results": [],
+          "myVoteProposalId": "",
+          "myProposal": {
+            "id": "proposal-own",
+            "label": "",
+            "isOwn": true,
+            "status": "DRAFT",
+            "revision": 6,
+            "items": [
+              {
+                "responsibility": "Coordinate research priorities and final synthesis.",
+                "shareBasisPoints": 2400,
+                "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                "participantUsername": "alexchen",
+                "participantDisplayName": "Alex Chen"
+              },
+              {
+                "responsibility": "Maintain source quality and evidence review.",
+                "shareBasisPoints": 2100,
+                "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                "participantUsername": "mayali",
+                "participantDisplayName": "Maya Li"
+              },
+              {
+                "responsibility": "Own data pipelines and research tooling.",
+                "shareBasisPoints": 1900,
+                "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                "participantUsername": "noahkim",
+                "participantDisplayName": "Noah Kim"
+              },
+              {
+                "responsibility": "Lead market analysis and editorial review.",
+                "shareBasisPoints": 1800,
+                "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                "participantUsername": "priyashah",
+                "participantDisplayName": "Priya Shah"
+              },
+              {
+                "responsibility": "Run operations, scheduling, and delivery checks.",
+                "shareBasisPoints": 1800,
+                "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                "participantUsername": "lucasreyes",
+                "participantDisplayName": "Lucas Reyes"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "foundations-member-voting",
+    "route": "/profit-sharing/market-intelligence-q2",
+    "realm": "member",
+    "heading": "Market Intelligence · Q2",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/profit-sharing/rounds/market-intelligence-q2",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "slug": "market-intelligence-q2",
+          "title": "Market Intelligence · Q2",
+          "phase": "VOTING",
+          "revision": 13,
+          "participantCount": 5,
+          "submittedCount": 5,
+          "votedCount": 4,
+          "ballotNumber": 1,
+          "winnerProposalId": "",
+          "participants": [
+            {
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "displayName": "Alex Chen",
+              "baselineResponsibility": "Coordinate research priorities and final synthesis.",
+              "sortOrder": 1,
+              "proposalStatus": "DRAFT"
+            },
+            {
+              "accountId": "22222222-2222-4222-8222-222222222222",
+              "username": "mayali",
+              "displayName": "Maya Li",
+              "baselineResponsibility": "Maintain source quality and evidence review.",
+              "sortOrder": 2,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "33333333-3333-4333-8333-333333333333",
+              "username": "noahkim",
+              "displayName": "Noah Kim",
+              "baselineResponsibility": "Own data pipelines and research tooling.",
+              "sortOrder": 3,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "55555555-5555-4555-8555-555555555555",
+              "username": "priyashah",
+              "displayName": "Priya Shah",
+              "baselineResponsibility": "Lead market analysis and editorial review.",
+              "sortOrder": 4,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "66666666-6666-4666-8666-666666666666",
+              "username": "lucasreyes",
+              "displayName": "Lucas Reyes",
+              "baselineResponsibility": "Run operations, scheduling, and delivery checks.",
+              "sortOrder": 5,
+              "proposalStatus": "SUBMITTED"
+            }
+          ],
+          "proposals": [
+            {
+              "id": "proposal-a",
+              "label": "Proposal A",
+              "isOwn": true,
+              "authorAccountId": "11111111-1111-4111-8111-111111111111",
+              "authorUsername": "alexchen",
+              "authorDisplayName": "Alex Chen",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 2400,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 2100,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 1900,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-b",
+              "label": "Proposal B",
+              "isOwn": false,
+              "authorAccountId": "22222222-2222-4222-8222-222222222222",
+              "authorUsername": "mayali",
+              "authorDisplayName": "Maya Li",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 2200,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-c",
+              "label": "Proposal C",
+              "isOwn": false,
+              "authorAccountId": "33333333-3333-4333-8333-333333333333",
+              "authorUsername": "noahkim",
+              "authorDisplayName": "Noah Kim",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 2400,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-d",
+              "label": "Proposal D",
+              "isOwn": false,
+              "authorAccountId": "55555555-5555-4555-8555-555555555555",
+              "authorUsername": "priyashah",
+              "authorDisplayName": "Priya Shah",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 2100,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 1900,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 2200,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-e",
+              "label": "Proposal E",
+              "isOwn": false,
+              "authorAccountId": "66666666-6666-4666-8666-666666666666",
+              "authorUsername": "lucasreyes",
+              "authorDisplayName": "Lucas Reyes",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 1900,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 2100,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 2200,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            }
+          ],
+          "results": [],
+          "myVoteProposalId": "",
+          "myProposal": {
+            "id": "proposal-a",
+            "label": "Proposal A",
+            "isOwn": true,
+            "authorAccountId": "11111111-1111-4111-8111-111111111111",
+            "authorUsername": "alexchen",
+            "authorDisplayName": "Alex Chen",
+            "status": "SUBMITTED",
+            "revision": 7,
+            "items": [
+              {
+                "responsibility": "Coordinate research priorities and final synthesis.",
+                "shareBasisPoints": 2400,
+                "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                "participantUsername": "alexchen",
+                "participantDisplayName": "Alex Chen"
+              },
+              {
+                "responsibility": "Maintain source quality and evidence review.",
+                "shareBasisPoints": 2100,
+                "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                "participantUsername": "mayali",
+                "participantDisplayName": "Maya Li"
+              },
+              {
+                "responsibility": "Own data pipelines and research tooling.",
+                "shareBasisPoints": 1900,
+                "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                "participantUsername": "noahkim",
+                "participantDisplayName": "Noah Kim"
+              },
+              {
+                "responsibility": "Lead market analysis and editorial review.",
+                "shareBasisPoints": 1800,
+                "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                "participantUsername": "priyashah",
+                "participantDisplayName": "Priya Shah"
+              },
+              {
+                "responsibility": "Run operations, scheduling, and delivery checks.",
+                "shareBasisPoints": 1800,
+                "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                "participantUsername": "lucasreyes",
+                "participantDisplayName": "Lucas Reyes"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "foundations-member-closed",
+    "route": "/profit-sharing/platform-foundations-q1",
+    "realm": "member",
+    "heading": "Platform Foundations · Q1",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/profit-sharing/rounds/platform-foundations-q1",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "slug": "platform-foundations-q1",
+          "title": "Platform Foundations · Q1",
+          "phase": "CLOSED",
+          "revision": 18,
+          "participantCount": 5,
+          "submittedCount": 5,
+          "votedCount": 5,
+          "ballotNumber": 2,
+          "winnerProposalId": "proposal-b",
+          "participants": [
+            {
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "displayName": "Alex Chen",
+              "baselineResponsibility": "Coordinate research priorities and final synthesis.",
+              "sortOrder": 1,
+              "proposalStatus": "DRAFT"
+            },
+            {
+              "accountId": "22222222-2222-4222-8222-222222222222",
+              "username": "mayali",
+              "displayName": "Maya Li",
+              "baselineResponsibility": "Maintain source quality and evidence review.",
+              "sortOrder": 2,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "33333333-3333-4333-8333-333333333333",
+              "username": "noahkim",
+              "displayName": "Noah Kim",
+              "baselineResponsibility": "Own data pipelines and research tooling.",
+              "sortOrder": 3,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "55555555-5555-4555-8555-555555555555",
+              "username": "priyashah",
+              "displayName": "Priya Shah",
+              "baselineResponsibility": "Lead market analysis and editorial review.",
+              "sortOrder": 4,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "66666666-6666-4666-8666-666666666666",
+              "username": "lucasreyes",
+              "displayName": "Lucas Reyes",
+              "baselineResponsibility": "Run operations, scheduling, and delivery checks.",
+              "sortOrder": 5,
+              "proposalStatus": "SUBMITTED"
+            }
+          ],
+          "proposals": [
+            {
+              "id": "proposal-a",
+              "label": "Proposal A",
+              "isOwn": true,
+              "authorAccountId": "11111111-1111-4111-8111-111111111111",
+              "authorUsername": "alexchen",
+              "authorDisplayName": "Alex Chen",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 2400,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 2100,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 1900,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-b",
+              "label": "Proposal B",
+              "isOwn": false,
+              "authorAccountId": "22222222-2222-4222-8222-222222222222",
+              "authorUsername": "mayali",
+              "authorDisplayName": "Maya Li",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 2200,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-c",
+              "label": "Proposal C",
+              "isOwn": false,
+              "authorAccountId": "33333333-3333-4333-8333-333333333333",
+              "authorUsername": "noahkim",
+              "authorDisplayName": "Noah Kim",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 2400,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-d",
+              "label": "Proposal D",
+              "isOwn": false,
+              "authorAccountId": "55555555-5555-4555-8555-555555555555",
+              "authorUsername": "priyashah",
+              "authorDisplayName": "Priya Shah",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 2100,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 1900,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 2200,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-e",
+              "label": "Proposal E",
+              "isOwn": false,
+              "authorAccountId": "66666666-6666-4666-8666-666666666666",
+              "authorUsername": "lucasreyes",
+              "authorDisplayName": "Lucas Reyes",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 1900,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 2100,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 2200,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            }
+          ],
+          "results": [
+            {
+              "proposalId": "proposal-a",
+              "label": "Proposal A",
+              "authorAccountId": "11111111-1111-4111-8111-111111111111",
+              "authorUsername": "alexchen",
+              "authorDisplayName": "Alex Chen",
+              "voteCount": 0,
+              "isWinner": false
+            },
+            {
+              "proposalId": "proposal-b",
+              "label": "Proposal B",
+              "authorAccountId": "22222222-2222-4222-8222-222222222222",
+              "authorUsername": "mayali",
+              "authorDisplayName": "Maya Li",
+              "voteCount": 3,
+              "isWinner": true
+            },
+            {
+              "proposalId": "proposal-c",
+              "label": "Proposal C",
+              "authorAccountId": "33333333-3333-4333-8333-333333333333",
+              "authorUsername": "noahkim",
+              "authorDisplayName": "Noah Kim",
+              "voteCount": 1,
+              "isWinner": false
+            },
+            {
+              "proposalId": "proposal-d",
+              "label": "Proposal D",
+              "authorAccountId": "55555555-5555-4555-8555-555555555555",
+              "authorUsername": "priyashah",
+              "authorDisplayName": "Priya Shah",
+              "voteCount": 1,
+              "isWinner": false
+            },
+            {
+              "proposalId": "proposal-e",
+              "label": "Proposal E",
+              "authorAccountId": "66666666-6666-4666-8666-666666666666",
+              "authorUsername": "lucasreyes",
+              "authorDisplayName": "Lucas Reyes",
+              "voteCount": 0,
+              "isWinner": false
+            }
+          ],
+          "myVoteProposalId": "",
+          "myProposal": {
+            "id": "proposal-a",
+            "label": "Proposal A",
+            "isOwn": true,
+            "authorAccountId": "11111111-1111-4111-8111-111111111111",
+            "authorUsername": "alexchen",
+            "authorDisplayName": "Alex Chen",
+            "status": "SUBMITTED",
+            "revision": 7,
+            "items": [
+              {
+                "responsibility": "Coordinate research priorities and final synthesis.",
+                "shareBasisPoints": 2400,
+                "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                "participantUsername": "alexchen",
+                "participantDisplayName": "Alex Chen"
+              },
+              {
+                "responsibility": "Maintain source quality and evidence review.",
+                "shareBasisPoints": 2100,
+                "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                "participantUsername": "mayali",
+                "participantDisplayName": "Maya Li"
+              },
+              {
+                "responsibility": "Own data pipelines and research tooling.",
+                "shareBasisPoints": 1900,
+                "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                "participantUsername": "noahkim",
+                "participantDisplayName": "Noah Kim"
+              },
+              {
+                "responsibility": "Lead market analysis and editorial review.",
+                "shareBasisPoints": 1800,
+                "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                "participantUsername": "priyashah",
+                "participantDisplayName": "Priya Shah"
+              },
+              {
+                "responsibility": "Run operations, scheduling, and delivery checks.",
+                "shareBasisPoints": 1800,
+                "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                "participantUsername": "lucasreyes",
+                "participantDisplayName": "Lucas Reyes"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "foundations-member-draft",
+    "route": "/profit-sharing/growth-research-q4",
+    "realm": "member",
+    "heading": "Growth Research · Q4",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/profit-sharing/rounds/growth-research-q4",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "slug": "growth-research-q4",
+          "title": "Growth Research · Q4",
+          "phase": "DRAFT",
+          "revision": 3,
+          "participantCount": 4,
+          "submittedCount": 0,
+          "votedCount": 0,
+          "participants": [
+            {
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "displayName": "Alex Chen",
+              "baselineResponsibility": "Coordinate research priorities and final synthesis.",
+              "sortOrder": 1,
+              "proposalStatus": "DRAFT"
+            },
+            {
+              "accountId": "22222222-2222-4222-8222-222222222222",
+              "username": "mayali",
+              "displayName": "Maya Li",
+              "baselineResponsibility": "Maintain source quality and evidence review.",
+              "sortOrder": 2,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "33333333-3333-4333-8333-333333333333",
+              "username": "noahkim",
+              "displayName": "Noah Kim",
+              "baselineResponsibility": "Own data pipelines and research tooling.",
+              "sortOrder": 3,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "55555555-5555-4555-8555-555555555555",
+              "username": "priyashah",
+              "displayName": "Priya Shah",
+              "baselineResponsibility": "Lead market analysis and editorial review.",
+              "sortOrder": 4,
+              "proposalStatus": "SUBMITTED"
+            }
+          ],
+          "proposals": [],
+          "results": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "foundations-admin-rounds",
+    "route": "/admin/profit-sharing",
+    "realm": "admin",
+    "heading": "Profit Sharing Administration",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "id": "44444444-4444-4444-8444-444444444444",
+              "accountId": "44444444-4444-4444-8444-444444444444",
+              "username": "alex.admin",
+              "administrator": true,
+              "loggedIn": true,
+              "iss": "fixture",
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Alex Morgan",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.admin@example.invalid",
+                "solanaAddress": "",
+                "createdAt": 1783999440,
+                "lastLoginAt": 1789351200
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": false,
+                "revision": "7",
+                "moduleAccess": []
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/profit-sharing/rounds",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "rounds": [
+            {
+              "slug": "research-operations-q3",
+              "title": "Research Operations · Q3",
+              "phase": "COLLECTING",
+              "revision": 8,
+              "participantCount": 5,
+              "submittedCount": 5,
+              "votedCount": 0,
+              "ballotNumber": 0
+            },
+            {
+              "slug": "market-intelligence-q2",
+              "title": "Market Intelligence · Q2",
+              "phase": "VOTING",
+              "revision": 13,
+              "participantCount": 5,
+              "submittedCount": 5,
+              "votedCount": 4,
+              "ballotNumber": 1
+            },
+            {
+              "slug": "platform-foundations-q1",
+              "title": "Platform Foundations · Q1",
+              "phase": "CLOSED",
+              "revision": 18,
+              "participantCount": 5,
+              "submittedCount": 5,
+              "votedCount": 5,
+              "ballotNumber": 2,
+              "winnerProposalId": "proposal-c"
+            },
+            {
+              "slug": "growth-research-q4",
+              "title": "Growth Research · Q4",
+              "phase": "DRAFT",
+              "revision": 3,
+              "participantCount": 4,
+              "submittedCount": 0,
+              "votedCount": 0,
+              "ballotNumber": 0
+            }
+          ]
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/account",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "id": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "5",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "22222222-2222-4222-8222-222222222222",
+              "username": "mayali",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Maya Li",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "3"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "maya.li@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "3",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "33333333-3333-4333-8333-333333333333",
+              "username": "noahkim",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Noah Kim",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "2"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "noah.kim@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "2",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "55555555-5555-4555-8555-555555555555",
+              "username": "priyashah",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Priya Shah",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "5"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "priya.shah@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "5",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "66666666-6666-4666-8666-666666666666",
+              "username": "lucasreyes",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Lucas Reyes",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "3"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "lucas.reyes@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "3",
+                "moduleAccess": []
+              }
+            }
+          ],
+          "totalSize": 5
+        }
+      }
+    ]
+  },
+  {
+    "id": "foundations-admin-collecting",
+    "route": "/admin/profit-sharing/research-operations-q3",
+    "realm": "admin",
+    "heading": "Research Operations · Q3",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "id": "44444444-4444-4444-8444-444444444444",
+              "accountId": "44444444-4444-4444-8444-444444444444",
+              "username": "alex.admin",
+              "administrator": true,
+              "loggedIn": true,
+              "iss": "fixture",
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Alex Morgan",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.admin@example.invalid",
+                "solanaAddress": "",
+                "createdAt": 1783999440,
+                "lastLoginAt": 1789351200
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": false,
+                "revision": "7",
+                "moduleAccess": []
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/profit-sharing/rounds/research-operations-q3",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "slug": "research-operations-q3",
+          "title": "Research Operations · Q3",
+          "phase": "COLLECTING",
+          "revision": 8,
+          "participantCount": 5,
+          "submittedCount": 5,
+          "votedCount": 0,
+          "ballotNumber": 0,
+          "participants": [
+            {
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "displayName": "Alex Chen",
+              "baselineResponsibility": "Coordinate research priorities and final synthesis.",
+              "sortOrder": 1,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "22222222-2222-4222-8222-222222222222",
+              "username": "mayali",
+              "displayName": "Maya Li",
+              "baselineResponsibility": "Maintain source quality and evidence review.",
+              "sortOrder": 2,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "33333333-3333-4333-8333-333333333333",
+              "username": "noahkim",
+              "displayName": "Noah Kim",
+              "baselineResponsibility": "Own data pipelines and research tooling.",
+              "sortOrder": 3,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "55555555-5555-4555-8555-555555555555",
+              "username": "priyashah",
+              "displayName": "Priya Shah",
+              "baselineResponsibility": "Lead market analysis and editorial review.",
+              "sortOrder": 4,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "66666666-6666-4666-8666-666666666666",
+              "username": "lucasreyes",
+              "displayName": "Lucas Reyes",
+              "baselineResponsibility": "Run operations, scheduling, and delivery checks.",
+              "sortOrder": 5,
+              "proposalStatus": "SUBMITTED"
+            }
+          ],
+          "proposals": [],
+          "results": []
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/account",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "id": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "5",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "22222222-2222-4222-8222-222222222222",
+              "username": "mayali",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Maya Li",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "3"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "maya.li@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "3",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "33333333-3333-4333-8333-333333333333",
+              "username": "noahkim",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Noah Kim",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "2"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "noah.kim@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "2",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "55555555-5555-4555-8555-555555555555",
+              "username": "priyashah",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Priya Shah",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "5"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "priya.shah@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "5",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "66666666-6666-4666-8666-666666666666",
+              "username": "lucasreyes",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Lucas Reyes",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "3"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "lucas.reyes@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "3",
+                "moduleAccess": []
+              }
+            }
+          ],
+          "totalSize": 5
+        }
+      }
+    ]
+  },
+  {
+    "id": "foundations-admin-voting",
+    "route": "/admin/profit-sharing/market-intelligence-q2",
+    "realm": "admin",
+    "heading": "Market Intelligence · Q2",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "id": "44444444-4444-4444-8444-444444444444",
+              "accountId": "44444444-4444-4444-8444-444444444444",
+              "username": "alex.admin",
+              "administrator": true,
+              "loggedIn": true,
+              "iss": "fixture",
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Alex Morgan",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.admin@example.invalid",
+                "solanaAddress": "",
+                "createdAt": 1783999440,
+                "lastLoginAt": 1789351200
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": false,
+                "revision": "7",
+                "moduleAccess": []
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/profit-sharing/rounds/market-intelligence-q2",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "slug": "market-intelligence-q2",
+          "title": "Market Intelligence · Q2",
+          "phase": "VOTING",
+          "revision": 13,
+          "participantCount": 5,
+          "submittedCount": 5,
+          "votedCount": 4,
+          "ballotNumber": 1,
+          "winnerProposalId": "",
+          "participants": [
+            {
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "displayName": "Alex Chen",
+              "baselineResponsibility": "Coordinate research priorities and final synthesis.",
+              "sortOrder": 1,
+              "proposalStatus": "DRAFT"
+            },
+            {
+              "accountId": "22222222-2222-4222-8222-222222222222",
+              "username": "mayali",
+              "displayName": "Maya Li",
+              "baselineResponsibility": "Maintain source quality and evidence review.",
+              "sortOrder": 2,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "33333333-3333-4333-8333-333333333333",
+              "username": "noahkim",
+              "displayName": "Noah Kim",
+              "baselineResponsibility": "Own data pipelines and research tooling.",
+              "sortOrder": 3,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "55555555-5555-4555-8555-555555555555",
+              "username": "priyashah",
+              "displayName": "Priya Shah",
+              "baselineResponsibility": "Lead market analysis and editorial review.",
+              "sortOrder": 4,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "66666666-6666-4666-8666-666666666666",
+              "username": "lucasreyes",
+              "displayName": "Lucas Reyes",
+              "baselineResponsibility": "Run operations, scheduling, and delivery checks.",
+              "sortOrder": 5,
+              "proposalStatus": "SUBMITTED"
+            }
+          ],
+          "proposals": [
+            {
+              "id": "proposal-a",
+              "label": "Proposal A",
+              "isOwn": false,
+              "authorAccountId": "11111111-1111-4111-8111-111111111111",
+              "authorUsername": "alexchen",
+              "authorDisplayName": "Alex Chen",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 2400,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 2100,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 1900,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-b",
+              "label": "Proposal B",
+              "isOwn": false,
+              "authorAccountId": "22222222-2222-4222-8222-222222222222",
+              "authorUsername": "mayali",
+              "authorDisplayName": "Maya Li",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 2200,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-c",
+              "label": "Proposal C",
+              "isOwn": false,
+              "authorAccountId": "33333333-3333-4333-8333-333333333333",
+              "authorUsername": "noahkim",
+              "authorDisplayName": "Noah Kim",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 2400,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-d",
+              "label": "Proposal D",
+              "isOwn": false,
+              "authorAccountId": "55555555-5555-4555-8555-555555555555",
+              "authorUsername": "priyashah",
+              "authorDisplayName": "Priya Shah",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 2100,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 1900,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 2200,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-e",
+              "label": "Proposal E",
+              "isOwn": false,
+              "authorAccountId": "66666666-6666-4666-8666-666666666666",
+              "authorUsername": "lucasreyes",
+              "authorDisplayName": "Lucas Reyes",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 1900,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 2100,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 2200,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            }
+          ],
+          "results": []
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/account",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "id": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "5",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "22222222-2222-4222-8222-222222222222",
+              "username": "mayali",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Maya Li",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "3"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "maya.li@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "3",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "33333333-3333-4333-8333-333333333333",
+              "username": "noahkim",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Noah Kim",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "2"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "noah.kim@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "2",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "55555555-5555-4555-8555-555555555555",
+              "username": "priyashah",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Priya Shah",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "5"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "priya.shah@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "5",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "66666666-6666-4666-8666-666666666666",
+              "username": "lucasreyes",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Lucas Reyes",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "3"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "lucas.reyes@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "3",
+                "moduleAccess": []
+              }
+            }
+          ],
+          "totalSize": 5
+        }
+      }
+    ]
+  },
+  {
+    "id": "foundations-admin-closed",
+    "route": "/admin/profit-sharing/platform-foundations-q1",
+    "realm": "admin",
+    "heading": "Platform Foundations · Q1",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "id": "44444444-4444-4444-8444-444444444444",
+              "accountId": "44444444-4444-4444-8444-444444444444",
+              "username": "alex.admin",
+              "administrator": true,
+              "loggedIn": true,
+              "iss": "fixture",
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Alex Morgan",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.admin@example.invalid",
+                "solanaAddress": "",
+                "createdAt": 1783999440,
+                "lastLoginAt": 1789351200
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": false,
+                "revision": "7",
+                "moduleAccess": []
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/profit-sharing/rounds/platform-foundations-q1",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "slug": "platform-foundations-q1",
+          "title": "Platform Foundations · Q1",
+          "phase": "CLOSED",
+          "revision": 18,
+          "participantCount": 5,
+          "submittedCount": 5,
+          "votedCount": 5,
+          "ballotNumber": 2,
+          "winnerProposalId": "proposal-b",
+          "participants": [
+            {
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "displayName": "Alex Chen",
+              "baselineResponsibility": "Coordinate research priorities and final synthesis.",
+              "sortOrder": 1,
+              "proposalStatus": "DRAFT"
+            },
+            {
+              "accountId": "22222222-2222-4222-8222-222222222222",
+              "username": "mayali",
+              "displayName": "Maya Li",
+              "baselineResponsibility": "Maintain source quality and evidence review.",
+              "sortOrder": 2,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "33333333-3333-4333-8333-333333333333",
+              "username": "noahkim",
+              "displayName": "Noah Kim",
+              "baselineResponsibility": "Own data pipelines and research tooling.",
+              "sortOrder": 3,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "55555555-5555-4555-8555-555555555555",
+              "username": "priyashah",
+              "displayName": "Priya Shah",
+              "baselineResponsibility": "Lead market analysis and editorial review.",
+              "sortOrder": 4,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "66666666-6666-4666-8666-666666666666",
+              "username": "lucasreyes",
+              "displayName": "Lucas Reyes",
+              "baselineResponsibility": "Run operations, scheduling, and delivery checks.",
+              "sortOrder": 5,
+              "proposalStatus": "SUBMITTED"
+            }
+          ],
+          "proposals": [
+            {
+              "id": "proposal-a",
+              "label": "Proposal A",
+              "isOwn": false,
+              "authorAccountId": "11111111-1111-4111-8111-111111111111",
+              "authorUsername": "alexchen",
+              "authorDisplayName": "Alex Chen",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 2400,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 2100,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 1900,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-b",
+              "label": "Proposal B",
+              "isOwn": false,
+              "authorAccountId": "22222222-2222-4222-8222-222222222222",
+              "authorUsername": "mayali",
+              "authorDisplayName": "Maya Li",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 2200,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-c",
+              "label": "Proposal C",
+              "isOwn": false,
+              "authorAccountId": "33333333-3333-4333-8333-333333333333",
+              "authorUsername": "noahkim",
+              "authorDisplayName": "Noah Kim",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 2400,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-d",
+              "label": "Proposal D",
+              "isOwn": false,
+              "authorAccountId": "55555555-5555-4555-8555-555555555555",
+              "authorUsername": "priyashah",
+              "authorDisplayName": "Priya Shah",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 2100,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 1900,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 2200,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            },
+            {
+              "id": "proposal-e",
+              "label": "Proposal E",
+              "isOwn": false,
+              "authorAccountId": "66666666-6666-4666-8666-666666666666",
+              "authorUsername": "lucasreyes",
+              "authorDisplayName": "Lucas Reyes",
+              "status": "SUBMITTED",
+              "revision": 7,
+              "items": [
+                {
+                  "responsibility": "Coordinate research priorities and final synthesis.",
+                  "shareBasisPoints": 1900,
+                  "participantAccountId": "11111111-1111-4111-8111-111111111111",
+                  "participantUsername": "alexchen",
+                  "participantDisplayName": "Alex Chen"
+                },
+                {
+                  "responsibility": "Maintain source quality and evidence review.",
+                  "shareBasisPoints": 2100,
+                  "participantAccountId": "22222222-2222-4222-8222-222222222222",
+                  "participantUsername": "mayali",
+                  "participantDisplayName": "Maya Li"
+                },
+                {
+                  "responsibility": "Own data pipelines and research tooling.",
+                  "shareBasisPoints": 2000,
+                  "participantAccountId": "33333333-3333-4333-8333-333333333333",
+                  "participantUsername": "noahkim",
+                  "participantDisplayName": "Noah Kim"
+                },
+                {
+                  "responsibility": "Lead market analysis and editorial review.",
+                  "shareBasisPoints": 1800,
+                  "participantAccountId": "55555555-5555-4555-8555-555555555555",
+                  "participantUsername": "priyashah",
+                  "participantDisplayName": "Priya Shah"
+                },
+                {
+                  "responsibility": "Run operations, scheduling, and delivery checks.",
+                  "shareBasisPoints": 2200,
+                  "participantAccountId": "66666666-6666-4666-8666-666666666666",
+                  "participantUsername": "lucasreyes",
+                  "participantDisplayName": "Lucas Reyes"
+                }
+              ]
+            }
+          ],
+          "results": [
+            {
+              "proposalId": "proposal-a",
+              "label": "Proposal A",
+              "authorAccountId": "11111111-1111-4111-8111-111111111111",
+              "authorUsername": "alexchen",
+              "authorDisplayName": "Alex Chen",
+              "voteCount": 0,
+              "isWinner": false
+            },
+            {
+              "proposalId": "proposal-b",
+              "label": "Proposal B",
+              "authorAccountId": "22222222-2222-4222-8222-222222222222",
+              "authorUsername": "mayali",
+              "authorDisplayName": "Maya Li",
+              "voteCount": 3,
+              "isWinner": true
+            },
+            {
+              "proposalId": "proposal-c",
+              "label": "Proposal C",
+              "authorAccountId": "33333333-3333-4333-8333-333333333333",
+              "authorUsername": "noahkim",
+              "authorDisplayName": "Noah Kim",
+              "voteCount": 1,
+              "isWinner": false
+            },
+            {
+              "proposalId": "proposal-d",
+              "label": "Proposal D",
+              "authorAccountId": "55555555-5555-4555-8555-555555555555",
+              "authorUsername": "priyashah",
+              "authorDisplayName": "Priya Shah",
+              "voteCount": 1,
+              "isWinner": false
+            },
+            {
+              "proposalId": "proposal-e",
+              "label": "Proposal E",
+              "authorAccountId": "66666666-6666-4666-8666-666666666666",
+              "authorUsername": "lucasreyes",
+              "authorDisplayName": "Lucas Reyes",
+              "voteCount": 0,
+              "isWinner": false
+            }
+          ]
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/account",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "id": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "5",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "22222222-2222-4222-8222-222222222222",
+              "username": "mayali",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Maya Li",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "3"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "maya.li@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "3",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "33333333-3333-4333-8333-333333333333",
+              "username": "noahkim",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Noah Kim",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "2"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "noah.kim@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "2",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "55555555-5555-4555-8555-555555555555",
+              "username": "priyashah",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Priya Shah",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "5"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "priya.shah@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "5",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "66666666-6666-4666-8666-666666666666",
+              "username": "lucasreyes",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Lucas Reyes",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "3"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "lucas.reyes@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "3",
+                "moduleAccess": []
+              }
+            }
+          ],
+          "totalSize": 5
+        }
+      }
+    ]
+  },
+  {
+    "id": "foundations-admin-draft",
+    "route": "/admin/profit-sharing/growth-research-q4",
+    "realm": "admin",
+    "heading": "Growth Research · Q4",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "id": "44444444-4444-4444-8444-444444444444",
+              "accountId": "44444444-4444-4444-8444-444444444444",
+              "username": "alex.admin",
+              "administrator": true,
+              "loggedIn": true,
+              "iss": "fixture",
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Alex Morgan",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.admin@example.invalid",
+                "solanaAddress": "",
+                "createdAt": 1783999440,
+                "lastLoginAt": 1789351200
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": false,
+                "revision": "7",
+                "moduleAccess": []
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/profit-sharing/rounds/growth-research-q4",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "slug": "growth-research-q4",
+          "title": "Growth Research · Q4",
+          "phase": "DRAFT",
+          "revision": 3,
+          "participantCount": 4,
+          "submittedCount": 0,
+          "votedCount": 0,
+          "ballotNumber": 0,
+          "participants": [
+            {
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "displayName": "Alex Chen",
+              "baselineResponsibility": "Coordinate research priorities and final synthesis.",
+              "sortOrder": 1,
+              "proposalStatus": "DRAFT"
+            },
+            {
+              "accountId": "22222222-2222-4222-8222-222222222222",
+              "username": "mayali",
+              "displayName": "Maya Li",
+              "baselineResponsibility": "Maintain source quality and evidence review.",
+              "sortOrder": 2,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "33333333-3333-4333-8333-333333333333",
+              "username": "noahkim",
+              "displayName": "Noah Kim",
+              "baselineResponsibility": "Own data pipelines and research tooling.",
+              "sortOrder": 3,
+              "proposalStatus": "SUBMITTED"
+            },
+            {
+              "accountId": "55555555-5555-4555-8555-555555555555",
+              "username": "priyashah",
+              "displayName": "Priya Shah",
+              "baselineResponsibility": "Lead market analysis and editorial review.",
+              "sortOrder": 4,
+              "proposalStatus": "SUBMITTED"
+            }
+          ],
+          "proposals": [],
+          "results": []
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/account",
+        "realm": "admin",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "id": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "5",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "22222222-2222-4222-8222-222222222222",
+              "username": "mayali",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Maya Li",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "3"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "maya.li@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "3",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "33333333-3333-4333-8333-333333333333",
+              "username": "noahkim",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Noah Kim",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "2"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "noah.kim@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "2",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "55555555-5555-4555-8555-555555555555",
+              "username": "priyashah",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Priya Shah",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "5"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "priya.shah@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "5",
+                "moduleAccess": []
+              }
+            },
+            {
+              "id": "66666666-6666-4666-8666-666666666666",
+              "username": "lucasreyes",
+              "administrator": false,
+              "status": "ACCOUNT_STATUS_ACTIVE",
+              "profile": {
+                "displayName": "Lucas Reyes",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "3"
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "lucas.reyes@example.invalid"
+              },
+              "access": {
+                "loginEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "3",
+                "moduleAccess": []
+              }
+            }
+          ],
+          "totalSize": 5
+        }
+      }
+    ]
+  }
+]

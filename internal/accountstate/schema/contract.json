@@ -216,31 +216,6 @@
   },
   {
     "kind": "column",
-    "name": "account_preferences.account_id",
-    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
-  },
-  {
-    "kind": "column",
-    "name": "account_preferences.created_at",
-    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
-  },
-  {
-    "kind": "column",
-    "name": "account_preferences.revision",
-    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
-  },
-  {
-    "kind": "column",
-    "name": "account_preferences.theme",
-    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
-  },
-  {
-    "kind": "column",
-    "name": "account_preferences.updated_at",
-    "definition": "timestamp with time zone NOT NULL DEFAULT now() identity= generated= collation="
-  },
-  {
-    "kind": "column",
     "name": "account_profile.account_id",
     "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
   },
@@ -2046,26 +2021,6 @@
   },
   {
     "kind": "constraint",
-    "name": "account_preferences.account_preferences_account_fk",
-    "definition": "FOREIGN KEY (account_id) REFERENCES athena_account(account_id) ON DELETE CASCADE validated=t"
-  },
-  {
-    "kind": "constraint",
-    "name": "account_preferences.account_preferences_pkey",
-    "definition": "PRIMARY KEY (account_id) validated=t"
-  },
-  {
-    "kind": "constraint",
-    "name": "account_preferences.account_preferences_revision_check",
-    "definition": "CHECK ((revision \u003e 0)) validated=t"
-  },
-  {
-    "kind": "constraint",
-    "name": "account_preferences.account_preferences_theme_check",
-    "definition": "CHECK ((theme = ANY (ARRAY['system'::text, 'light'::text, 'dark'::text]))) validated=t"
-  },
-  {
-    "kind": "constraint",
     "name": "account_profile.account_profile_account_fk",
     "definition": "FOREIGN KEY (account_id) REFERENCES athena_account(account_id) ON DELETE CASCADE validated=t"
   },
@@ -3171,11 +3126,6 @@
   },
   {
     "kind": "index",
-    "name": "account_preferences_pkey",
-    "definition": "CREATE UNIQUE INDEX account_preferences_pkey ON public.account_preferences USING btree (account_id) valid=t ready=t"
-  },
-  {
-    "kind": "index",
     "name": "account_profile_pkey",
     "definition": "CREATE UNIQUE INDEX account_profile_pkey ON public.account_profile USING btree (account_id) valid=t ready=t"
   },
@@ -3647,11 +3597,6 @@
   {
     "kind": "table",
     "name": "account_notification_deliveries",
-    "definition": "r persistence=p rls=f force_rls=f"
-  },
-  {
-    "kind": "table",
-    "name": "account_preferences",
     "definition": "r persistence=p rls=f force_rls=f"
   },
   {

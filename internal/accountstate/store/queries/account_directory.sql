@@ -149,11 +149,6 @@ WITH inserted_account AS (
   SELECT account_id, username, 'standard', 1
   FROM inserted_account
   RETURNING account_id
-), inserted_preferences AS (
-  INSERT INTO account_preferences (account_id, theme, revision)
-  SELECT account_id, 'system', 1
-  FROM inserted_account
-  RETURNING account_id
 )
 SELECT account_id,
        username,
@@ -167,8 +162,7 @@ SELECT account_id,
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
   AND (SELECT COUNT(*) FROM inserted_modules) = 11
-  AND EXISTS (SELECT 1 FROM inserted_profile)
-  AND EXISTS (SELECT 1 FROM inserted_preferences);
+  AND EXISTS (SELECT 1 FROM inserted_profile);
 
 -- name: CreateAdministratorAccount :one
 WITH inserted_account AS (
@@ -236,11 +230,6 @@ WITH inserted_account AS (
   SELECT account_id, username, 'standard', 1
   FROM inserted_account
   RETURNING account_id
-), inserted_preferences AS (
-  INSERT INTO account_preferences (account_id, theme, revision)
-  SELECT account_id, 'system', 1
-  FROM inserted_account
-  RETURNING account_id
 )
 SELECT account_id,
        username,
@@ -254,8 +243,7 @@ SELECT account_id,
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
   AND (SELECT COUNT(*) FROM inserted_modules) = 11
-  AND EXISTS (SELECT 1 FROM inserted_profile)
-  AND EXISTS (SELECT 1 FROM inserted_preferences);
+  AND EXISTS (SELECT 1 FROM inserted_profile);
 
 -- name: CreateDevelopmentMember :one
 WITH inserted_account AS (
@@ -316,11 +304,6 @@ WITH inserted_account AS (
   SELECT account_id, username, 'standard', 1
   FROM inserted_account
   RETURNING account_id
-), inserted_preferences AS (
-  INSERT INTO account_preferences (account_id, theme, revision)
-  SELECT account_id, 'system', 1
-  FROM inserted_account
-  RETURNING account_id
 )
 SELECT account_id,
        username,
@@ -334,8 +317,7 @@ SELECT account_id,
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
   AND (SELECT COUNT(*) FROM inserted_modules) = 11
-  AND EXISTS (SELECT 1 FROM inserted_profile)
-  AND EXISTS (SELECT 1 FROM inserted_preferences);
+  AND EXISTS (SELECT 1 FROM inserted_profile);
 
 -- name: CreateDevelopmentAdministrator :one
 WITH inserted_account AS (
@@ -396,11 +378,6 @@ WITH inserted_account AS (
   SELECT account_id, username, 'standard', 1
   FROM inserted_account
   RETURNING account_id
-), inserted_preferences AS (
-  INSERT INTO account_preferences (account_id, theme, revision)
-  SELECT account_id, 'system', 1
-  FROM inserted_account
-  RETURNING account_id
 )
 SELECT account_id,
        username,
@@ -414,8 +391,7 @@ SELECT account_id,
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
   AND (SELECT COUNT(*) FROM inserted_modules) = 11
-  AND EXISTS (SELECT 1 FROM inserted_profile)
-  AND EXISTS (SELECT 1 FROM inserted_preferences);
+  AND EXISTS (SELECT 1 FROM inserted_profile);
 
 -- name: RecordAccountLogin :one
 UPDATE athena_account

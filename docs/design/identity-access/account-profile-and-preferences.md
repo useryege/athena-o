@@ -1,90 +1,90 @@
-# Account Profile and Preferences
+# Account Profile and Local View Preferences
 
 > 设计状态：已实现
 
 ## Scope
 
-Account Profile and Preferences owns each UUID account's editable display name,
-display-only Standard/Pro tier, private avatar metadata, and System/Light/Dark
-theme. It exposes uncached reads and independent optimistic-concurrency
-boundaries for public profile and private preference state.
+Account Profile owns each UUID account's editable display name, display-only
+Standard/Pro tier, and private avatar metadata. It exposes uncached reads and
+optimistic concurrency for profile state. Both applications use one fixed dark
+theme; there is no account theme preference, theme endpoint, or Appearance page.
+Pagination, sorting, sidebar, banner, and return-position preferences remain
+browser-local and realm-scoped; storage reads and writes allow only those fields.
 
 The immutable username belongs to [Account Credentials](account-credentials.md)
 and appears read-only as `@username`. The shared registration reached from
 [Google OIDC Login](google-oidc-login.md) or [Solana Wallet
 Authentication](solana-wallet-authentication.md) initializes both username and
 display name only when registration commits. Later external logins never
-overwrite username, display name, avatar, tier, or theme; Google may refresh
+overwrite username, display name, avatar, or tier; Google may refresh
 only verified-email audit data.
 
 ## Source Locations
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| Domain state and validation | [internal/accountcenter/types.go](../../../internal/accountcenter/types.go) | `Profile`, `Preferences`, `AvatarMetadata`, `Tier`, `ThemeMode` |
-| Application boundary | [internal/accountcenter/manager.go](../../../internal/accountcenter/manager.go) | `Manager`, `GetProfile`, `UpdateDisplayName`, `UpdateTier`, `ReplaceAvatar`, `DeleteAvatar`, `UpdatePreferences` |
-| PostgreSQL adapter | [internal/accountstate/store/sql_store.go](../../../internal/accountstate/store/sql_store.go) | `AccountExists`, `GetProfile`, `UpdateProfile`, `GetPreferences`, `UpdatePreferences` |
-| Schema and queries | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql), [internal/accountstate/store/queries/account_center.sql](../../../internal/accountstate/store/queries/account_center.sql) | `account_profile`, `account_preferences` |
+| Domain state and validation | [internal/accountcenter/types.go](../../../internal/accountcenter/types.go) | `Profile`, `AvatarMetadata`, `Tier` |
+| Application boundary | [internal/accountcenter/manager.go](../../../internal/accountcenter/manager.go) | `Manager`, `GetProfile`, `UpdateDisplayName`, `UpdateTier`, `ReplaceAvatar`, `DeleteAvatar` |
+| PostgreSQL adapter | [internal/accountstate/store/sql_store.go](../../../internal/accountstate/store/sql_store.go) | `AccountExists`, `GetProfile`, `UpdateProfile` |
+| Schema and queries | [internal/accountstate/store/migrations/000001_init.sql](../../../internal/accountstate/store/migrations/000001_init.sql), [internal/accountstate/store/queries/account_center.sql](../../../internal/accountstate/store/queries/account_center.sql) | `account_profile` |
 | Registration aggregate | [internal/accountstate/store/queries/account_directory.sql](../../../internal/accountstate/store/queries/account_directory.sql) | `CreateOrdinaryAccount`, `CreateAdministratorAccount`, development member/administrator creation |
-| API projection and mutations | [internal/server/account/account.go](../../../internal/server/account/account.go), [internal/server/account/account.proto](../../../internal/server/account/account.proto) | `ToAPIAccountProfile`, `ToAPIAccountPreferences`, `UpdateAccountProfile`, `UpdateAccountTier`, `UpdateAccountPreferences` |
+| API projection and mutations | [internal/server/account/account.go](../../../internal/server/account/account.go), [internal/server/account/account.proto](../../../internal/server/account/account.proto) | `ToAPIAccountProfile`, `UpdateAccountProfile`, `UpdateAccountTier` |
 | Browser surfaces and realm facades | [ui/src/app/shared/pages/account-center.tsx](../../../ui/src/app/shared/pages/account-center.tsx), [ui/src/app/admin/pages/admin-accounts.tsx](../../../ui/src/app/admin/pages/admin-accounts.tsx), [ui/src/app/shared/services/accounts-service.ts](../../../ui/src/app/shared/services/accounts-service.ts), [ui/src/app/admin/accounts-service.ts](../../../ui/src/app/admin/accounts-service.ts) | `AccountCenterPage`, `AdminAccountsPage`, neutral `SelfAccountService`, management-only `AdminAccountsService` |
-| Neutral browser presentation | [ui/src/app/shared/account-presentation.tsx](../../../ui/src/app/shared/account-presentation.tsx), [ui/src/app/shared/theme.ts](../../../ui/src/app/shared/theme.ts), [ui/src/app/shared/validation.ts](../../../ui/src/app/shared/validation.ts) | account avatar/tier labels, theme conversion, profile validation shared without cross-realm page imports |
+| Neutral browser presentation | [ui/src/app/shared/account-presentation.tsx](../../../ui/src/app/shared/account-presentation.tsx), [ui/src/app/shared/validation.ts](../../../ui/src/app/shared/validation.ts) | account avatar/tier labels, profile validation shared without cross-realm page imports |
 
 ## Architecture
 
 `accountcenter.Manager` accepts a stable account UUID and first validates that
 the `athena_account` parent exists. It delegates every read and CAS mutation to
 the shared account-state PostgreSQL adapter and keeps no profile cache. A
-profile revision covers display name, tier, and avatar reference; a separate
-preferences revision covers theme, so a theme write cannot conflict with a
-profile write.
+profile revision covers display name, tier, and avatar reference; access revisions remain separate from profile revisions.
 
 Username and display name are intentionally distinct. Username is permanent,
 case-preserving public identity. Display name is 1–80 UTF-8 characters without
 control characters and may be changed. Profile/avatar routes use UUID even
 though labels use display name and `@username`.
 
-Both frontend applications expose the same current-account profile, appearance,
+Both frontend applications expose the same current-account profile,
 access, Help, and logout capabilities under their own route roots. Only the
 member application exposes Security and API Key management. Administrators may
 also view safe identity/profile data and change an ordinary account's display-
 only tier and profile through Account Admin; they do not receive another user's
-private preferences or API Key metadata. Tier never grants authorization.
+API Key metadata. Tier never grants authorization.
 
 ## Runtime Flow
 
 1. A successful Google or Solana-wallet username registration creates
-   `athena_account`, access, all module rows, profile, and preferences together.
+   `athena_account`, access, all module rows, and profile together.
    Profile display name is initialized to the exact chosen username, tier to
-   Standard, theme to System, and both revisions to one. The disabled-auth
+   Standard, and profile revision to one. The disabled-auth
    development aggregate uses the same complete state shape with
    username/display name `local-user` for role `member` or `local-admin` for
    role `administrator`.
 2. Reads require the UUID parent and require an already-persisted positive-
-   revision row. Missing or malformed profile/preferences state is treated as
+   revision row. Missing or malformed profile state is treated as
    an invalid aggregate, not synthesized from email or username.
-3. A profile or preference update validates the complete proposed value and
+3. A profile update validates the complete proposed value and
    expected revision. Its SQL CAS advances exactly one revision on success. A
    stale revision returns a stable conflict and changes nothing.
 4. Avatar upload validates and stores a private candidate object before profile
    CAS. Successful replacement commits its reference before old-object cleanup;
    failed or ambiguous CAS is reconciled through a read and orphan collection.
 5. Session and bootstrap projections combine UUID, immutable username, current
-   profile/preferences, current access, role, and safe provider-specific
+   profile, current access, role, and safe provider-specific
    identity presentation. Google subject, API Key JTI, wallet signatures,
    bearer material, and avatar object key remain private.
 6. Member Account Center uses `/account/*`; Administrator Account Center uses
-   `/admin/account/*`. Both show `@username` in a disabled input and permit
+   `/admin/account/*`. Both show `@username` in a read-only input and permit
    editing only display name and other mutable profile fields. The administrator
    directory detail adds a copyable Technical account ID; neither self-service
    surface presents UUID as the user's public name.
 
 ## State / Data
 
-`account_profile.account_id UUID` and `account_preferences.account_id UUID` are
-primary keys and foreign keys to `athena_account`. Profile owns display name,
-tier, optional avatar object metadata, and revision. Preferences owns theme and
-its own revision. Neither table stores username, email, subject, or role.
+`account_profile.account_id UUID` is a primary key and foreign key to
+`athena_account`. Profile owns display name, tier, optional avatar object metadata,
+and revision. It stores no username, email, subject, or role. The canonical schema
+has no `account_preferences` table.
 
 The account directory's immutable `username`, provider binding, and mutable
 Google-only `verified_email` remain separate. An email change on successful
@@ -96,29 +96,48 @@ Avatar bytes remain private S3 objects. Public profile projections expose only
 an authenticated UUID route such as `/api/v1/account/{id}/avatar?v={revision}`.
 The revision is a cache buster; it is not an object-store key or credential.
 
+## Theme removal and generated contracts
+
+The theme-only `AccountPreferences`/`AccountThemeMode`, update RPC/HTTP route,
+UserInfo projection, storage queries, account-creation CTE fields, and initial
+schema table were removed together. SQL/sqlc, schema contract, proto, gateway,
+OpenAPI, and browser models were regenerated from their owners. Profile CAS,
+access revision, and session generation remain independent. The aggregate
+avatar HTTP consumer was also corrected; the full API build and real bootstrap
+were verified after that correction.
+
+`ViewPreferencesService` accepts only `version`, `pageSizes`, `sortOptions`,
+`hideBannerContent`, `hideSidebar`, and `position` during both read and write.
+A legacy theme field cannot select a theme or survive the next preference save;
+other supported values remain. Appearance URLs use each realm's existing 404.
+
+New-schema verification used a dedicated task database and managed instance;
+existing development databases and volumes were preserved. This change does
+not supply a historical schema migration or authorize resetting another database.
+See the [implementation and acceptance record](../../testing/web-ui-theme-refactor-acceptance.md)
+for T1 contract evidence and final versioned results.
+
 ## Configuration
 
-Profile and preferences have no per-account environment settings. Theme starts
-as System and tier starts as Standard. Object-store configuration belongs to
+Profile has no per-account environment settings. Tier starts as Standard. Object-store configuration belongs to
 [Account Avatar Storage](account-avatar-storage.md).
 
 ## Invariants
 
-- Every profile and preferences row belongs to the same durable UUID account.
+- Every profile row belongs to the same durable UUID account.
 - Username is read-only identity presentation; display name is the editable
   profile label and starts equal to username.
 - Google email, name, and avatar and Solana-wallet metadata never synchronize
   into Athena presentation state after registration.
-- Profile and preference revisions advance independently by CAS.
+- Profile revisions advance by CAS, independently of access revisions.
 - Tier is presentation metadata and cannot grant a module or role.
-- Safe public/session projections exclude subject, private preferences of other
-  users, API Key metadata, and object-store secrets.
-- Self-service profile and theme behavior is shared across frontend realms,
+- Safe public/session projections exclude subject, API Key metadata, and object-store secrets.
+- Self-service profile behavior is shared across frontend realms,
   while API Key management remains member-only.
 
 ## Failure Recovery
 
-Registration rolls back account, access, modules, profile, and preferences as
+Registration rolls back account, access, modules, and profile as
 one database statement if any inserted component fails. A stale revision or SQL
 failure leaves its aggregate unchanged. Avatar write/CAS failures are reconciled
 by bounded re-read, compensation, and the orphan collector; no candidate becomes
@@ -135,7 +154,7 @@ account-state PostgreSQL connection.
 
 - [ ] UUID account parent and registration defaults remain current.
 - [ ] Immutable username and editable display-name presentation remain separate.
-- [ ] Profile, preferences, and avatar CAS boundaries remain independent.
+- [ ] Profile CAS covers display name, tier, and avatar and remains independent of access.
 - [ ] External identity data does not overwrite Athena display state.
 - [ ] Authorization and public projections remain current.
 - [ ] The [design index](../README.md) contains the current summary.

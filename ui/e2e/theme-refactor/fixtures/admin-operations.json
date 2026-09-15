@@ -1,0 +1,1703 @@
+[
+    {
+        "id": "admin-accounts",
+        "route": "/admin/accounts",
+        "realm": "admin",
+        "heading": "Account Administration",
+        "replies": [
+            {
+                "path": "/api/v1/app/bootstrap",
+                "realm": "admin",
+                "json": {
+                    "settings": {
+                        "url": "http://localhost:34000",
+                        "googleAnalytics": {},
+                        "help": {
+                            "chatUrl": "",
+                            "chatText": "",
+                            "binaryUrls": {}
+                        },
+                        "uiCssURL": "",
+                        "uiBannerContent": ""
+                    },
+                    "session": {
+                        "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+                        "userInfo": {
+                            "loggedIn": true,
+                            "accountId": "22222222-2222-4222-8222-222222222222",
+                            "username": "fixture.admin",
+                            "iss": "fixture",
+                            "administrator": true,
+                            "profile": {
+                                "displayName": "Fixture Admin",
+                                "tier": "ACCOUNT_TIER_STANDARD",
+                                "avatarUrl": "",
+                                "revision": 4
+                            },
+                            "identity": {
+                                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                                "verifiedEmail": "admin@example.invalid",
+                                "solanaAddress": "",
+                                "createdAt": 1783999440,
+                                "lastLoginAt": 1789351200
+                            },
+                            "access": {
+                                "loginEnabled": true,
+                                "apiKeyEnabled": false,
+                                "profitSharingEnabled": false,
+                                "revision": 7,
+                                "moduleAccess": [
+                                    {
+                                        "module": "ACCOUNT_DATA_MODULE_WALLET",
+                                        "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "status": 200,
+                "method": "GET"
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/account",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "items": [
+                        {
+                            "id": "11111111-1111-4111-8111-111111111111",
+                            "username": "mira.chen",
+                            "administrator": false,
+                            "access": {
+                                "loginEnabled": true,
+                                "apiKeyEnabled": true,
+                                "profitSharingEnabled": false,
+                                "revision": "7",
+                                "moduleAccess": [
+                                    {
+                                        "module": 1,
+                                        "dataAccess": 1
+                                    },
+                                    {
+                                        "module": 2,
+                                        "dataAccess": 1
+                                    },
+                                    {
+                                        "module": 3,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 4,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 5,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 11,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 7,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 8,
+                                        "dataAccess": 1
+                                    },
+                                    {
+                                        "module": 13,
+                                        "dataAccess": 1
+                                    },
+                                    {
+                                        "module": 9,
+                                        "dataAccess": 1
+                                    },
+                                    {
+                                        "module": 12,
+                                        "dataAccess": 2
+                                    }
+                                ]
+                            },
+                            "profile": {
+                                "displayName": "Mira Chen",
+                                "tier": "ACCOUNT_TIER_STANDARD",
+                                "avatarUrl": "",
+                                "revision": "4"
+                            },
+                            "identity": {
+                                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                                "verifiedEmail": "mira.chen@example.invalid",
+                                "solanaAddress": "",
+                                "createdAt": 1783999440,
+                                "lastLoginAt": 1789351200
+                            },
+                            "status": "ACCOUNT_STATUS_ACTIVE"
+                        },
+                        {
+                            "id": "33333333-3333-4333-8333-333333333332",
+                            "username": "noah.park",
+                            "administrator": false,
+                            "access": {
+                                "loginEnabled": true,
+                                "apiKeyEnabled": false,
+                                "profitSharingEnabled": false,
+                                "revision": "7",
+                                "moduleAccess": [
+                                    {
+                                        "module": 1,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 2,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 3,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 4,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 5,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 11,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 7,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 8,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 13,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 9,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 12,
+                                        "dataAccess": 0
+                                    }
+                                ]
+                            },
+                            "profile": {
+                                "displayName": "Noah Park",
+                                "tier": "ACCOUNT_TIER_STANDARD",
+                                "avatarUrl": "",
+                                "revision": "4"
+                            },
+                            "identity": {
+                                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                                "verifiedEmail": "noah.park@example.invalid",
+                                "solanaAddress": "",
+                                "createdAt": 1783999440,
+                                "lastLoginAt": 0
+                            },
+                            "status": "ACCOUNT_STATUS_PENDING"
+                        },
+                        {
+                            "id": "33333333-3333-4333-8333-333333333333",
+                            "username": "river",
+                            "administrator": false,
+                            "access": {
+                                "loginEnabled": false,
+                                "apiKeyEnabled": false,
+                                "profitSharingEnabled": false,
+                                "revision": "7",
+                                "moduleAccess": [
+                                    {
+                                        "module": 1,
+                                        "dataAccess": 1
+                                    },
+                                    {
+                                        "module": 2,
+                                        "dataAccess": 1
+                                    },
+                                    {
+                                        "module": 3,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 4,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 5,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 11,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 7,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 8,
+                                        "dataAccess": 1
+                                    },
+                                    {
+                                        "module": 13,
+                                        "dataAccess": 1
+                                    },
+                                    {
+                                        "module": 9,
+                                        "dataAccess": 1
+                                    },
+                                    {
+                                        "module": 12,
+                                        "dataAccess": 2
+                                    }
+                                ]
+                            },
+                            "profile": {
+                                "displayName": "River",
+                                "tier": "ACCOUNT_TIER_STANDARD",
+                                "avatarUrl": "",
+                                "revision": "4"
+                            },
+                            "identity": {
+                                "provider": "ACCOUNT_IDENTITY_PROVIDER_SOLANA_WALLET",
+                                "verifiedEmail": "",
+                                "solanaAddress": "7fZdJmR6uFQ7kbKaojTcKVWHR3hyZiA8dCuYUBwXsMn2",
+                                "createdAt": 1783999440,
+                                "lastLoginAt": 1789351200
+                            },
+                            "status": "ACCOUNT_STATUS_BLOCKED"
+                        },
+                        {
+                            "id": "22222222-2222-4222-8222-222222222222",
+                            "username": "alex.admin",
+                            "administrator": true,
+                            "access": {
+                                "loginEnabled": true,
+                                "apiKeyEnabled": true,
+                                "profitSharingEnabled": false,
+                                "revision": "7",
+                                "moduleAccess": [
+                                    {
+                                        "module": 1,
+                                        "dataAccess": 1
+                                    },
+                                    {
+                                        "module": 2,
+                                        "dataAccess": 1
+                                    },
+                                    {
+                                        "module": 3,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 4,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 5,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 11,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 7,
+                                        "dataAccess": 0
+                                    },
+                                    {
+                                        "module": 8,
+                                        "dataAccess": 1
+                                    },
+                                    {
+                                        "module": 13,
+                                        "dataAccess": 1
+                                    },
+                                    {
+                                        "module": 9,
+                                        "dataAccess": 1
+                                    },
+                                    {
+                                        "module": 12,
+                                        "dataAccess": 2
+                                    }
+                                ]
+                            },
+                            "profile": {
+                                "displayName": "Alex Morgan",
+                                "tier": "ACCOUNT_TIER_STANDARD",
+                                "avatarUrl": "",
+                                "revision": "4"
+                            },
+                            "identity": {
+                                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                                "verifiedEmail": "alex.admin@example.invalid",
+                                "solanaAddress": "",
+                                "createdAt": 1783999440,
+                                "lastLoginAt": 1789351200
+                            },
+                            "status": "ACCOUNT_STATUS_ACTIVE"
+                        }
+                    ],
+                    "totalSize": 4
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/account/11111111-1111-4111-8111-111111111111",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "id": "11111111-1111-4111-8111-111111111111",
+                    "username": "mira.chen",
+                    "administrator": false,
+                    "access": {
+                        "loginEnabled": true,
+                        "apiKeyEnabled": true,
+                        "profitSharingEnabled": false,
+                        "revision": "7",
+                        "moduleAccess": [
+                            {
+                                "module": 1,
+                                "dataAccess": 1
+                            },
+                            {
+                                "module": 2,
+                                "dataAccess": 1
+                            },
+                            {
+                                "module": 3,
+                                "dataAccess": 0
+                            },
+                            {
+                                "module": 4,
+                                "dataAccess": 0
+                            },
+                            {
+                                "module": 5,
+                                "dataAccess": 0
+                            },
+                            {
+                                "module": 11,
+                                "dataAccess": 0
+                            },
+                            {
+                                "module": 7,
+                                "dataAccess": 0
+                            },
+                            {
+                                "module": 8,
+                                "dataAccess": 1
+                            },
+                            {
+                                "module": 13,
+                                "dataAccess": 1
+                            },
+                            {
+                                "module": 9,
+                                "dataAccess": 1
+                            },
+                            {
+                                "module": 12,
+                                "dataAccess": 2
+                            }
+                        ]
+                    },
+                    "profile": {
+                        "displayName": "Mira Chen",
+                        "tier": "ACCOUNT_TIER_STANDARD",
+                        "avatarUrl": "",
+                        "revision": "4"
+                    },
+                    "identity": {
+                        "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                        "verifiedEmail": "mira.chen@example.invalid",
+                        "solanaAddress": "",
+                        "createdAt": 1783999440,
+                        "lastLoginAt": 1789351200
+                    },
+                    "status": "ACCOUNT_STATUS_ACTIVE"
+                }
+            },
+            {
+                "method": "PUT",
+                "path": "/api/v1/account/11111111-1111-4111-8111-111111111111/access",
+                "realm": "admin",
+                "status": 409,
+                "json": {
+                    "error": {
+                        "code": 10,
+                        "message": "access revision conflict"
+                    }
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/session/userinfo",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "loggedIn": true,
+                    "accountId": "22222222-2222-4222-8222-222222222222",
+                    "username": "fixture.admin",
+                    "iss": "fixture",
+                    "administrator": true,
+                    "profile": {
+                        "displayName": "Fixture Admin",
+                        "tier": "ACCOUNT_TIER_STANDARD",
+                        "avatarUrl": "",
+                        "revision": 4
+                    },
+                    "identity": {
+                        "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                        "verifiedEmail": "admin@example.invalid",
+                        "solanaAddress": "",
+                        "createdAt": 1783999440,
+                        "lastLoginAt": 1789351200
+                    },
+                    "access": {
+                        "loginEnabled": true,
+                        "apiKeyEnabled": false,
+                        "profitSharingEnabled": false,
+                        "revision": 7,
+                        "moduleAccess": [
+                            {
+                                "module": "ACCOUNT_DATA_MODULE_WALLET",
+                                "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "id": "admin-services",
+        "route": "/admin/service-status",
+        "realm": "admin",
+        "heading": "Service Status",
+        "replies": [
+            {
+                "path": "/api/v1/app/bootstrap",
+                "realm": "admin",
+                "json": {
+                    "settings": {
+                        "url": "http://localhost:34000",
+                        "googleAnalytics": {},
+                        "help": {
+                            "chatUrl": "",
+                            "chatText": "",
+                            "binaryUrls": {}
+                        },
+                        "uiCssURL": "",
+                        "uiBannerContent": ""
+                    },
+                    "session": {
+                        "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+                        "userInfo": {
+                            "loggedIn": true,
+                            "accountId": "22222222-2222-4222-8222-222222222222",
+                            "username": "fixture.admin",
+                            "iss": "fixture",
+                            "administrator": true,
+                            "profile": {
+                                "displayName": "Fixture Admin",
+                                "tier": "ACCOUNT_TIER_STANDARD",
+                                "avatarUrl": "",
+                                "revision": 4
+                            },
+                            "identity": {
+                                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                                "verifiedEmail": "admin@example.invalid",
+                                "solanaAddress": "",
+                                "createdAt": 1783999440,
+                                "lastLoginAt": 1789351200
+                            },
+                            "access": {
+                                "loginEnabled": true,
+                                "apiKeyEnabled": false,
+                                "profitSharingEnabled": false,
+                                "revision": 7,
+                                "moduleAccess": [
+                                    {
+                                        "module": "ACCOUNT_DATA_MODULE_WALLET",
+                                        "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "status": 200,
+                "method": "GET"
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/service-statuses",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "checkedAt": 1789363202,
+                    "items": [
+                        {
+                            "name": "notification",
+                            "status": "SERVING",
+                            "errorMessage": ""
+                        },
+                        {
+                            "name": "wallet",
+                            "status": "SERVING",
+                            "errorMessage": ""
+                        },
+                        {
+                            "name": "market-radar",
+                            "status": "SERVING",
+                            "errorMessage": ""
+                        },
+                        {
+                            "name": "sports-live",
+                            "status": "UNREACHABLE",
+                            "errorMessage": "Health check timed out after 5 seconds."
+                        },
+                        {
+                            "name": "sports-history",
+                            "status": "SERVING",
+                            "errorMessage": ""
+                        },
+                        {
+                            "name": "managed-oo",
+                            "status": "SERVING",
+                            "errorMessage": ""
+                        },
+                        {
+                            "name": "worm-markets",
+                            "status": "SERVING",
+                            "errorMessage": ""
+                        },
+                        {
+                            "name": "worm-trading",
+                            "status": "SERVING",
+                            "errorMessage": ""
+                        },
+                        {
+                            "name": "profit-sharing",
+                            "status": "SERVING",
+                            "errorMessage": ""
+                        },
+                        {
+                            "name": "token-api",
+                            "status": "SERVING",
+                            "errorMessage": ""
+                        }
+                    ]
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/admin/notification-runtime/status",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "started": true,
+                    "status": "running",
+                    "botAvailable": true,
+                    "botId": 7135024601,
+                    "botUsername": "athena_demo_bot",
+                    "pollerActive": true,
+                    "lastPollAt": "2026-09-14T05:20:01Z",
+                    "lastUpdateAt": "2026-09-14T05:19:48Z",
+                    "systemPendingCount": 12,
+                    "systemRetryCount": 2,
+                    "systemFailedCount": 0,
+                    "systemSendingCount": 0,
+                    "systemUnknownCount": 0,
+                    "accountPendingCount": 7,
+                    "accountRetryCount": 1,
+                    "accountFailedCount": 1,
+                    "accountSendingCount": 0,
+                    "accountUnknownCount": 0,
+                    "unreachableBindingCount": 1,
+                    "recovery": {
+                        "state": "waiting",
+                        "reason": "non_first_start_barrier",
+                        "startedAt": "2026-09-14T05:19:59Z",
+                        "remainingMillis": "55000",
+                        "elapsedMillis": "5000",
+                        "clockSource": "sender_monotonic"
+                    }
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/admin/trader-sync/status",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "status": {
+                        "collectorConnected": true,
+                        "collectorEpoch": "collector-demo-07",
+                        "filterRevision": "42",
+                        "asOf": "2026-09-14T05:20:03Z",
+                        "metrics": [
+                            {
+                                "name": "raw_observation_available",
+                                "value": "0",
+                                "unit": "boolean",
+                                "kind": "gauge"
+                            },
+                            {
+                                "name": "raw_queue_depth",
+                                "unit": "raw_logs",
+                                "kind": "gauge"
+                            },
+                            {
+                                "name": "raw_persist_in_flight",
+                                "unit": "raw_logs",
+                                "kind": "gauge"
+                            },
+                            {
+                                "name": "confirmation_backlog",
+                                "value": "4",
+                                "unit": "source_records",
+                                "kind": "gauge"
+                            },
+                            {
+                                "name": "delivery_pending",
+                                "value": "12",
+                                "unit": "deliveries",
+                                "kind": "gauge"
+                            },
+                            {
+                                "name": "projector_candidate_transaction_elapsed_ns_total",
+                                "value": "9007199254740993",
+                                "unit": "nanoseconds_sender_independent_monotonic",
+                                "kind": "epoch",
+                                "serviceEpoch": "projector-demo-a7"
+                            },
+                            {
+                                "name": "synthetic_window",
+                                "value": "36",
+                                "unit": "activities",
+                                "kind": "window",
+                                "windowStart": "2026-09-14T05:19:00Z",
+                                "windowEnd": "2026-09-14T05:20:00Z"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/session/userinfo",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "loggedIn": true,
+                    "accountId": "22222222-2222-4222-8222-222222222222",
+                    "username": "fixture.admin",
+                    "iss": "fixture",
+                    "administrator": true,
+                    "profile": {
+                        "displayName": "Fixture Admin",
+                        "tier": "ACCOUNT_TIER_STANDARD",
+                        "avatarUrl": "",
+                        "revision": 4
+                    },
+                    "identity": {
+                        "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                        "verifiedEmail": "admin@example.invalid",
+                        "solanaAddress": "",
+                        "createdAt": 1783999440,
+                        "lastLoginAt": 1789351200
+                    },
+                    "access": {
+                        "loginEnabled": true,
+                        "apiKeyEnabled": false,
+                        "profitSharingEnabled": false,
+                        "revision": 7,
+                        "moduleAccess": [
+                            {
+                                "module": "ACCOUNT_DATA_MODULE_WALLET",
+                                "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "id": "admin-gateways",
+        "route": "/admin/etherscan-gateways",
+        "realm": "admin",
+        "heading": "Etherscan Gateways",
+        "replies": [
+            {
+                "path": "/api/v1/app/bootstrap",
+                "realm": "admin",
+                "json": {
+                    "settings": {
+                        "url": "http://localhost:34000",
+                        "googleAnalytics": {},
+                        "help": {
+                            "chatUrl": "",
+                            "chatText": "",
+                            "binaryUrls": {}
+                        },
+                        "uiCssURL": "",
+                        "uiBannerContent": ""
+                    },
+                    "session": {
+                        "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+                        "userInfo": {
+                            "loggedIn": true,
+                            "accountId": "22222222-2222-4222-8222-222222222222",
+                            "username": "fixture.admin",
+                            "iss": "fixture",
+                            "administrator": true,
+                            "profile": {
+                                "displayName": "Fixture Admin",
+                                "tier": "ACCOUNT_TIER_STANDARD",
+                                "avatarUrl": "",
+                                "revision": 4
+                            },
+                            "identity": {
+                                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                                "verifiedEmail": "admin@example.invalid",
+                                "solanaAddress": "",
+                                "createdAt": 1783999440,
+                                "lastLoginAt": 1789351200
+                            },
+                            "access": {
+                                "loginEnabled": true,
+                                "apiKeyEnabled": false,
+                                "profitSharingEnabled": false,
+                                "revision": 7,
+                                "moduleAccess": [
+                                    {
+                                        "module": "ACCOUNT_DATA_MODULE_WALLET",
+                                        "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "status": 200,
+                "method": "GET"
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/etherscan-gateway-statuses",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "checkedAt": 1789365005,
+                    "items": [
+                        {
+                            "address": "192.0.2.11:8099",
+                            "reachable": true,
+                            "started": true,
+                            "status": "running",
+                            "checkedAt": 1789365005,
+                            "errorMessage": "",
+                            "latencyMs": 42,
+                            "etherscanBaseUrl": "https://api.etherscan.io/v2/api"
+                        },
+                        {
+                            "address": "192.0.2.12:8099",
+                            "reachable": true,
+                            "started": true,
+                            "status": "running",
+                            "checkedAt": 1789365005,
+                            "errorMessage": "",
+                            "latencyMs": 57,
+                            "etherscanBaseUrl": "https://api.etherscan.io/v2/api"
+                        },
+                        {
+                            "address": "192.0.2.13:8099",
+                            "reachable": false,
+                            "started": false,
+                            "status": "unreachable",
+                            "checkedAt": 1789365005,
+                            "errorMessage": "rpc error: code = DeadlineExceeded desc = context deadline exceeded",
+                            "latencyMs": 5000,
+                            "etherscanBaseUrl": ""
+                        }
+                    ]
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/etherscan-gateway-probe-runs/latest",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "status": "completed",
+                    "result": "fail",
+                    "createdAt": 1789364880,
+                    "startedAt": 1789364880,
+                    "finishedAt": 1789364882,
+                    "requestsPerKey": 6,
+                    "keyCount": 3,
+                    "gatewayCount": 3,
+                    "total": 18,
+                    "requiredSuccess": 17,
+                    "counts": {
+                        "success": 16,
+                        "rateLimit": 2,
+                        "authentication": 0,
+                        "plan": 0,
+                        "invalidRequest": 0,
+                        "malformed": 0,
+                        "upstream": 0,
+                        "other": 0
+                    },
+                    "gatewaySummaries": [
+                        {
+                            "gateway": "192.0.2.11:8099",
+                            "counts": {
+                                "success": 6,
+                                "rateLimit": 0,
+                                "authentication": 0,
+                                "plan": 0,
+                                "invalidRequest": 0,
+                                "malformed": 0,
+                                "upstream": 0,
+                                "other": 0
+                            }
+                        },
+                        {
+                            "gateway": "192.0.2.12:8099",
+                            "counts": {
+                                "success": 6,
+                                "rateLimit": 0,
+                                "authentication": 0,
+                                "plan": 0,
+                                "invalidRequest": 0,
+                                "malformed": 0,
+                                "upstream": 0,
+                                "other": 0
+                            }
+                        },
+                        {
+                            "gateway": "192.0.2.13:8099",
+                            "counts": {
+                                "success": 4,
+                                "rateLimit": 2,
+                                "authentication": 0,
+                                "plan": 0,
+                                "invalidRequest": 0,
+                                "malformed": 0,
+                                "upstream": 0,
+                                "other": 0
+                            }
+                        }
+                    ],
+                    "keySummaries": [
+                        {
+                            "keyLabel": "key-01",
+                            "counts": {
+                                "success": 6,
+                                "rateLimit": 0,
+                                "authentication": 0,
+                                "plan": 0,
+                                "invalidRequest": 0,
+                                "malformed": 0,
+                                "upstream": 0,
+                                "other": 0
+                            }
+                        },
+                        {
+                            "keyLabel": "key-02",
+                            "counts": {
+                                "success": 5,
+                                "rateLimit": 1,
+                                "authentication": 0,
+                                "plan": 0,
+                                "invalidRequest": 0,
+                                "malformed": 0,
+                                "upstream": 0,
+                                "other": 0
+                            }
+                        },
+                        {
+                            "keyLabel": "key-03",
+                            "counts": {
+                                "success": 5,
+                                "rateLimit": 1,
+                                "authentication": 0,
+                                "plan": 0,
+                                "invalidRequest": 0,
+                                "malformed": 0,
+                                "upstream": 0,
+                                "other": 0
+                            }
+                        }
+                    ],
+                    "samples": [
+                        "gateway=192.0.2.13:8099 key=key-02 category=rate_limit: Max rate limit reached",
+                        "gateway=192.0.2.13:8099 key=key-03 category=rate_limit: Max rate limit reached"
+                    ],
+                    "errorMessage": "",
+                    "runId": "55555555-5555-4555-8555-555555555555",
+                    "intervalMs": 10,
+                    "elapsedMs": 1184,
+                    "startSpreadMs": 170
+                }
+            },
+            {
+                "method": "POST",
+                "path": "/api/v1/etherscan-gateway-probe-runs",
+                "realm": "admin",
+                "status": 503,
+                "json": {
+                    "error": {
+                        "message": "controlled start failure"
+                    }
+                },
+                "delayMs": 1500
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/session/userinfo",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "loggedIn": true,
+                    "accountId": "22222222-2222-4222-8222-222222222222",
+                    "username": "fixture.admin",
+                    "iss": "fixture",
+                    "administrator": true,
+                    "profile": {
+                        "displayName": "Fixture Admin",
+                        "tier": "ACCOUNT_TIER_STANDARD",
+                        "avatarUrl": "",
+                        "revision": 4
+                    },
+                    "identity": {
+                        "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                        "verifiedEmail": "admin@example.invalid",
+                        "solanaAddress": "",
+                        "createdAt": 1783999440,
+                        "lastLoginAt": 1789351200
+                    },
+                    "access": {
+                        "loginEnabled": true,
+                        "apiKeyEnabled": false,
+                        "profitSharingEnabled": false,
+                        "revision": 7,
+                        "moduleAccess": [
+                            {
+                                "module": "ACCOUNT_DATA_MODULE_WALLET",
+                                "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "id": "admin-notifications",
+        "route": "/admin/notifications",
+        "realm": "admin",
+        "heading": "System Notifications",
+        "replies": [
+            {
+                "path": "/api/v1/app/bootstrap",
+                "realm": "admin",
+                "json": {
+                    "settings": {
+                        "url": "http://localhost:34000",
+                        "googleAnalytics": {},
+                        "help": {
+                            "chatUrl": "",
+                            "chatText": "",
+                            "binaryUrls": {}
+                        },
+                        "uiCssURL": "",
+                        "uiBannerContent": ""
+                    },
+                    "session": {
+                        "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+                        "userInfo": {
+                            "loggedIn": true,
+                            "accountId": "22222222-2222-4222-8222-222222222222",
+                            "username": "fixture.admin",
+                            "iss": "fixture",
+                            "administrator": true,
+                            "profile": {
+                                "displayName": "Fixture Admin",
+                                "tier": "ACCOUNT_TIER_STANDARD",
+                                "avatarUrl": "",
+                                "revision": 4
+                            },
+                            "identity": {
+                                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                                "verifiedEmail": "admin@example.invalid",
+                                "solanaAddress": "",
+                                "createdAt": 1783999440,
+                                "lastLoginAt": 1789351200
+                            },
+                            "access": {
+                                "loginEnabled": true,
+                                "apiKeyEnabled": false,
+                                "profitSharingEnabled": false,
+                                "revision": 7,
+                                "moduleAccess": [
+                                    {
+                                        "module": "ACCOUNT_DATA_MODULE_WALLET",
+                                        "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "status": 200,
+                "method": "GET"
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/admin/system-notification-deliveries",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "items": [
+                        {
+                            "id": 1048,
+                            "source": "market-radar",
+                            "severity": "warning",
+                            "topicLabel": "Market Radar",
+                            "title": "Market movement threshold reached",
+                            "body": "Market: Example market A\nObserved move: +8.4 percentage points\nWindow: 5 minutes\nThreshold: 5 percentage points",
+                            "link": "https://example.invalid/markets/demo-a",
+                            "channel": "telegram",
+                            "status": "unknown",
+                            "telegramChat": "prod",
+                            "providerMessageId": "",
+                            "errorMessage": "response_lost: Telegram response was not recorded.",
+                            "createdAt": "2026-09-14T05:58:00Z",
+                            "authorizedAt": "2026-09-14T05:58:02Z",
+                            "startedAt": "",
+                            "resultAt": "2026-09-14T05:58:10Z",
+                            "sentAt": ""
+                        },
+                        {
+                            "id": 1047,
+                            "source": "system-monitor",
+                            "severity": "error",
+                            "topicLabel": "Operations",
+                            "title": "Service health check failed",
+                            "body": "Service: example-worker\nThe health check did not return a successful response.",
+                            "link": "",
+                            "channel": "telegram",
+                            "status": "failed",
+                            "telegramChat": "prod",
+                            "providerMessageId": "",
+                            "errorMessage": "Forbidden: bot was removed from the group chat",
+                            "createdAt": "2026-09-14T05:42:00Z",
+                            "authorizedAt": "2026-09-14T05:42:01Z",
+                            "startedAt": "2026-09-14T05:42:02Z",
+                            "resultAt": "2026-09-14T05:42:03Z",
+                            "sentAt": ""
+                        },
+                        {
+                            "id": 1046,
+                            "source": "trader-sync",
+                            "severity": "info",
+                            "topicLabel": "Trader Sync",
+                            "title": "Trader activity detected",
+                            "body": "Trader: Example trader\nA new activity record is available.",
+                            "link": "",
+                            "channel": "telegram",
+                            "status": "sending",
+                            "telegramChat": "prod",
+                            "providerMessageId": "",
+                            "errorMessage": "",
+                            "createdAt": "2026-09-14T05:35:00Z",
+                            "authorizedAt": "2026-09-14T05:35:01Z",
+                            "startedAt": "2026-09-14T05:35:02Z",
+                            "resultAt": "",
+                            "sentAt": ""
+                        },
+                        {
+                            "id": 1045,
+                            "source": "admin-ui",
+                            "severity": "info",
+                            "topicLabel": "Connectivity test",
+                            "title": "System notification test",
+                            "body": "Operational connectivity test from the administrator interface.",
+                            "link": "",
+                            "channel": "telegram",
+                            "status": "pending",
+                            "telegramChat": "test",
+                            "providerMessageId": "",
+                            "errorMessage": "",
+                            "createdAt": "2026-09-14T05:20:00Z",
+                            "authorizedAt": "",
+                            "startedAt": "",
+                            "resultAt": "",
+                            "sentAt": ""
+                        },
+                        {
+                            "id": 1044,
+                            "source": "system-monitor",
+                            "severity": "info",
+                            "topicLabel": "Operations",
+                            "title": "Service health restored",
+                            "body": "Service: example-worker\nThe latest health check completed successfully.",
+                            "link": "",
+                            "channel": "telegram",
+                            "status": "sent",
+                            "telegramChat": "prod",
+                            "providerMessageId": "18421",
+                            "errorMessage": "",
+                            "createdAt": "2026-09-14T04:48:00Z",
+                            "authorizedAt": "2026-09-14T04:48:01Z",
+                            "startedAt": "2026-09-14T04:48:02Z",
+                            "resultAt": "2026-09-14T04:48:03Z",
+                            "sentAt": "2026-09-14T04:48:03Z"
+                        }
+                    ],
+                    "total": 5,
+                    "page": 1,
+                    "pageSize": 50
+                }
+            },
+            {
+                "method": "POST",
+                "path": "/api/v1/admin/system-notification-tests",
+                "realm": "admin",
+                "status": 503,
+                "json": {
+                    "error": {
+                        "message": "controlled test failure"
+                    }
+                },
+                "delayMs": 1500
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/admin/system-notification-deliveries/1048",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "id": 1048,
+                    "source": "market-radar",
+                    "severity": "warning",
+                    "topicLabel": "Market Radar",
+                    "title": "Market movement threshold reached",
+                    "body": "Market: Example market A\nObserved move: +8.4 percentage points\nWindow: 5 minutes\nThreshold: 5 percentage points",
+                    "link": "https://example.invalid/markets/demo-a",
+                    "channel": "telegram",
+                    "status": "unknown",
+                    "telegramChat": "prod",
+                    "providerMessageId": "",
+                    "errorMessage": "response_lost: Telegram response was not recorded.",
+                    "createdAt": "2026-09-14T05:58:00Z",
+                    "authorizedAt": "2026-09-14T05:58:02Z",
+                    "startedAt": "",
+                    "resultAt": "2026-09-14T05:58:10Z",
+                    "sentAt": ""
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/admin/system-notification-deliveries/1047",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "id": 1047,
+                    "source": "system-monitor",
+                    "severity": "error",
+                    "topicLabel": "Operations",
+                    "title": "Service health check failed",
+                    "body": "Service: example-worker\nThe health check did not return a successful response.",
+                    "link": "",
+                    "channel": "telegram",
+                    "status": "failed",
+                    "telegramChat": "prod",
+                    "providerMessageId": "",
+                    "errorMessage": "Forbidden: bot was removed from the group chat",
+                    "createdAt": "2026-09-14T05:42:00Z",
+                    "authorizedAt": "2026-09-14T05:42:01Z",
+                    "startedAt": "2026-09-14T05:42:02Z",
+                    "resultAt": "2026-09-14T05:42:03Z",
+                    "sentAt": ""
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/admin/system-notification-deliveries/1046",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "id": 1046,
+                    "source": "trader-sync",
+                    "severity": "info",
+                    "topicLabel": "Trader Sync",
+                    "title": "Trader activity detected",
+                    "body": "Trader: Example trader\nA new activity record is available.",
+                    "link": "",
+                    "channel": "telegram",
+                    "status": "sending",
+                    "telegramChat": "prod",
+                    "providerMessageId": "",
+                    "errorMessage": "",
+                    "createdAt": "2026-09-14T05:35:00Z",
+                    "authorizedAt": "2026-09-14T05:35:01Z",
+                    "startedAt": "2026-09-14T05:35:02Z",
+                    "resultAt": "",
+                    "sentAt": ""
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/admin/system-notification-deliveries/1045",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "id": 1045,
+                    "source": "admin-ui",
+                    "severity": "info",
+                    "topicLabel": "Connectivity test",
+                    "title": "System notification test",
+                    "body": "Operational connectivity test from the administrator interface.",
+                    "link": "",
+                    "channel": "telegram",
+                    "status": "pending",
+                    "telegramChat": "test",
+                    "providerMessageId": "",
+                    "errorMessage": "",
+                    "createdAt": "2026-09-14T05:20:00Z",
+                    "authorizedAt": "",
+                    "startedAt": "",
+                    "resultAt": "",
+                    "sentAt": ""
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/admin/system-notification-deliveries/1044",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "id": 1044,
+                    "source": "system-monitor",
+                    "severity": "info",
+                    "topicLabel": "Operations",
+                    "title": "Service health restored",
+                    "body": "Service: example-worker\nThe latest health check completed successfully.",
+                    "link": "",
+                    "channel": "telegram",
+                    "status": "sent",
+                    "telegramChat": "prod",
+                    "providerMessageId": "18421",
+                    "errorMessage": "",
+                    "createdAt": "2026-09-14T04:48:00Z",
+                    "authorizedAt": "2026-09-14T04:48:01Z",
+                    "startedAt": "2026-09-14T04:48:02Z",
+                    "resultAt": "2026-09-14T04:48:03Z",
+                    "sentAt": "2026-09-14T04:48:03Z"
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/session/userinfo",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "loggedIn": true,
+                    "accountId": "22222222-2222-4222-8222-222222222222",
+                    "username": "fixture.admin",
+                    "iss": "fixture",
+                    "administrator": true,
+                    "profile": {
+                        "displayName": "Fixture Admin",
+                        "tier": "ACCOUNT_TIER_STANDARD",
+                        "avatarUrl": "",
+                        "revision": 4
+                    },
+                    "identity": {
+                        "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                        "verifiedEmail": "admin@example.invalid",
+                        "solanaAddress": "",
+                        "createdAt": 1783999440,
+                        "lastLoginAt": 1789351200
+                    },
+                    "access": {
+                        "loginEnabled": true,
+                        "apiKeyEnabled": false,
+                        "profitSharingEnabled": false,
+                        "revision": 7,
+                        "moduleAccess": [
+                            {
+                                "module": "ACCOUNT_DATA_MODULE_WALLET",
+                                "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "id": "admin-notification-detail",
+        "route": "/admin/notifications/1048",
+        "realm": "admin",
+        "heading": "System Notification Detail",
+        "replies": [
+            {
+                "path": "/api/v1/app/bootstrap",
+                "realm": "admin",
+                "json": {
+                    "settings": {
+                        "url": "http://localhost:34000",
+                        "googleAnalytics": {},
+                        "help": {
+                            "chatUrl": "",
+                            "chatText": "",
+                            "binaryUrls": {}
+                        },
+                        "uiCssURL": "",
+                        "uiBannerContent": ""
+                    },
+                    "session": {
+                        "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+                        "userInfo": {
+                            "loggedIn": true,
+                            "accountId": "22222222-2222-4222-8222-222222222222",
+                            "username": "fixture.admin",
+                            "iss": "fixture",
+                            "administrator": true,
+                            "profile": {
+                                "displayName": "Fixture Admin",
+                                "tier": "ACCOUNT_TIER_STANDARD",
+                                "avatarUrl": "",
+                                "revision": 4
+                            },
+                            "identity": {
+                                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                                "verifiedEmail": "admin@example.invalid",
+                                "solanaAddress": "",
+                                "createdAt": 1783999440,
+                                "lastLoginAt": 1789351200
+                            },
+                            "access": {
+                                "loginEnabled": true,
+                                "apiKeyEnabled": false,
+                                "profitSharingEnabled": false,
+                                "revision": 7,
+                                "moduleAccess": [
+                                    {
+                                        "module": "ACCOUNT_DATA_MODULE_WALLET",
+                                        "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "status": 200,
+                "method": "GET"
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/admin/system-notification-deliveries",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "items": [
+                        {
+                            "id": 1048,
+                            "source": "market-radar",
+                            "severity": "warning",
+                            "topicLabel": "Market Radar",
+                            "title": "Market movement threshold reached",
+                            "body": "Market: Example market A\nObserved move: +8.4 percentage points\nWindow: 5 minutes\nThreshold: 5 percentage points",
+                            "link": "https://example.invalid/markets/demo-a",
+                            "channel": "telegram",
+                            "status": "unknown",
+                            "telegramChat": "prod",
+                            "providerMessageId": "",
+                            "errorMessage": "response_lost: Telegram response was not recorded.",
+                            "createdAt": "2026-09-14T05:58:00Z",
+                            "authorizedAt": "2026-09-14T05:58:02Z",
+                            "startedAt": "",
+                            "resultAt": "2026-09-14T05:58:10Z",
+                            "sentAt": ""
+                        },
+                        {
+                            "id": 1047,
+                            "source": "system-monitor",
+                            "severity": "error",
+                            "topicLabel": "Operations",
+                            "title": "Service health check failed",
+                            "body": "Service: example-worker\nThe health check did not return a successful response.",
+                            "link": "",
+                            "channel": "telegram",
+                            "status": "failed",
+                            "telegramChat": "prod",
+                            "providerMessageId": "",
+                            "errorMessage": "Forbidden: bot was removed from the group chat",
+                            "createdAt": "2026-09-14T05:42:00Z",
+                            "authorizedAt": "2026-09-14T05:42:01Z",
+                            "startedAt": "2026-09-14T05:42:02Z",
+                            "resultAt": "2026-09-14T05:42:03Z",
+                            "sentAt": ""
+                        },
+                        {
+                            "id": 1046,
+                            "source": "trader-sync",
+                            "severity": "info",
+                            "topicLabel": "Trader Sync",
+                            "title": "Trader activity detected",
+                            "body": "Trader: Example trader\nA new activity record is available.",
+                            "link": "",
+                            "channel": "telegram",
+                            "status": "sending",
+                            "telegramChat": "prod",
+                            "providerMessageId": "",
+                            "errorMessage": "",
+                            "createdAt": "2026-09-14T05:35:00Z",
+                            "authorizedAt": "2026-09-14T05:35:01Z",
+                            "startedAt": "2026-09-14T05:35:02Z",
+                            "resultAt": "",
+                            "sentAt": ""
+                        },
+                        {
+                            "id": 1045,
+                            "source": "admin-ui",
+                            "severity": "info",
+                            "topicLabel": "Connectivity test",
+                            "title": "System notification test",
+                            "body": "Operational connectivity test from the administrator interface.",
+                            "link": "",
+                            "channel": "telegram",
+                            "status": "pending",
+                            "telegramChat": "test",
+                            "providerMessageId": "",
+                            "errorMessage": "",
+                            "createdAt": "2026-09-14T05:20:00Z",
+                            "authorizedAt": "",
+                            "startedAt": "",
+                            "resultAt": "",
+                            "sentAt": ""
+                        },
+                        {
+                            "id": 1044,
+                            "source": "system-monitor",
+                            "severity": "info",
+                            "topicLabel": "Operations",
+                            "title": "Service health restored",
+                            "body": "Service: example-worker\nThe latest health check completed successfully.",
+                            "link": "",
+                            "channel": "telegram",
+                            "status": "sent",
+                            "telegramChat": "prod",
+                            "providerMessageId": "18421",
+                            "errorMessage": "",
+                            "createdAt": "2026-09-14T04:48:00Z",
+                            "authorizedAt": "2026-09-14T04:48:01Z",
+                            "startedAt": "2026-09-14T04:48:02Z",
+                            "resultAt": "2026-09-14T04:48:03Z",
+                            "sentAt": "2026-09-14T04:48:03Z"
+                        }
+                    ],
+                    "total": 5,
+                    "page": 1,
+                    "pageSize": 50
+                }
+            },
+            {
+                "method": "POST",
+                "path": "/api/v1/admin/system-notification-tests",
+                "realm": "admin",
+                "status": 503,
+                "json": {
+                    "error": {
+                        "message": "controlled test failure"
+                    }
+                },
+                "delayMs": 1500
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/admin/system-notification-deliveries/1048",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "id": 1048,
+                    "source": "market-radar",
+                    "severity": "warning",
+                    "topicLabel": "Market Radar",
+                    "title": "Market movement threshold reached",
+                    "body": "Market: Example market A\nObserved move: +8.4 percentage points\nWindow: 5 minutes\nThreshold: 5 percentage points",
+                    "link": "https://example.invalid/markets/demo-a",
+                    "channel": "telegram",
+                    "status": "unknown",
+                    "telegramChat": "prod",
+                    "providerMessageId": "",
+                    "errorMessage": "response_lost: Telegram response was not recorded.",
+                    "createdAt": "2026-09-14T05:58:00Z",
+                    "authorizedAt": "2026-09-14T05:58:02Z",
+                    "startedAt": "",
+                    "resultAt": "2026-09-14T05:58:10Z",
+                    "sentAt": ""
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/admin/system-notification-deliveries/1047",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "id": 1047,
+                    "source": "system-monitor",
+                    "severity": "error",
+                    "topicLabel": "Operations",
+                    "title": "Service health check failed",
+                    "body": "Service: example-worker\nThe health check did not return a successful response.",
+                    "link": "",
+                    "channel": "telegram",
+                    "status": "failed",
+                    "telegramChat": "prod",
+                    "providerMessageId": "",
+                    "errorMessage": "Forbidden: bot was removed from the group chat",
+                    "createdAt": "2026-09-14T05:42:00Z",
+                    "authorizedAt": "2026-09-14T05:42:01Z",
+                    "startedAt": "2026-09-14T05:42:02Z",
+                    "resultAt": "2026-09-14T05:42:03Z",
+                    "sentAt": ""
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/admin/system-notification-deliveries/1046",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "id": 1046,
+                    "source": "trader-sync",
+                    "severity": "info",
+                    "topicLabel": "Trader Sync",
+                    "title": "Trader activity detected",
+                    "body": "Trader: Example trader\nA new activity record is available.",
+                    "link": "",
+                    "channel": "telegram",
+                    "status": "sending",
+                    "telegramChat": "prod",
+                    "providerMessageId": "",
+                    "errorMessage": "",
+                    "createdAt": "2026-09-14T05:35:00Z",
+                    "authorizedAt": "2026-09-14T05:35:01Z",
+                    "startedAt": "2026-09-14T05:35:02Z",
+                    "resultAt": "",
+                    "sentAt": ""
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/admin/system-notification-deliveries/1045",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "id": 1045,
+                    "source": "admin-ui",
+                    "severity": "info",
+                    "topicLabel": "Connectivity test",
+                    "title": "System notification test",
+                    "body": "Operational connectivity test from the administrator interface.",
+                    "link": "",
+                    "channel": "telegram",
+                    "status": "pending",
+                    "telegramChat": "test",
+                    "providerMessageId": "",
+                    "errorMessage": "",
+                    "createdAt": "2026-09-14T05:20:00Z",
+                    "authorizedAt": "",
+                    "startedAt": "",
+                    "resultAt": "",
+                    "sentAt": ""
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/admin/system-notification-deliveries/1044",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "id": 1044,
+                    "source": "system-monitor",
+                    "severity": "info",
+                    "topicLabel": "Operations",
+                    "title": "Service health restored",
+                    "body": "Service: example-worker\nThe latest health check completed successfully.",
+                    "link": "",
+                    "channel": "telegram",
+                    "status": "sent",
+                    "telegramChat": "prod",
+                    "providerMessageId": "18421",
+                    "errorMessage": "",
+                    "createdAt": "2026-09-14T04:48:00Z",
+                    "authorizedAt": "2026-09-14T04:48:01Z",
+                    "startedAt": "2026-09-14T04:48:02Z",
+                    "resultAt": "2026-09-14T04:48:03Z",
+                    "sentAt": "2026-09-14T04:48:03Z"
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/api/v1/session/userinfo",
+                "realm": "admin",
+                "status": 200,
+                "json": {
+                    "loggedIn": true,
+                    "accountId": "22222222-2222-4222-8222-222222222222",
+                    "username": "fixture.admin",
+                    "iss": "fixture",
+                    "administrator": true,
+                    "profile": {
+                        "displayName": "Fixture Admin",
+                        "tier": "ACCOUNT_TIER_STANDARD",
+                        "avatarUrl": "",
+                        "revision": 4
+                    },
+                    "identity": {
+                        "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                        "verifiedEmail": "admin@example.invalid",
+                        "solanaAddress": "",
+                        "createdAt": 1783999440,
+                        "lastLoginAt": 1789351200
+                    },
+                    "access": {
+                        "loginEnabled": true,
+                        "apiKeyEnabled": false,
+                        "profitSharingEnabled": false,
+                        "revision": 7,
+                        "moduleAccess": [
+                            {
+                                "module": "ACCOUNT_DATA_MODULE_WALLET",
+                                "dataAccess": "ACCOUNT_DATA_ACCESS_NONE"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+]

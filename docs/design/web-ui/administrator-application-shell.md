@@ -8,6 +8,14 @@
 
 共享部署与会话边界见[应用壳](application-shell.md)；普通账户业务路由和模块授权见[会员应用壳](member-application-shell.md)。
 
+## 单一深色与验收边界
+
+两份 HTML 固定深色首屏，入口级 `AthenaThemeProvider` 在 bootstrap 前提供统一 token 和本地 Inter／JetBrains Mono；系统 light／dark 输入均不改变外观。桌面侧栏 224px、顶栏 64px、内容边距 32px，900px 以下使用手机抽屉和 20px 外侧间距。Ant 字号 rem 桥接、弹窗滚动正文／固定操作区及完整关闭目标沿共用实现。
+
+两端 Appearance 已删除并使用各自既有 404；主题不是账户或浏览器偏好。分页、排序、侧栏、banner 和返回位置仍按 realm 隔离。37 条改版入口已实现，8 条 Trader Sync 专页仅共享主题回归；管理员 Service Status 的 Trader Sync 页签已按 v16 重排。Token 导航未开启。
+
+正式 React、原生浏览器缩放、真实本地读取与外部未验证项分别见[验收记录](../../testing/web-ui-theme-refactor-acceptance.md)；完整基线与最终差量使用各自提交，不把设计批准或 fixture 成功当真实供应商成功。
+
 ## 源码入口
 
 | 职责 | 源码 | 关键符号 |
@@ -49,9 +57,9 @@
 6. 管理员 Trader Sync 路由为 `/admin/trader-sync/subscriptions` 与 `/admin/trader-sync/subscriptions/:id`，并与 `/admin/service-status` 互链。列表 filter 先保留 draft，只有 Apply 才生效；accountId trim、wallet trim 并小写，includeCancelled=true 表示当前与已取消全部，默认 pageSize=50。
 7. Trader Sync 列表 Previous 使用本页真实输入 cursor，Next 使用响应 nextCursor，不推算 total。只显示用户安全身份、完整钱包、生命周期、观察、活动数和关联逻辑 delivery 数；不同订阅行的 Associated deliveries 不可求和。详情无备注、完整活动、消息正文、逐条 delivery 或 Pause/Resume/Cancel/Resend。
 8. Service Status 对 Services、Notification Runtime、Trader Sync 各维护独立 10 秒可见 single-flight；hidden 不发新请求，visible/focus 和手动 Refresh 使用同一 reload。某一来源 pending/失败不阻塞其余来源，失败保留该来源最后成功值、时间和 stale 提示。
-9. Profile、Appearance、Access、Help 只操作当前管理员 UUID；管理员应用不创建 API Key。Logout 只撤销/清除 `athena.token.admin`，会员会话不受影响。
+9. Profile、Access、Help 只操作当前管理员 UUID；管理员应用不创建 API Key。Logout 只撤销/清除 `athena.token.admin`，会员会话不受影响。
 
-其他路由为 `/admin/profit-sharing`、`/admin/profit-sharing/:slug`、`/admin/etherscan-gateways`、`/admin/notifications`、`/admin/notifications/:id`、`/admin/account/profile`、`/admin/account/appearance`、`/admin/account/access` 与 `/admin/help`。管理路由都位于 `/admin` 应用根下。
+其他路由为 `/admin/profit-sharing`、`/admin/profit-sharing/:slug`、`/admin/etherscan-gateways`、`/admin/notifications`、`/admin/notifications/:id`、`/admin/account/profile`、`/admin/account/access` 与 `/admin/help`。管理路由都位于 `/admin` 应用根下，已移除的 Appearance 地址统一落入既有 404 兜底。
 
 ## 身份清理与访问复查
 
@@ -63,7 +71,7 @@
 
 ## 数据与 Service Status 语义
 
-管理员授权投影包含 account UUID、持久管理员角色、profile、preferences、安全 provider 身份、access revision 和登录专用 aggregate。请求/cache key 包含 admin realm、viewer UUID、issuer 与 generation；持久 UI key 使用 `athena.admin.*`，不读取会员 drafts、filters、return positions 或 feature cache。
+管理员授权投影包含 account UUID、持久管理员角色、profile、安全 provider 身份、access revision 和登录专用 aggregate。请求/cache key 包含 admin realm、viewer UUID、issuer 与 generation；持久 UI key 使用 `athena.admin.*`，不读取会员 drafts、filters、return positions 或 feature cache。
 
 Trader Sync Summary DTO 从源头白名单化：ID 与计数保持 string，不经 JavaScript number；缺值显示 `Unavailable`/`Unknown`，raw 不可观测不补 0。健康六态为 pending_baseline、healthy、interrupted、paused、permission_disabled、cancelled；healthy 显示 `Monitoring`，interrupted 显示 `Monitoring interrupted`。
 

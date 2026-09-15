@@ -30,7 +30,7 @@ func Migrations() embed.FS {
 }
 
 // SQLStore is the shared durable adapter for account identity, access, API
-// Keys, profiles, and preferences.
+// Keys and profiles.
 type SQLStore struct {
 	accessChangeHook AccessChangeHook
 	pool             *pgxpool.Pool
@@ -1100,54 +1100,6 @@ func profileFromRow(displayName, tier, objectKey, contentType, etag string, size
 		Avatar:   accountcenter.AvatarMetadata{ObjectKey: objectKey, ContentType: contentType, ETag: etag, SizeBytes: sizeBytes},
 		Revision: uint64(revision),
 	}, nil
-}
-
-func (s *SQLStore) GetPreferences(ctx context.Context, accountID string) (accountcenter.Preferences, bool, error) {
-	if err := s.requireDatabase(); err != nil {
-		return accountcenter.Preferences{}, false, err
-	}
-	accountIDValue, canonicalID, err := accountIDParam(accountID)
-	if err != nil {
-		return accountcenter.Preferences{}, false, err
-	}
-	row, err := s.queries.GetAccountPreferences(ctx, accountIDValue)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return accountcenter.Preferences{}, false, nil
-	}
-	if err != nil {
-		return accountcenter.Preferences{}, false, fmt.Errorf("get account %q preferences: %w", canonicalID, err)
-	}
-	if row.Revision <= 0 {
-		return accountcenter.Preferences{}, false, fmt.Errorf("account %q has non-positive preferences revision", canonicalID)
-	}
-	return accountcenter.Preferences{Theme: accountcenter.ThemeMode(row.Theme), Revision: uint64(row.Revision)}, true, nil
-}
-
-func (s *SQLStore) UpdatePreferences(ctx context.Context, accountID string, next accountcenter.Preferences, expectedRevision uint64) (accountcenter.Preferences, error) {
-	if err := s.requireDatabase(); err != nil {
-		return accountcenter.Preferences{}, err
-	}
-	accountIDValue, canonicalID, err := accountIDParam(accountID)
-	if err != nil {
-		return accountcenter.Preferences{}, err
-	}
-	if expectedRevision == 0 || expectedRevision >= math.MaxInt64 || next.Revision != expectedRevision {
-		return accountcenter.Preferences{}, fmt.Errorf("account %q preferences revision does not match expected revision", canonicalID)
-	}
-	row, err := s.queries.UpdateAccountPreferences(ctx, accountstatesqlc.UpdateAccountPreferencesParams{
-		Theme: string(next.Theme), AccountID: accountIDValue, ExpectedRevision: int64(expectedRevision),
-	})
-	if errors.Is(err, pgx.ErrNoRows) {
-		return accountcenter.Preferences{}, accountcenter.ErrPreferencesRevisionConflict
-	}
-	if err != nil {
-		return accountcenter.Preferences{}, fmt.Errorf("update account %q preferences: %w", canonicalID, err)
-	}
-	theme, revision := row.Theme, row.Revision
-	if revision <= 0 || uint64(revision) != expectedRevision+1 {
-		return accountcenter.Preferences{}, fmt.Errorf("account %q preferences update returned revision %d after expected revision %d", canonicalID, revision, expectedRevision)
-	}
-	return accountcenter.Preferences{Theme: accountcenter.ThemeMode(theme), Revision: uint64(revision)}, nil
 }
 
 var (

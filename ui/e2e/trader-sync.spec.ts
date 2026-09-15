@@ -37,7 +37,7 @@ test('desktop and mobile product documents remain within viewport', async ({page
             await page.goto(memberPath('/trader-sync/activities/1'));
             await expect(page.getByRole('heading', {name: 'Activity', exact: true, level: 1})).toBeVisible();
             await expect(page.locator('base')).toHaveAttribute('href', memberPath('/'));
-            await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+            await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
             if (width === 1440) {
                 const colors = await contrastRows(page);
                 fs.writeFileSync(info.outputPath(`contrast-${theme}.json`), JSON.stringify(colors, null, 2));
@@ -146,8 +146,10 @@ test('administrator runtime gauges, epochs and synthetic windows preserve source
     await expect(page.getByRole('heading', {name: 'Service Status', exact: true, level: 1})).toBeVisible();
     await expect(page.locator('base')).toHaveAttribute('href', memberPath('/admin/'));
     await expect(page.locator('meta[name="athena-deployment-base-href"]')).toHaveAttribute('content', memberPath('/'));
+    await page.getByRole('tab', {name: /^Notifications/}).click();
     await expect(page.getByText('55000 ms', {exact: true})).toBeVisible();
     await expect(page.getByText('5000 ms', {exact: true})).toBeVisible();
+    await page.getByRole('tab', {name: /^Trader Sync/}).click();
     await expect(page.getByText('synthetic_window', {exact: true}).filter({visible: true})).toBeVisible();
     await expect(page.getByText('Current gauge', {exact: true}).first()).toBeVisible();
     await page.screenshot({path: info.outputPath('admin-runtime.png'), fullPage: true});
@@ -161,7 +163,7 @@ test('administrator summaries preserve large counts and exclude private controls
             await page.goto(memberPath('/admin/trader-sync/subscriptions'));
             await expect(page.getByRole('heading', {name: 'Trader Sync', exact: true, level: 1})).toBeVisible();
             await expect(page.getByText('9007199254740993', {exact: true}).filter({visible: true})).toBeVisible();
-            await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+            await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
             if (width === 1440) {
                 const colors = await contrastRows(page);
                 fs.writeFileSync(info.outputPath(`contrast-${theme}.json`), JSON.stringify(colors, null, 2));
@@ -213,7 +215,7 @@ for (const [route, title, scenario] of [
                 await page.setViewportSize({width, height: 900});
                 await page.goto(memberPath(route));
                 await expect(page.getByRole('heading', {name: title, exact: true, level: 1})).toBeVisible();
-                await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+                await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
                 if (width === 1440) {
                     const colors = await contrastRows(page);
                     fs.writeFileSync(info.outputPath(`contrast-${theme}.json`), JSON.stringify(colors, null, 2));
@@ -406,7 +408,7 @@ for (const [route, title, scenario] of [
                 await page.setViewportSize({width, height: 900});
                 await page.goto(memberPath(route));
                 await expect(page.getByRole('heading', {name: title, exact: true, level: 1})).toBeVisible();
-                await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+                await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
                 expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
                 if (width === 1440) {
                     const rows = await contrastRows(page);
@@ -458,5 +460,39 @@ test('administrator newer 401 fences an older successful permission response', a
         await page.screenshot({path: info.outputPath('admin-401-late-response.png')});
     } finally {
         state.releaseUserInfo?.();
+    }
+});
+
+test('single dark Trader Sync button roles', async ({page}, info) => {
+    await installTraderSyncRoutes(page, 'monitoring');
+    for (const width of [1440, 390]) {
+        await page.setViewportSize({width, height: 900});
+        await page.goto(memberPath('/trader-sync/add'));
+        await page.getByLabel('Wallet address or Polymarket profile URL').fill('0x000000000000000000000000000000000000002a');
+        // Styling is fixed dark and does not need a conditional root marker.
+        await page.locator('html').evaluate(element => element.removeAttribute('data-theme'));
+        const add = page.getByRole('button', {name: 'Resolve trader', exact: true});
+        await expect(add).toBeEnabled();
+        await expect(add).toHaveCSS('color', 'rgb(6, 8, 11)');
+        await expect(add).toHaveCSS('background-color', 'rgb(0, 255, 167)');
+        await page.screenshot({path: info.outputPath(`trader-add-${width}.png`), fullPage: true});
+
+        await page.goto(memberPath('/trader-sync/subscriptions'));
+        const view = page.locator('.trader-sync-view').first();
+        await expect(view).toBeVisible();
+        await page.locator('html').evaluate(element => element.removeAttribute('data-theme'));
+        await expect(view).toHaveCSS('color', 'rgb(6, 8, 11)');
+        await expect(view).toHaveCSS('background-color', 'rgb(0, 255, 167)');
+        await page.screenshot({path: info.outputPath(`trader-view-${width}.png`), fullPage: true});
+
+        await page.goto(memberPath(`/trader-sync/subscriptions/${subscriptionID}`));
+        await page.getByRole('button', {name: 'Cancel subscription', exact: true}).click();
+        await page.locator('html').evaluate(element => element.removeAttribute('data-theme'));
+        const cancel = page.locator('.trader-sync-cancel-modal .ant-btn-primary.ant-btn-dangerous');
+        await expect(cancel).toBeVisible();
+        await expect(cancel).toHaveCSS('color', 'rgb(6, 8, 11)');
+        await expect(cancel).toHaveCSS('background-color', 'rgb(245, 140, 155)');
+        await page.getByRole('dialog').screenshot({path: info.outputPath(`trader-cancel-${width}.png`)});
+        await page.keyboard.press('Escape');
     }
 });

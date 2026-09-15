@@ -200,7 +200,7 @@ export const NotificationsPage = () => {
     }, [countdownAttemptId, expiryMilliseconds]);
 
     const beginSetup = async () => {
-        if (action || actionRequestRef.current) {
+        if (!mountedRef.current || action || actionRequestRef.current) {
             return;
         }
         setAction(settings?.attempt ? 'restart' : 'begin');
@@ -238,7 +238,7 @@ export const NotificationsPage = () => {
     };
 
     const cancelSetup = async () => {
-        if (action || actionRequestRef.current) {
+        if (!mountedRef.current || action || actionRequestRef.current) {
             return;
         }
         setAction('cancel');
@@ -270,7 +270,7 @@ export const NotificationsPage = () => {
     };
 
     const disconnect = async () => {
-        if (action || actionRequestRef.current) {
+        if (!mountedRef.current || action || actionRequestRef.current) {
             return;
         }
         setAction('disconnect');
@@ -305,9 +305,10 @@ export const NotificationsPage = () => {
         confirmRef.current?.destroy();
         const handle = ctx.modal.confirm({
             title: 'Disconnect Telegram?',
-            content:
-                'Athena will stop sending notifications to this Telegram account and cancel setup. Old Trader Sync notifications without send permission are cancelled; a notification already authorized may still arrive. History is not backfilled after reconnecting.',
+            content: `${settings ? telegramIdentity(settings) : 'Current Telegram account'}. Athena will stop sending notifications to this Telegram account and cancel setup. Old Trader Sync notifications without send permission are cancelled; a notification already authorized may still arrive. History is not backfilled after reconnecting.`,
             okText: 'Disconnect',
+            cancelText: 'Keep connected',
+            autoFocusButton: 'cancel',
             okButtonProps: {danger: true},
             onOk: async () => {
                 try {
@@ -344,19 +345,20 @@ export const NotificationsPage = () => {
 
     const binding = settings?.binding;
     const activeInstructions = Boolean(attempt && instructions?.attemptId === attempt.id && attempt.status === 'pending' && !attemptExpired);
+    const setupNeedsRecovery = Boolean(attempt && (attempt.status === 'failed' || attemptExpired));
     const botUsername = (settings?.botUsername || '').replace(/^@+/, '');
     const status = !settings?.botAvailable
         ? {label: 'Unavailable', color: 'default' as const, className: 'telegram-channel-card--unavailable'}
         : binding?.status === 'connected'
-          ? {label: 'Connected', color: 'green' as const, className: 'telegram-channel-card--connected'}
+          ? {label: 'Connected', color: 'success' as const, className: 'telegram-channel-card--connected'}
           : binding?.status === 'unreachable'
-            ? {label: 'Needs attention', color: 'orange' as const, className: 'telegram-channel-card--warning'}
+            ? {label: 'Needs attention', color: 'warning' as const, className: 'telegram-channel-card--warning'}
             : attempt?.status === 'failed'
-              ? {label: 'Setup failed', color: 'red' as const, className: 'telegram-channel-card--warning'}
+              ? {label: 'Setup failed', color: 'error' as const, className: 'telegram-channel-card--warning'}
               : attemptExpired
-                ? {label: 'Link expired', color: 'orange' as const, className: 'telegram-channel-card--warning'}
+                ? {label: 'Link expired', color: 'warning' as const, className: 'telegram-channel-card--warning'}
                 : attempt?.status === 'pending'
-                  ? {label: 'Waiting for Telegram', color: 'blue' as const, className: 'telegram-channel-card--pending'}
+                  ? {label: 'Waiting for Telegram', color: 'processing' as const, className: 'telegram-channel-card--pending'}
                   : {label: 'Not connected', color: 'default' as const, className: ''};
     const focusState = !settings
         ? ''
@@ -413,14 +415,17 @@ export const NotificationsPage = () => {
             {settings && (
                 <>
                     {error && <Alert className='app-page__alert' type='error' showIcon={true} title='Could not refresh Telegram status' description={error.message} />}
-                    <Section title='Delivery channels'>
+                    <section className='telegram-delivery' aria-labelledby='telegram-delivery-title'>
+                        <Typography.Title id='telegram-delivery-title' level={2}>
+                            Delivery channels
+                        </Typography.Title>
                         <div ref={channelStatusFocusRef} className={`telegram-channel-card ${status.className}`} tabIndex={-1}>
-                            <div className='telegram-channel-card__icon' aria-hidden='true'>
-                                <SendOutlined />
-                            </div>
                             <div className='telegram-channel-card__copy'>
                                 <div className='telegram-channel-card__heading'>
-                                    <Typography.Title level={3}>Telegram</Typography.Title>
+                                    <span className='telegram-channel-card__heading-title'>
+                                        <SendOutlined aria-hidden='true' />
+                                        <Typography.Title level={3}>Telegram</Typography.Title>
+                                    </span>
                                     <span className='telegram-channel-card__status' role='status' aria-live='polite' aria-atomic='true'>
                                         <Tag color={status.color}>{status.label}</Tag>
                                     </span>
@@ -428,34 +433,34 @@ export const NotificationsPage = () => {
                                 <Typography.Paragraph type='secondary'>
                                     Receive Athena notifications in a private chat with {botUsername ? `@${botUsername}` : 'Athena Bot'}.
                                 </Typography.Paragraph>
-                                <Typography.Paragraph type='secondary'>
-                                    Disconnecting or reconnecting cancels old Trader Sync notifications that have not received send permission. A notification already authorized
-                                    may still arrive. History is not backfilled for a new binding.
-                                </Typography.Paragraph>
-                                {binding && (
-                                    <dl className='telegram-connection-details'>
-                                        <div>
-                                            <dt>Telegram account</dt>
-                                            <dd>{telegramIdentity(settings)}</dd>
-                                        </div>
-                                        <div>
-                                            <dt>Connected</dt>
-                                            <dd>{formatBeijingDateTime(binding.boundAt) || '-'}</dd>
-                                        </div>
-                                    </dl>
-                                )}
                             </div>
+                            {binding && (
+                                <dl className='telegram-connection-details'>
+                                    <div>
+                                        <dt>Telegram account</dt>
+                                        <dd>{telegramIdentity(settings)}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>Connected</dt>
+                                        <dd>{formatBeijingDateTime(binding.boundAt) || '-'}</dd>
+                                    </div>
+                                </dl>
+                            )}
                             <Space className='telegram-channel-card__actions' wrap={true}>
                                 {binding ? (
                                     <>
-                                        {attempt?.status === 'pending' && !attemptExpired ? (
-                                            <Button icon={<DeleteOutlined />} loading={action === 'cancel'} disabled={Boolean(action)} onClick={() => void cancelSetup()}>
+                                        {setupNeedsRecovery ? null : attempt?.status === 'pending' && !attemptExpired ? (
+                                            <Button
+                                                icon={<DeleteOutlined aria-hidden={true} />}
+                                                loading={action === 'cancel'}
+                                                disabled={Boolean(action)}
+                                                onClick={() => void cancelSetup()}>
                                                 Cancel new setup
                                             </Button>
                                         ) : (
                                             <Button
                                                 type='primary'
-                                                icon={<ReloadOutlined />}
+                                                icon={<ReloadOutlined aria-hidden={true} />}
                                                 loading={action === (attempt ? 'restart' : 'begin')}
                                                 disabled={Boolean(action) || !settings.botAvailable}
                                                 onClick={() => void beginSetup()}>
@@ -464,7 +469,7 @@ export const NotificationsPage = () => {
                                         )}
                                         <Button
                                             danger={true}
-                                            icon={<DisconnectOutlined />}
+                                            icon={<DisconnectOutlined aria-hidden={true} />}
                                             loading={action === 'disconnect'}
                                             disabled={Boolean(action)}
                                             onClick={confirmDisconnect}>
@@ -472,24 +477,19 @@ export const NotificationsPage = () => {
                                         </Button>
                                     </>
                                 ) : attempt ? (
-                                    attempt.status === 'failed' || attemptExpired ? (
+                                    setupNeedsRecovery ? null : (
                                         <Button
-                                            type='primary'
-                                            icon={<ReloadOutlined />}
-                                            loading={action === 'restart'}
-                                            disabled={Boolean(action) || !settings.botAvailable}
-                                            onClick={() => void beginSetup()}>
-                                            Create new link
-                                        </Button>
-                                    ) : (
-                                        <Button icon={<DeleteOutlined />} loading={action === 'cancel'} disabled={Boolean(action)} onClick={() => void cancelSetup()}>
+                                            icon={<DeleteOutlined aria-hidden={true} />}
+                                            loading={action === 'cancel'}
+                                            disabled={Boolean(action)}
+                                            onClick={() => void cancelSetup()}>
                                             Cancel setup
                                         </Button>
                                     )
                                 ) : (
                                     <Button
                                         type='primary'
-                                        icon={<LinkOutlined />}
+                                        icon={<LinkOutlined aria-hidden={true} />}
                                         loading={action === 'begin'}
                                         disabled={Boolean(action) || !settings.botAvailable}
                                         onClick={() => void beginSetup()}>
@@ -497,6 +497,10 @@ export const NotificationsPage = () => {
                                     </Button>
                                 )}
                             </Space>
+                            <Typography.Paragraph className='telegram-channel-card__consequences' type='secondary'>
+                                Disconnecting or reconnecting cancels old Trader Sync notifications that have not received send permission. A notification already authorized may
+                                still arrive. History is not backfilled for a new binding.
+                            </Typography.Paragraph>
                         </div>
                         {!settings?.botAvailable && (
                             <Alert
@@ -516,7 +520,7 @@ export const NotificationsPage = () => {
                                 description='Open the bot chat and make sure the bot is not blocked, or create a new setup link. Athena keeps the current binding until the new setup succeeds.'
                             />
                         )}
-                    </Section>
+                    </section>
                     {attempt && (
                         <Section title='Telegram setup'>
                             <div
@@ -552,7 +556,12 @@ export const NotificationsPage = () => {
                                                     {
                                                         title: 'Open Athena Bot',
                                                         description: (
-                                                            <Button type='primary' icon={<SendOutlined />} href={instructions?.deepLink} target='_blank' rel='noreferrer'>
+                                                            <Button
+                                                                type='primary'
+                                                                icon={<SendOutlined aria-hidden={true} />}
+                                                                href={instructions?.deepLink}
+                                                                target='_blank'
+                                                                rel='noreferrer'>
                                                                 Open Telegram
                                                             </Button>
                                                         )
@@ -573,7 +582,7 @@ export const NotificationsPage = () => {
                                                     <Typography.Text type='secondary'>Send this exact command to {botUsername ? `@${botUsername}` : 'Athena Bot'}.</Typography.Text>
                                                 </div>
                                                 <code>{instructions?.fallbackCommand}</code>
-                                                <Button icon={<CopyOutlined />} onClick={() => void copyFallbackCommand()}>
+                                                <Button icon={<CopyOutlined aria-hidden={true} />} onClick={() => void copyFallbackCommand()}>
                                                     Copy command
                                                 </Button>
                                             </div>
@@ -603,7 +612,7 @@ export const NotificationsPage = () => {
                                                 ? `Expires in ${remainingTime(expiryMilliseconds, now)} · ${formatBeijingDateTime(attempt.expiresAt)}`
                                                 : 'This one-time setup remains active until the server expires it.'}
                                         </Typography.Text>
-                                        <Button icon={<ReloadOutlined />} loading={loading} disabled={Boolean(action)} onClick={() => void refresh(true)}>
+                                        <Button icon={<ReloadOutlined aria-hidden={true} />} loading={loading} disabled={Boolean(action)} onClick={() => void refresh(true)}>
                                             Check now
                                         </Button>
                                     </div>
@@ -613,13 +622,17 @@ export const NotificationsPage = () => {
                                         <Space wrap={true}>
                                             <Button
                                                 type='primary'
-                                                icon={attempt.status === 'failed' ? <WarningOutlined /> : <ReloadOutlined />}
+                                                icon={attempt.status === 'failed' ? <WarningOutlined aria-hidden={true} /> : <ReloadOutlined aria-hidden={true} />}
                                                 loading={action === 'restart'}
                                                 disabled={Boolean(action) || !settings.botAvailable}
                                                 onClick={() => void beginSetup()}>
                                                 Create new link
                                             </Button>
-                                            <Button icon={<DeleteOutlined />} loading={action === 'cancel'} disabled={Boolean(action)} onClick={() => void cancelSetup()}>
+                                            <Button
+                                                icon={<DeleteOutlined aria-hidden={true} />}
+                                                loading={action === 'cancel'}
+                                                disabled={Boolean(action)}
+                                                onClick={() => void cancelSetup()}>
                                                 Cancel setup
                                             </Button>
                                         </Space>
@@ -629,11 +642,11 @@ export const NotificationsPage = () => {
                         </Section>
                     )}
                     {settings.botAvailable && binding?.status === 'connected' && (
-                        <div ref={connectedFocusRef} className='telegram-connected-alert' tabIndex={-1} aria-label='Telegram connection ready'>
+                        <div ref={connectedFocusRef} className='telegram-connected-alert' role='region' tabIndex={-1} aria-label='Telegram connection ready'>
                             <Alert
                                 type='success'
                                 showIcon={true}
-                                icon={<CheckCircleOutlined />}
+                                icon={<CheckCircleOutlined aria-hidden={true} />}
                                 title='Telegram is ready'
                                 description='Athena can now deliver account notifications to the connected private chat.'
                             />

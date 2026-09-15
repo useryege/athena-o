@@ -1,0 +1,3979 @@
+[
+  {
+    "id": "markets-live",
+    "route": "/sports-live",
+    "realm": "member",
+    "heading": "Sports Live",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-live/events",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "eventKey": "live-fifwc",
+              "eventId": "synthetic-live-fifwc",
+              "slug": "fifwc-eng-fra-2026-09-14",
+              "title": "England vs. France",
+              "score": "1\u20130",
+              "period": "Second half",
+              "elapsed": "63:00",
+              "gameStatus": "In progress",
+              "startTime": "2026-09-14T06:00:00Z",
+              "updatedAt": "2026-09-14T08:00:00Z",
+              "volume": 284125.52,
+              "liquidity": 54320.75,
+              "marketCount": 3,
+              "markets": [
+                {
+                  "marketKey": "live-fifwc-eng",
+                  "conditionId": "0x1111111111111111111111111111111111111111111111111111111111111111",
+                  "slug": "fifwc-eng-fra-2026-09-14-eng",
+                  "sportsMarketType": "moneyline",
+                  "question": "Will England win?",
+                  "outcomes": "[\"Yes\",\"No\"]",
+                  "outcomePrices": "[\"0.615\", \"0.385\"]"
+                },
+                {
+                  "marketKey": "live-fifwc-fra",
+                  "conditionId": "0x2222222222222222222222222222222222222222222222222222222222222222",
+                  "slug": "fifwc-eng-fra-2026-09-14-fra",
+                  "sportsMarketType": "moneyline",
+                  "question": "Will France win?",
+                  "outcomes": "[\"Yes\",\"No\"]",
+                  "outcomePrices": "[\"0.185\", \"0.815\"]"
+                },
+                {
+                  "marketKey": "live-fifwc-draw",
+                  "conditionId": "0x3333333333333333333333333333333333333333333333333333333333333333",
+                  "slug": "fifwc-eng-fra-2026-09-14-draw",
+                  "sportsMarketType": "moneyline",
+                  "question": "Will this match end in a draw?",
+                  "outcomes": "[\"Yes\",\"No\"]",
+                  "outcomePrices": "[\"0.200\", \"0.8\"]"
+                }
+              ],
+              "teams": [
+                {
+                  "name": "England"
+                },
+                {
+                  "name": "France"
+                }
+              ]
+            },
+            {
+              "eventKey": "live-atp",
+              "eventId": "synthetic-live-atp",
+              "slug": "atp-sin-alc-2026-09-14",
+              "title": "Jannik Sinner vs. Carlos Alcaraz",
+              "score": "6\u20134, 3\u20134",
+              "period": "Set 2",
+              "elapsed": "63:00",
+              "gameStatus": "In progress",
+              "startTime": "2026-09-14T06:00:00Z",
+              "updatedAt": "2026-09-14T08:00:00Z",
+              "volume": 284125.52,
+              "liquidity": 54320.75,
+              "marketCount": 1,
+              "markets": [
+                {
+                  "marketKey": "live-atp-ml",
+                  "conditionId": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "slug": "atp-sin-alc-2026-09-14",
+                  "sportsMarketType": "moneyline",
+                  "question": "Jannik Sinner vs. Carlos Alcaraz",
+                  "outcomes": "[\"Jannik Sinner\", \"Carlos Alcaraz\"]",
+                  "outcomePrices": "[\"0.572\", \"0.428\"]",
+                  "updatedAt": "2026-09-14T08:00:00Z"
+                }
+              ],
+              "teams": [
+                {
+                  "name": "Jannik Sinner"
+                },
+                {
+                  "name": "Carlos Alcaraz"
+                }
+              ]
+            }
+          ],
+          "fetchedAt": 1789372800,
+          "stale": false
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sports-live/price-history:batchGet",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "marketKey": "live-fifwc-eng",
+              "tokenId": "live-fifwc-eng-0",
+              "outcome": "Yes",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5455,
+                0.5059,
+                0.5314,
+                0.5768,
+                0.5373,
+                0.5627,
+                0.6082,
+                0.5686,
+                0.5941,
+                0.6395,
+                0.615
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-eng",
+              "tokenId": "live-fifwc-eng-1",
+              "outcome": "No",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5245,
+                0.4641,
+                0.4686,
+                0.4932,
+                0.4327,
+                0.4373,
+                0.4618,
+                0.4014,
+                0.4059,
+                0.4305,
+                0.385
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-fra",
+              "tokenId": "live-fifwc-fra-0",
+              "outcome": "Yes",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5064,
+                0.4277,
+                0.4141,
+                0.4205,
+                0.3418,
+                0.3282,
+                0.3345,
+                0.2559,
+                0.2423,
+                0.2486,
+                0.185
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-fra",
+              "tokenId": "live-fifwc-fra-1",
+              "outcome": "No",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5636,
+                0.5423,
+                0.5859,
+                0.6495,
+                0.6282,
+                0.6718,
+                0.7355,
+                0.7141,
+                0.7577,
+                0.8214,
+                0.815
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-draw",
+              "tokenId": "live-fifwc-draw-0",
+              "outcome": "Yes",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5077,
+                0.4305,
+                0.4182,
+                0.4259,
+                0.3486,
+                0.3364,
+                0.3441,
+                0.2668,
+                0.2545,
+                0.2623,
+                0.2
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-draw",
+              "tokenId": "live-fifwc-draw-1",
+              "outcome": "No",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5623,
+                0.5395,
+                0.5818,
+                0.6441,
+                0.6214,
+                0.6636,
+                0.7259,
+                0.7032,
+                0.7455,
+                0.8077,
+                0.8
+              ]
+            },
+            {
+              "marketKey": "live-atp-ml",
+              "tokenId": "live-atp-ml-0",
+              "outcome": "Jannik Sinner",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5415,
+                0.4981,
+                0.5196,
+                0.5612,
+                0.5177,
+                0.5393,
+                0.5808,
+                0.5374,
+                0.5589,
+                0.6005,
+                0.572
+              ]
+            },
+            {
+              "marketKey": "live-atp-ml",
+              "tokenId": "live-atp-ml-1",
+              "outcome": "Carlos Alcaraz",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5285,
+                0.4719,
+                0.4804,
+                0.5088,
+                0.4523,
+                0.4607,
+                0.4892,
+                0.4326,
+                0.4411,
+                0.4695,
+                0.428
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "markets-live-failed",
+    "route": "/sports-live",
+    "realm": "member",
+    "heading": "Sports Live",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-live/events",
+        "realm": "member",
+        "status": 503,
+        "json": {
+          "message": "Sports source unavailable"
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sports-live/price-history:batchGet",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "marketKey": "live-fifwc-eng",
+              "tokenId": "live-fifwc-eng-0",
+              "outcome": "Yes",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5455,
+                0.5059,
+                0.5314,
+                0.5768,
+                0.5373,
+                0.5627,
+                0.6082,
+                0.5686,
+                0.5941,
+                0.6395,
+                0.615
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-eng",
+              "tokenId": "live-fifwc-eng-1",
+              "outcome": "No",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5245,
+                0.4641,
+                0.4686,
+                0.4932,
+                0.4327,
+                0.4373,
+                0.4618,
+                0.4014,
+                0.4059,
+                0.4305,
+                0.385
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-fra",
+              "tokenId": "live-fifwc-fra-0",
+              "outcome": "Yes",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5064,
+                0.4277,
+                0.4141,
+                0.4205,
+                0.3418,
+                0.3282,
+                0.3345,
+                0.2559,
+                0.2423,
+                0.2486,
+                0.185
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-fra",
+              "tokenId": "live-fifwc-fra-1",
+              "outcome": "No",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5636,
+                0.5423,
+                0.5859,
+                0.6495,
+                0.6282,
+                0.6718,
+                0.7355,
+                0.7141,
+                0.7577,
+                0.8214,
+                0.815
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-draw",
+              "tokenId": "live-fifwc-draw-0",
+              "outcome": "Yes",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5077,
+                0.4305,
+                0.4182,
+                0.4259,
+                0.3486,
+                0.3364,
+                0.3441,
+                0.2668,
+                0.2545,
+                0.2623,
+                0.2
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-draw",
+              "tokenId": "live-fifwc-draw-1",
+              "outcome": "No",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5623,
+                0.5395,
+                0.5818,
+                0.6441,
+                0.6214,
+                0.6636,
+                0.7259,
+                0.7032,
+                0.7455,
+                0.8077,
+                0.8
+              ]
+            },
+            {
+              "marketKey": "live-atp-ml",
+              "tokenId": "live-atp-ml-0",
+              "outcome": "Jannik Sinner",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5415,
+                0.4981,
+                0.5196,
+                0.5612,
+                0.5177,
+                0.5393,
+                0.5808,
+                0.5374,
+                0.5589,
+                0.6005,
+                0.572
+              ]
+            },
+            {
+              "marketKey": "live-atp-ml",
+              "tokenId": "live-atp-ml-1",
+              "outcome": "Carlos Alcaraz",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5285,
+                0.4719,
+                0.4804,
+                0.5088,
+                0.4523,
+                0.4607,
+                0.4892,
+                0.4326,
+                0.4411,
+                0.4695,
+                0.428
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "markets-live-empty",
+    "route": "/sports-live",
+    "realm": "member",
+    "heading": "Sports Live",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-live/events",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [],
+          "fetchedAt": 1789372800
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sports-live/price-history:batchGet",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "marketKey": "live-fifwc-eng",
+              "tokenId": "live-fifwc-eng-0",
+              "outcome": "Yes",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5455,
+                0.5059,
+                0.5314,
+                0.5768,
+                0.5373,
+                0.5627,
+                0.6082,
+                0.5686,
+                0.5941,
+                0.6395,
+                0.615
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-eng",
+              "tokenId": "live-fifwc-eng-1",
+              "outcome": "No",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5245,
+                0.4641,
+                0.4686,
+                0.4932,
+                0.4327,
+                0.4373,
+                0.4618,
+                0.4014,
+                0.4059,
+                0.4305,
+                0.385
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-fra",
+              "tokenId": "live-fifwc-fra-0",
+              "outcome": "Yes",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5064,
+                0.4277,
+                0.4141,
+                0.4205,
+                0.3418,
+                0.3282,
+                0.3345,
+                0.2559,
+                0.2423,
+                0.2486,
+                0.185
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-fra",
+              "tokenId": "live-fifwc-fra-1",
+              "outcome": "No",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5636,
+                0.5423,
+                0.5859,
+                0.6495,
+                0.6282,
+                0.6718,
+                0.7355,
+                0.7141,
+                0.7577,
+                0.8214,
+                0.815
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-draw",
+              "tokenId": "live-fifwc-draw-0",
+              "outcome": "Yes",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5077,
+                0.4305,
+                0.4182,
+                0.4259,
+                0.3486,
+                0.3364,
+                0.3441,
+                0.2668,
+                0.2545,
+                0.2623,
+                0.2
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-draw",
+              "tokenId": "live-fifwc-draw-1",
+              "outcome": "No",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5623,
+                0.5395,
+                0.5818,
+                0.6441,
+                0.6214,
+                0.6636,
+                0.7259,
+                0.7032,
+                0.7455,
+                0.8077,
+                0.8
+              ]
+            },
+            {
+              "marketKey": "live-atp-ml",
+              "tokenId": "live-atp-ml-0",
+              "outcome": "Jannik Sinner",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5415,
+                0.4981,
+                0.5196,
+                0.5612,
+                0.5177,
+                0.5393,
+                0.5808,
+                0.5374,
+                0.5589,
+                0.6005,
+                0.572
+              ]
+            },
+            {
+              "marketKey": "live-atp-ml",
+              "tokenId": "live-atp-ml-1",
+              "outcome": "Carlos Alcaraz",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5285,
+                0.4719,
+                0.4804,
+                0.5088,
+                0.4523,
+                0.4607,
+                0.4892,
+                0.4326,
+                0.4411,
+                0.4695,
+                0.428
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "markets-live-stale",
+    "route": "/sports-live",
+    "realm": "member",
+    "heading": "Sports Live",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-live/events",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "eventKey": "live-fifwc",
+              "eventId": "synthetic-live-fifwc",
+              "slug": "fifwc-eng-fra-2026-09-14",
+              "title": "England vs. France",
+              "score": "1\u20130",
+              "period": "Second half",
+              "elapsed": "63:00",
+              "gameStatus": "In progress",
+              "startTime": "2026-09-14T06:00:00Z",
+              "updatedAt": "2026-09-14T08:00:00Z",
+              "volume": 284125.52,
+              "liquidity": 54320.75,
+              "marketCount": 3,
+              "markets": [
+                {
+                  "marketKey": "live-fifwc-eng",
+                  "conditionId": "0x1111111111111111111111111111111111111111111111111111111111111111",
+                  "slug": "fifwc-eng-fra-2026-09-14-eng",
+                  "sportsMarketType": "moneyline",
+                  "question": "Will England win?",
+                  "outcomes": "[\"Yes\",\"No\"]",
+                  "outcomePrices": "[\"0.615\", \"0.385\"]"
+                },
+                {
+                  "marketKey": "live-fifwc-fra",
+                  "conditionId": "0x2222222222222222222222222222222222222222222222222222222222222222",
+                  "slug": "fifwc-eng-fra-2026-09-14-fra",
+                  "sportsMarketType": "moneyline",
+                  "question": "Will France win?",
+                  "outcomes": "[\"Yes\",\"No\"]",
+                  "outcomePrices": "[\"0.185\", \"0.815\"]"
+                },
+                {
+                  "marketKey": "live-fifwc-draw",
+                  "conditionId": "0x3333333333333333333333333333333333333333333333333333333333333333",
+                  "slug": "fifwc-eng-fra-2026-09-14-draw",
+                  "sportsMarketType": "moneyline",
+                  "question": "Will this match end in a draw?",
+                  "outcomes": "[\"Yes\",\"No\"]",
+                  "outcomePrices": "[\"0.200\", \"0.8\"]"
+                }
+              ],
+              "teams": [
+                {
+                  "name": "England"
+                },
+                {
+                  "name": "France"
+                }
+              ]
+            },
+            {
+              "eventKey": "live-atp",
+              "eventId": "synthetic-live-atp",
+              "slug": "atp-sin-alc-2026-09-14",
+              "title": "Jannik Sinner vs. Carlos Alcaraz",
+              "score": "6\u20134, 3\u20134",
+              "period": "Set 2",
+              "elapsed": "63:00",
+              "gameStatus": "In progress",
+              "startTime": "2026-09-14T06:00:00Z",
+              "updatedAt": "2026-09-14T08:00:00Z",
+              "volume": 284125.52,
+              "liquidity": 54320.75,
+              "marketCount": 1,
+              "markets": [
+                {
+                  "marketKey": "live-atp-ml",
+                  "conditionId": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "slug": "atp-sin-alc-2026-09-14",
+                  "sportsMarketType": "moneyline",
+                  "question": "Jannik Sinner vs. Carlos Alcaraz",
+                  "outcomes": "[\"Jannik Sinner\", \"Carlos Alcaraz\"]",
+                  "outcomePrices": "[\"0.572\", \"0.428\"]",
+                  "updatedAt": "2026-09-14T08:00:00Z"
+                }
+              ],
+              "teams": [
+                {
+                  "name": "Jannik Sinner"
+                },
+                {
+                  "name": "Carlos Alcaraz"
+                }
+              ]
+            }
+          ],
+          "fetchedAt": 1789372800,
+          "stale": true
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sports-live/price-history:batchGet",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "marketKey": "live-fifwc-eng",
+              "tokenId": "live-fifwc-eng-0",
+              "outcome": "Yes",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5455,
+                0.5059,
+                0.5314,
+                0.5768,
+                0.5373,
+                0.5627,
+                0.6082,
+                0.5686,
+                0.5941,
+                0.6395,
+                0.615
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-eng",
+              "tokenId": "live-fifwc-eng-1",
+              "outcome": "No",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5245,
+                0.4641,
+                0.4686,
+                0.4932,
+                0.4327,
+                0.4373,
+                0.4618,
+                0.4014,
+                0.4059,
+                0.4305,
+                0.385
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-fra",
+              "tokenId": "live-fifwc-fra-0",
+              "outcome": "Yes",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5064,
+                0.4277,
+                0.4141,
+                0.4205,
+                0.3418,
+                0.3282,
+                0.3345,
+                0.2559,
+                0.2423,
+                0.2486,
+                0.185
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-fra",
+              "tokenId": "live-fifwc-fra-1",
+              "outcome": "No",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5636,
+                0.5423,
+                0.5859,
+                0.6495,
+                0.6282,
+                0.6718,
+                0.7355,
+                0.7141,
+                0.7577,
+                0.8214,
+                0.815
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-draw",
+              "tokenId": "live-fifwc-draw-0",
+              "outcome": "Yes",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5077,
+                0.4305,
+                0.4182,
+                0.4259,
+                0.3486,
+                0.3364,
+                0.3441,
+                0.2668,
+                0.2545,
+                0.2623,
+                0.2
+              ]
+            },
+            {
+              "marketKey": "live-fifwc-draw",
+              "tokenId": "live-fifwc-draw-1",
+              "outcome": "No",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5623,
+                0.5395,
+                0.5818,
+                0.6441,
+                0.6214,
+                0.6636,
+                0.7259,
+                0.7032,
+                0.7455,
+                0.8077,
+                0.8
+              ]
+            },
+            {
+              "marketKey": "live-atp-ml",
+              "tokenId": "live-atp-ml-0",
+              "outcome": "Jannik Sinner",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5415,
+                0.4981,
+                0.5196,
+                0.5612,
+                0.5177,
+                0.5393,
+                0.5808,
+                0.5374,
+                0.5589,
+                0.6005,
+                0.572
+              ]
+            },
+            {
+              "marketKey": "live-atp-ml",
+              "tokenId": "live-atp-ml-1",
+              "outcome": "Carlos Alcaraz",
+              "timestamps": [
+                1789372140,
+                1789372200,
+                1789372260,
+                1789372320,
+                1789372380,
+                1789372440,
+                1789372500,
+                1789372560,
+                1789372620,
+                1789372680,
+                1789372740,
+                1789372800
+              ],
+              "prices": [
+                0.5,
+                0.5285,
+                0.4719,
+                0.4804,
+                0.5088,
+                0.4523,
+                0.4607,
+                0.4892,
+                0.4326,
+                0.4411,
+                0.4695,
+                0.428
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "markets-history",
+    "route": "/sports-history",
+    "realm": "member",
+    "heading": "Sports History",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-history/events",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "eventKey": "hist-atp",
+              "eventId": "synthetic-hist-atp",
+              "slug": "atp-fri-med-2026-09-14",
+              "title": "Taylor Fritz vs. Daniil Medvedev",
+              "score": "6\u20134, 7\u20136",
+              "period": "Final",
+              "elapsed": "63:00",
+              "gameStatus": "Finished",
+              "startTime": "2026-09-14T06:00:00Z",
+              "updatedAt": "2026-09-14T08:00:00Z",
+              "volume": 284125.52,
+              "liquidity": 54320.75,
+              "marketCount": 1,
+              "markets": [
+                {
+                  "marketKey": "hist-atp-ml",
+                  "conditionId": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "slug": "atp-fri-med-2026-09-14",
+                  "sportsMarketType": "moneyline",
+                  "question": "Taylor Fritz vs. Daniil Medvedev",
+                  "outcomes": "[\"Taylor Fritz\", \"Daniil Medvedev\"]",
+                  "outcomePrices": "[\"1.000\", \"0.000\"]",
+                  "updatedAt": "2026-09-14T08:00:00Z"
+                }
+              ],
+              "teams": [
+                {
+                  "name": "Taylor Fritz"
+                },
+                {
+                  "name": "Daniil Medvedev"
+                }
+              ],
+              "league": "ATP",
+              "finishedAt": "2026-09-14T07:45:00Z"
+            },
+            {
+              "eventKey": "hist-wta",
+              "eventId": "synthetic-hist-wta",
+              "slug": "wta-swi-sab-2026-09-14",
+              "title": "Iga \u015awi\u0105tek vs. Aryna Sabalenka",
+              "score": "4\u20136, 6\u20133, 4\u20136",
+              "period": "Final",
+              "elapsed": "63:00",
+              "gameStatus": "Finished",
+              "startTime": "2026-09-14T06:00:00Z",
+              "updatedAt": "2026-09-14T08:00:00Z",
+              "volume": 284125.52,
+              "liquidity": 54320.75,
+              "marketCount": 1,
+              "markets": [
+                {
+                  "marketKey": "hist-wta-ml",
+                  "conditionId": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "slug": "wta-swi-sab-2026-09-14",
+                  "sportsMarketType": "moneyline",
+                  "question": "Iga \u015awi\u0105tek vs. Aryna Sabalenka",
+                  "outcomes": "[\"Iga \\u015awi\\u0105tek\", \"Aryna Sabalenka\"]",
+                  "outcomePrices": "[\"0.000\", \"1.000\"]",
+                  "updatedAt": "2026-09-14T08:00:00Z"
+                }
+              ],
+              "teams": [
+                {
+                  "name": "Iga \u015awi\u0105tek"
+                },
+                {
+                  "name": "Aryna Sabalenka"
+                }
+              ],
+              "league": "WTA",
+              "finishedAt": "2026-09-14T07:45:00Z"
+            }
+          ],
+          "fetchedAt": 1789372800,
+          "stale": false
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sports-history/price-history:batchGet",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "marketKey": "hist-atp-ml",
+              "tokenId": "hist-atp-ml-0",
+              "outcome": "Taylor Fritz",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.5805,
+                0.5759,
+                0.6364,
+                0.7168,
+                0.7123,
+                0.7727,
+                0.8532,
+                0.8486,
+                0.9091,
+                0.9895,
+                1
+              ]
+            },
+            {
+              "marketKey": "hist-atp-ml",
+              "tokenId": "hist-atp-ml-1",
+              "outcome": "Daniil Medvedev",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.4895,
+                0.3941,
+                0.3636,
+                0.3532,
+                0.2577,
+                0.2273,
+                0.2168,
+                0.1214,
+                0.0909,
+                0.0805,
+                0
+              ]
+            },
+            {
+              "marketKey": "hist-wta-ml",
+              "tokenId": "hist-wta-ml-0",
+              "outcome": "Iga \u015awi\u0105tek",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.4895,
+                0.3941,
+                0.3636,
+                0.3532,
+                0.2577,
+                0.2273,
+                0.2168,
+                0.1214,
+                0.0909,
+                0.0805,
+                0
+              ]
+            },
+            {
+              "marketKey": "hist-wta-ml",
+              "tokenId": "hist-wta-ml-1",
+              "outcome": "Aryna Sabalenka",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.5805,
+                0.5759,
+                0.6364,
+                0.7168,
+                0.7123,
+                0.7727,
+                0.8532,
+                0.8486,
+                0.9091,
+                0.9895,
+                1
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-history/sync-status",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "status": {
+            "state": "succeeded",
+            "startedAt": 1789372680,
+            "completedAt": 1789372740,
+            "lastSuccessAt": 1789372740,
+            "errorMessage": ""
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "markets-history-failed",
+    "route": "/sports-history",
+    "realm": "member",
+    "heading": "Sports History",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-history/events",
+        "realm": "member",
+        "status": 503,
+        "json": {
+          "message": "Sports source unavailable"
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sports-history/price-history:batchGet",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "marketKey": "hist-atp-ml",
+              "tokenId": "hist-atp-ml-0",
+              "outcome": "Taylor Fritz",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.5805,
+                0.5759,
+                0.6364,
+                0.7168,
+                0.7123,
+                0.7727,
+                0.8532,
+                0.8486,
+                0.9091,
+                0.9895,
+                1
+              ]
+            },
+            {
+              "marketKey": "hist-atp-ml",
+              "tokenId": "hist-atp-ml-1",
+              "outcome": "Daniil Medvedev",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.4895,
+                0.3941,
+                0.3636,
+                0.3532,
+                0.2577,
+                0.2273,
+                0.2168,
+                0.1214,
+                0.0909,
+                0.0805,
+                0
+              ]
+            },
+            {
+              "marketKey": "hist-wta-ml",
+              "tokenId": "hist-wta-ml-0",
+              "outcome": "Iga \u015awi\u0105tek",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.4895,
+                0.3941,
+                0.3636,
+                0.3532,
+                0.2577,
+                0.2273,
+                0.2168,
+                0.1214,
+                0.0909,
+                0.0805,
+                0
+              ]
+            },
+            {
+              "marketKey": "hist-wta-ml",
+              "tokenId": "hist-wta-ml-1",
+              "outcome": "Aryna Sabalenka",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.5805,
+                0.5759,
+                0.6364,
+                0.7168,
+                0.7123,
+                0.7727,
+                0.8532,
+                0.8486,
+                0.9091,
+                0.9895,
+                1
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-history/sync-status",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "status": {
+            "state": "succeeded",
+            "startedAt": 1789372680,
+            "completedAt": 1789372740,
+            "lastSuccessAt": 1789372740,
+            "errorMessage": ""
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "markets-history-empty",
+    "route": "/sports-history",
+    "realm": "member",
+    "heading": "Sports History",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-history/events",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [],
+          "fetchedAt": 1789372800
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sports-history/price-history:batchGet",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "marketKey": "hist-atp-ml",
+              "tokenId": "hist-atp-ml-0",
+              "outcome": "Taylor Fritz",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.5805,
+                0.5759,
+                0.6364,
+                0.7168,
+                0.7123,
+                0.7727,
+                0.8532,
+                0.8486,
+                0.9091,
+                0.9895,
+                1
+              ]
+            },
+            {
+              "marketKey": "hist-atp-ml",
+              "tokenId": "hist-atp-ml-1",
+              "outcome": "Daniil Medvedev",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.4895,
+                0.3941,
+                0.3636,
+                0.3532,
+                0.2577,
+                0.2273,
+                0.2168,
+                0.1214,
+                0.0909,
+                0.0805,
+                0
+              ]
+            },
+            {
+              "marketKey": "hist-wta-ml",
+              "tokenId": "hist-wta-ml-0",
+              "outcome": "Iga \u015awi\u0105tek",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.4895,
+                0.3941,
+                0.3636,
+                0.3532,
+                0.2577,
+                0.2273,
+                0.2168,
+                0.1214,
+                0.0909,
+                0.0805,
+                0
+              ]
+            },
+            {
+              "marketKey": "hist-wta-ml",
+              "tokenId": "hist-wta-ml-1",
+              "outcome": "Aryna Sabalenka",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.5805,
+                0.5759,
+                0.6364,
+                0.7168,
+                0.7123,
+                0.7727,
+                0.8532,
+                0.8486,
+                0.9091,
+                0.9895,
+                1
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-history/sync-status",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "status": {
+            "state": "succeeded",
+            "startedAt": 1789372680,
+            "completedAt": 1789372740,
+            "lastSuccessAt": 1789372740,
+            "errorMessage": ""
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "markets-history-stale",
+    "route": "/sports-history",
+    "realm": "member",
+    "heading": "Sports History",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-history/events",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "eventKey": "hist-atp",
+              "eventId": "synthetic-hist-atp",
+              "slug": "atp-fri-med-2026-09-14",
+              "title": "Taylor Fritz vs. Daniil Medvedev",
+              "score": "6\u20134, 7\u20136",
+              "period": "Final",
+              "elapsed": "63:00",
+              "gameStatus": "Finished",
+              "startTime": "2026-09-14T06:00:00Z",
+              "updatedAt": "2026-09-14T08:00:00Z",
+              "volume": 284125.52,
+              "liquidity": 54320.75,
+              "marketCount": 1,
+              "markets": [
+                {
+                  "marketKey": "hist-atp-ml",
+                  "conditionId": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "slug": "atp-fri-med-2026-09-14",
+                  "sportsMarketType": "moneyline",
+                  "question": "Taylor Fritz vs. Daniil Medvedev",
+                  "outcomes": "[\"Taylor Fritz\", \"Daniil Medvedev\"]",
+                  "outcomePrices": "[\"1.000\", \"0.000\"]",
+                  "updatedAt": "2026-09-14T08:00:00Z"
+                }
+              ],
+              "teams": [
+                {
+                  "name": "Taylor Fritz"
+                },
+                {
+                  "name": "Daniil Medvedev"
+                }
+              ],
+              "league": "ATP",
+              "finishedAt": "2026-09-14T07:45:00Z"
+            },
+            {
+              "eventKey": "hist-wta",
+              "eventId": "synthetic-hist-wta",
+              "slug": "wta-swi-sab-2026-09-14",
+              "title": "Iga \u015awi\u0105tek vs. Aryna Sabalenka",
+              "score": "4\u20136, 6\u20133, 4\u20136",
+              "period": "Final",
+              "elapsed": "63:00",
+              "gameStatus": "Finished",
+              "startTime": "2026-09-14T06:00:00Z",
+              "updatedAt": "2026-09-14T08:00:00Z",
+              "volume": 284125.52,
+              "liquidity": 54320.75,
+              "marketCount": 1,
+              "markets": [
+                {
+                  "marketKey": "hist-wta-ml",
+                  "conditionId": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "slug": "wta-swi-sab-2026-09-14",
+                  "sportsMarketType": "moneyline",
+                  "question": "Iga \u015awi\u0105tek vs. Aryna Sabalenka",
+                  "outcomes": "[\"Iga \\u015awi\\u0105tek\", \"Aryna Sabalenka\"]",
+                  "outcomePrices": "[\"0.000\", \"1.000\"]",
+                  "updatedAt": "2026-09-14T08:00:00Z"
+                }
+              ],
+              "teams": [
+                {
+                  "name": "Iga \u015awi\u0105tek"
+                },
+                {
+                  "name": "Aryna Sabalenka"
+                }
+              ],
+              "league": "WTA",
+              "finishedAt": "2026-09-14T07:45:00Z"
+            }
+          ],
+          "fetchedAt": 1789372800,
+          "stale": true
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sports-history/price-history:batchGet",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "marketKey": "hist-atp-ml",
+              "tokenId": "hist-atp-ml-0",
+              "outcome": "Taylor Fritz",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.5805,
+                0.5759,
+                0.6364,
+                0.7168,
+                0.7123,
+                0.7727,
+                0.8532,
+                0.8486,
+                0.9091,
+                0.9895,
+                1
+              ]
+            },
+            {
+              "marketKey": "hist-atp-ml",
+              "tokenId": "hist-atp-ml-1",
+              "outcome": "Daniil Medvedev",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.4895,
+                0.3941,
+                0.3636,
+                0.3532,
+                0.2577,
+                0.2273,
+                0.2168,
+                0.1214,
+                0.0909,
+                0.0805,
+                0
+              ]
+            },
+            {
+              "marketKey": "hist-wta-ml",
+              "tokenId": "hist-wta-ml-0",
+              "outcome": "Iga \u015awi\u0105tek",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.4895,
+                0.3941,
+                0.3636,
+                0.3532,
+                0.2577,
+                0.2273,
+                0.2168,
+                0.1214,
+                0.0909,
+                0.0805,
+                0
+              ]
+            },
+            {
+              "marketKey": "hist-wta-ml",
+              "tokenId": "hist-wta-ml-1",
+              "outcome": "Aryna Sabalenka",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.5805,
+                0.5759,
+                0.6364,
+                0.7168,
+                0.7123,
+                0.7727,
+                0.8532,
+                0.8486,
+                0.9091,
+                0.9895,
+                1
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-history/sync-status",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "status": {
+            "state": "succeeded",
+            "startedAt": 1789372680,
+            "completedAt": 1789372740,
+            "lastSuccessAt": 1789372740,
+            "errorMessage": ""
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "markets-corners",
+    "route": "/world-cup-corners",
+    "realm": "member",
+    "heading": "2022 World Cup Corner Analysis",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/world-cup-corners/dataset",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "stages": [
+            {
+              "key": "group-stage",
+              "label": "Group stage",
+              "shortLabel": "Groups",
+              "knockout": false
+            },
+            {
+              "key": "round-of-16",
+              "label": "Round of 16",
+              "shortLabel": "Round of 16",
+              "knockout": true
+            },
+            {
+              "key": "quarter-finals",
+              "label": "Quarter-finals",
+              "shortLabel": "Quarter-finals",
+              "knockout": true
+            },
+            {
+              "key": "semi-finals",
+              "label": "Semi-finals",
+              "shortLabel": "Semi-finals",
+              "knockout": true
+            },
+            {
+              "key": "third-place",
+              "label": "Third-place play-off",
+              "shortLabel": "Third place",
+              "knockout": true
+            },
+            {
+              "key": "final",
+              "label": "Final",
+              "shortLabel": "Final",
+              "knockout": true
+            }
+          ],
+          "matches": [
+            {
+              "id": 1,
+              "stage": "group-stage",
+              "homeTeam": "England",
+              "awayTeam": "Iran",
+              "homeScore": 6,
+              "awayScore": 2,
+              "hasPenaltyShootout": false,
+              "homePenaltyScore": 3,
+              "awayPenaltyScore": 4,
+              "homeCorners90": 8,
+              "awayCorners90": 0,
+              "homeCornersFull": 8,
+              "awayCornersFull": 0
+            },
+            {
+              "id": 2,
+              "stage": "group-stage",
+              "homeTeam": "Argentina",
+              "awayTeam": "Saudi Arabia",
+              "homeScore": 1,
+              "awayScore": 2,
+              "hasPenaltyShootout": false,
+              "homePenaltyScore": 3,
+              "awayPenaltyScore": 4,
+              "homeCorners90": 9,
+              "awayCorners90": 2,
+              "homeCornersFull": 9,
+              "awayCornersFull": 2
+            },
+            {
+              "id": 3,
+              "stage": "round-of-16",
+              "homeTeam": "France",
+              "awayTeam": "Poland",
+              "homeScore": 3,
+              "awayScore": 1,
+              "hasPenaltyShootout": false,
+              "homePenaltyScore": 3,
+              "awayPenaltyScore": 4,
+              "homeCorners90": 7,
+              "awayCorners90": 1,
+              "homeCornersFull": 7,
+              "awayCornersFull": 1
+            },
+            {
+              "id": 4,
+              "stage": "quarter-finals",
+              "homeTeam": "Netherlands",
+              "awayTeam": "Argentina",
+              "homeScore": 2,
+              "awayScore": 2,
+              "hasPenaltyShootout": true,
+              "homePenaltyScore": 3,
+              "awayPenaltyScore": 4,
+              "homeCorners90": 2,
+              "awayCorners90": 4,
+              "homeCornersFull": 2,
+              "awayCornersFull": 8
+            },
+            {
+              "id": 5,
+              "stage": "semi-finals",
+              "homeTeam": "Argentina",
+              "awayTeam": "Croatia",
+              "homeScore": 3,
+              "awayScore": 0,
+              "hasPenaltyShootout": false,
+              "homePenaltyScore": 3,
+              "awayPenaltyScore": 4,
+              "homeCorners90": 2,
+              "awayCorners90": 4,
+              "homeCornersFull": 2,
+              "awayCornersFull": 4
+            },
+            {
+              "id": 6,
+              "stage": "semi-finals",
+              "homeTeam": "France",
+              "awayTeam": "Morocco",
+              "homeScore": 2,
+              "awayScore": 0,
+              "hasPenaltyShootout": false,
+              "homePenaltyScore": 3,
+              "awayPenaltyScore": 4,
+              "homeCorners90": 3,
+              "awayCorners90": 3,
+              "homeCornersFull": 3,
+              "awayCornersFull": 3
+            },
+            {
+              "id": 7,
+              "stage": "third-place",
+              "homeTeam": "Croatia",
+              "awayTeam": "Morocco",
+              "homeScore": 2,
+              "awayScore": 1,
+              "hasPenaltyShootout": false,
+              "homePenaltyScore": 3,
+              "awayPenaltyScore": 4,
+              "homeCorners90": 6,
+              "awayCorners90": 3,
+              "homeCornersFull": 6,
+              "awayCornersFull": 3
+            },
+            {
+              "id": 8,
+              "stage": "final",
+              "homeTeam": "Argentina",
+              "awayTeam": "France",
+              "homeScore": 3,
+              "awayScore": 3,
+              "hasPenaltyShootout": true,
+              "homePenaltyScore": 4,
+              "awayPenaltyScore": 2,
+              "homeCorners90": 4,
+              "awayCorners90": 4,
+              "homeCornersFull": 6,
+              "awayCornersFull": 5
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "markets-corners-failed",
+    "route": "/world-cup-corners",
+    "realm": "member",
+    "heading": "2022 World Cup Corner Analysis",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/world-cup-corners/dataset",
+        "realm": "member",
+        "status": 503,
+        "json": {
+          "message": "Sports source unavailable"
+        }
+      }
+    ]
+  },
+  {
+    "id": "markets-corners-empty",
+    "route": "/world-cup-corners",
+    "realm": "member",
+    "heading": "2022 World Cup Corner Analysis",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/world-cup-corners/dataset",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "matches": [],
+          "stages": [
+            {
+              "key": "group-stage",
+              "label": "Group stage",
+              "shortLabel": "Groups",
+              "knockout": false
+            },
+            {
+              "key": "round-of-16",
+              "label": "Round of 16",
+              "shortLabel": "Round of 16",
+              "knockout": true
+            },
+            {
+              "key": "quarter-finals",
+              "label": "Quarter-finals",
+              "shortLabel": "Quarter-finals",
+              "knockout": true
+            },
+            {
+              "key": "semi-finals",
+              "label": "Semi-finals",
+              "shortLabel": "Semi-finals",
+              "knockout": true
+            },
+            {
+              "key": "third-place",
+              "label": "Third-place play-off",
+              "shortLabel": "Third place",
+              "knockout": true
+            },
+            {
+              "key": "final",
+              "label": "Final",
+              "shortLabel": "Final",
+              "knockout": true
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "markets-corners-stale",
+    "route": "/world-cup-corners",
+    "realm": "member",
+    "heading": "2022 World Cup Corner Analysis",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/world-cup-corners/dataset",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "stages": [
+            {
+              "key": "group-stage",
+              "label": "Group stage",
+              "shortLabel": "Groups",
+              "knockout": false
+            },
+            {
+              "key": "round-of-16",
+              "label": "Round of 16",
+              "shortLabel": "Round of 16",
+              "knockout": true
+            },
+            {
+              "key": "quarter-finals",
+              "label": "Quarter-finals",
+              "shortLabel": "Quarter-finals",
+              "knockout": true
+            },
+            {
+              "key": "semi-finals",
+              "label": "Semi-finals",
+              "shortLabel": "Semi-finals",
+              "knockout": true
+            },
+            {
+              "key": "third-place",
+              "label": "Third-place play-off",
+              "shortLabel": "Third place",
+              "knockout": true
+            },
+            {
+              "key": "final",
+              "label": "Final",
+              "shortLabel": "Final",
+              "knockout": true
+            }
+          ],
+          "matches": [
+            {
+              "id": 1,
+              "stage": "group-stage",
+              "homeTeam": "England",
+              "awayTeam": "Iran",
+              "homeScore": 6,
+              "awayScore": 2,
+              "hasPenaltyShootout": false,
+              "homePenaltyScore": 3,
+              "awayPenaltyScore": 4,
+              "homeCorners90": 8,
+              "awayCorners90": 0,
+              "homeCornersFull": 8,
+              "awayCornersFull": 0
+            },
+            {
+              "id": 2,
+              "stage": "group-stage",
+              "homeTeam": "Argentina",
+              "awayTeam": "Saudi Arabia",
+              "homeScore": 1,
+              "awayScore": 2,
+              "hasPenaltyShootout": false,
+              "homePenaltyScore": 3,
+              "awayPenaltyScore": 4,
+              "homeCorners90": 9,
+              "awayCorners90": 2,
+              "homeCornersFull": 9,
+              "awayCornersFull": 2
+            },
+            {
+              "id": 3,
+              "stage": "round-of-16",
+              "homeTeam": "France",
+              "awayTeam": "Poland",
+              "homeScore": 3,
+              "awayScore": 1,
+              "hasPenaltyShootout": false,
+              "homePenaltyScore": 3,
+              "awayPenaltyScore": 4,
+              "homeCorners90": 7,
+              "awayCorners90": 1,
+              "homeCornersFull": 7,
+              "awayCornersFull": 1
+            },
+            {
+              "id": 4,
+              "stage": "quarter-finals",
+              "homeTeam": "Netherlands",
+              "awayTeam": "Argentina",
+              "homeScore": 2,
+              "awayScore": 2,
+              "hasPenaltyShootout": true,
+              "homePenaltyScore": 3,
+              "awayPenaltyScore": 4,
+              "homeCorners90": 2,
+              "awayCorners90": 4,
+              "homeCornersFull": 2,
+              "awayCornersFull": 8
+            },
+            {
+              "id": 5,
+              "stage": "semi-finals",
+              "homeTeam": "Argentina",
+              "awayTeam": "Croatia",
+              "homeScore": 3,
+              "awayScore": 0,
+              "hasPenaltyShootout": false,
+              "homePenaltyScore": 3,
+              "awayPenaltyScore": 4,
+              "homeCorners90": 2,
+              "awayCorners90": 4,
+              "homeCornersFull": 2,
+              "awayCornersFull": 4
+            },
+            {
+              "id": 6,
+              "stage": "semi-finals",
+              "homeTeam": "France",
+              "awayTeam": "Morocco",
+              "homeScore": 2,
+              "awayScore": 0,
+              "hasPenaltyShootout": false,
+              "homePenaltyScore": 3,
+              "awayPenaltyScore": 4,
+              "homeCorners90": 3,
+              "awayCorners90": 3,
+              "homeCornersFull": 3,
+              "awayCornersFull": 3
+            },
+            {
+              "id": 7,
+              "stage": "third-place",
+              "homeTeam": "Croatia",
+              "awayTeam": "Morocco",
+              "homeScore": 2,
+              "awayScore": 1,
+              "hasPenaltyShootout": false,
+              "homePenaltyScore": 3,
+              "awayPenaltyScore": 4,
+              "homeCorners90": 6,
+              "awayCorners90": 3,
+              "homeCornersFull": 6,
+              "awayCornersFull": 3
+            },
+            {
+              "id": 8,
+              "stage": "final",
+              "homeTeam": "Argentina",
+              "awayTeam": "France",
+              "homeScore": 3,
+              "awayScore": 3,
+              "hasPenaltyShootout": true,
+              "homePenaltyScore": 4,
+              "awayPenaltyScore": 2,
+              "homeCorners90": 4,
+              "awayCorners90": 4,
+              "homeCornersFull": 6,
+              "awayCornersFull": 5
+            }
+          ],
+          "stale": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "markets-history-writable",
+    "route": "/sports-history",
+    "realm": "member",
+    "heading": "Sports History",
+    "replies": [
+      {
+        "method": "GET",
+        "path": "/api/v1/app/bootstrap",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "settings": {
+            "url": "http://localhost:34000",
+            "googleAnalytics": {},
+            "help": {
+              "chatUrl": "",
+              "chatText": "",
+              "binaryUrls": {}
+            },
+            "uiCssURL": "",
+            "uiBannerContent": ""
+          },
+          "session": {
+            "status": "APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED",
+            "userInfo": {
+              "loggedIn": true,
+              "accountId": "11111111-1111-4111-8111-111111111111",
+              "username": "alexchen",
+              "iss": "fixture",
+              "administrator": false,
+              "profile": {
+                "displayName": "Alex Chen",
+                "tier": "ACCOUNT_TIER_STANDARD",
+                "avatarUrl": "",
+                "revision": "4"
+              },
+              "access": {
+                "loginEnabled": true,
+                "apiKeyEnabled": true,
+                "profitSharingEnabled": true,
+                "revision": "1",
+                "moduleAccess": [
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WALLET",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SOLANA",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_TRADER_SYNC",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MARKET_RADAR",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
+                  },
+                  {
+                    "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
+                    "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
+                  }
+                ]
+              },
+              "identity": {
+                "provider": "ACCOUNT_IDENTITY_PROVIDER_GOOGLE",
+                "verifiedEmail": "alex.chen@example.invalid",
+                "solanaAddress": ""
+              }
+            }
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-history/events",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "eventKey": "hist-atp",
+              "eventId": "synthetic-hist-atp",
+              "slug": "atp-fri-med-2026-09-14",
+              "title": "Taylor Fritz vs. Daniil Medvedev",
+              "score": "6\u20134, 7\u20136",
+              "period": "Final",
+              "elapsed": "63:00",
+              "gameStatus": "Finished",
+              "startTime": "2026-09-14T06:00:00Z",
+              "updatedAt": "2026-09-14T08:00:00Z",
+              "volume": 284125.52,
+              "liquidity": 54320.75,
+              "marketCount": 1,
+              "markets": [
+                {
+                  "marketKey": "hist-atp-ml",
+                  "conditionId": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "slug": "atp-fri-med-2026-09-14",
+                  "sportsMarketType": "moneyline",
+                  "question": "Taylor Fritz vs. Daniil Medvedev",
+                  "outcomes": "[\"Taylor Fritz\", \"Daniil Medvedev\"]",
+                  "outcomePrices": "[\"1.000\", \"0.000\"]",
+                  "updatedAt": "2026-09-14T08:00:00Z"
+                }
+              ],
+              "teams": [
+                {
+                  "name": "Taylor Fritz"
+                },
+                {
+                  "name": "Daniil Medvedev"
+                }
+              ],
+              "league": "ATP",
+              "finishedAt": "2026-09-14T07:45:00Z"
+            },
+            {
+              "eventKey": "hist-wta",
+              "eventId": "synthetic-hist-wta",
+              "slug": "wta-swi-sab-2026-09-14",
+              "title": "Iga \u015awi\u0105tek vs. Aryna Sabalenka",
+              "score": "4\u20136, 6\u20133, 4\u20136",
+              "period": "Final",
+              "elapsed": "63:00",
+              "gameStatus": "Finished",
+              "startTime": "2026-09-14T06:00:00Z",
+              "updatedAt": "2026-09-14T08:00:00Z",
+              "volume": 284125.52,
+              "liquidity": 54320.75,
+              "marketCount": 1,
+              "markets": [
+                {
+                  "marketKey": "hist-wta-ml",
+                  "conditionId": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "slug": "wta-swi-sab-2026-09-14",
+                  "sportsMarketType": "moneyline",
+                  "question": "Iga \u015awi\u0105tek vs. Aryna Sabalenka",
+                  "outcomes": "[\"Iga \\u015awi\\u0105tek\", \"Aryna Sabalenka\"]",
+                  "outcomePrices": "[\"0.000\", \"1.000\"]",
+                  "updatedAt": "2026-09-14T08:00:00Z"
+                }
+              ],
+              "teams": [
+                {
+                  "name": "Iga \u015awi\u0105tek"
+                },
+                {
+                  "name": "Aryna Sabalenka"
+                }
+              ],
+              "league": "WTA",
+              "finishedAt": "2026-09-14T07:45:00Z"
+            }
+          ],
+          "fetchedAt": 1789372800,
+          "stale": false
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sports-history/price-history:batchGet",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "items": [
+            {
+              "marketKey": "hist-atp-ml",
+              "tokenId": "hist-atp-ml-0",
+              "outcome": "Taylor Fritz",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.5805,
+                0.5759,
+                0.6364,
+                0.7168,
+                0.7123,
+                0.7727,
+                0.8532,
+                0.8486,
+                0.9091,
+                0.9895,
+                1
+              ]
+            },
+            {
+              "marketKey": "hist-atp-ml",
+              "tokenId": "hist-atp-ml-1",
+              "outcome": "Daniil Medvedev",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.4895,
+                0.3941,
+                0.3636,
+                0.3532,
+                0.2577,
+                0.2273,
+                0.2168,
+                0.1214,
+                0.0909,
+                0.0805,
+                0
+              ]
+            },
+            {
+              "marketKey": "hist-wta-ml",
+              "tokenId": "hist-wta-ml-0",
+              "outcome": "Iga \u015awi\u0105tek",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.4895,
+                0.3941,
+                0.3636,
+                0.3532,
+                0.2577,
+                0.2273,
+                0.2168,
+                0.1214,
+                0.0909,
+                0.0805,
+                0
+              ]
+            },
+            {
+              "marketKey": "hist-wta-ml",
+              "tokenId": "hist-wta-ml-1",
+              "outcome": "Aryna Sabalenka",
+              "timestamps": [
+                1789365600,
+                1789366173,
+                1789366745,
+                1789367318,
+                1789367891,
+                1789368464,
+                1789369036,
+                1789369609,
+                1789370182,
+                1789370755,
+                1789371327,
+                1789371900
+              ],
+              "prices": [
+                0.5,
+                0.5805,
+                0.5759,
+                0.6364,
+                0.7168,
+                0.7123,
+                0.7727,
+                0.8532,
+                0.8486,
+                0.9091,
+                0.9895,
+                1
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/sports-history/sync-status",
+        "realm": "member",
+        "status": 200,
+        "json": {
+          "status": {
+            "state": "succeeded",
+            "startedAt": 1789372680,
+            "completedAt": 1789372740,
+            "lastSuccessAt": 1789372740,
+            "errorMessage": ""
+          }
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/sports-history:refresh",
+        "realm": "member",
+        "status": 200,
+        "delayMs": 800,
+        "json": {
+          "status": {
+            "state": "succeeded",
+            "completedAt": 1789372740
+          }
+        }
+      }
+    ]
+  }
+]

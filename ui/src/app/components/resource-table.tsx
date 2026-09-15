@@ -11,6 +11,8 @@ export const ResourceTable = <T,>(props: {
     items: T[];
     columns: ColumnsType<T>;
     loading?: boolean;
+    /** Whether this source has completed a successful read (including an empty result). */
+    hasData?: boolean;
     page?: number;
     pageSize?: number;
     pageSizeOptions?: number[];
@@ -74,7 +76,7 @@ export const ResourceTable = <T,>(props: {
               }
             : undefined;
     const scroll = props.scrollX === undefined ? undefined : {x: props.scrollX};
-    const sticky = props.stickyHeader === true ? {offsetHeader: 56} : props.stickyHeader ? {offsetHeader: props.stickyHeader.offsetHeader ?? 56} : undefined;
+    const sticky = props.stickyHeader === true ? {offsetHeader: 64} : props.stickyHeader ? {offsetHeader: props.stickyHeader.offsetHeader ?? 64} : undefined;
     const hasPagination = props.total !== undefined && props.onPageChange;
     const regionClassName = [
         'resource-table-region',
@@ -88,12 +90,20 @@ export const ResourceTable = <T,>(props: {
     const currentPage = props.page || 1;
     const currentPageSize = props.pageSize || pageSizeOptions[0];
 
+    if (props.hasData === false) {
+        return props.loading ? (
+            <div role='status' aria-label='Loading items'>
+                <Skeleton active />
+            </div>
+        ) : null;
+    }
+
     return (
         <div className={regionClassName} role='region' aria-label={props.label || 'Data table'} aria-busy={props.loading || undefined}>
             {hasPagination && (
-                <div className='resource-table-pagination' aria-label='Table pagination'>
+                <div className='resource-table-pagination' role='navigation' aria-label='Table pagination'>
                     <div className='resource-table-pagination__controls'>
-                        <Typography.Text className='resource-table-pagination__total' type='secondary'>
+                        <Typography.Text className='resource-table-pagination__total athena-number' type='secondary'>
                             {props.total} {props.total === 1 ? 'item' : 'items'}
                         </Typography.Text>
                         <Pagination
@@ -139,7 +149,7 @@ export const ResourceTable = <T,>(props: {
                 expandable={props.expandable}
             />
             {props.compactRender && (
-                <div className='resource-table-compact' aria-label={`${props.label || 'Data table'} compact view`}>
+                <div className='resource-table-compact' role='group' aria-label={`${props.label || 'Data table'} compact view`}>
                     {props.loading ? (
                         <ul className='resource-table-compact__items resource-table-compact__loading' aria-label='Loading items'>
                             {[0, 1, 2].map(index => (

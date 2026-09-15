@@ -8,10 +8,10 @@
 
 支持的发行来源文案为 Pump.fun、Raydium LaunchLab、Direct Token initialization；未知来源显示 Unrecognized platform。来源 pending/error 与未知区分；名称缺失分别显示 Metadata pending、Name unavailable、Metadata read failed，空符号显示 Symbol unavailable。展开详情显示初始化权限、付费账户、Token 程序、发行程序、元数据来源、账户、观察 slot 和时间。Token 程序与发行平台是不同事实；未知 CPI 的发行程序表示可证明的直接父程序。
 
-扫描状态展示服务返回的起点、已处理 slot、最新 finalized slot、最后成功时间、总候选数和错误。slot 与 int64 JSON 值在客户端保留为十进制文本，避免 JavaScript 数值精度丢失；时间仅在安全整数范围内转换。空列表、请求错误和刷新均使用成员端现有状态组件。移动端表格在本身的横向滚动容器中显示。
+扫描状态展示服务返回的起点、已处理 slot、最新 finalized slot、最后成功时间、总候选数和错误。slot 与 int64 JSON 值在客户端保留为十进制文本，避免 JavaScript 数值精度丢失；时间仅在安全整数范围内转换。空列表、请求错误和刷新均使用成员端现有状态组件。移动端采用分隔记录，完整 Mint 与交易签名直接换行展示，发行证据默认收起。扫描状态与候选列表各自显示请求失败和重试；保留的旧数据明确标注为上次结果。状态缺失显示 Unknown，不将缺失的总候选数显示为零。
 
 数据来自 `GET /api/v1/solana/projects` 和 `GET /api/v1/solana/status` 的成员端代理路径。查询使用 `page`、`pageSize` 和 `query`；默认每页 25 条，提交查询回到第一页。名称/符号子串忽略大小写，Mint 保留大小写语义。刷新只读取已保存的发现结果和扫描状态，不触发扫描、补全或研究；后台补全后可手动刷新查看。
 
 ## 视觉与功能确认的边界
 
-本轮确认的是独立列表、字段、搜索及链上详情。验收截图记录当时页面实现，不代表全站最终视觉主题。后续页面视觉须遵循当前项目已确认的 Nansen 参考、单一深色、Inter 英文/正文/数字与 JetBrains Mono 地址/哈希方向；主题与字体的权威需求为[全站视觉主题](../../requirements/web-ui/visual-theme.md)及其关联文档。本次集成保留已有确认范围，不将首版认可扩大为全站视觉重构完成。
+本轮确认的是独立列表、字段、搜索及链上详情。验收截图记录当时页面实现，不代表全站最终视觉主题。后续页面视觉须遵循当前项目已确认的 Nansen 参考、单一深色、Inter 英文/正文/数字与 JetBrains Mono 地址/哈希方向；主题与字体的权威需求为[全站视觉主题](../../requirements/web-ui/visual-theme.md)及其关联文档。本页现按 v20 会员基础业务主图与 v23 一致性契约重排，Source read failed 使用警告色，与元数据失败独立展示；此页面实施不代表其他全站任务完成。

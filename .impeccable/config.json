@@ -488,6 +488,24 @@
         ],
         "createdAt": "2026-09-14T13:02:06.298Z",
         "reason": "User confirmed Nansen single-dark visual direction and Inter in typography v2; Token wallet analytics v1 explicitly inherits that font choice and was approved on 2026-09-14. Preserve this file-scoped brand exception; do not suppress other fonts or rules."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          ".worktrees/ui-theme-refactor/ui/src/assets/fonts.css"
+        ],
+        "createdAt": "2026-09-15T06:52:24.266Z",
+        "reason": "User confirmed: ATHENA v2 typography explicitly uses Inter for headings, body and numbers (docs/requirements/web-ui/typography-proposal.md:3,19,23 and its v2 approval record); the full UI implementation request explicitly requires Inter. Keep this approved Nansen theme choice; suppress only this font value in the reported production font declaration."
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "ui/src/assets/fonts.css"
+        ],
+        "createdAt": "2026-09-15T07:13:13.776Z",
+        "reason": "User confirmed ATHENA v2 typography uses Inter for headings, body, and numbers; scope remains only the integrated production font declaration."
       }
     ]
   }

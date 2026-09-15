@@ -9,7 +9,8 @@ import {
 } from './member/pages/trader-sync/state';
 import renderer, {act} from 'react-test-renderer';
 import {RouterProvider} from 'react-router-dom';
-import {Button, Input, Menu} from 'antd';
+import {Button, Form, Input, Menu} from 'antd';
+import {selfAccountServices} from './session/services';
 import {MemberApp as App, loadAppBootstrapWithRetry} from './member/app';
 import {parseUserInfo, AppBootstrap, AppBootstrapSessionStatus, AuthSettings} from './shared/models';
 import {ensureMemberBusinessServices, memberServices as services} from './member/services';
@@ -279,6 +280,20 @@ describe('Trader Sync real Shell cleanup', () => {
         expect(scroll).toHaveBeenCalledWith({top: 0, behavior: 'instant'});
         expect(containsText(tree.toJSON(), 'Trader Sync')).toBe(true);
     });
+    test('member identity control belongs to the top bar and the desktop navigation uses the approved width', async () => {
+        ensureMemberBusinessServices();
+        jest.spyOn(services.traderSync, 'listSubscriptions').mockResolvedValue({subscriptions: [], page: {}, quota: {used: 0, limit: 10}, asOf: '2026-09-11T00:00:00Z'});
+        await mountMember('read_write', '/trader-sync/subscriptions');
+        const header = tree.root.findByProps({className: 'athena-shell__header'});
+        const sider = tree.root.findByProps({className: 'athena-shell__sider'});
+        expect(header.findAllByProps({'aria-label': 'Open account menu'})).toHaveLength(1);
+        expect(sider.findAllByProps({'aria-label': 'Open account menu'})).toHaveLength(0);
+        expect(sider.props.width).toBe(224);
+    });
+    test('removed member Appearance URL uses the existing not-found fallback', async () => {
+        await mountMember('read_write', '/account/appearance');
+        expect(containsText(tree.toJSON(), 'Page not found')).toBe(true);
+    });
     test.each(['none', 'read'])('home entry excludes %s and rejects the home deep link', async level => {
         await mountMember(level, '/trader-sync');
         expect(window.location.pathname).toBe('/account/access');
@@ -446,5 +461,62 @@ describe('Trader Sync real Shell cleanup', () => {
     test('RW Add route renders the actual independent page', async () => {
         await mountMember();
         expect(containsText(tree.toJSON(), 'Wallet address or Polymarket profile URL')).toBe(true);
+    });
+});
+
+describe('T3 real member Shell identity boundaries', () => {
+    let tree: renderer.ReactTestRenderer;
+    const identity = (accountId = 'profile-A', iss = 'issuer-one', displayName = 'Original profile') => parseUserInfo({
+        loggedIn: true, accountId, iss, username: accountId,
+        profile: {displayName, revision: 7},
+        access: {loginEnabled: true, apiKeyEnabled: true, revision: 1}
+    });
+    const mount = async (path: string) => {
+        ensureMemberBusinessServices();
+        jest.spyOn(services.authService, 'bootstrap').mockResolvedValue({settings: authSettings, session: {status: AppBootstrapSessionStatus.Authenticated, userInfo: identity()}});
+        jest.spyOn(services.users, 'get').mockResolvedValue(identity());
+        jest.spyOn(services.memberNotifications, 'getTelegramSettings').mockResolvedValue({botAvailable: true, botUsername: 'bot', binding: {status: 'connected', boundAt: '', revision: 1, telegramDisplayName: 'Old Telegram', telegramUsername: 'old_user'}});
+        jest.spyOn(services.memberSecurity, 'listTokens').mockResolvedValue([{id: 'old-identity-key', issuedAt: 1, expiresAt: 0}] as any);
+        window.history.replaceState(null, '', path);
+        await act(async () => { tree = renderer.create(<App />); });
+    };
+    afterEach(() => { if (tree) act(() => tree.unmount()); });
+    test.each([['profile-B', 'issuer-one'], ['profile-A', 'issuer-two']])('same-revision Profile switches to %s/%s without carrying the old draft', async (accountId, iss) => {
+        await mount('/account/profile');
+        const input = () => tree.root.findAllByType(Input).find(item => item.props.id === 'profile-display-name')!;
+        await act(async () => input().props.onChange({target: {value: 'Private old draft'}}));
+        jest.mocked(services.users.get).mockResolvedValue(identity(accountId, iss, 'Replacement profile'));
+        await act(async () => window.dispatchEvent(new Event('focus')));
+        expect(input().props.value).toBe('Replacement profile');
+        expect(JSON.stringify(tree.toJSON())).not.toContain('Private old draft');
+        expect(tree.root.findAllByType(Button).find(item => item.props.children === 'Save profile')!.props.disabled).toBe(true);
+    });
+    test.each([['profile-B', 'issuer-one'], ['profile-A', 'issuer-two']])('late Profile save cannot refresh replacement %s/%s', async (accountId, iss) => {
+        await mount('/account/profile');
+        let finish!: (value: any) => void;
+        const pending = new Promise<any>(resolve => finish = resolve);
+        const save = jest.spyOn(selfAccountServices.accounts, 'updateProfile').mockReturnValue(pending);
+        const input = () => tree.root.findAllByType(Input).find(item => item.props.id === 'profile-display-name')!;
+        await act(async () => input().props.onChange({target: {value: 'Pending old draft'}}));
+        await act(async () => tree.root.findByType(Form).props.onFinish());
+        expect(save).toHaveBeenCalledWith('profile-A', 'Pending old draft', 7);
+        jest.mocked(services.users.get).mockResolvedValue(identity(accountId, iss, 'Replacement profile'));
+        await act(async () => window.dispatchEvent(new Event('focus')));
+        jest.mocked(services.users.get).mockClear();
+        await act(async () => finish({...identity().profile, displayName: 'Late old saved profile', revision: 8}));
+        expect(services.users.get).not.toHaveBeenCalled();
+        expect(input().props.value).toBe('Replacement profile');
+    });
+    test.each([['profile-B', 'issuer-one'], ['profile-A', 'issuer-two']])('Notifications switches to %s/%s and clears the old binding', async (accountId, iss) => {
+        await mount('/notifications');
+        expect(JSON.stringify(tree.toJSON())).toContain('Old Telegram');
+        let finish!: (value: any) => void;
+        const pending = Object.assign(new Promise<any>(resolve => finish = resolve), {abort: jest.fn()});
+        jest.mocked(services.memberNotifications.getTelegramSettings).mockReturnValueOnce(pending).mockResolvedValue({botAvailable: true, botUsername: 'bot'});
+        jest.mocked(services.users.get).mockResolvedValue(identity(accountId, iss));
+        await act(async () => window.dispatchEvent(new Event('focus')));
+        expect(JSON.stringify(tree.toJSON())).not.toContain('Old Telegram');
+        await act(async () => finish({botAvailable: true, botUsername: 'bot', binding: {status: 'connected', boundAt: '', revision: 1, telegramDisplayName: 'Late old Telegram', telegramUsername: 'old'}}));
+        expect(JSON.stringify(tree.toJSON())).not.toContain('Late old Telegram');
     });
 });

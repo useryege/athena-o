@@ -1,18 +1,8 @@
-import {
-    BgColorsOutlined,
-    ClockCircleOutlined,
-    DeleteOutlined,
-    KeyOutlined,
-    LogoutOutlined,
-    ReloadOutlined,
-    SafetyCertificateOutlined,
-    UploadOutlined,
-    UserOutlined
-} from '@ant-design/icons';
-import {Alert, Button, Form, Input, Select, Space, Tag, Typography, Upload} from 'antd';
+import {ClockCircleOutlined, DeleteOutlined, KeyOutlined, LogoutOutlined, ReloadOutlined, SafetyCertificateOutlined, UploadOutlined, UserOutlined} from '@ant-design/icons';
+import {Button, Form, Input, Select, Space, Tag, Typography, Upload} from 'antd';
 import * as React from 'react';
 import {useBlocker, useNavigate} from 'react-router-dom';
-import {AppPage, ChoiceGroup, KeyValueGrid, Section, StatusTag, useAsyncData} from '../../components';
+import {AppPage, Section, StatusTag, useAsyncData} from '../../components';
 import {moduleAccessSummary} from '../account-access';
 import {accountAccessDisplayModules, accountDataAccessLabel} from '../access-modules';
 import {Context, useAuthorization} from '../context';
@@ -20,21 +10,18 @@ import {accountStatusForAccess, AccountStatus} from '../models';
 import {AccountAvatar, accountTierLabel, identityPresentation, identityProviderLabel} from '../account-presentation';
 import {selfAccountServices as services} from '../../session/services';
 import {requestErrorDetails, requestErrorMessage} from '../services/requests';
-import type {ThemeMode, ViewPreferences} from '../services/view-preferences-service';
-import {accountThemeLabel} from '../theme';
 import {hasControlCharacters, unicodeCharacterCount} from '../validation';
 import {boolTag} from './shared';
 
-export type AccountCenterSection = 'profile' | 'appearance' | 'security' | 'access';
+export type AccountCenterSection = 'profile' | 'security' | 'access';
 
 const accountSections: Array<{key: AccountCenterSection; label: string; description: string; icon: React.ReactNode}> = [
-    {key: 'profile', label: 'Profile', description: 'Name and avatar', icon: <UserOutlined />},
-    {key: 'appearance', label: 'Appearance', description: 'Theme across devices', icon: <BgColorsOutlined />},
-    {key: 'access', label: 'Access & session', description: 'Permissions and versions', icon: <KeyOutlined />}
+    {key: 'profile', label: 'Profile', description: 'Name and avatar', icon: <UserOutlined aria-hidden={true} />},
+    {key: 'access', label: 'Access & session', description: 'Permissions and versions', icon: <KeyOutlined aria-hidden={true} />}
 ];
-const memberSecuritySection = {key: 'security' as const, label: 'Security', description: 'API keys and AI connections', icon: <SafetyCertificateOutlined />};
+const memberSecuritySection = {key: 'security' as const, label: 'Security', description: 'API keys and AI connections', icon: <SafetyCertificateOutlined aria-hidden={true} />};
 
-const useUnsavedChanges = (dirty: boolean, reset: () => void, label: string) => {
+const useUnsavedChanges = (dirty: boolean, reset: () => void, savedName: string, draftName: string) => {
     const ctx = React.useContext(Context);
     const blocker = useBlocker(dirty);
 
@@ -56,8 +43,39 @@ const useUnsavedChanges = (dirty: boolean, reset: () => void, label: string) => 
         }
         let resolved = false;
         const handle = ctx.modal.confirm({
-            title: `Discard unsaved ${label}?`,
-            content: 'Your current changes have not been saved.',
+            title: 'Discard unsaved profile changes?',
+            className: 'account-profile-leave-confirm',
+            focusable: {trap: true, focusTriggerAfterClose: true},
+            wrapProps: {
+                onKeyDownCapture: event => {
+                    if (event.key !== 'Tab') return;
+                    const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not([disabled])'));
+                    const first = buttons[0];
+                    const last = buttons[buttons.length - 1];
+                    if (first && last && ((!event.shiftKey && document.activeElement === last) || (event.shiftKey && document.activeElement === first))) {
+                        event.preventDefault();
+                        (event.shiftKey ? last : first).focus();
+                    }
+                }
+            },
+            content: (
+                <>
+                    <p>Your current changes have not been saved.</p>
+                    <dl className='account-draft-comparison'>
+                        <div>
+                            <dt>Saved display name</dt>
+                            <dd>{savedName}</dd>
+                        </div>
+                        <div>
+                            <dt>Your draft</dt>
+                            <dd>{draftName}</dd>
+                        </div>
+                    </dl>
+                </>
+            ),
+            cancelText: 'Keep editing',
+            autoFocusButton: 'cancel',
+            okButtonProps: {danger: true},
             okText: 'Discard and leave',
             onOk: () => {
                 resolved = true;
@@ -74,7 +92,7 @@ const useUnsavedChanges = (dirty: boolean, reset: () => void, label: string) => 
                 handle.destroy();
             }
         };
-    }, [blocker.state, ctx.modal, label, reset]);
+    }, [blocker.state, ctx.modal, savedName, draftName, reset]);
 };
 
 export const AccountCenterLayout = (props: {active: AccountCenterSection; showMemberSecurity?: boolean; children: React.ReactNode}) => {
@@ -83,25 +101,25 @@ export const AccountCenterLayout = (props: {active: AccountCenterSection; showMe
     const profile = authorization.user.profile;
     const visibleSections =
         props.showMemberSecurity && authorization.user.access.apiKeyEnabled && !authorization.isAdmin
-            ? [...accountSections.slice(0, 2), memberSecuritySection, ...accountSections.slice(2)]
+            ? [...accountSections.slice(0, 1), memberSecuritySection, ...accountSections.slice(1)]
             : accountSections;
     return (
         <AppPage
             title='Account Center'
-            subtitle={
-                props.showMemberSecurity ? 'Manage your Athena identity, appearance, API keys, and current access.' : 'Manage your Athena identity, appearance, and current access.'
-            }>
-            <div className='account-center-hero'>
-                <AccountAvatar profile={profile} username={authorization.user.username} size={64} />
-                <div className='account-center-hero__copy'>
-                    <Typography.Title level={2}>{profile.displayName || authorization.user.username}</Typography.Title>
-                    <Typography.Text type='secondary'>@{authorization.user.username}</Typography.Text>
-                    <Space size={6} wrap={true}>
-                        <Tag>{accountTierLabel(profile.tier)}</Tag>
-                        <Tag color={authorization.isAdmin ? 'gold' : 'default'}>{authorization.isAdmin ? 'Administrator' : 'Member'}</Tag>
-                    </Space>
+            subtitle={props.showMemberSecurity ? 'Manage your Athena identity, API keys, and current access.' : 'Manage your Athena identity and current access.'}>
+            {props.active !== 'profile' && (
+                <div className='account-center-hero'>
+                    <AccountAvatar className='account-identity-avatar' profile={profile} username={authorization.user.username} size={36} />
+                    <div className='account-center-hero__copy'>
+                        <Typography.Title level={2}>{profile.displayName || authorization.user.username}</Typography.Title>
+                        <Typography.Text type='secondary'>@{authorization.user.username}</Typography.Text>
+                        <Space size={6} wrap={true}>
+                            <Tag>{accountTierLabel(profile.tier)}</Tag>
+                            <Tag color={authorization.isAdmin ? 'success' : 'default'}>{authorization.isAdmin ? 'Administrator' : 'Member'}</Tag>
+                        </Space>
+                    </div>
                 </div>
-            </div>
+            )}
             <div className='account-center-mobile-select'>
                 <label htmlFor='account-center-section'>Account section</label>
                 <Select
@@ -140,6 +158,13 @@ const ProfilePage = () => {
     const ctx = React.useContext(Context);
     const username = authorization.user.username;
     const accountId = authorization.user.accountId;
+    const mountedRef = React.useRef(true);
+    React.useLayoutEffect(() => {
+        mountedRef.current = true;
+        return () => {
+            mountedRef.current = false;
+        };
+    }, []);
     const [profile, setProfile] = React.useState(authorization.user.profile);
     const [displayName, setDisplayName] = React.useState(profile.displayName);
     const [saving, setSaving] = React.useState(false);
@@ -158,7 +183,7 @@ const ProfilePage = () => {
     }, [authorization.user.profile.revision]);
 
     const reset = React.useCallback(() => setDisplayName(profile.displayName), [profile.displayName]);
-    useUnsavedChanges(dirty, reset, 'profile changes');
+    useUnsavedChanges(dirty, reset, profile.displayName, displayName);
 
     const commitProfile = async () => {
         if (!dirty || !displayNameValid || saving) {
@@ -167,24 +192,32 @@ const ProfilePage = () => {
         setSaving(true);
         try {
             const updated = await services.accounts.updateProfile(accountId, normalizedDisplayName, profile.revision);
+            if (!mountedRef.current) return;
             setProfile(updated);
             setDisplayName(updated.displayName);
             await authorization.refresh();
+            if (!mountedRef.current) return;
             ctx.notifications.success('Profile updated');
         } catch (err) {
+            if (!mountedRef.current) return;
             if (requestErrorDetails(err).status === 409) {
                 await authorization.refresh();
+                if (!mountedRef.current) return;
                 ctx.notifications.warning('Profile changed elsewhere', 'Your display-name draft was kept. Review the latest profile before saving again.');
             } else {
                 ctx.notifications.error('Could not update profile', requestErrorMessage(err));
             }
         } finally {
-            setSaving(false);
+            if (mountedRef.current) setSaving(false);
         }
     };
 
     const changeAvatar = async (file?: File) => {
         if (uploading) {
+            return;
+        }
+        if (file && !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            ctx.notifications.error('Unsupported avatar format', 'Choose a JPEG, PNG, or WebP image.');
             return;
         }
         if (file && file.size > 2 * 1024 * 1024) {
@@ -196,27 +229,37 @@ const ProfilePage = () => {
             const updated = file
                 ? await services.accounts.uploadAvatar(accountId, username, file, profile.revision)
                 : await services.accounts.deleteAvatar(accountId, username, profile.revision);
+            if (!mountedRef.current) return;
             setProfile(updated);
             await authorization.refresh();
+            if (!mountedRef.current) return;
             ctx.notifications.success(file ? 'Avatar updated' : 'Avatar removed');
         } catch (err) {
+            if (!mountedRef.current) return;
             if (requestErrorDetails(err).status === 409) {
                 await authorization.refresh();
+                if (!mountedRef.current) return;
                 ctx.notifications.warning('Profile changed elsewhere', 'The latest profile is being reloaded. Try the avatar change again.');
             } else {
                 ctx.notifications.error(file ? 'Could not upload avatar' : 'Could not remove avatar', requestErrorMessage(err));
             }
         } finally {
-            setUploading(false);
+            if (mountedRef.current) setUploading(false);
         }
     };
 
     return (
-        <Section title='Profile'>
+        <section className='section-panel account-profile-panel' aria-label='Profile'>
             <div className='account-profile-form'>
                 <div className='account-profile-avatar'>
-                    <AccountAvatar profile={profile} username={username} size={88} />
-                    <div>
+                    <AccountAvatar className='account-identity-avatar' profile={profile} username={username} size={72} />
+                    <div className='account-profile-identity'>
+                        <Typography.Title level={2}>{profile.displayName || username}</Typography.Title>
+                        <Typography.Text type='secondary'>@{username}</Typography.Text>
+                        <Space size={6} wrap={true}>
+                            <Tag color={authorization.isAdmin ? 'success' : 'default'}>{authorization.isAdmin ? 'Administrator' : 'Member'}</Tag>
+                            <Tag>{accountTierLabel(profile.tier)}</Tag>
+                        </Space>
                         <Space wrap={true}>
                             <Upload
                                 accept='image/jpeg,image/png,image/webp'
@@ -225,12 +268,12 @@ const ProfilePage = () => {
                                     void changeAvatar(file as File);
                                     return Upload.LIST_IGNORE;
                                 }}>
-                                <Button icon={<UploadOutlined />} loading={uploading} disabled={uploading}>
+                                <Button icon={<UploadOutlined aria-hidden={true} />} loading={uploading} disabled={uploading}>
                                     Upload image
                                 </Button>
                             </Upload>
                             {profile.avatarUrl && (
-                                <Button danger={true} icon={<DeleteOutlined />} loading={uploading} disabled={uploading} onClick={() => void changeAvatar()}>
+                                <Button danger={true} icon={<DeleteOutlined aria-hidden={true} />} loading={uploading} disabled={uploading} onClick={() => void changeAvatar()}>
                                     Remove
                                 </Button>
                             )}
@@ -239,11 +282,19 @@ const ProfilePage = () => {
                     </div>
                 </div>
                 <Form layout='vertical' onFinish={() => void commitProfile()}>
-                    <Form.Item label='Username'>
-                        <Input value={`@${username}`} readOnly={true} />
+                    <Form.Item label='Username' htmlFor='profile-username' extra='Your permanent username cannot be changed.'>
+                        <Input id='profile-username' value={`@${username}`} readOnly={true} />
                     </Form.Item>
                     <Form.Item
-                        label='Display name'
+                        label={
+                            <span className='account-profile-name-label'>
+                                <span id='profile-name-label'>Display name</span>
+                                <span id='profile-name-count' aria-hidden={true}>
+                                    {unicodeCharacterCount(displayName)}/80
+                                </span>
+                            </span>
+                        }
+                        htmlFor='profile-display-name'
                         validateStatus={!displayNameValid ? 'error' : undefined}
                         help={
                             !normalizedDisplayName
@@ -255,8 +306,10 @@ const ProfilePage = () => {
                                     : 'Shown in the application shell and Account Center.'
                         }>
                         <Input
+                            id='profile-display-name'
                             value={displayName}
-                            showCount={{formatter: info => `${unicodeCharacterCount(info.value)}/80`}}
+                            aria-labelledby='profile-name-label'
+                            aria-describedby='profile-name-count'
                             autoComplete='name'
                             onChange={event => setDisplayName(event.target.value)}
                         />
@@ -276,41 +329,7 @@ const ProfilePage = () => {
                     </div>
                 </Form>
             </div>
-        </Section>
-    );
-};
-
-const AppearancePage = (props: {preferences: ViewPreferences; changing: boolean; onThemeChange: (theme: ThemeMode) => Promise<void>}) => {
-    const authorization = useAuthorization();
-    return (
-        <Section title='Appearance'>
-            <div className='account-theme-options'>
-                <div>
-                    <Typography.Text strong={true}>Color theme</Typography.Text>
-                    <Typography.Paragraph type='secondary'>
-                        This preference follows you across signed-in devices. System tracks your operating-system appearance.
-                    </Typography.Paragraph>
-                </div>
-                <ChoiceGroup<ThemeMode>
-                    className='account-theme-choice'
-                    ariaLabel='Athena color theme'
-                    value={props.preferences.theme}
-                    disabled={props.changing}
-                    options={[
-                        {value: 'system', label: 'System'},
-                        {value: 'light', label: 'Light'},
-                        {value: 'dark', label: 'Dark'}
-                    ]}
-                    onChange={theme => void props.onThemeChange(theme)}
-                />
-            </div>
-            <Alert
-                type='info'
-                showIcon={true}
-                title={`${accountThemeLabel(props.preferences.theme)} theme selected`}
-                description={`Server preference revision ${authorization.user.preferences.revision}. Sidebar, table, and sorting preferences remain local to this browser.`}
-            />
-        </Section>
+        </section>
     );
 };
 
@@ -339,12 +358,12 @@ const PendingAccessPage = (props: {loggingOut: boolean; onLogout: () => void}) =
         <Section title='Access pending'>
             <div className='account-access-pending'>
                 <div className='account-access-pending__icon' aria-hidden='true'>
-                    <ClockCircleOutlined />
+                    <ClockCircleOutlined aria-hidden={true} />
                 </div>
                 <div className='account-access-pending__copy'>
                     <Typography.Title level={2}>{identity.pendingTitle}</Typography.Title>
                     <Typography.Paragraph>
-                        Your Athena account is ready, but an administrator has not granted business access yet. You can update your profile and appearance while you wait.
+                        Your Athena account is ready, but an administrator has not granted business access yet. You can update your profile while you wait.
                     </Typography.Paragraph>
                     <div className='account-access-pending__identity'>
                         <Typography.Text type='secondary'>{identity.label}</Typography.Text>
@@ -357,10 +376,20 @@ const PendingAccessPage = (props: {loggingOut: boolean; onLogout: () => void}) =
                         {authorization.lastCheckedAt > 0 ? new Date(authorization.lastCheckedAt).toLocaleTimeString() : 'not yet'}.
                     </Typography.Text>
                     <Space wrap={true}>
-                        <Button type='primary' icon={<ReloadOutlined />} loading={refreshing} disabled={refreshing || props.loggingOut} onClick={() => void refresh()}>
+                        <Button
+                            type='primary'
+                            icon={<ReloadOutlined aria-hidden={true} />}
+                            loading={refreshing}
+                            disabled={refreshing || props.loggingOut}
+                            onClick={() => void refresh()}>
                             Refresh permissions
                         </Button>
-                        <Button danger={true} icon={<LogoutOutlined />} loading={props.loggingOut} disabled={refreshing || props.loggingOut} onClick={props.onLogout}>
+                        <Button
+                            danger={true}
+                            icon={<LogoutOutlined aria-hidden={true} />}
+                            loading={props.loggingOut}
+                            disabled={refreshing || props.loggingOut}
+                            onClick={props.onLogout}>
                             Log out
                         </Button>
                     </Space>
@@ -370,6 +399,17 @@ const PendingAccessPage = (props: {loggingOut: boolean; onLogout: () => void}) =
     );
 };
 
+const AccountSessionFacts = (props: {items: Array<{label: string; value: React.ReactNode}>}) => (
+    <dl className='account-session-facts'>
+        {props.items.map(item => (
+            <div key={item.label}>
+                <dt>{item.label}</dt>
+                <dd>{item.value}</dd>
+            </div>
+        ))}
+    </dl>
+);
+
 const ActiveAccessPage = () => {
     const authorization = useAuthorization();
     const identity = identityPresentation(authorization.user.identity);
@@ -377,11 +417,38 @@ const ActiveAccessPage = () => {
     const uiVersion = typeof SYSTEM_INFO === 'undefined' ? 'latest' : SYSTEM_INFO.version;
     return (
         <>
-            <Section title='Current session'>
-                <KeyValueGrid
+            <Section title='Module access' extra={<Typography.Text type='secondary'>{moduleAccessSummary(authorization.user.access)}</Typography.Text>}>
+                <Typography.Paragraph type='secondary'>
+                    {authorization.isAdmin
+                        ? 'Administrator access is active. Member modules, API keys, and member Profit Sharing are unavailable for this identity.'
+                        : 'Your current permissions in Athena. Access is managed by an administrator.'}
+                </Typography.Paragraph>
+                <div className='account-module-summary'>
+                    {accountAccessDisplayModules.map(definition => (
+                        <div key={definition.module}>
+                            <span>
+                                <strong>{definition.label}</strong>
+                                <small>{definition.description}</small>
+                            </span>
+                            <Tag color={authorization.access(definition.module) === 2 ? 'success' : undefined}>
+                                {accountDataAccessLabel(authorization.access(definition.module))}
+                            </Tag>
+                        </div>
+                    ))}
+                </div>
+                <div className='account-access-flags'>
+                    <span>
+                        API key access <StatusTag value={authorization.user.access.apiKeyEnabled ? 'Yes' : 'No'} positive={authorization.user.access.apiKeyEnabled} />
+                    </span>
+                    <span>
+                        Profit Sharing access{' '}
+                        <StatusTag value={authorization.user.access.profitSharingEnabled ? 'Yes' : 'No'} positive={authorization.user.access.profitSharingEnabled} />
+                    </span>
+                </div>
+            </Section>
+            <Section title='Current session' extra={<span>Logged in {boolTag(authorization.user.loggedIn)}</span>}>
+                <AccountSessionFacts
                     items={[
-                        {label: 'Username', value: `@${authorization.user.username}`},
-                        {label: 'Identity provider', value: identityProviderLabel(authorization.user.identity.provider)},
                         {
                             label: identity.label,
                             value: (
@@ -390,33 +457,25 @@ const ActiveAccessPage = () => {
                                 </Typography.Text>
                             )
                         },
-                        {label: 'Account created', value: identityTime(authorization.user.identity.createdAt)},
-                        {label: 'Last sign-in', value: identityTime(authorization.user.identity.lastLoginAt)},
-                        {label: 'Logged in', value: boolTag(authorization.user.loggedIn)},
+                        {label: 'Identity provider', value: identityProviderLabel(authorization.user.identity.provider)},
+                        {label: 'Username', value: `@${authorization.user.username}`},
                         {label: 'Role', value: authorization.isAdmin ? <StatusTag value='Administrator' positive={true} /> : 'Member'},
-                        {label: 'Tier', value: accountTierLabel(authorization.user.profile.tier)},
-                        {label: 'Module access', value: moduleAccessSummary(authorization.user.access)},
-                        {label: 'API key access', value: boolTag(authorization.user.access.apiKeyEnabled)},
-                        {label: 'Profit Sharing access', value: boolTag(authorization.user.access.profitSharingEnabled)},
-                        {label: 'Access revision', value: authorization.revision},
-                        {label: 'Issuer', value: authorization.user.iss || 'athena'},
-                        {label: 'UI version', value: uiVersion || '-'},
-                        {label: 'API version', value: version.data?.Version || version.data?.version || '-'}
+                        {label: 'Tier', value: accountTierLabel(authorization.user.profile.tier)}
                     ]}
                 />
-            </Section>
-            <Section title='Module access'>
-                <div className='account-module-summary'>
-                    {accountAccessDisplayModules.map(definition => (
-                        <div key={definition.module}>
-                            <span>
-                                <strong>{definition.label}</strong>
-                                <small>{definition.description}</small>
-                            </span>
-                            <Tag>{accountDataAccessLabel(authorization.access(definition.module))}</Tag>
-                        </div>
-                    ))}
-                </div>
+                <details className='account-session-details'>
+                    <summary>Times, revisions &amp; versions</summary>
+                    <AccountSessionFacts
+                        items={[
+                            {label: 'Account created', value: identityTime(authorization.user.identity.createdAt)},
+                            {label: 'Last sign-in', value: identityTime(authorization.user.identity.lastLoginAt)},
+                            {label: 'Access revision', value: authorization.revision},
+                            {label: 'Issuer', value: authorization.user.iss || 'athena'},
+                            {label: 'UI version', value: uiVersion || '-'},
+                            {label: 'API version', value: version.data?.Version || version.data?.version || '-'}
+                        ]}
+                    />
+                </details>
             </Section>
         </>
     );
@@ -431,18 +490,9 @@ const AccessPage = (props: {loggingOut: boolean; onLogout: () => void}) => {
     );
 };
 
-export const AccountCenterPage = (props: {
-    section: Exclude<AccountCenterSection, 'security'>;
-    showMemberSecurity?: boolean;
-    preferences: ViewPreferences;
-    themeChanging: boolean;
-    onThemeChange: (theme: ThemeMode) => Promise<void>;
-    loggingOut: boolean;
-    onLogout: () => void;
-}) => (
+export const AccountCenterPage = (props: {section: Exclude<AccountCenterSection, 'security'>; showMemberSecurity?: boolean; loggingOut: boolean; onLogout: () => void}) => (
     <AccountCenterLayout active={props.section} showMemberSecurity={props.showMemberSecurity}>
         {props.section === 'profile' && <ProfilePage />}
-        {props.section === 'appearance' && <AppearancePage preferences={props.preferences} changing={props.themeChanging} onThemeChange={props.onThemeChange} />}
         {props.section === 'access' && <AccessPage loggingOut={props.loggingOut} onLogout={props.onLogout} />}
     </AccountCenterLayout>
 );

@@ -1,6 +1,6 @@
 {
-  "checked_at": "2026-09-14T12:16:40.882428+00:00",
-  "status": "coverage_mapped_implementation_not_started",
+  "checked_at": "2026-09-15",
+  "status": "implementation_acceptance_review_environment_closure_and_notification_complete",
   "scope": "当前 React 入口与已批准主视觉；Trader Sync 仅承接共享主题影响与回归，独立 Token/Nansen 接入保持原计划。",
   "counts": {
     "routing_state": 4,
@@ -19,7 +19,14 @@
       "source": "ui/src/app/member/app.tsx",
       "disposition": "routing_state",
       "authority": "v3 + v15 + v22",
-      "task": "T2"
+      "task": "T2",
+      "implementation_status": "existing_routing_rule_verified",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-2-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+        "pointer": "/appearanceAndFallbacks",
+        "case_id": "member-default"
+      }
     },
     {
       "realm": "member",
@@ -30,7 +37,14 @@
       "source": "ui/src/app/member/pages/wallets.tsx",
       "disposition": "implement",
       "authority": "v20",
-      "task": "T5"
+      "task": "T5",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-5-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/0",
+        "case_id": "foundations-wallets"
+      }
     },
     {
       "realm": "member",
@@ -41,7 +55,14 @@
       "source": "ui/src/app/member/pages/worm-trading.tsx",
       "disposition": "implement",
       "authority": "v22",
-      "task": "T7"
+      "task": "T7",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-7-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/1",
+        "case_id": "worm-assets"
+      }
     },
     {
       "realm": "member",
@@ -52,7 +73,14 @@
       "source": "ui/src/app/member/pages/worm-trading-combinations.tsx",
       "disposition": "implement",
       "authority": "v22",
-      "task": "T7"
+      "task": "T7",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-7-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/2",
+        "case_id": "worm-combinations"
+      }
     },
     {
       "realm": "member",
@@ -63,7 +91,14 @@
       "source": "ui/src/app/member/pages/worm-trading-combinations.tsx",
       "disposition": "implement",
       "authority": "v22",
-      "task": "T7"
+      "task": "T7",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-7-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/3",
+        "case_id": "worm-combinations-new"
+      }
     },
     {
       "realm": "member",
@@ -74,7 +109,14 @@
       "source": "ui/src/app/member/pages/worm-trading-combinations.tsx",
       "disposition": "implement",
       "authority": "v22",
-      "task": "T7"
+      "task": "T7",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-7-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/4",
+        "case_id": "worm-combinations-edit"
+      }
     },
     {
       "realm": "member",
@@ -85,7 +127,14 @@
       "source": "ui/src/app/member/pages/worm-trading-execution-preview.tsx",
       "disposition": "implement",
       "authority": "v22",
-      "task": "T8"
+      "task": "T8",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-8-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/5",
+        "case_id": "worm-preview"
+      }
     },
     {
       "realm": "member",
@@ -96,7 +145,14 @@
       "source": "ui/src/app/member/pages/worm-trading-executions.tsx",
       "disposition": "implement",
       "authority": "v22",
-      "task": "T8"
+      "task": "T8",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-8-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/6",
+        "case_id": "worm-executions"
+      }
     },
     {
       "realm": "member",
@@ -107,7 +163,14 @@
       "source": "ui/src/app/member/pages/worm-trading-executions.tsx",
       "disposition": "implement",
       "authority": "v22",
-      "task": "T8"
+      "task": "T8",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-8-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/7",
+        "case_id": "worm-execution-detail"
+      }
     },
     {
       "realm": "member",
@@ -118,7 +181,14 @@
       "source": "ui/src/app/member/pages/market-radar.tsx",
       "disposition": "implement",
       "authority": "v21",
-      "task": "T6"
+      "task": "T6",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-6-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/8",
+        "case_id": "markets-hot"
+      }
     },
     {
       "realm": "member",
@@ -129,7 +199,14 @@
       "source": "ui/src/app/member/pages/market-radar.tsx",
       "disposition": "implement",
       "authority": "v21",
-      "task": "T6"
+      "task": "T6",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-6-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/9",
+        "case_id": "markets-realtime"
+      }
     },
     {
       "realm": "member",
@@ -140,7 +217,14 @@
       "source": "ui/src/app/member/pages/market-radar.tsx",
       "disposition": "implement",
       "authority": "v21",
-      "task": "T6"
+      "task": "T6",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-6-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/10",
+        "case_id": "markets-movers"
+      }
     },
     {
       "realm": "member",
@@ -151,7 +235,14 @@
       "source": "ui/src/app/member/pages/solana.tsx",
       "disposition": "implement",
       "authority": "v20",
-      "task": "T5"
+      "task": "T5",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-5-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/11",
+        "case_id": "foundations-solana"
+      }
     },
     {
       "realm": "member",
@@ -162,7 +253,14 @@
       "source": "ui/src/app/member/pages/sports-live.tsx",
       "disposition": "implement",
       "authority": "v21",
-      "task": "T6"
+      "task": "T6",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-6-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/12",
+        "case_id": "markets-live"
+      }
     },
     {
       "realm": "member",
@@ -173,7 +271,14 @@
       "source": "ui/src/app/member/pages/sports-history.tsx",
       "disposition": "implement",
       "authority": "v21",
-      "task": "T6"
+      "task": "T6",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-6-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/13",
+        "case_id": "markets-history"
+      }
     },
     {
       "realm": "member",
@@ -184,7 +289,14 @@
       "source": "ui/src/app/member/pages/world-cup-corners.tsx",
       "disposition": "implement",
       "authority": "v21",
-      "task": "T6"
+      "task": "T6",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-6-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/14",
+        "case_id": "markets-corners"
+      }
     },
     {
       "realm": "member",
@@ -195,7 +307,14 @@
       "source": "ui/src/app/member/pages/managed-oo.tsx",
       "disposition": "implement",
       "authority": "v21",
-      "task": "T6"
+      "task": "T6",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-6-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/15",
+        "case_id": "markets-proposals"
+      }
     },
     {
       "realm": "member",
@@ -206,7 +325,14 @@
       "source": "ui/src/app/member/pages/managed-oo.tsx",
       "disposition": "implement",
       "authority": "v21",
-      "task": "T6"
+      "task": "T6",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-6-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/16",
+        "case_id": "markets-disputes"
+      }
     },
     {
       "realm": "member",
@@ -217,7 +343,13 @@
       "source": "ui/src/app/member/pages/trader-sync/home.tsx",
       "disposition": "deferred",
       "authority": "v6",
-      "task": "T9"
+      "task": "T9",
+      "implementation_status": "layout_deferred_shared_theme_regression_verified",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+        "pointer": "/traderSyncEightRoutes/0"
+      }
     },
     {
       "realm": "member",
@@ -228,7 +360,13 @@
       "source": "ui/src/app/member/pages/trader-sync/subscriptions.tsx",
       "disposition": "deferred",
       "authority": "v8",
-      "task": "T9"
+      "task": "T9",
+      "implementation_status": "layout_deferred_shared_theme_regression_verified",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+        "pointer": "/traderSyncEightRoutes/2"
+      }
     },
     {
       "realm": "member",
@@ -239,7 +377,13 @@
       "source": "ui/src/app/member/pages/trader-sync/subscription-detail.tsx",
       "disposition": "deferred",
       "authority": "v9",
-      "task": "T9"
+      "task": "T9",
+      "implementation_status": "layout_deferred_shared_theme_regression_verified",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+        "pointer": "/traderSyncEightRoutes/3"
+      }
     },
     {
       "realm": "member",
@@ -250,7 +394,13 @@
       "source": "ui/src/app/member/pages/trader-sync/add.tsx",
       "disposition": "deferred",
       "authority": "v7",
-      "task": "T9"
+      "task": "T9",
+      "implementation_status": "layout_deferred_shared_theme_regression_verified",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+        "pointer": "/traderSyncEightRoutes/1"
+      }
     },
     {
       "realm": "member",
@@ -261,7 +411,13 @@
       "source": "ui/src/app/member/pages/trader-sync/activity-detail.tsx",
       "disposition": "deferred",
       "authority": "暂缓新主题定稿",
-      "task": "T9"
+      "task": "T9",
+      "implementation_status": "layout_deferred_shared_theme_regression_verified",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+        "pointer": "/traderSyncEightRoutes/4"
+      }
     },
     {
       "realm": "member",
@@ -272,7 +428,13 @@
       "source": "ui/src/app/member/pages/trader-sync/summary-detail.tsx",
       "disposition": "deferred",
       "authority": "暂缓新主题定稿",
-      "task": "T9"
+      "task": "T9",
+      "implementation_status": "layout_deferred_shared_theme_regression_verified",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+        "pointer": "/traderSyncEightRoutes/5"
+      }
     },
     {
       "realm": "member",
@@ -283,7 +445,14 @@
       "source": "ui/src/app/member/pages/notifications.tsx",
       "disposition": "implement",
       "authority": "v10",
-      "task": "T3"
+      "task": "T3",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-3-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/17",
+        "case_id": "member-notifications"
+      }
     },
     {
       "realm": "member",
@@ -294,7 +463,14 @@
       "source": "ui/src/app/shared/pages/account-center.tsx",
       "disposition": "implement",
       "authority": "v11",
-      "task": "T3"
+      "task": "T3",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-3-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/18",
+        "case_id": "member-profile"
+      }
     },
     {
       "realm": "member",
@@ -305,7 +481,14 @@
       "source": "ui/src/app/shared/pages/account-center.tsx",
       "disposition": "remove",
       "authority": "Nansen 单一深色决定",
-      "task": "T1"
+      "task": "T1",
+      "implementation_status": "removed_existing_404_verified",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-1-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+        "pointer": "/appearanceAndFallbacks",
+        "case_id": "member-appearance"
+      }
     },
     {
       "realm": "member",
@@ -316,7 +499,14 @@
       "source": "ui/src/app/member/pages/account-security.tsx",
       "disposition": "implement",
       "authority": "v12",
-      "task": "T3"
+      "task": "T3",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-3-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/19",
+        "case_id": "member-security"
+      }
     },
     {
       "realm": "member",
@@ -327,7 +517,14 @@
       "source": "ui/src/app/shared/pages/account-center.tsx",
       "disposition": "implement",
       "authority": "v13",
-      "task": "T3"
+      "task": "T3",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-3-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/20",
+        "case_id": "member-access"
+      }
     },
     {
       "realm": "member",
@@ -338,7 +535,14 @@
       "source": "ui/src/app/member/pages/profit-sharing.tsx",
       "disposition": "implement",
       "authority": "v20",
-      "task": "T5"
+      "task": "T5",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-5-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/21",
+        "case_id": "foundations-member-rounds"
+      }
     },
     {
       "realm": "member",
@@ -349,7 +553,14 @@
       "source": "ui/src/app/member/pages/profit-sharing.tsx",
       "disposition": "implement",
       "authority": "v20",
-      "task": "T5"
+      "task": "T5",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-5-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/22",
+        "case_id": "foundations-member-collecting"
+      }
     },
     {
       "realm": "member",
@@ -360,7 +571,14 @@
       "source": "ui/src/app/shared/pages/help.tsx",
       "disposition": "implement",
       "authority": "v22",
-      "task": "T3"
+      "task": "T3",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-3-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/23",
+        "case_id": "member-help"
+      }
     },
     {
       "realm": "member",
@@ -371,7 +589,14 @@
       "source": "ui/src/app/member/app.tsx",
       "disposition": "routing_state",
       "authority": "v3 + v15 + v22",
-      "task": "T2"
+      "task": "T2",
+      "implementation_status": "existing_routing_rule_verified",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-2-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+        "pointer": "/appearanceAndFallbacks",
+        "case_id": "member-unknown"
+      }
     },
     {
       "realm": "member",
@@ -382,7 +607,14 @@
       "source": "ui/src/app/member/pages/login.tsx",
       "disposition": "implement",
       "authority": "v14",
-      "task": "T3"
+      "task": "T3",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-3-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/24",
+        "case_id": "member-login"
+      }
     },
     {
       "realm": "member",
@@ -393,7 +625,14 @@
       "source": "ui/src/app/member/pages/register.tsx",
       "disposition": "implement",
       "authority": "v14 + v22",
-      "task": "T3"
+      "task": "T3",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-3-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/25",
+        "case_id": "member-register"
+      }
     },
     {
       "realm": "admin",
@@ -404,7 +643,14 @@
       "source": "ui/src/app/admin/app.tsx",
       "disposition": "routing_state",
       "authority": "v3 + v15 + v22",
-      "task": "T2"
+      "task": "T2",
+      "implementation_status": "existing_routing_rule_verified",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-2-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+        "pointer": "/appearanceAndFallbacks",
+        "case_id": "admin-default"
+      }
     },
     {
       "realm": "admin",
@@ -415,7 +661,14 @@
       "source": "ui/src/app/admin/pages/admin-accounts.tsx",
       "disposition": "implement",
       "authority": "v15",
-      "task": "T4"
+      "task": "T4",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-4-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/26",
+        "case_id": "admin-accounts"
+      }
     },
     {
       "realm": "admin",
@@ -426,7 +679,14 @@
       "source": "ui/src/app/admin/pages/profit-sharing-admin.tsx",
       "disposition": "implement",
       "authority": "v19",
-      "task": "T5"
+      "task": "T5",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-5-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/27",
+        "case_id": "foundations-admin-rounds"
+      }
     },
     {
       "realm": "admin",
@@ -437,7 +697,14 @@
       "source": "ui/src/app/admin/pages/profit-sharing-admin.tsx",
       "disposition": "implement",
       "authority": "v19",
-      "task": "T5"
+      "task": "T5",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-5-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/28",
+        "case_id": "foundations-admin-collecting"
+      }
     },
     {
       "realm": "admin",
@@ -448,7 +715,13 @@
       "source": "ui/src/app/admin/pages/trader-sync/subscriptions.tsx",
       "disposition": "deferred",
       "authority": "v19",
-      "task": "T9"
+      "task": "T9",
+      "implementation_status": "layout_deferred_shared_theme_regression_verified",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+        "pointer": "/traderSyncEightRoutes/6"
+      }
     },
     {
       "realm": "admin",
@@ -459,7 +732,13 @@
       "source": "ui/src/app/admin/pages/trader-sync/subscription-detail.tsx",
       "disposition": "deferred",
       "authority": "v19",
-      "task": "T9"
+      "task": "T9",
+      "implementation_status": "layout_deferred_shared_theme_regression_verified",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-9-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+        "pointer": "/traderSyncEightRoutes/7"
+      }
     },
     {
       "realm": "admin",
@@ -470,7 +749,14 @@
       "source": "ui/src/app/admin/pages/service-status.tsx",
       "disposition": "implement",
       "authority": "v16",
-      "task": "T4"
+      "task": "T4",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-4-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/29",
+        "case_id": "admin-services"
+      }
     },
     {
       "realm": "admin",
@@ -481,7 +767,14 @@
       "source": "ui/src/app/admin/pages/etherscan-gateways.tsx",
       "disposition": "implement",
       "authority": "v17",
-      "task": "T4"
+      "task": "T4",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-4-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/30",
+        "case_id": "admin-gateways"
+      }
     },
     {
       "realm": "admin",
@@ -492,7 +785,14 @@
       "source": "ui/src/app/admin/pages/system-notifications.tsx",
       "disposition": "implement",
       "authority": "v18",
-      "task": "T4"
+      "task": "T4",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-4-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/31",
+        "case_id": "admin-notifications"
+      }
     },
     {
       "realm": "admin",
@@ -503,7 +803,14 @@
       "source": "ui/src/app/admin/pages/system-notification-detail.tsx",
       "disposition": "implement",
       "authority": "v18",
-      "task": "T4"
+      "task": "T4",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-4-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/32",
+        "case_id": "admin-notification-detail"
+      }
     },
     {
       "realm": "admin",
@@ -514,7 +821,14 @@
       "source": "ui/src/app/shared/pages/account-center.tsx",
       "disposition": "implement",
       "authority": "v22",
-      "task": "T3"
+      "task": "T3",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-3-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/33",
+        "case_id": "admin-profile"
+      }
     },
     {
       "realm": "admin",
@@ -525,7 +839,14 @@
       "source": "ui/src/app/shared/pages/account-center.tsx",
       "disposition": "remove",
       "authority": "Nansen 单一深色决定",
-      "task": "T1"
+      "task": "T1",
+      "implementation_status": "removed_existing_404_verified",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-1-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+        "pointer": "/appearanceAndFallbacks",
+        "case_id": "admin-appearance"
+      }
     },
     {
       "realm": "admin",
@@ -536,7 +857,14 @@
       "source": "ui/src/app/shared/pages/account-center.tsx",
       "disposition": "implement",
       "authority": "v22",
-      "task": "T3"
+      "task": "T3",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-3-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/34",
+        "case_id": "admin-access"
+      }
     },
     {
       "realm": "admin",
@@ -547,7 +875,14 @@
       "source": "ui/src/app/shared/pages/help.tsx",
       "disposition": "implement",
       "authority": "v22",
-      "task": "T3"
+      "task": "T3",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-3-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/35",
+        "case_id": "admin-help"
+      }
     },
     {
       "realm": "admin",
@@ -558,7 +893,14 @@
       "source": "ui/src/app/admin/app.tsx",
       "disposition": "routing_state",
       "authority": "v3 + v15 + v22",
-      "task": "T2"
+      "task": "T2",
+      "implementation_status": "existing_routing_rule_verified",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-2-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+        "pointer": "/appearanceAndFallbacks",
+        "case_id": "admin-unknown"
+      }
     },
     {
       "realm": "admin",
@@ -569,7 +911,113 @@
       "source": "ui/src/app/admin/login.tsx",
       "disposition": "implement",
       "authority": "v22",
-      "task": "T3"
+      "task": "T3",
+      "implementation_status": "implemented",
+      "evidence": {
+        "source": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/task-3-report.md",
+        "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+        "pointer": "/mainCases/36",
+        "case_id": "admin-login"
+      }
     }
-  ]
+  ],
+  "implementation_sha": "78e473b79122441771f1c4ed27c9b15019d875d4",
+  "evidence_path_base": "repository_root",
+  "delivery_status_document": "docs/testing/web-ui-theme-refactor-acceptance.md#交付状态与环境收尾",
+  "evidence_version_policy": "e7ec272b unfiltered acceptance1018; 82f25ad8 semantic38/unfiltered a11y176/native38/real56/auth4/fonts; 20167913 affected acceptance14/a11y24/native1/smoke2. Baselines are not reruns on final SHA. 78e473b7 final-review delete-lifecycle fix: Jest38/420, affected acceptance40, real system-Chrome smoke2; one production logic file and two tests, no CSS/DOM delta.",
+  "shared_registration_admin_variant": {
+    "route": "/register?athenaRealm=admin",
+    "counted_as_new_route": false,
+    "evidence": {
+      "index": ".tmp/ui-theme-refactor/task-9/route-visual-review-20167913.json",
+      "pointer": "/mainCases/37",
+      "case_id": "admin-register"
+    }
+  },
+  "state_evidence": {
+    "S1": {
+      "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+      "pointer": "/states/S1",
+      "entries": 100
+    },
+    "S2": {
+      "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+      "pointer": "/states/S2",
+      "entries": 60
+    },
+    "S3": {
+      "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+      "pointer": "/states/S3",
+      "entries": 62
+    },
+    "S4": {
+      "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+      "pointer": "/states/S4",
+      "entries": 40
+    },
+    "S5": {
+      "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+      "pointer": "/states/S5",
+      "entries": 406
+    },
+    "S6": {
+      "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+      "pointer": "/states/S6",
+      "entries": 32
+    },
+    "S7": {
+      "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+      "pointer": "/states/S7",
+      "entries": 20
+    },
+    "S8": {
+      "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+      "pointer": "/states/S8",
+      "entries": 14
+    },
+    "S9": {
+      "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+      "pointer": "/states/S9",
+      "entries": 60
+    },
+    "S10": {
+      "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+      "pointer": "/states/S10",
+      "entries": 68
+    },
+    "S11": {
+      "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+      "pointer": "/states/S11",
+      "entries": 108
+    },
+    "S12": {
+      "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+      "pointer": "/states/S12",
+      "entries": 180
+    },
+    "S13": {
+      "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+      "pointer": "/states/S13",
+      "entries": 90
+    },
+    "S14": {
+      "index": ".tmp/ui-theme-refactor/task-9/state-coverage-20167913.json",
+      "pointer": "/states/S14",
+      "entries": 40
+    }
+  },
+  "final_review_fix": {
+    "route": "/worm-trading/combinations",
+    "state_ids": [
+      "S2",
+      "S3",
+      "S4",
+      "S11"
+    ],
+    "source_sha": "78e473b79122441771f1c4ed27c9b15019d875d4",
+    "report": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/final-fix-report.md",
+    "review": ".tmp/ui-theme-refactor/sdd-archive/2026-09-14-web-ui-theme-refactor/final-branch-rereview-1.md",
+    "index": ".tmp/ui-theme-refactor/final-delivery-78e473b7.json",
+    "note": "Supplemental lifecycle regression; original versioned route/state pointers remain unchanged."
+  }
 }

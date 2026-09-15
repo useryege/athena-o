@@ -107,8 +107,8 @@ administrator account-directory commands use separate facades.
 2. A cryptographically verified but unknown Google subject or Solana address in
    an explicit application realm remains outside PostgreSQL until the browser
    submits an acceptable username through the shared registration handler.
-   `RegisterExternalAccount` creates identity, access, ten module rows, profile,
-   and preferences in one transaction. Member accounts start Pending. The admin
+   `RegisterExternalAccount` creates identity, access, eleven module rows, and profile
+   in one transaction. Member accounts start Pending. The admin
    realm accepts only the configured verified Google email and can create only
    the single fixed administrator aggregate; the same email entering through
    the member realm remains an ordinary member persona.
@@ -120,7 +120,7 @@ administrator account-directory commands use separate facades.
 4. A known provider, subject, and realm resolve directly to the original UUID
    and locked username. Successful login updates `last_login_at`; Google also
    refreshes its verified-email audit field. Login cannot change provider,
-   subject, username, role, profile, or preferences.
+   subject, username, role, or profile.
 5. Athena signs a login token with a fresh UUID JTI, expiry, and digest of the
    persisted realm, provider, and subject. API Key creation signs a fresh JTI
    and inserts bearer-free metadata before returning the bearer to its creator.
@@ -255,7 +255,7 @@ entitlements, and API Key metadata are database state.
   identity key. Google email is never a lookup key; wallet software brand is not
   an identity provider value.
 - One verified Google subject may own independent member and administrator
-  personas. Their UUIDs, usernames, access, profile, preferences, API Keys,
+  personas. Their UUIDs, usernames, access, profile, API Keys,
   Wallets, and business data never merge or inherit from each other.
 - Google and Solana identities cannot merge or act as secondary credentials for
   one account.

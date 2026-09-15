@@ -44,7 +44,7 @@ export const MetricRow = (props: {items: Array<{label: string; value: React.Reac
             <Col key={item.label} span={4}>
                 <div className={`metric metric--${item.tone || 'neutral'}`}>
                     <span>{item.label}</span>
-                    <strong>{item.value ?? '-'}</strong>
+                    <strong className='athena-number'>{item.value ?? '-'}</strong>
                 </div>
             </Col>
         ))}
@@ -52,9 +52,7 @@ export const MetricRow = (props: {items: Array<{label: string; value: React.Reac
 );
 
 export const StatusTag = (props: {value?: React.ReactNode; positive?: boolean; negative?: boolean}) => (
-    <Tag className={props.positive && !props.negative ? 'athena-status-tag--positive' : undefined} color={props.negative ? 'red' : props.positive ? 'green' : 'default'}>
-        {props.value ?? '-'}
-    </Tag>
+    <Tag color={props.negative ? 'error' : props.positive ? 'success' : 'default'}>{props.value ?? '-'}</Tag>
 );
 
 export const SearchBar = (props: {value?: string; placeholder?: string; onChange: (value: string) => void; onSearch?: () => void}) => (
@@ -77,7 +75,7 @@ export const InlineActions = (props: {children: React.ReactNode}) => (
 
 export const TruncatedText = (props: {value?: React.ReactNode; copyable?: boolean; singleLine?: boolean}) => (
     <Typography.Text
-        className={`truncate-text${props.singleLine ? ' truncate-text--single-line' : ''}`}
+        className={`truncate-text athena-identifier${props.singleLine ? ' truncate-text--single-line' : ''}`}
         copyable={props.copyable}
         ellipsis={props.singleLine ? {tooltip: props.value} : undefined}>
         {props.value || '-'}

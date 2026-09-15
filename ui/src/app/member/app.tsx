@@ -6,11 +6,8 @@ import '../styles/member.css';
 import {
     ApiOutlined,
     BarChartOutlined,
-    BgColorsOutlined,
     BellOutlined,
-    CheckOutlined,
     DashboardOutlined,
-    DesktopOutlined,
     FileTextOutlined,
     HistoryOutlined,
     IdcardOutlined,
@@ -18,16 +15,14 @@ import {
     LogoutOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
-    MoonOutlined,
     PieChartOutlined,
     QuestionCircleOutlined,
     SettingOutlined,
-    SunOutlined,
     SwapOutlined,
     TrophyOutlined,
     WalletOutlined
 } from '@ant-design/icons';
-import {App as AntApp, Breadcrumb, Button, ConfigProvider, Dropdown, Layout as AntLayout, Menu, Result, Space, Spin, Tag, Tooltip, Typography} from 'antd';
+import {App as AntApp, Breadcrumb, Button, Dropdown, Layout as AntLayout, Menu, Result, Space, Spin, Tag, Tooltip, Typography} from 'antd';
 import type {MenuProps} from 'antd';
 import * as React from 'react';
 import {createBrowserRouter, Navigate, Route, RouterProvider, Routes, useLocation, useNavigate} from 'react-router-dom';
@@ -36,14 +31,19 @@ import {AuthorizationCtx, Provider} from '../shared/context';
 import {AccountDataAccess, AccountDataModule, accountDataModules} from '../shared/access-modules';
 import {moduleAccessLevels, moduleAccessLevelsEqual, ModuleAccessLevels} from '../shared/account-access';
 import {accountStatusForAccess, AccountStatus, AppBootstrap, AppBootstrapSession, AppBootstrapSessionStatus, AuthSettings, UserInfo} from '../shared/models';
-import requests, {isAccountDataAccessDeniedError, isAccountMaintenanceError, requestErrorDetails, requestErrorMessage} from '../shared/services/requests';
-import type {ThemeMode, ViewPreferences} from '../shared/services/view-preferences-service';
+import requests, {
+    isAccountDataAccessDeniedError,
+    isAccountProfitSharingAccessDeniedError,
+    isAccountMaintenanceError,
+    requestErrorDetails,
+    requestErrorMessage
+} from '../shared/services/requests';
+import type {ViewPreferences} from '../shared/services/view-preferences-service';
 import {WALLET_REAUTH_REQUIRED} from '../shared/services/wallet-service';
 import {loginPathFor, readLoginReturnTo} from '../shared/login-navigation';
 import {deploymentPath, readApplicationBaseHRef, readDeploymentBaseHRef} from '../shared/runtime-base';
 import {BrandMark, clearAsyncDataCache, setAsyncDataCacheSession} from '../components';
 import {AccountAvatar, accountTierLabel} from '../shared/account-presentation';
-import {accountThemeLabel, localThemeMode, serverThemeMode} from '../shared/theme';
 import {configureMemberSessionServices, ensureMemberBusinessServices, memberServices as services} from './services';
 import {clearTraderSyncState} from './pages/trader-sync/state';
 import {clearTelegramBindingInstructions} from './notification-storage';
@@ -249,7 +249,6 @@ const navItems = navSections.flatMap(section => section.children);
 
 const accountRouteMetadata = [
     {path: '/account/profile', section: 'Account', label: 'Profile'},
-    {path: '/account/appearance', section: 'Account', label: 'Appearance'},
     {path: '/account/security', section: 'Account', label: 'Security'},
     {path: '/account/access', section: 'Account', label: 'Access & session'},
     {path: '/help', section: 'Support', label: 'Help'}
@@ -391,11 +390,10 @@ const mergeMonotonicAccountProjection = (previous: AccessState | null, incoming:
         return incoming;
     }
     const profile = incoming.user.profile.revision < previous.user.profile.revision ? previous.user.profile : incoming.user.profile;
-    const preferences = incoming.user.preferences.revision < previous.user.preferences.revision ? previous.user.preferences : incoming.user.preferences;
-    if (profile === incoming.user.profile && preferences === incoming.user.preferences) {
+    if (profile === incoming.user.profile) {
         return incoming;
     }
-    return {...incoming, user: {...incoming.user, profile, preferences}};
+    return {...incoming, user: {...incoming.user, profile}};
 };
 
 type SessionState = {status: 'anonymous'} | {status: 'resolving'} | {status: 'authenticated'; access: AccessState} | {status: 'maintenance'} | {status: 'error'; error: Error};
@@ -432,8 +430,8 @@ const NotFoundPage = () => {
 };
 
 const narrowShellQuery = '(max-width: 900px)';
-const desktopExpandedSidebarWidth = 272;
-const mobileExpandedSidebarWidth = 248;
+const desktopExpandedSidebarWidth = 224;
+const mobileExpandedSidebarWidth = 280;
 
 const useNarrowShell = () => {
     const matches = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(narrowShellQuery).matches;
@@ -451,15 +449,8 @@ const useNarrowShell = () => {
     return narrow;
 };
 
-const AppRoutes = (props: {
-    access: AccessState;
-    preferences: ViewPreferences;
-    settings: AuthSettings;
-    themeChanging: boolean;
-    onThemeChange: (theme: ThemeMode) => Promise<void>;
-    loggingOut: boolean;
-    onLogout: () => void;
-}) => {
+const AppRoutes = (props: {access: AccessState; settings: AuthSettings; loggingOut: boolean; onLogout: () => void}) => {
+    const identityKey = JSON.stringify([props.access.user.accountId, props.access.user.iss]);
     const pending = isPendingAccess(props.access);
     const moduleRoute = (module: AccountDataModule, element: React.ReactElement) =>
         props.access.moduleAccess[module] >= AccountDataAccess.Read ? element : <Navigate replace={true} to='/account/access' />;
@@ -468,9 +459,6 @@ const AppRoutes = (props: {
     const profitSharingRoute = (element: React.ReactElement) => (props.access.user.access.profitSharingEnabled ? element : <Navigate replace={true} to='/account/access' />);
     const accountCenterProps = {
         showMemberSecurity: props.access.user.access.apiKeyEnabled,
-        preferences: props.preferences,
-        themeChanging: props.themeChanging,
-        onThemeChange: props.onThemeChange,
         loggingOut: props.loggingOut,
         onLogout: props.onLogout
     };
@@ -479,22 +467,22 @@ const AppRoutes = (props: {
             <Routes>
                 <Route path='/' element={<Navigate replace={true} to={pending ? '/account/access' : '/account/profile'} />} />
                 <Route path='/wallet' element={moduleRoute(AccountDataModule.Wallet, <WalletsPage />)} />
-                <Route path='/worm-trading' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingPage />)} />
-                <Route path='/worm-trading/combinations' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationsPage />)} />
-                <Route path='/worm-trading/combinations/new' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationBuilderPage />)} />
-                <Route path='/worm-trading/combinations/:id/edit' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationBuilderPage />)} />
-                <Route path='/worm-trading/combinations/:id/execute' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionPreviewPage />)} />
-                <Route path='/worm-trading/executions' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionsPage />)} />
-                <Route path='/worm-trading/executions/:id' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionDetailPage />)} />
-                <Route path='/market-radar' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarHotPage />)} />
-                <Route path='/market-radar/realtime' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarRealtimePage />)} />
-                <Route path='/market-radar/movers' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarMoversPage />)} />
+                <Route path='/worm-trading' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingPage key={identityKey} />)} />
+                <Route path='/worm-trading/combinations' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationsPage key={identityKey} />)} />
+                <Route path='/worm-trading/combinations/new' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationBuilderPage key={identityKey} />)} />
+                <Route path='/worm-trading/combinations/:id/edit' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingCombinationBuilderPage key={identityKey} />)} />
+                <Route path='/worm-trading/combinations/:id/execute' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionPreviewPage key={identityKey} />)} />
+                <Route path='/worm-trading/executions' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionsPage key={identityKey} />)} />
+                <Route path='/worm-trading/executions/:id' element={moduleRoute(AccountDataModule.WormTrading, <WormTradingExecutionDetailPage key={identityKey} />)} />
+                <Route path='/market-radar' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarHotPage key={identityKey} />)} />
+                <Route path='/market-radar/realtime' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarRealtimePage key={identityKey} />)} />
+                <Route path='/market-radar/movers' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarMoversPage key={identityKey} />)} />
                 <Route path='/solana' element={moduleRoute(AccountDataModule.Solana, <SolanaPage />)} />
-                <Route path='/sports-live' element={moduleRoute(AccountDataModule.SportsLive, <SportsLivePage />)} />
-                <Route path='/sports-history' element={moduleRoute(AccountDataModule.SportsHistory, <SportsHistoryPage />)} />
-                <Route path='/world-cup-corners' element={moduleRoute(AccountDataModule.WorldCupCorners, <WorldCupCornersPage />)} />
-                <Route path='/managed-oo/proposals' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOOProposalsPage />)} />
-                <Route path='/managed-oo/disputes' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOODisputesPage />)} />
+                <Route path='/sports-live' element={moduleRoute(AccountDataModule.SportsLive, <SportsLivePage key={identityKey} />)} />
+                <Route path='/sports-history' element={moduleRoute(AccountDataModule.SportsHistory, <SportsHistoryPage key={identityKey} />)} />
+                <Route path='/world-cup-corners' element={moduleRoute(AccountDataModule.WorldCupCorners, <WorldCupCornersPage key={identityKey} />)} />
+                <Route path='/managed-oo/proposals' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOOProposalsPage key={identityKey} />)} />
+                <Route path='/managed-oo/disputes' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOODisputesPage key={identityKey} />)} />
                 <Route
                     path='/trader-sync'
                     element={traderSyncRoute(
@@ -531,11 +519,13 @@ const AppRoutes = (props: {
                         <TraderSyncSummaryPage key={JSON.stringify([props.access.user.accountId, props.access.user.iss])} ownerId={props.access.user.accountId} />
                     )}
                 />
-                <Route path='/notifications' element={<NotificationsPage />} />
-                <Route path='/account/profile' element={<AccountCenterPage section='profile' {...accountCenterProps} />} />
-                <Route path='/account/appearance' element={<AccountCenterPage section='appearance' {...accountCenterProps} />} />
-                <Route path='/account/security' element={props.access.user.access.apiKeyEnabled ? <AccountSecurityPage /> : <Navigate replace={true} to='/account/access' />} />
-                <Route path='/account/access' element={<AccountCenterPage section='access' {...accountCenterProps} />} />
+                <Route path='/notifications' element={<NotificationsPage key={identityKey} />} />
+                <Route path='/account/profile' element={<AccountCenterPage key={identityKey} section='profile' {...accountCenterProps} />} />
+                <Route
+                    path='/account/security'
+                    element={props.access.user.access.apiKeyEnabled ? <AccountSecurityPage key={identityKey} /> : <Navigate replace={true} to='/account/access' />}
+                />
+                <Route path='/account/access' element={<AccountCenterPage key={identityKey} section='access' {...accountCenterProps} />} />
                 <Route path='/profit-sharing' element={profitSharingRoute(<ProfitSharingRoundsPage />)} />
                 <Route path='/profit-sharing/:slug' element={profitSharingRoute(<ProfitSharingRoundPage />)} />
                 <Route path='/help' element={<HelpPage help={props.settings.help} />} />
@@ -556,7 +546,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
     const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
     const [accessRefreshedAt, setAccessRefreshedAt] = React.useState(initialAccess ? Date.now() : 0);
     const [accountMenuOpen, setAccountMenuOpen] = React.useState(false);
-    const [themeChanging, setThemeChanging] = React.useState(false);
     const [loggingOut, setLoggingOut] = React.useState(false);
     const sidebarRef = React.useRef<HTMLDivElement>(null);
     const shellBackgroundRef = React.useRef<HTMLElement>(null);
@@ -587,7 +576,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         requests.invalidatePendingRequestErrors();
         requests.endAuthorizationSession();
         setAccountMenuOpen(false);
-        setThemeChanging(false);
         setLoggingOut(false);
         setSession(status === 'maintenance' ? {status: 'maintenance'} : {status: 'anonymous'});
         clearAsyncDataCache();
@@ -622,7 +610,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                 setAsyncDataCacheSession('member', user.accountId, sessionGeneration);
                 const previous = accessRef.current;
                 const next = mergeMonotonicAccountProjection(previous, loadAccessState(user));
-                services.viewPreferences.syncServerTheme(localThemeMode(next.user.preferences.theme));
                 const authorizationChanged =
                     Boolean(previous) &&
                     (previous.user.accountId !== next.user.accountId ||
@@ -765,17 +752,20 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
     }, [props.pref.hideSidebar]);
 
     React.useEffect(() => {
-        if (access) {
-            services.viewPreferences.syncServerTheme(localThemeMode(access.user.preferences.theme));
-        }
-    }, [access?.user.preferences.revision, access?.user.accountId]);
-
-    React.useEffect(() => {
         if (narrowShell) {
             setMobileSidebarOpen(false);
             setAccountMenuOpen(false);
         }
     }, [location.pathname, narrowShell]);
+
+    React.useEffect(() => {
+        if (!accountMenuOpen) return;
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setAccountMenuOpen(false);
+        };
+        document.addEventListener('keydown', closeOnEscape, true);
+        return () => document.removeEventListener('keydown', closeOnEscape, true);
+    }, [accountMenuOpen]);
 
     React.useLayoutEffect(() => {
         if (!narrowShell || !mobileSidebarOpen) {
@@ -783,7 +773,16 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         }
         const sidebar = sidebarRef.current;
         const background = shellBackgroundRef.current;
-        sidebar?.querySelector<HTMLElement>('.athena-shell__mobile-close, .athena-brand, [role="menuitem"]')?.focus();
+        const focusInitialControl = () => sidebar?.querySelector<HTMLElement>('.athena-shell__mobile-close, .athena-brand, [role="menuitem"]')?.focus();
+        let focusFrame = 0;
+        const focusWhenVisible = () => {
+            if (sidebar && getComputedStyle(sidebar).visibility !== 'hidden' && sidebar.getClientRects().length > 0) {
+                focusInitialControl();
+                return;
+            }
+            focusFrame = window.requestAnimationFrame(focusWhenVisible);
+        };
+        focusFrame = window.requestAnimationFrame(focusWhenVisible);
         background?.setAttribute('inert', '');
         background?.setAttribute('aria-hidden', 'true');
         const previousBodyOverflow = document.body.style.overflow;
@@ -819,12 +818,19 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         document.addEventListener('keydown', handleDialogKeyboard, true);
         return () => {
             document.body.style.overflow = previousBodyOverflow;
+            window.cancelAnimationFrame(focusFrame);
             background?.removeAttribute('inert');
             background?.removeAttribute('aria-hidden');
             document.removeEventListener('keydown', handleDialogKeyboard, true);
             window.requestAnimationFrame(() => mobileSidebarToggleRef.current?.focus());
         };
     }, [mobileSidebarOpen, narrowShell]);
+
+    React.useLayoutEffect(() => {
+        const navigation = sidebarRef.current?.querySelector('#athena-primary-navigation');
+        navigation?.querySelectorAll('[aria-current="page"]').forEach(item => item.removeAttribute('aria-current'));
+        navigation?.querySelector('.ant-menu-item-selected')?.setAttribute('aria-current', 'page');
+    }, [location.pathname, mobileSidebarOpen, narrowShell, access?.revision]);
 
     React.useEffect(() => {
         if (session.status === 'anonymous' && !isLoginPath) {
@@ -871,7 +877,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
             if (isLoginPath) {
                 return;
             }
-            if (isAccountDataAccessDeniedError(err)) {
+            if (isAccountDataAccessDeniedError(err) || isAccountProfitSharingAccessDeniedError(err)) {
                 void refreshAfterAccessDenied();
                 return;
             }
@@ -963,61 +969,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         };
     }, [access, accessRefreshedAt, refreshAccess]);
 
-    const changeTheme = React.useCallback(
-        async (theme: ThemeMode) => {
-            const current = accessRef.current;
-            if (!current || themeChanging || localThemeMode(current.user.preferences.theme) === theme) {
-                setAccountMenuOpen(false);
-                return;
-            }
-            const generation = accessGenerationRef.current;
-            const isCurrentAccountSession = () => {
-                const latest = accessRef.current;
-                return (
-                    generation === accessGenerationRef.current &&
-                    accessRefreshAllowedRef.current &&
-                    latest !== null &&
-                    latest.user.accountId === current.user.accountId &&
-                    latest.user.iss === current.user.iss
-                );
-            };
-            setThemeChanging(true);
-            services.viewPreferences.syncServerTheme(theme);
-            try {
-                const preferences = await services.accounts.updatePreferences(serverThemeMode(theme), current.user.preferences.revision);
-                const latest = accessRef.current;
-                if (isCurrentAccountSession() && latest) {
-                    const next = mergeMonotonicAccountProjection(latest, {...latest, user: {...latest.user, preferences}});
-                    services.viewPreferences.syncServerTheme(localThemeMode(next.user.preferences.theme));
-                    accessRef.current = next;
-                    setSession({status: 'authenticated', access: next});
-                    notifications.success('Appearance updated', `${accountThemeLabel(next.user.preferences.theme)} theme is now synced across devices.`);
-                }
-            } catch (err) {
-                const latest = accessRef.current;
-                if (isCurrentAccountSession() && latest) {
-                    services.viewPreferences.syncServerTheme(localThemeMode(latest.user.preferences.theme));
-                    try {
-                        await refreshAccess(true);
-                    } catch {
-                        // Keep the last authoritative projection if a refresh is unavailable.
-                    }
-                    const refreshed = accessRef.current;
-                    if (isCurrentAccountSession() && refreshed) {
-                        services.viewPreferences.syncServerTheme(localThemeMode(refreshed.user.preferences.theme));
-                        notifications.error('Could not update appearance', requestErrorMessage(err));
-                    }
-                }
-            } finally {
-                if (generation === accessGenerationRef.current) {
-                    setThemeChanging(false);
-                    setAccountMenuOpen(false);
-                }
-            }
-        },
-        [notifications, refreshAccess, themeChanging]
-    );
-
     const logout = React.useCallback(async () => {
         if (loggingOut) {
             return;
@@ -1061,22 +1012,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
               },
               {type: 'divider'},
               {key: '/account/profile', label: 'Profile', icon: <IdcardOutlined />},
-              {
-                  type: 'group',
-                  label: (
-                      <span className='athena-account-menu__label'>
-                          <span>
-                              <BgColorsOutlined /> Appearance
-                          </span>
-                          <small>{themeChanging ? 'Saving…' : accountThemeLabel(props.pref.theme)}</small>
-                      </span>
-                  ),
-                  children: [
-                      {key: 'theme:system', label: 'System', disabled: themeChanging, icon: props.pref.theme === 'system' ? <CheckOutlined /> : <DesktopOutlined />},
-                      {key: 'theme:light', label: 'Light', disabled: themeChanging, icon: props.pref.theme === 'light' ? <CheckOutlined /> : <SunOutlined />},
-                      {key: 'theme:dark', label: 'Dark', disabled: themeChanging, icon: props.pref.theme === 'dark' ? <CheckOutlined /> : <MoonOutlined />}
-                  ]
-              },
               {key: '/account/access', label: 'Access', icon: <KeyOutlined />},
               ...(access.user.access.apiKeyEnabled ? [{key: '/account/security', label: 'Security', icon: <SettingOutlined />}] : []),
               {key: '/help', label: 'Help', icon: <QuestionCircleOutlined />},
@@ -1099,10 +1034,6 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
         : [];
 
     const onAccountMenuClick: MenuProps['onClick'] = item => {
-        if (item.key.startsWith('theme:')) {
-            void changeTheme(item.key.slice('theme:'.length) as ThemeMode);
-            return;
-        }
         if (item.key === 'logout') {
             void logout();
             return;
@@ -1156,17 +1087,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
             </Routes>
         );
     } else if (access && !isLoginPath) {
-        routes = (
-            <AppRoutes
-                access={access}
-                preferences={props.pref}
-                settings={props.settings}
-                themeChanging={themeChanging}
-                onThemeChange={changeTheme}
-                loggingOut={loggingOut}
-                onLogout={() => void logout()}
-            />
-        );
+        routes = <AppRoutes access={access} settings={props.settings} loggingOut={loggingOut} onLogout={() => void logout()} />;
     } else {
         routes = <div className='athena-boot'>Loading Athena...</div>;
     }
@@ -1203,8 +1124,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                         <BrandMark size='small' />
                         {!sidebarCollapsed && (
                             <span className='athena-brand__copy'>
-                                <strong>Athena</strong>
-                                <small>Operations Console</small>
+                                <strong>ATHENA</strong>
                             </span>
                         )}
                     </div>
@@ -1212,38 +1132,20 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                 <nav className='athena-sidebar-navigation' id='athena-primary-navigation' aria-label='Primary navigation'>
                     {(!narrowShell || mobileSidebarOpen) && menu}
                 </nav>
-                {access && (!narrowShell || mobileSidebarOpen) && (
-                    <div className='athena-sidebar-footer'>
-                        <Dropdown
-                            open={accountMenuOpen}
-                            trigger={['click']}
-                            placement='topLeft'
-                            classNames={{root: 'athena-account-menu'}}
-                            destroyOnHidden={true}
-                            menu={{items: accountMenuItems, onClick: onAccountMenuClick, selectable: false}}
-                            getPopupContainer={trigger => (trigger.closest('.athena-sidebar-footer') as HTMLElement) || sidebarRef.current || document.body}
-                            onOpenChange={setAccountMenuOpen}>
-                            <button
-                                className='athena-account-trigger'
-                                type='button'
-                                aria-label='Open account menu'
-                                aria-haspopup='menu'
-                                aria-expanded={accountMenuOpen}
-                                title={sidebarCollapsed ? access.user.profile.displayName || access.user.username : undefined}>
-                                <AccountAvatar profile={access.user.profile} username={access.user.username} size={38} />
-                                {!sidebarCollapsed && (
-                                    <span className='athena-account-trigger__copy'>
-                                        <strong>{access.user.profile.displayName || access.user.username}</strong>
-                                        <small>@{access.user.username}</small>
-                                    </span>
-                                )}
-                                {!sidebarCollapsed && (
-                                    <span className='athena-account-trigger__more' aria-hidden='true'>
-                                        •••
-                                    </span>
-                                )}
-                            </button>
-                        </Dropdown>
+                {(!narrowShell || mobileSidebarOpen) && (
+                    <div className='athena-sidebar-bottom'>
+                        <Button
+                            type='text'
+                            icon={<QuestionCircleOutlined />}
+                            aria-label='Help'
+                            aria-current={location.pathname === '/help' ? 'page' : undefined}
+                            onClick={() => {
+                                setMobileSidebarOpen(false);
+                                navigate('/help');
+                            }}>
+                            <span className='athena-sidebar-bottom__label'>Help</span>
+                        </Button>
+                        {!sidebarCollapsed && <p>Member workspace</p>}
                     </div>
                 )}
             </AntLayout.Sider>
@@ -1262,7 +1164,7 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
             <AntLayout ref={shellBackgroundRef}>
                 <AntLayout.Header className='athena-shell__header'>
                     <div className='athena-shell__header-left'>
-                        <Tooltip title={sidebarCollapsed ? 'Open navigation' : 'Close navigation'}>
+                        <Tooltip title={narrowShell ? undefined : sidebarCollapsed ? 'Open navigation' : 'Close navigation'}>
                             <Button
                                 ref={mobileSidebarToggleRef}
                                 className='athena-shell__sidebar-toggle'
@@ -1284,6 +1186,29 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
                         </Tooltip>
                         <Breadcrumb className='athena-shell__breadcrumb' items={breadcrumbItems(location.pathname)} />
                     </div>
+                    {access && (
+                        <div className='athena-shell__header-actions'>
+                            <Dropdown
+                                open={accountMenuOpen}
+                                trigger={['click']}
+                                placement='bottomRight'
+                                classNames={{root: 'athena-account-menu'}}
+                                destroyOnHidden={true}
+                                menu={{items: accountMenuItems, onClick: onAccountMenuClick, selectable: false}}
+                                onOpenChange={setAccountMenuOpen}>
+                                <button className='athena-account-trigger' type='button' aria-label='Open account menu' aria-haspopup='menu' aria-expanded={accountMenuOpen}>
+                                    <AccountAvatar className='athena-account-avatar' profile={access.user.profile} username={access.user.username} size={28} />
+                                    <span className='athena-account-trigger__copy'>
+                                        <strong>{access.user.profile.displayName || access.user.username}</strong>
+                                        <small>@{access.user.username}</small>
+                                    </span>
+                                    <span className='athena-account-trigger__more' aria-hidden='true'>
+                                        •••
+                                    </span>
+                                </button>
+                            </Dropdown>
+                        </div>
+                    )}
                 </AntLayout.Header>
                 <AntLayout.Content className='athena-shell__content' id='athena-main' tabIndex={-1}>
                     {routes}
@@ -1331,13 +1256,9 @@ export const MemberApp = () => {
 };
 
 const RegistrationBootstrap = () => (
-    <ConfigProvider>
-        <AntApp>
-            <React.Suspense fallback={<div className='athena-boot'>Loading registration…</div>}>
-                <RegisterPage />
-            </React.Suspense>
-        </AntApp>
-    </ConfigProvider>
+    <React.Suspense fallback={<div className='athena-boot'>Loading registration…</div>}>
+        <RegisterPage />
+    </React.Suspense>
 );
 
 const AppEntry = () => {

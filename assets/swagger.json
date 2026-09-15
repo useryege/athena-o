@@ -71,39 +71,6 @@
         }
       }
     },
-    "/api/v1/account/preferences": {
-      "put": {
-        "tags": [
-          "AccountService"
-        ],
-        "summary": "UpdateAccountPreferences changes the current account's UI preferences.",
-        "operationId": "AccountService_UpdateAccountPreferences",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/accountUpdateAccountPreferencesRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/accountAccountPreferences"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        }
-      }
-    },
     "/api/v1/account/security/tokens": {
       "get": {
         "tags": [
@@ -3790,18 +3757,6 @@
         }
       }
     },
-    "accountAccountPreferences": {
-      "type": "object",
-      "properties": {
-        "revision": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "theme": {
-          "$ref": "#/definitions/accountAccountThemeMode"
-        }
-      }
-    },
     "accountAccountProfile": {
       "type": "object",
       "properties": {
@@ -3828,16 +3783,6 @@
         "ACCOUNT_STATUS_PENDING",
         "ACCOUNT_STATUS_ACTIVE",
         "ACCOUNT_STATUS_BLOCKED"
-      ]
-    },
-    "accountAccountThemeMode": {
-      "type": "string",
-      "default": "ACCOUNT_THEME_MODE_UNSPECIFIED",
-      "enum": [
-        "ACCOUNT_THEME_MODE_UNSPECIFIED",
-        "ACCOUNT_THEME_MODE_SYSTEM",
-        "ACCOUNT_THEME_MODE_LIGHT",
-        "ACCOUNT_THEME_MODE_DARK"
       ]
     },
     "accountAccountTier": {
@@ -3912,18 +3857,6 @@
           "items": {
             "$ref": "#/definitions/accountToken"
           }
-        }
-      }
-    },
-    "accountUpdateAccountPreferencesRequest": {
-      "type": "object",
-      "properties": {
-        "expectedRevision": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "theme": {
-          "$ref": "#/definitions/accountAccountThemeMode"
         }
       }
     },
@@ -5302,9 +5235,6 @@
         },
         "loggedIn": {
           "type": "boolean"
-        },
-        "preferences": {
-          "$ref": "#/definitions/accountAccountPreferences"
         },
         "profile": {
           "$ref": "#/definitions/accountAccountProfile"

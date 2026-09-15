@@ -10,7 +10,9 @@ export const AppPage = (props: {
     children: React.ReactNode;
     loading?: boolean;
     error?: Error;
+    stale?: boolean;
     onRefresh?: () => void;
+    refreshLabel?: string;
 }) => {
     return (
         <div className='app-page' aria-busy={props.loading || undefined}>
@@ -21,24 +23,36 @@ export const AppPage = (props: {
                 </div>
                 <Space className='app-page__actions' wrap={true}>
                     {props.onRefresh && (
-                        <Tooltip title='Refresh data'>
-                            <Button aria-label='Refresh data' icon={<ReloadOutlined />} loading={props.loading} onClick={props.onRefresh} />
+                        <Tooltip title={props.refreshLabel || 'Refresh data'}>
+                            <Button aria-label={props.refreshLabel || 'Refresh data'} icon={<ReloadOutlined />} loading={props.loading} onClick={props.onRefresh}>
+                                {props.refreshLabel || 'Refresh'}
+                            </Button>
                         </Tooltip>
                     )}
                     {props.extra}
                 </Space>
             </header>
             {props.filters && <div className='app-page__filters'>{props.filters}</div>}
-            {props.error && <Alert className='app-page__alert' type='error' title='Request failed' description={props.error.message} showIcon={true} />}
+            {props.error && (
+                <Alert
+                    className='app-page__alert'
+                    type='error'
+                    title='Request failed'
+                    description={props.error.message}
+                    showIcon={true}
+                    action={props.onRefresh && <Button onClick={props.onRefresh}>Retry</Button>}
+                />
+            )}
+            {props.stale && <Alert type='warning' title='Stale data — showing the last successful read' />}
             {props.loading && !props.children ? <Skeleton active={true} /> : props.children}
         </div>
     );
 };
 
 export const BrandMark = (props: {size?: 'small' | 'large'}) => (
-    <span className={`brand-mark brand-mark--${props.size || 'small'}`} aria-hidden='true'>
-        A
-    </span>
+    <svg className={`brand-mark brand-mark--${props.size || 'small'}`} viewBox='0 0 28 28' aria-hidden='true'>
+        <path d='m4 23 10-19 10 19M8 17h12M11 23h6' />
+    </svg>
 );
 
 export const Section = (props: {title: string; extra?: React.ReactNode; children: React.ReactNode}) => {

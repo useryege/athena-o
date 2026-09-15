@@ -7,6 +7,7 @@ import {parseUserInfo} from '../../shared/models';
 import {clearTraderSyncState, readAddDraft, saveAddDraft} from './trader-sync/state';
 import {ensureMemberBusinessServices, memberServices as services} from '../services';
 import {normalizeResolvedTarget} from '../trader-sync-models';
+import {readTelegramBindingInstructions} from '../notification-storage';
 import fixture from '../testdata/trader-sync/resolve-saved-note-existing.json';
 
 const ctx = {
@@ -138,4 +139,53 @@ test('clearing module state removes a visible return entry synchronously', async
     expect(returnButtons()).toHaveLength(1);
     act(clearTraderSyncState);
     expect(returnButtons()).toHaveLength(0);
+});
+
+test('failed setup has one recovery action while the existing Connected binding remains visible', async () => {
+    jest.mocked(services.memberNotifications.getTelegramSettings).mockResolvedValue({
+        botAvailable: true,
+        botUsername: 'bot',
+        binding: {status: 'connected', boundAt: '2026-09-11T00:00:00Z', revision: 1, telegramUsername: 'tester', telegramDisplayName: 'Tester'},
+        attempt: {id: 'failed-attempt', status: 'failed', expiresAt: '2026-09-11T00:05:00Z', failureReason: 'binding_failed'}
+    });
+    await mount('');
+    const recovery = tree.root.findAllByType(Button).filter(item => item.props.children === 'Create new link' || item.props.children === 'Reconnect');
+    expect(recovery).toHaveLength(1);
+    expect(recovery[0].props.children).toBe('Create new link');
+    expect(JSON.stringify(tree.toJSON())).toContain('Connected');
+    expect(JSON.stringify(tree.toJSON())).toContain('Tester');
+});
+
+test('disconnect confirmation names the current identity and focuses Keep connected', async () => {
+    await mount('');
+    act(() => tree.root.findAllByType(Button).find(item => item.props.children === 'Disconnect')!.props.onClick());
+    const options = (ctx.modal.confirm.mock.calls.at(-1) as any)[0];
+    expect(options.content).toContain('Tester (@tester)');
+    expect(options.cancelText).toBe('Keep connected');
+    expect(options.autoFocusButton).toBe('cancel');
+});
+
+test('unmount destroys the old disconnect confirmation and its stale callback cannot write', async () => {
+    const disconnect = jest.spyOn(services.memberNotifications, 'disconnectTelegram').mockResolvedValue(undefined);
+    await mount('/trader-sync/add');
+    act(() => tree.root.findAllByType(Button).find(item => item.props.children === 'Disconnect')!.props.onClick());
+    const confirmation = (ctx.modal.confirm.mock.calls.at(-1) as any)[0];
+    const handle = ctx.modal.confirm.mock.results.at(-1)!.value;
+    act(() => tree.unmount());
+    expect(handle.destroy).toHaveBeenCalledTimes(1);
+    await act(async () => confirmation.onOk());
+    expect(disconnect).not.toHaveBeenCalled();
+});
+
+test('unmount aborts pending setup and a late response cannot store the old one-time instructions', async () => {
+    let finish!: (value: any) => void;
+    const pending = Object.assign(new Promise<any>(resolve => finish = resolve), {abort: jest.fn()});
+    jest.spyOn(services.memberNotifications, 'beginTelegramBinding').mockReturnValue(pending);
+    await mount('/trader-sync/add');
+    act(() => tree.root.findAllByType(Button).find(item => item.props.children === 'Reconnect')!.props.onClick());
+    act(() => tree.unmount());
+    expect(pending.abort).toHaveBeenCalledTimes(1);
+    await act(async () => finish({attempt: {id: 'old-attempt', status: 'pending', expiresAt: '2099-01-01T00:00:00Z', failureReason: ''}, botUsername: 'bot', deepLink: 'https://t.me/bot?start=old', fallbackCommand: '/start old-private-command'}));
+    expect(readTelegramBindingInstructions()).toBeUndefined();
+    expect(ctx.notifications.success).not.toHaveBeenCalledWith('Telegram setup started', expect.anything());
 });

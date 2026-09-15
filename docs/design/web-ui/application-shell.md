@@ -19,6 +19,14 @@ Application Shell](administrator-application-shell.md) owns management
 navigation, its administrator guard, and administrator self-service. Provider
 verification and durable authorization remain server responsibilities.
 
+## 单一深色与验收边界
+
+两份 HTML 固定深色首屏，入口级 `AthenaThemeProvider` 在 bootstrap 前提供统一 token 和本地 Inter／JetBrains Mono；系统 light／dark 输入均不改变外观。桌面侧栏 224px、顶栏 64px、内容边距 32px，900px 以下使用手机抽屉和 20px 外侧间距。Ant 字号 rem 桥接、弹窗滚动正文／固定操作区及完整关闭目标沿共用实现。
+
+两端 Appearance 已删除并使用各自既有 404；主题不是账户或浏览器偏好。分页、排序、侧栏、banner 和返回位置仍按 realm 隔离。37 条改版入口已实现，8 条 Trader Sync 专页仅共享主题回归；管理员 Service Status 的 Trader Sync 页签已按 v16 重排。Token 导航未开启。
+
+正式 React、原生浏览器缩放、真实本地读取与外部未验证项分别见[验收记录](../../testing/web-ui-theme-refactor-acceptance.md)；完整基线与最终差量使用各自提交，不把设计批准或 fixture 成功当真实供应商成功。
+
 ## Source Locations
 
 | Concern | Source | Key symbols |
@@ -101,12 +109,9 @@ components keep one neutral class contract.
 
 `StatusTag` in the neutral display components uses
 `athena-status-tag--positive` only when `positive` is true and `negative` is
-false. In the light theme, `shared.css` sets its text to `#237804` against
-Ant Design's existing `#f6ffed` background (approximately 5.44:1 contrast).
-The dark theme retains Ant Design's palette. Negative/default tags and the
-existing Trader Sync local text overrides retain their styles; this rule does
-not override all green Ant Design tags. Keep ordinary status text at least
-4.5:1 in the rendered page and verify both themes with the existing a11y suite.
+false. The shared single dark theme defines the approved semantic success text,
+background, and border roles. Theme colors come from `styles/tokens.css` and
+`AthenaThemeProvider`; rendered contrast is checked in browser acceptance.
 
 ## Runtime Flow
 
@@ -162,8 +167,8 @@ UUID, session generation, module or capability, and read/write mode. Cache keys
 include realm, viewer UUID, and session generation; a generation change clears
 the previous session's entries before the next realm is activated. Realm-
 specific persistent keys use
-`athena.member.*` or `athena.admin.*`; only explicitly neutral preferences such
-as theme presentation may be shared.
+`athena.member.*` or `athena.admin.*`; the fixed dark theme and local fonts are shared presentation, while browser view
+preferences remain realm-scoped.
 
 The HTML base values are deployment output, not account state. They are
 normalized to leading- and trailing-slash path values and never derived from a
