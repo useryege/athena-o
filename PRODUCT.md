@@ -41,7 +41,7 @@ Trader Sync 第一阶段提供目标确认、独立订阅、实时成交活动�
 
 ## Brand Commitments
 
-当前正式主题源码、约定验收及 T1–T10／整分支独立审阅已完成（最终生产 `78e473b7`）：37 条入口改版、2 条 Appearance 删除、4 条路由规则与 8 条 Trader Sync 共享回归；Service Status 页签已重排。共享 T1／T2 依赖完成，Token 独立接入及导航未开启。临时环境已停止并保留数据，准确版本、外部未验证项和通知状态见[实施与验收记录](docs/testing/web-ui-theme-refactor-acceptance.md#交付状态与环境收尾)。下列视觉版本叙述为设计批准历史，原始材料保留。
+当前正式主题源码、约定验收及 T1–T10／整分支独立审阅已完成（最终生产 `78e473b7`），并已通过合并提交 `2e29bb7` 整合到本地 `rf4`：37 条入口改版、2 条 Appearance 删除、4 条路由规则与 8 条 Trader Sync 共享回归；Service Status 页签已重排。共享 T1／T2 依赖完成，Token 独立接入及导航未开启。准确版本和外部未验证项见[实施与验收记录](docs/testing/web-ui-theme-refactor-acceptance.md#交付状态与环境收尾)，合并验证与新实例收尾见[整合记录](docs/testing/rf4-ui-theme-integration.md)。下列视觉版本叙述为设计批准历史，原始材料保留。
 
 产品名称为 ATHENA；Trader Sync 第一阶段能力名为 Activity Alerts。当前界面的主题、组件和语言事实以实际 React/CSS 及界面设计文档为依据。
 

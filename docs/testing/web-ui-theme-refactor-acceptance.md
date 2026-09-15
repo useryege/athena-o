@@ -6,7 +6,7 @@
 
 ## 实施范围与当前契约
 
-工作区 `/home/yege/work/athena/.worktrees/ui-theme-refactor`，分支 `codex/ui-theme-refactor`，起点 `bf752f27`。本任务未 push／merge，其他工作区的未提交内容不纳入本次文档更新。
+实施工作区 `/home/yege/work/athena/.worktrees/ui-theme-refactor`，分支 `codex/ui-theme-refactor`，起点 `bf752f27`。原实施任务没有 push／merge；2026-09-15 已通过保留双方历史的合并提交 `2e29bb7` 整合到本地 `rf4`，整合后的 fresh 验证、证据同步和环境收尾见 [rf4 UI 主题分支整合记录](rf4-ui-theme-integration.md)。
 
 | 范围 | 实际结果与归属 |
 | --- | --- |
@@ -114,7 +114,7 @@ T10 的[文档与映射检查](../../.tmp/ui-theme-refactor/t10-document-checks.
 | 最后真实 smoke | `27c3480e`，系统Chrome149，两realm各1通过，exit0、run／cleanup passed |
 | 临时环境最终停止 | 已完成；进程、端口、4容器停止，4数据卷与容器完整保留；16个其他容器状态不变 |
 | 一次完成邮件 | 从本工作区根调用一次 `make notify-task-complete`，使用默认 `.env`；exit0，SMTP第2次接受。见[通知记录](../../.tmp/ui-theme-refactor/completion-notification-result.json)；不表示已读 |
-| 分支整合 | 保留本地 `codex/ui-theme-refactor` 及本工作区，未 push／merge；原工作区其他任务文件未操作 |
+| 分支整合 | 已通过合并提交 `2e29bb7` 整合到本地 `rf4`；保留 `codex/ui-theme-refactor` 及源工作区，未 push；整合验证与新实例收尾见[整合记录](rf4-ui-theme-integration.md) |
 
 最后运行属于 `/home/yege/work/athena/.worktrees/ui-theme-refactor`，`INSTANCE=ui-theme-refactor`，RunID `fd48b901-e7e4-4136-b71d-117c7991fe57`，session23686，supervisor PID4098212。UI `http://127.0.0.1:34000`、API `http://127.0.0.1:38080`现均停止；日志 [start.log](../../.tmp/ui-theme-refactor/final-review-runtime/start.log)、[readiness](../../.tmp/ui-theme-refactor/final-review-runtime/readiness.json)和[smoke](../../.tmp/ui-theme-refactor/final-review-runtime/smoke.log)保留。
 

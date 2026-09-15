@@ -6,7 +6,7 @@
 
 目录中既有的 `web-ui/` 文档继续作为界面架构说明维护。前后端新任务均使用 Superpowers；具体界面设计仍遵循根 `AGENTS.md` 中适用的 UI 约定。
 
-全站 UI 已按 Nansen 单一深色、Inter／JetBrains Mono、v1–v22 批准视觉及 [v23 一致性契约](../requirements/web-ui/theme-consistency-contract.md)完成正式实现和 T9 验收；T1–T9 独立任务审阅通过。37 条改版入口、2 条 Appearance 删除、4 条路由规则及 8 条 Trader Sync 共享影响回归见[覆盖清单](../requirements/web-ui/theme-refactor-coverage.md)。Service Status 的 Trader Sync 页签已重排；专属八路由布局暂缓。共享 T1／T2 已完成，Token 独立功能未开启。
+全站 UI 已按 Nansen 单一深色、Inter／JetBrains Mono、v1–v22 批准视觉及 [v23 一致性契约](../requirements/web-ui/theme-consistency-contract.md)完成正式实现和 T9 验收，并通过合并提交 `2e29bb7` 整合到本地 `rf4`；T1–T9 独立任务审阅通过。37 条改版入口、2 条 Appearance 删除、4 条路由规则及 8 条 Trader Sync 共享影响回归见[覆盖清单](../requirements/web-ui/theme-refactor-coverage.md)，合并验证与环境收尾见[整合记录](../testing/rf4-ui-theme-integration.md)。Service Status 的 Trader Sync 页签已重排；专属八路由布局暂缓。共享 T1／T2 已完成，Token 独立功能未开启。
 
 当前设计文档描述固定深色和 realm 独立的本地视图偏好，账户主题 API／schema 已删除。[验收记录](../testing/web-ui-theme-refactor-acceptance.md)区分正式实现、受控状态、真实读取和外部未验证边界；最终审阅／环境停止／通知状态集中在该记录。下列 v1–v23 提案条目保留批准时点历史，不代表当前代码仍未实施。技术约束见[方案](../superpowers/specs/2026-09-14-web-ui-theme-refactor-design.md)与[实施计划](../superpowers/plans/2026-09-14-web-ui-theme-refactor.md)。
 
