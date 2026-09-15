@@ -1,3 +1,4 @@
+import {recordAxeReview} from './theme-refactor/axe-review';
 import {expect, test} from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import fs from 'node:fs';
@@ -60,9 +61,12 @@ for (const scenario of themeCases.filter(item =>
         await page.setViewportSize({width: 390, height: 844});
         const ledger = await openThemeCase(page, scenario.id);
         await assertThemeLayout(page);
+        await expect(page.locator('.ant-form-show-help-item-appear-active, .ant-form-show-help-item-enter-active')).toHaveCount(0);
         const results = await new AxeBuilder({page}).withTags(tags).analyze();
+
         const rawResult = info.outputPath('axe-results.json');
         fs.writeFileSync(rawResult, JSON.stringify(results, null, 2));
+        await recordAxeReview(page, results, info);
         await info.attach('axe-results.json', {path: rawResult, contentType: 'application/json'});
         expect(
             results.violations.map(violation => ({id: violation.id, impact: violation.impact, nodes: violation.nodes.map(node => node.target)})),
@@ -89,12 +93,14 @@ for (const state of [
         else if (state.id === 'admin-notifications') await page.getByRole('button', {name: 'Test Notification', exact: true}).click();
         else await page.getByRole('tab', {name: new RegExp(`^${state.tab}`)}).click();
         if (state.id === 'markets-proposals') await page.evaluate(() => window.scrollTo(0, 0));
-        if (state.id === 'admin-notifications')
-            await expect(page.getByRole('dialog')).not.toHaveClass(/(?:^|\s)ant-zoom-(?:appear|enter)(?:-active)?(?:\s|$)/);
+        if (state.id === 'admin-notifications') await expect(page.getByRole('dialog')).not.toHaveClass(/(?:^|\s)ant-zoom-(?:appear|enter)(?:-active)?(?:\s|$)/);
         await assertThemeLayout(page);
+        await expect(page.locator('.ant-form-show-help-item-appear-active, .ant-form-show-help-item-enter-active')).toHaveCount(0);
         const results = await new AxeBuilder({page}).withTags(tags).analyze();
+
         const rawResult = info.outputPath('axe-results.json');
         fs.writeFileSync(rawResult, JSON.stringify(results, null, 2));
+        await recordAxeReview(page, results, info);
         await info.attach('axe-results.json', {path: rawResult, contentType: 'application/json'});
         expect(
             results.violations.map(v => ({id: v.id, nodes: v.nodes.map(n => n.target)})),
@@ -128,9 +134,12 @@ for (const state of ['selection', 'cashout', 'leave']) {
             await page.keyboard.press('End');
             await expect.poll(() => page.locator('.ant-modal-confirm-body').evaluate(element => element.scrollTop)).toBeGreaterThan(0);
         }
+        await expect(page.locator('.ant-form-show-help-item-appear-active, .ant-form-show-help-item-enter-active')).toHaveCount(0);
         const results = await new AxeBuilder({page}).withTags(tags).analyze();
+
         const rawResult = info.outputPath('axe-results.json');
         fs.writeFileSync(rawResult, JSON.stringify(results, null, 2));
+        await recordAxeReview(page, results, info);
         await info.attach('axe-results.json', {path: rawResult, contentType: 'application/json'});
         expect(
             results.violations.map(v => ({id: v.id, nodes: v.nodes.map(n => n.target)})),
@@ -147,8 +156,12 @@ for (const id of ['worm-preview', 'worm-executions', 'worm-execution-detail', 'w
         const ledger = await openThemeCase(page, id);
         await page.evaluate(() => document.fonts.ready);
         await assertThemeLayout(page);
+        await expect(page.locator('.ant-form-show-help-item-appear-active, .ant-form-show-help-item-enter-active')).toHaveCount(0);
         const results = await new AxeBuilder({page}).withTags(tags).analyze();
+
         fs.writeFileSync(info.outputPath('axe-results.json'), JSON.stringify(results, null, 2));
+
+        await recordAxeReview(page, results, info);
         await info.attach('axe-results.json', {path: info.outputPath('axe-results.json'), contentType: 'application/json'});
         expect(
             results.violations.map(v => ({id: v.id, nodes: v.nodes.map(n => n.target)})),
@@ -164,8 +177,12 @@ for (const action of ['Authorize', 'Terminate']) {
         await page.getByRole('button', {name: action, exact: true}).click();
         await expect(page.getByRole('dialog')).toBeVisible();
         await page.waitForTimeout(500);
+        await expect(page.locator('.ant-form-show-help-item-appear-active, .ant-form-show-help-item-enter-active')).toHaveCount(0);
         const results = await new AxeBuilder({page}).withTags(tags).analyze();
+
         fs.writeFileSync(info.outputPath('axe-results.json'), JSON.stringify(results, null, 2));
+
+        await recordAxeReview(page, results, info);
         await info.attach('axe-results.json', {path: info.outputPath('axe-results.json'), contentType: 'application/json'});
         expect(
             results.violations.map(v => ({id: v.id, nodes: v.nodes.map(n => n.target)})),
@@ -193,8 +210,12 @@ for (const [id, failedPath] of [
         await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}${scenario.route}`);
         await expect(page.getByText('Controlled read unavailable', {exact: true})).toBeVisible();
         await page.evaluate(() => document.fonts.ready);
+        await expect(page.locator('.ant-form-show-help-item-appear-active, .ant-form-show-help-item-enter-active')).toHaveCount(0);
         const results = await new AxeBuilder({page}).withTags(tags).analyze();
+
         fs.writeFileSync(info.outputPath('axe-results.json'), JSON.stringify(results, null, 2));
+
+        await recordAxeReview(page, results, info);
         await info.attach('axe-results.json', {path: info.outputPath('axe-results.json'), contentType: 'application/json'});
         expect(results.violations.map(v => ({id: v.id, nodes: v.nodes.map(n => n.target)}))).toEqual([]);
         assertThemeLedger(ledger);
@@ -210,8 +231,12 @@ test('theme:a11y profile unsaved confirmation', async ({page}, info) => {
     const modal = page.getByRole('dialog');
     await expect(modal).toBeVisible();
     await expect(modal).not.toHaveClass(/ant-zoom-(?:appear|enter)/);
+    await expect(page.locator('.ant-form-show-help-item-appear-active, .ant-form-show-help-item-enter-active')).toHaveCount(0);
     const results = await new AxeBuilder({page}).withTags(tags).analyze();
+
     fs.writeFileSync(info.outputPath('axe-results.json'), JSON.stringify(results, null, 2));
+
+    await recordAxeReview(page, results, info);
     await info.attach('axe-results.json', {path: info.outputPath('axe-results.json'), contentType: 'application/json'});
     expect(results.violations.map(v => ({id: v.id, nodes: v.nodes.map(n => n.target)}))).toEqual([]);
     assertThemeLedger(ledger);

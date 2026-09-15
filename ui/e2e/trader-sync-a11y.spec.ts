@@ -1,3 +1,4 @@
+import {recordAxeReview} from './theme-refactor/axe-review';
 import {test, expect, type Page} from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import fs from 'node:fs';
@@ -69,8 +70,10 @@ for (const state of states)
                 await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
                 const results = await new AxeBuilder({page}).withTags(tags).analyze();
+
                 const rawResult = info.outputPath('axe-results.json');
                 fs.writeFileSync(rawResult, JSON.stringify(results, null, 2));
+                await recordAxeReview(page, results, info);
                 await info.attach('axe-results.json', {path: rawResult, contentType: 'application/json'});
                 expect(
                     results.violations.map(violation => ({id: violation.id, impact: violation.impact, nodes: violation.nodes.map(node => node.target)})),

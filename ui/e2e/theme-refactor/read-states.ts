@@ -26,6 +26,7 @@ for (const [id, path, emptyText, independentAction] of reads) {
         await expect(page.getByRole('heading', {name: scenario.heading, exact: true, level: 1})).toBeVisible();
         await expect(page.getByText(emptyText, {exact: true})).toBeHidden();
         await expect(page.getByText('Controlled read unavailable', {exact: true})).toBeVisible();
+        if (id === 'admin-services') await expect(page.locator('.service-health-table')).toHaveCount(0);
         await expect(page.getByText(emptyText, {exact: true})).toBeHidden();
         if (id === 'admin-services') await expect(page.getByText('0 services', {exact: true})).toBeHidden();
         if (id === 'admin-accounts') await expect(page.getByText('0 registered identities', {exact: true})).toBeHidden();

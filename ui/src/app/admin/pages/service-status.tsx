@@ -115,28 +115,30 @@ export const ServiceStatusPage = () => {
                                 )}
                                 {data.stale && <Alert type='warning' title='Stale service health — showing the last successful read' />}
                                 <p>Last checked: {checkedAt} (UTC+8)</p>
-                                <div className='service-health-container'>
-                                    <table className='service-health-table' aria-label='Service health'>
-                                        <thead>
-                                            <tr>
-                                                <th>Service</th>
-                                                <th>Status</th>
-                                                <th>Error</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {(data.data?.items || []).map(item => (
-                                                <tr key={item.name}>
-                                                    <th scope='row'>{serviceLabels[item.name] || item.name}</th>
-                                                    <td className='service-health-status'>{statusTag(item.status)}</td>
-                                                    <td className='service-health-error' data-empty={!item.errorMessage || undefined}>
-                                                        {item.errorMessage || '—'}
-                                                    </td>
+                                {Boolean(data.data?.items.length) && (
+                                    <div className='service-health-container'>
+                                        <table className='service-health-table' aria-label='Service health'>
+                                            <thead>
+                                                <tr>
+                                                    <th>Service</th>
+                                                    <th>Status</th>
+                                                    <th>Error</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                            </thead>
+                                            <tbody>
+                                                {(data.data?.items || []).map(item => (
+                                                    <tr key={item.name}>
+                                                        <th scope='row'>{serviceLabels[item.name] || item.name}</th>
+                                                        <td className='service-health-status'>{statusTag(item.status)}</td>
+                                                        <td className='service-health-error' data-empty={!item.errorMessage || undefined}>
+                                                            {item.errorMessage || '—'}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
                                 {!data.loading && data.data && !data.data.items.length && <Empty description='No service health records' />}
                                 <p className='admin-source-note'>gRPC health checks · Service connectivity is separate from runtime activity.</p>
                             </Section>

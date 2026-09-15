@@ -642,7 +642,7 @@ export const NotificationsPage = () => {
                         </Section>
                     )}
                     {settings.botAvailable && binding?.status === 'connected' && (
-                        <div ref={connectedFocusRef} className='telegram-connected-alert' tabIndex={-1} aria-label='Telegram connection ready'>
+                        <div ref={connectedFocusRef} className='telegram-connected-alert' role='region' tabIndex={-1} aria-label='Telegram connection ready'>
                             <Alert
                                 type='success'
                                 showIcon={true}

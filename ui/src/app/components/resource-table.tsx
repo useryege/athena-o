@@ -101,7 +101,7 @@ export const ResourceTable = <T,>(props: {
     return (
         <div className={regionClassName} role='region' aria-label={props.label || 'Data table'} aria-busy={props.loading || undefined}>
             {hasPagination && (
-                <div className='resource-table-pagination' aria-label='Table pagination'>
+                <div className='resource-table-pagination' role='navigation' aria-label='Table pagination'>
                     <div className='resource-table-pagination__controls'>
                         <Typography.Text className='resource-table-pagination__total athena-number' type='secondary'>
                             {props.total} {props.total === 1 ? 'item' : 'items'}
@@ -149,7 +149,7 @@ export const ResourceTable = <T,>(props: {
                 expandable={props.expandable}
             />
             {props.compactRender && (
-                <div className='resource-table-compact' aria-label={`${props.label || 'Data table'} compact view`}>
+                <div className='resource-table-compact' role='group' aria-label={`${props.label || 'Data table'} compact view`}>
                     {props.loading ? (
                         <ul className='resource-table-compact__items resource-table-compact__loading' aria-label='Loading items'>
                             {[0, 1, 2].map(index => (

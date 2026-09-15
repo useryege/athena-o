@@ -930,3 +930,5 @@ test('theme:core complete navigation labels fit the approved rail and refresh ke
     await expect(page.getByRole('button', {name: 'reload Refresh', exact: true})).toContainText('Refresh');
     assertThemeLedger(ledger);
 });
+
+import './theme-refactor/semantics';

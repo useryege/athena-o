@@ -659,16 +659,14 @@ const WalletSelectionModal = (props: {
                             const legacyRemovalBlocked = !props.selection.configured && !selected && !item.retirementPending && !item.removalAllowed;
                             const disabled = props.saving || Boolean(props.error) || removalLocked || (!selected && atLimit);
                             return (
-                                <label
+                                <Checkbox
                                     className={`worm-wallet-selection-card${selected ? ' worm-wallet-selection-card--selected' : ''}${disabled ? ' worm-wallet-selection-card--disabled' : ''}`}
-                                    key={walletID}>
-                                    <Checkbox
-                                        aria-label={`Select ${item.wallet.remark || 'Solana wallet'} ${item.wallet.address}`}
-                                        checked={selected}
-                                        disabled={disabled}
-                                        onChange={event => toggleWallet(walletID, event.target.checked)}
-                                    />
-                                    <div className='worm-wallet-selection-card__identity'>
+                                    key={walletID}
+                                    aria-label={`Select ${item.wallet.remark || 'Solana wallet'} ${item.wallet.address}`}
+                                    checked={selected}
+                                    disabled={disabled}
+                                    onChange={event => toggleWallet(walletID, event.target.checked)}>
+                                    <span className='worm-wallet-selection-card__identity'>
                                         <WormTradingWalletAvatar wallet={item.wallet} size={42} />
                                         <span>
                                             <Typography.Text strong={true} ellipsis={{tooltip: item.wallet.remark || 'Solana wallet'}}>
@@ -678,8 +676,8 @@ const WalletSelectionModal = (props: {
                                                 <code>{displayIdentity(item.wallet.address)}</code>
                                             </Tooltip>
                                         </span>
-                                    </div>
-                                    <div className='worm-wallet-selection-card__status'>
+                                    </span>
+                                    <span className='worm-wallet-selection-card__status'>
                                         {willAdd ? (
                                             <Tag color='processing'>Will add</Tag>
                                         ) : willRemove ? (
@@ -689,7 +687,7 @@ const WalletSelectionModal = (props: {
                                         ) : null}
                                         {item.pendingState && <Tag color='processing'>{titleCase(item.pendingState)}</Tag>}
                                         <ConnectionStatusTag state={item.connection.state} />
-                                    </div>
+                                    </span>
                                     {(removalLocked || legacyRemovalBlocked) && (
                                         <small>
                                             {removalLocked ? 'This selected wallet cannot be removed' : 'Select this existing wallet or resolve its removal blocker'}:{' '}
@@ -699,7 +697,7 @@ const WalletSelectionModal = (props: {
                                     {!removalLocked && !legacyRemovalBlocked && item.connection.warningCode === connectOutcomeUnknownWarning && (
                                         <small>Connection outcome is unknown and requires review.</small>
                                     )}
-                                </label>
+                                </Checkbox>
                             );
                         })
                     )}
@@ -3563,7 +3561,7 @@ const PositionCashOutBatchManagement = (props: {
                 </section>
             )}
             {batch.allowedActions.length > 0 && (
-                <div className='worm-position-cash-out-batch-controls' aria-label='Cash Out batch controls'>
+                <div className='worm-position-cash-out-batch-controls' role='group' aria-label='Cash Out batch controls'>
                     <Space wrap={true}>
                         {batch.allowedActions.includes('AUTHORIZE_BATCH') && (
                             <Button type='primary' danger={true} icon={<SafetyCertificateOutlined />} disabled={Boolean(busyAction)} onClick={() => openReview(batch)}>
