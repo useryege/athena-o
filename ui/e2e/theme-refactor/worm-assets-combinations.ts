@@ -479,3 +479,95 @@ test('theme:worm-combinations normal NO selection uses the same selection semant
     await expect(unselected).toHaveCSS('border-top-color', 'rgb(97, 113, 123)');
     checkReads(ledger);
 });
+
+// Actual Ant hook confirmations outlive route components unless the owner destroys them.
+test('theme:worm-delete-scope browser history leaving the list destroys the pending confirmation', async ({page}, info) => {
+    const data = scenario('worm-combinations');
+    const ledger = await go(page, data);
+    await page.getByRole('button', {name: /New combination$/}).click();
+    await expect(page.getByRole('heading', {name: 'New combination', exact: true})).toBeVisible();
+    await page.goBack();
+    await expect(page.getByRole('heading', {name: data.heading, exact: true})).toBeVisible();
+    await page.getByRole('button', {name: /Delete$/}).first().click();
+    await expect(page.getByRole('dialog', {name: 'Delete September market basket?'})).toBeVisible();
+    await page.screenshot({path: info.outputPath('before-navigation.png')});
+    await page.goForward();
+    await expect(page.getByRole('heading', {name: 'New combination', exact: true})).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.goBack();
+    await expect(page.getByRole('heading', {name: data.heading, exact: true})).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    expect(ledger.requests.filter(r => r.method !== 'GET')).toEqual([]);
+    checkReads(ledger);
+    await info.attach('request-ledger.json', {body: JSON.stringify(ledger), contentType: 'application/json'});
+    await page.screenshot({path: info.outputPath('after-navigation.png')});
+});
+
+for (const transition of ['issuer', 'account', 'revision', 'revoke-restore', 'A-B-A']) {
+    test(`theme:worm-delete-scope authorization ${transition} destroys the old Ant dialog`, async ({page}, info) => {
+        const data = scenario('worm-combinations');
+        const original = structuredClone((data.replies[0].json as any).session.userInfo);
+        const user = structuredClone(original);
+        writeReplies(data, '/api/v1/session/userinfo', 'GET', user);
+        const ledger = await go(page, data);
+        await page.getByRole('button', {name: /Delete$/}).first().click();
+        await expect(page.getByRole('dialog', {name: 'Delete September market basket?'})).toBeVisible();
+        if (transition === 'issuer') user.iss = 'replacement-issuer';
+        if (transition === 'account' || transition === 'A-B-A') user.accountId = '33333333-3333-4333-8333-333333333333';
+        if (transition === 'revision') user.access.revision = '2';
+        if (transition === 'revoke-restore')
+            user.access.moduleAccess.find((entry: any) => entry.module === 'ACCOUNT_DATA_MODULE_WORM_TRADING').dataAccess = 'ACCOUNT_DATA_ACCESS_READ';
+        await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+        await expect.poll(() => ledger.requests.filter(r => r.path === '/api/v1/session/userinfo').length).toBe(1);
+        await expect(page.getByRole('dialog')).toHaveCount(0);
+        if (transition === 'revoke-restore') await expect(page.getByRole('button', {name: /Delete$/})).toHaveCount(0);
+        if (transition === 'revoke-restore' || transition === 'A-B-A') {
+            Object.assign(user, structuredClone(original));
+            await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+            await expect.poll(() => ledger.requests.filter(r => r.path === '/api/v1/session/userinfo').length).toBe(2);
+            await expect(page.getByRole('button', {name: /Delete$/}).first()).toBeEnabled();
+            await expect(page.getByRole('dialog')).toHaveCount(0);
+        }
+        expect(ledger.requests.filter(r => r.method !== 'GET')).toEqual([]);
+        checkReads(ledger);
+        await info.attach('request-ledger.json', {body: JSON.stringify(ledger), contentType: 'application/json'});
+        await page.screenshot({path: info.outputPath(`${transition}.png`)});
+    });
+}
+
+for (const status of [200, 409, 503]) {
+    test(`theme:worm-delete-scope confirmation sends exact single DELETE and recovers from ${status}`, async ({page}, info) => {
+        const data = scenario('worm-combinations');
+        const list = data.replies.find(r => r.path.endsWith('/combinations'))!;
+        const item = (list.json as any).items[0];
+        const path = `/api/v1/worm-trading/combinations/${item.id}`;
+        writeReplies(data, path, 'DELETE', status === 200 ? {} : {message: 'Controlled deletion failure'}, status);
+        const reply = data.replies.find(r => r.method === 'DELETE')!;
+        reply.delayMs = 300;
+        const ledger = await go(page, data);
+        await page.getByRole('button', {name: /Delete$/}).first().click();
+        const dialog = page.getByRole('dialog', {name: 'Delete September market basket?'});
+        await expect(dialog.getByText('This permanently removes the saved combination and its 2 selected markets.', {exact: true})).toBeVisible();
+        if (status === 200) Object.assign(list.json as any, {items: [], total: 0});
+        await dialog.getByRole('button', {name: 'Delete combination', exact: true}).click();
+        await expect(dialog).toHaveCount(0);
+        const first = ledger.requests.filter(r => r.method !== 'GET');
+        expect(first).toEqual([{method: 'DELETE', path, realm: 'member', query: '?expectedRevision=7', body: undefined}]);
+        if (status === 200) {
+            await expect(page.getByText('No saved combinations', {exact: true})).toBeVisible();
+        } else {
+            await expect(page.getByText(status === 409 ? 'Combination changed' : 'Could not delete combination', {exact: true})).toBeVisible();
+            await expect(page.getByText(item.name, {exact: true}).filter({visible: true})).toBeVisible();
+            reply.status = 200;
+            reply.json = {};
+            Object.assign(list.json as any, {items: [], total: 0});
+            await page.getByRole('button', {name: /Delete$/}).first().click();
+            await page.getByRole('dialog').getByRole('button', {name: 'Delete combination', exact: true}).click();
+            await expect(page.getByText('No saved combinations', {exact: true})).toBeVisible();
+            expect(ledger.requests.filter(r => r.method !== 'GET')).toEqual([first[0], first[0]]);
+        }
+        checkReads(ledger);
+        await info.attach('request-ledger.json', {body: JSON.stringify(ledger), contentType: 'application/json'});
+        await page.screenshot({path: info.outputPath(`delete-${status}.png`)});
+    });
+}

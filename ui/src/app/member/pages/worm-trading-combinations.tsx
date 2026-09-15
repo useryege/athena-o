@@ -252,41 +252,48 @@ export const WormTradingCombinationsPage = () => {
     const canWriteRef = React.useRef(canWrite);
     canWriteRef.current = canWrite;
     const operationScope = JSON.stringify([authorization.user.accountId, authorization.user.iss, authorization.revision]);
-    const accountIDRef = React.useRef(operationScope);
-    accountIDRef.current = operationScope;
-    React.useLayoutEffect(
-        () => () => {
-            accountIDRef.current = '';
-            canWriteRef.current = false;
-        },
-        []
-    );
+    const deleteScope = React.useMemo(() => ({active: false, confirmations: new Map<string, {destroy: () => void}>()}), [operationScope, canWrite]);
     const navigate = useNavigate();
     const {page, pageSize, setPage} = usePagedParams(20, combinationPageSizes);
     const [deletingIDs, setDeletingIDs] = React.useState<Set<string>>(() => new Set());
     const data = useAsyncData(() => services.wormTrading.listMarketCombinations(page, pageSize), [authorization.user.accountId, page, pageSize]);
 
-    React.useEffect(() => {
-        if (!canWrite) {
-            setDeletingIDs(new Set());
-        }
-    }, [canWrite]);
+    React.useLayoutEffect(() => {
+        deleteScope.active = canWrite;
+        setDeletingIDs(new Set());
+        return () => {
+            deleteScope.active = false;
+            deleteScope.confirmations.forEach(confirmation => confirmation.destroy());
+            deleteScope.confirmations.clear();
+        };
+    }, [deleteScope, canWrite]);
 
     const deleteCombination = (item: WormMarketCombination) => {
-        if (!canWrite) {
+        if (!canWriteRef.current || !deleteScope.active || deleteScope.confirmations.has(item.id)) {
             return;
         }
-        ctx.modal.confirm({
+        let submitted = false;
+        const isCurrent = () => deleteScope.active && canWriteRef.current && deleteScope.confirmations.get(item.id) === confirmation;
+        const confirmation = ctx.modal.confirm({
             className: 'worm-confirm-modal',
             title: `Delete ${item.name}?`,
             content: `This permanently removes the saved combination and its ${item.items.length} selected ${item.items.length === 1 ? 'market' : 'markets'}.`,
             okText: 'Delete combination',
+            onCancel: () => {
+                if (isCurrent() && !submitted) {
+                    deleteScope.confirmations.delete(item.id);
+                }
+            },
             onOk: async () => {
-                const operationAccountID = accountIDRef.current;
+                // A confirmation belongs to the scope in which it was opened, even after A → B → A.
+                if (!isCurrent() || submitted) {
+                    return;
+                }
+                submitted = true;
                 setDeletingIDs(current => new Set(current).add(item.id));
                 try {
                     await services.wormTrading.deleteMarketCombination(item.id, item.revision);
-                    if (!canWriteRef.current || accountIDRef.current !== operationAccountID) {
+                    if (!isCurrent()) {
                         return;
                     }
                     ctx.notifications.success('Combination deleted', item.name);
@@ -296,7 +303,7 @@ export const WormTradingCombinationsPage = () => {
                         data.reload();
                     }
                 } catch (error) {
-                    if (canWriteRef.current && accountIDRef.current === operationAccountID) {
+                    if (isCurrent()) {
                         const details = requestErrorDetails(error);
                         if (details.status === 409) {
                             ctx.notifications.error('Combination changed', 'Reload the latest revision before deleting this combination.');
@@ -305,14 +312,18 @@ export const WormTradingCombinationsPage = () => {
                         }
                     }
                 } finally {
-                    setDeletingIDs(current => {
-                        const next = new Set(current);
-                        next.delete(item.id);
-                        return next;
-                    });
+                    if (isCurrent()) {
+                        deleteScope.confirmations.delete(item.id);
+                        setDeletingIDs(current => {
+                            const next = new Set(current);
+                            next.delete(item.id);
+                            return next;
+                        });
+                    }
                 }
             }
         });
+        deleteScope.confirmations.set(item.id, confirmation);
     };
 
     const items = data.data?.items || [];
