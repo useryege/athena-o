@@ -1473,6 +1473,7 @@ body,
 .athena-help-panel { max-width: 860px; }
 .athena-help-connect { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-bottom: 24px; }
 .athena-help-connect > .ant-typography { max-width: 30ch; }
+.athena-help-connect > .ant-btn { flex-shrink: 0; }
 .athena-help-resource { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-block: 24px; border-top: 1px solid var(--athena-border); color: var(--athena-text); }
 .athena-help-resource > span:first-child { display: grid; gap: 8px; }
 .athena-help-resource strong { font-size: .875rem; font-weight: 600; }

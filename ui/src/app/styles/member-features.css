@@ -4761,7 +4761,7 @@
 .account-token-card { display: grid; justify-content: stretch; border: 0; border-radius: 0; padding: 20px 0; background: transparent; }
 .account-token-card > div { gap: 14px; }
 .account-token-card dl { display: grid; gap: 12px; margin: 0; }
-.account-token-card dl > div { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 4px; }
+.account-token-card dl > div { display: grid; grid-template-columns: 4rem minmax(0, 1fr); gap: 4px; }
 .account-token-card dt { color: var(--athena-muted); font-size: .8125rem; }
 .account-token-card dd { margin: 0; font-variant-numeric: tabular-nums; }
 .account-token-card > button { justify-self: start; width: auto; }
@@ -4788,7 +4788,7 @@
     .telegram-channel-card { grid-template-columns: minmax(0, 1fr); padding: 20px; }
     .telegram-channel-card__heading { align-items: flex-start; flex-wrap: wrap; }
     .telegram-channel-card__actions { grid-column: 1; width: 100%; justify-content: stretch; }
-    .telegram-channel-card__actions > .ant-space-item { flex: 1; width: auto; }
+    .telegram-channel-card__actions > .ant-space-item { flex: 1 1 max-content; width: auto; }
     .telegram-channel-card__actions button { width: 100%; }
     .telegram-connection-details { grid-template-columns: minmax(0, 1fr); gap: 18px; }
     .account-center-content .section-panel__header { flex-wrap: wrap; }
@@ -4818,7 +4818,7 @@
 .app-page:has(.telegram-delivery) .app-page__heading { display: contents; }
 .app-page:has(.telegram-delivery) .app-page__heading > h1 { grid-column: 1; grid-row: 1; }
 .app-page:has(.telegram-delivery) .app-page__heading > .ant-typography-secondary { grid-column: 1 / -1; grid-row: 2; }
-.app-page:has(.telegram-delivery) .app-page__actions { grid-column: 2; grid-row: 1; }
+.app-page:has(.telegram-delivery) .app-page__actions { grid-column: 2; grid-row: 1; max-width: none; }
 .account-ai-result-modal.ant-modal { top: 24px; padding-bottom: 0; }
 
 /* v20 Wallets and saved Solana candidates. */

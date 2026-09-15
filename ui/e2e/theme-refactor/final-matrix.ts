@@ -58,6 +58,37 @@ for (const scenario of mainCases) {
                     expect(action.y, 'Page actions follow the complete title and description').toBeGreaterThanOrEqual(copy.y + copy.height);
                 }
             }
+            const splitActionWords = await page
+                .locator('.ant-btn, .radar-windows th, .radar-windows td')
+                .filter({visible: true})
+                .evaluateAll(buttons => {
+                    const split: {label: string; word: string; lines: number}[] = [];
+                    for (const button of buttons) {
+                        const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
+                        let node: Node | null;
+                        while ((node = walker.nextNode())) {
+                            for (const match of (node.textContent || '').matchAll(/[+-]?\d+(?:\.\d+)?%?|[A-Za-z]{2,}/g)) {
+                                const range = document.createRange();
+                                range.setStart(node, match.index!);
+                                range.setEnd(node, match.index! + match[0].length);
+                                const lines = new Set(Array.from(range.getClientRects(), rect => Math.round(rect.y))).size;
+                                if (lines > 1) split.push({label: button.textContent?.trim() || '', word: match[0], lines});
+                            }
+                        }
+                    }
+                    return split;
+                });
+            expect(splitActionWords, 'Action labels and price cells may wrap between words but must preserve whole words and numbers').toEqual([]);
+            const overlappingKeyLabels = await page.locator('.account-token-card dl > div').evaluateAll(rows =>
+                rows.filter(row => {
+                    const label = row.querySelector('dt')!;
+                    const value = row.querySelector('dd')!;
+                    const range = document.createRange();
+                    range.selectNodeContents(label);
+                    return range.getBoundingClientRect().right > value.getBoundingClientRect().left;
+                }).map(row => row.textContent)
+            );
+            expect(overlappingKeyLabels, 'API key date labels do not overlap their values after text enlargement').toEqual([]);
             const boundaries = await page
                 .locator('.ant-btn, .ant-alert, .athena-account-avatar')
                 .filter({visible: true})
