@@ -45,6 +45,19 @@ for (const scenario of mainCases) {
             await page.mouse.move(0, 0);
             await page.evaluate(() => window.scrollTo(0, 0));
             await assertThemeLayout(page);
+            // Mobile page copy owns a complete row; its actions follow it. Notifications has an approved title/refresh grid.
+            if (viewport.width <= 720 && scenario.id !== 'member-notifications') {
+                const header = page.locator('.app-page__header').first();
+                const heading = header.locator('.app-page__heading');
+                const actions = header.locator('.app-page__actions');
+                if ((await heading.count()) && (await actions.locator('button, a').count())) {
+                    const copy = (await heading.boundingBox())!;
+                    const action = (await actions.boundingBox())!;
+                    const frame = (await header.boundingBox())!;
+                    expect(copy.width, 'Page title and description retain the full mobile row').toBeGreaterThanOrEqual(frame.width - 4);
+                    expect(action.y, 'Page actions follow the complete title and description').toBeGreaterThanOrEqual(copy.y + copy.height);
+                }
+            }
             const boundaries = await page
                 .locator('.ant-btn, .ant-alert, .athena-account-avatar')
                 .filter({visible: true})

@@ -920,6 +920,10 @@ body,
         flex-wrap: wrap;
     }
 
+    .app-page__heading {
+        flex-basis: 100%;
+    }
+
     .app-page__actions {
         justify-content: flex-start;
         max-width: 100%;
