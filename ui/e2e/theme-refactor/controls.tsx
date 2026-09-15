@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {createRoot} from 'react-dom/client';
-import {Alert, App, Button, Dropdown, Input, InputNumber, Modal, Select, Space, Table} from 'antd';
+import {Alert, App, Button, Checkbox, Dropdown, Input, InputNumber, Modal, Radio, Select, Space, Switch, Table} from 'antd';
 import {AthenaThemeProvider} from '../../src/app/shared/athena-theme';
 import '../../src/assets/fonts.css';
 import '../../src/app/styles/shared.css';
@@ -10,6 +10,28 @@ const Controls = () => {
     const [open, setOpen] = React.useState(false);
     return (
         <main style={{padding: '1.25rem', maxWidth: '50rem'}}>
+            <section aria-label='Selection control states' style={{display: 'grid', gap: '1rem', justifyItems: 'start'}}>
+                <Checkbox aria-label='Checkbox toggle'>Checkbox toggle</Checkbox>
+                <Checkbox aria-label='Checkbox disabled checked' disabled defaultChecked>
+                    Checkbox disabled checked
+                </Checkbox>
+                <Checkbox aria-label='Checkbox disabled off' disabled>
+                    Checkbox disabled off
+                </Checkbox>
+                <Radio.Group aria-label='Radio choices' defaultValue='off'>
+                    <Radio value='on'>Radio on</Radio>
+                    <Radio value='off'>Radio off</Radio>
+                </Radio.Group>
+                <Radio aria-label='Radio disabled checked' disabled checked>
+                    Radio disabled checked
+                </Radio>
+                <Radio aria-label='Radio disabled off' disabled>
+                    Radio disabled off
+                </Radio>
+                <Switch aria-label='Switch toggle' />
+                <Switch aria-label='Switch disabled checked' disabled defaultChecked />
+                <Switch aria-label='Switch disabled off' disabled />
+            </section>
             <p data-testid='body'>Account information</p>
             <Space wrap>
                 <Button type='primary'>Save profile</Button>

@@ -891,7 +891,7 @@
     padding-right: 2.75rem;
 }
 
-.worm-wallet-selection-modal .ant-modal-close { width: 2.75rem; height: 2.75rem; }
+.worm-wallet-selection-modal .ant-modal-close { width: 2.75rem; height: 2.75rem; inset-block-start: .5rem; inset-inline-end: .5rem; }
 
 .worm-wallet-selection-modal__title .ant-tag {
     margin-inline-end: 0;

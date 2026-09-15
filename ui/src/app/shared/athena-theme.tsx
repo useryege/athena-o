@@ -33,6 +33,8 @@ export function createAthenaTheme(): ThemeConfig {
                 defaultActiveBorderColor: read('border-strong'),
                 borderColorDisabled: read('border')
             },
+            Checkbox: {colorWhite: read('bg')},
+            Radio: {colorWhite: read('bg')},
             Input: {activeBorderColor: read('primary'), hoverBorderColor: read('primary'), activeShadow: 'none'},
             Segmented: {trackBg: read('panel'), itemSelectedBg: read('selected-bg'), itemSelectedColor: read('primary')},
             Pagination: {itemActiveBg: read('panel')},

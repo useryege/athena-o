@@ -1839,3 +1839,5 @@ input, textarea { caret-color: var(--athena-primary); }
   .ant-modal-confirm .ant-modal-confirm-btns > .ant-btn + .ant-btn { margin-inline-start: 0; }
 }
 .ant-select { font-size: var(--ant-select-font-size, var(--athena-type-control)); }
+
+.athena-theme.ant-switch.ant-switch-checked:not(.ant-switch-disabled) { --ant-switch-handle-bg: var(--athena-bg); }

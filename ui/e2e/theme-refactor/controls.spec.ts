@@ -99,3 +99,58 @@ for (const width of [390, 720]) {
         }
     });
 }
+
+for (const root of [16, 32]) {
+    test(`selection controls retain off and disabled states with root ${root}`, async ({page}, info) => {
+        await page.goto('/controls.html');
+        await page.evaluate(size => (document.documentElement.style.fontSize = `${size}px`), root);
+        const records = [];
+        for (const kind of ['Checkbox', 'Radio', 'Switch']) {
+            const role = kind.toLowerCase() as 'checkbox' | 'radio' | 'switch';
+            const off = page.getByRole(role, {name: kind === 'Radio' ? 'Radio on' : `${kind} toggle`, exact: true});
+            await expect(off).not.toBeChecked();
+            const sample = async (input: typeof off) => {
+                const marker = kind === 'Switch' ? input.locator('.ant-switch-handle') : input.locator('..');
+                return marker.evaluate(async (e, kind) => {
+                    const surface = e.closest('.ant-switch') || e;
+                    getComputedStyle(surface).backgroundColor;
+                    await Promise.all(surface.getAnimations({subtree: true}).map(a => a.finished));
+                    const pseudo = getComputedStyle(e, kind === 'Switch' ? '::before' : '::after');
+                    return {
+                        foreground: kind === 'Checkbox' ? pseudo.borderRightColor : pseudo.backgroundColor,
+                        background: getComputedStyle(surface).backgroundColor,
+                        opacity: pseudo.opacity
+                    };
+                }, kind);
+            };
+            const before = await sample(off);
+            if (kind === 'Switch') expect(before.foreground).toBe('rgb(255, 255, 255)');
+            else expect(before.opacity).toBe('0');
+            await off.focus();
+            await expect(off).toBeFocused();
+            await page.keyboard.press('Space');
+            await expect(off).toBeChecked();
+            const selected = await sample(off);
+            expect(selected.foreground).toBe('rgb(6, 8, 11)');
+            expect(selected.opacity).toBe('1');
+            if (kind === 'Radio') await page.getByRole('radio', {name: 'Radio off', exact: true}).check();
+            else await off.click();
+            await expect(off).not.toBeChecked();
+            for (const state of ['checked', 'off']) {
+                const disabled = page.getByRole(role, {name: `${kind} disabled ${state}`, exact: true});
+                await expect(disabled).toBeDisabled();
+                await expect(disabled).toBeChecked({checked: state === 'checked'});
+                const colors = await sample(disabled);
+                expect(colors.foreground).toBe(kind === 'Switch' ? 'rgb(255, 255, 255)' : 'rgb(159, 160, 161)');
+                if (kind !== 'Switch') expect(colors.opacity).toBe(state === 'checked' ? '1' : '0');
+                const box = (await disabled.boundingBox())!;
+                await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+                await expect(disabled).toBeChecked({checked: state === 'checked'});
+                records.push({kind, state, ...colors});
+            }
+            records.push({kind, before, selected});
+        }
+        await info.attach('selection-control-states', {body: JSON.stringify(records), contentType: 'application/json'});
+        await info.attach('selection-control-states-visual', {body: await page.getByRole('region', {name: 'Selection control states'}).screenshot(), contentType: 'image/png'});
+    });
+}

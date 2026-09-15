@@ -31,6 +31,14 @@ for (const viewport of [
         const ledger = await openThemeCase(page, 'worm-assets-twenty');
         await page.getByRole('button', {name: /Manage selection/}).click();
         const dialog = page.getByRole('dialog');
+        await expect(dialog).not.toHaveClass(/ant-zoom-(?:appear|enter)/);
+        const close = dialog.getByRole('button', {name: 'Close', exact: true});
+        const closeBox = (await close.boundingBox())!;
+        const dialogBox = (await dialog.boundingBox())!;
+        expect.soft(closeBox.x).toBeGreaterThanOrEqual(Math.max(0, dialogBox.x));
+        expect.soft(closeBox.y).toBeGreaterThanOrEqual(Math.max(0, dialogBox.y));
+        expect.soft(closeBox.x + closeBox.width).toBeLessThanOrEqual(Math.min(viewport.width, dialogBox.x + dialogBox.width));
+        expect.soft(closeBox.y + closeBox.height).toBeLessThanOrEqual(Math.min(viewport.height, dialogBox.y + dialogBox.height));
         const card = dialog.locator('.worm-wallet-selection-card').first();
         const checkbox = card.getByRole('checkbox', {name: /^Select Wallet 1 /});
         await expect.soft(dialog.locator('label label'), 'native label elements must not be nested').toHaveCount(0);
@@ -73,6 +81,13 @@ for (const viewport of [
         await page.mouse.click(disabledBox.x + disabledBox.width / 2, disabledBox.y + disabledBox.height / 2);
         await expect(disabled.getByRole('checkbox')).not.toBeChecked();
         await info.attach('wallet-selection-semantics', {body: await page.screenshot(), contentType: 'image/png'});
+        await close.click();
+        await expect(dialog).toHaveCount(0);
+        await page.getByRole('button', {name: /Manage selection/}).click();
+        await expect(dialog).not.toHaveClass(/ant-zoom-(?:appear|enter)/);
+        await close.focus();
+        await page.keyboard.press('Enter');
+        await expect(dialog).toHaveCount(0);
         assertThemeLedger(ledger);
     });
 }
@@ -129,3 +144,58 @@ test('theme:semantics workflow number doubles with root text and fits its icon',
     await info.attach('workflow-root32', {body: await page.screenshot(), contentType: 'image/png'});
     assertThemeLedger(ledger);
 });
+
+for (const control of ['checkbox', 'radio', 'switch'] as const) {
+    test(`theme:semantics ${control} selected marker remains distinguishable in normal hover and focus`, async ({page}, info) => {
+        const ledger = await openThemeCase(page, control === 'checkbox' ? 'worm-assets-twenty' : control === 'radio' ? 'foundations-member-voting' : 'admin-accounts');
+        if (control === 'checkbox') await page.getByRole('button', {name: /Manage selection/}).click();
+        const input =
+            control === 'checkbox'
+                ? page.getByRole('dialog').getByRole('checkbox', {checked: true}).first()
+                : control === 'radio'
+                  ? page.locator('input[type="radio"]:not(:disabled)').first()
+                  : page.getByRole('switch', {checked: true}).first();
+        await expect(input).toBeVisible();
+        if (control === 'radio') await input.check();
+        const marker = control === 'checkbox' ? input.locator('..') : control === 'radio' ? input.locator('..') : input.locator('.ant-switch-handle');
+        const results = [];
+        for (const state of ['normal', 'hover', 'focus']) {
+            await page.mouse.move(0, 0);
+            if (state === 'hover') await input.hover();
+            if (state === 'focus') {
+                await input.focus();
+                await expect(input).toBeFocused();
+            }
+            await marker.evaluate(async e => {
+                const surface = e.closest('.ant-switch') || e;
+                getComputedStyle(surface).backgroundColor;
+                await Promise.all(surface.getAnimations({subtree: true}).map(animation => animation.finished));
+            });
+            const sample = await marker.evaluate((e, control) => {
+                const pseudo = getComputedStyle(e, control === 'switch' ? '::before' : '::after');
+                return {
+                    foreground: control === 'checkbox' ? pseudo.borderRightColor : pseudo.backgroundColor,
+                    background: getComputedStyle(control === 'switch' ? e.closest('.ant-switch')! : e).backgroundColor,
+                    opacity: pseudo.opacity
+                };
+            }, control);
+            const l = (c: string) =>
+                c
+                    .match(/[\d.]+/g)!
+                    .slice(0, 3)
+                    .map(Number)
+                    .map(v => v / 255)
+                    .map(v => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+                    .reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+            const a = l(sample.foreground),
+                b = l(sample.background),
+                contrast = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+            results.push({state, ...sample, contrast});
+            expect.soft(contrast).toBeGreaterThanOrEqual(3);
+            expect(sample.opacity).toBe('1');
+        }
+        await info.attach('selected-control-visual', {body: await page.screenshot(), contentType: 'image/png'});
+        await info.attach('non-text-contrast', {body: JSON.stringify(results), contentType: 'application/json'});
+        assertThemeLedger(ledger);
+    });
+}
