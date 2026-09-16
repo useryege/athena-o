@@ -9,7 +9,6 @@ import (
 
 	"github.com/useryege/athena/internal/server/version"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
-	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	"github.com/useryege/athena/internal/wormtrading/apiclient"
 	wormstore "github.com/useryege/athena/internal/wormtrading/store"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
@@ -39,7 +38,6 @@ type ServerOpts struct {
 	WormAPIAttemptTimeout   time.Duration
 	WormPositionBudget      time.Duration
 	WormPositionConcurrency int
-	WormMarketsClientset    wormmarketsapiclient.Clientset
 	WormWebClient           utilworm.WebClient
 	WalletSignerClientset   walletapiclient.WormExecutionSignerClientset
 	InternalAuthToken       string
@@ -68,7 +66,6 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		WormAPIAttemptTimeout:   opts.WormAPIAttemptTimeout,
 		WormPositionBudget:      opts.WormPositionBudget,
 		WormPositionConcurrency: opts.WormPositionConcurrency,
-		WormMarketsClientset:    opts.WormMarketsClientset,
 		WormWebClient:           opts.WormWebClient,
 		WalletSignerClientset:   opts.WalletSignerClientset,
 		SetHealthStatus:         server.setHealthStatus,

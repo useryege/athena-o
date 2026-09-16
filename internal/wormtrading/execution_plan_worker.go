@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
-	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
+	"github.com/useryege/athena/internal/wormtrading/apiclient"
 	wormstore "github.com/useryege/athena/internal/wormtrading/store"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -335,15 +335,17 @@ func (s *Service) readExecutionPlanCatalogs(
 	ctx context.Context,
 	items []wormstore.ExecutionPlanItem,
 ) ([]executionPlanCatalogItem, error) {
-	if s.wormMarketsClientset == nil || s.wormMarketsClientset.WormMarkets() == nil {
-		return nil, failExecutionPlanBuild(executionPlanFailureMarketsUnavailable, errors.New("Worm Markets client is not configured"))
+	if s.catalogReader == nil {
+		return nil, failExecutionPlanBuild(executionPlanFailureMarketsUnavailable, errors.New("Worm order event catalog reader is not configured"))
 	}
-	events := make(map[string]*wormmarketsapiclient.OrderEventCatalog)
+	catalogCtx, cancel := context.WithTimeout(ctx, s.wormCatalogBudget)
+	defer cancel()
+	events := make(map[string]*apiclient.OrderEventCatalog)
 	for _, item := range items {
 		if _, exists := events[item.EventConditionID]; exists {
 			continue
 		}
-		response, err := s.wormMarketsClientset.WormMarkets().GetOrderEventCatalog(ctx, &wormmarketsapiclient.GetOrderEventCatalogRequest{
+		response, err := s.catalogReader.GetOrderEventCatalog(catalogCtx, &apiclient.GetOrderEventCatalogRequest{
 			EventConditionId: item.EventConditionID,
 		})
 		if err != nil {
@@ -355,11 +357,11 @@ func (s *Service) readExecutionPlanCatalogs(
 		}
 		if response == nil || response.GetEvent() == nil || response.GetFetchedAt() <= 0 ||
 			response.GetEvent().GetEventConditionId() != item.EventConditionID {
-			return nil, failExecutionPlanBuild(executionPlanFailureMarketsInvalid, errors.New("Worm Markets returned an invalid event catalog"))
+			return nil, failExecutionPlanBuild(executionPlanFailureMarketsInvalid, errors.New("Worm order event catalog returned an invalid event catalog"))
 		}
 		events[item.EventConditionID] = response.GetEvent()
 	}
-	marketIndexes := make(map[string]map[string]*wormmarketsapiclient.OrderEventCatalogMarket, len(events))
+	marketIndexes := make(map[string]map[string]*apiclient.OrderEventCatalogMarket, len(events))
 	for eventConditionID, catalog := range events {
 		markets, err := indexExecutionPlanCatalogMarkets(catalog)
 		if err != nil {
@@ -392,7 +394,7 @@ func (s *Service) readExecutionPlanCatalogs(
 		if selectable {
 			maxLeverage, parseErr := parseExecutionPreviewDecimal(selectedOutcome.GetMaxLeverage())
 			if parseErr != nil || maxLeverage.Compare(executionPreviewOne()) < 0 {
-				return nil, failExecutionPlanBuild(executionPlanFailureMarketsInvalid, errors.New("Worm Markets returned invalid one-times leverage availability"))
+				return nil, failExecutionPlanBuild(executionPlanFailureMarketsInvalid, errors.New("Worm order event catalog returned invalid one-times leverage availability"))
 			}
 		} else {
 			unavailableCode = strings.TrimSpace(selectedOutcome.GetUnavailableCode())
@@ -406,7 +408,7 @@ func (s *Service) readExecutionPlanCatalogs(
 				unavailableCode = executionPlanMarketUnavailable
 			}
 			if !isCanonicalNonEmptyString(unavailableCode) || len(unavailableCode) > 100 {
-				return nil, failExecutionPlanBuild(executionPlanFailureMarketsInvalid, errors.New("Worm Markets returned an invalid unavailable code"))
+				return nil, failExecutionPlanBuild(executionPlanFailureMarketsInvalid, errors.New("Worm order event catalog returned an invalid unavailable code"))
 			}
 		}
 		result = append(result, executionPlanCatalogItem{
@@ -433,23 +435,23 @@ func (s *Service) readExecutionPlanCatalogs(
 }
 
 func indexExecutionPlanCatalogMarkets(
-	catalog *wormmarketsapiclient.OrderEventCatalog,
-) (map[string]*wormmarketsapiclient.OrderEventCatalogMarket, error) {
+	catalog *apiclient.OrderEventCatalog,
+) (map[string]*apiclient.OrderEventCatalogMarket, error) {
 	if catalog == nil || !validExecutionPreviewConditionID(catalog.GetEventConditionId()) {
-		return nil, errors.New("Worm Markets returned an invalid event")
+		return nil, errors.New("Worm order event catalog returned an invalid event")
 	}
-	result := make(map[string]*wormmarketsapiclient.OrderEventCatalogMarket, len(catalog.GetMarkets()))
+	result := make(map[string]*apiclient.OrderEventCatalogMarket, len(catalog.GetMarkets()))
 	for _, market := range catalog.GetMarkets() {
 		if market == nil || !validExecutionPreviewConditionID(market.GetMarketConditionId()) ||
 			market.GetEventConditionId() != catalog.GetEventConditionId() {
-			return nil, errors.New("Worm Markets returned an invalid market")
+			return nil, errors.New("Worm order event catalog returned an invalid market")
 		}
 		if _, exists := result[market.GetMarketConditionId()]; exists {
-			return nil, errors.New("Worm Markets returned a duplicate market")
+			return nil, errors.New("Worm order event catalog returned a duplicate market")
 		}
 		backend := strings.TrimSpace(market.GetBackend())
 		if backend != market.GetBackend() || backend != strings.ToLower(backend) {
-			return nil, errors.New("Worm Markets returned a non-canonical market backend")
+			return nil, errors.New("Worm order event catalog returned a non-canonical market backend")
 		}
 		result[market.GetMarketConditionId()] = market
 	}
@@ -457,22 +459,22 @@ func indexExecutionPlanCatalogMarkets(
 }
 
 func executionPlanSelectedOutcome(
-	market *wormmarketsapiclient.OrderEventCatalogMarket,
+	market *apiclient.OrderEventCatalogMarket,
 	isYes bool,
-) (*wormmarketsapiclient.OrderEventCatalogOutcome, error) {
+) (*apiclient.OrderEventCatalogOutcome, error) {
 	if market == nil || len(market.GetOutcomes()) != 2 {
-		return nil, errors.New("Worm Markets returned invalid market outcomes")
+		return nil, errors.New("Worm order event catalog returned invalid market outcomes")
 	}
-	var selected *wormmarketsapiclient.OrderEventCatalogOutcome
+	var selected *apiclient.OrderEventCatalogOutcome
 	seen := map[bool]bool{}
 	for _, outcome := range market.GetOutcomes() {
 		if outcome == nil || seen[outcome.GetIsYes()] || !isCanonicalNonEmptyString(outcome.GetLabel()) {
-			return nil, errors.New("Worm Markets returned invalid market outcomes")
+			return nil, errors.New("Worm order event catalog returned invalid market outcomes")
 		}
 		seen[outcome.GetIsYes()] = true
 		if outcome.GetSelectable() == (outcome.GetUnavailableCode() != "") ||
 			outcome.GetUnavailableCode() != strings.TrimSpace(outcome.GetUnavailableCode()) {
-			return nil, errors.New("Worm Markets returned inconsistent market outcomes")
+			return nil, errors.New("Worm order event catalog returned inconsistent market outcomes")
 		}
 		if outcome.GetIsYes() == isYes {
 			selected = outcome

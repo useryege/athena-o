@@ -19,7 +19,6 @@ import (
 	"github.com/useryege/athena/common"
 	accountstore "github.com/useryege/athena/internal/accountstate/store"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
-	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	"github.com/useryege/athena/internal/wormtrading"
 	wormtradingapiclient "github.com/useryege/athena/internal/wormtrading/apiclient"
 	wormtradingstore "github.com/useryege/athena/internal/wormtrading/store"
@@ -30,19 +29,18 @@ import (
 )
 
 const (
-	cliName                     = "athena-worm-trading"
-	solanaRPCEndpointEnv        = "ATHENA_WORM_TRADING_SOLANA_RPC_URL"
-	rpcAttemptTimeoutEnv        = "ATHENA_WORM_TRADING_RPC_ATTEMPT_TIMEOUT"
-	balanceBudgetEnv            = "ATHENA_WORM_TRADING_BALANCE_BUDGET"
-	rpcRateLimitEnv             = "ATHENA_WORM_TRADING_RPC_RATE_LIMIT"
-	rpcRateBurstEnv             = "ATHENA_WORM_TRADING_RPC_RATE_BURST"
-	credentialKeyEnv            = "ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY"
-	wormAttemptTimeoutEnv       = "ATHENA_WORM_TRADING_WORM_API_ATTEMPT_TIMEOUT"
-	wormCatalogBudgetEnv        = "ATHENA_WORM_TRADING_CATALOG_BUDGET"
-	wormPositionBudgetEnv       = "ATHENA_WORM_TRADING_POSITION_BUDGET"
-	wormPositionConcurrencyEnv  = "ATHENA_WORM_TRADING_POSITION_CONCURRENCY"
-	wormMarketsServerAddressEnv = "ATHENA_WORM_MARKETS_SERVER_ADDRESS"
-	walletServerAddressEnv      = "ATHENA_WALLET_SERVER_ADDRESS"
+	cliName                    = "athena-worm-trading"
+	solanaRPCEndpointEnv       = "ATHENA_WORM_TRADING_SOLANA_RPC_URL"
+	rpcAttemptTimeoutEnv       = "ATHENA_WORM_TRADING_RPC_ATTEMPT_TIMEOUT"
+	balanceBudgetEnv           = "ATHENA_WORM_TRADING_BALANCE_BUDGET"
+	rpcRateLimitEnv            = "ATHENA_WORM_TRADING_RPC_RATE_LIMIT"
+	rpcRateBurstEnv            = "ATHENA_WORM_TRADING_RPC_RATE_BURST"
+	credentialKeyEnv           = "ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY"
+	wormAttemptTimeoutEnv      = "ATHENA_WORM_TRADING_WORM_API_ATTEMPT_TIMEOUT"
+	wormCatalogBudgetEnv       = "ATHENA_WORM_TRADING_CATALOG_BUDGET"
+	wormPositionBudgetEnv      = "ATHENA_WORM_TRADING_POSITION_BUDGET"
+	wormPositionConcurrencyEnv = "ATHENA_WORM_TRADING_POSITION_CONCURRENCY"
+	walletServerAddressEnv     = "ATHENA_WALLET_SERVER_ADDRESS"
 )
 
 func NewCommand() *cobra.Command {
@@ -58,7 +56,6 @@ func NewCommand() *cobra.Command {
 		wormCatalogBudgetRaw       string
 		wormPositionBudgetRaw      string
 		wormPositionConcurrencyRaw string
-		wormMarketsServerAddress   string
 		walletServerAddress        string
 		storeSource                func(context.Context) (*wormtradingstore.SQLStore, error)
 	)
@@ -122,11 +119,6 @@ func NewCommand() *cobra.Command {
 				return err
 			}
 			defer utilio.Close(accountStore)
-			wormMarketsClientset, err := wormmarketsapiclient.NewWormMarketsClientset(wormMarketsServerAddress)
-			if err != nil {
-				return fmt.Errorf("configure Worm Markets client: %w", err)
-			}
-			defer utilio.Close(wormMarketsClientset)
 			walletSignerClientset, err := walletapiclient.NewWormExecutionSignerClientset(
 				walletServerAddress,
 				env.StringFromEnv(walletapiclient.WormExecutionSignerAuthTokenEnv, ""),
@@ -158,7 +150,6 @@ func NewCommand() *cobra.Command {
 				WormAPIAttemptTimeout:   wormAttemptTimeout,
 				WormPositionBudget:      wormPositionBudget,
 				WormPositionConcurrency: wormPositionConcurrency,
-				WormMarketsClientset:    wormMarketsClientset,
 				WormWebClient:           utilworm.NewWebClient(utilworm.WebClientConfig{Timeout: wormAttemptTimeout}),
 				WalletSignerClientset:   walletSignerClientset,
 				InternalAuthToken:       env.StringFromEnv(wormtradingapiclient.InternalAuthTokenEnv, ""),
@@ -261,12 +252,6 @@ func NewCommand() *cobra.Command {
 		"rpc-rate-burst",
 		env.StringFromEnv(rpcRateBurstEnv, strconv.Itoa(wormtrading.DefaultSolanaRPCRateBurst)),
 		"Logical Solana JSON-RPC subrequest burst",
-	)
-	command.Flags().StringVar(
-		&wormMarketsServerAddress,
-		"worm-markets-server-address",
-		env.StringFromEnv(wormMarketsServerAddressEnv, fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWormMarkets)),
-		"Athena Worm Markets server address used by execution preview",
 	)
 	command.Flags().StringVar(
 		&walletServerAddress,

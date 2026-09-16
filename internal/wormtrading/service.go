@@ -9,7 +9,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
-	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	"github.com/useryege/athena/internal/wormtrading/apiclient"
 	wormstore "github.com/useryege/athena/internal/wormtrading/store"
 	utilworm "github.com/useryege/athena/util/worm"
@@ -40,7 +39,6 @@ type Service struct {
 	wormPositionBudget       time.Duration
 	wormPositionSemaphore    chan struct{}
 	wormCapabilities         wormCapabilityStatus
-	wormMarketsClientset     wormmarketsapiclient.Clientset
 	wormWebClient            utilworm.WebClient
 	walletSignerClientset    walletapiclient.WormExecutionSignerClientset
 	walletOperationLocks     sync.Map
@@ -66,7 +64,6 @@ type ServiceOptions struct {
 	WormAPIAttemptTimeout   time.Duration
 	WormPositionBudget      time.Duration
 	WormPositionConcurrency int
-	WormMarketsClientset    wormmarketsapiclient.Clientset
 	WormWebClient           utilworm.WebClient
 	WalletSignerClientset   walletapiclient.WormExecutionSignerClientset
 	SetHealthStatus         func(grpc_health_v1.HealthCheckResponse_ServingStatus)
@@ -98,9 +95,6 @@ func NewServiceWithOptions(opts ServiceOptions) (*Service, error) {
 	if opts.CredentialStore == nil {
 		return nil, fmt.Errorf("worm credential store is required")
 	}
-	if opts.WormMarketsClientset == nil || opts.WormMarketsClientset.WormMarkets() == nil {
-		return nil, fmt.Errorf("worm markets client is required")
-	}
 	if opts.WormWebClient == nil {
 		return nil, fmt.Errorf("worm Web client is required")
 	}
@@ -121,7 +115,6 @@ func NewServiceWithOptions(opts ServiceOptions) (*Service, error) {
 		wormAPIAttemptTimeout:    opts.WormAPIAttemptTimeout,
 		wormPositionBudget:       opts.WormPositionBudget,
 		wormPositionSemaphore:    make(chan struct{}, opts.WormPositionConcurrency),
-		wormMarketsClientset:     opts.WormMarketsClientset,
 		wormWebClient:            opts.WormWebClient,
 		walletSignerClientset:    opts.WalletSignerClientset,
 		wormWebSessions:          make(map[string]*utilworm.WebAuthenticatedSession),

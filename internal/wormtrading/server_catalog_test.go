@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/useryege/athena/internal/accountaccess"
 	walletapi "github.com/useryege/athena/internal/wallet/apiclient"
-	marketsapi "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	"github.com/useryege/athena/internal/wormtrading/apiclient"
 	wormstore "github.com/useryege/athena/internal/wormtrading/store"
 	utilworm "github.com/useryege/athena/util/worm"
@@ -132,9 +131,6 @@ func TestCatalogServiceRequiresAccessAndBudget(t *testing.T) {
 }
 
 func TestCatalogServerWiresDefaultAndInjectedReaders(t *testing.T) {
-	markets, err := marketsapi.NewWormMarketsClientset("127.0.0.1:1")
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = markets.Close() })
 	signer, err := walletapi.NewWormExecutionSignerClientset("127.0.0.1:1", strings.Repeat("s", 32))
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = signer.Close() })
@@ -145,7 +141,7 @@ func TestCatalogServerWiresDefaultAndInjectedReaders(t *testing.T) {
 				reads++
 				require.Equal(t, catalogAccountID, id)
 				return catalogAccess(accountaccess.AccessLevelRead), nil
-			}), WormCatalogBudget: 45 * time.Second, CredentialStore: &wormstore.SQLStore{}, CredentialEncryptionKey: []byte(strings.Repeat("k", 32)), WormMarketsClientset: markets, WalletSignerClientset: signer, WormWebClient: utilworm.NewWebClient(utilworm.WebClientConfig{}), InternalAuthToken: strings.Repeat("t", 32)}
+			}), WormCatalogBudget: 45 * time.Second, CredentialStore: &wormstore.SQLStore{}, CredentialEncryptionKey: []byte(strings.Repeat("k", 32)), WalletSignerClientset: signer, WormWebClient: utilworm.NewWebClient(utilworm.WebClientConfig{}), InternalAuthToken: strings.Repeat("t", 32)}
 			if injected {
 				opts.CatalogReader = catalogReaderFunc(func(context.Context, *apiclient.GetOrderEventCatalogRequest) (*apiclient.GetOrderEventCatalogResponse, error) {
 					return &apiclient.GetOrderEventCatalogResponse{FetchedAt: 123}, nil
