@@ -74,6 +74,9 @@ func (s *Service) authorizeCatalogAccount(ctx context.Context, owner string, req
 }
 
 func (s *Service) GetOrderEventCatalog(ctx context.Context, req *apiclient.GetOrderEventCatalogRequest) (*apiclient.GetOrderEventCatalogResponse, error) {
+	// Bound authorization, catalog work and any downstream wait from RPC entry.
+	ctx, cancel := context.WithTimeout(ctx, s.wormCatalogBudget)
+	defer cancel()
 	if _, err := s.authorizeCatalogAccount(ctx, "", accountaccess.AccessLevelRead); err != nil {
 		return nil, err
 	}

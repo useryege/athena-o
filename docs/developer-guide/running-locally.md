@@ -540,6 +540,15 @@ fail startup. Shutdown drains gRPC for at most 10 seconds before cancelling
 transport, then stops existing workers and closes the command-owned Trading and
 account pools. Transport shutdown does not reverse an external request.
 
+For `GetOrderEventCatalog`, `CreateMarketCombination` and
+`UpdateMarketCombination`, the Trading catalog budget starts at RPC entry and
+covers the current account-access read, catalog work and final storage under
+the same deadline. The API adds a fixed 60-second transport deadline for these
+three calls only; an earlier caller deadline or cancellation takes precedence.
+Even when the service catalog budget is configured above 60 seconds, these HTTP
+requests remain capped by the API transport deadline. Writes are not retried
+automatically; this does not change Open/Close or other RPC budgets.
+
 `make build-service-image SERVICE=worm-trading` builds the minimal
 `deploy/worm-trading/Dockerfile`, containing only the service and its migration
 binary. `WORM_TRADING_IMAGE` defaults to `athena-worm-trading:local`; production

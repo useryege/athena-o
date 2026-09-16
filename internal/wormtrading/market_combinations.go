@@ -19,6 +19,9 @@ func (s *Service) CreateMarketCombination(
 	ctx context.Context,
 	req *apiclient.CreateMarketCombinationRequest,
 ) (*apiclient.CreateMarketCombinationResponse, error) {
+	// Keep authorization, resolution and persistence inside one request budget.
+	ctx, cancel := context.WithTimeout(ctx, s.wormCatalogBudget)
+	defer cancel()
 	if _, err := s.authorizeCatalogAccount(ctx, req.GetOwnerAccountId(), accountaccess.AccessLevelReadWrite); err != nil {
 		return nil, err
 	}
@@ -102,6 +105,9 @@ func (s *Service) UpdateMarketCombination(
 	ctx context.Context,
 	req *apiclient.UpdateMarketCombinationRequest,
 ) (*apiclient.UpdateMarketCombinationResponse, error) {
+	// Keep authorization, resolution and persistence inside one request budget.
+	ctx, cancel := context.WithTimeout(ctx, s.wormCatalogBudget)
+	defer cancel()
 	if _, err := s.authorizeCatalogAccount(ctx, req.GetOwnerAccountId(), accountaccess.AccessLevelReadWrite); err != nil {
 		return nil, err
 	}

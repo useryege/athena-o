@@ -61,12 +61,13 @@ for (const width of [1440, 390]) {
             if (combination)
                 routes.push(
                     [`/worm-trading/combinations/${combination.id}/edit`, 'Edit combination'],
-                    [`/worm-trading/combinations/${combination.id}/execute`, 'Execution preview']
+                    [`/worm-trading/combinations/${combination.id}/execute`, 'Worm Trading Execution Preview']
                 );
             if (execution) routes.push([`/worm-trading/executions/${execution.id}`, 'Worm Trading Execution']);
-            for (const [route] of routes) {
+            for (const [route, title] of routes) {
                 await page.goto(`${prefix}${route}`);
-                await expect(page.getByRole('heading', {level: 1})).toBeVisible();
+                await expect(page).toHaveURL(new URL(`${prefix}${route}`, target).href);
+                await expect(page.getByRole('heading', {level: 1, name: title, exact: true})).toBeVisible();
                 await expect(page.getByText('Page not found', {exact: true})).toHaveCount(0);
                 await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
             }

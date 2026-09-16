@@ -34,11 +34,11 @@ The T7 theme implementation scopes draft state and pending callbacks to account,
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| Native HTTP facade and validation | [internal/server/worm_combinations.go](../../../internal/server/worm_combinations.go) | `registerWormCombinationHandlers`, `getWormOrderEventCatalog`, `listWormCombinations`, `getWormCombination`, `createWormCombination`, `updateWormCombination`, `deleteWormCombination`, `resolveWormCombinationItems` |
+| Native HTTP facade and validation | [internal/server/worm_combinations.go](../../../internal/server/worm_combinations.go) | `registerWormCombinationHandlers`, `getWormOrderEventCatalog`, `listWormCombinations`, `getWormCombination`, `createWormCombination`, `updateWormCombination`, `deleteWormCombination`, `wormCombinationSelectionsToProto` |
 | Interactive authorization and origin | [internal/server/worm_connection.go](../../../internal/server/worm_connection.go) | `authenticateInteractiveWormTradingHTTP`, `validWormConnectionOrigin` |
 | API Server process wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go) | native handler registration and the single Worm Trading clientset |
 | Provider-backed event catalog | [internal/wormtrading/order_event_catalog.go](../../../internal/wormtrading/order_event_catalog.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | `GetOrderEventCatalog`, bounded Event/Market reads, stable unavailable reasons and exact complementary prices |
-| Combination application service | [internal/wormtrading/market_combinations.go](../../../internal/wormtrading/market_combinations.go), [internal/wormtrading/market_combination_resolver.go](../../../internal/wormtrading/market_combination_resolver.go), [internal/wormtrading/account_access.go](../../../internal/wormtrading/account_access.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | Create/update authority resolution, trusted identity, current access checks and CRUD |
+| Combination application service | [internal/wormtrading/market_combinations.go](../../../internal/wormtrading/market_combinations.go), [internal/wormtrading/market_combination_resolver.go](../../../internal/wormtrading/market_combination_resolver.go), [internal/wormtrading/account_access.go](../../../internal/wormtrading/account_access.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | `resolveMarketCombinationItems`, create/update authority resolution, trusted identity, current access checks and CRUD |
 | Store model and transactions | [internal/wormtrading/store/market_combinations.go](../../../internal/wormtrading/store/market_combinations.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `MarketCombination`, `MarketCombinationItem`, `SQLStore` CRUD methods, normalization and constraint mapping |
 | Schema and SQL queries | [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/queries/market_combinations.sql](../../../internal/wormtrading/store/queries/market_combinations.sql) | `worm_market_combinations`, `worm_market_combination_items`, revision-qualified writes, active execution lock guard |
 | Browser routes and interactions | [ui/src/app/member/app.tsx](../../../ui/src/app/member/app.tsx), [ui/src/app/member/pages/worm-trading-combinations.tsx](../../../ui/src/app/member/pages/worm-trading-combinations.tsx) | `wormTradingNavItem`, `WormTradingCombinationsPage`, `WormTradingCombinationBuilderPage`, `EventExplorerCard`, `CombinationSummary`, `marketLastTradeCents`, `parseEventConditionID` |
@@ -331,10 +331,20 @@ returns a conflict and preserves the complete template. Terminating or
 otherwise safely completing the Run releases the lock; template CRUD never
 merges or blindly replays the blocked write.
 
-If the complete multi-Event refetch exceeds the configured catalog budget, the shared context
-cancels outstanding catalog calls and the native facade returns HTTP 503. Trading
-does not begin persistence after that timeout, so neither a
-new header nor any partial item replacement can be committed.
+The configured catalog budget (default 45 seconds) starts at the Trading RPC
+entry and covers current account authorization, the complete multi-Event refetch
+and persistence under one deadline. Each phase inherits the remaining budget;
+an earlier caller deadline or cancellation takes precedence. If the refetch
+exceeds that deadline, outstanding catalog calls are canceled and Trading does
+not begin persistence. The native facade preserves gRPC `DeadlineExceeded`
+(code 4), mapped to HTTP 500 by the current error policy; dependency
+`Unavailable` remains HTTP 503.
+
+The API applies a fixed 60-second transport deadline only to `GetOrderEventCatalog`,
+`CreateMarketCombination` and `UpdateMarketCombination`, including time before
+the RPC reaches Trading. An earlier caller deadline or cancellation wins. A
+custom Trading catalog budget above 60 seconds does not extend this HTTP path
+beyond the API cap. Write requests are not automatically retried.
 
 An initial or manual Event refresh failure retains every existing Event catalog,
 selection, and ordering for inspection and exposes bounded Event-level feedback.

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -34,6 +35,8 @@ const (
 	wormCombinationMaximumBodyBytes = int64(1024 * 1024)
 	wormCombinationMaximumNameRunes = 80
 	wormCatalogMaximumPriceLength   = 128
+	// Bound transport even when a request cannot reach the Trading handler.
+	wormCatalogRPCTransportTimeout = 60 * time.Second
 )
 
 type wormCombinationInput struct {
@@ -243,6 +246,8 @@ func (server *AthenaServer) createWormCombination(w http.ResponseWriter, request
 		walletsecret.WriteError(w, err)
 		return
 	}
+	ctx, cancel := context.WithTimeout(ctx, wormCatalogRPCTransportTimeout)
+	defer cancel()
 	result, err := client.CreateMarketCombination(ctx, &wormtradingapiclient.CreateMarketCombinationRequest{
 		OwnerAccountId: credential.AccountID,
 		Name:           input.Name,
@@ -296,6 +301,8 @@ func (server *AthenaServer) updateWormCombination(w http.ResponseWriter, request
 		walletsecret.WriteError(w, err)
 		return
 	}
+	ctx, cancel := context.WithTimeout(ctx, wormCatalogRPCTransportTimeout)
+	defer cancel()
 	result, err := client.UpdateMarketCombination(ctx, &wormtradingapiclient.UpdateMarketCombinationRequest{
 		OwnerAccountId:   credential.AccountID,
 		Id:               combinationID,
@@ -357,6 +364,8 @@ func (server *AthenaServer) loadWormOrderEventCatalog(ctx context.Context, event
 	if server.WormTradingClientset == nil || server.WormTradingClientset.WormTrading() == nil {
 		return wormEventCatalogResponse{}, status.Error(codes.Unavailable, "Worm Trading is unavailable")
 	}
+	ctx, cancel := context.WithTimeout(ctx, wormCatalogRPCTransportTimeout)
+	defer cancel()
 	result, err := server.WormTradingClientset.WormTrading().GetOrderEventCatalog(ctx, &wormtradingapiclient.GetOrderEventCatalogRequest{
 		EventConditionId: eventConditionID,
 	})

@@ -47,7 +47,7 @@ func TestCatalogRPCAuthAndCurrentAccess(t *testing.T) {
 	access := catalogAccess(accountaccess.AccessLevelRead)
 	var storeErr error
 	var calls atomic.Int32
-	s := &Service{accountAccessReader: accountAccessFunc(func(context.Context, string) (accountaccess.Access, error) { return access, storeErr }), catalogReader: catalogReaderFunc(func(_ context.Context, req *apiclient.GetOrderEventCatalogRequest) (*apiclient.GetOrderEventCatalogResponse, error) {
+	s := &Service{wormCatalogBudget: time.Second, accountAccessReader: accountAccessFunc(func(context.Context, string) (accountaccess.Access, error) { return access, storeErr }), catalogReader: catalogReaderFunc(func(_ context.Context, req *apiclient.GetOrderEventCatalogRequest) (*apiclient.GetOrderEventCatalogResponse, error) {
 		calls.Add(1)
 		return &apiclient.GetOrderEventCatalogResponse{Event: &apiclient.OrderEventCatalog{EventConditionId: req.EventConditionId, Title: "event"}, FetchedAt: 123}, nil
 	})}

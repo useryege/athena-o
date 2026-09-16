@@ -1,6 +1,6 @@
 # Athena Modules and Permissions
 
-Athena evaluates authorization on the server for every protected operation. Product access is represented by nine independent module entries with the ordered levels `NONE < READ < READ_WRITE`.
+Athena evaluates authorization on the server for every protected operation. Product access is represented by seven independent module entries with the ordered levels `NONE < READ < READ_WRITE`.
 
 `READ_WRITE` includes `READ`. A module whose maximum is `READ` rejects `READ_WRITE`; this means the module has no public mutation boundary. Athena's server-side authorization rules determine the required level. Use [the Swagger specification](/swagger.json) for the operation's path, method, and schema.
 
