@@ -2,9 +2,9 @@
 
 > 设计状态：Trader Sync 独立进程、gRPC、schema 工具与实例运行器已实现；Redis持久重启修复、两次真实全栈重启及最终Chrome验收通过，见[验收记录](../../testing/trader-sync-independent-service-acceptance.md)。
 
-> 关联目标已调整为[板块访问开关简化方案](../../requirements/development-runtime/business-access-control.md)：本期只限制用户访问，进程及后台任务继续运行；原整组运行控制、默认停任务和新增 Runtime Control 的设计已暂停。服务清单扩展、核心分类、两个 BSC 索引器与 Sports 删除决定、Worm 保留决定，以及本地独立资源、Manager 使用五个远端 Gateway 的边界继续保留。访问范围及默认／重启规则已确认，尚未实施：首次默认关闭，之后保留管理员设置，重启不改变开关；下文描述现有运行命令与资源管理。
+> 关联目标已调整为[板块访问开关简化方案](../../requirements/development-runtime/business-access-control.md)：本期只限制用户访问，进程及后台任务继续运行；原整组运行控制、默认停任务和新增 Runtime Control 的设计已暂停。服务清单扩展、核心分类、BSC／Sports 与 Worm Markets 删除、Worm Trading 保留，以及本地独立资源、Manager 使用五个远端 Gateway 的边界继续有效。访问范围及默认／重启规则已确认，尚未实施：首次默认关闭，之后保留管理员设置，重启不改变开关；下文描述现有运行命令与资源管理。
 
-> [make run 全栈启动配套提案](../../superpowers/specs/2026-09-15-local-full-stack-design.md)原十程序版本已于 2026-09-16 获采用；随后保留 Worm，目标扩充为十二程序，Worm 独立入口、配置、鉴权、就绪与停止设计已补齐；两业务服务共用一个 Worm 访问开关。独立入口、按需存储准备、即时进度、核心先就绪及业务失败隔离继续沿用。尚未实施；下文六程序清单与当前失败收尾方式仍是现状，不代表新提案已落地。
+> [make run 全栈启动配套提案](../../superpowers/specs/2026-09-15-local-full-stack-design.md)的最新目标为 11 个应用，只保留 Worm Trading；Trading 独立入口、配置、鉴权、账户只读依赖、就绪与停止已实现，十一应用默认图仍未实施。独立入口、按需存储准备、即时进度、核心先就绪及业务失败隔离继续沿用；下文六程序清单仍是当前默认图。
 
 ## 范围与服务边界
 
@@ -55,7 +55,7 @@ make run-services SERVICES='trader-sync api-server ui' INSTANCE=ts-integration
 | `ui` | Vite | 无数据库；按配置连接 API |
 | 显式全栈 | Trader Sync、API、Notification、UI、Wallet、Profit Sharing | 本实例 PostgreSQL、Redis、MinIO |
 
-API 和 Notification 的局部入口不会启动 Trader Sync。全栈保留八个既有模块数据库的准备和两个 Temporal 空数据库，未选择的历史模块不启动业务进程。Wallet/Profit Sharing 仍使用既有聚合构建入口，这个既有范围不进入 Trader Sync 的独立构建依赖。
+API 和 Notification 的局部入口不会启动 Trader Sync。全栈准备五个现行业务数据库（Worm Trading、Wallet、Managed OO、Profit Sharing、Token）和两个 Temporal 空数据库；不会准备或重建 `worm_markets`。未选择的业务模块不启动进程。Wallet/Profit Sharing 仍使用既有聚合构建入口，这个既有范围不进入 Trader Sync 的独立构建依赖。
 
 `make run` 显式选择全栈图，默认实例名为 `full-stack`，允许通过 `INSTANCE` 指定别名；`make stop` 和 `make run-reset` 对应同一实例的停止与重置。它们使用相同的资源引擎，不能按固定容器名或端口清理其他实例。局部选择使用 `run-service`/`run-services`；全栈只接受 `DB_MODE=managed`，不能借全栈入口向外部库隐式创建其他模块数据库。
 

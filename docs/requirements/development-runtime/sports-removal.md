@@ -18,10 +18,10 @@
 
 - 删除两个命令、业务模块、后台任务、服务健康注册、API facade、proto、生成客户端和专属测试；World Cup Corners 的接口及静态数据一并移除。
 - 删除 `/sports-live`、`/sports-history`、`/world-cup-corners` 页面及导航、路由、专属组件和客户端。混合组件按实际使用者保留。
-- 清理 `sports_live`、`sports_history`、`world_cup_corners` 三类权限定义、默认授权、已有失效授权、SQL 和 schema 契约。Trading 权限保留；Markets 权限由独立重构清理，两项迁移需协调最终约束。
+- 清理 `sports_live`、`sports_history`、`world_cup_corners` 三类权限定义、默认授权、已有失效授权、SQL 和 schema 契约。该任务当时保留 Trading 与 Markets 权限；后续独立 Markets 退役迁移已删除 `worm_markets` 且未转换成 Trading grant。
 - 删除 Sports 专属通知生产和配置，按精确来源取消未发送消息；保留共享 Notification 的发送记录及真实结果，不处理 Worm 通知。
 - 清理 SQL／迁移源码、sqlc 和其他生成入口；同步生产 Compose、本地运行器、命令分发、Makefile、数据库初始化、环境变量、预检及使用说明。
-- 保留服务在缺少 Sports 配置和数据库时仍可构建、初始化和运行。未来实施须包含消费者、生成产物和受影响的验证。
+- 保留服务在缺少 Sports 配置和数据库时仍可构建、初始化和运行。该范围的消费者、生成产物和受影响验证已在 Sports 任务完成。
 
 ## 3. 历史数据：直接删除，已确认
 
@@ -38,7 +38,7 @@
 - 保留 API、UI、登录、账户、Wallet、Notification、Etherscan Manager／Gateway 和其余业务；ATHENA 钱包、私钥、头像、资产及外部订单／持仓不因本次删除而处置。
 - Polymarket、BSC／EVM、Solana、市场模型和通用 UI 按实际消费者保留。Worm 自身使用的体育市场数据不属于 Sports 板块删除范围。
 - v21 的 Sports 页面转为退役记录；Market Radar／Managed OO、v22 Worm／共用界面和全部已确认视觉规则继续有效。
-- 运行目标只保留 Trading，`worm` 访问标识与交易处理规则继续适用；相关目标设计尚未实施，Token 详细接入仍延期。
+- 运行目标只保留 Trading，`worm` 访问标识与交易处理规则继续适用；Markets 源码退役与 Trading 目录内聚已实施，原 main default 的数据库和五来源通知退役仍由独立 Task 10 留证。十一应用全栈与访问开关尚未实施，Token 详细接入仍延期。
 
 ## 5. 完成标准与决定记录
 
@@ -46,7 +46,7 @@
 
 2026-09-15 曾确认 Worm 与 Sports 一起删除，[原 R19](business-group-control.md#confirmed)保留该时点事实。2026-09-16 用户明确保留 Worm，覆盖此前 Worm 删除决定；随后确认剩余删除对象的历史数据直接删除。
 
-具体顺序与边界见[删除与清理配套设计](../../superpowers/specs/2026-09-16-module-removal-cleanup-design.md)。2026-09-16 用户再次确认删除范围；追加迁移、schema 契约、专属部署入口清理及失败／中断重入现已实施和验证，逐环境执行证据见验收记录。Worm 的新增全栈启动／统一访问开关仍未实施，属于后续任务；现有能力与数据继续保留。服务边界、事务、有限超时与验证遵守[服务开发规范](../../developer-guide/service-development-standards.md)的适用规则。
+具体顺序与边界见[删除与清理配套设计](../../superpowers/specs/2026-09-16-module-removal-cleanup-design.md)。2026-09-16 用户再次确认删除范围；追加迁移、schema 契约、专属部署入口清理及失败／中断重入现已实施和验证，逐环境执行证据见验收记录。这里的“Worm 保留”是该 Sports 任务的批准与验收时点事实；随后 Markets 由独立任务退役，Trading 与共用 Worm 能力继续保留，Markets 结果不计入本文件的 Sports 验收。十一应用全栈与统一访问开关仍未实施。服务边界、事务、有限超时与验证遵守[服务开发规范](../../developer-guide/service-development-standards.md)的适用规则。
 
 2026-09-16 已按用户优先顺序整理[删除清理实施计划](../../superpowers/plans/2026-09-16-module-removal-cleanup.md)，覆盖仓库清理、本地验收、现场退役与直接删库、最终核验。当前执行状态以验收记录为准。
 

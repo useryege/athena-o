@@ -1,8 +1,8 @@
 # Worm Position Cash Out Batches
 
-> 范围修订（2026-09-16 最新决定）：删除 Worm Markets 及其专属数据，保留 Worm Trading；用户已采用由 Trading 统一承接按需市场查询的方案 A。此前双服务保留决定被覆盖。见[删除需求](../../requirements/development-runtime/worm-markets-removal.md)及[目标设计](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)。新技术细节待整体审阅，尚未实施；下文保留当前源码的实际行为，Markets 依赖不得当作目标架构。
+> 实现状态（2026-09-16）：Worm Markets 服务与权限已经退役，执行所需 fresh catalog 已内聚到 Worm Trading；本文件的 proof、串行、幂等、未知结果、恢复和历史规则保持有效。原 main 的专属数据库与旧通知来源已经精确收尾，正常重启未重建 Markets。
 
-> 访问接入目标：`worm` 开关只对应 Trading，`worm_markets` 权限和公共接口随退役删除；Trading 现有权限、授权与已受理工作处理规则保留。访问开关及本地全栈扩展仍未实施，见[访问设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)与[运行设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md#33-worm-trading-接入)。
+> 访问接入目标：`worm` 开关只对应 Trading；访问开关及十一应用全栈扩展仍未实施，见[访问设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)与[运行设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md#33-worm-trading-接入)。
 
 ## Scope
 

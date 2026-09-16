@@ -1,8 +1,8 @@
 # Worm Execution Preview
 
-> 范围修订（2026-09-16 最新决定）：删除 Worm Markets 及其专属数据，保留 Worm Trading；用户已采用由 Trading 统一承接按需市场查询的方案 A。此前双服务保留决定被覆盖。见[删除需求](../../requirements/development-runtime/worm-markets-removal.md)及[目标设计](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)。新技术细节待整体审阅，尚未实施；下文保留当前源码的实际行为，Markets 依赖不得当作目标架构。
+> 实现状态（2026-09-16）：Preview worker 已改为调用 Worm Trading 进程内目录；Worm Markets 服务依赖已删除。原 main 的专属数据库和旧通知来源已经精确收尾，正常重启未重建 Markets，见[退役需求](../../requirements/development-runtime/worm-markets-removal.md)与[跨层验收](../../testing/worm-markets-retirement-acceptance.md)。
 
-> 访问接入目标：`worm` 开关只对应 Trading，`worm_markets` 权限和公共接口随退役删除；Trading 现有权限、授权与已受理工作处理规则保留。访问开关及本地全栈扩展仍未实施，见[访问设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)与[运行设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md#33-worm-trading-接入)。
+> 访问接入目标：`worm` 开关只对应 Trading；访问开关及十一应用全栈扩展仍未实施，见[访问设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)与[运行设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md#33-worm-trading-接入)。
 
 ## Scope
 
@@ -19,9 +19,9 @@ valid market order is actionable.
 
 The API Server owns interactive authentication, current-account derivation,
 exact-origin creation, and owner-scoped Wallet resolution. Worm Trading owns the
-asynchronous BUILDING to READY or FAILED lifecycle, provider reads,
-exact-decimal classification, persistence, expiry, and retention. Worm Markets
-owns the fresh Event catalog and market selectability projection. Wallet owns
+asynchronous BUILDING to READY or FAILED lifecycle, same-process fresh Event
+catalog and market selectability, provider reads, exact-decimal classification,
+persistence, expiry, and retention. Wallet owns
 custody and returns only safe metadata to the API Server.
 
 This capability performs Worm catalog GET, authenticated position/request List,
@@ -45,11 +45,11 @@ belongs to the Executions route.
 | Asynchronous lifecycle and authoritative snapshot assembly | [internal/wormtrading/execution_plan_worker.go](../../../internal/wormtrading/execution_plan_worker.go) | `runExecutionPlanWorker`, `buildClaimedExecutionPlan`, `constructExecutionPlanSnapshot`, `executionPlanLeaseGuard` |
 | Exact-decimal estimate, exposure, and step classification | [internal/wormtrading/execution_preview_builder.go](../../../internal/wormtrading/execution_preview_builder.go) | `ExecutionPreviewBuilder`, `ExecutionPreviewReadClient`, `ExecutionPreviewEstimateClient`, `Build`, complete position/request pagination, `buildExecutionPreviewSteps` |
 | Official Worm clients and shared rate limiting | [internal/wormtrading/worm_api.go](../../../internal/wormtrading/worm_api.go), [util/worm/worm.go](../../../util/worm/worm.go) | `NewOfficialWormAPIClientFactory` |
-| Authoritative Event catalogs | [internal/wormmarkets/order_event_catalog.go](../../../internal/wormmarkets/order_event_catalog.go), [internal/wormmarkets/wormmarkets.proto](../../../internal/wormmarkets/wormmarkets.proto) | `GetOrderEventCatalog`, `OrderEventCatalogMarket`, `OrderEventCatalogOutcome` |
+| Authoritative Event catalogs | [internal/wormtrading/order_event_catalog.go](../../../internal/wormtrading/order_event_catalog.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | same-process `GetOrderEventCatalog`, `OrderEventCatalogMarket`, `OrderEventCatalogOutcome` |
 | Confirmed balance adapter | [internal/wormtrading/solana_adapter.go](../../../internal/wormtrading/solana_adapter.go) | `SolanaBalanceAdapter.BatchGetBalances`, native SOL and Circle USDC observations |
 | Durable model and transactions | [internal/wormtrading/store/execution_plans.go](../../../internal/wormtrading/store/execution_plans.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `CreateExecutionPlan`, `ClaimExecutionPlan`, `UpdateExecutionPlanBuildProgress`, `MarkExecutionPlanReady`, `MarkExecutionPlanFailed`, `DeleteExpiredExecutionPlans` |
 | Schema and generated-query source | [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql), [internal/wormtrading/store/migrations/000011_wallet_selections.sql](../../../internal/wormtrading/store/migrations/000011_wallet_selections.sql), [internal/wormtrading/store/queries/execution_plans.sql](../../../internal/wormtrading/store/queries/execution_plans.sql) | four `worm_execution_plan*` tables, exact Wallet-selection revision, current development-data reset, leased claim, owner reads, terminal writes, reason aggregation, retention cleanup |
-| Process lifecycle and dependencies | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [cmd/athena-worm-trading/commands/athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | single preview worker, Worm Markets clientset, graceful cancellation |
+| Process lifecycle and dependencies | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/order_event_catalog.go](../../../internal/wormtrading/order_event_catalog.go), [cmd/athena-worm-trading/commands/athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | single preview worker, process-owned catalog and graceful cancellation |
 | Browser workflow, normalization, and responsive presentation | [ui/src/app/member/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/member/pages/worm-trading-execution-preview.tsx), [ui/src/app/member/pages/worm-execution-preflight.ts](../../../ui/src/app/member/pages/worm-execution-preflight.ts), [ui/src/app/member/pages/worm-trading-combinations.tsx](../../../ui/src/app/member/pages/worm-trading-combinations.tsx), [ui/src/app/shared/services/worm-trading-service.ts](../../../ui/src/app/shared/services/worm-trading-service.ts), [ui/src/app/member/app.tsx](../../../ui/src/app/member/app.tsx), [ui/src/app/styles/member-features.css](../../../ui/src/app/styles/member-features.css) | `WormTradingExecutionPreviewPage`, `ChecksStep`, `PlanChecksSummary`, `wormExecutionMandatoryGuardDefinitions`, strict plan normalization, contextual route/breadcrumb, `worm-preview-*` rules |
 | Live-Run handoff boundary | [internal/server/worm_executions.go](../../../internal/server/worm_executions.go), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [ui/src/app/member/pages/worm-trading-execution-preview.tsx](../../../ui/src/app/member/pages/worm-trading-execution-preview.tsx) | `CreateExecutionRun`, `Prepare live execution`, usable READY guard, immutable snapshot handoff |
 
@@ -65,7 +65,7 @@ interactive READ_WRITE browser
 
 single Worm Trading preview worker
   -> leased BUILDING claim
-  -> Worm Markets: fresh catalog GET per unique Event
+  -> same-process Trading catalog: fresh GET per unique Event
   -> credential store: CONNECTED snapshot + encrypted active credential
   -> Solana adapter: confirmed SOL/USDC batch
   -> Worm: public Estimate per selectable item
@@ -331,10 +331,11 @@ to that Run; it does not mutate these immutable preview rows.
 | Setting | Behavior |
 | --- | --- |
 | `ATHENA_WORM_TRADING_POSTGRES_DSN` | Owns all execution-plan tables and worker leases. |
-| `ATHENA_WORM_MARKETS_SERVER_ADDRESS` / `--worm-markets-server-address` | Required internal catalog client target; local default `127.0.0.1:8084`. Service construction fails when the client is absent. |
+| `ATHENA_WORM_TRADING_CATALOG_BUDGET` / `--worm-catalog-budget` | Total fresh-catalog budget; default `45s`, positive and no shorter than the Worm API attempt timeout. Preview uses the earlier of this budget and its worker/claim context. |
+| `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` | Independent read-only account schema dependency used by interactive catalog and combination requests; Trading owns and closes the pool but does not migrate the account schema. |
 | `ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY` | Decrypts active per-Wallet HMAC credentials only inside the worker. |
 | `ATHENA_WORM_TRADING_SOLANA_RPC_URL` and balance controls | Supply confirmed SOL/USDC observations through the existing verified mainnet adapter. |
-| `ATHENA_WORM_TRADING_WORM_API_ATTEMPT_TIMEOUT` | Per official Worm Estimate or authenticated List attempt; default `5s`. |
+| `ATHENA_WORM_TRADING_WORM_API_ATTEMPT_TIMEOUT` | Per official Worm catalog, Estimate, or authenticated List attempt; default `5s`. The catalog and public Estimate share the factory-level unauthenticated limiter (100/minute, burst 2); authenticated calls use their existing independent limiter. |
 
 Worker polling at one second, two-minute claims, 20-second heartbeats, hourly
 retention cleanup, 100-row cleanup batches, 15-minute READY TTL, and seven-day
@@ -409,6 +410,9 @@ The worker uses bounded stable failure codes:
 `USDC_BALANCE_UNAVAILABLE`, `WORM_READ_UNAVAILABLE`,
 `WORM_INVALID_RESPONSE`, `PLAN_SOURCE_CHANGED`, `WALLET_SELECTION_CHANGED`, and
 `PREVIEW_INVALID`.
+The two `WORM_MARKETS_*` names are stable historical protocol values; after the
+service retirement they mean the in-process Trading catalog or its Worm
+provider response failed, not that a Markets process exists.
 An ordinary unavailable market, deterministic Estimate rejection, mandatory
 exposure guard, or insufficient USDC is a Step classification rather than a
 failed plan. A valid partial fill continues through normal classification.
@@ -450,9 +454,9 @@ totals and estimates, and ordered reason counts. Step pages expose stable
 Wallet/item ordinals, READY/SKIPPED, reason, and projected USDC. Item Estimates
 include the raw `isFullyFilled` provider observation for diagnosis.
 
-Worker warnings contain bounded plan ID and failure code. Claim, store, Worm
-Markets, Solana, and Worm capability failures remain diagnosable through their
-existing process logs and health/status surfaces. Execution Preview adds no
+Worker warnings contain bounded plan ID and failure code. Claim, store,
+same-process catalog, Solana, and Worm capability failures remain diagnosable
+through Trading process logs and status surfaces. Execution Preview adds no
 metric, queue-depth endpoint, readiness gate, or independent health state; Worm
 Trading gRPC health remains driven by verified Solana readiness, not preview
 backlog or a particular provider snapshot.

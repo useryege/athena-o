@@ -1,6 +1,6 @@
 # 账户访问控制
 
-> 范围更新（2026-09-16）：[Sports 删除、Worm 保留](../../requirements/development-runtime/sports-removal.md)已实施。Sports Live／History 与 World Cup Corners 三类模块及失效授权已删除；Worm 两项独立权限保留，当前矩阵为八项。追加迁移及真实升级证据见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。
+> 范围更新（2026-09-16）：Sports 三项清理后，`worm_markets` 权限又由追加迁移 `000005_remove_worm_markets_access.sql` 精确删除；当前矩阵为七项，只保留 `worm_trading`。旧 Markets grant 不转换成 Trading grant，受影响账户 revision 按既有机制更新。代码、隔离升级与原 main 现场迁移见[退役验收](../../testing/worm-markets-retirement-acceptance.md)；原两个账户 revision 由 1 更新为 2，删除两条 Markets grant，其余 14 条 grant 与 flags 保持。
 
 > 设计状态：已实现
 
@@ -8,11 +8,11 @@
 
 > 交易目标：用户已确认[手动交易共用现有 Trader Sync 权限](../trading/polymarket-manual-trading.md#shared-trader-sync-access)，钱包操作权限和归属继续独立核验。该交易能力尚未实现；当前模块矩阵仍按下文所列源码运行。
 
-> 访问接入目标（2026-09-16 已确认，尚未实施）：普通 Wallet、登录与账户权限保持核心能力；Worm 用户钱包选择、连接、交易及其专属二次验证受同一 `worm` 开关约束。Google 共用回调按可信验证目的区分，关闭时不签发新的 Worm 凭据或交易授权；已有后台工作与内部目的绑定签名按原规则处理。详见[访问接入设计](../../superpowers/specs/2026-09-15-business-access-control-design.md#24-worm-原始-http-与二次验证入口)，不合并或改写 `worm_markets`／`worm_trading` 账户权限。
+> 访问接入目标（2026-09-16 已确认，尚未实施）：普通 Wallet、登录与账户权限保持核心能力；Worm 用户钱包选择、连接、交易及其专属二次验证受同一 `worm` 开关约束。Google 共用回调按可信验证目的区分，关闭时不签发新的 Worm 凭据或交易授权；已有后台工作与内部目的绑定签名按原规则处理。详见[访问接入设计](../../superpowers/specs/2026-09-15-business-access-control-design.md#24-worm-原始-http-与二次验证入口)。
 
 ## 范围
 
-账户访问控制负责 ATHENA 的持久授权模型：外部登录开关、独立 API Key 与 Profit Sharing 权益、完整八模块矩阵、revision 乐观更新、Pending/Active/Blocked 状态、RPC 鉴权，以及会员与管理员应用的严格边界。所有聚合和权限查找使用稳定账户 UUID。Wallet 操作还叠加凭据能力约束；精确行所有权由 Wallet 服务独立核验。
+账户访问控制负责 ATHENA 的持久授权模型：外部登录开关、独立 API Key 与 Profit Sharing 权益、完整七模块矩阵、revision 乐观更新、Pending/Active/Blocked 状态、RPC 鉴权，以及会员与管理员应用的严格边界。所有聚合和权限查找使用稳定账户 UUID。Wallet 操作还叠加凭据能力约束；精确行所有权由 Wallet 服务独立核验。
 
 `member` 与 `admin` 是独立 application realm。同一 Google subject 可以拥有两个独立身份：普通会员 UUID 与唯一管理员 UUID，用户名全局不同，权限、资料、偏好、API Key、Wallet 和业务关系都不合并。
 
@@ -38,7 +38,7 @@
 
 ## 架构与角色
 
-`Access` 包含持久 `Administrator` 投影、`LoginEnabled`、`APIKeyEnabled`、`ProfitSharingEnabled`、八个模块权限及正 `Revision`。PostgreSQL 是权威来源；单 API Server 的 `Controller` 保存分离快照，只发布已提交且校验通过的聚合。`Register(accountID)` 幂等发布已提交账户，并保留更高 revision。
+`Access` 包含持久 `Administrator` 投影、`LoginEnabled`、`APIKeyEnabled`、`ProfitSharingEnabled`、七个模块权限及正 `Revision`。PostgreSQL 是权威来源；单 API Server 的 `Controller` 保存分离快照，只发布已提交且校验通过的聚合。`Register(accountID)` 幂等发布已提交账户，并保留更高 revision。
 
 管理员角色只来自 `athena_account.administrator`，读取时关联到聚合，不从用户名、邮件、JWT 文本或请求推断。`Access.Validate` 固定管理员登录开启、API Key/Profit Sharing 关闭、所有会员模块为 NONE。只有显式 `RequirementAdministrator` 允许管理员操作；管理员角色不隐含任何会员能力，不能进入 Wallet、Worm Trading、Token、市场、Profit Sharing 或 Telegram 绑定业务。账户管理、治理、服务状态和 Etherscan 管理分别使用显式管理员规则。公开 Wallet 契约不接受角色或调用方指定 owner。
 
@@ -52,7 +52,6 @@
 | --- | --- |
 | `market_radar` | NONE / READ |
 | `managed_oo` | NONE / READ / READ_WRITE |
-| `worm_markets` | NONE / READ |
 | `worm_trading` | NONE / READ / READ_WRITE |
 | `token` | NONE / READ / READ_WRITE |
 | `solana` | NONE / READ |
@@ -60,6 +59,8 @@
 | `trader_sync` | NONE / READ_WRITE |
 
 鉴权仍采用 `NONE < READ < READ_WRITE`；只读模块拒绝 RW grant。Trader Sync grant 的 READ 由 Go、API 与 SQL CHECK 拒绝，但 READ requirement 合法，RW 可以满足它。模块之间不传递权限，模块与 API Key / Profit Sharing 权益也彼此独立。protobuf 的 Trader Sync enum 使用 12，Solana 使用 13，保留 2、3、6、7、10 不复用；已删除的 2、3、7 及其原名称均声明 reserved。Solana 公开查询在 API 检查 READ 后代理到独立发现服务；API 从已认证凭据注入唯一账户 UUID，独立服务验证内部 Bearer 并从账户数据库重读 Solana READ 权限。管理员没有会员 Solana 查询权限。
+
+Worm Trading 的目录及组合 Create／Update 还在服务侧验证内部 Bearer、恰好一个规范 `x-athena-account-id`，组合写的 owner 必须匹配该身份，并读取当前 LoginEnabled 和 `worm_trading` READ／READ_WRITE。该只读账户连接独立于 API runtime；管理员、API Key 或历史 Markets-only grant 均无绕过。
 
 ## Telegram 账户自助
 
@@ -107,10 +108,10 @@ Run/Step list/detail 需要交互式 READ。创建、证明身份、coordinator 
 
 ## 运行流程与原子更新
 
-1. 服务启动在账户 store 创建后立即设置必需 `AccessChangeHook`，先于开发账户初始化和 Controller 加载；缺失通过既有 `errorsutil.CheckError` 启动错误路径处理。读取所有 access head、数据库角色与八模块行；零账户合法，缺失、重复、未知、不完整或无效聚合使启动失败。
-2. member realm 中 Google 或 Solana 注册创建 login=true、API Key/Profit Sharing=false、revision=1 与八项 NONE。只有获准 Google 身份在 admin realm 可创建固定管理员聚合。管理员配置邮件进入 member realm 仍创建普通 Pending 身份。Controller 在提交后才发布对应独立 UUID。
+1. 服务启动在账户 store 创建后立即设置必需 `AccessChangeHook`，先于开发账户初始化和 Controller 加载；缺失通过既有 `errorsutil.CheckError` 启动错误路径处理。读取所有 access head、数据库角色与七模块行；零账户合法，缺失、重复、未知、不完整或无效聚合使启动失败。
+2. member realm 中 Google 或 Solana 注册创建 login=true、API Key/Profit Sharing=false、revision=1 与七项 NONE。只有获准 Google 身份在 admin realm 可创建固定管理员聚合。管理员配置邮件进入 member realm 仍创建普通 Pending 身份。Controller 在提交后才发布对应独立 UUID。
 3. 每次会话/API Key 请求检查 LoginEnabled，API Key 另查 APIKeyEnabled；Profit Sharing member RPC 查权益且业务层继续核验 round membership；产品 RPC 查显式模块 requirement。敏感原生入口同时执行上节凭据、owner、proof 与 origin 条件。未知已认证 RPC 拒绝，不能绕过规则进入业务代码。
-4. 管理员只能对普通账户以 expected revision 完整替换三个 flags 与八模块矩阵。Controller 按账户串行；SQL 使用共享 account gate，在同事务读取真实 previous，执行 head revision CAS 与八行替换，再于 commit 前执行 hook。hook 错误回滚整笔变更；成功后才发布缓存。管理员聚合不能经该路径编辑。
+4. 管理员只能对普通账户以 expected revision 完整替换三个 flags 与七模块矩阵。Controller 按账户串行；SQL 使用共享 account gate，在同事务读取真实 previous，执行 head revision CAS 与七行替换，再于 commit 前执行 hook。hook 错误回滚整笔变更；成功后才发布缓存。管理员聚合不能经该路径编辑。
 5. `trader_sync` RW→NONE 的真实 hook 在同一账户事务关闭区间、标记非取消订阅 permission_disabled、终止 pending baseline attempt 与未冻结摘要成员，并为全部旧 Trader Sync delivery 写永久资格墓碑（含 sending）；pending 投递取消。已许可 attempt 仍记录真实成功/unknown，明确失败则 cancelled。重授不恢复订阅或旧 attempt。Login/API Key flags 不冒充产品撤权。基线登记、摘要成员与发送许可边界见 [Trader Sync 设计](../trading/trader-sync-activity-alerts.md)。
 6. 状态优先为 login=false 的 BLOCKED；非管理员 login=true 且所有模块 NONE、Profit Sharing=false 为 PENDING；其余 ACTIVE。管理员即使没有会员 grant 也是 Active，API Key 单独开启不会让会员 Active，Telegram 状态不参与推导。
 7. 管理员目录搜索用户名、Google 验证邮件、Solana 地址、显示名及精确 UUID；支持 All/Pending/Active/Blocked、Profit-Sharing-eligible 过滤、总数与从 1 起的分页，默认 50、最大 100。排序为 Pending 优先，再最近登录、用户名、UUID。
@@ -121,13 +122,13 @@ Run/Step list/detail 需要交互式 READ。创建、证明身份、coordinator 
 
 ## 持久状态与不变量
 
-`account_access.account_id UUID` 保存三个 flags 和正 revision；`account_module_access` 主键为 `(account_id,module)`，每账户恰好八行，两者都引用同一 UUID 账户。角色只在父账户持久化并关联读取，授权表不含用户名。
+`account_access.account_id UUID` 保存三个 flags 和正 revision；`account_module_access` 主键为 `(account_id,module)`，每账户恰好七行，两者都引用同一 UUID 账户。角色只在父账户持久化并关联读取，授权表不含用户名。
 
 普通账户保留，可禁用登录或改变 grant；没有删除、角色提升、改用户名、重绑外部身份、合并或转移 API。唯一管理员由注册创建，由角色唯一索引和固定聚合校验保护。外部身份键包含 `(identity_provider,identity_subject,administrator)`；同一 Google subject 的两种 persona 不共享 UUID 或从属聚合，用户名依然全局唯一。
 
 必须保持：管理员能力不满足模块或 Profit Sharing member requirement；角色不从用户名推断；每个已认证 RPC 有明确边界；CAS 同时发布全部 flags/模块或全部不发布；所有 owner 由认证上下文提供。模块、API Key 与 Profit Sharing 独立。Run 授权不扩大冻结计划，不替代当前权限、Wallet owner 或 coordinator 排他性。历史 Preview/Run/单次及批量 Cash Out 继续使用自身 owner-scoped READ 边界；新的 selection revision 控制新准入，不删除历史可见性。
 
-追加 `000004_remove_sports_access.sql` 在同一 Goose 事务中清除三类旧授权并收紧模块及最大级别约束；000001–000003 保留原文。新库与升级库均为八行聚合且通过 schema contract。发布顺序为全部实际同库消费者退出、authority up、verify、一致新版本启动，不兼容旧代码继续写入。
+追加 `000004_remove_sports_access.sql` 与 `000005_remove_worm_markets_access.sql` 分别在 Goose 事务中精确清除旧授权并收紧模块及最大级别约束；000001–000003 保留原文。`000005` 删除 grant、递增受影响账户 revision，且不授予 `worm_trading`。新库与升级库均为七行聚合且通过 schema contract。发布顺序为全部实际同库消费者退出、authority up、verify、一致新版本启动，不兼容旧代码继续写入；原 main 实际升级证据由 Task 10 补录。
 
 ## 配置
 
@@ -155,4 +156,4 @@ Run 每条命令重新核验交互凭据、owner、module、Session、access rev
 
 ## 变更核对
 
-维护本文时同时核对八模块矩阵、三个权益与管理员状态，UUID 注册/CAS/提交后发布，RPC 与 Pending UI，Telegram 的普通会员交互/服务端 UUID 边界，Wallet/Worm typed credential 与 owner 约束，selection/组合/Preview/Run 的 origin、revision、proof、lease 和 API Key 限制，以及管理员目录分页排序。Trader Sync grant 和 requirement 的合法集合必须分开；产品撤权必须保留真实结果与永久墓碑。入口与实现状态在[设计索引](../README.md)保持一致。
+维护本文时同时核对七模块矩阵、三个权益与管理员状态，UUID 注册/CAS/提交后发布，RPC 与 Pending UI，Telegram 的普通会员交互/服务端 UUID 边界，Wallet/Worm typed credential 与 owner 约束，selection/组合/Preview/Run 的 origin、revision、proof、lease 和 API Key 限制，以及管理员目录分页排序。Trader Sync grant 和 requirement 的合法集合必须分开；产品撤权必须保留真实结果与永久墓碑。入口与实现状态在[设计索引](../README.md)保持一致。

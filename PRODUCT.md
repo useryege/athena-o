@@ -2,7 +2,7 @@
 
 <!-- impeccable:product-schema 1 -->
 
-> 产品范围更新（2026-09-16）：[Sports 删除、Worm 保留](docs/requirements/development-runtime/sports-removal.md)已确认，尚未实施。删除 Sports Live／History 与 World Cup Corners；Worm Markets／Trading 的业务、页面、接口、权限及数据全部保留。两个 BSC 索引器仍删除；四个删除对象的专属历史数据库直接删除。核心 Wallet、身份、通知和其他业务继续保留；v21 Sports 批准保留历史事实，v22 Worm／共用页面与其他视觉决定继续有效。
+> 产品范围更新（2026-09-16）：BSC 两个索引器及 Sports Live／History、World Cup Corners 的源码和已列目标环境清理已经完成，主生产机按用户指示跳过；该任务当时保留两项 Worm 服务。随后 [Worm Markets 退役、只保留 Trading](docs/requirements/development-runtime/worm-markets-removal.md)：Markets 源码、API、权限、运行入口和通知生产已删除，Trading 已内聚按需目录；原 main default 已完成五来源通知维护、精确删除专属数据库并验证正常重启未重建；九个保留库及 Trading／Wallet 业务表指纹保持。核心 Wallet、身份、共享通知、Trading 业务数据与其他业务继续保留；v21 Sports 图只保留历史批准事实，v22 Trading／共用页面和其他视觉决定继续有效。本文其他尚未实现的 Trader Sync 交易能力状态不因该退役任务改变。
 
 ## Platform
 

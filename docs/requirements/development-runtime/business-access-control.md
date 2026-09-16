@@ -1,6 +1,6 @@
 # 板块访问开关：简化方案
 
-> 状态：2026-09-15 访问控制范围及默认／重启规则已确认，尚未实施。关闭访问只拦截新的用户业务请求，后台照常运行；首次默认关闭，之后保留管理员设置，重启不改变开关。2026-09-16 配套技术方案已获采用，尚未实施。
+> 状态：2026-09-15 访问控制范围及默认／重启规则已确认，尚未实施。关闭访问只拦截新的用户业务请求，后台照常运行；首次默认关闭，之后保留管理员设置，重启不改变开关。2026-09-16 配套技术方案已获采用，尚未实施。与本方案相邻的 Markets 源码退役和 Trading 目录内聚已经实施，`worm` 的现行对象只有 Trading；这不表示访问开关已经完成。
 >
 > 原[整组运行控制需求](business-group-control.md)及 D01–D03 技术设计暂停推进。原确认记录保留为历史，不能继续据此实施后台任务启停、通知暂停或新增 Runtime Control 服务。
 
@@ -73,6 +73,6 @@
 
 未来验收只需围绕：关闭时普通调用和直接 API 调用均被拒绝；核心及开关管理可用；已接收工作和后台任务继续运行；重新开放后按原权限访问；页面隐藏与恢复正确；本地／生产配置隔离；首次默认关闭，并分别验证开放／关闭设置在重启后保持原值。
 
-当前只有文档和源码入口核对，没有实现、构建或运行验收。[接口、存储与页面接入设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)已于 2026-09-16 获采用并补齐 Worm：一张配置表、三个接口、六个可控板块，以及 Service Status 的访问页签；Token 保留标识并显示接入延期。移除 Markets 后六板块目标覆盖 39 个公共 RPC，另包含 Worm 原始 HTTP 与二次验证入口。本次确认不恢复旧运行控制的复杂协议。
+访问开关当前只有文档和源码入口核对，没有实现、构建或运行验收。[接口、存储与页面接入设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)已于 2026-09-16 获采用并补齐 Worm：一张配置表、三个接口、六个可控板块，以及 Service Status 的访问页签；Token 保留标识并显示接入延期。移除 Markets 后六板块目标覆盖 39 个公共 RPC，另包含 Worm 原始 HTTP 与二次验证入口。本次确认不恢复旧运行控制的复杂协议。
 
-启动配套已形成[make run 全栈设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md)，原十二应用版本已于 2026-09-16 获采用；最新 Markets 删除决定将目标调整为十一个应用，仅保留 Trading；其进程启动与停止不改写访问配置。[删除与清理配套设计](../../superpowers/specs/2026-09-16-module-removal-cleanup-design.md)也已完成自查及补充。访问开关与十一应用编排尚未实施，Markets 内聚与退役也另行实施；BSC／Sports 删除清理已正式执行，逐环境结果见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。Token 专属接入继续延期。
+启动配套已形成[make run 全栈设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md)，原十二应用版本已于 2026-09-16 获采用；后续 Markets 删除将目标调整为十一个应用，仅保留 Trading；其进程启动与停止不改写访问配置。[删除与清理配套设计](../../superpowers/specs/2026-09-16-module-removal-cleanup-design.md)也已完成自查及补充。访问开关与十一应用编排尚未实施；Markets 源码退役和 Trading 内聚已经实施；原 main default 已完成五来源通知维护、精确删库和正常重启复核，九个保留库及 Trading／Wallet 指纹保持。BSC／Sports 删除清理已正式执行，逐环境结果见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。Token 专属接入继续延期。

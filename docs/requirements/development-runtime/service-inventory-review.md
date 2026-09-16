@@ -1,12 +1,12 @@
 # 本地与生产服务清单核对
 
-> 核对日期：2026-09-15，工作区 `rf4`。目标成员依据已确认需求与目标设计；现状依据源码、仓库部署配置及本地环境文件，不代表已检查现有服务器的实时健康。
+> 核对日期：2026-09-16，工作区 `rf4`。目标成员依据已确认需求与目标设计；现状依据当前源码、仓库部署配置及本地环境文件。原 main default 的 Task 10 现场健康、数据与通知退役另行记录，不能由静态清单替代。
 >
 > 当前范围：改为[板块访问开关简化方案](business-access-control.md)，原整组运行控制暂停。本文件继续提供进程与环境的静态核对，保留核心分类、六个可控板块与延期接入的 Token、BSC／Sports 删除及 Worm Markets 退役决定及本地独立进程／存储、使用五个远端 Gateway 的安排；业务默认停止和成员启停要求仅属原方案历史。
 >
 > 实现状态：访问开关与清单扩展尚未实施，原整组运行控制未实现且已暂停。2026-09-15 静态核对没有操作环境；后续 2026-09-16 删除清理已执行，真实本地验收与逐环境结果见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。
 
-> [本期 make run 配套提案](../../superpowers/specs/2026-09-15-local-full-stack-design.md)已采用，尚未实施；最新 [Markets 删除、Trading 保留决定](worm-markets-removal.md)将目标由原十二应用收敛为五核心／六业务，共 11 个本地应用。Trading 承接按需市场查询，`worm` 开关只对应 Trading。下表 16／15 是包含待删除 Markets 的当前源码／部署统计，不能当作保留目标数量。BSC／Sports 清理与本次 Markets 退役分开记录。[BSC／Sports 删除清理](../../superpowers/specs/2026-09-16-module-removal-cleanup-design.md)已按确认范围实施，逐环境结果见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。
+> [本期 make run 配套提案](../../superpowers/specs/2026-09-15-local-full-stack-design.md)已采用，尚未实施；最新 [Markets 删除、Trading 保留决定](worm-markets-removal.md)将目标由原十二应用收敛为五核心／六业务，共 11 个本地应用。Trading 已承接按需市场查询，`worm` 开关只对应 Trading。当前源码共有 15 个业务进程角色，生产 Compose 有 14 个（缺 Solana）；数字仍包含待重构的 Token 九角色，不能当作十一应用目标已经落地。BSC／Sports 清理与本次 Markets 退役分开记录。
 
 ## Token 设计依据与延期范围
 
@@ -28,12 +28,11 @@
 | Market Radar | `athena-market-radar` | Polymarket Gamma；告警使用 Notification；当前业务读模型主要在内存中 | 未纳入 | 已纳入 |
 | Managed OO | `athena-managed-oo` | 自有 PostgreSQL；Polygon RPC、Polymarket Gamma；告警使用 Notification | 未纳入业务进程，仅有数据库准备 | 已纳入 |
 | Profit Sharing | `athena-profit-sharing` | 自有 PostgreSQL；公共入口通过核心 API 的身份、账户与权限能力 | 已纳入 | 已纳入 |
-| Worm Markets | `athena-worm-markets` | 自有 PostgreSQL、Worm API、共享 Notification | 未纳入业务进程，仅有数据库准备 | 已纳入 |
-| Worm Trading | `athena-worm-trading` | 自有 PostgreSQL、Worm Markets、Wallet、Worm API 与 Solana RPC | 未纳入业务进程，仅有数据库准备 | 已纳入 |
+| Worm Trading | `athena-worm-trading` | 自有 PostgreSQL、进程内 Worm 目录、Wallet、Worm API、Solana RPC 与账户状态只读连接 | 未纳入默认六进程；独立入口和按需 schema 已实现 | 已纳入 |
 
 原[统一运行控制架构](../../superpowers/specs/2026-09-15-business-group-control-design.md)建议的 `athena-runtime-control` 尚未实现且已暂停；新的用户访问开关不新增该进程。
 
-下表当前代码共对应 **16 个业务进程角色**，其中 Markets 待删除。生产 Compose 包含其中 15 个，缺少 Solana且包含旧 Markets；数字包含待重构的 Token 旧九角色，不是目标部署数量，也不含核心进程、第三方服务、部署工具或副本数。本期访问开关不控制这些后台进程或任务的运行。
+下表当前代码共对应 **15 个业务进程角色**；生产 Compose 包含其中 14 个，缺少 Solana。Markets 命令、Compose 服务和数据库准备已经从源码删除。数字包含待重构的 Token 旧九角色，不是目标部署数量，也不含核心进程、第三方服务、部署工具或副本数。本期访问开关不控制这些后台进程或任务的运行。
 
 ### Token 旧实现的九个角色：差距与清理依据
 
@@ -51,7 +50,7 @@
 
 旧六类 Collector 复用同一个命令入口，以不同参数运行。目标研究运行时已明确不沿用固定六类任务、整项目终态屏障或单个不可变画像，`simulation_result` 不进入新运行模型；这些旧入口需在重构中按目标替换或清理。Etherscan Manager／Gateway 属于共享核心服务。
 
-服务健康仍需按实际能力判断，不能只检查进程存在；健康信息与本期访问开关独立。本期六个可控板块包含 Worm，Token 接入延期。当前 Worm Trading 实际调用 Markets 与核心 Wallet。目标移除 Markets 依赖，由 Trading 承接目录并增加显式账户权限只读依赖；`worm` 只控制 Trading 用户访问，服务故障不自动改写该设置。具体配置与失败边界见[新设计](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)。
+服务健康仍需按实际能力判断，不能只检查进程存在；健康信息与本期访问开关独立。本期六个可控板块包含 Worm，Token 接入延期。Worm Trading 已移除 Markets client，直接拥有目录并增加显式账户权限只读依赖；`worm` 只控制 Trading 用户访问，服务故障不自动改写该设置。Trading `SERVING` 不证明上游目录或真实交易可用。具体配置与失败边界见[新设计](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)。
 
 ## 核心与基础设施范围
 
@@ -98,7 +97,7 @@
 1. 当前 `FullStackServices()` 只选择 Trader Sync、Profit Sharing、Notification、Wallet、UI 和 API Server。补齐保留业务进程及 Manager，并为所有业务实现初始化前的默认停止和常驻管理通道；不能直接启动旧命令后再关闭采集。
 2. Solana 需接入统一实例编排与生产部署，明确同环境账户库、业务表、schema 与内部鉴权；现有 profile 的“启动即扫描”不能直接作为目标默认行为。本轮不恢复既有暂停采集。
 3. Token 详细接入设计按用户要求推迟到其重构完成后，再核对实际成员、依赖、配置与就绪／收尾证据。本轮保留组级范围与通用接入要求，不固定沿用旧九成员，也不要求先改造旧采集与画像入口。
-4. 原时点曾将 BSC、Worm、Sports 全部列为删除；2026-09-16 曾修订为仅删除 BSC／Sports、保留 Worm 两服务，该时点边界用于已完成的 BSC／Sports 清理。之后用户确认 Markets 及其专属数据按独立计划退役、Trading 承接目录；最新目标覆盖此前双服务保留安排，Markets 退役尚未实施。BSC／Sports 实际代码、运行和数据处理已分别记录在验收记录。
+4. 原时点曾将 BSC、Worm、Sports 全部列为删除；2026-09-16 曾修订为仅删除 BSC／Sports、保留 Worm 两服务，该时点边界用于已完成的 BSC／Sports 清理。之后用户确认 Markets 独立退役、Trading 承接目录；源码、契约、权限和运行入口已实施；专属数据库与五来源队列的原 main 退役完成，九个保留库和正常重启不重建均已核实。BSC／Sports 实际代码、运行和数据处理分别记录在其验收记录。
 5. 本轮在 `cmd`、`internal`、主生产 Compose 和 Procfile 未发现 Temporal 运行消费者，仅本地全栈创建两个 Temporal 数据库。目标清单不据此新增 Temporal 常驻服务；初始化残留和旧数据分别处理。
 6. 服务清单、API 客户端地址、数据库准备、权限／业务准入、健康与控制展示必须同步。本地与生产共享分组语义，运行资源和控制状态按环境隔离。
 

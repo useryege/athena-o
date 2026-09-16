@@ -1,6 +1,6 @@
 # Worm Markets 删除与 Trading 市场查询内聚设计
 
-> 状态：2026-09-16 用户已完成整体审阅；删除范围、专属数据直接删除、方案 A 与本稿技术细节均已确认。[逐步实施计划](../plans/2026-09-16-worm-trading-market-query.md)已编制，尚未实施。
+> 状态：2026-09-16 用户已完成整体审阅；删除范围、专属数据直接删除、方案 A 与本稿技术细节均已确认。源码、契约、Trading 内聚、权限迁移、运行入口清理、隔离及真实只读验收已经实施；原 main default 的五来源通知已核对收尾，专属数据库已精确删除并经正常重启确认未重建，见[退役与跨层验收](../../testing/worm-markets-retirement-acceptance.md)。[逐步实施计划](../plans/2026-09-16-worm-trading-market-query.md)保留实施依据。
 >
 > 需求：[删除 Worm Markets，仅保留 Worm Trading](../../requirements/development-runtime/worm-markets-removal.md)。本文覆盖旧设计中的双服务保留、Markets 接入与配置安排；BSC／Sports 删除和访问开关仍按各自范围推进。本次仅修改文档。
 

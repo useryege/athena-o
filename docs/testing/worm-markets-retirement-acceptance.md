@@ -1,14 +1,14 @@
-# Worm Markets 退役前跨层验收
+# Worm Markets 退役与跨层验收
 
-验收日期：2026-09-16。范围为 Tasks 1–9，入口版本 `84b333d2` 加本次 Task 9 修改。Task 9 已完成；原现场的数据退役属于 Task 10，本记录不表示现场退役已经执行。
+验收日期：2026-09-16。范围为 Tasks 1–10；源码与隔离验收版本截至 `191e4f31`，精确数据库退役工具为 `0022bed4`。原 main default 的账户迁移、真实只读验收、五来源通知维护、专属数据库删除、正常重启和环境收尾均已完成并留证；最终文档和整分支审阅另行记录，不把审阅前状态写成整个任务已经结束。
 
 | 证据层 | 状态与范围 |
 | --- | --- |
-| 实现 | Trading 独立目录、权限、消费者、worker、账户迁移、Markets 服务/API 清理、本地独立运行和通知维护已集成；本次补成功交易回归并修复签名前后加载步骤遗漏尝试记录的问题。 |
+| 实现 | Trading 独立目录、权限、消费者、worker、账户迁移、Markets 服务/API 清理、本地独立运行和通知维护已集成；Task 9 补成功交易回归并修复签名前后加载步骤遗漏尝试记录的问题，Task 10 增加默认报告、显式 apply 的精确数据库退役工具。 |
 | 隔离副作用 | 真实 PostgreSQL、Trading SQLStore、凭据 cipher、目录校验、Solana 交易解析与 Ed25519 签名；Worm、Wallet、Solana 外部边界受控。没有真实下单、平仓或撤凭据。 |
 | 真实只读 | 实际开发实例的会员/管理员、桌面/手机；shell smoke 2 项，四场景业务 16 项，最终修复源码重建后 healthy 4 项通过，均 0 skipped/flaky。 |
-| 通知与收尾 | 通知精确维护及并发锁集成测试通过；没有发送测试通知或对现场运行维护。T9 全部 owned 应用、替身、容器已停止，数据卷与证据保留。任务结果通知由控制器按整项任务统一处理。 |
-| 现场数据 | 本项不读写原现场业务数据、不删除原现场库。真实 T9 实例是新空库，历史详情覆盖由隔离 fixture 承接。 |
+| 通知与收尾 | 原 main 五来源 report/apply/report 均成功，待发和在途均为 0；没有发送测试通知。两轮 owned 应用、替身和容器均按归属停止，原卷与证据保留。任务结果通知由控制器按整项任务统一处理。 |
+| 现场数据 | 已在核实 server、owner、OID、活跃连接和全部保留库后精确删除 `worm_markets`；复查为 `already_absent`，正常重启未重建。九个非目标库保留，Trading／Wallet 全表计数与指纹保持。 |
 
 ## 契约与修复
 
@@ -51,9 +51,27 @@ ATHENA_UI_E2E_MODE=smoke yarn playwright test --config=playwright.worm-retiremen
 
 四场景每场景 4 tests 全通过（member/admin × 两尺寸），另有初始 shell smoke 2 tests 和最终修复源码重建 healthy 4 tests。手机成功/失败截图由控制器人工查看。最初三轮 locator 失败及 provider 代理环境覆盖导致的无效故障均保留，未计为通过；校准 exact 图标菜单名、Profile region 和 mobile Primary navigation 范围，没有修改产品 UI 来迎合测试。
 
+## Task 10 原 main 现场退役
+
+现场操作只针对原 main default full-stack，namespace `ac252d3201cc3c6d872334f8e6a1bcf5`；没有部署远端或操作其他实例。main/rf4 先本地快进已审阅的工具提交 `0022bed4`，没有 stash、reset 或 push，主工作区另四个未提交文件的 SHA256 前后相同。配置只删除两项 Markets 通知键；Trading 原本没有稳定 key 且 33 张业务表均为空，因此初始化新 key，不是轮换或旧凭据解密验证。Wallet key、Wallet 内部／签名 token 与 Trading 内部 token 保持。
+
+账户 schema 迁移 `0` 到 `5` 及 verify 全部通过。原两个账户的 access revision 从 `1` 更新为 `2`，模块矩阵各由八项变为七项；原 16 条 grants 中两条 Markets grant 删除，其余 14 条 grant 与 flags 逐项不变，Markets 权限没有转换成 Trading 权限。
+
+通知工具对固定五个 `worm-markets.*` 来源执行 report/apply/report，三次均退出 0；`pending=0`、`sending=0`、`cancelled=0`、`retired_total=0` 且 `counts_verified=true`。既有 delivery 0、attempt 0、Topic 1、consumed 1、两个 sender 记录及 Bot `next_update_id=487823039` 保持；没有测试消息或替代消息外发。
+
+数据库工具的 apply 前报告经人工核对：目标 `worm_markets`、OID `17152`、owner `athena`、server identity `7685665987292844070`、活跃连接 0，并以九个真实 DSN 完整核验全部保留库。完全相同参数追加 `--apply` 后于 11:13:35 UTC 精确 DROP，复查返回 `already_absent`。原 1000 条 market 与 2969 条 price history 随专属库直接删除，没有归档或转存。保留库为 `postgres`、`athena`、`temporal`、`temporal_visibility`、`worm_trading`、`wallet`、`managed_oo`、`profit_sharing`、`token`；Trading 与 Wallet 全表 count/fingerprint 在删除后和正常重启后均与原值一致。
+
+最终 preservation audit 退出 0，逐项确认 16 个历史通知来源、28 条现行 HTTP 路径和七条 Trading 路由未因退役操作改变；Markets 的三条旧 HTTP 路径继续为 404。
+
+删除前真实 main shell smoke 为 2 passed；新业务只读 spec 为 4 passed。三条已删除 Markets HTTP 路由实际返回 404。正常 stop 后第二次 `make run` 连接相同 server identity，只看到九个保留库，未重建 Markets。重启后的首次真实浏览器套件为 3 passed / 1 failed：desktop `/account/profile` 停在 Loading Athena，bootstrap 请求在 5 秒内未返回；失败窗口没有 gRPC handler 记录，UI proxy 也没有 error，具体 pre-gRPC 延迟原因未定位。未修改产品或测试；随后 proxy/direct bootstrap 分别在 4ms/1ms 返回 200，同一套件复验为 4 passed / 0 skipped / 0 flaky，耗时 17.177s。该复验只证明随后运行成功，不声称首次超时已定位或修复。
+
+真实 Trading 库为空，因此现场只能覆盖四条可用会员路由；三条历史详情路由仍由 Task 9 受控 fixture 覆盖。空库也没有旧 Trading 凭据可供解密验证，没有执行真实 Worm 下单、平仓或撤凭据。正常运行确实新增 sender 实例并推进 poller/liveness、Trader Sync 索引和 epoch/control 记录，因此保留结论限定为已核对的业务表指纹、权限、迁移和通知事实，不声称共享数据库逐字节未变。
+
+11:27–11:28 UTC 最终先停止第二次 owned Trading borrower，再从原 main 执行 `make stop INSTANCE=full-stack`；六个应用、supervisor 和三个 owned 容器均停止，全部应用与动态基础设施端口释放，三个卷保留。通知 helper 在核对 PID 的 cwd/startTicks 后以 SIGTERM 结束，61907 释放；启动会话均正常退出，helper 的 143 符合信号终止。现场恢复任务前停止状态，没有 reset、删卷或停止归属不明资源。11:34 UTC 又核对隔离测试 PostgreSQL 的容器 ID、名称、挂载和实际 63533 映射后停止容器、释放端口并保留卷；首次 guard 因把空 HostConfig 动态端口误认作固定映射而在 mutation 前失败，改按 NetworkSettings 核对后才执行正确停止。至此本任务全部临时环境均已停止。
+
 ## 验证命令与结果
 
-Go 命令从 worktree 根目录执行，`ATHENA_TEST_PG_ADMIN_DSN` 指向已核实归属的隔离 PostgreSQL `127.0.0.1:63533`，各 pgtest 创建独立库；从未执行 `go test ./...`。
+Task 9 的 Go 命令从 worktree 根目录执行，`ATHENA_TEST_PG_ADMIN_DSN` 指向已核实归属的隔离 PostgreSQL `127.0.0.1:63533`，各 pgtest 创建独立库；Task 9 未执行 `go test ./...`。Task 6 曾额外启动一次超出 brief 的 `go test ./... -count=1` 宽范围探测，因无关 `internal/etherscanmanager` 测试超过两分钟无新输出而停止该任务拥有的测试进程，不计为通过证据；各任务要求的指定范围已独立通过。
 
 ```bash
 go test ./internal/wormtrading/... ./internal/server/... ./internal/accountaccess ./internal/devruntime ./internal/notification/... -count=1
@@ -91,9 +109,9 @@ bash hack/deploy-scripts_test.sh
 | R2 API | HTTP proof 经内部 Bearer gRPC 到 Trading；受限目录 RPC、当前 access revision 与撤权断言。 |
 | R3 独立生命周期 | 三目标独立 build；实际 Trading SERVING、无 Bearer 业务 RPC 拒绝；持 active health Watch 停止成功 12.286 秒。 |
 | R4 配置/故障 | provider/账户 owned 代理四场景共 24 次 GET；明确 503，仅目录受影响；恢复成功。共享账户 PG 是声明依赖，没有声称跨库原子撤权。 |
-| R5 所有权 | borrower 先停止，owner 保持运行；随后 owner 六进程/三容器及三个 helper 按归属停止；未 reset、未删卷。 |
+| R5 所有权 | borrower 先停止，owner 保持运行；随后 owner 六进程/三容器及三个 helper 按归属停止；未 reset、未删卷。helper 停止后的首次即时端口绑定断言因释放竞态失败，随后复核端口释放成功；最终证据采用复核结果并保留首次失败。 |
 | R6 事务/恢复 | SQLStore 锁互斥、attempt unknown、不重放、USDC evidence；账户及通知同库撤权/发送许可并发集成套件通过。 |
-| R7 设计 | 上述长期设计与本记录保持实际边界；Task 10 现场退役仍待控制器执行。 |
+| R7 设计 | 上述长期需求与设计已同步实现及原 main 现场事实；首次重启浏览器超时、空库覆盖和共享库正常运行变化均作为边界保留。 |
 | R8 消费者/验证 | 指定 Go/unit/integration/race、UI fixture/Jest/build/lint、真实只读/故障与 shell 回归均有实际日志。 |
 
 ## 本机证据与资源收尾
@@ -107,4 +125,6 @@ bash hack/deploy-scripts_test.sh
 
 最终 Trading 源码 `execution_runs.go` SHA256 为 `c9073fba9495686c2a213221095198b88b8ca51ac1812959b42a6cf497cd61b1`，实际 binary SHA256 为 `5481ef5fd89dfea608bcece3883a695aa069f7d1533d063855c565331423fe84`。最终 PID 1305291 已退出，61906 释放。`make stop-instance INSTANCE=worm-retirement-live` exit 0，12.286 秒；health Watch 总寿命 32.65 秒包含此前等待，不是停止耗时。
 
-`make stop INSTANCE=worm-retirement-full` exit 0，六应用退出，61900–61905、58986/58988/58989 释放，三个 owned 容器停止且卷保留。三个 helper 核对 cwd/startTicks 后终止，61907–61909 释放；首次立即检查退出的短暂竞态及后续成功复核均有记录。测试 PG 63533 和原 default 现场 PG 50124 由控制器保留供 Task 10，不属于遗留的 T9 应用。后续最终现场收尾以 Task 10 报告为准。
+`make stop INSTANCE=worm-retirement-full` exit 0，六应用退出，61900–61905、58986/58988/58989 释放，三个 owned 容器停止且卷保留。三个 helper 核对 cwd/startTicks 后终止，61907–61909 释放；首次立即检查退出的短暂竞态及后续成功复核均有记录。
+
+Task 10 现场证据位于同一证据根下的 `task-10-field-evidence.md`、`evidence/field-*.json`、`evidence/task-10-field-*.json` 及对应 stop log。最终原 main 的六应用、supervisor、三个容器、两个 field borrower、通知 helper 和隔离测试 PG 均已停止，现场及测试端口释放，所属卷保留。没有遗留本任务启动的运行实例。

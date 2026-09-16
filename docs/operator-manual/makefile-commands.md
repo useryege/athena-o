@@ -26,7 +26,7 @@
 | `REMOTE_APP_DIR` | `/root/athena` | 远端服务器上的部署目录。 |
 | `REMOTE_USER` | `root` | SSH 登录远端服务器使用的用户。 |
 | `PROD_LOG_SERVICE` | 空 | 查看生产日志时指定服务名。为空时查看全部服务。 |
-| `PROD_MIGRATE_MODULE` | `all` | 迁移目标模块。可设为 `account-state`、`worm-markets`、`notification`、`wallet`、`managed-oo`、`profit-sharing`、`token` 或 `all`。 |
+| `PROD_MIGRATE_MODULE` | `all` | 迁移目标模块。可设为 `account-state`、`worm-trading`、`notification`、`wallet`、`managed-oo`、`profit-sharing`、`token` 或 `all`。 |
 | `PROD_POSTGRES_VOLUME` | `athena-prod-postgres-data` | PostgreSQL external volume 名称。本地停止、远程部署和远程删除都会删除该 volume。 |
 | `PROD_REDIS_VOLUME` | `athena-prod-redis-data` | Redis AOF external volume 名称。本地停止、全新远程部署和远程删除都会删除该 volume；热部署保留。 |
 | `PROD_MINIO_VOLUME` | `athena-prod-minio-data` | MinIO external volume 名称。本地停止、全新远程部署和远程删除都会删除该 volume；热部署保留。 |
@@ -209,8 +209,8 @@ GET 和 EventSource 等无法设置请求头的浏览器传输可使用 `athenaR
 持久账号目录或访问认证 Redis。`ATHENA_WALLET_INTERNAL_AUTH_TOKEN` 也会在无关容器
 中覆盖为空，仅 `athena-wallet` 和 `athena-server` 获得同一个 required 值。
 `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` 仅注入 `athena-notification`、
-`athena-server` 以及 Market Radar、Managed OO、Worm Markets
-四个系统通知生产者；其他容器中的同名值会被覆盖为空。Telegram Bot Token 与
+`athena-server` 以及 Market Radar、Managed OO 两个系统通知生产者；
+Worm Markets 已退役，其他容器中的同名值会被覆盖为空。Telegram Bot Token 与
 测试/生产群组 ID 则只注入 `athena-notification`，API Server、生产者和其他容器中的
 同名值都会被覆盖为空。
 远端上传后的 `.env` 同样改为当前部署用户持有且权限为 `0600`。
@@ -251,9 +251,9 @@ PROD_IMAGE=athena:local make prod-build-local
 | `make run` | 显式启动 full-stack：TS/API/Notification/UI/Wallet/Profit Sharing。 | `make run` |
 | `make stop` | 停止 full-stack 实例，沿用相同资源所有权协议。 | `make stop` |
 | `make run-reset` | 重置已停止的 full-stack 实例，不自动停止或重新启动。 | `make stop` 后 `make run-reset` |
-| `make build-service-image` | 构建独立 Trader Sync/schema tool 镜像。 | `make build-service-image SERVICE=trader-sync TRADER_SYNC_IMAGE=athena-trader-sync:local` |
+| `make build-service-image` | 构建独立 Trader Sync 或 Worm Trading/schema tool 镜像。 | `make build-service-image SERVICE=worm-trading WORM_TRADING_IMAGE=athena-worm-trading:local` |
 
-独立入口支持 `trader-sync`、`api-server`、`notification`、`ui`；UI 无数据库依赖。
+独立入口支持 `worm-trading`、`trader-sync`、`api-server`、`notification`、`ui`；UI 无数据库依赖。
 API/Notification 不隐式启动 TS。全栈通过显式服务图选择，不再用 `ATHENA_RUN_EXCLUDE`
 从全栈中减服务。Bash5.1+/Linux/WSL 是运行器依赖；仅选择 UI 时需要项目 Node24。
 
@@ -272,6 +272,31 @@ token 和日志；不会按全局端口、固定容器名或 `/tmp/coverage` 清
 头像及其全栈模块数据；不能解决远端未知交易或替代远端凭据撤销。disabled-auth 仍只限
 loopback，分别以 realm 选择会员/管理员；切回正常认证可使用没有开发身份的新实例。
 更多配置与异常恢复见[本地运行编排](../design/development-runtime/local-runtime-orchestration.md)。
+
+### Worm Markets 一次性数据库退役
+
+普通 `make stop`、`make stop-instance`、`make run-reset` 和启动准备不会永久删除或重建
+`worm_markets`。已核实归属的旧环境使用一次性工具先生成报告，人工核对目标数据库、
+owner、server identity、活跃连接和全部保留库，再以完全相同的参数追加 `--apply`：
+
+```bash
+ATHENA_RETIRE_WORM_MARKETS_ADMIN_DSN="$ADMIN_DSN" \
+go run ./tools/retire-worm-markets-data \
+  --database="$TARGET_DATABASE" \
+  --expected-owner="$TARGET_OWNER" \
+  --timeout=2m \
+  --retain-dsn-env=ATHENA_RETAIN_POSTGRES_DSN \
+  --retain-dsn-env=ATHENA_RETAIN_ACCOUNT_DSN \
+  --retain-dsn-env=ATHENA_RETAIN_WORM_TRADING_DSN
+```
+
+`--retain-dsn-env` 可重复，每个参数是一个保存真实 DSN 的环境变量名；必须为目标 server
+上除目标外的每个非 template 数据库提供并核实一项，示例三项只是参数格式，不能当作完整
+现场清单。默认只读报告，只有 `--apply` 执行精确单库 DROP；缺失／错误／跨 server 的保留
+DSN、owner 不符、目标或当前连接库属于保留项、template／系统库、活跃连接和漏报数据库都
+阻止 apply。工具不使用 `WITH (FORCE)`，不终止连接，不删除容器或卷，目标已不存在时返回
+`already_absent`。报告只包含环境变量名和核实后的数据库身份，不应把 DSN 或密码复制进报告。
+实际执行证据及五来源通知维护见[Worm Markets 退役验收](../testing/worm-markets-retirement-acceptance.md)。
 
 ## UI
 

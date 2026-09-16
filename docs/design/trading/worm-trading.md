@@ -1,8 +1,8 @@
 # Worm Trading
 
-> 范围修订（2026-09-16 最新决定）：删除 Worm Markets 及其专属数据，保留 Worm Trading；用户已采用由 Trading 统一承接按需市场查询的方案 A。此前双服务保留决定被覆盖。见[删除需求](../../requirements/development-runtime/worm-markets-removal.md)及[目标设计](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)。新技术细节待整体审阅，尚未实施；下文保留当前源码的实际行为，Markets 依赖不得当作目标架构。
+> 实现状态（2026-09-16）：Worm Trading 已承接事件目录、组合权威校验、Preview 与执行前 fresh catalog；Worm Markets 源码、契约、权限和运行入口已删除。原 main 的专属数据库与五个旧通知来源已精确收尾，九个保留库和 Trading／Wallet 指纹保持，见[退役需求](../../requirements/development-runtime/worm-markets-removal.md)与[跨层验收](../../testing/worm-markets-retirement-acceptance.md)。
 
-> 访问接入目标：`worm` 开关只对应 Trading，`worm_markets` 权限和公共接口随退役删除；Trading 现有权限、授权与已受理工作处理规则保留。访问开关及本地全栈扩展仍未实施，见[访问设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)与[运行设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md#33-worm-trading-接入)。
+> 访问接入目标：`worm` 开关只对应 Trading；访问开关及十一应用全栈扩展仍未实施，见[访问设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)与[运行设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md#33-worm-trading-接入)。
 
 ## Scope
 
@@ -15,9 +15,10 @@ It returns confirmed native SOL and Circle native USDC balances, stores
 revocable Worm API credentials, reads open margin positions and non-terminal
 position requests, and exposes independent Solana, credential-store, and Worm
 upstream capability status. The same process persists account-owned, ordered
-Worm market combinations through internal CRUD RPCs; the API Server remains
-responsible for interactive authorization and authoritative market-catalog
-validation before those snapshots reach this store. Worm Trading also owns
+Worm market combinations, fresh provider catalogs, authoritative membership and
+direction validation, and trusted display snapshots through internal RPCs. The
+API Server remains responsible for interactive session admission, trusted
+account metadata and response projection. Worm Trading also owns
 durable, asynchronous read-only execution previews that freeze one combination
 revision, ordered owner Wallets, current market/estimate observations, complete
 Worm exposure, confirmed balances, two mandatory exposure guards, and
@@ -46,6 +47,16 @@ account UUID, while saved combinations, execution previews, and execution Runs
 are explicitly keyed by the current account UUID. Worm Trading persists Run
 intent and non-secret Worm request identity/state, but never a Wallet private
 key, Worm Web JWT, raw or signed transaction, or signature.
+
+`GetOrderEventCatalog`, `CreateMarketCombination`, and
+`UpdateMarketCombination` retain the internal Bearer and additionally require
+exactly one canonical `x-athena-account-id` supplied by the API Server. The
+Create／Update request owner must match it; catalog reads use the metadata identity directly. Trading reads the current account schema through
+its independent pool and requires LoginEnabled plus `worm_trading` READ for the
+catalog or READ_WRITE for writes. Missing, duplicate, malformed, mismatched,
+Markets-only, disabled, or stale access is rejected; administrators and API
+Keys have no bypass. Account reads and Trading writes remain separate
+transactions and do not claim cross-database atomic revocation.
 
 The read/connection/preview integration is fixed to Worm's official HMAC
 protocol. Production live execution uses `util/worm`'s stateless Web JWT stages:
@@ -88,7 +99,7 @@ Worm Trading is not selected by the default local full-stack graph. Its direct p
 | --- | --- | --- |
 | Process entry and configuration | [cmd/athena-worm-trading/commands/athena-worm-trading.go](../../../cmd/athena-worm-trading/commands/athena-worm-trading.go), [cmd/main.go](../../../cmd/main.go) | `NewCommand`, `athena-worm-trading` dispatch |
 | Internal authenticated server | [internal/wormtrading/server.go](../../../internal/wormtrading/server.go), [internal/wormtrading/apiclient](../../../internal/wormtrading/apiclient) | `Server`, `ServerOpts`, internal Bearer interceptors, gRPC health |
-| Service lifecycle and internal contract | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/worm_connection_inventory.go](../../../internal/wormtrading/worm_connection_inventory.go), [internal/wormtrading/market_combinations.go](../../../internal/wormtrading/market_combinations.go), [internal/wormtrading/execution_plans.go](../../../internal/wormtrading/execution_plans.go), [internal/wormtrading/execution_runs.go](../../../internal/wormtrading/execution_runs.go), [internal/wormtrading/execution_worker.go](../../../internal/wormtrading/execution_worker.go), [internal/wormtrading/position_cash_outs.go](../../../internal/wormtrading/position_cash_outs.go), [internal/wormtrading/position_cash_out_worker.go](../../../internal/wormtrading/position_cash_out_worker.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | `Service`, observation/connection/combination/preview RPCs, execution Run commands and worker, position Cash-Out commands and worker recovery |
+| Service lifecycle and internal contract | [internal/wormtrading/service.go](../../../internal/wormtrading/service.go), [internal/wormtrading/account_access.go](../../../internal/wormtrading/account_access.go), [internal/wormtrading/order_event_catalog.go](../../../internal/wormtrading/order_event_catalog.go), [internal/wormtrading/market_combination_resolver.go](../../../internal/wormtrading/market_combination_resolver.go), [internal/wormtrading/market_combinations.go](../../../internal/wormtrading/market_combinations.go), [internal/wormtrading/execution_plans.go](../../../internal/wormtrading/execution_plans.go), [internal/wormtrading/execution_runs.go](../../../internal/wormtrading/execution_runs.go), [internal/wormtrading/execution_worker.go](../../../internal/wormtrading/execution_worker.go), [internal/wormtrading/position_cash_outs.go](../../../internal/wormtrading/position_cash_outs.go), [internal/wormtrading/position_cash_out_worker.go](../../../internal/wormtrading/position_cash_out_worker.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | service-owned catalog, account access reader, observation/connection/combination/preview RPCs, execution and Cash-Out workers |
 | Solana provider adapter | [internal/wormtrading/solana_adapter.go](../../../internal/wormtrading/solana_adapter.go) | `SolanaBalanceAdapter`, `Probe`, `BatchGetBalances`, `decodeUSDCBalance` |
 | Durable store | [internal/wormtrading/store/migrations/000001_init.sql](../../../internal/wormtrading/store/migrations/000001_init.sql), [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/migrations/000003_execution_plans.sql](../../../internal/wormtrading/store/migrations/000003_execution_plans.sql), [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql](../../../internal/wormtrading/store/migrations/000005_regenerate_unknown_connection.sql), [internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql](../../../internal/wormtrading/store/migrations/000007_execution_open_position_completion.sql), [internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql](../../../internal/wormtrading/store/migrations/000008_execution_mandatory_guards.sql), [internal/wormtrading/store/migrations/000009_position_cash_outs.sql](../../../internal/wormtrading/store/migrations/000009_position_cash_outs.sql), [internal/wormtrading/store/sql_store.go](../../../internal/wormtrading/store/sql_store.go), [internal/wormtrading/store/execution_runs.go](../../../internal/wormtrading/store/execution_runs.go), [internal/wormtrading/store/position_cash_outs.go](../../../internal/wormtrading/store/position_cash_outs.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `SQLStore`, `RecordExecutionStepOpened`, credentials, combinations, preview lifecycle, immutable Run state, Cash-Out operation/authorization/command/attempt state, Wallet advisory locking, and bidirectional Run/Cash-Out isolation |
 | Owner Wallet selection and retirement | [internal/server/worm_wallet_selection.go](../../../internal/server/worm_wallet_selection.go), [internal/wormtrading/wallet_selections.go](../../../internal/wormtrading/wallet_selections.go), [internal/wormtrading/store/wallet_selections.go](../../../internal/wormtrading/store/wallet_selections.go), [internal/wormtrading/store/migrations/000011_wallet_selections.sql](../../../internal/wormtrading/store/migrations/000011_wallet_selections.sql), [internal/wormtrading/store/queries/wallet_selections.sql](../../../internal/wormtrading/store/queries/wallet_selections.sql) | `registerWormWalletSelectionHandlers`, `GetWalletSelection`, `ReplaceWalletSelection`, `InspectWalletSelectionCandidates`, `worm_trading_wallet_selections`, ordered selection items and retirements, zero-through-20 constraint, revision CAS, removal-first reconciliation |
@@ -224,16 +235,16 @@ Saved combinations use an independent, interactive-only native facade:
 ```text
 interactive login + worm_trading READ
   -> API Server GET event catalog
-  -> Worm Markets GetOrderEventCatalog
-       -> fresh Worm event + child-market GETs
+  -> Worm Trading GetOrderEventCatalog + trusted account metadata
+       -> current LoginEnabled/READ check
+       -> same-process fresh Worm event + child-market GETs
        -> optional exact-complement last-trade prices
 
 interactive login + worm_trading READ_WRITE + exact origin
-  -> API Server groups submitted Event and Market Condition IDs
-  -> Worm Markets GetOrderEventCatalog once per Event
-  -> API Server verifies market membership and selectable YES/NO direction
-  -> API Server constructs trusted event, market, logo, and outcome snapshots
-  -> Worm Trading atomic combination create or revision-CAS replacement
+  -> API Server forwards submitted Event/Market IDs and trusted account metadata
+  -> Worm Trading checks current READ_WRITE and resolves each Event concurrently
+  -> Trading verifies membership and selectable YES/NO direction
+  -> Trading constructs trusted display snapshots and atomically creates or replaces
 ```
 
 The browser submits only a name and ordered
@@ -252,7 +263,7 @@ interactive login + worm_trading READ_WRITE + exact origin
   -> Worm Trading atomically freezes combination revision, Wallet order,
      market order, and trusted display snapshots as BUILDING
   -> background worker
-       -> Worm Markets GetOrderEventCatalog for current market authority
+       -> same-process Trading catalog for current market authority
        -> credential store + decrypt active per-Wallet HMAC credentials
        -> Solana confirmed SOL/USDC balance batch
        -> Worm GET/List all open positions and in-flight requests
@@ -387,9 +398,10 @@ secret remain inside Worm Trading memory and its encrypted database columns.
    while `COMPLETING` attempts become outcome-unknown. A regenerate therefore
    returns immediately to its manual unknown state after restart instead of
    waiting for challenge expiry. Missing or invalid encryption material, an
-   unreachable store, or incomplete recovery fails closed. The command also
-   constructs one required process-owned Worm Markets clientset for preview
-   catalogs; service construction fails when that dependency is absent. Standard gRPC
+   unreachable store, or incomplete recovery fails closed. The command owns a
+   read-only account-state pool and the process-local official Worm catalog;
+   it closes both with its other resources, does not migrate the account schema,
+   and has no Markets client or address dependency. Standard gRPC
    health starts `NOT_SERVING`; the Solana identity probe changes it to `SERVING`
    only after mainnet, Circle USDC, confirmed-slot, and JSON-RPC batch checks
    succeed. Credential maintenance, the single preview worker, live-Run
@@ -651,7 +663,7 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     hostname or path and suppresses duplicate Events before calling the native
     event facade.
 18. The event facade validates a canonical Solana public key, obtains a fresh
-    provider-backed catalog through Worm Markets, and returns all child markets
+    provider-backed catalog through the same Trading process, and returns all child markets
     in provider order. Open, margin-enabled Polymarket or Hyperliquid children
     expose selectable YES and NO outcomes only when the direction supports at
     least `1x`; unavailable children and directions remain visible with stable
@@ -675,7 +687,7 @@ secret remain inside Worm Trading memory and its encrypted database columns.
     from the dirty fingerprint, and neither saved nor shown on the Saved
     combinations list. There is no automatic catalog polling.
 21. Create and update send only the trimmed name and ordered identifiers/sides.
-    The API Server refetches every referenced Event once, rejects missing or
+    Worm Trading refetches every referenced Event once, rejects missing or
     unselectable selections, and replaces all browser display data with trusted
     catalog snapshots. Create commits the header and all items together. Update
     locks the owner-scoped row, compares `expectedRevision`, increments the
@@ -1098,19 +1110,21 @@ position/request counts, and aggregate status.
 | `ATHENA_WORM_TRADING_RPC_RATE_LIMIT` / `--rpc-rate-limit` | Solana logical subrequests per second; default `40`. |
 | `ATHENA_WORM_TRADING_RPC_RATE_BURST` / `--rpc-rate-burst` | Solana logical subrequest burst; default `40`. |
 | `ATHENA_WORM_TRADING_WORM_API_ATTEMPT_TIMEOUT` / `--worm-api-attempt-timeout` | Per official credential or position call; default `5s` and no greater than the position budget. |
+| `ATHENA_WORM_TRADING_CATALOG_BUDGET` / `--worm-catalog-budget` | Complete Event catalog budget; default `45s`, positive and at least the Worm API attempt timeout. Limiter wait counts; a caller's earlier worker/claim deadline wins. |
 | `ATHENA_WORM_TRADING_POSITION_BUDGET` / `--worm-position-budget` | Complete current-wallet-page activity budget; default `20s`. |
 | `ATHENA_WORM_TRADING_POSITION_CONCURRENCY` / `--worm-position-concurrency` | Shared HMAC position/request provider concurrency; default `4`, maximum `32`. |
-| `ATHENA_WORM_MARKETS_SERVER_ADDRESS` / `--worm-markets-server-address` | Internal Worm Markets gRPC target used by execution-preview market validation; local default `127.0.0.1:8084`. |
+| `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` | Independent read-only account schema used for current catalog/combination access checks. The command owns and closes this pool but never runs account migrations. |
 | `ATHENA_WALLET_SERVER_ADDRESS` / `--wallet-server-address` | Internal Wallet gRPC target used by Worm Trading only through the execution-signer clientset. |
 | `ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN` | Required independent capability Bearer shared only by Worm Trading and Wallet. It must differ from the general Wallet internal token. |
 
-The Worm API base URL, HMAC headers, challenge message, activity page limit,
+The official Worm API base URL, HMAC headers, challenge message, activity page limit,
 request-state filter, and credential cleanup interval are fixed implementation
-constants. Execution Preview fixes Polymarket funds at `5` USDC, Hyperliquid
+constants. The catalog and public Estimate share the factory-level
+unauthenticated limiter (100 requests/minute, burst 2); authenticated HMAC calls
+retain their independent limiter. Execution Preview fixes Polymarket funds at `5` USDC, Hyperliquid
 funds at `1` USDC, leverage at `1x`, provider page size at 100, READY lifetime
-at 15 minutes, and durable retention at seven days. Unauthenticated Estimate
-requests share a process-wide 100/minute limiter with burst two; authenticated
-GET/List requests share 240/minute with burst four. No environment variable can
+at 15 minutes, and durable retention at seven days. Authenticated HMAC GET/List
+requests share 240/minute with burst four. No environment variable can
 redirect Wallet signing to another Worm service.
 The Web execution API, Origin, Referer, and `network_type=2` are also fixed to
 the official Worm service. Coordinator lease is 30 seconds; live execution Web
@@ -1182,7 +1196,7 @@ Wallet-signing, price, shares, or partial-close setting.
 - A combination has a trimmed 1–80-character account-unique name and at least
   one ordered market. Each Market Condition ID appears once, so YES and NO can
   never coexist for the same child market.
-- The API Server refetches each referenced Event catalog and constructs all
+- Worm Trading refetches each referenced Event catalog and constructs all
   display snapshots. A browser-supplied title, logo, outcome label, availability,
   owner, or ordinal cannot become trusted input; a positive browser revision is
   used only as the explicit CAS precondition.
@@ -1473,9 +1487,9 @@ last-trade price. Catalog responses expose optional `lastTradePrice`, Athena
 retrieval time as `fetchedAt`, and stable unavailable codes for per-market
 diagnosis. The fetch time is not the provider's last-trade timestamp, and the
 price is not a best ask, midpoint, estimate, or execution guarantee. There is no
-combination-specific metric or health state; dependency
-failure is visible through bounded native HTTP errors plus Worm Markets and Worm
-Trading service health/logs.
+combination-specific metric or health state; dependency failure is visible
+through bounded native HTTP errors plus Worm Trading catalog/service logs.
+`SERVING` does not prove the upstream catalog or a real trade is available.
 
 Execution Preview responses expose owner-safe frozen Wallet and market
 presentation, state/build stage, stable failure/usability codes, ordered reason

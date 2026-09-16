@@ -3,6 +3,8 @@
 > 状态：v13 所展示的桌面／手机权限与会话页及手机 Google 待授权页视觉已确认；正式 `ui/` 未修改。
 >
 > 范围：现有会员 `/account/access` 在 v1–v12 已确认视觉体系中的普通扩展，只调整信息层级和展示方式，不改变登录、授权、刷新或退出规则。
+>
+> 当前范围注记（2026-09-16）：下文十项展示／十一模块模型和截图记录 v13 批准时的源码与视觉事实。Sports 三项和 `worm_markets` 权限后来分别删除；现行七模块及完整替换语义以[账户访问控制](../../design/identity-access/account-access-control.md)为准。旧图只证明当时布局获批，不是当前权限清单。
 
 关联现状：[Account Center 页面](../../../ui/src/app/shared/pages/account-center.tsx)、[展示模块](../../../ui/src/app/shared/access-modules.ts)、[权限摘要](../../../ui/src/app/shared/account-access.ts)、[账户模型](../../../ui/src/app/shared/models.ts)、[身份文案](../../../ui/src/app/shared/account-presentation.tsx)、[会员应用壳](../../../ui/src/app/member/app.tsx)与[版本服务](../../../ui/src/app/shared/services/version-service.ts)；长期契约见[账户访问控制](../../design/identity-access/account-access-control.md)、[账户资料与偏好](../../design/identity-access/account-profile-and-preferences.md)和[会员应用壳设计](../../design/web-ui/member-application-shell.md)。
 
@@ -14,7 +16,7 @@ Appearance 只因已确认的单一深色目标从新界面移除，其他账户
 
 ## 模块权限与账户标志
 
-展示严格使用源码 `accountAccessDisplayModules` 的十项及顺序：Market Radar、Sports Live、Sports History、Managed OO、Worm Markets、Worm Trading、World Cup Corners、Solana、Wallet、Trader Sync。Token 只从本页展示中排除；解析、更新与 Active／Pending／Blocked 判定仍保留完整十一模块模型。
+批准时的展示严格使用当时源码 `accountAccessDisplayModules` 的十项及顺序：Market Radar、Sports Live、Sports History、Managed OO、Worm Markets、Worm Trading、World Cup Corners、Solana、Wallet、Trader Sync。Token 只从该历史页面展示中排除；当时解析、更新与 Active／Pending／Blocked 判定使用完整十一模块模型。现行清单见上方范围注记。
 
 固定 active fixture 显示 `2 full · 3 read · 5 none`，权限标签保持源码文案 `Read & write`、`Read only`、`No access`。API Key 与 Profit Sharing 是彼此独立的账户标志，不并入模块权限汇总；Tier 只展示，不授予访问。
 

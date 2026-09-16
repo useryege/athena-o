@@ -1,8 +1,8 @@
 # Worm Market Combinations
 
-> 范围修订（2026-09-16 最新决定）：删除 Worm Markets 及其专属数据，保留 Worm Trading；用户已采用由 Trading 统一承接按需市场查询的方案 A。此前双服务保留决定被覆盖。见[删除需求](../../requirements/development-runtime/worm-markets-removal.md)及[目标设计](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)。新技术细节待整体审阅，尚未实施；下文保留当前源码的实际行为，Markets 依赖不得当作目标架构。
+> 实现状态（2026-09-16）：Worm Trading 已按方案 A 承接按需目录与组合权威校验；Worm Markets 源码、契约、权限和运行入口已删除。原 main 的专属数据库与五个旧通知来源已精确退役，正常重启未重建 Markets，见[删除需求](../../requirements/development-runtime/worm-markets-removal.md)、[目标设计](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)及[验收记录](../../testing/worm-markets-retirement-acceptance.md)。
 
-> 访问接入目标：`worm` 开关只对应 Trading，`worm_markets` 权限和公共接口随退役删除；Trading 现有权限、授权与已受理工作处理规则保留。访问开关及本地全栈扩展仍未实施，见[访问设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)与[运行设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md#33-worm-trading-接入)。
+> 访问接入目标：`worm` 开关只对应 Trading；访问开关及十一应用全栈扩展仍未实施，见[访问设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)与[运行设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md#33-worm-trading-接入)。
 
 ## Scope
 
@@ -11,10 +11,10 @@ one Worm Event Condition ID and owner-scoped CRUD for reusable, ordered market
 templates. A saved item identifies one child Market Condition ID and exactly one
 YES or NO direction. One template may contain markets from multiple Events.
 
-Worm Markets owns fresh provider reads and catalog selectability. The API Server
-owns authentication, current-account derivation, request validation, trusted
-catalog correlation, and the native JSON facade. Worm Trading owns atomic
-PostgreSQL persistence and revision CAS. The browser owns only URL/ID input,
+Worm Trading owns fresh provider reads, catalog selectability, trusted
+combination resolution, atomic PostgreSQL persistence, and revision CAS. The
+API Server owns interactive authentication, current-account derivation, request
+validation, trusted account metadata, and the native JSON facade. The browser owns only URL/ID input,
 selection and display order, responsive presentation, transient last-trade
 prices, and unsaved-draft state.
 
@@ -36,9 +36,9 @@ The T7 theme implementation scopes draft state and pending callbacks to account,
 | --- | --- | --- |
 | Native HTTP facade and validation | [internal/server/worm_combinations.go](../../../internal/server/worm_combinations.go) | `registerWormCombinationHandlers`, `getWormOrderEventCatalog`, `listWormCombinations`, `getWormCombination`, `createWormCombination`, `updateWormCombination`, `deleteWormCombination`, `resolveWormCombinationItems` |
 | Interactive authorization and origin | [internal/server/worm_connection.go](../../../internal/server/worm_connection.go) | `authenticateInteractiveWormTradingHTTP`, `validWormConnectionOrigin` |
-| API Server process wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go) | native handler registration, Worm Markets and Worm Trading clientsets |
-| Provider-backed event catalog | [internal/wormmarkets/order_event_catalog.go](../../../internal/wormmarkets/order_event_catalog.go), [internal/wormmarkets/wormmarkets.proto](../../../internal/wormmarkets/wormmarkets.proto) | `GetOrderEventCatalog`, `getOrderEventCatalogMarkets`, `getOrderEventCatalogMarket`, `orderEventCatalogPricesFromLastTrade`, `OrderEventCatalogOutcome` |
-| Combination application service | [internal/wormtrading/market_combinations.go](../../../internal/wormtrading/market_combinations.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | `CreateMarketCombination`, `GetMarketCombination`, `ListMarketCombinations`, `UpdateMarketCombination`, `DeleteMarketCombination` |
+| API Server process wiring | [internal/server/athena-server.go](../../../internal/server/athena-server.go) | native handler registration and the single Worm Trading clientset |
+| Provider-backed event catalog | [internal/wormtrading/order_event_catalog.go](../../../internal/wormtrading/order_event_catalog.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | `GetOrderEventCatalog`, bounded Event/Market reads, stable unavailable reasons and exact complementary prices |
+| Combination application service | [internal/wormtrading/market_combinations.go](../../../internal/wormtrading/market_combinations.go), [internal/wormtrading/market_combination_resolver.go](../../../internal/wormtrading/market_combination_resolver.go), [internal/wormtrading/account_access.go](../../../internal/wormtrading/account_access.go), [internal/wormtrading/wormtrading.proto](../../../internal/wormtrading/wormtrading.proto) | Create/update authority resolution, trusted identity, current access checks and CRUD |
 | Store model and transactions | [internal/wormtrading/store/market_combinations.go](../../../internal/wormtrading/store/market_combinations.go), [internal/wormtrading/store/types.go](../../../internal/wormtrading/store/types.go) | `MarketCombination`, `MarketCombinationItem`, `SQLStore` CRUD methods, normalization and constraint mapping |
 | Schema and SQL queries | [internal/wormtrading/store/migrations/000002_market_combinations.sql](../../../internal/wormtrading/store/migrations/000002_market_combinations.sql), [internal/wormtrading/store/migrations/000004_execution_runs.sql](../../../internal/wormtrading/store/migrations/000004_execution_runs.sql), [internal/wormtrading/store/queries/market_combinations.sql](../../../internal/wormtrading/store/queries/market_combinations.sql) | `worm_market_combinations`, `worm_market_combination_items`, revision-qualified writes, active execution lock guard |
 | Browser routes and interactions | [ui/src/app/member/app.tsx](../../../ui/src/app/member/app.tsx), [ui/src/app/member/pages/worm-trading-combinations.tsx](../../../ui/src/app/member/pages/worm-trading-combinations.tsx) | `wormTradingNavItem`, `WormTradingCombinationsPage`, `WormTradingCombinationBuilderPage`, `EventExplorerCard`, `CombinationSummary`, `marketLastTradeCents`, `parseEventConditionID` |
@@ -51,27 +51,28 @@ The T7 theme implementation scopes draft state and pending callbacks to account,
 interactive browser
   -> native API Server facade
        -> authenticate current login and worm_trading level
-       -> Worm Markets internal gRPC
-            -> fresh Worm Event GET
-            -> bounded fresh child Market GETs
-            -> stable selectability + optional complementary last-trade prices
-       -> validate catalog correlation
+       -> Worm Trading internal gRPC + trusted x-athena-account-id
+            -> check current account LoginEnabled and worm_trading access
+            -> same-process catalog
+                 -> fresh Worm Event GET
+                 -> bounded fresh child Market GETs
+                 -> stable selectability + optional complementary last-trade prices
        -> browser receives all children, including unavailable choices
 
 create or update
   -> browser sends name + ordered Event ID / Market ID / side only
-  -> API Server refetches each unique Event catalog, at most four concurrently,
-     under one 45-second total budget
-  -> verify membership, unique Market IDs, and selectable direction
-  -> construct trusted event/market/outcome display snapshots
-  -> Worm Trading internal gRPC
+  -> API Server sends IDs and trusted account identity to Worm Trading
+  -> Trading refetches each unique Event catalog, at most four concurrently,
+     under one shared catalog budget
+  -> Trading verifies membership, unique Market IDs, and selectable direction
+  -> Trading constructs trusted event/market/outcome display snapshots
   -> one PostgreSQL transaction commits header and every ordered item
 ```
 
-`GetOrderEventCatalog` is deliberately separate from the public Worm Markets
-event detail. It performs no margin estimate. It retains a child summary when a
+`GetOrderEventCatalog` is a Worm Trading internal RPC and is not a public market
+detail API. It performs no margin estimate. It retains a child summary when a
 detail read fails and attaches stable unavailable codes rather than silently
-removing that market. Worm Markets allows at most eight child-detail reads at
+removing that market. The Trading catalog allows at most eight child-detail reads at
 once and preserves the Event's upstream child order. A valid provider
 `last_trade_price` becomes the YES display price, while NO is its exact decimal
 complement. A missing or invalid price omits both values and does not affect
@@ -109,8 +110,8 @@ Executions detail route.
    protocol, hostname, path, malformed percent encoding, or non-Base58 ID before
    starting a request.
 4. `GET /api/v1/worm-trading/events/{eventConditionId}` canonicalizes the ID as
-   a 32-byte Solana public key and calls internal `GetOrderEventCatalog`. Worm
-   Markets performs one Event read, validates every unique child ID, and fetches
+   a 32-byte Solana public key and calls Trading `GetOrderEventCatalog` with the
+   trusted account metadata. Trading verifies current READ access, performs one Event read, validates every unique child ID, and fetches
    child detail with at most eight workers.
 5. The catalog returns every child in provider order and exactly one YES and one
    NO projection. A direction is selectable only when the child is `open`,
@@ -150,13 +151,13 @@ Executions detail route.
    open with field-level feedback. The API Server rejects unknown JSON fields,
    trailing JSON, bodies over 1 MiB, invalid names or sides, duplicate Market
    IDs, and noncanonical IDs.
-9. Before persistence, `resolveWormCombinationItems` creates one 45-second
+9. Before persistence, Worm Trading's resolver creates one catalog-budget
    context for the complete multi-Event resolution and refetches each unique
    Event once, with at most four Event catalogs in flight. It verifies that each
    Market belongs to the submitted Event and that the requested direction is
    still selectable. Only the returned titles, logos, and outcome labels become
    stored snapshots. Expiring the shared budget cancels the remaining catalog
-   work and prevents the Worm Trading create or update RPC from being called.
+   work before the store transaction begins.
 10. Worm Trading normalizes and validates the complete request again, creates a
     UUID, inserts the header and contiguous items, reloads the committed
     projection, and commits one transaction. Name uniqueness is enforced within
@@ -259,18 +260,27 @@ direction; an unavailable direction must carry a reason.
 
 ## Configuration
 
-This capability introduces no independent environment setting.
+The catalog is part of Worm Trading and introduces no independent service.
 
-- Worm Markets uses its configured Worm provider base and existing request
-  behavior. The child-detail catalog concurrency is fixed at eight.
+- Trading uses the fixed official Worm API address. The catalog and public
+  Estimate share its factory-level unauthenticated limiter (100 requests per
+  minute, burst 2); authenticated HMAC calls keep their independent limiter.
+  Child-detail concurrency is fixed at eight.
+- `ATHENA_WORM_TRADING_WORM_API_ATTEMPT_TIMEOUT` defaults to 5 seconds.
+  `ATHENA_WORM_TRADING_CATALOG_BUDGET` defaults to 45 seconds, must be positive
+  and at least the attempt timeout, and includes limiter wait. A caller's earlier
+  deadline wins.
+- `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` is Trading's independent read-only source
+  for current LoginEnabled and `worm_trading` access. Trading does not migrate
+  that schema or borrow the API Server pool.
 - Worm Trading uses `ATHENA_WORM_TRADING_POSTGRES_DSN`; the combination tables
   are migrated in that owned database.
 - API Server reuses the configured public application Origin, or exact
   `http://localhost:4000` under isolated disabled-auth development, for writes.
 - Saved-list default and maximum page sizes are 20 and 100. Request bodies are
   limited to 1 MiB, names to 80 Unicode code points, and save-time Event catalog
-  concurrency to four. The complete create/update catalog resolution has one
-  fixed 45-second budget. There is no separate business count limit for template
+  concurrency to four. The complete create/update catalog resolution shares the
+  configured Trading catalog budget. There is no separate business count limit for template
   items or unique Events; the body limit and shared resolution budget remain the
   request bounds.
 
@@ -309,8 +319,8 @@ unselectable catalog item, so users can still inspect the rest of the Event.
 Cancellation stops bounded workers and returns the context status. Catalogs are
 not persisted, so retry always obtains a fresh provider view.
 
-Save-time catalog failures or newly unavailable selections occur before the
-Worm Trading store call and leave PostgreSQL unchanged. A unique-name conflict,
+Save-time catalog failures, current-access failures, or newly unavailable
+selections occur before the Trading store transaction and leave PostgreSQL unchanged. A unique-name conflict,
 invalid store input, or SQL failure rolls back create or full replacement. A
 revision mismatch preserves the complete current row and item set and returns a
 conflict for explicit reload. Missing owner-scoped IDs are indistinguishable
@@ -321,17 +331,17 @@ returns a conflict and preserves the complete template. Terminating or
 otherwise safely completing the Run releases the lock; template CRUD never
 merges or blindly replays the blocked write.
 
-If the complete multi-Event refetch exceeds 45 seconds, the shared context
-cancels outstanding catalog calls and the native facade returns HTTP 503. The
-facade does not call Worm Trading persistence after that timeout, so neither a
+If the complete multi-Event refetch exceeds the configured catalog budget, the shared context
+cancels outstanding catalog calls and the native facade returns HTTP 503. Trading
+does not begin persistence after that timeout, so neither a
 new header nor any partial item replacement can be committed.
 
 An initial or manual Event refresh failure retains every existing Event catalog,
 selection, and ordering for inspection and exposes bounded Event-level feedback.
 A failed manual refresh retains that Event's prior prices; an edit-time hydration
 failure keeps the saved display summary and renders its non-persisted price as
-`—`. Neither case authorizes a save: the API Server refetches every Event and
-revalidates every item before a PUT. Account, access-revision, or route changes
+`—`. Neither case authorizes a save: Worm Trading refetches every Event and
+revalidates every item before a PUT transaction. Account, access-revision, or route changes
 abort scoped browser requests and discard late results.
 
 ## Observability
@@ -345,8 +355,9 @@ market-detail, identity, state, margin, config, backend, outcome, and leverage
 failures without raw provider bodies.
 
 The capability adds no metric, readiness probe, or independent health state.
-Worm Markets health covers its process lifecycle; Worm Trading health covers
-its service and owned PostgreSQL readiness. Native HTTP status and bounded error
+Worm Trading owns its process health, catalog logs, latency/failure observation,
+and PostgreSQL readiness; `SERVING` does not prove the Worm provider or live
+execution path is currently available. Native HTTP status and bounded error
 messages expose authentication, invalid input, not found, conflict, and
 dependency failure. Responses never expose the owner UUID, credential, private
 key, signature, draft, transaction, or raw provider payload.

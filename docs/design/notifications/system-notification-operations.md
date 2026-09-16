@@ -1,6 +1,6 @@
 # 系统通知运营
 
-> 目标范围更新（2026-09-16）：[Sports 删除、Worm 保留](../../requirements/development-runtime/sports-removal.md)已确认，尚未实施。只移除 Sports Live 专属告警生产、配置并按精确来源取消未发送消息；Worm Markets、Market Radar、Managed OO、Trader Sync 等来源和共享 Notification 保留。共享发送账本保留真实事实，不属于四个专属历史数据库的删除范围。
+> 范围更新（2026-09-16）：Sports 与 Worm Markets 告警生产者、配置和部署注入均已删除；Market Radar、Managed OO、Trader Sync 等保留来源和共享 Notification 继续运行。原 main 已对五个 `worm-markets.*` 来源完成 report/apply/report，pending／sending／cancelled／retired 均为 0；sent／failed／unknown、attempt、Topic、Bot offset 及其他来源不删除。
 
 > 设计状态：已实现
 
@@ -10,7 +10,7 @@
 
 系统通知运营负责发送到配置的测试/生产 Telegram 群组及论坛 Topic 的运营通知，包括内部生产者契约、持久 Topic 与投递、公平调度、管理员列表/详情/测试操作和共享运行视图。
 
-Market Radar、Sports Live、Managed OO、Worm Markets 自行决定告警条件并保留来源侧状态；Notification 接受请求后负责投递，不选择普通账户，也不向会员暴露系统记录。私聊见[账户 Telegram 通知](account-telegram-notifications.md)。
+Market Radar、Managed OO 等现行生产者自行决定告警条件并保留来源侧状态；Notification 接受请求后负责投递，不选择普通账户，也不向会员暴露系统记录。Sports 与 Worm Markets 条目只作为历史来源保留在发送账本。私聊见[账户 Telegram 通知](account-telegram-notifications.md)。
 
 ## 源码入口
 
@@ -24,7 +24,8 @@ Market Radar、Sports Live、Managed OO、Worm Markets 自行决定告警条件�
 | 管理员鉴权 | [internal/server/authz.go](../../../internal/server/authz.go) | `administratorGRPCMethods` 通知规则 |
 | 管理员界面 | [ui/src/app/admin/pages/system-notifications.tsx](../../../ui/src/app/admin/pages/system-notifications.tsx), [ui/src/app/admin/pages/system-notification-detail.tsx](../../../ui/src/app/admin/pages/system-notification-detail.tsx), [ui/src/app/admin/pages/service-status.tsx](../../../ui/src/app/admin/pages/service-status.tsx), [ui/src/app/admin/notification-service.ts](../../../ui/src/app/admin/notification-service.ts) | 列表、筛选、详情、测试页面及 Notification 运行面板 |
 | 内部鉴权客户端 | [internal/notification/apiclient/apiclient.go](../../../internal/notification/apiclient/apiclient.go), [internal/notification/apiclient/internal_auth.go](../../../internal/notification/apiclient/internal_auth.go) | `Clientset.System`, `Clientset.Runtime`, `NewNotificationClientset` |
-| 当前告警生产者 | [internal/marketradar/mover_alerts.go](../../../internal/marketradar/mover_alerts.go), internal/sportslive/price_alerts.go（历史路径 `internal/sportslive/price_alerts.go`，基线 `264d0dc1`）, internal/sportslive/score_alerts.go（历史路径 `internal/sportslive/score_alerts.go`，基线 `264d0dc1`）, [internal/managedoo/proposed_alerts.go](../../../internal/managedoo/proposed_alerts.go), [internal/managedoo/disputed_alerts.go](../../../internal/managedoo/disputed_alerts.go), [internal/wormmarkets/notifications.go](../../../internal/wormmarkets/notifications.go) | `SendSystemNotification` 调用方 |
+| 当前告警生产者 | [internal/marketradar/mover_alerts.go](../../../internal/marketradar/mover_alerts.go), [internal/managedoo/proposed_alerts.go](../../../internal/managedoo/proposed_alerts.go), [internal/managedoo/disputed_alerts.go](../../../internal/managedoo/disputed_alerts.go) | 现行 `SendSystemNotification` 调用方；Sports 历史路径基线 `264d0dc1`、Worm Markets 历史路径基线 `c890ffd3` 均不再装配 |
+| 精确退役维护 | [tools/retire-worm-markets-notifications](../../../tools/retire-worm-markets-notifications) | 固定五来源 report/apply、pending 取消、sending 有界等待；原 main 三次执行均成功并核实无待发或在途记录 |
 | 进程与部署装配 | [cmd/athena-notification/commands/athena_notification.go](../../../cmd/athena-notification/commands/athena_notification.go), [本地服务配置](../../../internal/devruntime/registry.go), [docker-compose.prod.yml](../../../docker-compose.prod.yml) | 单进程、单 Bot、chat ID 与共享内部凭据 |
 | 持久发送许可 | [attempts.go](../../../internal/notification/store/attempts.go)、[delivery/types.go](../../../internal/notification/delivery/types.go)、[delivery_attempts.sql](../../../internal/notification/store/queries/delivery_attempts.sql) | `Authorize`、`RecordStarted`、`RecordOutcome`、`NextState` |
 | HTTP 起点与结构化结果 | [send_transport.go](../../../util/telegram/send_transport.go) | `sendTransport`、`SendError` |
@@ -67,7 +68,9 @@ Market Radar、Sports Live、Managed OO、Worm Markets 自行决定告警条件�
 | `ATHENA_NOTIFICATION_WORKER_CONCURRENCY` / `--worker-concurrency` | 跨 chat 并发默认 12；共享 Bot/私聊/群组预算及五次上限固定。 |
 | 各生产者 `..._NOTIFICATION_ENABLED` 与 `..._NOTIFICATION_SERVER_ADDRESS` | 开启通知及选择内部 gRPC 目标。 |
 
-生产 Compose 清除无关服务的内部凭据，仅注入 Notification、API Server、Market Radar、Sports Live、Managed OO、Worm Markets。非 Notification 应用容器不接收 Bot token 和具体群组 ID；生产者及 API Server 只使用鉴权 gRPC 地址。生产秘密重置独立轮换通知内部凭据，不与 Wallet、Wallet signer、Worm Trading 凭据共用。
+生产 Compose 清除无关服务的内部凭据，仅向 Notification、API Server 和现行系统通知生产者注入所需内部凭据；Sports 与 Worm Markets 不再接收地址或 token。非 Notification 应用容器不接收 Bot token 和具体群组 ID；生产者及 API Server 只使用鉴权 gRPC 地址。生产秘密重置独立轮换通知内部凭据，不与 Wallet、Wallet signer、Worm Trading 凭据共用。
+
+Worm Markets 历史精确来源为 `worm-markets.new-event`、`worm-markets.live-event`、`worm-markets.price-alert-80-20`、`worm-markets.price-alert-90-10`、`worm-markets.price-alert-95-5`。退役维护只取消这些来源的 pending；既有 sending 等待真实有界结果，回到 pending 后才取消。工具不使用前缀通配，不删除共享账本、attempt 或其他来源。
 
 ## 不变量
 

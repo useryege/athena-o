@@ -4,7 +4,7 @@
 >
 > 下文 R01–R21 及评审结论保留原确认时点的事实，不代表本期仍要求停止后台任务、暂停通知或协调业务进程。核心分类、BSC／Sports 删除、环境归属与 Token 详细接入延期继续有效；2026-09-16 用户已撤回 Worm 删除决定并确认剩余删除对象的历史数据直接删除，覆盖下文 R19 等旧时点表述；新访问规则已确认首次默认关闭，之后保留管理员设置，重启不改变开关。
 >
-> 后续实施事实（2026-09-16）：BSC／Sports 清理已执行，Worm 保留；当前结果见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。下文删除状态仍为原批准时点历史，不代表当前源码和运行事实。
+> 后续实施事实（2026-09-16）：BSC／Sports 清理任务当时保留 Worm 两服务，结果见[验收记录](../../testing/module-removal-cleanup-acceptance.md)；随后独立任务只退役 Markets，由 Trading 承接目录并保留共用 Worm 能力。Markets 源码与 Trading 内聚已经实施；原 main default 的五来源通知、专属数据库和正常重启复核也已完成，保留数据指纹保持。下文 R01–R21、R19、A29 等删除状态均保留原批准时点事实，不代表当前源码和运行事实。
 >
 > 原方案尚未实现。下文“当前”“后续”等表述均属于原运行控制设计范围，不作为继续推进 D01–D03 实施的指令。
 
@@ -385,7 +385,7 @@ Notification 在 HTTP 起点之后的取消也可能形成 unknown，统一组�
 
 ## 本轮评审结论与文档维护
 
-Q01–Q06 中本轮讨论的产品规则已确认，形成 R01–R21 需求基线。Q05 的[成员、依赖与部署差距清单](service-inventory-review.md)及本地使用五个远端 Gateway 的运行边界已记录；[技术方案第一段架构](../../superpowers/specs/2026-09-15-business-group-control-design.md)已获确认（D01），新增独立常开核心控制服务。Token 的详细接入设计待重构完成后再进行，目标仍以其文档为依据，旧代码只用于差距和清理核对。通用状态模型（D02）以及命令、并发与生效点（D03）均已确认；接下来继续设计成员注册、失联与故障判断、重启恢复、收尾证据及正式管理接口，并梳理其余业务组的接入；Token 内部任务与专属验收不作为本轮通用设计的前置条件。当前代码尚未实现，不重复确认已决规则。两项删除需求中的历史数据处置与既有部署退役记录仍需后续落实，不以本需求基线确认冒充数据删除或退役已完成。
+Q01–Q06 中本轮讨论的产品规则形成 R01–R21 历史需求基线；该整组控制方案已暂停，不能作为当前实施指令。Q05 的[成员、依赖与部署差距清单](service-inventory-review.md)及本地使用五个远端 Gateway 的运行边界仍供核对；D01–D03 仅保留批准历史。Token 的详细接入设计待重构完成后再进行，目标仍以其文档为依据。BSC／Sports 清理与后续 Markets 源码退役分别按各自需求和验收记录执行，不能以本历史基线冒充任何环境的数据删除；Markets 的原 main default 数据和五来源通知结果仍由 Task 10 单列证据。
 
 每次用户作出决定后，在相应 Q 项写入选择和日期，同步状态与验收行；不把评审建议直接改成用户已批准。未来技术方案使用 Superpowers 的规格目录，当前文档继续作为产品规则来源。
 
@@ -397,5 +397,5 @@ Q01–Q06 中本轮讨论的产品规则已确认，形成 R01–R21 需求基�
 - [服务开发规范](../../developer-guide/service-development-standards.md)、[本地运行说明](../../developer-guide/running-locally.md)。
 - [本地运行编排](../../design/development-runtime/local-runtime-orchestration.md)、[管理员应用壳](../../design/web-ui/administrator-application-shell.md)。
 - [系统通知运营](../../design/notifications/system-notification-operations.md)、[账户 Telegram 通知](../../design/notifications/account-telegram-notifications.md)。
-- [Token 目标设计包](../../superpowers/specs/2026-09-10-token-first-block-design.md)、[Nansen 接入设计](../../superpowers/specs/2026-09-14-token-wallet-analytics-backend-design.md)、[旧采集与 Profile 现状](../../design/token-intelligence/collection-profile.md)、[Sports 删除与 Worm 保留决定](sports-removal.md)。
+- [Token 目标设计包](../../superpowers/specs/2026-09-10-token-first-block-design.md)、[Nansen 接入设计](../../superpowers/specs/2026-09-14-token-wallet-analytics-backend-design.md)、[旧采集与 Profile 现状](../../design/token-intelligence/collection-profile.md)、[Sports 删除任务当时的 Worm 保留边界](sports-removal.md)、[后续 Markets 退役与 Trading 保留需求](worm-markets-removal.md)。
 - [Etherscan Manager](../../design/blockchain-data/etherscan-manager.md)、[BSC 普通交易索引](../../design/blockchain-data/bsc-inbound-normal-transactions.md)、[BSC Swap 索引](../../design/blockchain-data/bsc-v2-swap-transactions.md)。

@@ -83,7 +83,7 @@ two independent accounts even when both belong to the same person.
 
 ### Start the stack
 
-目标已收缩为[板块访问开关简化方案](../requirements/development-runtime/business-access-control.md)：本期只拦截用户业务请求，程序与后台任务继续运行；原整组运行停止方案已暂停。新开关及服务清单扩展尚未实现；已确认目标为首次默认关闭访问，之后保留管理员设置，再次执行 `make run` 或重启不改变开关；以下命令和启动清单描述当前实际行为。 [全栈启动配套提案](../superpowers/specs/2026-09-15-local-full-stack-design.md)已于 2026-09-16 获采用，原十程序设计已通过；随后保留 Worm，目标覆盖十二程序，Worm 独立入口、配置、鉴权、就绪与停止设计已补齐；其两服务共用一个访问开关。阶段进度和失败处理规则继续有效，尚未实施。
+目标已收缩为[板块访问开关简化方案](../requirements/development-runtime/business-access-control.md)：本期只拦截用户业务请求，程序与后台任务继续运行；原整组运行停止方案已暂停。新开关及服务清单扩展尚未实现；已确认目标为首次默认关闭访问，之后保留管理员设置，再次执行 `make run` 或重启不改变开关；以下命令和启动清单描述当前实际行为。[全栈启动配套提案](../superpowers/specs/2026-09-15-local-full-stack-design.md)原十程序设计已通过，之后曾以两项 Worm 服务扩为十二程序；现行目标在 Markets 退役后为十一应用，`worm` 只对应 Trading。Trading 独立入口、账户状态只读依赖、进程内目录、鉴权、就绪与停止已实现，但仍未接入当前默认六进程图；访问开关与十一应用扩展尚未实施。
 
 Start the explicitly selected full stack from this checkout:
 

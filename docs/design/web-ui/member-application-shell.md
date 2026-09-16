@@ -1,10 +1,10 @@
 # 会员应用壳
 
-> 范围更新（2026-09-16）：[Sports 删除、Worm 保留](../../requirements/development-runtime/sports-removal.md)已实施。Sports Live／History、World Cup Corners 的导航、路由、页面与权限展示已移除；Worm 全部页面、登录、Wallet 和其他板块保留。下文记录清理后的八权限界面。
+> 范围更新（2026-09-16）：Sports 三项清理后，Worm Markets 的 API-only 权限也已独立退役；Worm Trading 七条路由、登录、Wallet 和其他板块保留。下文记录当前七模块权限界面；原 main 现场数据退役不改变会员壳源码状态。
 
 > 设计状态：已实现
 
-> 关联目标改为[板块访问开关简化方案](../../requirements/development-runtime/business-access-control.md)，尚未实施。页面展示“开放访问／关闭访问”，不暗示后台任务停止；前台页面关闭后最多 5 秒隐藏正文、断线隐藏及恢复前确认的既定体验继续沿用。原运行控制状态与后台收尾设计已暂停，登录和账户模块权限仍独立成立。 [接口、存储与页面接入技术提案](../../superpowers/specs/2026-09-15-business-access-control-design.md)已于 2026-09-16 获采用，尚未实施；拟在 Service Status 增加访问页签，并以共用路由边界控制业务正文，当前代码尚未接入。Worm 已确认共用一个访问开关：管理员只显示一行 Worm 设置，会员七条现有路由及其弹窗统一受控；关闭时停止浏览器交易驱动，重新开放不自动补发交易，原有两个模块权限分别保留。
+> 关联目标改为[板块访问开关简化方案](../../requirements/development-runtime/business-access-control.md)，尚未实施。页面展示“开放访问／关闭访问”，不暗示后台任务停止；前台页面关闭后最多 5 秒隐藏正文、断线隐藏及恢复前确认的既定体验继续沿用。原运行控制状态与后台收尾设计已暂停，登录和账户模块权限仍独立成立。 [接口、存储与页面接入技术提案](../../superpowers/specs/2026-09-15-business-access-control-design.md)已于 2026-09-16 获采用，尚未实施；拟在 Service Status 增加访问页签，并以共用路由边界控制业务正文，当前代码尚未接入。`worm` 只控制 Worm Trading：管理员只显示一行 Worm 设置，会员七条现有路由及其弹窗统一受控；关闭时停止浏览器交易驱动，重新开放不自动补发交易。
 
 ## 范围
 
@@ -32,7 +32,7 @@
 | Telegram 绑定 | [notifications.tsx](../../../ui/src/app/member/pages/notifications.tsx)、[notification-service.ts](../../../ui/src/app/member/notification-service.ts)、[notification-storage.ts](../../../ui/src/app/member/notification-storage.ts) | `NotificationsPage`、`MemberNotificationService`、标签页绑定指令 |
 | Trader Sync | [app.tsx](../../../ui/src/app/member/app.tsx)、[routes.tsx](../../../ui/src/app/member/routes.tsx)、[trader-sync-service.ts](../../../ui/src/app/member/trader-sync-service.ts)、[pages/trader-sync](../../../ui/src/app/member/pages/trader-sync)、[state.ts](../../../ui/src/app/member/pages/trader-sync/state.ts) | 六类页面、类型化 API、owner-scoped 草稿/页栈/读取会话、`clearTraderSyncState` |
 | Solana | [solana.tsx](../../../ui/src/app/member/pages/solana.tsx)、[solana-service.ts](../../../ui/src/app/shared/services/solana-service.ts) | 新 Mint 候选列表、查询、分页、链上详情与持久扫描状态 |
-| 权限与可见读取 | [access-modules.ts](../../../ui/src/app/shared/access-modules.ts)、[context.ts](../../../ui/src/app/shared/context.ts)、[use-visible-query.ts](../../../ui/src/app/shared/use-visible-query.ts) | 八模块、`AuthorizationCtx`、可见时 single-flight |
+| 权限与可见读取 | [access-modules.ts](../../../ui/src/app/shared/access-modules.ts)、[context.ts](../../../ui/src/app/shared/context.ts)、[use-visible-query.ts](../../../ui/src/app/shared/use-visible-query.ts) | 七模块、`AuthorizationCtx`、可见时 single-flight |
 | 请求与缓存清理 | [requests.ts](../../../ui/src/app/shared/services/requests.ts)、[data.ts](../../../ui/src/app/components/data.ts) | realm/account/session scope、abort、cache generation |
 | 服务注册 | [services.ts](../../../ui/src/app/member/services.ts)、[registry.ts](../../../ui/src/app/shared/services/registry.ts) | realm-owned `MemberServices` 与中立共享 facade |
 | 服务端鉴权 | [authz.go](../../../internal/server/authz.go)、[tradersync.proto](../../../internal/server/tradersync/tradersync.proto) | 普通交互账户规则、Trader Sync 读写 RPC、Telegram 绑定 RPC |
@@ -44,13 +44,13 @@
 
 入口在 bootstrap 前把请求 realm 固定为 `member`。API 请求带 `X-Athena-Application-Realm: member`，认证开启时只选择 HttpOnly `athena.token.member`，loopback disabled-auth 时只选择 `local-user`。`AccountAvatar`、Wallet、Worm Trading 的浏览器原生资源请求使用 `athenaRealm=member`；外部图片 URL 不改写。realm 只选择会话槽或开发身份，角色、模块和操作级授权仍由服务端判断。
 
-桌面使用常驻侧栏，紧凑布局使用 drawer。导航投影当前普通账户的八模块权限：
+桌面使用常驻侧栏，紧凑布局使用 drawer。导航投影当前普通账户的七模块权限：
 
-- **Markets**：Market Radar、Managed OO、Worm Trading，以及 grant 严格为 `READ_WRITE` 时的 Trader Sync；Worm Markets 仍是只有 API 的模块。
+- **Markets**：Market Radar、Managed OO、Worm Trading，以及 grant 严格为 `READ_WRITE` 时的 Trader Sync。
 - **Token & Risk**：Token 为禁用项，仅在 Token 为 `READ`/`READ_WRITE` 时显示；Solana 在拥有 `READ` 时显示并进入 `/solana`；Wallet 按自己的模块显示。
 - **Operations**：有权益时显示 Profit Sharing；每个已认证普通交互会话均显示 Notifications。
 
-Token 在 Trader Sync 加入前已经存在，仍没有路径、页面、service、return snapshot 或 landing。权限卡使用排除 Token 的 `accountAccessDisplayModules`，但完整八模块 aggregate 仍参与账户状态，因此 Token-only 账户仍为 Active。
+Token 在 Trader Sync 加入前已经存在，仍没有路径、页面、service、return snapshot 或 landing。权限卡使用排除 Token 的 `accountAccessDisplayModules`，但完整七模块 aggregate 仍参与账户状态，因此 Token-only 账户仍为 Active。
 
 Solana 只接受 `NONE` 与 `READ`，列表、查询和链上详情由[Solana 列表设计](solana-discovery.md)定义。页面刷新只重读持久数据，不触发扫描；默认六服务全栈不启动 Solana 发现进程，服务未运行时按真实请求结果显示不可用，不用空列表掩盖故障。
 
@@ -77,7 +77,7 @@ Trader Sync 只接受 `NONE` 与 `READ_WRITE`。非法持久/网关 `READ` 经 `
 
 ## 状态与数据
 
-会员授权投影包含 account UUID、不可变 username、安全身份展示、profile、access revision、Profit Sharing 权益和完整八模块。UUID、member realm、issuer 与 session generation 共同限定请求、缓存和 Trader Sync 内存状态；username/display name 只用于展示。
+会员授权投影包含 account UUID、不可变 username、安全身份展示、profile、access revision、Profit Sharing 权益和完整七模块。UUID、member realm、issuer 与 session generation 共同限定请求、缓存和 Trader Sync 内存状态；username/display name 只用于展示。
 
 私钥和新签发 API Key 只存在于当前 React result state。离开页面、结束会话、改变账户或失去权限会丢弃它们并取消工作。浏览器不持久化 provider token、wallet signature、外部 subject、registration ticket、管理员断言或 HttpOnly cookie。
 
@@ -96,7 +96,7 @@ Trader Sync 的订阅、活动、通知证据均由 owner-scoped API 提供；�
 - 每个业务路由与服务端操作都重复授权；Trader Sync 六路由严格要求 `READ_WRITE`。
 - Pending 不发起业务模块或 Profit Sharing 请求，但可使用 Telegram 绑定。
 - Telegram 绑定只接受普通交互登录；会员 bundle 不包含系统通知详情、测试发送或管理员页面。
-- 八模块不等于八个页面或导航项；Token 没有业务页面，导航仍按权限显示禁用项。
+- 七模块不等于七个页面或导航项；Token 没有业务页面，导航仍按权限显示禁用项。
 - accountId、issuer、realm 和 generation 是身份敏感状态的 key；撤权清理发生在跳转前。
 - 登出与角色错配使用整页导航，不提供跨 realm switcher；会员登出不结束管理员会话。
 
@@ -112,7 +112,7 @@ Trader Sync 的资源 ID 不存在或跨 owner 返回 NotFound/404；签名游�
 
 ## 维护检查
 
-- [ ] 会员路由、八模块导航、Solana `READ`、严格 Trader Sync `READ_WRITE`、Notifications 和 lazy imports 保持同步。
+- [ ] 会员路由、七模块导航、Solana `READ`、严格 Trader Sync `READ_WRITE`、Notifications 和 lazy imports 保持同步。
 - [ ] 管理员在会员 service 构造和请求前离开。
 - [ ] Pending、Telegram 临时状态、授权刷新、request abort、cache/Trader Sync state 清理与 logout 保持一致。
 - [ ] Trader Sync 六路由、5 秒可见刷新、游标/返回位置、UTC+8 与失权晚响应 fence 保持一致。

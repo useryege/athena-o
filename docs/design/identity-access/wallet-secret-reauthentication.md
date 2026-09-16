@@ -1,10 +1,10 @@
 # Wallet Secret and Worm Credential Reauthentication
 
-> 范围修订（2026-09-16）：Worm Markets／Trading 保留，其凭据再认证和交易授权继续有效；Wallet 私钥查看、通用再认证与身份能力保留。详见[Sports 删除与 Worm 保留决定](../../requirements/development-runtime/sports-removal.md)。
+> 范围修订（2026-09-16）：Worm Markets 后续已独立退役，只保留 Worm Trading；Worm 凭据再认证、Run／Cash-Out 授权、Wallet 私钥查看、通用再认证与身份能力继续有效。Markets 删除不清除这些 lease、proof、credential 或签名用途。详见[Markets 退役需求](../../requirements/development-runtime/worm-markets-removal.md)。
 
 > 设计状态：已实现
 
-> 访问接入目标（2026-09-16 已确认，尚未实施）：普通 Wallet、登录与账户权限保持核心能力；Worm 用户钱包选择、连接、交易及其专属二次验证受同一 `worm` 开关约束。Google 共用回调按可信验证目的区分，关闭时不签发新的 Worm 凭据或交易授权；已有后台工作与内部目的绑定签名按原规则处理。详见[访问接入设计](../../superpowers/specs/2026-09-15-business-access-control-design.md#24-worm-原始-http-与二次验证入口)，不合并或改写 `worm_markets`／`worm_trading` 账户权限。
+> 访问接入目标（2026-09-16 已确认，尚未实施）：普通 Wallet、登录与账户权限保持核心能力；Worm 用户钱包选择、连接、交易及其专属二次验证受同一 `worm` 开关约束。Google 共用回调按可信验证目的区分，关闭时不签发新的 Worm 凭据或交易授权；已有后台工作与内部目的绑定签名按原规则处理。详见[访问接入设计](../../superpowers/specs/2026-09-15-business-access-control-design.md#24-worm-原始-http-与二次验证入口)。
 
 ## Scope
 

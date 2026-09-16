@@ -1,6 +1,6 @@
 # 删除 Worm Markets，仅保留 Worm Trading
 
-> 需求状态：2026-09-16 用户已完成整体设计审阅；删除范围、Markets 专属数据直接删除、方案 A 及配套技术细节均已确认。实施计划已编制，尚未实施。
+> 需求状态：2026-09-16 已实施并完成原 main default 现场退役。源码、契约、权限迁移、Trading 目录内聚、本地与生产入口清理和精确退役工具均已落地；五类待发送通知已核对收尾，`worm_markets` 专属数据库已删除，九个保留库和正常重启不重建均已验证。完整范围与局限见[退役验收](../../testing/worm-markets-retirement-acceptance.md)。
 >
 > 关联设计：[Worm Markets 删除与 Trading 市场查询内聚](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)；[逐项实施计划](../../superpowers/plans/2026-09-16-worm-trading-market-query.md)。本文覆盖此前“Worm Markets／Trading 都保留”的决定；Sports 与 BSC 的既有删除范围独立保持。
 
@@ -8,7 +8,7 @@
 
 产品只保留 Worm Trading。移除独立 Worm Markets 的市场发现、持续采集、价格观察、Live 判定及通知能力，同时让 Trading 完整承担当前交易流程需要的按需市场查询。
 
-当前 Trading 的组合编辑、保存、预览和下单前检查依赖 Markets 的实时事件目录；该目录不读取 Markets 数据库。因此删除 Markets 需要先解除这项业务依赖，不能只移除其部署进程。
+实施前，Trading 的组合编辑、保存、预览和下单前检查依赖 Markets 的实时事件目录。现已由 Trading 进程内目录直接访问 Worm 官方接口，并在服务侧读取账户状态、复核身份与 `worm_trading` 权限；API 只负责交互身份、访问准入与投影。Trading 不再依赖 Markets gRPC、数据库、进程、权限、健康项、配置或通知生产。
 
 ## 删除与保留范围
 
@@ -44,15 +44,15 @@ Markets 的历史数据和 Trading 保存的交易事实是不同数据。删除
 
 ## 可观察的完成条件
 
-- 环境中没有 Markets 程序、配置和数据库时，Trading 能独立启动，并完成现有组合查询、保存、预览、交易与平仓流程的对应验证。
-- 原 Markets 用户 API 和权限入口消失，Trading 三组导航及七条路由继续可用；管理员不再显示 Markets 服务健康项。
-- Markets 专属数据库和旧部署完成按归属退役；正常启动／停止不执行永久删除，不再重建 Markets 数据库。
-- Trading 原有记录、加密 key、凭据和未决任务保留，重启恢复不产生重复交易；共享库、卷和其他服务保留。
-- 删除结果分别提供源码、运行实例、数据和通知队列证据；隔离副作用测试与真实只读验收分别记录，不把静态设计或模拟成交写成真实成交验证。
+- **源码与契约已完成**：Markets 命令、模块、公共 API、proto、权限、健康项、通知生产、构建和部署入口已删除；Trading 目录、组合保存、Preview 与执行校验已内聚并通过隔离测试、race、构建和真实只读故障恢复验收。
+- **运行入口已完成**：默认六进程图仍不含 Trading；Trading 独立入口已具备自身数据库、账户只读连接、目录配置、就绪和有界停止，不再准备或重建 `worm_markets` 数据库。正常 stop/reset 不执行一次性永久删除。
+- **数据与通知现场已完成**：controller 在已核实原 main default 现场对固定五来源执行 report/apply/report，待发、在途和取消均为 0；随后核对目标 OID、owner、server、活跃连接与全部保留库，精确删除 `worm_markets`，复查为 `already_absent`。原 1000 条 market 与 2969 条 price history 直接删除，没有归档或转存。
+- **保留项已复核**：九个非目标库保留，Trading 与 Wallet 全表 count/fingerprint 在删除后及正常重启后保持；原两个账户只删除两条 Markets grant，其他 14 条 grant 与 flags 保持；共享通知 Topic、sender、offset 与投递事实保持。正常重启没有重建 Markets，也没有执行真实交易。Trading 现场为空库，因此没有旧凭据可供解密实测。
+- 源码、运行实例、数据和通知队列证据分别记录；隔离副作用测试与真实只读验收分开，不把静态设计或模拟成交写成真实成交验证。
 
 ## 已确认决定与讨论状态
 
 - 用户要求删除 Worm Markets 板块，只保留 Worm Trading，先开展需求与设计讨论。
 - 用户选择直接删除 Markets 专属数据。
 - 用户采用方案 A：由 Worm Trading 服务集中承接按需市场查询，API 通过 Trading 访问，Trading 内部复用同一套规则。
-- 用户已完成书面整体审阅，并要求编制实施计划；服务侧身份与权限校验、查询预算、发布切换及退役证据按关联设计落实。当前成果是设计与实施计划，没有执行代码重构、服务启停、远端操作或数据删除。
+- 用户已完成书面整体审阅并批准实施计划；服务侧身份与权限校验、查询预算、源码发布切换和精确退役工具已经落实。Task 10 controller 已完成原 main default 的账户迁移、通知维护、数据库永久删除、正常重启不重建与按归属收尾；首次重启浏览器套件出现一次未定位的 bootstrap 5 秒超时，随后同一套件复验 4/4 通过，验收记录保留两次结果，不声称根因已修复。

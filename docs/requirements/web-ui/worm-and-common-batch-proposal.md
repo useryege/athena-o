@@ -1,6 +1,6 @@
 # Worm Trading 与共用页面集中视觉提案（v22）
 
-> 范围修订（2026-09-16）：用户明确保留 Worm Markets 和 Worm Trading，撤回此前 Worm 删除决定。本批 Worm、管理员、账户和 Help 界面及全站视觉规则全部保留；详见[范围修订](../development-runtime/sports-removal.md)。下文批准记录和历史验收证据保持当时事实。
+> 范围时间线（2026-09-16）：v22 批准时用户保留 Worm Markets 和 Worm Trading，撤回此前整组 Worm 删除决定；随后独立任务只退役 Markets，并由 Trading 承接按需目录。下文 24 张图、六个 Trading 业务页／七条路由和六项共用界面的批准事实继续有效；Markets 退役不撤销 Trading 视觉批准，也不证明已删除的 Markets API 或权限仍存在。现行范围见[Markets 退役需求](../development-runtime/worm-markets-removal.md)。
 
 > 状态：所展示视觉已整批确认。用户于 2026-09-14 对六个 Worm 业务页面及六项共用适配的二十四张桌面／手机主图反馈“确认✅”，确认范围见 [v22 确认记录](previews/theme-worm-and-common-v22-approval.json)。正式 `ui/` 尚未改版。
 

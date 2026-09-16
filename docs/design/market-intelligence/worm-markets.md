@@ -1,54 +1,49 @@
-# Worm Markets
+# Worm Markets（退役历史设计）
 
-> 范围修订（2026-09-16 最新决定）：删除 Worm Markets 及其专属数据，保留 Worm Trading；用户已采用由 Trading 统一承接按需市场查询的方案 A。此前双服务保留决定被覆盖。见[删除需求](../../requirements/development-runtime/worm-markets-removal.md)及[目标设计](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)。新技术细节待整体审阅，尚未实施；下文保留当前源码的实际行为，Markets 依赖不得当作目标架构。
+> 退役状态（2026-09-16）：独立服务源码、内部与公共契约、API、`worm_markets` 权限、健康项、构建／迁移／Compose／本地运行入口以及通知生产已经在 `c890ffd3` 删除；Trading 所需目录规则已迁入 [Worm Market Combinations](../trading/worm-market-combinations.md)。原 main 的五个旧通知来源已精确核对收尾，专属数据库已按核实身份删除；九个保留库与共享通知事实保持，正常重启未重建 Markets。该现场结果不扩大为其他环境已经清理。见[退役需求](../../requirements/development-runtime/worm-markets-removal.md)、[目标设计](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)与[跨层验收](../../testing/worm-markets-retirement-acceptance.md)。
 
-> 访问接入目标：`worm` 开关只对应 Trading，`worm_markets` 权限和公共接口随退役删除；Trading 现有权限、授权与已受理工作处理规则保留。访问开关及本地全栈扩展仍未实施，见[访问设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)与[运行设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md#33-worm-trading-接入)。
+> 本文以下正文保存退役前的同步、规则、Live、价格窗口、告警和数据模型，仅用于解释历史实现。除仍链接的 `util/worm` 与 Notification 契约外，`cmd/athena-worm-markets`、`internal/wormmarkets`、`internal/server/wormmarkets`、共享类型及 `worm_markets` schema 都是 `c890ffd3` 之前的历史路径，不是现行入口。当前 `worm` 访问标识只对应 Trading；访问开关及十一应用全栈扩展仍未实施。
 
 ## Scope
 
-Worm Markets owns the continuously synchronized read model for open Worm sports
-leverage markets. It polls the Worm API, stores market snapshots and a rolling
-price window, fills missing market rules, derives one-way live state, emits new
+Before retirement, Worm Markets owned the continuously synchronized read model for open Worm sports
+leverage markets. It polled the Worm API, stored market snapshots and a rolling
+price window, filled missing market rules, derived one-way live state, emitted new
 event, live-event, and extreme-price system-management notifications, and
-exposes event reads over its internal gRPC API. It also exposes a fresh,
+exposed event reads over its internal gRPC API. It also exposed a fresh,
 read-only combination catalog
 for one Worm event. That catalog preserves every child market, marks each market
 and YES/NO outcome with stable selectability reasons, and projects an optional
-pair of complementary last-trade prices. It performs no margin estimate or
-mutation. The Athena API Server publishes the browse capability
+pair of complementary last-trade prices. It performed no margin estimate or
+mutation. The Athena API Server published the browse capability
 under `/api/v1/worm-markets`. The interactive Worm Trading Combinations facade
-uses the catalog for builder display and trusted saves, while the Worm Trading
-execution-preview worker refetches it to freeze current market availability,
+used the catalog for builder display and trusted saves, while the Worm Trading
+execution-preview worker refetched it to freeze current market availability,
 backend, and `1x` eligibility before estimating a plan.
 
-The service does not own user wallets or the presentation of Worm data in a
-page. The generic Worm HTTP client in `util/worm` remains an external-provider
-adapter rather than part of this capability's application state.
-Athena Notification owns delivery after a system notification is accepted.
-Worm Markets never selects an account or sends an account notification.
+The service did not own user wallets or the presentation of Worm data in a
+page. The generic Worm HTTP client in `util/worm` remains a current external-provider
+adapter rather than part of this retired capability's application state.
+Athena Notification owned delivery after a system notification was accepted.
+Worm Markets never selected an account or sent an account notification.
 
 ## Source Locations
 
-| Concern | Source | Key symbols |
+| Historical concern | Path before `c890ffd3` | Retired symbols |
 | --- | --- | --- |
-| Binary dispatch | [cmd/main.go](../../../cmd/main.go) | `main`, `ATHENA_BINARY_NAME` dispatch |
-| Process composition and configuration | [cmd/athena-worm-markets/commands/athena-worm-markets.go](../../../cmd/athena-worm-markets/commands/athena-worm-markets.go) | `NewCommand` |
-| gRPC lifecycle and health | [internal/wormmarkets/server.go](../../../internal/wormmarkets/server.go) | `Server`, `NewServer`, `Start`, `Stop` |
-| Synchronization and browse API | [internal/wormmarkets/service.go](../../../internal/wormmarkets/service.go) | `Service`, `Start`, `syncWormMarketsOnce`, `ListWormEvents`, `GetWormEvent` |
-| Combination event catalog | [internal/wormmarkets/order_event_catalog.go](../../../internal/wormmarkets/order_event_catalog.go) | `GetOrderEventCatalog`, `getOrderEventCatalogMarkets`, `getOrderEventCatalogMarket`, `orderEventCatalogPricesFromLastTrade`, stable unavailable codes |
-| Notification policy and delivery | [internal/wormmarkets/notifications.go](../../../internal/wormmarkets/notifications.go) | `sendWormNotifications`, `newWormEventNotifications`, `newWormLiveNotification`, `newWormPriceAlertNotification` |
-| Internal service contract | [internal/wormmarkets/wormmarkets.proto](../../../internal/wormmarkets/wormmarkets.proto) | `WormMarketsService` |
-| Public HTTP/gRPC contract | [internal/server/wormmarkets/wormmarkets.proto](../../../internal/server/wormmarkets/wormmarkets.proto) | `WormMarketsService` HTTP annotations |
-| Public proxy | [internal/server/wormmarkets/wormmarkets.go](../../../internal/server/wormmarkets/wormmarkets.go) | `Server`, `GetWormEvent`, `ListWormEvents` |
-| Internal gRPC connection ownership | [internal/wormmarkets/apiclient/apiclient.go](../../../internal/wormmarkets/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewWormMarketsClientset`, `ClientConnection` |
-| System notification contract and authenticated client | [internal/notification/notification.proto](../../../internal/notification/notification.proto), [internal/notification/apiclient/apiclient.go](../../../internal/notification/apiclient/apiclient.go) | `SystemNotificationService`, `SendSystemNotification`, `Clientset.System`, `InternalAuthTokenEnv` |
-| Provider adapter | [util/worm/worm.go](../../../util/worm/worm.go) | `Client`, `NewClient`, `DefaultBaseURL` |
-| PostgreSQL connection and migrations | [internal/wormmarkets/store/sql_store.go](../../../internal/wormmarkets/store/sql_store.go) | `SQLStore`, `NewSQLStoreSource`, `Migrations` |
-| Durable store operations | [internal/wormmarkets/store/worm_markets_store.go](../../../internal/wormmarkets/store/worm_markets_store.go) | `BatchUpsertWormMarkets`, `ListWormEventsPage`, `UpdateWormMarketLiveState` |
-| Schema and query semantics | [internal/wormmarkets/store/migrations/000001_init.sql](../../../internal/wormmarkets/store/migrations/000001_init.sql), [internal/wormmarkets/store/queries/worm_markets_market.sql](../../../internal/wormmarkets/store/queries/worm_markets_market.sql) | `worm_markets_market`, `worm_markets_price_history` |
-| Shared API model | [pkg/apis/application/v1alpha1/worm_markets_types.go](../../../pkg/apis/application/v1alpha1/worm_markets_types.go) | `WormMarketsEventItem`, `WormMarketsMarketItem`, `WormMarketsMarginPositionEstimateItem` |
+| Process and lifecycle | `cmd/athena-worm-markets/`, `internal/wormmarkets/{server,service}.go` | `NewCommand`, `Server`, synchronization loops and health |
+| Historical catalog | `internal/wormmarkets/order_event_catalog.go`, `internal/wormmarkets/wormmarkets.proto` | former `GetOrderEventCatalog`; current rules live in [Trading catalog](../trading/worm-market-combinations.md) |
+| Public API and client | `internal/server/wormmarkets/`, `internal/wormmarkets/apiclient/` | former `/api/v1/worm-markets/*` and both Markets gRPC services |
+| Notifications | `internal/wormmarkets/notifications.go` | five retired `worm-markets.*` producers; shared [Notification contract](../../../internal/notification/notification.proto) remains |
+| Store and schema | `internal/wormmarkets/store/`, historical `worm_markets` database | synchronized snapshots and price history; the verified original-main database was dropped with no archive or transfer |
+| Shared API model | `pkg/apis/application/v1alpha1/worm_markets_types.go` | removed browse/status/estimate types |
+| Provider adapter retained | [util/worm/worm.go](../../../util/worm/worm.go) | current Trading official provider adapter |
+| Precise retirement tools | [tools/retire-worm-markets-data](../../../tools/retire-worm-markets-data), [tools/retire-worm-markets-notifications](../../../tools/retire-worm-markets-notifications) | one-target database report/apply and fixed five-source notification report/apply; ordinary startup and stop do not invoke them |
 
 ## Architecture
+
+The following diagram and flows describe the retired topology before
+`c890ffd3`; no current process registers these nodes or endpoints.
 
 ```mermaid
 flowchart LR
@@ -168,7 +163,7 @@ and alert-band changes do not share one explicit transaction.
 
 ## State / Data
 
-`worm_markets_market` is the current durable market snapshot keyed by Worm
+`worm_markets_market` was the service's durable market snapshot keyed by Worm
 `condition_id`. It stores display fields, event identity, the fixed browse
 classification, margin capability, raw upstream JSON, optionally enriched rule
 JSON, fetch and last-seen times, derived live fields, and the current price alert
@@ -207,6 +202,9 @@ provider response, not a best ask, midpoint, estimate, executable quote, or
 execution guarantee.
 
 ## Configuration
+
+All settings in this section are retired historical inputs. Current startup
+must not require, inject, or synthesize any `ATHENA_WORM_MARKETS_*` value.
 
 | Setting | Behavior |
 | --- | --- |
@@ -308,6 +306,11 @@ authoritative event and market read.
 
 ## Observability
 
+The health, status and API statements below are historical. Current Service
+Status contains Worm Trading only; catalog latency, failures and provider
+reachability are observed inside Trading, whose `SERVING` state does not prove
+the upstream catalog or a real trade is available.
+
 The process logs version/startup metadata and its listen port. Debug logs report
 the number of synchronized markets, enriched rules, and evaluated live states.
 Warnings identify failed syncs, rule fetches, live-state operations,
@@ -333,11 +336,9 @@ provider's last trade. The catalog adds no separate metric or readiness signal.
 
 ## Change Checklist
 
-- [ ] Component responsibilities and boundaries still match this document.
-- [ ] Runtime, concurrency, and transaction flows are current.
-- [ ] State, data, interfaces, configuration, dependencies, and invariants are current.
-- [ ] The combination catalog remains provider-backed, bounded, stable-reasoned, exact-complement-priced, and free of extra reads, owned persistence, estimates, and mutations for both combination and preview consumers.
-- [ ] Failure recovery, health checks, and observability are current.
-- [ ] New-event, live-event, and price alerts still use authenticated `SendSystemNotification` only and never enter the account domain.
-- [ ] Source links and named symbols resolve to the implementation.
-- [ ] The [design index](../README.md) contains the correct entry.
+- [ ] Historical paths and `c890ffd3` remain identifiable without restoring them as current links.
+- [ ] Code, contracts, API, permissions, health, config and notification producers remain absent.
+- [ ] Current catalog rules stay documented under Trading, including bounded reads, stable reasons, exact complementary prices and no mutation.
+- [ ] Field evidence distinguishes source retirement from per-environment database and queue retirement.
+- [ ] Retained `util/worm`, Trading data, credentials, locks, attempts and Notification history are not described as deleted.
+- [ ] The [design index](../README.md) identifies this as a retired historical design.
