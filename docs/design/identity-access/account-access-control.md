@@ -100,7 +100,7 @@ Worm Trading 摘要入口不授予普通 Wallet 列表/详情能力。API Server
 
 连接与 selection 管理采用原生 HTTP 边界，不是公开 RPC 权限。selection GET 要求交互式 READ，全量管理目录要求交互式 RW；owner 与 Solana 过滤由服务端给出，读取不改凭据，故无需 lease。替换 selection 要求 exact origin 和 expected-revision CAS，范围为 0–20。每次 connect、reconnect、regenerate 或 retirement-disconnect 还需独立五分钟 `worm.api_credential.manage` lease 与 owner 范围内 Solana Wallet 查询。所有管理入口拒绝 API Key；Wallet 签名仅在内部 Wallet Bearer 及精确 purpose-bound challenge 验证后执行。
 
-组合目录/list/detail GET 要求交互式 READ；POST/PUT/DELETE 要求 RW、exact origin、owner 与 revision，但不需要 Wallet 权限或 Worm 凭据 lease，因为只修改账户模板。创建或完整替换前，API Server 重取引用的事件目录并构造可信展示快照，不能使用浏览器标题或 availability 作为授权证据。API Key 即使能读 Assets 投影也不能进入此 facade。
+组合目录/list/detail GET 要求交互式 READ；POST/PUT/DELETE 要求 RW、exact origin、owner 与 revision，但不需要 Wallet 权限或 Worm 凭据 lease，因为只修改账户模板。创建或完整替换前，API Server facade 核验交互式准入，只转发组合、事件等 ID 与可信账户身份元数据；Trading 核验当前 RW、owner 与 revision，重取权威事件目录、校验事件归属和方向，并构造可信展示快照。浏览器标题或 availability 不能作为授权证据。API Key 即使能读 Assets 投影也不能进入此 facade。
 
 Preview 的 owner-scoped plan/step GET 要求交互式 READ；创建 POST 要求 RW 与 exact origin，只接收组合 UUID、expected revision、当前 selection revision，以及按顺序排列的 1–20 个当前已选 Wallet ID，不执行 step-up。API Server 核验每个 Wallet owner 后才持久化异步 preview 请求。浏览器的组合/Wallet 选择和 Refresh 需要 RW；owner 范围内 `?planId=` Review 保持 READ 可用，且不请求管理连接目录。API Key 不能创建或读取 Preview。
 

@@ -59,9 +59,9 @@ ATHENA_UI_E2E_MODE=smoke yarn playwright test --config=playwright.worm-retiremen
 
 通知工具对固定五个 `worm-markets.*` 来源执行 report/apply/report，三次均退出 0；`pending=0`、`sending=0`、`cancelled=0`、`retired_total=0` 且 `counts_verified=true`。既有 delivery 0、attempt 0、Topic 1、consumed 1、两个 sender 记录及 Bot `next_update_id=487823039` 保持；没有测试消息或替代消息外发。
 
-数据库工具的 apply 前报告经人工核对：目标 `worm_markets`、OID `17152`、owner `athena`、server identity `7685665987292844070`、活跃连接 0，并以九个真实 DSN 完整核验全部保留库。完全相同参数追加 `--apply` 后于 11:13:35 UTC 精确 DROP，复查返回 `already_absent`。原 1000 条 market 与 2969 条 price history 随专属库直接删除，没有归档或转存。保留库为 `postgres`、`athena`、`temporal`、`temporal_visibility`、`worm_trading`、`wallet`、`managed_oo`、`profit_sharing`、`token`；Trading 与 Wallet 全表 count/fingerprint 在删除后和正常重启后均与原值一致。
+数据库工具的 apply 前报告经控制器核对：目标 `worm_markets`、OID `17152`、owner `athena`、server identity `7685665987292844070`、活跃连接 0，并以九个真实 DSN 完整核验全部保留库。完全相同参数追加 `--apply` 后于 11:13:35 UTC 精确 DROP，复查返回 `already_absent`。原 1000 条 market 与 2969 条 price history 随专属库直接删除，没有归档或转存。保留库为 `postgres`、`athena`、`temporal`、`temporal_visibility`、`worm_trading`、`wallet`、`managed_oo`、`profit_sharing`、`token`；Trading 与 Wallet 全表 count/fingerprint 在删除后和正常重启后均与原值一致。
 
-最终 preservation audit 退出 0，逐项确认 16 个历史通知来源、28 条现行 HTTP 路径和七条 Trading 路由未因退役操作改变；Markets 的三条旧 HTTP 路径继续为 404。
+最终 preservation audit 退出 0，逐项确认 16 个历史迁移源文件、28 条现行 HTTP 路径和七条 Trading 路由未因退役操作改变；Markets 的三条旧 HTTP 路径继续为 404。
 
 删除前真实 main shell smoke 为 2 passed；新业务只读 spec 为 4 passed。三条已删除 Markets HTTP 路由实际返回 404。正常 stop 后第二次 `make run` 连接相同 server identity，只看到九个保留库，未重建 Markets。重启后的首次真实浏览器套件为 3 passed / 1 failed：desktop `/account/profile` 停在 Loading Athena，bootstrap 请求在 5 秒内未返回；失败窗口没有 gRPC handler 记录，UI proxy 也没有 error，具体 pre-gRPC 延迟原因未定位。未修改产品或测试；随后 proxy/direct bootstrap 分别在 4ms/1ms 返回 200，同一套件复验为 4 passed / 0 skipped / 0 flaky，耗时 17.177s。该复验只证明随后运行成功，不声称首次超时已定位或修复。
 

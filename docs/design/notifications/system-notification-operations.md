@@ -39,7 +39,7 @@ Market Radar、Managed OO 等现行生产者自行决定告警条件并保留来
 ## 运行流程
 
 1. Notification CLI 打开自己的 `athena` pool并校验内部 Bearer；`NewServer` 在 `Start` 前借原 pool 配置 Trader Sync summaries。`Start` 先取得 sender session/恢复屏障，再同步 Bot 资料、检查长轮询兼容性，启动 poller 与 worker 后才报告 SERVING。异常旧 sender 必须先由操作员确认停止并用恢复命令处理。
-2. 四个现有生产者仅在各自通知功能开启时创建鉴权客户端，调用 `SendSystemNotification` 提交来源、严重程度、标题/正文/链接、逻辑 chat 和 Topic 标签。
+2. Market Radar 与 Managed OO 两个现行业务生产者仅在各自通知功能开启时创建鉴权客户端，调用 `SendSystemNotification` 提交来源、严重程度、标题/正文/链接、逻辑 chat 和 Topic 标签。管理员测试通知由 API Server facade 单独入队，不计作业务生产者。
 3. 服务校验请求和渲染后的 Telegram 长度。`EnsureSystemNotificationTopic` 先读取持久 `(telegram_chat,label)`；不存在时取得 PostgreSQL advisory lock，调用 Telegram 创建 Topic，再保存 message-thread ID。
 4. 接受请求后插入引用 Topic 的 pending 投递并返回 ID。消息发送只在 worker 内进行；Topic 创建仍可能在入队前调用 Telegram。
 5. account、system、reply 候选与 Trader Sync `summary_head` 协调共同进入统一调度；summary head 只守护未解决批次首条，冻结 parts 仍复用 account delivery/permit/result。候选保留未来 NotBefore，不用全局前 N 条遮蔽其他 owner。调度按 owner 公平轮转并优先即将到期任务，跨 chat 默认并发 12，同 chat 串行。Bot 20 次/秒、私聊至少一秒和群组 20 次/分钟都以实际 started 推进。
@@ -51,7 +51,7 @@ Market Radar、Managed OO 等现行生产者自行决定告警条件并保留来
 
 - `system_notification_topics` 以 `(telegram_chat,label)` 为键，保存正数 `message_thread_id`；逻辑 chat 仅为 test/prod。
 - `system_notification_deliveries` 保存来源、严重程度、标题/正文/链接、channel、逻辑 chat、Topic、状态、provider 结果、尝试数、下一尝试时间与领取信息；Topic 为外键，`current_attempt_id` 指向当前许可。
-- 系统表实际状态为 pending/sending/sent/failed/unknown；pending 且 attempts>0 单独计入 retry。公共状态契约另含 cancelled，供账户与 reply 使用；系统表没有 cancelled 状态。终态不自动重发。
+- 系统表实际状态为 pending/sending/sent/failed/unknown/cancelled；pending 且 attempts>0 单独计入 retry。来源退役时，工具把该来源仍为 pending 的记录改为 cancelled，并写入退役原因；终态不自动重发。
 - `notification_delivery_attempts` 保存 work kind/ID、sender incarnation、不可变实际数字 chat/group、不可变 digest、授权/实际起点/结果时间、message ID、outcome/code/retry-after。系统 attempt 的 owner 为空；许可事务按 kind 核验实际投递关系。
 
 `SystemNotificationDeliveryItem` 与 `SystemNotificationDeliveryDetail` 是内部和公开契约共享的投影，仅包含系统通知；不包含账户投递或私聊标识。除原字段外，投影保留 authorizedAt、startedAt、resultAt；缺失起点为空，不当作发送成功时间。管理员能筛选 sending/unknown/cancelled，unknown 使用明确警示和“不会自动重发”说明，运行页独立展示 sending/unknown 数量。
@@ -60,7 +60,7 @@ Market Radar、Managed OO 等现行生产者自行决定告警条件并保留来
 
 | 配置 | 行为 |
 | --- | --- |
-| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Notification、API Server 与四个现有生产者共享的必需 Bearer。 |
+| `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` | Notification、API Server 与 Market Radar、Managed OO 两个现行业务生产者共享的必需 Bearer；API Server 还将它用于管理员测试 facade。 |
 | `ATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID` | `TELEGRAM_CHAT_TEST` 对应的具体群组。 |
 | `ATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID` | `TELEGRAM_CHAT_PROD` 对应的具体群组。 |
 | `ATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN`、`..._API_URL`、`..._TIMEOUT_SECONDS` | Bot 身份、API 地址及适配器超时；worker 消息另有五秒 context 截止，长轮询使用独立客户端。 |

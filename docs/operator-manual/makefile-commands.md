@@ -360,8 +360,9 @@ Bearer，不是钱包加密主密钥。Wallet 与 API Server 必须配置同一�
 都会被拒绝。
 
 `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` 采用相同的最小长度和独立性要求，
-但只用于 Notification gRPC。Notification、API Server 和四个系统通知生产者必须使用
-同一个值；健康检查不携带该凭证，其他内部 RPC 缺失或不匹配时会被拒绝。
+但只用于 Notification gRPC。Notification、API Server 和 Market Radar、Managed OO 两个
+现行业务生产者必须使用同一个值；管理员测试通知通过 API Server facade 入队，不另算
+业务生产者。健康检查不携带该凭证，其他内部 RPC 缺失或不匹配时会被拒绝。
 `make prod-reset-secrets` 会同时生成一个与 Wallet、Wallet signer 和 Worm Trading
 内部 token 均不相同的 40 位值。
 
