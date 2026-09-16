@@ -58,6 +58,7 @@ type WormAPIClient interface {
 type WormAPIClientFactory interface {
 	NewUnauthenticatedClient() (WormAPIClient, error)
 	NewAuthenticatedClient(apiKey, apiSecret string) (WormAPIClient, error)
+	NewCatalogClient() (WormCatalogClient, error)
 }
 
 type officialWormAPIClientFactory struct {
@@ -106,7 +107,11 @@ func (f *officialWormAPIClientFactory) NewAuthenticatedClient(apiKey, apiSecret 
 	return f.newClient(apiKey, apiSecret)
 }
 
-func (f *officialWormAPIClientFactory) newClient(apiKey, apiSecret string) (WormAPIClient, error) {
+func (f *officialWormAPIClientFactory) NewCatalogClient() (WormCatalogClient, error) {
+	return f.newClient("", "")
+}
+
+func (f *officialWormAPIClientFactory) newClient(apiKey, apiSecret string) (worm.Client, error) {
 	rateLimiter := f.unauthenticatedRateLimiter
 	if apiKey != "" || apiSecret != "" {
 		rateLimiter = f.authenticatedRateLimiter
