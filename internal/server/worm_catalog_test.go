@@ -33,9 +33,37 @@ func (c catalogHTTPClientset) WormTrading() trading.WormTradingServiceClient { r
 
 type catalogHTTPClient struct {
 	trading.WormTradingServiceClient
-	calls int
-	err   error
-	t     *testing.T
+	calls       int
+	createCalls int
+	createReq   *trading.CreateMarketCombinationRequest
+	updateCalls int
+	updateReq   *trading.UpdateMarketCombinationRequest
+	err         error
+	t           *testing.T
+}
+
+func (c *catalogHTTPClient) UpdateMarketCombination(ctx context.Context, req *trading.UpdateMarketCombinationRequest, _ ...grpc.CallOption) (*trading.UpdateMarketCombinationResponse, error) {
+	c.updateCalls++
+	c.updateReq = req
+	md, _ := metadata.FromOutgoingContext(ctx)
+	require.Equal(c.t, []string{httpCatalogAccountID}, md.Get("x-athena-account-id"))
+	item := req.GetItems()[0]
+	return &trading.UpdateMarketCombinationResponse{Combination: &trading.MarketCombination{
+		Id: req.GetId(), OwnerAccountId: req.GetOwnerAccountId(), Name: req.GetName(), Revision: req.GetExpectedRevision() + 1, CreatedAt: 1, UpdatedAt: 2,
+		Items: []*trading.MarketCombinationItem{{Ordinal: 1, EventConditionId: item.GetEventConditionId(), EventTitle: "Trusted event", MarketConditionId: item.GetMarketConditionId(), MarketTitle: "Trusted market", IsYes: item.GetIsYes(), OutcomeLabel: "YES"}},
+	}}, nil
+}
+
+func (c *catalogHTTPClient) CreateMarketCombination(ctx context.Context, req *trading.CreateMarketCombinationRequest, _ ...grpc.CallOption) (*trading.CreateMarketCombinationResponse, error) {
+	c.createCalls++
+	c.createReq = req
+	md, _ := metadata.FromOutgoingContext(ctx)
+	require.Equal(c.t, []string{httpCatalogAccountID}, md.Get("x-athena-account-id"))
+	item := req.GetItems()[0]
+	return &trading.CreateMarketCombinationResponse{Combination: &trading.MarketCombination{
+		Id: "965f7c56-5e65-450d-8faf-8bd9b918aeeb", OwnerAccountId: req.GetOwnerAccountId(), Name: req.GetName(), Revision: 1, CreatedAt: 1, UpdatedAt: 1,
+		Items: []*trading.MarketCombinationItem{{Ordinal: 1, EventConditionId: item.GetEventConditionId(), EventTitle: "Trusted event", MarketConditionId: item.GetMarketConditionId(), MarketTitle: "Trusted market", IsYes: item.GetIsYes(), OutcomeLabel: "YES"}},
+	}}, nil
 }
 
 func (c *catalogHTTPClient) GetOrderEventCatalog(ctx context.Context, req *trading.GetOrderEventCatalogRequest, _ ...grpc.CallOption) (*trading.GetOrderEventCatalogResponse, error) {
@@ -89,16 +117,6 @@ func TestWormCatalogHTTPRejectsAPIKey(t *testing.T) {
 	require.Equal(t, http.StatusUnauthorized, w.Code, w.Body.String())
 	require.Zero(t, c.calls)
 }
-func TestWormCombinationPreResolutionUsesTrustedAccountIdentity(t *testing.T) {
-	s, c := newCatalogHTTPServer(t)
-	mux := http.NewServeMux()
-	registerWormCombinationHandlers(mux, s)
-	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, catalogHTTPRequest("POST", "/api/v1/worm-trading/combinations", `{"name":"Selection","items":[{"eventConditionId":"`+httpCatalogEventID+`","marketConditionId":"`+httpCatalogEventID+`","side":"YES"}]}`))
-	require.Equal(t, 1, c.calls, w.Body.String())
-	require.Equal(t, http.StatusConflict, w.Code, w.Body.String())
-}
-
 func TestWormCatalogHTTPPreservesRevocationAndCancellation(t *testing.T) {
 	for _, tc := range []struct {
 		code     codes.Code

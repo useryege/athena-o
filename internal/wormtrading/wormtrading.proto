@@ -407,17 +407,15 @@ message BatchGetWalletPositionSnapshotsResponse {
   string status = 5;
 }
 
-// MarketCombinationItemInput is an API-Server-validated market selection and
-// its trusted display snapshot. Array order is the persisted execution order.
+// MarketCombinationItemInput is an untrusted user selection. Worm Trading
+// resolves its trusted display snapshot before persistence. Array order is the
+// persisted execution order.
 message MarketCombinationItemInput {
   string event_condition_id = 1;
-  string event_title = 2;
-  string event_logo = 3;
+  reserved 2, 3, 5, 6, 8;
+  reserved "event_title", "event_logo", "market_title", "market_logo", "outcome_label";
   string market_condition_id = 4;
-  string market_title = 5;
-  string market_logo = 6;
   bool is_yes = 7;
-  string outcome_label = 8;
 }
 
 message MarketCombinationItem {

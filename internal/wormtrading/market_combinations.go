@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/wormtrading/apiclient"
 	wormstore "github.com/useryege/athena/internal/wormtrading/store"
 	"google.golang.org/grpc/codes"
@@ -18,6 +19,9 @@ func (s *Service) CreateMarketCombination(
 	ctx context.Context,
 	req *apiclient.CreateMarketCombinationRequest,
 ) (*apiclient.CreateMarketCombinationResponse, error) {
+	if _, err := s.authorizeCatalogAccount(ctx, req.GetOwnerAccountId(), accountaccess.AccessLevelReadWrite); err != nil {
+		return nil, err
+	}
 	ownerAccountID, err := normalizeMarketCombinationAccountID(req.GetOwnerAccountId())
 	if err != nil {
 		return nil, err
@@ -25,7 +29,10 @@ func (s *Service) CreateMarketCombination(
 	if err := s.requireMarketCombinationStore(); err != nil {
 		return nil, err
 	}
-	items := marketCombinationInputsFromProto(req.GetItems())
+	items, err := s.resolveMarketCombinationItems(ctx, req.GetItems())
+	if err != nil {
+		return nil, err
+	}
 	combination, err := s.credentialStore.CreateMarketCombination(ctx, ownerAccountID, req.GetName(), items)
 	s.recordCredentialStoreResult(err)
 	if err != nil {
@@ -95,6 +102,9 @@ func (s *Service) UpdateMarketCombination(
 	ctx context.Context,
 	req *apiclient.UpdateMarketCombinationRequest,
 ) (*apiclient.UpdateMarketCombinationResponse, error) {
+	if _, err := s.authorizeCatalogAccount(ctx, req.GetOwnerAccountId(), accountaccess.AccessLevelReadWrite); err != nil {
+		return nil, err
+	}
 	ownerAccountID, err := normalizeMarketCombinationAccountID(req.GetOwnerAccountId())
 	if err != nil {
 		return nil, err
@@ -109,7 +119,10 @@ func (s *Service) UpdateMarketCombination(
 	if err := s.requireMarketCombinationStore(); err != nil {
 		return nil, err
 	}
-	items := marketCombinationInputsFromProto(req.GetItems())
+	items, err := s.resolveMarketCombinationItems(ctx, req.GetItems())
+	if err != nil {
+		return nil, err
+	}
 	combination, err := s.credentialStore.UpdateMarketCombination(
 		ctx,
 		ownerAccountID,
@@ -175,27 +188,6 @@ func normalizeMarketCombinationID(value string) (string, error) {
 		return "", status.Error(codes.InvalidArgument, "id must be a valid non-zero UUID")
 	}
 	return parsed.String(), nil
-}
-
-func marketCombinationInputsFromProto(items []*apiclient.MarketCombinationItemInput) []wormstore.MarketCombinationItemInput {
-	converted := make([]wormstore.MarketCombinationItemInput, 0, len(items))
-	for _, item := range items {
-		if item == nil {
-			converted = append(converted, wormstore.MarketCombinationItemInput{})
-			continue
-		}
-		converted = append(converted, wormstore.MarketCombinationItemInput{
-			EventConditionID:  item.GetEventConditionId(),
-			EventTitle:        item.GetEventTitle(),
-			EventLogo:         item.GetEventLogo(),
-			MarketConditionID: item.GetMarketConditionId(),
-			MarketTitle:       item.GetMarketTitle(),
-			MarketLogo:        item.GetMarketLogo(),
-			IsYes:             item.GetIsYes(),
-			OutcomeLabel:      item.GetOutcomeLabel(),
-		})
-	}
-	return converted
 }
 
 func marketCombinationToProto(combination *wormstore.MarketCombination) *apiclient.MarketCombination {

@@ -10,14 +10,11 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
-	"time"
 	"unicode"
 	"unicode/utf8"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/google/uuid"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -36,8 +33,6 @@ const (
 	wormCombinationMaximumPageSize  = int32(100)
 	wormCombinationMaximumBodyBytes = int64(1024 * 1024)
 	wormCombinationMaximumNameRunes = 80
-	wormCatalogFetchConcurrency     = 4
-	wormCatalogResolveBudget        = 45 * time.Second
 	wormCatalogMaximumPriceLength   = 128
 )
 
@@ -238,7 +233,7 @@ func (server *AthenaServer) createWormCombination(w http.ResponseWriter, request
 		walletsecret.WriteError(w, err)
 		return
 	}
-	items, err := server.resolveWormCombinationItems(ctx, input.Items)
+	items, err := wormCombinationSelectionsToProto(input.Items)
 	if err != nil {
 		walletsecret.WriteError(w, err)
 		return
@@ -291,7 +286,7 @@ func (server *AthenaServer) updateWormCombination(w http.ResponseWriter, request
 		walletsecret.WriteError(w, err)
 		return
 	}
-	items, err := server.resolveWormCombinationItems(ctx, input.Items)
+	items, err := wormCombinationSelectionsToProto(input.Items)
 	if err != nil {
 		walletsecret.WriteError(w, err)
 		return
@@ -371,24 +366,12 @@ func (server *AthenaServer) loadWormOrderEventCatalog(ctx context.Context, event
 	return projectWormOrderEventCatalog(result, eventConditionID)
 }
 
-func (server *AthenaServer) resolveWormCombinationItems(
-	ctx context.Context,
-	selections []wormCombinationItemSelection,
-) ([]*wormtradingapiclient.MarketCombinationItemInput, error) {
+func wormCombinationSelectionsToProto(selections []wormCombinationItemSelection) ([]*wormtradingapiclient.MarketCombinationItemInput, error) {
 	if len(selections) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "at least one market is required")
 	}
-	resolveCtx, cancel := context.WithTimeout(ctx, wormCatalogResolveBudget)
-	defer cancel()
-	type normalizedSelection struct {
-		eventConditionID  string
-		marketConditionID string
-		isYes             bool
-	}
-	normalized := make([]normalizedSelection, len(selections))
-	eventIDs := make([]string, 0, len(selections))
-	seenEvents := make(map[string]struct{}, len(selections))
 	seenMarkets := make(map[string]struct{}, len(selections))
+	converted := make([]*wormtradingapiclient.MarketCombinationItemInput, 0, len(selections))
 	for index, selection := range selections {
 		eventConditionID, err := canonicalWormConditionID(selection.EventConditionID, "item event condition ID")
 		if err != nil {
@@ -410,83 +393,11 @@ func (server *AthenaServer) resolveWormCombinationItems(
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "item %d side must be YES or NO", index+1)
 		}
-		normalized[index] = normalizedSelection{
-			eventConditionID:  eventConditionID,
-			marketConditionID: marketConditionID,
-			isYes:             isYes,
-		}
-		if _, exists := seenEvents[eventConditionID]; !exists {
-			seenEvents[eventConditionID] = struct{}{}
-			eventIDs = append(eventIDs, eventConditionID)
-		}
-	}
-
-	catalogs := make(map[string]wormEventCatalogResponse, len(eventIDs))
-	var catalogsMu sync.Mutex
-	group, groupCtx := errgroup.WithContext(resolveCtx)
-	group.SetLimit(wormCatalogFetchConcurrency)
-	for _, eventConditionID := range eventIDs {
-		eventConditionID := eventConditionID
-		group.Go(func() error {
-			catalog, err := server.loadWormOrderEventCatalog(groupCtx, eventConditionID)
-			if err != nil {
-				return err
-			}
-			catalogsMu.Lock()
-			catalogs[eventConditionID] = catalog
-			catalogsMu.Unlock()
-			return nil
+		converted = append(converted, &wormtradingapiclient.MarketCombinationItemInput{
+			EventConditionId: eventConditionID, MarketConditionId: marketConditionID, IsYes: isYes,
 		})
 	}
-	if err := group.Wait(); err != nil {
-		if status.Code(err) == codes.NotFound {
-			return nil, status.Error(codes.FailedPrecondition, "a selected Worm event is no longer available")
-		}
-		return nil, err
-	}
-
-	resolved := make([]*wormtradingapiclient.MarketCombinationItemInput, 0, len(normalized))
-	for index, selection := range normalized {
-		catalog, exists := catalogs[selection.eventConditionID]
-		if !exists {
-			return nil, status.Error(codes.Internal, "Worm Trading returned an incomplete event catalog set")
-		}
-		var market *wormEventCatalogMarket
-		for marketIndex := range catalog.Markets {
-			if catalog.Markets[marketIndex].MarketConditionID == selection.marketConditionID {
-				market = &catalog.Markets[marketIndex]
-				break
-			}
-		}
-		if market == nil {
-			return nil, status.Errorf(codes.FailedPrecondition, "item %d market is not part of the selected event", index+1)
-		}
-		wantedSide := "NO"
-		if selection.isYes {
-			wantedSide = "YES"
-		}
-		var outcome *wormEventCatalogOutcome
-		for outcomeIndex := range market.Outcomes {
-			if market.Outcomes[outcomeIndex].Side == wantedSide {
-				outcome = &market.Outcomes[outcomeIndex]
-				break
-			}
-		}
-		if outcome == nil || !outcome.Selectable {
-			return nil, status.Errorf(codes.FailedPrecondition, "item %d market direction is not selectable", index+1)
-		}
-		resolved = append(resolved, &wormtradingapiclient.MarketCombinationItemInput{
-			EventConditionId:  catalog.EventConditionID,
-			EventTitle:        catalog.Title,
-			EventLogo:         catalog.Logo,
-			MarketConditionId: market.MarketConditionID,
-			MarketTitle:       market.Title,
-			MarketLogo:        market.Logo,
-			IsYes:             selection.isYes,
-			OutcomeLabel:      outcome.Label,
-		})
-	}
-	return resolved, nil
+	return converted, nil
 }
 
 func projectWormOrderEventCatalog(
