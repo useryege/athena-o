@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/useryege/athena/internal/accountstate/schema"
+	"github.com/useryege/athena/internal/notification/retirement"
 	"github.com/useryege/athena/internal/notification/store"
 )
 
@@ -60,83 +60,32 @@ func run(ctx context.Context, args []string, out io.Writer) (runErr error) {
 	if err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(ctx, o.Timeout)
-	defer cancel()
-	dsn, err := schema.LoadDSN(os.LookupEnv)
-	if err != nil {
-		return err
-	}
-	connectCtx, connectCancel := context.WithTimeout(ctx, 5*time.Second)
-	pool, err := schema.ConnectVerified(connectCtx, dsn)
-	connectCancel()
-	if err != nil {
-		return fmt.Errorf("connect/verify account-state: %w", err)
-	}
-	defer pool.Close()
-	operationCtx, operationCancel := context.WithTimeout(ctx, 5*time.Second)
-	pooledLock, err := pool.Acquire(operationCtx)
-	if err != nil {
-		operationCancel()
-		return err
-	}
-	// Detach before taking the advisory lock so even a single-connection pool
-	// has capacity for the maintenance queries. Close the physical session at exit.
-	lock := pooledLock.Hijack()
-	defer func() {
-		closeCtx, closeCancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer closeCancel()
-		_ = lock.Close(closeCtx)
-	}()
-	err = lock.QueryRow(operationCtx, `SELECT current_database(),oid::bigint,current_user,coalesce(inet_server_addr()::text,'local'),coalesce(inet_server_port(),0),pg_postmaster_start_time() FROM pg_database WHERE datname=current_database()`).Scan(&r.Database, &r.DatabaseOID, &r.User, &r.ServerAddress, &r.ServerPort, &r.ServerStartedAt)
-	if err != nil {
-		operationCancel()
-		return err
-	}
-	var acquired bool
-	err = lock.QueryRow(operationCtx, `SELECT pg_try_advisory_lock(hashtextextended('athena:retire-sports-notifications',0))`).Scan(&acquired)
-	operationCancel()
-	if err != nil {
-		return err
-	}
-	if !acquired {
-		return fmt.Errorf("another Sports retirement command holds the database lock")
-	}
-	s := store.NewSQLStore(pool) // Borrowed; pool ownership stays with this command.
-	r.RetiredSportsCounts, err = s.CountRetiredSports(ctx)
-	if err != nil {
-		return err
-	}
-	r.CountsVerified = true
-	if !o.Apply {
-		r.Status = "read_only"
-		return nil
-	}
-	r.Status = "incomplete"
-	for {
-		n, err := s.CancelRetiredSportsPending(ctx, 100)
-		if err != nil {
-			r.CountsVerified = false
-			return err
-		}
-		r.Cancelled += n
-		counts, err := s.CountRetiredSports(ctx)
-		if err != nil {
-			r.CountsVerified = false
-			return err
-		}
-		r.RetiredSportsCounts = counts
-		if r.Pending == 0 && r.Sending == 0 {
-			r.Status = "completed"
-			return nil
-		}
-		timer := time.NewTimer(time.Second)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			return fmt.Errorf("retirement unfinished (last observed pending=%d sending=%d): %w", r.Pending, r.Sending, ctx.Err())
-		case <-timer.C:
-		}
-	}
+	common, err := retirement.Run(ctx, retirement.Config{
+		Apply:         o.Apply,
+		Timeout:       o.Timeout,
+		BatchSize:     100,
+		LockName:      "athena:retire-sports-notifications",
+		LockHeldError: "another Sports retirement command holds the database lock",
+		Count: func(ctx context.Context, s *store.SQLStore) (retirement.Snapshot, error) {
+			counts, err := s.CountRetiredSports(ctx)
+			return retirement.Snapshot{Pending: counts.Pending, Sending: counts.Sending}, err
+		},
+		Retire: func(ctx context.Context, s *store.SQLStore, batchSize int32) (retirement.Batch, error) {
+			cancelled, err := s.CancelRetiredSportsPending(ctx, batchSize)
+			return retirement.Batch{Cancelled: cancelled}, err
+		},
+	})
+	r.Database = common.Database
+	r.DatabaseOID = common.DatabaseOID
+	r.User = common.User
+	r.ServerAddress = common.ServerAddress
+	r.ServerPort = common.ServerPort
+	r.ServerStartedAt = common.ServerStartedAt
+	r.Cancelled = common.Cancelled
+	r.RetiredSportsCounts = store.RetiredSportsCounts{Pending: common.Pending, Sending: common.Sending}
+	r.CountsVerified = common.CountsVerified
+	r.Status = common.Status
+	return err
 }
 
 func main() {

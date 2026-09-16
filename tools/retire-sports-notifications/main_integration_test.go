@@ -32,7 +32,11 @@ func TestRunReadOnlyApplyReentryAndMutualExclusion(t *testing.T) {
 	require.NoError(t, run(ctx, nil, &out))
 	var report result
 	require.NoError(t, json.Unmarshal(out.Bytes(), &report))
+	var fields map[string]any
+	require.NoError(t, json.Unmarshal(out.Bytes(), &fields))
+	require.NotContains(t, fields, "retired_total")
 	require.Equal(t, "read_only", report.Status)
+	require.True(t, report.CountsVerified)
 	require.EqualValues(t, 1, report.Pending)
 	require.NotEmpty(t, report.Database)
 	var state string
