@@ -81,14 +81,6 @@
                                         "dataAccess": 1
                                     },
                                     {
-                                        "module": 2,
-                                        "dataAccess": 1
-                                    },
-                                    {
-                                        "module": 3,
-                                        "dataAccess": 0
-                                    },
-                                    {
                                         "module": 4,
                                         "dataAccess": 0
                                     },
@@ -98,10 +90,6 @@
                                     },
                                     {
                                         "module": 11,
-                                        "dataAccess": 0
-                                    },
-                                    {
-                                        "module": 7,
                                         "dataAccess": 0
                                     },
                                     {
@@ -152,14 +140,6 @@
                                         "dataAccess": 0
                                     },
                                     {
-                                        "module": 2,
-                                        "dataAccess": 0
-                                    },
-                                    {
-                                        "module": 3,
-                                        "dataAccess": 0
-                                    },
-                                    {
                                         "module": 4,
                                         "dataAccess": 0
                                     },
@@ -169,10 +149,6 @@
                                     },
                                     {
                                         "module": 11,
-                                        "dataAccess": 0
-                                    },
-                                    {
-                                        "module": 7,
                                         "dataAccess": 0
                                     },
                                     {
@@ -223,14 +199,6 @@
                                         "dataAccess": 1
                                     },
                                     {
-                                        "module": 2,
-                                        "dataAccess": 1
-                                    },
-                                    {
-                                        "module": 3,
-                                        "dataAccess": 0
-                                    },
-                                    {
                                         "module": 4,
                                         "dataAccess": 0
                                     },
@@ -240,10 +208,6 @@
                                     },
                                     {
                                         "module": 11,
-                                        "dataAccess": 0
-                                    },
-                                    {
-                                        "module": 7,
                                         "dataAccess": 0
                                     },
                                     {
@@ -294,14 +258,6 @@
                                         "dataAccess": 1
                                     },
                                     {
-                                        "module": 2,
-                                        "dataAccess": 1
-                                    },
-                                    {
-                                        "module": 3,
-                                        "dataAccess": 0
-                                    },
-                                    {
                                         "module": 4,
                                         "dataAccess": 0
                                     },
@@ -311,10 +267,6 @@
                                     },
                                     {
                                         "module": 11,
-                                        "dataAccess": 0
-                                    },
-                                    {
-                                        "module": 7,
                                         "dataAccess": 0
                                     },
                                     {
@@ -374,14 +326,6 @@
                                 "dataAccess": 1
                             },
                             {
-                                "module": 2,
-                                "dataAccess": 1
-                            },
-                            {
-                                "module": 3,
-                                "dataAccess": 0
-                            },
-                            {
                                 "module": 4,
                                 "dataAccess": 0
                             },
@@ -391,10 +335,6 @@
                             },
                             {
                                 "module": 11,
-                                "dataAccess": 0
-                            },
-                            {
-                                "module": 7,
                                 "dataAccess": 0
                             },
                             {
@@ -563,16 +503,6 @@
                         },
                         {
                             "name": "market-radar",
-                            "status": "SERVING",
-                            "errorMessage": ""
-                        },
-                        {
-                            "name": "sports-live",
-                            "status": "UNREACHABLE",
-                            "errorMessage": "Health check timed out after 5 seconds."
-                        },
-                        {
-                            "name": "sports-history",
                             "status": "SERVING",
                             "errorMessage": ""
                         },

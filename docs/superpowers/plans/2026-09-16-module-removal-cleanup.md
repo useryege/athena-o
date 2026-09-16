@@ -220,7 +220,7 @@ go build ./cmd/athena-server ./cmd/athena-account-state-migrate ./cmd/athena-not
 
 **输出：**菜单、权限编辑和路由不再提供三项业务，Worm 七条页面路由与全部现有操作保留。
 
-- [ ] 先扩展账户权限测试：管理员提交的 `moduleAccess` 长度从 11 改为 8，包含原编号 5／11 的 Worm 权限及 9 的 Wallet；不包含 2／3／7。保留其余权限比较、编辑与读写上限断言。
+- [x] 先扩展账户权限测试：管理员提交的 `moduleAccess` 长度从 11 改为 8，包含原编号 5／11 的 Worm 权限及 9 的 Wallet；不包含 2／3／7。保留其余权限比较、编辑与读写上限断言。
 
 ```ts
 // 在现有 AdminAccountsService().updateAccess(...) 调用之后检查真实提交结构。
@@ -231,7 +231,7 @@ expect(payload.moduleAccess.find((item: {module: number}) => item.module === 12)
     .toEqual({module: 12, dataAccess: 0});
 ```
 
-- [ ] 新增浏览器删除回归：使用既有已登录 member／admin fixture，访问三个废弃详情入口，断言现有未找到页面且没有旧业务请求；管理员权限列表无三项，会员菜单无三项。测试覆盖部署根路径与 `/athena`，Worm 菜单和七路由保持原权限约束。
+- [x] 新增浏览器删除回归：使用既有已登录 member／admin fixture，访问三个废弃详情入口，断言现有未找到页面且没有旧业务请求；管理员权限列表无三项，会员菜单无三项。测试覆盖部署根路径与 `/athena`，Worm 菜单和七路由保持原权限约束。
 
 ```ts
 import {expect, test} from '@playwright/test';
@@ -256,8 +256,8 @@ for (const oldPath of ['/sports-live', '/sports-history', '/world-cup-corners'])
 
 管理员权限和 Worm 正向覆盖扩展现有 `admin-accounts`、`worm-assets-combinations`、`worm-executions` 场景；修订 fixture 的八类权限与真实新协议一致。上述 UI fixture 不能证明真实后端旧路由已注销，T3 与 T6 的 API 检查仍需执行。
 
-- [ ] 删除专属实现与请求服务；清理 `app.tsx`、`routes.tsx`、`services.ts`、共享注册和帮助中的调用。`sports-models.ts`／`sports-market-card.tsx` 当前只被 Sports 页和专属用例使用，核对后一并删除；共享组件与其他市场类型保留。
-- [ ] 更新主题混合场景中 Sports 的路由和数据，保留 Market Radar、Managed OO、Worm 场景；不重写或抹去 v21 历史批准事实。样式规则只删除已无消费者的选择器。
+- [x] 删除专属实现与请求服务；清理 `app.tsx`、`routes.tsx`、`services.ts`、共享注册和帮助中的调用。`sports-models.ts`／`sports-market-card.tsx` 当前只被 Sports 页和专属用例使用，核对后一并删除；共享组件与其他市场类型保留。
+- [x] 更新主题混合场景中 Sports 的路由和数据，保留 Market Radar、Managed OO、Worm 场景；不重写或抹去 v21 历史批准事实。样式规则只删除已无消费者的选择器。
 
 **运行与预期（在 `ui/`）：**
 
@@ -277,11 +277,11 @@ Playwright 真正执行与清理证据由 T6 统一完成；本任务单元检�
 
 **输出：**启动不要求废弃配置，不准备 Sports 库；新部署清单不会自动重建旧程序。永久删除仍仅由 T8 执行。
 
-- [ ] 先给已有 `Modules()` 和 `fullStackModules()` 测试增加“不含 Sports、仍含两个 Worm”的断言；移除 Sports 配置后解析生产 Compose，断言服务／depends_on／migration 目标不存在，Worm、Wallet、Notification 保留。该测试要读取实际解析结果，不只搜索文本。
-- [ ] 清理注册表的 API 地址白名单、`fullStackModules()` 的 Sports 两库、初始化 SQL 和迁移模块；普通运行器遇到历史实例记录时保留 owner 信息供停服，不删除状态文件掩盖遗留进程。旧 Token／Temporal 准备保持本期清理边界，交由后续运行计划调整。
-- [ ] 移除 `docker-compose.prod.yml` 中 Sports 两服务及其依赖、专属环境项；移除两个索引器的 Make 变量／构建／镜像／部署目标、两份部署脚本和两目录。`.env` 和模板按键删除，不整文件覆盖，不更改保留凭据。
-- [ ] 检查部署预检与 schema 服务列表，所有实际账户库使用者都进入不兼容 schema 的维护顺序，包括实际部署的 Solana；不照搬只含三个旧服务的列表。清理后的 API 不得因 Sports 地址／DSN／token 缺失而失败。
-- [ ] 检查 `hack/prod-remote-deploy.sh` 及 Make 包装的副作用：现有 `prod-deploy-remote` 带 secrets 重置前置步骤，既有 cleanup 可能执行整 project `down --remove-orphans`。退役手册使用经核对的发布步骤与精确对象，不把这些包装命令当作安全的单模块删除入口，不为清理重置其他服务凭据。
+- [x] 先给已有 `Modules()` 和 `fullStackModules()` 测试增加“不含 Sports、仍含两个 Worm”的断言；移除 Sports 配置后解析生产 Compose，断言服务／depends_on／migration 目标不存在，Worm、Wallet、Notification 保留。该测试要读取实际解析结果，不只搜索文本。
+- [x] 清理注册表的 API 地址白名单、`fullStackModules()` 的 Sports 两库、初始化 SQL 和迁移模块；普通运行器遇到历史实例记录时保留 owner 信息供停服，不删除状态文件掩盖遗留进程。旧 Token／Temporal 准备保持本期清理边界，交由后续运行计划调整。
+- [x] 移除 `docker-compose.prod.yml` 中 Sports 两服务及其依赖、专属环境项；移除两个索引器的 Make 变量／构建／镜像／部署目标、两份部署脚本和两目录。`.env` 和模板按键删除，不整文件覆盖，不更改保留凭据。
+- [x] 检查部署预检与 schema 服务列表，所有实际账户库使用者都进入不兼容 schema 的维护顺序，包括实际部署的 Solana；不照搬只含三个旧服务的列表。清理后的 API 不得因 Sports 地址／DSN／token 缺失而失败。
+- [x] 检查 `hack/prod-remote-deploy.sh` 及 Make 包装的副作用：现有 `prod-deploy-remote` 带 secrets 重置前置步骤，既有 cleanup 可能执行整 project `down --remove-orphans`。退役手册使用经核对的发布步骤与精确对象，不把这些包装命令当作安全的单模块删除入口，不为清理重置其他服务凭据。
 - [ ] 本地 `dist`、镜像、临时部署包按实际归属整理：只删除已经不被任何保留进程使用的专属产物；共享 `PROD_IMAGE`、PostgreSQL 基础镜像及混合日志／缓存保留。现场旧文件等 T8 完成定位与停服后处理。
 
 **运行与预期：**

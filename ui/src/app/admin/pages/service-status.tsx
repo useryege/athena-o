@@ -14,8 +14,6 @@ const serviceLabels: Record<string, string> = {
     'notification': 'Notification',
     'wallet': 'Wallet',
     'market-radar': 'Market Radar',
-    'sports-live': 'Sports Live',
-    'sports-history': 'Sports History',
     'managed-oo': 'Managed OO',
     'worm-markets': 'Worm Markets',
     'worm-trading': 'Worm Trading',

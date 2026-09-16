@@ -6,11 +6,8 @@ export enum AccountDataAccess {
 
 export enum AccountDataModule {
     MarketRadar = 1,
-    SportsLive = 2,
-    SportsHistory = 3,
     ManagedOO = 4,
     WormMarkets = 5,
-    WorldCupCorners = 7,
     Token = 8,
     Wallet = 9,
     WormTrading = 11,
@@ -45,22 +42,6 @@ export const accountDataModules: AccountDataModuleDefinition[] = [
         maxAccess: AccountDataAccess.Read
     },
     {
-        module: AccountDataModule.SportsLive,
-        id: 'sports_live',
-        label: 'Sports Live',
-        description: 'Current sports events and live price histories.',
-        group: 'markets',
-        maxAccess: AccountDataAccess.Read
-    },
-    {
-        module: AccountDataModule.SportsHistory,
-        id: 'sports_history',
-        label: 'Sports History',
-        description: 'Completed sports history, sync state, and manual refresh.',
-        group: 'markets',
-        maxAccess: AccountDataAccess.ReadWrite
-    },
-    {
         module: AccountDataModule.ManagedOO,
         id: 'managed_oo',
         label: 'Managed OO',
@@ -84,14 +65,6 @@ export const accountDataModules: AccountDataModuleDefinition[] = [
         description: 'Owner-scoped Solana balances and Worm trading operations.',
         group: 'markets',
         maxAccess: AccountDataAccess.ReadWrite
-    },
-    {
-        module: AccountDataModule.WorldCupCorners,
-        id: 'world_cup_corners',
-        label: 'World Cup Corners',
-        description: 'Protected World Cup corner and result dataset.',
-        group: 'markets',
-        maxAccess: AccountDataAccess.Read
     },
     {
         module: AccountDataModule.Token,

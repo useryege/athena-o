@@ -1,7 +1,6 @@
 import executionCases from './fixtures/worm-executions.json';
 import wormCases from './fixtures/worm-assets-combinations.json';
 import marketCases from './fixtures/markets.json';
-import sportsCases from './fixtures/sports.json';
 import managedOOCases from './fixtures/managed-oo.json';
 import walletCases from './fixtures/wallets.json';
 import solanaCases from './fixtures/solana.json';
@@ -70,7 +69,6 @@ export const themeCases: ThemeCase[] = [
     ...(executionCases as ThemeCase[]),
     ...(wormCases as ThemeCase[]),
     ...(marketCases as ThemeCase[]),
-    ...(sportsCases as ThemeCase[]),
     ...(managedOOCases as ThemeCase[]),
     ...(identityCases as ThemeCase[]),
     ...(walletCases as ThemeCase[]),

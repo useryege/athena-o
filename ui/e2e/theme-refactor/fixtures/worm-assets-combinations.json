@@ -59,20 +59,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -605,19 +593,7 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
@@ -1030,20 +1006,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -1168,20 +1132,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -1411,20 +1363,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -1617,20 +1557,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -1720,20 +1648,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -1826,19 +1742,7 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
@@ -1947,19 +1851,7 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
@@ -2114,20 +2006,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -2357,20 +2237,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -2629,20 +2497,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -3115,20 +2971,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -3661,20 +3505,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -4688,20 +4520,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -5193,7 +5013,9 @@
                     "observedLiquidated": false,
                     "requestedAt": 1789372800,
                     "updatedAt": 1789372800,
-                    "allowedActions": ["AUTHORIZE_CASH_OUT"],
+                    "allowedActions": [
+                        "AUTHORIZE_CASH_OUT"
+                    ],
                     "positionRequestPubkey": "3vbqPKB1JYbeuh1Bwdcu1unwhWhmxZ5HYBFUJ7qFNVM1"
                 }
             },
@@ -5309,20 +5131,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -5819,7 +5629,9 @@
                     "observedLiquidated": false,
                     "requestedAt": 1789372800,
                     "updatedAt": 1789372800,
-                    "allowedActions": ["CHECK_STATUS"],
+                    "allowedActions": [
+                        "CHECK_STATUS"
+                    ],
                     "reasonCode": "CLOSE_OUTCOME_UNKNOWN"
                 }
             },
@@ -5844,7 +5656,9 @@
                     "observedLiquidated": false,
                     "requestedAt": 1789372800,
                     "updatedAt": 1789372800,
-                    "allowedActions": ["CHECK_STATUS"],
+                    "allowedActions": [
+                        "CHECK_STATUS"
+                    ],
                     "reasonCode": "CLOSE_OUTCOME_UNKNOWN"
                 }
             }
@@ -5910,20 +5724,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -6426,7 +6228,10 @@
                     ],
                     "createdAt": 1789372800,
                     "updatedAt": 1789372800,
-                    "allowedActions": ["AUTHORIZE_BATCH", "CANCEL"]
+                    "allowedActions": [
+                        "AUTHORIZE_BATCH",
+                        "CANCEL"
+                    ]
                 }
             },
             {
@@ -6468,7 +6273,10 @@
                     ],
                     "createdAt": 1789372800,
                     "updatedAt": 1789372800,
-                    "allowedActions": ["AUTHORIZE_BATCH", "CANCEL"]
+                    "allowedActions": [
+                        "AUTHORIZE_BATCH",
+                        "CANCEL"
+                    ]
                 }
             },
             {
@@ -6557,7 +6365,10 @@
                     ],
                     "createdAt": 1789372800,
                     "updatedAt": 1789372800,
-                    "allowedActions": ["AUTHORIZE_BATCH", "CANCEL"]
+                    "allowedActions": [
+                        "AUTHORIZE_BATCH",
+                        "CANCEL"
+                    ]
                 }
             }
         ]
@@ -6622,20 +6433,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -7138,7 +6937,11 @@
                     ],
                     "createdAt": 1789372800,
                     "updatedAt": 1789372800,
-                    "allowedActions": ["CHECK_STATUS", "TERMINATE", "CONTINUE"],
+                    "allowedActions": [
+                        "CHECK_STATUS",
+                        "TERMINATE",
+                        "CONTINUE"
+                    ],
                     "reasonCode": "BALANCE_INCREASE_TIMEOUT",
                     "currentItem": {
                         "id": "22000000-0000-4000-8000-000000000020",
@@ -7212,7 +7015,11 @@
                     ],
                     "createdAt": 1789372800,
                     "updatedAt": 1789372800,
-                    "allowedActions": ["CHECK_STATUS", "TERMINATE", "CONTINUE"],
+                    "allowedActions": [
+                        "CHECK_STATUS",
+                        "TERMINATE",
+                        "CONTINUE"
+                    ],
                     "reasonCode": "BALANCE_INCREASE_TIMEOUT",
                     "currentItem": {
                         "id": "22000000-0000-4000-8000-000000000020",
@@ -7345,7 +7152,11 @@
                     ],
                     "createdAt": 1789372800,
                     "updatedAt": 1789372800,
-                    "allowedActions": ["CHECK_STATUS", "TERMINATE", "CONTINUE"],
+                    "allowedActions": [
+                        "CHECK_STATUS",
+                        "TERMINATE",
+                        "CONTINUE"
+                    ],
                     "reasonCode": "BALANCE_INCREASE_TIMEOUT",
                     "currentItem": {
                         "id": "22000000-0000-4000-8000-000000000020",
@@ -7442,20 +7253,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",
@@ -7958,7 +7757,10 @@
                     ],
                     "createdAt": 1789372800,
                     "updatedAt": 1789372800,
-                    "allowedActions": ["CHECK_STATUS", "TERMINATE"],
+                    "allowedActions": [
+                        "CHECK_STATUS",
+                        "TERMINATE"
+                    ],
                     "reasonCode": "CLOSE_OUTCOME_UNKNOWN",
                     "currentItem": {
                         "id": "22000000-0000-4000-8000-000000000020",
@@ -8032,7 +7834,10 @@
                     ],
                     "createdAt": 1789372800,
                     "updatedAt": 1789372800,
-                    "allowedActions": ["CHECK_STATUS", "TERMINATE"],
+                    "allowedActions": [
+                        "CHECK_STATUS",
+                        "TERMINATE"
+                    ],
                     "reasonCode": "CLOSE_OUTCOME_UNKNOWN",
                     "currentItem": {
                         "id": "22000000-0000-4000-8000-000000000020",
@@ -8165,7 +7970,10 @@
                     ],
                     "createdAt": 1789372800,
                     "updatedAt": 1789372800,
-                    "allowedActions": ["CHECK_STATUS", "TERMINATE"],
+                    "allowedActions": [
+                        "CHECK_STATUS",
+                        "TERMINATE"
+                    ],
                     "reasonCode": "CLOSE_OUTCOME_UNKNOWN",
                     "currentItem": {
                         "id": "22000000-0000-4000-8000-000000000020",
@@ -8262,20 +8070,8 @@
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_LIVE",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_SPORTS_HISTORY",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
                                         "module": "ACCOUNT_DATA_MODULE_MANAGED_OO",
                                         "dataAccess": "ACCOUNT_DATA_ACCESS_READ_WRITE"
-                                    },
-                                    {
-                                        "module": "ACCOUNT_DATA_MODULE_WORLD_CUP_CORNERS",
-                                        "dataAccess": "ACCOUNT_DATA_ACCESS_READ"
                                     },
                                     {
                                         "module": "ACCOUNT_DATA_MODULE_WORM_TRADING",

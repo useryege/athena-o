@@ -19,7 +19,6 @@ import {
     QuestionCircleOutlined,
     SettingOutlined,
     SwapOutlined,
-    TrophyOutlined,
     WalletOutlined
 } from '@ant-design/icons';
 import {App as AntApp, Breadcrumb, Button, Dropdown, Layout as AntLayout, Menu, Result, Space, Spin, Tag, Tooltip, Typography} from 'antd';
@@ -62,8 +61,6 @@ import {
     MarketRadarHotPage,
     MarketRadarMoversPage,
     MarketRadarRealtimePage,
-    SportsLivePage,
-    SportsHistoryPage,
     SolanaPage,
     ManagedOODisputesPage,
     ManagedOOProposalsPage,
@@ -74,7 +71,6 @@ import {
     WormTradingExecutionDetailPage,
     WormTradingExecutionsPage,
     WormTradingPage,
-    WorldCupCornersPage,
     ProfitSharingRoundsPage,
     ProfitSharingRoundPage,
     LoginPage,
@@ -146,22 +142,6 @@ const marketRadarNavItem: NavItem = {
     ]
 };
 
-const sportsNavItem: NavItem = {
-    key: 'sports',
-    label: 'Sports',
-    icon: <TrophyOutlined />,
-    children: [
-        {key: '/sports-live', label: 'Sports Live', path: '/sports-live', icon: <DashboardOutlined />, module: AccountDataModule.SportsLive},
-        {
-            key: '/sports-history',
-            label: 'Sports History',
-            path: '/sports-history',
-            icon: <DashboardOutlined />,
-            module: AccountDataModule.SportsHistory
-        }
-    ]
-};
-
 const managedOONavItem: NavItem = {
     key: 'managed-oo',
     label: 'Managed OO',
@@ -218,16 +198,8 @@ const navSections: NavSection[] = [
         children: [
             marketRadarNavItem,
             {key: '/trader-sync', label: 'Trader Sync', path: '/trader-sync', icon: <SwapOutlined />, module: AccountDataModule.TraderSync},
-            sportsNavItem,
             managedOONavItem,
-            wormTradingNavItem,
-            {
-                key: '/world-cup-corners',
-                label: 'World Cup Corners',
-                path: '/world-cup-corners',
-                icon: <BarChartOutlined />,
-                module: AccountDataModule.WorldCupCorners
-            }
+            wormTradingNavItem
         ]
     },
     {
@@ -361,11 +333,8 @@ const isPendingAccess = (access: AccessState) => accountStatusForAccess(access.u
 const moduleLandingPaths: Partial<Record<AccountDataModule, string>> = {
     [AccountDataModule.TraderSync]: '/trader-sync',
     [AccountDataModule.MarketRadar]: '/market-radar',
-    [AccountDataModule.SportsLive]: '/sports-live',
-    [AccountDataModule.SportsHistory]: '/sports-history',
     [AccountDataModule.ManagedOO]: '/managed-oo/proposals',
     [AccountDataModule.WormTrading]: '/worm-trading',
-    [AccountDataModule.WorldCupCorners]: '/world-cup-corners',
     [AccountDataModule.Solana]: '/solana',
     [AccountDataModule.Wallet]: '/wallet'
 };
@@ -478,9 +447,6 @@ const AppRoutes = (props: {access: AccessState; settings: AuthSettings; loggingO
                 <Route path='/market-radar/realtime' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarRealtimePage key={identityKey} />)} />
                 <Route path='/market-radar/movers' element={moduleRoute(AccountDataModule.MarketRadar, <MarketRadarMoversPage key={identityKey} />)} />
                 <Route path='/solana' element={moduleRoute(AccountDataModule.Solana, <SolanaPage />)} />
-                <Route path='/sports-live' element={moduleRoute(AccountDataModule.SportsLive, <SportsLivePage key={identityKey} />)} />
-                <Route path='/sports-history' element={moduleRoute(AccountDataModule.SportsHistory, <SportsHistoryPage key={identityKey} />)} />
-                <Route path='/world-cup-corners' element={moduleRoute(AccountDataModule.WorldCupCorners, <WorldCupCornersPage key={identityKey} />)} />
                 <Route path='/managed-oo/proposals' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOOProposalsPage key={identityKey} />)} />
                 <Route path='/managed-oo/disputes' element={moduleRoute(AccountDataModule.ManagedOO, <ManagedOODisputesPage key={identityKey} />)} />
                 <Route

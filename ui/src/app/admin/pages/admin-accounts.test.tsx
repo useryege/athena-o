@@ -37,7 +37,7 @@ test('real editor exposes only NONE and RW for Trader Sync and edits full matrix
     const solanaChoice = tree!.root.findAllByType(Select).find(item => item.props['aria-label'] === 'Solana data access for @member');
     expect(solanaChoice!.props.options.map((item: any) => item.value)).toEqual([0, 1]);
     act(() => choice!.props.onChange(0));
-    expect(edited.moduleAccess).toHaveLength(11);
+    expect(edited.moduleAccess).toHaveLength(8);
     expect(edited.moduleAccess.find((item: any) => item.module === 12).dataAccess).toBe(0);
     expect(edited.moduleAccess.find((item: any) => item.module === 13).dataAccess).toBe(1);
     expect(edited.moduleAccess.find((item: any) => item.module === 8).dataAccess).toBe(1);

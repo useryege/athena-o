@@ -7,7 +7,7 @@
 
 | 层面 | 状态 |
 | --- | --- |
-| 代码清理 | T1–T3 完成，T4–T5 实施中 |
+| 代码清理 | T1–T4 完成，T5 配置完成、历史产物待现场盘点 |
 | 运行退役 | 尚未执行，历史 IP 与默认卷不视为现场事实 |
 | 数据删除 | 尚未执行；四库直接删除策略已批准 |
 
@@ -40,3 +40,13 @@ sports-models/sports-market-card 仅由待删 Sports 页面及专属测试使用
 运行日志：`t3-go-retry.log`、`t3-store-retry.log`、`t3-integration.log`（初次旧模块数量断言失配已在重验修正）、`t3-build.log`。schema、txgate 与 migrate 命令集成通过；API、账户、迁移、服务命令测试及五个消费者构建通过。
 
 sqlc、account-state-schema-contract、protogen、clientgen 已从源生成。protogen 使用任务独立 GOPATH，首次第三方 proto 搜索路径失败已修正后成功；31 个只有 gzip 压缩字节差异的产物在解压描述符与剩余源码均逐字一致后恢复原文件，清单 `generator-compression-only.txt`。所有日志保留；未手改生成逻辑。
+
+## T4 前端
+
+三个页面、菜单、权限、专属服务与样式已移除；混合市场场景保留 Radar、Managed OO 和全部 Worm 场景。新增旧路由未找到、无旧请求、管理员八权限和七条 Worm 路由场景。五个 Jest suites / 16 tests、lint 与生产 UI build 通过；Playwright 结果归 T6，尚不计真实验收。证据 `t4-tests-retry.log`、`t4-lint-final.log`、`t4-build.log`。
+
+## T5 启动与部署
+
+现有六程序编排保留，数据库准备不再创建 Sports 两库；Compose、索引器构建/部署入口及精确配置清理。账户 schema 维护从实际 Compose 识别所有同 DSN 消费者（含 profile 服务），拒绝不同 DSN 未核对的情况；迁移前核验退出，TS 单独发布只恢复维护前运行项。
+
+runtime/migration/CLI 测试、实际 Compose 解析、部署脚本模拟及改动脚本 ShellCheck 均通过：`t5-runtime-correct.log`、`t5-compose.log`、`t5-deploy-final.log`、`t5-shellcheck-final.log`。两次手动验证命令误写旧 CLI 路径的 setup failure 已改为实际 `cmd/athena-local-runtime` 重验；产品代码无对应失败。历史 dist/镜像未删除，等待归属与现场条件核对。
