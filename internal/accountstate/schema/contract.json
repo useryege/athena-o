@@ -1937,12 +1937,12 @@
   {
     "kind": "constraint",
     "name": "account_module_access.account_module_access_max_level_check",
-    "definition": "CHECK (((access_level \u003c\u003e 'read_write'::text) OR (module = ANY (ARRAY['sports_history'::text, 'managed_oo'::text, 'worm_trading'::text, 'token'::text, 'wallet'::text, 'trader_sync'::text])))) validated=t"
+    "definition": "CHECK (((access_level \u003c\u003e 'read_write'::text) OR (module = ANY (ARRAY['managed_oo'::text, 'worm_trading'::text, 'token'::text, 'wallet'::text, 'trader_sync'::text])))) validated=t"
   },
   {
     "kind": "constraint",
     "name": "account_module_access.account_module_access_module_check",
-    "definition": "CHECK ((module = ANY (ARRAY['market_radar'::text, 'sports_live'::text, 'sports_history'::text, 'managed_oo'::text, 'worm_markets'::text, 'worm_trading'::text, 'world_cup_corners'::text, 'token'::text, 'solana'::text, 'wallet'::text, 'trader_sync'::text]))) validated=t"
+    "definition": "CHECK ((module = ANY (ARRAY['market_radar'::text, 'managed_oo'::text, 'worm_markets'::text, 'worm_trading'::text, 'token'::text, 'solana'::text, 'wallet'::text, 'trader_sync'::text]))) validated=t"
   },
   {
     "kind": "constraint",

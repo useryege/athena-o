@@ -159,7 +159,7 @@ go build -o .superpowers/module-removal/retire-sports-notifications ./tools/reti
 
 **输出：**无废弃业务注册、账户权限只保留八类模块、新旧库统一 schema 和可独立验证的迁移命令。
 
-- [ ] 先在 `internal/accountaccess/access_test.go` 增加真实权限行为断言，预期当前代码仍识别旧模块而失败：
+- [x] 先在 `internal/accountaccess/access_test.go` 增加真实权限行为断言，预期当前代码仍识别旧模块而失败：
 
 ```go
 func TestRetiredModulesAreRejected(t *testing.T) {
@@ -172,8 +172,8 @@ func TestRetiredModulesAreRejected(t *testing.T) {
 }
 ```
 
-- [ ] 集成测试同时覆盖空库和旧库：用 `pgtest.NewUnmigrated` 与只包含历史迁移的 `fstest.MapFS` 建立旧结构，写入只拥有 Sports 的账户及带 Worm／Wallet 权限的账户，运行全部迁移；断言三类行删除、保留权限与 login／API Key 标志不变、派生 Pending 正确。插入三种废弃模块应被约束拒绝；新旧最终 catalog 均通过 `schema.Verify`。保留已有版本集合检查，不删历史迁移记录。
-- [ ] 追加迁移核心内容如下；使用 Goose 默认事务，失败完整回滚本次迁移。保留原访问级别及 Trader Sync 的额外约束：
+- [x] 集成测试同时覆盖空库和旧库：用 `pgtest.NewUnmigrated` 与只包含历史迁移的 `fstest.MapFS` 建立旧结构，写入只拥有 Sports 的账户及带 Worm／Wallet 权限的账户，运行全部迁移；断言三类行删除、保留权限与 login／API Key 标志不变、派生 Pending 正确。插入三种废弃模块应被约束拒绝；新旧最终 catalog 均通过 `schema.Verify`。保留已有版本集合检查，不删历史迁移记录。
+- [x] 追加迁移核心内容如下；使用 Goose 默认事务，失败完整回滚本次迁移。保留原访问级别及 Trader Sync 的额外约束：
 
 ```sql
 -- +goose Up
@@ -196,11 +196,11 @@ END $$;
 -- +goose StatementEnd
 ```
 
-- [ ] 移除 `account_access.sql` 的三组更新参数、`account_directory.sql` 的三类初始权限及相关 Go 映射；清理 `sqlc.yaml` 的四个专属输入。完成整批 SQL 后运行 `make sqlc-local`，再调整 `sql_store.go` 的生成参数消费者，运行 `make account-state-schema-contract` 更新契约。
-- [ ] 删除公共账号 proto 中编号 2、3、7 对应的三个值，声明 `reserved 2, 3, 7` 及其原名字；其余编号不变。清理 API 构造、关闭、权限映射、gateway、健康登记、命令参数及 `common` 专属端口；删除 World Cup Corners 内嵌静态业务数据。
-- [ ] 删除模块代码与 `internal/migration/modules.go` 的 Sports 导入／注册，更新共享 `market_intelligence_types.go` 时只删无保留消费者的类型。生成脚本当前自动发现 `internal/**/*.proto`，删除源及专属旧产物即可取消发现；仅清理真正存在的特殊分支，保留 Worm Swagger 后处理。
-- [ ] 执行 `make protogen`，检查 protobuf／gateway／Swagger／共享生成类型；若类型变更影响 deepcopy，按仓库既有生成入口补齐实际产物。不因本次删除运行合约 ABI 生成器；依赖仅在最后一个保留消费者确实消失时移除。
-- [ ] API 测试核对已注册服务与真实 HTTP 路由：旧 gRPC 方法不再注册，旧 `/api/...` 地址走未知 API 结果而非返回旧业务；Wallet、Worm、账户和健康仍存在。纯权限拒绝不足以证明接口已删除。删除废弃包专属测试，保留混合测试中的其他业务断言。
+- [x] 移除 `account_access.sql` 的三组更新参数、`account_directory.sql` 的三类初始权限及相关 Go 映射；清理 `sqlc.yaml` 的四个专属输入。完成整批 SQL 后运行 `make sqlc-local`，再调整 `sql_store.go` 的生成参数消费者，运行 `make account-state-schema-contract` 更新契约。
+- [x] 删除公共账号 proto 中编号 2、3、7 对应的三个值，声明 `reserved 2, 3, 7` 及其原名字；其余编号不变。清理 API 构造、关闭、权限映射、gateway、健康登记、命令参数及 `common` 专属端口；删除 World Cup Corners 内嵌静态业务数据。
+- [x] 删除模块代码与 `internal/migration/modules.go` 的 Sports 导入／注册，更新共享 `market_intelligence_types.go` 时只删无保留消费者的类型。生成脚本当前自动发现 `internal/**/*.proto`，删除源及专属旧产物即可取消发现；仅清理真正存在的特殊分支，保留 Worm Swagger 后处理。
+- [x] 执行 `make protogen`，检查 protobuf／gateway／Swagger／共享生成类型；若类型变更影响 deepcopy，按仓库既有生成入口补齐实际产物。不因本次删除运行合约 ABI 生成器；依赖仅在最后一个保留消费者确实消失时移除。
+- [x] API 测试核对已注册服务与真实 HTTP 路由：旧 gRPC 方法不再注册，旧 `/api/...` 地址走未知 API 结果而非返回旧业务；Wallet、Worm、账户和健康仍存在。纯权限拒绝不足以证明接口已删除。删除废弃包专属测试，保留混合测试中的其他业务断言。
 
 **运行与预期：**
 

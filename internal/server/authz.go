@@ -155,16 +155,6 @@ var moduleGRPCRules = map[string]grpcModuleRule{
 	"/marketradar.MarketRadarService/ListRealtimeMarkets":  moduleRead(accountaccess.ModuleMarketRadar),
 	"/marketradar.MarketRadarService/ListMarketMovers":     moduleRead(accountaccess.ModuleMarketRadar),
 
-	"/sportslive.SportsLiveService/GetSportsLiveStatus":              moduleRead(accountaccess.ModuleSportsLive),
-	"/sportslive.SportsLiveService/ListSportsLiveEvents":             moduleRead(accountaccess.ModuleSportsLive),
-	"/sportslive.SportsLiveService/BatchGetSportsLivePriceHistories": moduleRead(accountaccess.ModuleSportsLive),
-
-	"/sportshistory.SportsHistoryService/GetSportsHistoryStatus":              moduleRead(accountaccess.ModuleSportsHistory),
-	"/sportshistory.SportsHistoryService/ListSportsHistoryEvents":             moduleRead(accountaccess.ModuleSportsHistory),
-	"/sportshistory.SportsHistoryService/BatchGetSportsHistoryPriceHistories": moduleRead(accountaccess.ModuleSportsHistory),
-	"/sportshistory.SportsHistoryService/GetSportsHistorySyncStatus":          moduleRead(accountaccess.ModuleSportsHistory),
-	"/sportshistory.SportsHistoryService/RefreshSportsHistory":                moduleWrite(accountaccess.ModuleSportsHistory),
-
 	"/managedoo.ManagedOOService/GetManagedOOStatus":     moduleRead(accountaccess.ModuleManagedOO),
 	"/managedoo.ManagedOOService/ListManagedOOProposals": moduleRead(accountaccess.ModuleManagedOO),
 	"/managedoo.ManagedOOService/ListManagedOODisputes":  moduleRead(accountaccess.ModuleManagedOO),
@@ -177,8 +167,6 @@ var moduleGRPCRules = map[string]grpcModuleRule{
 	"/wormtrading.WormTradingService/GetWormTradingStatus":      moduleRead(accountaccess.ModuleWormTrading),
 	"/wormtrading.WormTradingService/ListWalletBalances":        moduleRead(accountaccess.ModuleWormTrading),
 	"/wormtrading.WormTradingService/ListWalletTradingActivity": moduleRead(accountaccess.ModuleWormTrading),
-
-	"/worldcupcorners.WorldCupCornersService/GetWorldCupCornersDataset": moduleRead(accountaccess.ModuleWorldCupCorners),
 
 	"/tokenapi.TokenCatalogService/GetContractCode":                     moduleRead(accountaccess.ModuleToken),
 	"/tokenapi.TokenCatalogService/ListContractCodes":                   moduleRead(accountaccess.ModuleToken),

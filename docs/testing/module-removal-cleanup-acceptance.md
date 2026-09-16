@@ -7,7 +7,7 @@
 
 | 层面 | 状态 |
 | --- | --- |
-| 代码清理 | T1–T2 完成，T3 开始 |
+| 代码清理 | T1–T3 完成，T4–T5 实施中 |
 | 运行退役 | 尚未执行，历史 IP 与默认卷不视为现场事实 |
 | 数据删除 | 尚未执行；四库直接删除策略已批准 |
 
@@ -32,3 +32,11 @@ sports-models/sports-market-card 仅由待删 Sports 页面及专属测试使用
 实现默认只读、显式 --apply、总期限与每次 5 秒操作期限、100 条批次、独占 session advisory lock 和精确六来源。pending 取消与发送许可共享 delivery 行锁，sending/终态/发送尝试保留。
 
 独立 PostgreSQL：容器 `athena-module-removal-20260916-tests`（ID `1ee650507fde`），loopback `127.0.0.1:61752`，同名数据卷，owner 标签为当前实施工作区；fixture 只创建随机 athena_test 库。退役工具与存储集成测试通过，CLI 普通测试和构建通过。日志：`t2-red.log`、`t2-cli-red.log`、`t2-sqlc.log`、`t2-green.log`（包含已修复的 fixture Topic 缺失）、`t2-cli-green.log`。未调用 Telegram，未取得 sender 身份。
+
+## T3 后端与账户
+
+四个程序/实现、三个 API facade、旧公共客户端、权限映射与业务注册已删除。追加 `000004_remove_sports_access.sql`，保留 000001–000003 原文；proto 2/3/7 和旧名称 reserved，其余编号不变。空库与升级库 catalog 校验通过，Sports 行清理、八项授权、Worm/Wallet 权限、login/API Key、Pending 和迁移失败原子回滚/重入均通过数据库测试。
+
+运行日志：`t3-go-retry.log`、`t3-store-retry.log`、`t3-integration.log`（初次旧模块数量断言失配已在重验修正）、`t3-build.log`。schema、txgate 与 migrate 命令集成通过；API、账户、迁移、服务命令测试及五个消费者构建通过。
+
+sqlc、account-state-schema-contract、protogen、clientgen 已从源生成。protogen 使用任务独立 GOPATH，首次第三方 proto 搜索路径失败已修正后成功；31 个只有 gzip 压缩字节差异的产物在解压描述符与剩余源码均逐字一致后恢复原文件，清单 `generator-compression-only.txt`。所有日志保留；未手改生成逻辑。

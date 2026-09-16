@@ -57,20 +57,15 @@ import (
 	"github.com/useryege/athena/internal/server/session"
 	"github.com/useryege/athena/internal/server/settings"
 	serversolana "github.com/useryege/athena/internal/server/solana"
-	serversportshistory "github.com/useryege/athena/internal/server/sportshistory"
-	serversportslive "github.com/useryege/athena/internal/server/sportslive"
 	servertokenapi "github.com/useryege/athena/internal/server/tokenapi"
 	servertradersync "github.com/useryege/athena/internal/server/tradersync"
 	"github.com/useryege/athena/internal/server/version"
 	serverwallet "github.com/useryege/athena/internal/server/wallet"
 	"github.com/useryege/athena/internal/server/walletavatarhttp"
 	"github.com/useryege/athena/internal/server/walletsecrethttp"
-	serverworldcupcorners "github.com/useryege/athena/internal/server/worldcupcorners"
 	serverwormmarkets "github.com/useryege/athena/internal/server/wormmarkets"
 	serverwormtrading "github.com/useryege/athena/internal/server/wormtrading"
 	solanaapiclient "github.com/useryege/athena/internal/solanadiscovery/apiclient"
-	sportshistoryapiclient "github.com/useryege/athena/internal/sportshistory/apiclient"
-	sportsliveapiclient "github.com/useryege/athena/internal/sportslive/apiclient"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
 	trpc "github.com/useryege/athena/internal/tradersync/apiclient"
 	tradersyncstore "github.com/useryege/athena/internal/tradersync/store"
@@ -114,12 +109,9 @@ import (
 	marketradarpkg "github.com/useryege/athena/pkg/apiclient/marketradar"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
 	profitsharingpkg "github.com/useryege/athena/pkg/apiclient/profitsharing"
-	sportshistorypkg "github.com/useryege/athena/pkg/apiclient/sportshistory"
-	sportslivepkg "github.com/useryege/athena/pkg/apiclient/sportslive"
 	tokenapipkg "github.com/useryege/athena/pkg/apiclient/tokenapi"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
-	worldcupcornerspkg "github.com/useryege/athena/pkg/apiclient/worldcupcorners"
 	wormmarketspkg "github.com/useryege/athena/pkg/apiclient/wormmarkets"
 	wormtradingpkg "github.com/useryege/athena/pkg/apiclient/wormtrading"
 )
@@ -228,8 +220,6 @@ type AthenaServerOpts struct {
 	NotificationClientset             notificationapiclient.Clientset
 	WalletClientset                   walletapiclient.Clientset
 	MarketRadarClientset              marketradarapiclient.Clientset
-	SportsLiveClientset               sportsliveapiclient.Clientset
-	SportsHistoryClientset            sportshistoryapiclient.Clientset
 	ManagedOOClientset                managedooapiclient.Clientset
 	WormMarketsClientset              wormmarketsapiclient.Clientset
 	WormTradingClientset              wormtradingapiclient.Clientset
@@ -653,13 +643,10 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	tspkg.RegisterTraderSyncServiceServer(grpcS, server.serviceSet.TraderSyncService)
 	walletpkg.RegisterWalletServiceServer(grpcS, server.serviceSet.WalletService)
 	marketradarpkg.RegisterMarketRadarServiceServer(grpcS, server.serviceSet.MarketRadarService)
-	sportslivepkg.RegisterSportsLiveServiceServer(grpcS, server.serviceSet.SportsLiveService)
-	sportshistorypkg.RegisterSportsHistoryServiceServer(grpcS, server.serviceSet.SportsHistoryService)
 	managedoopkg.RegisterManagedOOServiceServer(grpcS, server.serviceSet.ManagedOOService)
 	wormmarketspkg.RegisterWormMarketsServiceServer(grpcS, server.serviceSet.WormMarketsService)
 	wormtradingpkg.RegisterWormTradingServiceServer(grpcS, server.serviceSet.WormTradingService)
 	profitsharingpkg.RegisterProfitSharingServiceServer(grpcS, server.serviceSet.ProfitSharingService)
-	worldcupcornerspkg.RegisterWorldCupCornersServiceServer(grpcS, server.serviceSet.WorldCupCornersService)
 	tokenapipkg.RegisterTokenCatalogServiceServer(grpcS, server.serviceSet.TokenServices)
 	tokenapipkg.RegisterTokenCollectionServiceServer(grpcS, server.serviceSet.TokenServices)
 	tokenapipkg.RegisterTokenPolicyServiceServer(grpcS, server.serviceSet.TokenServices)
@@ -675,25 +662,22 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 }
 
 type AthenaServiceSet struct {
-	TraderSyncService      *servertradersync.Server
-	HealthService          *health.Server
-	SessionService         *session.Server
-	AppBootstrapService    *serverappbootstrap.Server
-	AccountService         *account.Server
-	VersionService         *version.Server
-	NotificationService    *servernotification.Server
-	WalletService          *serverwallet.Server
-	MarketRadarService     *servermarketradar.Server
-	SportsLiveService      *serversportslive.Server
-	SportsHistoryService   *serversportshistory.Server
-	ManagedOOService       *servermanagedoo.Server
-	WormMarketsService     *serverwormmarkets.Server
-	WormTradingService     *serverwormtrading.Server
-	ProfitSharingService   *serverprofitsharing.Server
-	WorldCupCornersService *serverworldcupcorners.Server
-	TokenServices          *servertokenapi.Server
-	SolanaService          *serversolana.Server
-	ServiceStatusService   *serverservicestatus.Server
+	TraderSyncService    *servertradersync.Server
+	HealthService        *health.Server
+	SessionService       *session.Server
+	AppBootstrapService  *serverappbootstrap.Server
+	AccountService       *account.Server
+	VersionService       *version.Server
+	NotificationService  *servernotification.Server
+	WalletService        *serverwallet.Server
+	MarketRadarService   *servermarketradar.Server
+	ManagedOOService     *servermanagedoo.Server
+	WormMarketsService   *serverwormmarkets.Server
+	WormTradingService   *serverwormtrading.Server
+	ProfitSharingService *serverprofitsharing.Server
+	TokenServices        *servertokenapi.Server
+	SolanaService        *serversolana.Server
+	ServiceStatusService *serverservicestatus.Server
 }
 
 func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
@@ -709,13 +693,10 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	// wallet service
 	walletService := serverwallet.NewServer(server.WalletClientset, server.walletAvatarHTTP.DeleteObjectBestEffort)
 	marketRadarService := servermarketradar.NewServer(server.MarketRadarClientset)
-	sportsLiveService := serversportslive.NewServer(server.SportsLiveClientset)
-	sportsHistoryService := serversportshistory.NewServer(server.SportsHistoryClientset)
 	managedOOService := servermanagedoo.NewServer(server.ManagedOOClientset)
 	wormMarketsService := serverwormmarkets.NewServer(server.WormMarketsClientset)
 	wormTradingService := serverwormtrading.NewServer(server.WalletClientset, server.WormTradingClientset)
 	profitSharingService := serverprofitsharing.NewServer(server.ProfitSharingClientset, server.credentialMgr, server.accessController, server.accountCenter)
-	worldCupCornersService := serverworldcupcorners.NewServer()
 	// token api service
 	tokenAPIService := servertokenapi.NewServer(server.TokenAPIClientset)
 	var solanaClient solanapkg.SolanaServiceClient
@@ -727,8 +708,6 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		server.NotificationClientset,
 		server.WalletClientset,
 		server.MarketRadarClientset,
-		server.SportsLiveClientset,
-		server.SportsHistoryClientset,
 		server.ManagedOOClientset,
 		server.WormMarketsClientset,
 		server.WormTradingClientset,
@@ -748,25 +727,22 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	healthService := health.NewServer()
 
 	return &AthenaServiceSet{
-		TraderSyncService:      servertradersync.New(server.TraderSyncClient, server.resolveTraderSyncActor),
-		HealthService:          healthService,
-		SessionService:         sessionService,
-		AppBootstrapService:    appBootstrapService,
-		AccountService:         accountService,
-		VersionService:         versionService,
-		NotificationService:    notificationService,
-		WalletService:          walletService,
-		MarketRadarService:     marketRadarService,
-		SportsLiveService:      sportsLiveService,
-		SportsHistoryService:   sportsHistoryService,
-		ManagedOOService:       managedOOService,
-		WormMarketsService:     wormMarketsService,
-		WormTradingService:     wormTradingService,
-		ProfitSharingService:   profitSharingService,
-		WorldCupCornersService: worldCupCornersService,
-		TokenServices:          tokenAPIService,
-		SolanaService:          solanaService,
-		ServiceStatusService:   serviceStatusService,
+		TraderSyncService:    servertradersync.New(server.TraderSyncClient, server.resolveTraderSyncActor),
+		HealthService:        healthService,
+		SessionService:       sessionService,
+		AppBootstrapService:  appBootstrapService,
+		AccountService:       accountService,
+		VersionService:       versionService,
+		NotificationService:  notificationService,
+		WalletService:        walletService,
+		MarketRadarService:   marketRadarService,
+		ManagedOOService:     managedOOService,
+		WormMarketsService:   wormMarketsService,
+		WormTradingService:   wormTradingService,
+		ProfitSharingService: profitSharingService,
+		TokenServices:        tokenAPIService,
+		SolanaService:        solanaService,
+		ServiceStatusService: serviceStatusService,
 	}
 }
 
@@ -1138,13 +1114,10 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, tspkg.RegisterTraderSyncServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, walletpkg.RegisterWalletServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, marketradarpkg.RegisterMarketRadarServiceHandler, gwmux, conn)
-	mustRegisterGWHandler(ctx, sportslivepkg.RegisterSportsLiveServiceHandler, gwmux, conn)
-	mustRegisterGWHandler(ctx, sportshistorypkg.RegisterSportsHistoryServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, managedoopkg.RegisterManagedOOServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, wormmarketspkg.RegisterWormMarketsServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, wormtradingpkg.RegisterWormTradingServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, profitsharingpkg.RegisterProfitSharingServiceHandler, gwmux, conn)
-	mustRegisterGWHandler(ctx, worldcupcornerspkg.RegisterWorldCupCornersServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenCatalogServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenCollectionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenPolicyServiceHandler, gwmux, conn)

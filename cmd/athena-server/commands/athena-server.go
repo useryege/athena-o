@@ -21,8 +21,6 @@ import (
 	"github.com/useryege/athena/internal/server"
 	servercache "github.com/useryege/athena/internal/server/cache"
 	solanaapiclient "github.com/useryege/athena/internal/solanadiscovery/apiclient"
-	sportshistoryapiclient "github.com/useryege/athena/internal/sportshistory/apiclient"
-	sportsliveapiclient "github.com/useryege/athena/internal/sportslive/apiclient"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
@@ -63,8 +61,6 @@ func NewCommand() *cobra.Command {
 		notificationServerAddress  string
 		walletServerAddress        string
 		marketRadarServerAddress   string
-		sportsLiveServerAddress    string
-		sportsHistoryServerAddress string
 		managedOOServerAddress     string
 		wormMarketsServerAddress   string
 		wormTradingServerAddress   string
@@ -145,16 +141,6 @@ func NewCommand() *cobra.Command {
 				return fmt.Errorf("create Market Radar clientset: %w", err)
 			}
 			defer utilio.Close(marketRadarClientset)
-			sportsLiveClientset, err := sportsliveapiclient.NewSportsLiveClientset(sportsLiveServerAddress)
-			if err != nil {
-				return fmt.Errorf("create Sports Live clientset: %w", err)
-			}
-			defer utilio.Close(sportsLiveClientset)
-			sportsHistoryClientset, err := sportshistoryapiclient.NewSportsHistoryClientset(sportsHistoryServerAddress)
-			if err != nil {
-				return fmt.Errorf("create Sports History clientset: %w", err)
-			}
-			defer utilio.Close(sportsHistoryClientset)
 			managedOOClientset, err := managedooapiclient.NewManagedOOClientset(managedOOServerAddress)
 			if err != nil {
 				return fmt.Errorf("create Managed OO clientset: %w", err)
@@ -207,8 +193,6 @@ func NewCommand() *cobra.Command {
 				NotificationClientset:             notificationclientset,
 				WalletClientset:                   walletclientset,
 				MarketRadarClientset:              marketRadarClientset,
-				SportsLiveClientset:               sportsLiveClientset,
-				SportsHistoryClientset:            sportsHistoryClientset,
 				ManagedOOClientset:                managedOOClientset,
 				WormMarketsClientset:              wormMarketsClientset,
 				WormTradingClientset:              wormTradingClientset,
@@ -296,8 +280,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&notificationServerAddress, "notification-server-address", env.StringFromEnv("ATHENA_NOTIFICATION_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortNotification)), "Athena notification server address")
 	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_WALLET_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWallet)), "Athena wallet server address")
 	command.Flags().StringVar(&marketRadarServerAddress, "market-radar-server-address", env.StringFromEnv("ATHENA_MARKET_RADAR_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortMarketRadar)), "Athena Market Radar server address")
-	command.Flags().StringVar(&sportsLiveServerAddress, "sports-live-server-address", env.StringFromEnv("ATHENA_SPORTS_LIVE_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortSportsLive)), "Athena Sports Live server address")
-	command.Flags().StringVar(&sportsHistoryServerAddress, "sports-history-server-address", env.StringFromEnv("ATHENA_SPORTS_HISTORY_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortSportsHistory)), "Athena Sports History server address")
 	command.Flags().StringVar(&managedOOServerAddress, "managed-oo-server-address", env.StringFromEnv("ATHENA_MANAGED_OO_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortManagedOO)), "Athena Managed OO server address")
 	command.Flags().StringVar(&wormMarketsServerAddress, "worm-markets-server-address", env.StringFromEnv("ATHENA_WORM_MARKETS_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWormMarkets)), "Athena Worm Markets server address")
 	command.Flags().StringVar(&wormTradingServerAddress, "worm-trading-server-address", env.StringFromEnv("ATHENA_WORM_TRADING_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWormTrading)), "Athena Worm Trading server address")

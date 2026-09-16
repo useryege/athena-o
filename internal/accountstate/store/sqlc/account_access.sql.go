@@ -151,19 +151,16 @@ const replaceAccountModuleAccess = `-- name: ReplaceAccountModuleAccess :execrow
 UPDATE account_module_access AS module_access
 SET access_level = CASE module_access.module
   WHEN 'market_radar' THEN $1::text
-  WHEN 'sports_live' THEN $2::text
-  WHEN 'sports_history' THEN $3::text
-  WHEN 'managed_oo' THEN $4::text
-  WHEN 'worm_markets' THEN $5::text
-  WHEN 'worm_trading' THEN $6::text
-  WHEN 'world_cup_corners' THEN $7::text
-  WHEN 'token' THEN $8::text
-  WHEN 'solana' THEN $9::text
-  WHEN 'wallet' THEN $10::text
-  WHEN 'trader_sync' THEN $11::text
+  WHEN 'managed_oo' THEN $2::text
+  WHEN 'worm_markets' THEN $3::text
+  WHEN 'worm_trading' THEN $4::text
+  WHEN 'token' THEN $5::text
+  WHEN 'solana' THEN $6::text
+  WHEN 'wallet' THEN $7::text
+  WHEN 'trader_sync' THEN $8::text
   ELSE module_access.access_level
 END
-WHERE module_access.account_id = $12::uuid
+WHERE module_access.account_id = $9::uuid
   AND EXISTS (
     SELECT 1
     FROM athena_account AS account
@@ -173,29 +170,23 @@ WHERE module_access.account_id = $12::uuid
 `
 
 type ReplaceAccountModuleAccessParams struct {
-	MarketRadarAccessLevel     string
-	SportsLiveAccessLevel      string
-	SportsHistoryAccessLevel   string
-	ManagedOoAccessLevel       string
-	WormMarketsAccessLevel     string
-	WormTradingAccessLevel     string
-	WorldCupCornersAccessLevel string
-	TokenAccessLevel           string
-	SolanaAccessLevel          string
-	WalletAccessLevel          string
-	TraderSyncAccessLevel      string
-	AccountID                  pgtype.UUID
+	MarketRadarAccessLevel string
+	ManagedOoAccessLevel   string
+	WormMarketsAccessLevel string
+	WormTradingAccessLevel string
+	TokenAccessLevel       string
+	SolanaAccessLevel      string
+	WalletAccessLevel      string
+	TraderSyncAccessLevel  string
+	AccountID              pgtype.UUID
 }
 
 func (q *Queries) ReplaceAccountModuleAccess(ctx context.Context, arg ReplaceAccountModuleAccessParams) (int64, error) {
 	result, err := q.db.Exec(ctx, replaceAccountModuleAccess,
 		arg.MarketRadarAccessLevel,
-		arg.SportsLiveAccessLevel,
-		arg.SportsHistoryAccessLevel,
 		arg.ManagedOoAccessLevel,
 		arg.WormMarketsAccessLevel,
 		arg.WormTradingAccessLevel,
-		arg.WorldCupCornersAccessLevel,
 		arg.TokenAccessLevel,
 		arg.SolanaAccessLevel,
 		arg.WalletAccessLevel,

@@ -12,27 +12,21 @@ import (
 type Module string
 
 const (
-	ModuleMarketRadar     Module = "market_radar"
-	ModuleSportsLive      Module = "sports_live"
-	ModuleSportsHistory   Module = "sports_history"
-	ModuleManagedOO       Module = "managed_oo"
-	ModuleWormMarkets     Module = "worm_markets"
-	ModuleWormTrading     Module = "worm_trading"
-	ModuleWorldCupCorners Module = "world_cup_corners"
-	ModuleToken           Module = "token"
-	ModuleSolana          Module = "solana"
-	ModuleWallet          Module = "wallet"
-	ModuleTraderSync      Module = "trader_sync"
+	ModuleMarketRadar Module = "market_radar"
+	ModuleManagedOO   Module = "managed_oo"
+	ModuleWormMarkets Module = "worm_markets"
+	ModuleWormTrading Module = "worm_trading"
+	ModuleToken       Module = "token"
+	ModuleSolana      Module = "solana"
+	ModuleWallet      Module = "wallet"
+	ModuleTraderSync  Module = "trader_sync"
 )
 
 var allModules = [...]Module{
 	ModuleMarketRadar,
-	ModuleSportsLive,
-	ModuleSportsHistory,
 	ModuleManagedOO,
 	ModuleWormMarkets,
 	ModuleWormTrading,
-	ModuleWorldCupCorners,
 	ModuleToken,
 	ModuleSolana,
 	ModuleWallet,
@@ -58,9 +52,9 @@ func AllModules() []Module {
 // MaxAccessLevel returns the highest meaningful level for a known module.
 func MaxAccessLevel(module Module) (AccessLevel, bool) {
 	switch module {
-	case ModuleMarketRadar, ModuleSportsLive, ModuleWormMarkets, ModuleWorldCupCorners, ModuleSolana:
+	case ModuleMarketRadar, ModuleWormMarkets, ModuleSolana:
 		return AccessLevelRead, true
-	case ModuleSportsHistory, ModuleManagedOO, ModuleWormTrading, ModuleToken, ModuleWallet, ModuleTraderSync:
+	case ModuleManagedOO, ModuleWormTrading, ModuleToken, ModuleWallet, ModuleTraderSync:
 		return AccessLevelReadWrite, true
 	default:
 		return "", false
