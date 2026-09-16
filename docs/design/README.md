@@ -37,7 +37,7 @@
 
 | 子系统 | 能力 | 文档 | 状态 |
 | --- | --- | --- | --- |
-| Trading | 删除 Markets 服务／专属数据，由 Trading 集中承接目录、组合保存验证与执行校验 | [Trading 市场查询内聚](../superpowers/specs/2026-09-16-worm-trading-market-query-design.md) | `方案 A、删除范围与数据策略已确认`；完整技术稿待整体审阅，尚未实施；[业务需求](../requirements/development-runtime/worm-markets-removal.md) |
+| Trading | 删除 Markets 服务／专属数据，由 Trading 集中承接目录、组合保存验证与执行校验 | [Trading 市场查询内聚](../superpowers/specs/2026-09-16-worm-trading-market-query-design.md) | `完整设计已审阅确认`；[十项实施计划](../superpowers/plans/2026-09-16-worm-trading-market-query.md)已编制，尚未实施；[业务需求](../requirements/development-runtime/worm-markets-removal.md) |
 | Service Operations | 本地与生产按板块开放或关闭用户访问 | [板块访问开关](../requirements/development-runtime/business-access-control.md) | `访问范围及默认／重启规则已确认，尚未实施`；现有 API 入口检查持久化开关，关闭后拒绝新的用户业务请求；进程、后台任务和通知继续运行；核心分类、BSC／Sports 删除与 Worm Markets 删除／Trading 保留决定、环境边界及 Token 详细接入延期继续有效；首次默认关闭，之后保留管理员设置，重启不改变开关；[接口、存储与页面接入提案](../superpowers/specs/2026-09-15-business-access-control-design.md)方案已采用并补齐 Trading 的 `worm` 开关、全部用户入口和交易处理边界，共六个可控板块，尚未实施 |
 | Service Operations | 原整组运行控制架构、状态与命令规则 | [历史架构与状态模型](../superpowers/specs/2026-09-15-business-group-control-design.md) | `已暂停，尚未实施`；D01–D03 原确认事实保留，本期不新增 Runtime Control 或业务成员控制协议；[历史需求](../requirements/development-runtime/business-group-control.md)及[历史命令设计](../superpowers/specs/2026-09-15-business-group-control-commands.md)不再作为本期实施依据 |
 | Service Operations | 两个 BSC 索引器与 Sports 的代码和契约删除、失效配置／队列清理、精确部署退役及专属数据直接删除 | [删除与清理配套设计](../superpowers/specs/2026-09-16-module-removal-cleanup-design.md) | `2026-09-16 清理设计自查与补充完成`；范围及专属数据直接删除已确认，Trading 保留，Markets 按独立内聚设计退役；追加迁移、专属产物、失败重入与验收边界已补齐，尚未实施；[优先实施计划](../superpowers/plans/2026-09-16-module-removal-cleanup.md)已整理，按仓库清理、本地验收、现场退役及最终核验推进；Worm 启动／访问接入已在对应设计补齐 |

@@ -1,6 +1,6 @@
 # 两个 BSC 索引器与 Sports 删除清理实施计划
 
-> 最新边界（2026-09-16）：用户另行确认删除 Markets 及其专属数据，采用 [Trading 统一承接目录](../specs/2026-09-16-worm-trading-market-query-design.md)。本文件仍只执行 BSC／Sports 原删除范围，不自行扩大删库或通知来源；下文 Worm 双服务保留基线仅适用于内聚重构前。执行时按目标分支实际状态调整保留回归，不能为通过旧检查重建 Markets。两个任务的账户迁移、约束和共享生成产物必须协调。
+> 最新边界（2026-09-16）：用户另行确认删除 Markets 及其专属数据，已审阅 [Trading 统一承接目录设计](../specs/2026-09-16-worm-trading-market-query-design.md)及要求编制其[实施计划](2026-09-16-worm-trading-market-query.md)。本文件仍只执行 BSC／Sports 原删除范围，不自行扩大删库或通知来源；下文 Worm 双服务保留基线仅适用于内聚重构前。执行时按目标分支实际状态调整保留回归，不能为通过旧检查重建 Markets。两个任务的账户迁移、约束和共享生成产物必须协调。
 
 > **供执行代理：**使用 [executing-plans](../../../.agents/skills/executing-plans/SKILL.md) 逐项执行并复核；需要子代理时按用户选择使用 [subagent-driven-development](../../../.agents/skills/subagent-driven-development/SKILL.md)。用下方复选框记录实际结果。
 
@@ -159,7 +159,7 @@ go build -o .superpowers/module-removal/retire-sports-notifications ./tools/reti
 
 **输入：**T1 精确清单；T2 的通知来源与维护能力已独立于待删 Sports 包。
 
-**输出：**无废弃业务注册、账户权限只保留八类模块、新旧库统一 schema 和可独立验证的迁移命令。
+**输出：**无废弃业务注册、新旧库统一 schema 和可独立验证的迁移命令；仅执行本计划时权限为八类，Markets 删除也已落地时为七类，以当前实际模块集合为准。
 
 - [ ] 先在 `internal/accountaccess/access_test.go` 增加真实权限行为断言，预期当前代码仍识别旧模块而失败：
 
@@ -168,14 +168,13 @@ func TestRetiredModulesAreRejected(t *testing.T) {
     for _, old := range []Module{"sports_live", "sports_history", "world_cup_corners"} {
         if _, ok := MaxAccessLevel(old); ok { t.Fatalf("retired module accepted: %s", old) }
     }
-    if got := len(AllModules()); got != 8 { t.Fatalf("module count=%d", got) }
-    if level, ok := MaxAccessLevel(ModuleWormMarkets); !ok || level != AccessLevelRead { t.Fatal("Worm Markets permission changed") }
     if level, ok := MaxAccessLevel(ModuleWormTrading); !ok || level != AccessLevelReadWrite { t.Fatal("Worm Trading permission changed") }
+    if level, ok := MaxAccessLevel(ModuleWallet); !ok || level != AccessLevelReadWrite { t.Fatal("Wallet permission changed") }
 }
 ```
 
 - [ ] 集成测试同时覆盖空库和旧库：用 `pgtest.NewUnmigrated` 与只包含历史迁移的 `fstest.MapFS` 建立旧结构，写入只拥有 Sports 的账户及带 Worm／Wallet 权限的账户，运行全部迁移；断言三类行删除、保留权限与 login／API Key 标志不变、派生 Pending 正确。插入三种废弃模块应被约束拒绝；新旧最终 catalog 均通过 `schema.Verify`。保留已有版本集合检查，不删历史迁移记录。
-- [ ] 追加迁移核心内容如下；使用 Goose 默认事务，失败完整回滚本次迁移。保留原访问级别及 Trader Sync 的额外约束：
+- [ ] 追加迁移核心内容如下；使用 Goose 默认事务，失败完整回滚本次迁移。保留原访问级别及 Trader Sync 的额外约束。下列 module check 是 Markets 尚在时的集合；若其删除迁移已在前，写入本次未发布迁移前从集合精确去掉 `worm_markets`，不能恢复该合法值。两个删除一起合并时按新计划任务 5 验证两种顺序的最终约束与 contract；不改已应用的历史迁移。
 
 ```sql
 -- +goose Up
@@ -212,17 +211,17 @@ go test -tags=integration ./internal/accountstate/... ./cmd/athena-account-state
 go build ./cmd/athena-server ./cmd/athena-account-state-migrate ./cmd/athena-notification ./cmd/athena-trader-sync ./cmd/athena-solana-discovery
 ```
 
-预期八类权限、旧接口不存在、新旧库校验通过；没有废弃包 import 或手改生成产物。保持 SQL／proto 源与消费者同一提交范围，提交只包含本任务文件。
+预期权限集合符合当前合并范围（八类，或已删 Markets 后七类）、旧接口不存在、新旧库校验通过；没有废弃包 import 或手改生成产物。保持 SQL／proto 源与消费者同一提交范围，提交只包含本任务文件。
 
 ### T4：删除前端入口与专属展示
 
 **文件：**按地图清理三页、服务、模型、卡片；同步 `ui/src/app/shared/access-modules.ts`、现有账户权限测试、管理员权限页测试及 `ui/e2e/theme-refactor/` 的混合覆盖清单。新增 `ui/e2e/module-removal.spec.ts`，修改 `ui/playwright.config.ts` 的 `ui-fixtures.testMatch`，把 `module-removal` 加入原正则；smoke 和 live 的证据分类不变。
 
-**输入：**T3 稳定的八类账户权限和移除后的公共协议。
+**输入：**T3 按当前合并范围确定的账户权限和移除后的公共协议。
 
 **输出：**菜单、权限编辑和路由不再提供三项业务，Worm 七条页面路由与全部现有操作保留。
 
-- [ ] 先扩展账户权限测试：管理员提交的 `moduleAccess` 长度从 11 改为 8，包含原编号 5／11 的 Worm 权限及 9 的 Wallet；不包含 2／3／7。保留其余权限比较、编辑与读写上限断言。
+- [ ] 先扩展账户权限测试：管理员提交的 `moduleAccess` 与当前正式模块集合一致，仅删 Sports 时为8项，Markets也已删时为7项；始终保留编号11的 Trading 及9的 Wallet，不包含2／3／7。编号5仅在 Markets尚未删除时保留；删除后 reserved，不重排其他数字。保留其余权限比较、编辑与读写上限断言。
 
 ```ts
 // 在现有 AdminAccountsService().updateAccess(...) 调用之后检查真实提交结构。
@@ -256,7 +255,7 @@ for (const oldPath of ['/sports-live', '/sports-history', '/world-cup-corners'])
 }
 ```
 
-管理员权限和 Worm 正向覆盖扩展现有 `admin-accounts`、`worm-assets-combinations`、`worm-executions` 场景；修订 fixture 的八类权限与真实新协议一致。上述 UI fixture 不能证明真实后端旧路由已注销，T3 与 T6 的 API 检查仍需执行。
+管理员权限和 Worm 正向覆盖扩展现有 `admin-accounts`、`worm-assets-combinations`、`worm-executions` 场景；修订 fixture 的权限集合与真实新协议一致。上述 UI fixture 不能证明真实后端旧路由已注销，T3 与 T6 的 API 检查仍需执行。
 
 - [ ] 删除专属实现与请求服务；清理 `app.tsx`、`routes.tsx`、`services.ts`、共享注册和帮助中的调用。`sports-models.ts`／`sports-market-card.tsx` 当前只被 Sports 页和专属用例使用，核对后一并删除；共享组件与其他市场类型保留。
 - [ ] 更新主题混合场景中 Sports 的路由和数据，保留 Market Radar、Managed OO、Worm 场景；不重写或抹去 v21 历史批准事实。样式规则只删除已无消费者的选择器。

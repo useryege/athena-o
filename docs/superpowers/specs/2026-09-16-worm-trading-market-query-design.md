@@ -1,6 +1,6 @@
 # Worm Markets 删除与 Trading 市场查询内聚设计
 
-> 状态：2026-09-16 删除范围、专属数据直接删除及方案 A 已获用户采用；本稿补齐技术细节并完成静态自查，待用户整体审阅。尚未实施，尚未编写逐步实施计划。
+> 状态：2026-09-16 用户已完成整体审阅；删除范围、专属数据直接删除、方案 A 与本稿技术细节均已确认。[逐步实施计划](../plans/2026-09-16-worm-trading-market-query.md)已编制，尚未实施。
 >
 > 需求：[删除 Worm Markets，仅保留 Worm Trading](../../requirements/development-runtime/worm-markets-removal.md)。本文覆盖旧设计中的双服务保留、Markets 接入与配置安排；BSC／Sports 删除和访问开关仍按各自范围推进。本次仅修改文档。
 
@@ -71,7 +71,7 @@ flowchart LR
 
 为遵守 SDS-R2，Trading 在这三个方法中通过只读 `AccountAccessReader.GetAccountAccess` 查询当前账户权限，检查 LoginEnabled、有效账户矩阵及 `worm_trading` READ 或 READ_WRITE；沿用现有管理员与业务权限规则，不增设管理员绕过。仅服务 token、旧 Markets 授权或伪造 owner 都不能授予读取／保存权限。账户不存在或未获授权拒绝；读取失败返回暂不可用，不默认放行。
 
-采用仓库已有账户状态 SQLStore 的有限读取接口及独立连接池，增加 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` 为 Trading 的显式依赖，复用已验证账户 schema；不启动账户迁移、借用 API runtime 或反向调用 API。进程命令拥有并关闭该池，目录组件只借用 reader。此项是服务边界重构新增技术细节，需随本稿整体审阅。
+采用仓库已有账户状态 SQLStore 的有限读取接口及独立连接池，增加 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` 为 Trading 的显式依赖，复用已验证账户 schema；不启动账户迁移、借用 API runtime 或反向调用 API。进程命令拥有并关闭该池，服务的权限边界只借用 reader。此项已随本稿整体审阅确认。
 
 其余既有 Trading RPC 的 API 授权、对象归属、Run proof 和 Wallet 目的绑定继续按既有设计执行；本次不扩展为全模块授权协议重写。预览／执行 worker 在进程内调用目录组件，仍由持久任务和既有授权状态约束，不伪造交互请求，不用新的用户访问开关中断已受理工作。
 
@@ -162,5 +162,5 @@ revision 更新或发布维护可能使原授权过期或与当前 revision 不�
 - 已确认目录不依赖 Markets 数据库，迁入范围包括 API 交互、组合保存、预览和执行前检查。
 - 已区分 Markets 专属历史与 Trading 业务快照，删除策略不触及外部持仓和加密凭据。
 - 已同步目标应用／数据库／公共 RPC 数量，旧 BSC／Sports 计划保留其独立范围并标明新决定。
-- 已补齐新增服务侧权限读取、配置、故障域、事务边界及验证要求；这些技术细节属于本稿整体审阅内容。
-- 本次只有文档静态检查。用户审阅本稿后再按 writing-plans 整理分步实施计划；代码、运行验收与退役均未执行。
+- 已补齐新增服务侧权限读取、配置、故障域、事务边界及验证要求，并获用户整体审阅确认。
+- 已按 writing-plans 编制[十项实施计划](../plans/2026-09-16-worm-trading-market-query.md)。当前只有文档静态检查；代码、运行验收与退役均未执行。

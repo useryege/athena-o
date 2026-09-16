@@ -1,8 +1,8 @@
 # 删除 Worm Markets，仅保留 Worm Trading
 
-> 需求状态：2026-09-16 删除范围、Markets 专属数据直接删除及方案 A 已确认；配套技术细节已整理，书面设计待整体审阅，尚未实施。
+> 需求状态：2026-09-16 用户已完成整体设计审阅；删除范围、Markets 专属数据直接删除、方案 A 及配套技术细节均已确认。实施计划已编制，尚未实施。
 >
-> 关联设计：[Worm Markets 删除与 Trading 市场查询内聚](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)。本文覆盖此前“Worm Markets／Trading 都保留”的决定；Sports 与 BSC 的既有删除范围独立保持。
+> 关联设计：[Worm Markets 删除与 Trading 市场查询内聚](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)；[逐项实施计划](../../superpowers/plans/2026-09-16-worm-trading-market-query.md)。本文覆盖此前“Worm Markets／Trading 都保留”的决定；Sports 与 BSC 的既有删除范围独立保持。
 
 ## 背景与目标
 
@@ -55,4 +55,4 @@ Markets 的历史数据和 Trading 保存的交易事实是不同数据。删除
 - 用户要求删除 Worm Markets 板块，只保留 Worm Trading，先开展需求与设计讨论。
 - 用户选择直接删除 Markets 专属数据。
 - 用户采用方案 A：由 Worm Trading 服务集中承接按需市场查询，API 通过 Trading 访问，Trading 内部复用同一套规则。
-- 服务侧身份与权限校验、查询预算、发布切换及退役证据等技术细节见关联设计，尚待书面整体审阅。当前没有执行代码重构、服务启停、远端操作或数据删除。
+- 用户已完成书面整体审阅，并要求编制实施计划；服务侧身份与权限校验、查询预算、发布切换及退役证据按关联设计落实。当前成果是设计与实施计划，没有执行代码重构、服务启停、远端操作或数据删除。
