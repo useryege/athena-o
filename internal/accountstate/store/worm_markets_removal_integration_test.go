@@ -7,6 +7,7 @@ import (
 	"context"
 	"database/sql"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -18,6 +19,7 @@ import (
 	"github.com/useryege/athena/internal/accountstate/schema/catalog"
 	accountstore "github.com/useryege/athena/internal/accountstate/store"
 	"github.com/useryege/athena/internal/accountstate/store/migrations"
+	"github.com/useryege/athena/internal/accountstate/txgate"
 	"github.com/useryege/athena/internal/testutil/pgtest"
 )
 
@@ -94,6 +96,63 @@ func TestWormMarketsRemovalUpgradesSportsSchema(t *testing.T) {
 	require.Equal(t, "enabled", desiredState)
 	require.Equal(t, "pending", notificationStatus)
 	assertSportsModulesRejected(t, ctx, db, accountID)
+
+	fresh := pgtest.New(t, migrations.FS, migrations.Dir)
+	require.True(t, bytes.Equal(schemaCatalog(t, ctx, fresh), schemaCatalog(t, ctx, db)), "000004 upgrade and fresh schemas differ")
+}
+
+func TestWormMarketsRemovalWaitsForAccountSessionGate(t *testing.T) {
+	db := pgtest.NewUnmigrated(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	accountID := uuid.NewString()
+	migrateAccountStateTo(t, ctx, db.DSN, 4)
+	insertRemovalAccount(t, ctx, db, accountID, 4, []string{
+		"market_radar", "managed_oo", "worm_markets", "worm_trading",
+		"token", "solana", "wallet", "trader_sync",
+	})
+
+	gate, err := txgate.AcquireAccountSession(ctx, db.Pool, accountID)
+	require.NoError(t, err)
+	released := false
+	t.Cleanup(func() {
+		if !released {
+			_ = gate.Release(context.Background())
+		}
+	})
+
+	migrationDB, err := sql.Open("pgx", db.DSN)
+	require.NoError(t, err)
+	defer migrationDB.Close()
+	goose.SetBaseFS(migrations.FS)
+	defer goose.SetBaseFS(nil)
+	require.NoError(t, goose.SetDialect("postgres"))
+	done := make(chan error, 1)
+	go func() { done <- goose.UpToContext(ctx, migrationDB, migrations.Dir, 5) }()
+
+	waitForWormMarketsGateWaiter(t, ctx, db, done)
+	rowLock, err := db.Pool.Begin(ctx)
+	require.NoError(t, err)
+	_, err = rowLock.Exec(ctx, `SELECT account_id FROM account_access WHERE account_id=$1 FOR UPDATE NOWAIT`, accountID)
+	require.NoError(t, err, "migration must acquire the advisory gate before the account row lock")
+	require.NoError(t, rowLock.Rollback(ctx))
+
+	var revision int64
+	var marketsRows int
+	require.NoError(t, db.Pool.QueryRow(ctx, `SELECT revision FROM account_access WHERE account_id=$1`, accountID).Scan(&revision))
+	require.EqualValues(t, 4, revision)
+	require.NoError(t, db.Pool.QueryRow(ctx, `SELECT count(*) FROM account_module_access WHERE account_id=$1 AND module='worm_markets'`, accountID).Scan(&marketsRows))
+	require.Equal(t, 1, marketsRows)
+
+	require.NoError(t, gate.Release(ctx))
+	released = true
+	require.NoError(t, <-done)
+	access, err := accountstore.NewSQLStore(db.Pool).GetAccountAccess(ctx, accountID)
+	require.NoError(t, err)
+	require.EqualValues(t, 5, access.Revision)
+	require.Len(t, access.Modules, 7)
+	require.NotContains(t, access.Modules, accountaccess.Module("worm_markets"))
+	require.Contains(t, access.Modules, accountaccess.ModuleWormTrading)
 }
 
 func TestWormMarketsRemovalFromSolanaSchemaMatchesFresh(t *testing.T) {
@@ -171,4 +230,37 @@ func schemaCatalog(t *testing.T, ctx context.Context, db *pgtest.DB) []byte {
 	require.NoError(t, err)
 	require.NoError(t, tx.Commit(ctx))
 	return snapshot
+}
+
+func waitForWormMarketsGateWaiter(t *testing.T, ctx context.Context, db *pgtest.DB, done <-chan error) {
+	t.Helper()
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case err := <-done:
+			require.NoError(t, err)
+			t.Fatal("migration completed while the affected account session gate was held")
+		default:
+		}
+		var waiting bool
+		err := db.Pool.QueryRow(ctx, `SELECT EXISTS (
+			SELECT 1
+			FROM pg_stat_activity AS activity
+			JOIN pg_locks AS lock ON lock.pid = activity.pid
+			WHERE activity.datname = current_database()
+			  AND activity.query LIKE '%affected_accounts AS MATERIALIZED%'
+			  AND lock.locktype = 'advisory'
+			  AND NOT lock.granted
+		)`).Scan(&waiting)
+		require.NoError(t, err)
+		if waiting {
+			return
+		}
+		select {
+		case <-ctx.Done():
+			t.Fatal(ctx.Err())
+		case <-ticker.C:
+		}
+	}
 }

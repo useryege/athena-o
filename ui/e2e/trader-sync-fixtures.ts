@@ -94,7 +94,7 @@ export async function installTraderSyncRoutes(page: Page, scenario: string): Pro
             apiKeyEnabled: false,
             profitSharingEnabled: false,
             revision: '1',
-            moduleAccess: ['MARKET_RADAR', 'SPORTS_LIVE', 'SPORTS_HISTORY', 'MANAGED_OO', 'WORM_TRADING', 'WORLD_CUP_CORNERS', 'TOKEN', 'WALLET', 'TRADER_SYNC'].map(x => ({
+            moduleAccess: ['MARKET_RADAR', 'MANAGED_OO', 'WORM_TRADING', 'TOKEN', 'SOLANA', 'WALLET', 'TRADER_SYNC'].map(x => ({
                 module: 'ACCOUNT_DATA_MODULE_' + x,
                 dataAccess: x === 'TRADER_SYNC' ? 'ACCOUNT_DATA_ACCESS_READ_WRITE' : 'ACCOUNT_DATA_ACCESS_NONE'
             }))

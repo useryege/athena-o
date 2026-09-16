@@ -3,10 +3,15 @@ WITH affected_accounts AS MATERIALIZED (
   SELECT account_id
   FROM account_module_access
   WHERE module = 'worm_markets'
+), gated_accounts AS MATERIALIZED (
+  SELECT account_id,
+         pg_advisory_xact_lock(hashtextextended('athena:account:' || account_id::text, 0)) AS gate
+  FROM affected_accounts
+  ORDER BY account_id
 ), locked_accounts AS MATERIALIZED (
   SELECT access.account_id
   FROM account_access AS access
-  JOIN affected_accounts USING (account_id)
+  JOIN gated_accounts USING (account_id)
   ORDER BY access.account_id
   FOR UPDATE OF access
 ), affected AS (
