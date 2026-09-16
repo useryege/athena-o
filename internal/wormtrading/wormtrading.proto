@@ -1196,6 +1196,8 @@ message PositionCashOutBatchCommandResponse {
 }
 
 service WormTradingService {
+  // Reads the order catalog after current Trading account authorization.
+  rpc GetOrderEventCatalog(GetOrderEventCatalogRequest) returns (GetOrderEventCatalogResponse);
   rpc GetWormTradingStatus(GetWormTradingStatusRequest) returns (GetWormTradingStatusResponse);
   rpc BatchGetWalletBalances(BatchGetWalletBalancesRequest) returns (BatchGetWalletBalancesResponse);
   rpc BatchGetWalletConnections(BatchGetWalletConnectionsRequest) returns (BatchGetWalletConnectionsResponse);

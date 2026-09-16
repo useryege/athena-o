@@ -17,6 +17,7 @@ import (
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
+	accountstore "github.com/useryege/athena/internal/accountstate/store"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	"github.com/useryege/athena/internal/wormtrading"
@@ -37,6 +38,7 @@ const (
 	rpcRateBurstEnv             = "ATHENA_WORM_TRADING_RPC_RATE_BURST"
 	credentialKeyEnv            = "ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY"
 	wormAttemptTimeoutEnv       = "ATHENA_WORM_TRADING_WORM_API_ATTEMPT_TIMEOUT"
+	wormCatalogBudgetEnv        = "ATHENA_WORM_TRADING_CATALOG_BUDGET"
 	wormPositionBudgetEnv       = "ATHENA_WORM_TRADING_POSITION_BUDGET"
 	wormPositionConcurrencyEnv  = "ATHENA_WORM_TRADING_POSITION_CONCURRENCY"
 	wormMarketsServerAddressEnv = "ATHENA_WORM_MARKETS_SERVER_ADDRESS"
@@ -53,6 +55,7 @@ func NewCommand() *cobra.Command {
 		rpcRateLimitRaw            string
 		rpcRateBurstRaw            string
 		wormAttemptTimeoutRaw      string
+		wormCatalogBudgetRaw       string
 		wormPositionBudgetRaw      string
 		wormPositionConcurrencyRaw string
 		wormMarketsServerAddress   string
@@ -94,6 +97,13 @@ func NewCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			wormCatalogBudget, err := parseDurationSetting("Worm catalog budget", wormCatalogBudgetRaw)
+			if err != nil {
+				return err
+			}
+			if wormCatalogBudget < wormAttemptTimeout {
+				return fmt.Errorf("Worm catalog budget must be at least the API attempt timeout")
+			}
 			wormPositionBudget, err := parseDurationSetting("Worm position budget", wormPositionBudgetRaw)
 			if err != nil {
 				return err
@@ -107,6 +117,11 @@ func NewCommand() *cobra.Command {
 				return err
 			}
 			defer utilio.Close(credentialStore)
+			accountStore, err := accountstore.NewSQLStoreSource()(cmd.Context())
+			if err != nil {
+				return err
+			}
+			defer utilio.Close(accountStore)
 			wormMarketsClientset, err := wormmarketsapiclient.NewWormMarketsClientset(wormMarketsServerAddress)
 			if err != nil {
 				return fmt.Errorf("configure Worm Markets client: %w", err)
@@ -135,6 +150,8 @@ func NewCommand() *cobra.Command {
 				return fmt.Errorf("configure Solana balance adapter: %w", err)
 			}
 			server, err := wormtrading.NewServer(wormtrading.ServerOpts{
+				AccountAccessReader:     accountStore,
+				WormCatalogBudget:       wormCatalogBudget,
 				BalanceAdapter:          adapter,
 				CredentialStore:         credentialStore,
 				CredentialEncryptionKey: credentialEncryptionKey,
@@ -275,6 +292,7 @@ func NewCommand() *cobra.Command {
 		env.StringFromEnv(wormPositionConcurrencyEnv, strconv.Itoa(wormtrading.DefaultWormPositionConcurrency)),
 		"Maximum concurrent official Worm position requests",
 	)
+	command.Flags().StringVar(&wormCatalogBudgetRaw, "worm-catalog-budget", env.StringFromEnv(wormCatalogBudgetEnv, wormtrading.DefaultWormCatalogBudget.String()), "Total budget for one Worm order event catalog")
 	storeSource = wormtradingstore.NewSQLStoreSource()
 	command.AddCommand(cli.NewVersionCmd(cliName))
 	return command

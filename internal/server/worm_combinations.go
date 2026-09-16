@@ -19,12 +19,12 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/internal/walletsecret"
-	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	wormtradingapiclient "github.com/useryege/athena/internal/wormtrading/apiclient"
 )
 
@@ -123,11 +123,12 @@ func registerWormCombinationHandlers(mux *http.ServeMux, server *AthenaServer) {
 
 func (server *AthenaServer) getWormOrderEventCatalog(w http.ResponseWriter, request *http.Request) {
 	walletsecret.SetSecretResponseHeaders(w)
-	ctx, _, err := server.authenticateInteractiveWormTradingHTTP(request, accountaccess.AccessLevelRead)
+	ctx, credential, err := server.authenticateInteractiveWormTradingHTTP(request, accountaccess.AccessLevelRead)
 	if err != nil {
 		walletsecret.WriteError(w, err)
 		return
 	}
+	ctx = withWormTradingAccountIdentity(ctx, credential.AccountID)
 	if err := rejectWormCombinationQuery(request); err != nil {
 		walletsecret.WriteError(w, err)
 		return
@@ -227,6 +228,7 @@ func (server *AthenaServer) createWormCombination(w http.ResponseWriter, request
 		walletsecret.WriteError(w, err)
 		return
 	}
+	ctx = withWormTradingAccountIdentity(ctx, credential.AccountID)
 	if err := rejectWormCombinationQuery(request); err != nil {
 		walletsecret.WriteError(w, err)
 		return
@@ -274,6 +276,7 @@ func (server *AthenaServer) updateWormCombination(w http.ResponseWriter, request
 		walletsecret.WriteError(w, err)
 		return
 	}
+	ctx = withWormTradingAccountIdentity(ctx, credential.AccountID)
 	if err := rejectWormCombinationQuery(request); err != nil {
 		walletsecret.WriteError(w, err)
 		return
@@ -356,10 +359,10 @@ func (server *AthenaServer) deleteWormCombination(w http.ResponseWriter, request
 }
 
 func (server *AthenaServer) loadWormOrderEventCatalog(ctx context.Context, eventConditionID string) (wormEventCatalogResponse, error) {
-	if server.WormMarketsClientset == nil || server.WormMarketsClientset.WormMarkets() == nil {
-		return wormEventCatalogResponse{}, status.Error(codes.Unavailable, "Worm Markets is unavailable")
+	if server.WormTradingClientset == nil || server.WormTradingClientset.WormTrading() == nil {
+		return wormEventCatalogResponse{}, status.Error(codes.Unavailable, "Worm Trading is unavailable")
 	}
-	result, err := server.WormMarketsClientset.WormMarkets().GetOrderEventCatalog(ctx, &wormmarketsapiclient.GetOrderEventCatalogRequest{
+	result, err := server.WormTradingClientset.WormTrading().GetOrderEventCatalog(ctx, &wormtradingapiclient.GetOrderEventCatalogRequest{
 		EventConditionId: eventConditionID,
 	})
 	if err != nil {
@@ -446,7 +449,7 @@ func (server *AthenaServer) resolveWormCombinationItems(
 	for index, selection := range normalized {
 		catalog, exists := catalogs[selection.eventConditionID]
 		if !exists {
-			return nil, status.Error(codes.Internal, "Worm Markets returned an incomplete event catalog set")
+			return nil, status.Error(codes.Internal, "Worm Trading returned an incomplete event catalog set")
 		}
 		var market *wormEventCatalogMarket
 		for marketIndex := range catalog.Markets {
@@ -487,22 +490,22 @@ func (server *AthenaServer) resolveWormCombinationItems(
 }
 
 func projectWormOrderEventCatalog(
-	response *wormmarketsapiclient.GetOrderEventCatalogResponse,
+	response *wormtradingapiclient.GetOrderEventCatalogResponse,
 	expectedEventConditionID string,
 ) (wormEventCatalogResponse, error) {
 	if response == nil || response.GetEvent() == nil || response.GetFetchedAt() <= 0 {
-		return wormEventCatalogResponse{}, status.Error(codes.Internal, "Worm Markets returned an incomplete event catalog")
+		return wormEventCatalogResponse{}, status.Error(codes.Internal, "Worm Trading returned an incomplete event catalog")
 	}
 	event := response.GetEvent()
 	if event.GetEventConditionId() != expectedEventConditionID {
-		return wormEventCatalogResponse{}, status.Error(codes.Internal, "Worm Markets returned a mismatched event catalog")
+		return wormEventCatalogResponse{}, status.Error(codes.Internal, "Worm Trading returned a mismatched event catalog")
 	}
 	if _, err := canonicalWormConditionID(event.GetEventConditionId(), "event condition ID"); err != nil {
-		return wormEventCatalogResponse{}, status.Error(codes.Internal, "Worm Markets returned an invalid event catalog ID")
+		return wormEventCatalogResponse{}, status.Error(codes.Internal, "Worm Trading returned an invalid event catalog ID")
 	}
 	title := strings.TrimSpace(event.GetTitle())
 	if title == "" {
-		return wormEventCatalogResponse{}, status.Error(codes.Internal, "Worm Markets returned an event without a title")
+		return wormEventCatalogResponse{}, status.Error(codes.Internal, "Worm Trading returned an event without a title")
 	}
 	result := wormEventCatalogResponse{
 		EventConditionID: event.GetEventConditionId(),
@@ -518,7 +521,7 @@ func projectWormOrderEventCatalog(
 			return wormEventCatalogResponse{}, err
 		}
 		if _, exists := seenMarkets[projected.MarketConditionID]; exists {
-			return wormEventCatalogResponse{}, status.Error(codes.Internal, "Worm Markets returned duplicate market catalog IDs")
+			return wormEventCatalogResponse{}, status.Error(codes.Internal, "Worm Trading returned duplicate market catalog IDs")
 		}
 		seenMarkets[projected.MarketConditionID] = struct{}{}
 		result.Markets = append(result.Markets, projected)
@@ -527,22 +530,22 @@ func projectWormOrderEventCatalog(
 }
 
 func projectWormOrderEventMarket(
-	market *wormmarketsapiclient.OrderEventCatalogMarket,
+	market *wormtradingapiclient.OrderEventCatalogMarket,
 	expectedEventConditionID string,
 ) (wormEventCatalogMarket, error) {
 	if market == nil || market.GetEventConditionId() != expectedEventConditionID {
-		return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Markets returned a mismatched child market")
+		return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Trading returned a mismatched child market")
 	}
 	marketConditionID, err := canonicalWormConditionID(market.GetMarketConditionId(), "market condition ID")
 	if err != nil || marketConditionID != market.GetMarketConditionId() {
-		return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Markets returned an invalid child market ID")
+		return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Trading returned an invalid child market ID")
 	}
 	title := strings.TrimSpace(market.GetTitle())
 	state := strings.ToLower(strings.TrimSpace(market.GetState()))
 	backend := strings.ToLower(strings.TrimSpace(market.GetBackend()))
 	unavailableCode := strings.TrimSpace(market.GetUnavailableCode())
 	if title == "" || state == "" || unavailableCode != market.GetUnavailableCode() {
-		return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Markets returned an invalid child market projection")
+		return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Trading returned an invalid child market projection")
 	}
 	projected := wormEventCatalogMarket{
 		MarketConditionID: marketConditionID,
@@ -561,34 +564,34 @@ func projectWormOrderEventMarket(
 			return wormEventCatalogMarket{}, err
 		}
 		if _, exists := seenSides[projectedOutcome.Side]; exists {
-			return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Markets returned duplicate market outcome sides")
+			return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Trading returned duplicate market outcome sides")
 		}
 		seenSides[projectedOutcome.Side] = struct{}{}
 		projected.Outcomes = append(projected.Outcomes, projectedOutcome)
 	}
 	if len(projected.Outcomes) != 2 {
-		return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Markets returned an incomplete market outcome catalog")
+		return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Trading returned an incomplete market outcome catalog")
 	}
 	if _, ok := seenSides["YES"]; !ok {
-		return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Markets omitted the YES market outcome")
+		return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Trading omitted the YES market outcome")
 	}
 	if _, ok := seenSides["NO"]; !ok {
-		return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Markets omitted the NO market outcome")
+		return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Trading omitted the NO market outcome")
 	}
 	if err := validateWormOrderEventPrices(projected.Outcomes); err != nil {
 		return wormEventCatalogMarket{}, err
 	}
 	for _, outcome := range projected.Outcomes {
 		if outcome.Selectable && (projected.UnavailableCode != "" || projected.State != "open" || !projected.MarginEnabled || (projected.Backend != "polymarket" && projected.Backend != "hyperliquid")) {
-			return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Markets returned an unsafe selectable market outcome")
+			return wormEventCatalogMarket{}, status.Error(codes.Internal, "Worm Trading returned an unsafe selectable market outcome")
 		}
 	}
 	return projected, nil
 }
 
-func projectWormOrderEventOutcome(outcome *wormmarketsapiclient.OrderEventCatalogOutcome) (wormEventCatalogOutcome, error) {
+func projectWormOrderEventOutcome(outcome *wormtradingapiclient.OrderEventCatalogOutcome) (wormEventCatalogOutcome, error) {
 	if outcome == nil {
-		return wormEventCatalogOutcome{}, status.Error(codes.Internal, "Worm Markets returned an empty market outcome")
+		return wormEventCatalogOutcome{}, status.Error(codes.Internal, "Worm Trading returned an empty market outcome")
 	}
 	side := "NO"
 	if outcome.GetIsYes() {
@@ -599,20 +602,20 @@ func projectWormOrderEventOutcome(outcome *wormmarketsapiclient.OrderEventCatalo
 	lastTradePrice := strings.TrimSpace(outcome.GetLastTradePrice())
 	unavailableCode := strings.TrimSpace(outcome.GetUnavailableCode())
 	if label == "" || lastTradePrice != outcome.GetLastTradePrice() || unavailableCode != outcome.GetUnavailableCode() {
-		return wormEventCatalogOutcome{}, status.Error(codes.Internal, "Worm Markets returned an invalid market outcome")
+		return wormEventCatalogOutcome{}, status.Error(codes.Internal, "Worm Trading returned an invalid market outcome")
 	}
 	if lastTradePrice != "" {
 		if _, ok := parseWormOrderEventPrice(lastTradePrice); !ok {
-			return wormEventCatalogOutcome{}, status.Error(codes.Internal, "Worm Markets returned an invalid market last-trade price")
+			return wormEventCatalogOutcome{}, status.Error(codes.Internal, "Worm Trading returned an invalid market last-trade price")
 		}
 	}
 	if outcome.GetSelectable() {
 		leverage, err := strconv.ParseFloat(maxLeverage, 64)
 		if unavailableCode != "" || err != nil || math.IsNaN(leverage) || math.IsInf(leverage, 0) || leverage < 1 {
-			return wormEventCatalogOutcome{}, status.Error(codes.Internal, "Worm Markets returned an invalid selectable market outcome")
+			return wormEventCatalogOutcome{}, status.Error(codes.Internal, "Worm Trading returned an invalid selectable market outcome")
 		}
 	} else if unavailableCode == "" {
-		return wormEventCatalogOutcome{}, status.Error(codes.Internal, "Worm Markets returned an unavailable outcome without a reason")
+		return wormEventCatalogOutcome{}, status.Error(codes.Internal, "Worm Trading returned an unavailable outcome without a reason")
 	}
 	return wormEventCatalogOutcome{
 		Side:            side,
@@ -632,7 +635,7 @@ func validateWormOrderEventPrices(outcomes []wormEventCatalogOutcome) error {
 	yesPrice := prices["YES"]
 	noPrice := prices["NO"]
 	if (yesPrice == "") != (noPrice == "") {
-		return status.Error(codes.Internal, "Worm Markets returned an incomplete market last-trade price pair")
+		return status.Error(codes.Internal, "Worm Trading returned an incomplete market last-trade price pair")
 	}
 	if yesPrice == "" {
 		return nil
@@ -640,7 +643,7 @@ func validateWormOrderEventPrices(outcomes []wormEventCatalogOutcome) error {
 	yes, yesOK := parseWormOrderEventPrice(yesPrice)
 	no, noOK := parseWormOrderEventPrice(noPrice)
 	if !yesOK || !noOK || new(big.Rat).Add(yes, no).Cmp(big.NewRat(1, 1)) != 0 {
-		return status.Error(codes.Internal, "Worm Markets returned a non-complementary market last-trade price pair")
+		return status.Error(codes.Internal, "Worm Trading returned a non-complementary market last-trade price pair")
 	}
 	return nil
 }
@@ -896,12 +899,12 @@ func sanitizeWormCatalogDependencyError(err error) error {
 		return nil
 	}
 	switch status.Code(err) {
-	case codes.InvalidArgument, codes.NotFound:
+	case codes.InvalidArgument, codes.NotFound, codes.Canceled, codes.DeadlineExceeded, codes.Unauthenticated, codes.PermissionDenied:
 		return err
-	case codes.Canceled, codes.DeadlineExceeded, codes.Unavailable, codes.FailedPrecondition, codes.Unauthenticated, codes.PermissionDenied:
-		return status.Error(codes.Unavailable, "Worm Markets is unavailable")
+	case codes.Unavailable, codes.FailedPrecondition:
+		return status.Error(codes.Unavailable, "Worm Trading is unavailable")
 	default:
-		return status.Error(codes.Internal, "Worm Markets request failed")
+		return status.Error(codes.Internal, "Worm Trading request failed")
 	}
 }
 
@@ -924,4 +927,13 @@ func writeWormCombinationJSON(w http.ResponseWriter, statusCode int, value any) 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(statusCode)
 	_ = json.NewEncoder(w).Encode(value)
+}
+
+// withWormTradingAccountIdentity replaces all untrusted identity values while
+// retaining internal tracing and authentication metadata.
+func withWormTradingAccountIdentity(ctx context.Context, accountID string) context.Context {
+	md, _ := metadata.FromOutgoingContext(ctx)
+	md = md.Copy()
+	md.Set("x-athena-account-id", accountID)
+	return metadata.NewOutgoingContext(ctx, md)
 }

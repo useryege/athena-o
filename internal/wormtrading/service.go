@@ -19,6 +19,7 @@ import (
 )
 
 const (
+	DefaultWormCatalogBudget          = 45 * time.Second
 	maxWalletBalanceReferences        = 100
 	wormCredentialMaintenanceInterval = 30 * time.Second
 	wormConnectionRecoveryBatchSize   = int32(100)
@@ -27,6 +28,9 @@ const (
 type Service struct {
 	apiclient.UnimplementedWormTradingServiceServer
 
+	accountAccessReader      AccountAccessReader
+	catalogReader            OrderEventCatalogReader
+	wormCatalogBudget        time.Duration
 	adapter                  *SolanaBalanceAdapter
 	setHealthStatus          func(grpc_health_v1.HealthCheckResponse_ServingStatus)
 	credentialStore          wormstore.Store
@@ -53,6 +57,9 @@ type Service struct {
 }
 
 type ServiceOptions struct {
+	AccountAccessReader     AccountAccessReader
+	CatalogReader           OrderEventCatalogReader
+	WormCatalogBudget       time.Duration
 	BalanceAdapter          *SolanaBalanceAdapter
 	CredentialStore         wormstore.Store
 	CredentialEncryptionKey []byte
@@ -68,6 +75,12 @@ type ServiceOptions struct {
 func NewServiceWithOptions(opts ServiceOptions) (*Service, error) {
 	if opts.WormAPIAttemptTimeout <= 0 {
 		opts.WormAPIAttemptTimeout = DefaultWormAPIAttemptTimeout
+	}
+	if opts.AccountAccessReader == nil {
+		return nil, fmt.Errorf("account access reader is required")
+	}
+	if opts.WormCatalogBudget <= 0 || opts.WormCatalogBudget < opts.WormAPIAttemptTimeout {
+		return nil, fmt.Errorf("worm catalog budget must be positive and at least the API attempt timeout")
 	}
 	if opts.WormPositionBudget <= 0 {
 		opts.WormPositionBudget = DefaultWormPositionBudget
@@ -99,6 +112,9 @@ func NewServiceWithOptions(opts ServiceOptions) (*Service, error) {
 	}
 
 	service := &Service{
+		accountAccessReader:      opts.AccountAccessReader,
+		catalogReader:            opts.CatalogReader,
+		wormCatalogBudget:        opts.WormCatalogBudget,
 		adapter:                  opts.BalanceAdapter,
 		setHealthStatus:          opts.SetHealthStatus,
 		credentialStore:          opts.CredentialStore,
@@ -125,6 +141,16 @@ func NewServiceWithOptions(opts ServiceOptions) (*Service, error) {
 	}
 	service.credentialCipher = cipher
 	service.wormClientFactory = factory
+	if service.catalogReader == nil {
+		catalogClient, err := factory.NewCatalogClient()
+		if err != nil {
+			return nil, err
+		}
+		service.catalogReader, err = NewOrderEventCatalogReader(catalogClient, opts.WormCatalogBudget, service.wormCapabilities.recordWormResult)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return service, nil
 }
 

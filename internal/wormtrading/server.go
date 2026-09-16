@@ -30,6 +30,9 @@ type Server struct {
 }
 
 type ServerOpts struct {
+	AccountAccessReader     AccountAccessReader
+	CatalogReader           OrderEventCatalogReader
+	WormCatalogBudget       time.Duration
 	BalanceAdapter          *SolanaBalanceAdapter
 	CredentialStore         wormstore.Store
 	CredentialEncryptionKey []byte
@@ -56,6 +59,9 @@ func NewServer(opts ServerOpts) (*Server, error) {
 		internalAuthTokenHash: sha256.Sum256([]byte(internalAuthToken)),
 	}
 	server.service, err = NewServiceWithOptions(ServiceOptions{
+		AccountAccessReader:     opts.AccountAccessReader,
+		CatalogReader:           opts.CatalogReader,
+		WormCatalogBudget:       opts.WormCatalogBudget,
 		BalanceAdapter:          opts.BalanceAdapter,
 		CredentialStore:         opts.CredentialStore,
 		CredentialEncryptionKey: opts.CredentialEncryptionKey,
