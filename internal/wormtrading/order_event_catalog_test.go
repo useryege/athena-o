@@ -107,6 +107,7 @@ func TestOrderEventCatalogRejectsInvalidEventShapeBeforeMarkets(t *testing.T) {
 		name  string
 		event *utilworm.Event
 	}{
+		{name: "nil event"},
 		{name: "mismatched event", event: &utilworm.Event{ConditionID: catalogConditionID(4)}},
 		{name: "noncanonical child", event: &utilworm.Event{ConditionID: eventID, Markets: []utilworm.MarketSummary{{ConditionID: " " + marketID}}}},
 		{name: "invalid child", event: &utilworm.Event{ConditionID: eventID, Markets: []utilworm.MarketSummary{{ConditionID: "invalid"}}}},
@@ -114,6 +115,7 @@ func TestOrderEventCatalogRejectsInvalidEventShapeBeforeMarkets(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			var observed []error
 			client := catalogClientFunc{
 				event: func(context.Context, string) (*utilworm.Event, error) { return tt.event, nil },
 				market: func(context.Context, string) (*utilworm.Market, error) {
@@ -121,11 +123,14 @@ func TestOrderEventCatalogRejectsInvalidEventShapeBeforeMarkets(t *testing.T) {
 					return nil, nil
 				},
 			}
-			reader, err := NewOrderEventCatalogReader(client, time.Second, nil)
+			reader, err := NewOrderEventCatalogReader(client, time.Second, func(err error) { observed = append(observed, err) })
 			require.NoError(t, err)
 
 			_, err = reader.GetOrderEventCatalog(context.Background(), &apiclient.GetOrderEventCatalogRequest{EventConditionId: eventID})
 			require.Equal(t, codes.Unavailable, status.Code(err))
+			require.Len(t, observed, 1)
+			require.Error(t, observed[0])
+			require.Equal(t, wormErrorInvalidResponse, classifyWormError(observed[0]))
 		})
 	}
 }
@@ -256,6 +261,7 @@ func TestOrderEventCatalogRetainsUnavailableMarketDetails(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			var observed []error
 			client := catalogClientFunc{
 				event: func(context.Context, string) (*utilworm.Event, error) {
 					return &utilworm.Event{ConditionID: eventID, Markets: []utilworm.MarketSummary{{
@@ -266,8 +272,10 @@ func TestOrderEventCatalogRetainsUnavailableMarketDetails(t *testing.T) {
 				},
 				market: func(context.Context, string) (*utilworm.Market, error) { return nil, tt.err },
 			}
+			reader, err := NewOrderEventCatalogReader(client, time.Second, func(err error) { observed = append(observed, err) })
+			require.NoError(t, err)
 
-			response, err := readCatalog(t, client, eventID)
+			response, err := reader.GetOrderEventCatalog(context.Background(), &apiclient.GetOrderEventCatalogRequest{EventConditionId: eventID})
 			require.NoError(t, err)
 			require.Len(t, response.GetEvent().GetMarkets(), 1)
 			market := response.GetEvent().GetMarkets()[0]
@@ -277,6 +285,9 @@ func TestOrderEventCatalogRetainsUnavailableMarketDetails(t *testing.T) {
 			require.Equal(t, []string{"Up", "Down"}, []string{market.GetOutcomes()[0].GetLabel(), market.GetOutcomes()[1].GetLabel()})
 			require.False(t, market.GetOutcomes()[0].GetSelectable())
 			require.False(t, market.GetOutcomes()[1].GetSelectable())
+			require.Len(t, observed, 2)
+			require.NoError(t, observed[0])
+			require.ErrorIs(t, observed[1], tt.err)
 		})
 	}
 }
@@ -332,6 +343,48 @@ func TestOrderEventCatalogAppliesMarketAndOutcomeRules(t *testing.T) {
 			require.Equal(t, tt.noSelectable, market.GetOutcomes()[1].GetSelectable())
 			require.Equal(t, tt.yesUnavailable, market.GetOutcomes()[0].GetUnavailableCode())
 			require.Equal(t, tt.noUnavailable, market.GetOutcomes()[1].GetUnavailableCode())
+		})
+	}
+}
+
+func TestOrderEventCatalogObservesInvalidMarketResponse(t *testing.T) {
+	eventID := catalogConditionID(35)
+	marketID := catalogConditionID(36)
+	tests := []struct {
+		name   string
+		market *utilworm.Market
+	}{
+		{name: "nil market"},
+		{name: "market id mismatch", market: func() *utilworm.Market {
+			market := validCatalogMarket(eventID, marketID)
+			market.ConditionID = catalogConditionID(37)
+			return market
+		}()},
+		{name: "event mismatch", market: func() *utilworm.Market {
+			market := validCatalogMarket(eventID, marketID)
+			market.Event.ConditionID = catalogConditionID(38)
+			return market
+		}()},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var observed []error
+			client := catalogClientFunc{
+				event: func(context.Context, string) (*utilworm.Event, error) {
+					return &utilworm.Event{ConditionID: eventID, Markets: []utilworm.MarketSummary{{ConditionID: marketID}}}, nil
+				},
+				market: func(context.Context, string) (*utilworm.Market, error) { return tt.market, nil },
+			}
+			reader, err := NewOrderEventCatalogReader(client, time.Second, func(err error) { observed = append(observed, err) })
+			require.NoError(t, err)
+
+			response, err := reader.GetOrderEventCatalog(context.Background(), &apiclient.GetOrderEventCatalogRequest{EventConditionId: eventID})
+			require.NoError(t, err)
+			require.Len(t, response.GetEvent().GetMarkets(), 1)
+			require.Len(t, observed, 2)
+			require.NoError(t, observed[0])
+			require.Error(t, observed[1])
+			require.Equal(t, wormErrorInvalidResponse, classifyWormError(observed[1]))
 		})
 	}
 }
@@ -514,11 +567,37 @@ func TestOrderEventCatalogRejectsProviderSuccessAfterBudget(t *testing.T) {
 			return nil, nil
 		},
 	}
-	reader, err := NewOrderEventCatalogReader(client, 20*time.Millisecond, nil)
+	var observed []error
+	reader, err := NewOrderEventCatalogReader(client, 20*time.Millisecond, func(err error) { observed = append(observed, err) })
 	require.NoError(t, err)
 
 	_, err = reader.GetOrderEventCatalog(context.Background(), &apiclient.GetOrderEventCatalogRequest{EventConditionId: eventID})
 	require.Equal(t, codes.DeadlineExceeded, status.Code(err))
+	require.Len(t, observed, 1)
+	require.ErrorIs(t, observed[0], context.DeadlineExceeded)
+}
+
+func TestOrderEventCatalogObservesMarketSuccessAfterBudgetAsTimeout(t *testing.T) {
+	eventID := catalogConditionID(112)
+	marketID := catalogConditionID(113)
+	var observed []error
+	client := catalogClientFunc{
+		event: func(context.Context, string) (*utilworm.Event, error) {
+			return &utilworm.Event{ConditionID: eventID, Markets: []utilworm.MarketSummary{{ConditionID: marketID}}}, nil
+		},
+		market: func(ctx context.Context, _ string) (*utilworm.Market, error) {
+			<-ctx.Done()
+			return validCatalogMarket(eventID, marketID), nil
+		},
+	}
+	reader, err := NewOrderEventCatalogReader(client, 20*time.Millisecond, func(err error) { observed = append(observed, err) })
+	require.NoError(t, err)
+
+	_, err = reader.GetOrderEventCatalog(context.Background(), &apiclient.GetOrderEventCatalogRequest{EventConditionId: eventID})
+	require.Equal(t, codes.DeadlineExceeded, status.Code(err))
+	require.Len(t, observed, 2)
+	require.NoError(t, observed[0])
+	require.ErrorIs(t, observed[1], context.DeadlineExceeded)
 }
 
 func TestOrderEventCatalogDoesNotObserveInvalidUserInput(t *testing.T) {

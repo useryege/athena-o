@@ -44,6 +44,8 @@ type orderEventCatalogPrices struct {
 	no  string
 }
 
+var errWormCatalogInvalidResponse = errors.New("invalid Worm catalog response")
+
 type WormCatalogClient interface {
 	GetEvent(context.Context, string) (*utilworm.Event, error)
 	GetMarket(context.Context, string) (*utilworm.Market, error)
@@ -92,14 +94,16 @@ func (r *orderEventCatalogReader) GetOrderEventCatalog(ctx context.Context, req 
 		return nil, status.FromContextError(err).Err()
 	}
 	event, err := r.client.GetEvent(catalogCtx, eventConditionID)
-	r.observeProviderResult(err)
 	if err != nil {
+		r.observeProviderResult(err)
 		return nil, mapOrderCatalogEventError(catalogCtx, eventConditionID, err)
 	}
 	if err := catalogCtx.Err(); err != nil {
+		r.observeProviderResult(err)
 		return nil, status.FromContextError(err).Err()
 	}
 	if event == nil || event.ConditionID != eventConditionID || validateOrderConditionID(event.ConditionID) != nil {
+		r.observeProviderResult(errWormCatalogInvalidResponse)
 		return nil, status.Error(codes.Unavailable, "worm event response condition id mismatch")
 	}
 
@@ -108,17 +112,21 @@ func (r *orderEventCatalogReader) GetOrderEventCatalog(ctx context.Context, req 
 	for i, market := range event.Markets {
 		marketConditionID := strings.TrimSpace(market.ConditionID)
 		if market.ConditionID != marketConditionID {
+			r.observeProviderResult(errWormCatalogInvalidResponse)
 			return nil, status.Errorf(codes.Unavailable, "worm event response contains a non-canonical child market condition id at index %d", i)
 		}
 		if err := validateOrderConditionID(marketConditionID); err != nil {
+			r.observeProviderResult(errWormCatalogInvalidResponse)
 			return nil, status.Errorf(codes.Unavailable, "worm event response contains an invalid child market condition id at index %d", i)
 		}
 		if _, exists := seenMarketConditionIDs[marketConditionID]; exists {
+			r.observeProviderResult(errWormCatalogInvalidResponse)
 			return nil, status.Errorf(codes.Unavailable, "worm event response contains duplicate child market %q", marketConditionID)
 		}
 		seenMarketConditionIDs[marketConditionID] = struct{}{}
 		marketConditionIDs[i] = marketConditionID
 	}
+	r.observeProviderResult(nil)
 
 	markets, err := r.getOrderEventCatalogMarkets(catalogCtx, eventConditionID, event.Markets, marketConditionIDs)
 	if err != nil {
@@ -190,8 +198,34 @@ func (r *orderEventCatalogReader) getOrderEventCatalogMarket(
 ) *apiclient.OrderEventCatalogMarket {
 	item := orderEventCatalogMarketFromSummary(eventConditionID, marketConditionID, summary)
 	market, err := r.client.GetMarket(ctx, marketConditionID)
-	r.observeProviderResult(err)
-	if err != nil || market == nil {
+	if err != nil {
+		r.observeProviderResult(err)
+		applyOrderMarketUnavailable(
+			item,
+			orderMarketUnavailableDetail,
+			summary.Outcomes,
+			nil,
+			nil,
+			nil,
+			orderEventCatalogPricesFromLastTrade(summary.LastTradePrice),
+		)
+		return item
+	}
+	if err := ctx.Err(); err != nil {
+		r.observeProviderResult(err)
+		applyOrderMarketUnavailable(
+			item,
+			orderMarketUnavailableDetail,
+			summary.Outcomes,
+			nil,
+			nil,
+			nil,
+			orderEventCatalogPricesFromLastTrade(summary.LastTradePrice),
+		)
+		return item
+	}
+	if market == nil {
+		r.observeProviderResult(errWormCatalogInvalidResponse)
 		applyOrderMarketUnavailable(
 			item,
 			orderMarketUnavailableDetail,
@@ -204,6 +238,7 @@ func (r *orderEventCatalogReader) getOrderEventCatalogMarket(
 		return item
 	}
 	if market.ConditionID != marketConditionID || validateOrderConditionID(market.ConditionID) != nil {
+		r.observeProviderResult(errWormCatalogInvalidResponse)
 		applyOrderMarketUnavailable(item, orderMarketUnavailableIDMismatch, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, market.Config, orderEventCatalogPrices{})
 		return item
 	}
@@ -217,9 +252,11 @@ func (r *orderEventCatalogReader) getOrderEventCatalogMarket(
 	}
 
 	if market.Event == nil || market.Event.ConditionID != eventConditionID || validateOrderConditionID(market.Event.ConditionID) != nil {
+		r.observeProviderResult(errWormCatalogInvalidResponse)
 		applyOrderMarketUnavailable(item, orderMarketUnavailableEventMismatch, market.Outcomes, market.YesOutcomeLabel, market.NoOutcomeLabel, market.Config, orderEventCatalogPrices{})
 		return item
 	}
+	r.observeProviderResult(nil)
 	prices := orderEventCatalogPricesFromLastTrade(market.LastTradePrice)
 	item.EventConditionId = eventConditionID
 	if item.State != "open" {

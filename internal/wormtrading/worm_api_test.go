@@ -3,7 +3,10 @@ package wormtrading
 import (
 	"context"
 	"errors"
+	"io"
+	"net/http"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -33,6 +36,12 @@ func (l *countingWormLimiter) count() int {
 }
 
 var _ ratelimit.Limiter = (*countingWormLimiter)(nil)
+
+type wormRoundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f wormRoundTripFunc) RoundTrip(request *http.Request) (*http.Response, error) {
+	return f(request)
+}
 
 func TestWormAPIClientFactorySharesCatalogAndEstimateLimiter(t *testing.T) {
 	waitErr := errors.New("stop before HTTP")
@@ -71,4 +80,58 @@ func TestWormCatalogClientExposesOnlyReadMethods(t *testing.T) {
 	typeOfFactory := reflect.TypeOf(NewOfficialWormAPIClientFactory)
 	require.Equal(t, 1, typeOfFactory.NumIn(), "production factory must not accept a base URL")
 	require.Equal(t, reflect.TypeOf(time.Duration(0)), typeOfFactory.In(0))
+}
+
+func TestWormCatalogClientUsesOnlyReadHTTPRoutes(t *testing.T) {
+	eventID := catalogConditionID(10)
+	marketID := catalogConditionID(11)
+	type requestRecord struct {
+		method string
+		url    string
+	}
+	var requests []requestRecord
+	originalTransport := http.DefaultTransport
+	http.DefaultTransport = wormRoundTripFunc(func(request *http.Request) (*http.Response, error) {
+		requests = append(requests, requestRecord{method: request.Method, url: request.URL.String()})
+		body := ""
+		switch request.URL.Path {
+		case "/events/" + eventID + "/":
+			body = `{"data":{"condition_id":"` + eventID + `"}}`
+		case "/markets/" + marketID + "/":
+			body = `{"data":{"condition_id":"` + marketID + `"}}`
+		default:
+			return &http.Response{
+				StatusCode: http.StatusNotFound,
+				Status:     "404 Not Found",
+				Header:     make(http.Header),
+				Body:       io.NopCloser(strings.NewReader(`{"error":{"message":"unexpected route"}}`)),
+			}, nil
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Header:     make(http.Header),
+			Body:       io.NopCloser(strings.NewReader(body)),
+		}, nil
+	})
+	t.Cleanup(func() { http.DefaultTransport = originalTransport })
+
+	factory := &officialWormAPIClientFactory{
+		attemptTimeout:             time.Second,
+		unauthenticatedRateLimiter: ratelimit.Noop(),
+		authenticatedRateLimiter:   ratelimit.Noop(),
+	}
+	client, err := factory.NewCatalogClient()
+	require.NoError(t, err)
+
+	event, err := client.GetEvent(context.Background(), eventID)
+	require.NoError(t, err)
+	require.Equal(t, eventID, event.ConditionID)
+	market, err := client.GetMarket(context.Background(), marketID)
+	require.NoError(t, err)
+	require.Equal(t, marketID, market.ConditionID)
+	require.Equal(t, []requestRecord{
+		{method: http.MethodGet, url: OfficialWormAPIBaseURL + "/events/" + eventID + "/"},
+		{method: http.MethodGet, url: OfficialWormAPIBaseURL + "/markets/" + marketID + "/"},
+	}, requests)
 }
