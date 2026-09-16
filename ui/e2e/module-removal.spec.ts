@@ -34,7 +34,11 @@ for (const id of ['worm-assets', 'worm-combinations', 'worm-combinations-new', '
     test(`retained Worm route: ${id}`, async ({page}) => {
         const ledger = await openThemeCase(page, id);
         await expect(page.getByText('Page not found', {exact: true})).toHaveCount(0);
-        expect(ledger.requests.some(request => request.path.startsWith('/api/v1/worm-trading/'))).toBe(true);
+        if (id === 'worm-combinations-new') {
+            await expect(page.getByRole('heading', {level: 1, name: 'New combination', exact: true})).toBeVisible();
+        } else {
+            await expect.poll(() => ledger.requests.some(request => request.path.startsWith('/api/v1/worm-trading/'))).toBe(true);
+        }
         assertThemeLedger(ledger);
     });
 }

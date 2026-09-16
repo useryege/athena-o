@@ -503,8 +503,8 @@
                         },
                         {
                             "name": "market-radar",
-                            "status": "SERVING",
-                            "errorMessage": ""
+                            "status": "UNREACHABLE",
+                            "errorMessage": "Health check timed out after 5 seconds."
                         },
                         {
                             "name": "managed-oo",
