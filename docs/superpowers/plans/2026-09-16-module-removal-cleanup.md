@@ -95,7 +95,7 @@ func (s *SQLStore) CountRetiredSports(ctx context.Context) (RetiredSportsCounts,
 func (s *SQLStore) CancelRetiredSportsPending(ctx context.Context, limit int32) (int64, error)
 ```
 
-- [ ] 先增加数据库集成用例。以下核心断言放在 `store` 包，沿用既有测试 fixture；新增接口未实现时应编译失败，随后转为行为断言通过：
+- [x] 先增加数据库集成用例。以下核心断言放在 `store` 包，沿用既有测试 fixture；新增接口未实现时应编译失败，随后转为行为断言通过：
 
 ```go
 func TestRetiredSportsPendingIsCancelledWithoutDeletingLedger(t *testing.T) {
@@ -114,8 +114,8 @@ func TestRetiredSportsPendingIsCancelledWithoutDeletingLedger(t *testing.T) {
 }
 ```
 
-- [ ] 增加同一行许可竞争用例：通过现有 `s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil)` 得到 `sending`，清理返回零且仍为 `sending`；再用现有结果记录 API 分别写入 retryable／sent／unknown，核对只有回到 pending 的可被下一次清理取消。另建 Worm、Trader Sync 和近似 Sports 来源，确认均未改变；验证六个精确来源、行锁超时及分批处理。
-- [ ] 新 SQL 写入六个固定来源，不接受任意前缀或调用方传入来源。取消使用与发送许可相同的 delivery 行锁／状态条件；每批 100 条，事务内设置有限锁与 SQL 超时。核心查询如下，计数查询复用相同六来源集合：
+- [x] 增加同一行许可竞争用例：通过现有 `s.Authorize(ctx, testPermitCandidate(ref), uuid.New(), nil)` 得到 `sending`，清理返回零且仍为 `sending`；再用现有结果记录 API 分别写入 retryable／sent／unknown，核对只有回到 pending 的可被下一次清理取消。另建 Worm、Trader Sync 和近似 Sports 来源，确认均未改变；验证六个精确来源、行锁超时及分批处理。
+- [x] 新 SQL 写入六个固定来源，不接受任意前缀或调用方传入来源。取消使用与发送许可相同的 delivery 行锁／状态条件；每批 100 条，事务内设置有限锁与 SQL 超时。核心查询如下，计数查询复用相同六来源集合：
 
 ```sql
 -- name: CancelRetiredSportsPending :execrows
@@ -137,9 +137,9 @@ SET status='cancelled', error_message='source retired: sports removal',
 FROM chosen c WHERE d.id=c.id AND d.status='pending';
 ```
 
-- [ ] SQL 源稳定后执行 `make sqlc-local`，检查生成差异，再实现存储方法：借用现有 pool；写操作自建并提交事务，`SET LOCAL lock_timeout='2s'`、`statement_timeout='5s'`；计数失败不能当作零，保留发送尝试及终态数据。
-- [ ] 工具使用 `schema.LoadDSN` 和 `schema.ConnectVerified` 连接、明确打印数据库身份和只读计数；默认只读，指定 `--apply` 才循环取消并复查。`--timeout` 默认 `5m`，每秒复查，单次数据库操作最多 5 秒；超时、锁失败或非零 pending／sending 输出剩余量并退出非零。持有该数据库一条专用连接的 session advisory lock `athena:retire-sports-notifications`，获取失败立即退出，进程结束释放。
-- [ ] 为工具增加默认只读、参数校验、超时／取消、重复运行和并发运行测试。JSON 结果包含数据库名、取消数、pending、sending、结果状态；日志不输出 DSN 密码。只读计数不证明生产者已退出，T8 必须单独核验。
+- [x] SQL 源稳定后执行 `make sqlc-local`，检查生成差异，再实现存储方法：借用现有 pool；写操作自建并提交事务，`SET LOCAL lock_timeout='2s'`、`statement_timeout='5s'`；计数失败不能当作零，保留发送尝试及终态数据。
+- [x] 工具使用 `schema.LoadDSN` 和 `schema.ConnectVerified` 连接、明确打印数据库身份和只读计数；默认只读，指定 `--apply` 才循环取消并复查。`--timeout` 默认 `5m`，每秒复查，单次数据库操作最多 5 秒；超时、锁失败或非零 pending／sending 输出剩余量并退出非零。持有该数据库一条专用连接的 session advisory lock `athena:retire-sports-notifications`，获取失败立即退出，进程结束释放。
+- [x] 为工具增加默认只读、参数校验、超时／取消、重复运行和并发运行测试。JSON 结果包含数据库名、取消数、pending、sending、结果状态；日志不输出 DSN 密码。只读计数不证明生产者已退出，T8 必须单独核验。
 
 **运行与预期：**使用明确的隔离测试 PostgreSQL 设置 `ATHENA_TEST_PG_ADMIN_DSN`，fixture 只操作自建库；不能省略环境后把测试未运行当通过。
 

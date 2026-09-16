@@ -7,7 +7,7 @@
 
 | 层面 | 状态 |
 | --- | --- |
-| 代码清理 | T1 完成，T2 开始 |
+| 代码清理 | T1–T2 完成，T3 开始 |
 | 运行退役 | 尚未执行，历史 IP 与默认卷不视为现场事实 |
 | 数据删除 | 尚未执行；四库直接删除策略已批准 |
 
@@ -26,3 +26,9 @@ sports-models/sports-market-card 仅由待删 Sports 页面及专属测试使用
 ## 环境归属
 
 任务前本机已有 ATHENA 停止实例和其他项目运行容器；全部保持原样。任务新增环境与其停止结果后续逐项记录。普通验收数据保留与历史四库永久退役分别记录。
+
+## T2 通知维护
+
+实现默认只读、显式 --apply、总期限与每次 5 秒操作期限、100 条批次、独占 session advisory lock 和精确六来源。pending 取消与发送许可共享 delivery 行锁，sending/终态/发送尝试保留。
+
+独立 PostgreSQL：容器 `athena-module-removal-20260916-tests`（ID `1ee650507fde`），loopback `127.0.0.1:61752`，同名数据卷，owner 标签为当前实施工作区；fixture 只创建随机 athena_test 库。退役工具与存储集成测试通过，CLI 普通测试和构建通过。日志：`t2-red.log`、`t2-cli-red.log`、`t2-sqlc.log`、`t2-green.log`（包含已修复的 fixture Topic 缺失）、`t2-cli-green.log`。未调用 Telegram，未取得 sender 身份。
