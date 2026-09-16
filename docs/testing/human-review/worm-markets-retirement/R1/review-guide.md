@@ -20,6 +20,7 @@
 DOCS_GATE_SHA 只记录 Task 10 docs gate 阶段提交；PRODUCT_SHA 是本轮固定受审产品并包含其后的 budget/current docs 修订。MATERIAL_SHA 从正式 R1 目录的最后一次提交运行时解析，避免材料自引用；PRODUCT_SHA 必须是该材料提交的祖先。在启动任何服务或执行会修改数据的步骤前完成本节；任何一项不符都停止环境恢复，在报告中记为“受阻”，不得 checkout、reset 或覆盖当前工作。
 
 ~~~bash
+set -e
 REVIEW_WT=/home/yege/work/athena/.worktrees/worm-markets-retirement
 FIELD_MAIN=/home/yege/work/athena
 TASK_BASE=617bd6a26345905dc7125911ec72c1cee56afe0b
@@ -46,6 +47,31 @@ git -C "$FIELD_MAIN" merge-base --is-ancestor "$PRODUCT_SHA" HEAD
 git -C "$FIELD_MAIN" diff --quiet "$PRODUCT_SHA" -- . \
   ':(exclude)docs' ':(exclude).agents' ':(exclude).codex' \
   ':(exclude)AGENTS.md' ':(exclude)tools/task-completion-email/main.go'
+
+# 拒绝会进入 Go/UI/部署构建的未跟踪或忽略输入；不扫描 node_modules、dist、.run、.tmp 等输出目录。
+RUNTIME_INPUT_PATHS=(
+  cmd common internal pkg tools ui/src ui/e2e hack deploy assets
+  Makefile go.mod go.sum Dockerfile Dockerfile.dev docker-compose.prod.yml sqlc.yaml
+)
+mapfile -d '' -t UNTRACKED_RUNTIME_INPUTS < <(
+  git -C "$FIELD_MAIN" ls-files -z --others --exclude-standard -- \
+    "${RUNTIME_INPUT_PATHS[@]}" ':(exclude)tools/task-completion-email/main.go'
+)
+mapfile -d '' -t IGNORED_RUNTIME_INPUTS < <(
+  git -C "$FIELD_MAIN" ls-files -z --others --ignored --exclude-standard -- \
+    "${RUNTIME_INPUT_PATHS[@]}" ':(exclude)tools/task-completion-email/main.go'
+)
+if ((${#UNTRACKED_RUNTIME_INPUTS[@]} || ${#IGNORED_RUNTIME_INPUTS[@]})); then
+  printf 'untracked runtime input: %q\n' "${UNTRACKED_RUNTIME_INPUTS[@]}"
+  printf 'ignored runtime input: %q\n' "${IGNORED_RUNTIME_INPUTS[@]}"
+  exit 1
+fi
+
+# 两个 ignored 本地运行输入必须仍是本轮核对过的 profile 与拒发替身。
+PROFILE="$REVIEW_WT/.superpowers/sdd/2026-09-16-worm-trading-market-query/runtime/field-full-stack.env"
+TELEGRAM_HELPER="$REVIEW_WT/.superpowers/sdd/2026-09-16-worm-trading-market-query/runtime/telegram-substitute.py"
+test "$(sha256sum "$PROFILE" | awk '{print $1}')" = c1629c0b439579ec93decea15319f71a4a5a4058bc556bb41fe7fe8be43d42d0
+test "$(sha256sum "$TELEGRAM_HELPER" | awk '{print $1}')" = debd3134fc2466c68f2ab33c41c186145d885603c0830ed51cd5a62790dc1c4e
 ~~~
 
 正式 R1 文件提交后预期全部退出 0。本轮固定的三个完整 SHA 为：
@@ -56,7 +82,7 @@ d66c0c3d07a16e3050600fd244e349cbcd79c575
 1dfcb795dfdf3da1ecb1b63e4acc9677604d90a5
 ~~~
 
-MATERIAL_SHA 不写入材料正文，执行命令时从正式目录解析，并在交付记录中记录完整值。<code>FIELD_MAIN</code> 可保留其他任务的文档、技能及明确排除的 task-completion-email 修改；不要清理、暂存或提交这些内容。
+MATERIAL_SHA 不写入材料正文，执行命令时从正式目录解析，并在交付记录中记录完整值。<code>FIELD_MAIN</code> 可保留其他任务的文档、技能及明确排除的 task-completion-email 修改；未知 runtime 输入或本地受控文件摘要不符时必须记为受阻，不得清理、覆盖或继续启动。
 
 ## 禁止操作
 
@@ -79,20 +105,86 @@ CHK-001 至 CHK-004 只读取既有证据，不需要启动环境。CHK-005 至 
 
 - Docker 可用；<code>/home/yege/work/athena/.env</code> 与原 namespace 的三个数据卷仍在。
 - Node 使用 <code>ui/.nvmrc</code> 的 24.14.1。
-- 以下本地受控文件存在：
+- 以下本地受控文件已经过版本核对中的 SHA-256 完整性检查：
   - <code>/home/yege/work/athena/.worktrees/worm-markets-retirement/.superpowers/sdd/2026-09-16-worm-trading-market-query/runtime/field-full-stack.env</code>
   - <code>/home/yege/work/athena/.worktrees/worm-markets-retirement/.superpowers/sdd/2026-09-16-worm-trading-market-query/runtime/telegram-substitute.py</code>
 - field profile 指向 <code>http://127.0.0.1:61907</code> 的本地 Telegram 替身。替身只允许启动和轮询所需方法，对 sendMessage 等外发方法返回 403。
 
-如受控文件缺失，将运行项记为受阻并请求 AI 从本轮证据恢复；不要改用真实 Telegram API。
+如受控文件缺失或摘要不符，将运行项记为受阻并请求 AI 从本轮证据恢复；不要覆盖文件或改用真实 Telegram API。
 
-### 1. 启动拒发 Telegram 替身
+### 1. 执行时归属预检并创建本轮记录
 
-终端 A 前台运行并保持：
+在任何启动前从终端 C 执行。它要求同一 checkout 的 `full-stack` 状态为 stopped，固定应用／helper／borrower 端口均无监听，并以 noclobber 创建本轮唯一 active record。发现已有环境、端口或旧记录时立即记为受阻；不得借用、停止或覆盖它们。
 
 ~~~bash
+set -e
+FIELD_MAIN=/home/yege/work/athena
+ACTIVE_RECORD=/tmp/worm-markets-retirement-R1-active
+STATE="$FIELD_MAIN/.run/instances/full-stack/state.json"
+
+test ! -e "$ACTIVE_RECORD"
+test -f "$STATE"
+make -C "$FIELD_MAIN" runtime-status INSTANCE=full-stack
+test "$(jq -r '.Phase' "$STATE")" = stopped
+
+for port in 4000 8080 8086 8088 8090 8108 8122 61907; do
+  if ss -ltnH "sport = :$port" | grep -q .; then
+    echo "preflight port already in use: $port" >&2
+    exit 1
+  fi
+done
+
+R1_RUN_DIR=$(mktemp -d /tmp/worm-markets-retirement-R1-XXXXXXXX)
+BORROWER_INSTANCE="worm-retirement-human-r1-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+printf '%s\n' "$BORROWER_INSTANCE" > "$R1_RUN_DIR/borrower-instance"
+jq '{checkedAt: (now | todateiso8601), Key, RunID, Phase, Supervisor}' "$STATE" > "$R1_RUN_DIR/preflight-full-stack.json"
+if ! (set -o noclobber; printf '%s\n' "$R1_RUN_DIR" > "$ACTIVE_RECORD") 2>/dev/null; then
+  python3 - "$R1_RUN_DIR" <<'PY_CLEAN_RECORD'
+import pathlib, sys
+root = pathlib.Path(sys.argv[1])
+(root / "borrower-instance").unlink()
+(root / "preflight-full-stack.json").unlink()
+root.rmdir()
+PY_CLEAN_RECORD
+  echo 'another R1 run record already exists; inspect it before continuing' >&2
+  exit 1
+fi
+printf 'active record: %s\nborrower instance: %s\n' "$R1_RUN_DIR" "$BORROWER_INSTANCE"
+~~~
+
+active record 存在后，所有终端都先从该文件加载本轮目录，不自行重建名称：
+
+~~~bash
+ACTIVE_RECORD=/tmp/worm-markets-retirement-R1-active
+R1_RUN_DIR=$(cat "$ACTIVE_RECORD")
+BORROWER_INSTANCE=$(cat "$R1_RUN_DIR/borrower-instance")
+BORROWER_ENV="$R1_RUN_DIR/trading.env"
+export R1_RUN_DIR BORROWER_INSTANCE BORROWER_ENV
+~~~
+
+### 2. 启动拒发 Telegram 替身
+
+终端 A 从 active record 加载目录，直接启动 helper 子进程并记录 PID、start ticks 与 cwd。只有该直接子进程仍存活且 61907 已监听时才写 `helper-owned.json`；终端保持等待。
+
+~~~bash
+set -e
 REVIEW_WT=/home/yege/work/athena/.worktrees/worm-markets-retirement
-python3 -u "$REVIEW_WT/.superpowers/sdd/2026-09-16-worm-trading-market-query/runtime/telegram-substitute.py"
+ACTIVE_RECORD=/tmp/worm-markets-retirement-R1-active
+R1_RUN_DIR=$(cat "$ACTIVE_RECORD")
+cd "$REVIEW_WT"
+python3 -u "$REVIEW_WT/.superpowers/sdd/2026-09-16-worm-trading-market-query/runtime/telegram-substitute.py" > "$R1_RUN_DIR/helper.log" 2>&1 &
+HELPER_PID=$!
+for _ in $(seq 1 50); do
+  kill -0 "$HELPER_PID" 2>/dev/null || { cat "$R1_RUN_DIR/helper.log" >&2; exit 1; }
+  ss -ltnpH 'sport = :61907' | grep -Fq "pid=$HELPER_PID," && break
+  sleep 0.1
+done
+ss -ltnpH 'sport = :61907' | grep -Fq "pid=$HELPER_PID,"
+HELPER_START_TICKS=$(awk '{print $22}' "/proc/$HELPER_PID/stat")
+HELPER_CWD=$(readlink -f "/proc/$HELPER_PID/cwd")
+jq -n --argjson pid "$HELPER_PID" --argjson startTicks "$HELPER_START_TICKS" --arg cwd "$HELPER_CWD" \
+  '{pid: $pid, startTicks: $startTicks, cwd: $cwd}' > "$R1_RUN_DIR/helper-owned.json"
+wait "$HELPER_PID"
 ~~~
 
 另一个终端核对它确实拒发，预期 HTTP 403；这不会向 Telegram 外发：
@@ -101,24 +193,59 @@ python3 -u "$REVIEW_WT/.superpowers/sdd/2026-09-16-worm-trading-market-query/run
 curl -sS -o /dev/null -w '%{http_code}\n'   -X POST http://127.0.0.1:61907/bot-r1/sendMessage   -d chat_id=1 -d text=blocked
 ~~~
 
-### 2. 启动原 main default full-stack
+### 3. 启动原 main default full-stack
 
 终端 B 从现场 checkout 启动。命令复用原 namespace 的保留卷；基础设施端口由 Docker 动态分配，禁止写死先前的 50124 或 59370。
 
 ~~~bash
+set -e
 FIELD_MAIN=/home/yege/work/athena
 REVIEW_WT=/home/yege/work/athena/.worktrees/worm-markets-retirement
+ACTIVE_RECORD=/tmp/worm-markets-retirement-R1-active
+R1_RUN_DIR=$(cat "$ACTIVE_RECORD")
 cd "$FIELD_MAIN"
 source "$HOME/.nvm/nvm.sh"
 nvm use "$(cat ui/.nvmrc)"
+LAUNCHER_PID=$$
+LAUNCHER_START_TICKS=$(awk '{print $22}' "/proc/$LAUNCHER_PID/stat")
+LAUNCHER_CWD=$(readlink -f "/proc/$LAUNCHER_PID/cwd")
+jq -n --argjson pid "$LAUNCHER_PID" --argjson startTicks "$LAUNCHER_START_TICKS" --arg cwd "$LAUNCHER_CWD" \
+  '{pid: $pid, startTicks: $startTicks, cwd: $cwd}' > "$R1_RUN_DIR/full-stack-launcher.json"
 ATHENA_NOTIFICATION_TELEGRAM_API_URL=http://127.0.0.1:61907 make run INSTANCE=full-stack   ENV_FILE="$REVIEW_WT/.superpowers/sdd/2026-09-16-worm-trading-market-query/runtime/field-full-stack.env"
 ~~~
 
-报告 <code>instance full-stack is ready</code> 后，在终端 C 核对状态、动态 DSN 和就绪响应：
+报告 <code>instance full-stack is ready</code> 后，在终端 C 核对当前 supervisor 是上述 launcher 的后代、state 身份与实际进程一致，才写入 `full-stack-owned.json` 和 owned-start 标记。如果 `make run` 失败、launcher 身份已变或 supervisor 不是其后代，不得写 owned 标记、不得停止当前 `full-stack`，记录受阻并保留 active record。
 
 ~~~bash
-cd /home/yege/work/athena
+set -e
+FIELD_MAIN=/home/yege/work/athena
+ACTIVE_RECORD=/tmp/worm-markets-retirement-R1-active
+R1_RUN_DIR=$(cat "$ACTIVE_RECORD")
+STATE="$FIELD_MAIN/.run/instances/full-stack/state.json"
+LAUNCHER_PID=$(jq -r '.pid' "$R1_RUN_DIR/full-stack-launcher.json")
+LAUNCHER_START_TICKS=$(jq -r '.startTicks' "$R1_RUN_DIR/full-stack-launcher.json")
+test "$(awk '{print $22}' "/proc/$LAUNCHER_PID/stat")" = "$LAUNCHER_START_TICKS"
+
+cd "$FIELD_MAIN"
 make runtime-status INSTANCE=full-stack
+test "$(jq -r '.Phase' "$STATE")" = running
+RUN_ID=$(jq -r '.RunID' "$STATE")
+SUPERVISOR_PID=$(jq -r '.Supervisor.PID' "$STATE")
+test "$RUN_ID" = "$(jq -r '.Supervisor.RunID' "$STATE")"
+test "$(awk '{print $22}' "/proc/$SUPERVISOR_PID/stat")" = "$(jq -r '.Supervisor.StartTicks' "$STATE")"
+test "$(readlink -f "/proc/$SUPERVISOR_PID/exe")" = "$(jq -r '.Supervisor.Exe' "$STATE")"
+test "$(tr '\0' '\n' < "/proc/$SUPERVISOR_PID/environ" | awk -F= '$1 == "ATHENA_LOCAL_RUNTIME_RUN_ID" {print $2}')" = "$RUN_ID"
+
+CURRENT_PID=$SUPERVISOR_PID
+DESCENDANT=false
+while test "$CURRENT_PID" -gt 1; do
+  if test "$CURRENT_PID" = "$LAUNCHER_PID"; then DESCENDANT=true; break; fi
+  CURRENT_PID=$(awk '{print $4}' "/proc/$CURRENT_PID/stat")
+done
+test "$DESCENDANT" = true
+jq '{Key, RunID, Phase, Supervisor, Endpoints}' "$STATE" > "$R1_RUN_DIR/full-stack-owned.json"
+touch "$R1_RUN_DIR/full-stack-owned-start"
+
 jq '.Endpoints | {postgres, redis, minio}' .run/instances/full-stack/state.json
 jq -r '.ATHENA_ACCOUNT_STATE_POSTGRES_DSN' .run/instances/full-stack/environment.json
 curl -fsS -o /dev/null -w 'ui member bootstrap %{http_code}\n'   -H 'X-Athena-Application-Realm: member'   http://127.0.0.1:4000/api/v1/app/bootstrap
@@ -127,42 +254,14 @@ curl -fsS -o /dev/null -w 'api admin bootstrap %{http_code}\n'   -H 'X-Athena-Ap
 
 预期 status 为 running，两个 bootstrap 都是 200。UI 为 <code>http://127.0.0.1:4000</code>，API 为 <code>http://127.0.0.1:8080</code>；PostgreSQL／Redis／MinIO 动态端口以本次 <code>state.json.Endpoints</code> 为准。environment.json 的 DSN 只用于派生 borrower 连接，不当作端口表。
 
-### 3. 生成并启动 external Trading borrower
+### 4. 生成并启动 external Trading borrower
 
 default full-stack 不内置 Worm Trading。每次恢复都创建带 UTC 时间戳和 PID 的 owned borrower 名称；不能复用固定 instance，因为 full-stack 正常 stop/start 会重新分配动态 PostgreSQL 端口，而旧 external instance 保留的是前一轮 DSN 指纹。
 
-先在终端 C 创建本轮记录。稳定 active 文件采用 noclobber；如果它已存在，停止本轮并按文件中的旧 instance 执行 runtime-status，请 AI 核实归属。不要覆盖、reset 或删除仍可能 active 的旧记录。
+从 active record 重新加载本轮唯一名称：
 
 ~~~bash
-ACTIVE_RECORD=/tmp/worm-markets-retirement-R1-active
-if test -e "$ACTIVE_RECORD"; then
-  OLD_RUN_DIR=$(cat "$ACTIVE_RECORD")
-  OLD_INSTANCE=$(cat "$OLD_RUN_DIR/borrower-instance" 2>/dev/null || true)
-  printf 'existing R1 record: %s instance=%s\n' "$OLD_RUN_DIR" "$OLD_INSTANCE"
-  test -z "$OLD_INSTANCE" || make -C /home/yege/work/athena runtime-status INSTANCE="$OLD_INSTANCE"
-  exit 1
-fi
-
-R1_RUN_DIR=$(mktemp -d /tmp/worm-markets-retirement-R1-XXXXXXXX)
-BORROWER_INSTANCE="worm-retirement-human-r1-$(date -u +%Y%m%dT%H%M%SZ)-$$"
-BORROWER_ENV="$R1_RUN_DIR/trading.env"
-printf '%s\n' "$BORROWER_INSTANCE" > "$R1_RUN_DIR/borrower-instance"
-if ! (set -o noclobber; printf '%s\n' "$R1_RUN_DIR" > "$ACTIVE_RECORD") 2>/dev/null; then
-  python3 - "$R1_RUN_DIR" <<'PY_CLEAN_RECORD'
-import pathlib, sys
-root = pathlib.Path(sys.argv[1])
-(root / "borrower-instance").unlink()
-root.rmdir()
-PY_CLEAN_RECORD
-  echo 'another R1 run record already exists; inspect it before continuing' >&2
-  exit 1
-fi
-printf 'export R1_RUN_DIR=%q\nexport BORROWER_INSTANCE=%q\nexport BORROWER_ENV=%q\n'   "$R1_RUN_DIR" "$BORROWER_INSTANCE" "$BORROWER_ENV"
-~~~
-
-把输出的三条 export 复制到终端 D，或在任何终端从 active record 重新加载：
-
-~~~bash
+set -e
 ACTIVE_RECORD=/tmp/worm-markets-retirement-R1-active
 R1_RUN_DIR=$(cat "$ACTIVE_RECORD")
 BORROWER_INSTANCE=$(cat "$R1_RUN_DIR/borrower-instance")
@@ -173,6 +272,7 @@ export R1_RUN_DIR BORROWER_INSTANCE BORROWER_ENV
 下面脚本从本次动态 account DSN 推导同一 server 的 worm_trading DSN，并复用 field profile 中已核对的稳定 credential key，以及 full-stack runtime 中的内部 token 和 Wallet signer。输出只保存在本轮唯一目录。
 
 ~~~bash
+set -e
 FIELD_MAIN=/home/yege/work/athena
 REVIEW_WT=/home/yege/work/athena/.worktrees/worm-markets-retirement
 python3 - "$REVIEW_WT/.superpowers/sdd/2026-09-16-worm-trading-market-query/runtime/field-full-stack.env"   "$FIELD_MAIN/.run/instances/full-stack/environment.json" "$BORROWER_ENV" <<'PY_BORROWER_ENV'
@@ -205,6 +305,7 @@ PY_BORROWER_ENV
 终端 D 使用保存的唯一名称启动 borrower：
 
 ~~~bash
+set -e
 cd /home/yege/work/athena
 make run-service SERVICE=worm-trading INSTANCE="$BORROWER_INSTANCE"   DB_MODE=external ENV_FILE="$BORROWER_ENV"
 ~~~
@@ -212,11 +313,16 @@ make run-service SERVICE=worm-trading INSTANCE="$BORROWER_INSTANCE"   DB_MODE=ex
 报告 ready 后，终端 C 从同一 active record 加载名称并核对：
 
 ~~~bash
+set -e
 ACTIVE_RECORD=/tmp/worm-markets-retirement-R1-active
 R1_RUN_DIR=$(cat "$ACTIVE_RECORD")
 BORROWER_INSTANCE=$(cat "$R1_RUN_DIR/borrower-instance")
 cd /home/yege/work/athena
 make runtime-status INSTANCE="$BORROWER_INSTANCE"
+BORROWER_STATE="$PWD/.run/instances/$BORROWER_INSTANCE/state.json"
+test "$(jq -r '.Phase' "$BORROWER_STATE")" = running
+jq '{Key, RunID, Phase, Supervisor}' "$BORROWER_STATE" > "$R1_RUN_DIR/borrower-owned.json"
+touch "$R1_RUN_DIR/borrower-owned-start"
 curl -fsS -o /dev/null -w 'catalog %{http_code}\n'   -H 'X-Athena-Application-Realm: member'   http://127.0.0.1:4000/api/v1/worm-trading/events/2igwY6nZGmC8S3apwxx3N8C9xyLKuQZ6tT2KmedtTZBF
 ~~~
 
@@ -365,7 +471,7 @@ development 身份是真实应用 DisableAuth 身份，但没有覆盖 Google �
 
 ## 本轮现场收尾
 
-仅执行 CHK-001 至 CHK-004 时无需停止资源。执行运行项后，必须从 active record 读取本轮唯一 borrower 名称，按 borrower → full-stack → Telegram 替身收尾。若 status/stop 失败，保留 active record 供排查，不覆盖或 reset。
+仅执行 CHK-001 至 CHK-004 时无需停止资源。执行运行项后，先完成全部身份核对；任一 owned-start 标记缺失、RunID／supervisor 或 helper 身份变化时，不执行任何 stop，保留 active record 和证据并记为受阻。全部一致后才按 borrower → full-stack → Telegram 替身收尾。
 
 ~~~bash
 set -e
@@ -373,32 +479,63 @@ ACTIVE_RECORD=/tmp/worm-markets-retirement-R1-active
 R1_RUN_DIR=$(cat "$ACTIVE_RECORD")
 BORROWER_INSTANCE=$(cat "$R1_RUN_DIR/borrower-instance")
 BORROWER_ENV="$R1_RUN_DIR/trading.env"
+FIELD_MAIN=/home/yege/work/athena
+BORROWER_STATE="$FIELD_MAIN/.run/instances/$BORROWER_INSTANCE/state.json"
+FULL_STATE="$FIELD_MAIN/.run/instances/full-stack/state.json"
 
-cd /home/yege/work/athena
+test -f "$R1_RUN_DIR/borrower-owned-start"
+test -f "$R1_RUN_DIR/full-stack-owned-start"
+test "$(jq -r '.Phase' "$BORROWER_STATE")" = running
+test "$(jq -r '.RunID' "$BORROWER_STATE")" = "$(jq -r '.RunID' "$R1_RUN_DIR/borrower-owned.json")"
+test "$(jq -S -c '.Supervisor' "$BORROWER_STATE")" = "$(jq -S -c '.Supervisor' "$R1_RUN_DIR/borrower-owned.json")"
+test "$(jq -r '.Phase' "$FULL_STATE")" = running
+test "$(jq -r '.RunID' "$FULL_STATE")" = "$(jq -r '.RunID' "$R1_RUN_DIR/full-stack-owned.json")"
+test "$(jq -S -c '.Supervisor' "$FULL_STATE")" = "$(jq -S -c '.Supervisor' "$R1_RUN_DIR/full-stack-owned.json")"
+
+HELPER_PID=$(jq -r '.pid' "$R1_RUN_DIR/helper-owned.json")
+HELPER_START_TICKS=$(jq -r '.startTicks' "$R1_RUN_DIR/helper-owned.json")
+HELPER_CWD=$(jq -r '.cwd' "$R1_RUN_DIR/helper-owned.json")
+test "$(awk '{print $22}' "/proc/$HELPER_PID/stat")" = "$HELPER_START_TICKS"
+test "$(readlink -f "/proc/$HELPER_PID/cwd")" = "$HELPER_CWD"
+mapfile -t DYNAMIC_PORTS < <(
+  jq -r '.Endpoints | [.postgres, .redis, .minio][] | split(":")[-1]' "$R1_RUN_DIR/full-stack-owned.json"
+)
+
+cd "$FIELD_MAIN"
 make stop-instance INSTANCE="$BORROWER_INSTANCE"
 make runtime-status INSTANCE="$BORROWER_INSTANCE"
 make stop INSTANCE=full-stack
 make runtime-status INSTANCE=full-stack
+test "$(awk '{print $22}' "/proc/$HELPER_PID/stat")" = "$HELPER_START_TICKS"
+test "$(readlink -f "/proc/$HELPER_PID/cwd")" = "$HELPER_CWD"
+kill -TERM "$HELPER_PID"
+for _ in $(seq 1 50); do
+  test ! -e "/proc/$HELPER_PID" && break
+  sleep 0.1
+done
+test ! -e "/proc/$HELPER_PID"
+
+for port in 4000 8080 8086 8088 8090 8108 8122 61907 "${DYNAMIC_PORTS[@]}"; do
+  if ss -ltnH "sport = :$port" | grep -q .; then
+    echo "still-listening $port" >&2
+    exit 1
+  fi
+done
 
 test "$(cat "$ACTIVE_RECORD")" = "$R1_RUN_DIR"
 python3 - "$ACTIVE_RECORD" "$R1_RUN_DIR" <<'PY_CLEAN_SUCCESS'
 import pathlib, sys
 active, root = map(pathlib.Path, sys.argv[1:])
-(root / "trading.env").unlink(missing_ok=True)
-(root / "borrower-instance").unlink()
+for name in (
+    "borrower-instance", "trading.env", "preflight-full-stack.json",
+    "helper.log", "helper-owned.json", "full-stack-launcher.json",
+    "full-stack-owned.json", "full-stack-owned-start",
+    "borrower-owned.json", "borrower-owned-start",
+):
+    (root / name).unlink(missing_ok=True)
 root.rmdir()
 active.unlink()
 PY_CLEAN_SUCCESS
 ~~~
 
-回到终端 A 以 Ctrl-C 停止 Telegram 替身，再核对固定端口：
-
-~~~bash
-for port in 4000 8080 8086 8088 8090 8108 8122 61907; do
-  if ss -ltnH "sport = :$port" | grep -q .; then
-    echo "still-listening $port"
-  fi
-done
-~~~
-
-预期无输出。动态 PostgreSQL／Redis／MinIO 端口从本轮 <code>.run/instances/full-stack/state.json</code> 的 <code>Endpoints</code> 记录中核对，不使用历史端口常量。停止命令保留原三个卷，禁止 reset。停止失败时保存两个 instance 目录状态和日志并记录受阻，不终止归属不明进程。
+终端 A 的 `wait` 此时应以 SIGTERM 状态返回。停止块在清理 active record 前已经从本轮 <code>full-stack-owned.json</code> 读取动态 PostgreSQL／Redis／MinIO 端口，并连同固定端口逐一确认无监听，不使用历史端口常量。停止命令保留原三个卷，禁止 reset。任何身份、停止或端口核对失败都保存两个 instance 目录、active record 和日志并记录受阻，不终止归属不明进程。

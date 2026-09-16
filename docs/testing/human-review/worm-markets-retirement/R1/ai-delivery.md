@@ -63,7 +63,7 @@
 | --- | --- | --- | --- | --- | --- |
 | AI-FINAL-I1 | 整分支最终审阅：catalog/Create/Update 的 account reader 无 deadline，catalog budget 起点偏晚 | 已由 W/final-review.md 核实 | 1dfcb795 已统一修复服务预算与 API transport deadline | W/final-fix-report.md 定向测试通过；W/final-rereview.md 为 ADDRESSED；最终真实只读 4/4 | AI 已验证，纳入 R1 人工审查 |
 
-R1 当前没有用户提交的问题；上表是阻止 AI 交付完成的审阅项，不占用用户 ISSUE-001 编号。
+R1 当前没有用户提交的问题；上表记录曾阻止 AI 交付完成、现已修复并复审通过的审阅项，不占用用户 ISSUE-001 编号。
 
 ## 环境与资源收尾
 
