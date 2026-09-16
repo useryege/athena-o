@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 caller_trader_sync_image="${TRADER_SYNC_IMAGE:-}"
+caller_worm_trading_image="${WORM_TRADING_IMAGE:-}"
 caller_prod_account_state_maintenance="${PROD_ACCOUNT_STATE_MAINTENANCE:-}"
 caller_prod_account_state_external_consumers_stopped="${PROD_ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED:-}"
 
@@ -13,6 +14,7 @@ ENV_FILE="${PROD_ENV_FILE:-${REPO_ROOT}/.env}"
 COMPOSE_FILE="${PROD_COMPOSE_FILE:-${REPO_ROOT}/docker-compose.prod.yml}"
 IMAGE="${PROD_IMAGE:-athena:local}"
 TRADER_SYNC_IMAGE="${TRADER_SYNC_IMAGE:-athena-trader-sync:local}"
+WORM_TRADING_IMAGE="${WORM_TRADING_IMAGE:-athena-worm-trading:local}"
 MINIO_IMAGE="${MINIO_IMAGE:-athena-minio:9e49d5e7a648-go1.27.1}"
 MINIO_MC_IMAGE="${MINIO_MC_IMAGE:-athena-minio-mc:7394ce0dd2a8-go1.27.1}"
 REMOTE_USER="${REMOTE_USER:-root}"
@@ -38,6 +40,7 @@ if [[ -f "${ENV_FILE}" ]]; then
   set +a
 fi
 if [[ -n "${caller_trader_sync_image}" ]]; then export TRADER_SYNC_IMAGE="${caller_trader_sync_image}"; fi
+if [[ -n "${caller_worm_trading_image}" ]]; then export WORM_TRADING_IMAGE="${caller_worm_trading_image}"; fi
 if [[ -n "${caller_prod_account_state_maintenance}" ]]; then export PROD_ACCOUNT_STATE_MAINTENANCE="${caller_prod_account_state_maintenance}"; fi
 if [[ -n "${caller_prod_account_state_external_consumers_stopped}" ]]; then export PROD_ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED="${caller_prod_account_state_external_consumers_stopped}"; fi
 
@@ -67,8 +70,9 @@ MIGRATE_MODULE="$8"
 GOOGLE_OIDC_SECRET_ARCHIVE_PATH="$9"
 ATHENA_CONTAINER_UID="${10}"
 TRADER_SYNC_IMAGE="${11}"
+WORM_TRADING_IMAGE="${14}"
 export PROD_ACCOUNT_STATE_MAINTENANCE="${12}" PROD_ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED="${13}"
-export PROD_IMAGE="$IMAGE" MINIO_IMAGE MINIO_MC_IMAGE TRADER_SYNC_IMAGE
+export PROD_IMAGE="$IMAGE" MINIO_IMAGE MINIO_MC_IMAGE TRADER_SYNC_IMAGE WORM_TRADING_IMAGE
 export PROD_POSTGRES_VOLUME="$POSTGRES_VOLUME" PROD_REDIS_VOLUME="$REDIS_VOLUME" PROD_MINIO_VOLUME="$MINIO_VOLUME"
 compose() {
   docker compose -f docker-compose.prod.yml --env-file .env "$@"
@@ -85,7 +89,7 @@ prod_remote_exec() {
     "${POSTGRES_VOLUME}" "${REDIS_VOLUME}" "${MINIO_VOLUME}" \
     "${REMOTE_APP_DIR}" "${MIGRATE_MODULE}" \
     "${GOOGLE_OIDC_SECRET_ARCHIVE_PATH}" "${ATHENA_CONTAINER_UID}" \
-    "${TRADER_SYNC_IMAGE}" "${PROD_ACCOUNT_STATE_MAINTENANCE:-false}" "${PROD_ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED:-false}"
+    "${TRADER_SYNC_IMAGE}" "${PROD_ACCOUNT_STATE_MAINTENANCE:-false}" "${PROD_ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED:-false}" "${WORM_TRADING_IMAGE}"
 }
 
 destroy_remote() {
@@ -259,6 +263,9 @@ if [[ -n "${ATHENA_TRADER_SYNC_INTERNAL_AUTH_TOKEN:-}" || -n "${ATHENA_TRADER_SY
   echo 'Production Trader Sync secrets require only _FILE values' >&2; exit 1
 fi
 if [[ -z "${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:-}" ]]; then echo 'ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required' >&2; exit 1; fi
+if [[ "${ACTION}" != trader-sync-deploy ]] && ! docker image inspect "${WORM_TRADING_IMAGE}" >/dev/null 2>&1; then
+  echo "Docker image not found locally: ${WORM_TRADING_IMAGE}"; exit 1
+fi
 if ! docker image inspect "${TRADER_SYNC_IMAGE}" >/dev/null 2>&1; then
   echo "Docker image not found locally: ${TRADER_SYNC_IMAGE}"; exit 1
 fi
@@ -350,7 +357,9 @@ done
 REMOTE
 )"
 
-  for image in "${IMAGE}" "${MINIO_IMAGE}" "${MINIO_MC_IMAGE}" "${TRADER_SYNC_IMAGE}"; do
+  delivery_images=("${IMAGE}" "${MINIO_IMAGE}" "${MINIO_MC_IMAGE}" "${TRADER_SYNC_IMAGE}")
+  if [[ "${ACTION}" != trader-sync-deploy ]]; then delivery_images+=("${WORM_TRADING_IMAGE}"); fi
+  for image in "${delivery_images[@]}"; do
     echo "Streaming Docker image ${image} to ${REMOTE}..."
     docker save "${image}" | prod_remote_exec 'docker load'
   done
@@ -440,7 +449,7 @@ REMOTE
 cd "$APP_DIR"
 account_state_prepare
 other_schema_up
-mapfile -t athena_services < <(compose config --services | awk '/^athena-/ && $0 != "athena-migrate" && $0 != "athena-account-state-migrate" && $0 != "athena-server" { print }')
+mapfile -t athena_services < <(compose config --services | awk '/^athena-/ && $0 != "athena-migrate" && $0 != "athena-account-state-migrate" && $0 != "athena-worm-trading-migrate" && $0 != "athena-server" { print }')
 if ((${#athena_services[@]} == 0)); then
   echo 'No Athena backend services found in docker-compose.prod.yml.'
   exit 1
@@ -486,7 +495,7 @@ done
 REMOTE
 )"
 
-for image in "${IMAGE}" "${MINIO_IMAGE}" "${MINIO_MC_IMAGE}" "${TRADER_SYNC_IMAGE}"; do
+for image in "${IMAGE}" "${MINIO_IMAGE}" "${MINIO_MC_IMAGE}" "${TRADER_SYNC_IMAGE}" "${WORM_TRADING_IMAGE}"; do
   echo "Streaming Docker image ${image} to ${REMOTE}..."
   docker save "${image}" | prod_remote_exec 'docker load'
 done

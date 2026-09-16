@@ -102,7 +102,7 @@ before starting the stack.
 
 The full stack contains Trader Sync, API Server, Notification, Wallet, Profit Sharing,
 and UI. BSC indexers, Sports Live/History and World Cup Corners have been removed.
-The existing graph prepares only retained databases; it does not launch the two Worm processes.
+The existing graph prepares only retained databases; it does not launch the standalone Worm Trading process.
 See the [removal acceptance record](../testing/module-removal-cleanup-acceptance.md) for the separately verified Worm Compose environment. It defaults to the `full-stack` instance (override `INSTANCE` consistently for run/stop/reset) and its own persistent PostgreSQL, Redis,
 and MinIO. Infrastructure binds dynamically assigned loopback ports; inspect them with
 `make runtime-status INSTANCE=full-stack`. Default business ports are API `8080`,
@@ -481,3 +481,70 @@ make stop ATHENA_RUN_PROFILE=solana-preview
 对应端口可通过 `ATHENA_SOLANA_PREVIEW_UI_PORT`、`ATHENA_SOLANA_PREVIEW_API_PORT`、`ATHENA_SOLANA_PREVIEW_DISCOVERY_PORT` 调整；UI 使用 strictPort，避免静默换到别处。profile 只停止自己记录并验证的进程，不回收基础设施。也可选择 `ATHENA_RUN_PROFILE=solana-discovery` 仅运行扫描和后台补全服务。标准全栈停止语义保持不变，停止预览须带上相同 profile；Solana profile 不提供数据 reset。
 
 Solana预览为公共节点采样设置每范围1 slot、并发1、每秒请求预算1；有积压时页面照实展示。服务常规默认每范围4 slots；更高容量节点可通过自身配置调整。
+
+## Standalone Worm Trading
+
+Worm Trading builds directly from `cmd/athena-worm-trading` and runs independently
+of API, UI and other business services (SDS-R3/R5). Supply a task-specific `ENV_FILE`
+with a stable `ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY`, an internal token of
+at least 32 bytes in `ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN`, the configured
+`ATHENA_WALLET_SERVER_ADDRESS` and matching
+`ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN`, and
+`ATHENA_WORM_TRADING_SOLANA_RPC_URL`. Wallet is an explicitly borrowed signer;
+this command does not launch it. Solana readiness checks its mainnet genesis hash
+and slot. The official Worm provider is fixed and does not participate in startup
+readiness; its failures affect calls that require the provider, while persisted
+combinations and history remain readable.
+
+```bash
+make build-service SERVICE=worm-trading
+make run-service SERVICE=worm-trading INSTANCE=worm-retirement DB_MODE=managed ENV_FILE=/absolute/path/trading.env
+make runtime-status INSTANCE=worm-retirement
+make stop-instance INSTANCE=worm-retirement
+```
+
+Managed mode prepares only the instance account database and `worm_trading`, using
+the independent account migration owner and `athena-worm-trading-migrate up` then
+`verify`. Trading startup only opens and verifies both databases. It never migrates
+or chooses a fallback database. `verify` uses a read-only repeatable-read transaction:
+the complete effective embedded migration version set must match and all required
+Trading relations must exist. This is a version/relation check, not a full catalog
+fingerprint. An empty, older or future schema is rejected without creating goose
+metadata. To prepare an explicitly selected database outside managed runtime:
+
+```bash
+ATHENA_WORM_TRADING_POSTGRES_DSN='postgres://user:password@localhost/worm_trading' \
+  go run ./cmd/athena-worm-trading-migrate up --timeout=120s
+ATHENA_WORM_TRADING_POSTGRES_DSN='postgres://user:password@localhost/worm_trading' \
+  go run ./cmd/athena-worm-trading-migrate verify --timeout=120s
+```
+
+For `DB_MODE=external`, provide both `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` and
+`ATHENA_WORM_TRADING_POSTGRES_DSN`. Only verification runs; no borrowed schema or
+container is created, migrated or stopped. Use a distinct instance when switching
+DB mode or database identity. To inspect the UI against the current six-program
+`make run`, first configure its API's `ATHENA_WORM_TRADING_SERVER_ADDRESS` to the
+separate Trading listener, then start Trading in external mode with that same
+full-stack account database, Trading database and Wallet signer. This preserves
+account identity and grants across API and Trading. Record the full-stack owner
+and Trading borrower separately. The default six-program graph remains unchanged.
+
+The runtime forwards explicit Trading configuration keys only, including RPC
+attempt/balance/rate settings, `ATHENA_WORM_TRADING_WORM_API_ATTEMPT_TIMEOUT`
+(default 5s), `ATHENA_WORM_TRADING_CATALOG_BUDGET` (default 45s, positive and at
+least the attempt timeout), position budget/concurrency and ordinary proxy
+variables. `ATHENA_WORM_TRADING_LISTEN_ADDRESS` defaults to `127.0.0.1`, port to
+8090. When Trading and API are selected together, API receives the selected Trading
+instance address. Invalid budgets, incompatible schemas and missing keys/tokens
+fail startup. Shutdown drains gRPC for at most 10 seconds before cancelling
+transport, then stops existing workers and closes the command-owned Trading and
+account pools. Transport shutdown does not reverse an external request.
+
+`make build-service-image SERVICE=worm-trading` builds the minimal
+`deploy/worm-trading/Dockerfile`, containing only the service and its migration
+binary. `WORM_TRADING_IMAGE` defaults to `athena-worm-trading:local`; production
+build and local/remote delivery use that image for both Compose entries. The
+migration tool is under the `tools` profile. Production schema preparation calls
+its `up`/`verify`; account maintenance includes Trading as an account consumer.
+`make stop-instance` retains this instance's volumes and evidence and leaves the
+configured Wallet/Solana and external databases alone.

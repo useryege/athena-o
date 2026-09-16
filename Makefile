@@ -55,6 +55,7 @@ PATH:=$(PATH):$(PWD)/hack
 
 PROD_IMAGE?=athena:local
 TRADER_SYNC_IMAGE?=athena-trader-sync:local
+WORM_TRADING_IMAGE?=athena-worm-trading:local
 PROD_COMPOSE_FILE?=docker-compose.prod.yml
 PROD_ENV_FILE?=.env.prod
 REMOTE_APP_DIR?=/root/athena
@@ -366,6 +367,7 @@ minio-images-local:
 .PHONY: prod-build-local
 prod-build-local: minio-images-local
 	$(MAKE) build-service-image SERVICE=trader-sync
+	$(MAKE) build-service-image SERVICE=worm-trading
 	DOCKER_BUILDKIT=1 $(DOCKER) build --platform=$(TARGET_ARCH) -t $(PROD_IMAGE) .
 
 # use http://127.0.0.1:8080
@@ -447,8 +449,12 @@ export MINIO_IMAGE MINIO_MC_IMAGE
 
 .PHONY: build-service-image prod-trader-sync-deploy-remote
 build-service-image:
-	@test "$$SERVICE" = trader-sync || { echo 'build-service-image requires SERVICE=trader-sync' >&2; exit 1; }
-	@DOCKER_BUILDKIT=1 docker build --platform="$$TARGET_ARCH" -f deploy/trader-sync/Dockerfile -t "$$TRADER_SYNC_IMAGE" \
+	@case "$$SERVICE" in \
+	  trader-sync) service_image="$$TRADER_SYNC_IMAGE" ;; \
+	  worm-trading) service_image="$$WORM_TRADING_IMAGE" ;; \
+	  *) echo 'build-service-image requires SERVICE=trader-sync or worm-trading' >&2; exit 1 ;; \
+	esac; \
+	DOCKER_BUILDKIT=1 docker build --platform="$$TARGET_ARCH" -f "deploy/$$SERVICE/Dockerfile" -t "$$service_image" \
 	  --build-arg "VERSION=$$VERSION" --build-arg "GIT_COMMIT=$$GIT_COMMIT" --build-arg "GIT_TREE_STATE=$$GIT_TREE_STATE" \
 	  --build-arg "GIT_TAG=$$GIT_TAG" --build-arg "BUILD_DATE=$$BUILD_DATE" .
 
@@ -459,3 +465,8 @@ prod-trader-sync-deploy-remote:
 .PHONY: trader-sync-acceptance
 trader-sync-acceptance:
 	@bash ./hack/trader-sync-independent-acceptance.sh
+
+.PHONY: worm-trading-migrate
+worm-trading-migrate:
+	go run ./cmd/athena-worm-trading-migrate up --timeout=120s
+	go run ./cmd/athena-worm-trading-migrate verify --timeout=120s

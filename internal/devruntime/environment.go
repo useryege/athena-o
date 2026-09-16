@@ -27,6 +27,16 @@ func (m *Manager) PrepareEnvironment(input map[string]string, specs []ServiceSpe
 		env[k] = v
 	}
 	env["ATHENA_LOCAL_RUNTIME_INSTANCE"] = m.Key.Name
+	if selected(specs, "worm-trading") {
+		if _, ok := env["ATHENA_WORM_TRADING_LISTEN_ADDRESS"]; !ok {
+			env["ATHENA_WORM_TRADING_LISTEN_ADDRESS"] = "127.0.0.1"
+		}
+		env["ATHENA_WORM_TRADING_SERVER_ADDRESS"] = serviceAddress("worm-trading", env)
+		if mode == "external" && strings.TrimSpace(env["ATHENA_WORM_TRADING_POSTGRES_DSN"]) == "" {
+			return nil, errors.New("external database requires explicit ATHENA_WORM_TRADING_POSTGRES_DSN")
+		}
+	}
+
 	if selected(specs, "notification") {
 		env["ATHENA_NOTIFICATION_SERVER_ADDRESS"] = serviceAddress("notification", env)
 	}

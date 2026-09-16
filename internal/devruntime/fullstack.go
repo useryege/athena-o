@@ -106,6 +106,12 @@ func (m *Manager) prepareFullStackDatabases(ctx context.Context, env map[string]
 		return err
 	}
 	for _, module := range fullStackModules() {
+		if module.Name == "worm-trading" {
+			if err := m.prepareWormTradingDatabase(ctx, env); err != nil {
+				return err
+			}
+			continue
+		}
 		location := *dsn
 		location.Path = "/" + module.Database
 		location.RawPath = ""

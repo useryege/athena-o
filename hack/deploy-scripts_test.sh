@@ -55,7 +55,9 @@ set -euo pipefail
 printf 'docker %s %s %s %s\n' "${TEST_REMOTE_SHELL:-local}" "${PWD}" "${PROD_IMAGE:-}" "$*" >>"${TEST_LOG}"
 if [[ "$1" == compose && "${2:-}" != version ]]; then
   [[ "${TRADER_SYNC_IMAGE:-}" == "${TEST_TRADER_SYNC_IMAGE}" ]] || exit 74
+  [[ "${WORM_TRADING_IMAGE:-}" == "${TEST_WORM_TRADING_IMAGE}" ]] || exit 75
 fi
+if [[ "$*" == "image inspect ${TEST_WORM_TRADING_IMAGE}" && "${TEST_MISSING_WORM_IMAGE:-}" == yes ]]; then exit 1; fi
 case "${1:-} ${2:-}" in
   'save '*) printf '\000\001\377IMAGE\000';;
   'load '*) cat >>"${TEST_IMAGE_LOG}";;
@@ -63,7 +65,7 @@ case "${1:-} ${2:-}" in
   'volume create') : >"${TEST_VOLUME_DIR}/$3";;
   'volume rm') printf '%s\0' "$3" >>"${TEST_VOLUME_RM_LOG}"; [[ "${TEST_FAIL_VOLUME_RM:-}" != yes ]] || exit 42; rm -f "${TEST_VOLUME_DIR}/$3";;
 esac
-if [[ "$*" == *'config --services'* ]]; then printf 'athena-a\nathena-notification\nathena-trader-sync\nathena-server\nathena-migrate\nathena-account-state-migrate\n'; fi
+if [[ "$*" == *'config --services'* ]]; then printf 'athena-a\nathena-notification\nathena-trader-sync\nathena-server\nathena-migrate\nathena-account-state-migrate\nathena-worm-trading-migrate\n'; fi
 argv=("$@")
 for ((index = 0; index < ${#argv[@]}; index++)); do
   if [[ "${argv[index]}" == exec && "${argv[index+1]:-}" == -T && "${argv[index+3]:-}" == sh && "${argv[index+4]:-}" == -c ]]; then
@@ -78,7 +80,7 @@ for ((index = 0; index < ${#argv[@]}; index++)); do
   fi
 done
 if [[ "$*" == *'config --format json'* ]]; then
-  printf '%s\n' '{"services":{"athena-server":{"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-notification":{"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-trader-sync":{"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-solana-discovery":{"profiles":["solana"],"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-account-state-migrate":{"profiles":["tools"],"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-wallet":{"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}}}}'
+  printf '%s\n' '{"services":{"athena-server":{"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-notification":{"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-trader-sync":{"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-worm-trading":{"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-solana-discovery":{"profiles":["solana"],"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-account-state-migrate":{"profiles":["tools"],"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-wallet":{"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}}}}'
   exit 0
 fi
 if [[ "$*" == *'athena-account-state-migrate verify'* && "${TEST_FAIL_SCHEMA_VERIFY:-}" == yes && -f "${TEST_VOLUME_DIR}/../schema-up" ]]; then exit 47; fi
@@ -87,8 +89,8 @@ if [[ "$*" == *'athena-account-state-migrate up'* ]]; then
   [[ "${TEST_FAIL_SCHEMA_UP:-}" != yes ]] || exit 46
   : >"${TEST_VOLUME_DIR}/../schema-up"
 fi
-if [[ "$*" == *'ps --status running --services athena-server'* ]]; then printf '%s\n' athena-server athena-notification athena-trader-sync athena-solana-discovery; exit 0; fi
-if [[ "$*" == *'ps --status running -q athena-server athena-notification athena-trader-sync athena-solana-discovery'* && "${TEST_CONSUMER_RUNNING:-}" == yes ]]; then echo still-running; fi
+if [[ "$*" == *'ps --status running --services athena-server'* ]]; then printf '%s\n' athena-server athena-notification athena-trader-sync athena-worm-trading athena-solana-discovery; exit 0; fi
+if [[ "$*" == *'ps --status running -q athena-server athena-notification athena-trader-sync athena-worm-trading athena-solana-discovery'* && "${TEST_CONSUMER_RUNNING:-}" == yes ]]; then echo still-running; fi
 if [[ "${TEST_FAIL_UP:-}" == yes && "${TEST_REMOTE_SHELL:-}" == 1 && "$*" == *'--wait-timeout 180'* ]]; then exit 39; fi
 if [[ "${TEST_FAIL_MIGRATE:-}" == yes && "$*" == *'athena-migrate'* ]]; then exit 41; fi
 exit 0
@@ -159,10 +161,12 @@ special_dir="${tmp}/remote single'quote \$(touch ${tmp}/injected)"
 mkdir -p "${special_dir}"
 for name in trader-token cursor-key tls-cert tls-key tls-ca; do printf '%s-file-value-0123456789abcdef0123456789abcdef' "$name" >"${tmp}/$name"; done
 export TRADER_SYNC_IMAGE="trader-sync:test" TEST_TRADER_SYNC_IMAGE="trader-sync:test"
+export WORM_TRADING_IMAGE="worm-trading:test" TEST_WORM_TRADING_IMAGE="worm-trading:test"
 export PROD_ACCOUNT_STATE_MAINTENANCE=true PROD_ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED=true
 cat >"${tmp}/prod.env" <<EOF
 REMOTE_HOST=example
 TRADER_SYNC_IMAGE=env-file-tag-must-not-override-explicit-tag
+WORM_TRADING_IMAGE=env-file-tag-must-not-override-explicit-tag
 PROD_ACCOUNT_STATE_MAINTENANCE=false
 PROD_ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED=false
 ATHENA_ACCOUNT_STATE_POSTGRES_DSN=postgres://fixture/account_state
@@ -204,9 +208,10 @@ for volume in "${PROD_POSTGRES_VOLUME}" "${PROD_REDIS_VOLUME}" "${PROD_MINIO_VOL
 [[ -e "${TEST_VOLUME_DIR}/${unrelated_volume}" ]]
 [[ "$(find "${TEST_VOLUME_DIR}" -type f | wc -l)" -eq 4 ]]
 [[ ! -s "${TEST_VOLUME_RM_LOG}" ]]
-cmp <(printf '\000\001\377IMAGE\000\000\001\377IMAGE\000\000\001\377IMAGE\000\000\001\377IMAGE\000') "${TEST_IMAGE_LOG}"
+cmp <(printf '\000\001\377IMAGE\000\000\001\377IMAGE\000\000\001\377IMAGE\000\000\001\377IMAGE\000\000\001\377IMAGE\000') "${TEST_IMAGE_LOG}"
 
 rg -q -F "save ${TRADER_SYNC_IMAGE}" "${TEST_LOG}"
+rg -q -F "save ${WORM_TRADING_IMAGE}" "${TEST_LOG}"
 rg -q -F 'athena-account-state-migrate verify' "${TEST_LOG}"
 : >"${TEST_LOG}"
 TEST_FAIL_CREATEDB=yes bash "${fixture}/hack/prod-remote-deploy.sh" hot-deploy >"${tmp}/prod-hot.out" 2>&1
@@ -267,10 +272,10 @@ cmp <(printf '%s\0' "${PROD_POSTGRES_VOLUME}" "${PROD_REDIS_VOLUME}" "${PROD_MIN
 : >"${TEST_LOG}"
 rm -f "${TEST_VOLUME_DIR}/../schema-up"
 TEST_SCHEMA_CHANGE=yes bash "${fixture}/hack/prod-remote-deploy.sh" hot-deploy >"${tmp}/schema-change.out" 2>&1
-assert_order 'stop -t 30 athena-server athena-notification athena-trader-sync athena-solana-discovery' 'ps --status running -q athena-server athena-notification athena-trader-sync athena-solana-discovery'
-assert_order 'ps --status running -q athena-server athena-notification athena-trader-sync athena-solana-discovery' 'athena-account-state-migrate up'
+assert_order 'stop -t 30 athena-server athena-notification athena-trader-sync athena-worm-trading athena-solana-discovery' 'ps --status running -q athena-server athena-notification athena-trader-sync athena-worm-trading athena-solana-discovery'
+assert_order 'ps --status running -q athena-server athena-notification athena-trader-sync athena-worm-trading athena-solana-discovery' 'athena-account-state-migrate up'
 assert_order 'athena-account-state-migrate up' '--force-recreate athena-a'
-rg -q -F 'up -d --no-deps --force-recreate athena-server athena-notification athena-trader-sync athena-solana-discovery' "${TEST_LOG}"
+rg -q -F 'up -d --no-deps --force-recreate athena-server athena-notification athena-trader-sync athena-worm-trading athena-solana-discovery' "${TEST_LOG}"
 if rg 'stop -t 30' "${TEST_LOG}" | rg -q 'athena-wallet'; then exit 1; fi
 # Verify after up, not merely a version comparison.
 awk '/athena-account-state-migrate up/{up=1;next} up && /athena-account-state-migrate verify/{found=1} END{exit !found}' "${TEST_LOG}"
@@ -278,7 +283,7 @@ awk '/athena-account-state-migrate up/{up=1;next} up && /athena-account-state-mi
 : >"${TEST_LOG}"
 rm -f "${TEST_VOLUME_DIR}/../schema-up"
 TEST_SCHEMA_CHANGE=yes bash "${fixture}/hack/prod-remote-deploy.sh" trader-sync-deploy >"${tmp}/trader-schema-change.out" 2>&1
-rg -q -F 'up -d --no-deps --force-recreate athena-server athena-notification athena-trader-sync athena-solana-discovery' "${TEST_LOG}"
+rg -q -F 'up -d --no-deps --force-recreate athena-server athena-notification athena-trader-sync athena-worm-trading athena-solana-discovery' "${TEST_LOG}"
 for scenario in migration-fails verification-fails consumer-running external-unconfirmed maintenance-unconfirmed; do
   : >"${TEST_LOG}"
   rm -f "${TEST_VOLUME_DIR}/../schema-up"
@@ -294,8 +299,9 @@ for scenario in migration-fails verification-fails consumer-running external-unc
   if [[ "$scenario" != migration-fails && "$scenario" != verification-fails ]] && rg -q 'athena-account-state-migrate up' "${TEST_LOG}"; then exit 1; fi
 done
 : >"${TEST_LOG}"
-bash "${fixture}/hack/prod-remote-deploy.sh" trader-sync-deploy >"${tmp}/trader-sync-only.out" 2>&1
+TEST_MISSING_WORM_IMAGE=yes bash "${fixture}/hack/prod-remote-deploy.sh" trader-sync-deploy >"${tmp}/trader-sync-only.out" 2>&1
 rg -q -F 'up -d --no-deps --force-recreate athena-trader-sync' "${TEST_LOG}"
+if rg -q -F "save ${WORM_TRADING_IMAGE}" "${TEST_LOG}"; then exit 1; fi
 if rg -q -e 'stop .*athena-server' -e '--force-recreate athena-server' -e 'athena-account-state-migrate up' "${TEST_LOG}"; then exit 1; fi
 # Archive paths resolve to the uploaded files, never the operator's original paths.
 for index in trader-token cursor-key tls-cert tls-key tls-ca; do
@@ -310,9 +316,9 @@ if rg -q -F "$tmp/tls-key" "$special_dir/.env"; then exit 1; fi
 : >"${TEST_LOG}"
 rm -f "${TEST_VOLUME_DIR}/../schema-up"
 TEST_SCHEMA_CHANGE=yes bash "${fixture}/hack/prod-start-local.sh" >"${tmp}/prod-local.out" 2>&1
-assert_order 'stop -t 30 athena-server athena-notification athena-trader-sync athena-solana-discovery' 'athena-account-state-migrate up'
+assert_order 'stop -t 30 athena-server athena-notification athena-trader-sync athena-worm-trading athena-solana-discovery' 'athena-account-state-migrate up'
 assert_order 'athena-account-state-migrate up' 'athena-migrate athena up'
-rg -q -F 'up -d --no-deps --force-recreate athena-server athena-notification athena-trader-sync athena-solana-discovery' "${TEST_LOG}"
+rg -q -F 'up -d --no-deps --force-recreate athena-server athena-notification athena-trader-sync athena-worm-trading athena-solana-discovery' "${TEST_LOG}"
 : >"${TEST_LOG}"
 rm -f "${TEST_VOLUME_DIR}/../schema-up"
 if TEST_SCHEMA_CHANGE=yes TEST_FAIL_SCHEMA_UP=yes bash "${fixture}/hack/prod-start-local.sh" >"${tmp}/prod-local-fail.out" 2>&1; then exit 1; fi

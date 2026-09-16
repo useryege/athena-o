@@ -5,7 +5,9 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"os"
 	"sort"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -106,17 +108,21 @@ func NewSQLStore(pool *pgxpool.Pool) *SQLStore {
 
 func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {
 	return func(ctx context.Context) (*SQLStore, error) {
-		pool, err := postgres.ConnectAndMigrate(ctx, postgres.Options{
-			Module:       "worm-trading",
-			DSNEnv:       "ATHENA_WORM_TRADING_POSTGRES_DSN",
-			Database:     "worm_trading",
-			Migrations:   migrations,
-			MigrationDir: "migrations",
-		})
+		dsn := strings.TrimSpace(os.Getenv(DSNEnv))
+		if dsn == "" {
+			return nil, fmt.Errorf("%s is required", DSNEnv)
+		}
+		ctx, cancel := context.WithTimeout(ctx, DefaultTimeout)
+		defer cancel()
+		pool, err := postgres.OpenPool(ctx, "worm-trading", dsn)
 		if err != nil {
 			return nil, fmt.Errorf("connect Worm Trading postgres: %w", err)
 		}
-		log.Info("Worm Trading postgres migrations are up to date")
+		if err := VerifySchema(ctx, pool); err != nil {
+			pool.Close()
+			return nil, err
+		}
+		log.Info("Worm Trading postgres schema verified")
 		return NewSQLStore(pool), nil
 	}
 }

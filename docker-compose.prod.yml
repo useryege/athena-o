@@ -122,8 +122,11 @@ services:
       ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY: ${ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY:?ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY is required}
 
   athena-worm-trading:
-    image: ${PROD_IMAGE:-athena:local}
+    image: ${WORM_TRADING_IMAGE:-athena-worm-trading:local}
     restart: unless-stopped
+    stop_grace_period: 40s
+    labels:
+      io.athena.account-state.consumer: "true"
     depends_on:
       postgres:
         condition: service_healthy
@@ -133,8 +136,7 @@ services:
       - ${ATHENA_COMPOSE_ENV_FILE:-.env}
     environment:
       <<: *without-auth-secrets
-      ATHENA_BINARY_NAME: athena-worm-trading
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
+      ATHENA_ACCOUNT_STATE_POSTGRES_DSN: ${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:?ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required}
       ATHENA_WORM_TRADING_LISTEN_ADDRESS: 0.0.0.0
       ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN: ${ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN:?ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN is required}
       ATHENA_WALLET_SERVER_ADDRESS: athena-wallet:8088
@@ -142,7 +144,7 @@ services:
       ATHENA_WORM_TRADING_SOLANA_RPC_URL: ${ATHENA_WORM_TRADING_SOLANA_RPC_URL:?ATHENA_WORM_TRADING_SOLANA_RPC_URL is required}
       ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY: ${ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY:?ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY is required}
       ATHENA_WORM_TRADING_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm_trading sslmode=disable
-    command: ["athena", "--port", "8090"]
+    command: ["athena-worm-trading", "--port", "8090"]
     expose:
       - "8090"
 
@@ -444,6 +446,17 @@ services:
     environment:
       ATHENA_ACCOUNT_STATE_POSTGRES_DSN: ${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:?ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required}
     entrypoint: ["/usr/bin/tini", "--", "athena-account-state-migrate"]
+    command: ["verify"]
+
+  athena-worm-trading-migrate:
+    image: ${WORM_TRADING_IMAGE:-athena-worm-trading:local}
+    profiles: [tools]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ATHENA_WORM_TRADING_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm_trading sslmode=disable
+    entrypoint: ["/usr/bin/tini", "--", "athena-worm-trading-migrate"]
     command: ["verify"]
 
   athena-migrate:

@@ -62,14 +62,14 @@ func TestFullStackPreparesEveryLegacySchemaBeforeConsumers(t *testing.T) {
 	}
 	helpers := 0
 	for name, code := range state.ExitCodes {
-		if strings.Contains(name, "full-stack-schema-") {
+		if strings.Contains(name, "full-stack-schema-") || strings.Contains(name, "worm-trading-schema-") {
 			helpers++
 			if code != 0 {
 				t.Fatalf("schema failed %s %d", name, code)
 			}
 		}
 	}
-	if helpers != 8 {
+	if helpers != 6 {
 		t.Fatalf("schema tools not supervised: %v", state.ExitCodes)
 	}
 	data, err := os.ReadFile(o.Key.StatePath())
@@ -79,7 +79,7 @@ func TestFullStackPreparesEveryLegacySchemaBeforeConsumers(t *testing.T) {
 	if strings.Contains(string(data), dsn) {
 		t.Fatal("state leaked DSN")
 	}
-	t.Logf("full stack all 8 module schemas ready; namespace=%s; zero consumers", o.Key.Namespace)
+	t.Logf("full stack all 5 module schemas ready; namespace=%s; zero consumers", o.Key.Namespace)
 }
 
 func TestFullStackRunnerProcess(t *testing.T) {

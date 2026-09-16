@@ -87,7 +87,7 @@ with tempfile.TemporaryDirectory(prefix='athena-production-compose-test-') as te
     retired = {'athena-sports-live', 'athena-sports-history', 'athena-worm-markets'}
     assert not retired.intersection(services), 'retired services still deploy'
     labelled = {name for name, s in services.items() if s.get('labels', {}).get('io.athena.account-state.consumer') == 'true'}
-    assert labelled == {'athena-server', 'athena-notification', 'athena-trader-sync'}, labelled
+    assert labelled == {'athena-server', 'athena-notification', 'athena-trader-sync', 'athena-worm-trading'}, labelled
     for name in ['athena-worm-trading', 'athena-wallet', 'athena-notification']:
         assert name in services, name + ' was removed'
     for name, service in services.items():

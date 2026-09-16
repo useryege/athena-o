@@ -151,6 +151,8 @@ func serviceAddress(name string, env map[string]string) string {
 		return envDefault(env, "ATHENA_TRADER_SYNC_LISTEN_ADDRESS", "127.0.0.1:8122")
 	case "api-server":
 		return net.JoinHostPort(envDefault(env, "ATHENA_SERVER_LISTEN_ADDRESS", "127.0.0.1"), envDefault(env, "ATHENA_SERVER_PORT", "8080"))
+	case "worm-trading":
+		return net.JoinHostPort(envDefault(env, "ATHENA_WORM_TRADING_LISTEN_ADDRESS", "127.0.0.1"), envDefault(env, "ATHENA_WORM_TRADING_PORT", "8090"))
 	case "wallet":
 		return net.JoinHostPort(envDefault(env, "ATHENA_WALLET_LISTEN_ADDRESS", "127.0.0.1"), envDefault(env, "ATHENA_WALLET_PORT", "8088"))
 	case "profit-sharing":
@@ -290,6 +292,11 @@ func runResolved(ctx context.Context, o RunOptions, specs []ServiceSpec, fullSta
 			}
 		}
 		if err = runSchema(ctx, o.Key, "verify", env); err != nil {
+			return err
+		}
+	}
+	if selected(specs, "worm-trading") {
+		if err = m.prepareWormTradingDatabase(ctx, env); err != nil {
 			return err
 		}
 	}
@@ -464,7 +471,7 @@ func waitService(ctx context.Context, m *Manager, name, address string, env map[
 	}
 }
 func probeService(ctx context.Context, name, address string, env map[string]string) error {
-	if name == "trader-sync" || name == "notification" || name == "wallet" || name == "profit-sharing" {
+	if name == "worm-trading" || name == "trader-sync" || name == "notification" || name == "wallet" || name == "profit-sharing" {
 		credentials := insecure.NewCredentials()
 		service := ""
 		if name == "trader-sync" {

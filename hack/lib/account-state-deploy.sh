@@ -59,9 +59,14 @@ print("\n".join(names))
 other_schema_up() {
   local module
   if [[ "${MIGRATE_MODULE:-all}" == all ]]; then
-    for module in worm-trading wallet managed-oo profit-sharing token; do
+    compose --profile tools run --rm athena-worm-trading-migrate up
+    compose --profile tools run --rm athena-worm-trading-migrate verify
+    for module in wallet managed-oo profit-sharing token; do
       compose --profile tools run --rm athena-migrate athena up --module "$module"
     done
+  elif [[ "$MIGRATE_MODULE" == worm-trading ]]; then
+    compose --profile tools run --rm athena-worm-trading-migrate up
+    compose --profile tools run --rm athena-worm-trading-migrate verify
   elif [[ "$MIGRATE_MODULE" != account-state ]]; then
     compose --profile tools run --rm athena-migrate athena up --module "$MIGRATE_MODULE"
   fi

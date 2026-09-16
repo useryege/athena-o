@@ -182,7 +182,7 @@ func NewCommand() *cobra.Command {
 
 			select {
 			case <-signalContext.Done():
-				grpcServer.GracefulStop()
+				stopGRPC(grpcServer, 10*time.Second)
 				err = <-serveErrors
 			case err = <-serveErrors:
 			}
@@ -305,4 +305,17 @@ func parseIntSetting(name, raw string) (int, error) {
 		return 0, fmt.Errorf("%s must be a positive integer", name)
 	}
 	return value, nil
+}
+
+// stopGRPC bounds draining RPCs; stopping transport does not undo external requests.
+func stopGRPC(server *grpc.Server, timeout time.Duration) {
+	done := make(chan struct{})
+	go func() { server.GracefulStop(); close(done) }()
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	select {
+	case <-done:
+	case <-timer.C:
+		server.Stop()
+	}
 }
