@@ -1,0 +1,25 @@
+{
+  "changed_outside_task": [
+    ".agents/skills/impeccable/SKILL.md",
+    ".agents/skills/impeccable/reference/adapt.md",
+    ".agents/skills/impeccable/reference/audit.md",
+    ".agents/skills/impeccable/reference/harden.md",
+    ".agents/skills/impeccable/reference/routing.md",
+    ".agents/skills/impeccable/scripts/bin/linux-x64/impeccable",
+    ".agents/skills/impeccable/scripts/command-metadata.json",
+    ".agents/skills/impeccable/scripts/live-browser.js"
+  ],
+  "superpowers_original_files": 53,
+  "note": "Observed later workspace changes outside this task. This task never wrote these paths. Full shared superpowers-development.md snapshot retains its concurrent Impeccable footer; task-only delta excludes that footer.",
+  "other_observed_paths": [
+    "docs/developer-guide/superpowers-development.md (Impeccable footer only)",
+    "docs/requirements/development-runtime/service-inventory-review.md",
+    "docs/requirements/token/README.md",
+    "docs/requirements/token/token.md",
+    "docs/operator-manual/makefile-commands.md (Worm documentation changes)"
+  ],
+  "initial_head": "0022bed48bc0c3d1d8010958e242b02b92facdd0",
+  "observed_delivery_head": "1dfcb795dfdf3da1ecb1b63e4acc9677604d90a5",
+  "head_note": "Other work advanced HEAD during this task. This task did not commit, push, merge or reset. Delivery manifest records the observed HEAD plus exact source file hashes.",
+  "notification_preservation": "The initial full-file check detected concurrent changes in makefile-commands.md; the entire notification section and all notification configuration/command table rows still exactly match the task-start snapshot. Two other protected notification files retain full-file hashes."
+}

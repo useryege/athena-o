@@ -126,3 +126,9 @@ Group repositories by outcome:
 - Merged: repository, PR URL, and merge commit SHA.
 
 State explicitly whether any local worktree files were excluded and whether tests or other validation ran.
+
+## Post-delivery human review boundary
+
+For a development task already using the ATHENA post-delivery review loop, report Git delivery and human review as separate facts. Step six may hand off a worktree or branch, publish a PR, or contain an already merged version according to the task's actual delivery mode. A merged PR can still be awaiting human review. Interpret reusable authorization from the user's actual words: repository, branch/PR/task scope, authorized action, and explicit limits. Task-scoped authorization for repair delivery remains valid when a fix creates a new commit SHA; a new SHA alone does not revoke it. Authorization explicitly bound to one immutable SHA or one operation does not expand, and a changed repository, target branch/PR, task scope, action, or explicit limit still requires authority for that changed operation. Human review follows the AI delivery and cleanup step, and neither AI checks nor a merge is final human approval.
+
+A standalone request to create, inspect, ready, or merge PRs keeps this skill's original scope and does not create a human-review round unless the user explicitly connects it to an active ATHENA development delivery.

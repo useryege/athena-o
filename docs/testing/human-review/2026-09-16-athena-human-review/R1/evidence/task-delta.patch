@@ -1,0 +1,538 @@
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -10,6 +10,7 @@
+   - [No Historical Compatibility](#no-historical-compatibility)
+   - [Superpowers Development Workflow](#superpowers-development-workflow)
+   - [本地验收环境准备与完成标准](#本地验收环境准备与完成标准)
++  - [AI 交付后的人工审查](#ai-交付后的人工审查)
+   - [Chinese Plans](#chinese-plans)
+   - [Task Result Email](#task-result-email)
+   - [Impeccable Integration](#impeccable-integration)
+@@ -71,6 +72,14 @@
+ - 收尾由执行任务的代理主动完成：先核对仓库/worktree、实例和资源归属，再从同一仓库使用带相同 `INSTANCE` / profile 的 `make stop`、`make stop-instance` 或对应工具的停止入口；独立测试替身和预览也须按记录停止。不得自动执行 `make run-reset`、删除数据卷、停止借用的基础设施或终止归属不明的进程。
+ - 停止后核对所属进程退出、端口释放和容器停止；收尾失败须保留日志、排查并报告未停止项，不得仅凭停止命令已执行就宣称完成。交付时列明已停止和仍保留的环境；保留项注明用户要求或已有环境归属，并提供地址、仓库/worktree、实例、会话或进程、日志、验收结果及准确停止命令。
+ - 用户明确要求只读、仅预检或不启动服务时遵循该限制，仅报告实际检查结果。规则文档修改、纯隔离测试不因此自动扩大为启动真实环境。
++
++### AI 交付后的人工审查
++
++- ATHENA 开发任务完成实现、AI 审阅、约定验证及第六步环境收尾后，使用项目技能 [athena-human-review](.codex/skills/athena-human-review/SKILL.md)，在 `docs/testing/human-review/<任务标识>/R<轮次>/` 交付具体的 `ai-delivery.md`、`review-guide.md` 和可回填的 `human-report.md`。纯咨询、独立只读审查、独立 PR 操作、其他项目及未明确接续的历史已完成任务不自动建立新轮次。
++- “本轮 AI 交付完成，待人工审查”只表示该轮 AI 工作、材料和收尾已有实际证据；测试通过、PR 合并、环境停止或通知发送均不表示“最终交付完成”。本轮 AI 阶段存在缺口时如实记录“AI 阶段未完成／存在阻塞”。
++- 人工报告在草稿期间保持被审查版本稳定。用户提交完整报告后，即授权 AI 核实并修复已确认设计范围内的问题，再完成审阅、验证、下一轮交付与收尾；报告可如实包含受阻和未执行项。用户明确的仅分析或先审方案限制继续优先；新需求、设计改变和超出既有授权的外部操作仍需用户决定。
++- 修复轮保留原始观察和稳定问题编号；AI 验证后标记“待人工复验”，不能代替用户关闭。下一轮复验修复项、受影响流程和历史受阻项；未受影响的历史结果只有在写明来源版本与影响依据时才能沿用。
++- 只有用户对准确轮次和版本明确确认，每个必查项都有真实结论，除用户明确接受并记录范围的例外、范围调整或设计变更外其余必查项均已完成并通过，问题处置、AI 证据及环境状态均已交代，才记录“最终交付完成”。失败、受阻和未执行项保留原状态，不得为了结案改成通过。人工审查阶段位于第六步 AI 交付与环境收尾之后，该轮可按任务既有方式保留工作区或分支、提交 PR 或已经合并。Git 操作授权按用户原话中的实际仓库、分支／PR／任务范围、动作和显式限制复用；面向同一任务修复交付的授权不因产生新提交 SHA 自动失效。明确绑定特定不可变 SHA 或一次操作的授权不得自行扩大，后续仓库、目标分支／PR、任务范围、动作或显式限制发生变化时仍按实际授权边界处理。
+ 
+ ### Chinese Plans
+ 
+--- a/docs/developer-guide/superpowers-development.md
++++ b/docs/developer-guide/superpowers-development.md
+@@ -26,6 +26,7 @@
+ | 工作隔离、验证和交付 | [using-git-worktrees](../../.agents/skills/using-git-worktrees/SKILL.md)、[verification-before-completion](../../.agents/skills/verification-before-completion/SKILL.md)、[finishing-a-development-branch](../../.agents/skills/finishing-a-development-branch/SKILL.md) |
+ | 改进技能 | [writing-skills](../../.agents/skills/writing-skills/SKILL.md) |
+ | ATHENA 页面检查、冒烟与浏览器回归 | [athena-browser-acceptance](../../.codex/skills/athena-browser-acceptance/SKILL.md) |
++| AI 交付后的人工审查、报告处理与修复轮交接 | [athena-human-review](../../.codex/skills/athena-human-review/SKILL.md) |
+ 
+ 由 `brainstorming` 按任务选取 Spike、Bounded 或 Architectural 路径。局部修改不必一律形成完整 spec 和 plan；需要书面方案的任务按上游技能创建相应文件。方案批准、任务执行和审查遵循所选技能，沿用用户已经明确给出的决定与授权。
+ 
+@@ -39,12 +40,15 @@
+ | `docs/superpowers/plans/YYYY-MM-DD-<topic>.md` | Superpowers 需要的实现计划 |
+ | `.superpowers/` | 临时执行记录、子代理交接和可视化会话，Git 忽略 |
+ | `.worktrees/` | 项目内隔离工作树，Git 忽略 |
++| `docs/testing/human-review/<任务标识>/R<轮次>/` | 每轮具体的 AI 交付报告、人工审查指南和预填人工报告 |
+ 
+ 任务 spec 和 plan 引用相关长期文档，记录本次要改变的内容。完成实现时同步受影响的长期文档与源码链接。已有的 `讨论中`、`已确认`、`设计中`、`已确认待实现`、`已实现` 状态继续描述真实情况，不作为额外的阶段启动条件；切换流程不代表批准尚未决定的业务规则，也不代表已有方案已经实现。
+ 
+ ## 项目技能的职责
+ 
+ Superpowers 负责开发方法。Impeccable 负责 `ui/` 下的 UI/UX 能力，并复用任务设计讨论与批准结果。`grpc-rpc-naming`、`sync-athena-changes` 继续提供 RPC 命名、生成源与消费者同步知识；多仓库 PR 技能提供相应操作支持。[ATHENA 浏览器验收技能](../../.codex/skills/athena-browser-acceptance/SKILL.md)按请求在当前可用的内置浏览器检查、真实本地开发环境冒烟和隔离 Playwright 回归之间选择入口，并如实区分三者的证据。
++
++开发闭环的阶段顺序为：AI 开发、审阅与验证 → AI 交付及环境收尾 → 用户人工审查 → 已确认范围内的问题修复、审阅和验证 → 下一轮交付及收尾 → 用户确认准确版本最终通过。[ATHENA 人工审查技能](../../.codex/skills/athena-human-review/SKILL.md)承接首次交付、已提交报告、修复轮交付和最终确认；R1 提供完整检查范围，后续轮次保留问题编号，区分必须复验、受影响回归、历史受阻补查及有依据的历史结果沿用。AI 阶段完成和最终交付是两个独立状态。
+ 
+ 真实验收按 [AGENTS.md 的环境准备与收尾规则](../../AGENTS.md#本地验收环境准备与完成标准)复用或主动启动目标环境。任务结束后，代理默认停止本任务启动的临时服务、预览、测试替身及所属容器，保留数据与证据；用户已有环境、其他任务正在使用的环境和借用基础设施保持原样，用户明确要求保留的环境按指定范围保留。smoke 工具不启停服务不免除代理的准备和收尾责任。开发、调试和验收期间可持续运行；失败或阻塞结束任务时也先保存证据再收尾。具体命令、退出核对和交付清单见[任务收尾说明](running-locally.md#task-shutdown-and-retained-environments)。相关测试与验证遵循 Superpowers。
+ 
+--- a/docs/developer-guide/running-locally.md
++++ b/docs/developer-guide/running-locally.md
+@@ -83,7 +83,7 @@
+ 
+ ### Start the stack
+ 
+-目标已收缩为[板块访问开关简化方案](../requirements/development-runtime/business-access-control.md)：本期只拦截用户业务请求，程序与后台任务继续运行；原整组运行停止方案已暂停。新开关及服务清单扩展尚未实现；已确认目标为首次默认关闭访问，之后保留管理员设置，再次执行 `make run` 或重启不改变开关；以下命令和启动清单描述当前实际行为。 [全栈启动配套提案](../superpowers/specs/2026-09-15-local-full-stack-design.md)已于 2026-09-16 获采用，原十程序设计已通过；随后保留 Worm，目标覆盖十二程序，Worm 独立入口、配置、鉴权、就绪与停止设计已补齐；其两服务共用一个访问开关。阶段进度和失败处理规则继续有效，尚未实施。
++目标已收缩为[板块访问开关简化方案](../requirements/development-runtime/business-access-control.md)：本期只拦截用户业务请求，程序与后台任务继续运行；原整组运行停止方案已暂停。新开关及服务清单扩展尚未实现；已确认目标为首次默认关闭访问，之后保留管理员设置，再次执行 `make run` 或重启不改变开关；以下命令和启动清单描述当前实际行为。[全栈启动配套提案](../superpowers/specs/2026-09-15-local-full-stack-design.md)原十程序设计已通过，之后曾以两项 Worm 服务扩为十二程序；现行目标在 Markets 退役后为十一应用，`worm` 只对应 Trading。Trading 独立入口、账户状态只读依赖、进程内目录、鉴权、就绪与停止已实现，但仍未接入当前默认六进程图；访问开关与十一应用扩展尚未实施。
+ 
+ Start the explicitly selected full stack from this checkout:
+ 
+@@ -255,7 +255,7 @@
+ 4. Preserve startup and smoke failures, inspect the relevant logs, resolve environment issues within scope and rerun the affected checks. Do not automatically reset data, delete volumes, change product behavior or repeatedly retry an unchanged failure. An unresolved external dependency, credential, permission or user decision must be reported with attempted actions and remaining verification; passing isolated tests does not close a required real smoke check.
+ 5. At task completion, cancellation, pause, or an end caused by failure/blockers, save evidence and follow [task shutdown](#task-shutdown-and-retained-environments). The accepting agent performs this cleanup; the smoke command does not own the development stack. Report the actual acceptance and cleanup results separately.
+ 
+-If the user requests only a read-only inspection, prerequisite check or no service startup, honor that boundary. A rules-only change or isolated-only test does not require starting a development stack. Required real acceptance that remains unverified prevents claiming full task completion or sending its completion notification.
++If the user requests only a read-only inspection, prerequisite check or no service startup, honor that boundary. A rules-only change or isolated-only test does not require starting a development stack. Required real acceptance that remains unverified prevents claiming the AI delivery stage complete. Task-result notification behavior remains governed by the fixed-content, elapsed-time and deduplication rules in the root `AGENTS.md`; a notification does not prove acceptance or final delivery.
+ 
+ ### Task shutdown and retained environments
+ 
+@@ -273,6 +273,16 @@
+ Confirm owned processes exited, their ports were released and their containers stopped. Save and investigate cleanup failures, and report any remaining resources instead of claiming shutdown. Failure evidence does not require a live server: after saving it, task-created temporary resources are stopped unless the user explicitly requested retaining the debugging environment.
+ 
+ The handoff lists stopped and retained environments. For retained items, record the user's request or existing ownership, URL, checkout, instance/profile, session or PID, logs, acceptance result and exact stop command. Keeping data and evidence does not imply keeping the service running. The agent must invoke shutdown; the runtime does not detect a completed conversation task.
++
++### Restore an environment for post-delivery human review
++
++The AI delivery step stops task-owned temporary environments as described above. Human review may therefore start later from a stopped state. The concrete `review-guide.md` for that task and round must identify the exact repository/worktree and immutable version, include a version check, and fill in the applicable start command, `INSTANCE` or profile, log location, URL, identity, test data, readiness checks and stop command. Do not leave generic placeholders in a delivered guide.
++
++The user may run those instructions or ask the AI to restore the environment. Such a request authorizes the necessary startup, readiness checks and environment troubleshooting for the specified review target; it does not authorize resetting data, switching over unrelated worktrees or changing product behavior. Preserve a version, identity or data mismatch as a blocked review prerequisite before making changes that could erase the observed state.
++
++Record who started each resource. User-started review resources remain user-owned. When the AI prepares an environment for continued human inspection, retain only the specified environment and report its URL, checkout, instance/profile, session or PID, logs and exact stop command; other task-owned resources still follow normal shutdown. If the user asks the AI to end the review environment, stop and verify it through the same ownership procedure above.
++
++Documentation, skill and other review tasks that do not exercise a runtime must say that no environment is required. They do not start a stack merely to populate the human-review materials.
+ 
+ ### Prerequisite checks
+ 
+@@ -540,6 +550,15 @@
+ transport, then stops existing workers and closes the command-owned Trading and
+ account pools. Transport shutdown does not reverse an external request.
+ 
++For `GetOrderEventCatalog`, `CreateMarketCombination` and
++`UpdateMarketCombination`, the Trading catalog budget starts at RPC entry and
++covers the current account-access read, catalog work and final storage under
++the same deadline. The API adds a fixed 60-second transport deadline for these
++three calls only; an earlier caller deadline or cancellation takes precedence.
++Even when the service catalog budget is configured above 60 seconds, these HTTP
++requests remain capped by the API transport deadline. Writes are not retried
++automatically; this does not change Open/Close or other RPC budgets.
++
+ `make build-service-image SERVICE=worm-trading` builds the minimal
+ `deploy/worm-trading/Dockerfile`, containing only the service and its migration
+ binary. `WORM_TRADING_IMAGE` defaults to `athena-worm-trading:local`; production
+--- a/.codex/skills/athena-browser-acceptance/SKILL.md
++++ b/.codex/skills/athena-browser-acceptance/SKILL.md
+@@ -32,7 +32,7 @@
+ 5. When the development, debugging or acceptance task ends, stop the temporary services, previews, test substitutes and owned containers started for this task. This includes completion, cancellation, pause, and ending with a failure or blocker after saving evidence. Keep services available while the task is actively debugging or testing; a single reply is not a task shutdown trigger. From the owning repository, use the matching instance/profile stop command, then stop separately launched helpers through their own shutdown entrypoints. Preserve development databases, volumes and evidence; do not use reset or stop borrowed infrastructure.
+ 6. Preserve services already started by the user and environments used by other active tasks. Retain a task-created environment only when the user explicitly requests it for inspection, debugging or use as the main development environment; that request covers only the specified environment. Verify owned process exit, released ports and stopped containers. Investigate and report cleanup failures. Report stopped and retained environments, and for each retained environment include its reason, target, repository/worktree, instance, session/process, logs, acceptance result and exact stop command. Follow the [task shutdown procedure](../../../docs/developer-guide/running-locally.md#task-shutdown-and-retained-environments); never kill processes of unclear ownership.
+ 
+-The smoke **tool** does not start services; the accepting **agent** must prepare them. Required real smoke left unverified means acceptance remains incomplete: distinguish implementation from verification and do not declare the whole task complete or send its completion email. Check-only and isolated-only requests do not require starting a development stack.
++The smoke **tool** does not start services; the accepting **agent** must prepare them. Required real smoke left unverified means the AI delivery stage remains incomplete: distinguish implementation, verification, post-delivery human review, and final user confirmation. Task-result notification behavior follows the root `AGENTS.md`; sending it does not prove acceptance or final delivery. Check-only and isolated-only requests do not require starting a development stack.
+ 
+ ## ATHENA evidence contract
+ 
+@@ -44,3 +44,5 @@
+ - Do not broaden an acceptance-only request into a product fix. When a fix is authorized, preserve the failing evidence, use `systematic-debugging` and `test-driven-development`, then rerun the affected scenario and the smallest relevant regression.
+ 
+ The isolated command cleans only its run-specific harness, process groups, and database container, and preserves its evidence artifacts. The smoke command never owns the user's `make run` environment.
++
++When browser work enters post-delivery human review, use `athena-human-review` after the AI acceptance and task shutdown steps. Its concrete guide records the stopped environment and the exact recovery and stop instructions for the reviewed version. Restoring that environment for the user is a new review-environment action with explicit resource ownership; it does not change an earlier smoke result or make the final human conclusion automatic.
+--- a/.codex/skills/publish-multi-repo-prs/SKILL.md
++++ b/.codex/skills/publish-multi-repo-prs/SKILL.md
+@@ -126,3 +126,9 @@
+ - Merged: repository, PR URL, and merge commit SHA.
+ 
+ State explicitly whether any local worktree files were excluded and whether tests or other validation ran.
++
++## Post-delivery human review boundary
++
++For a development task already using the ATHENA post-delivery review loop, report Git delivery and human review as separate facts. Step six may hand off a worktree or branch, publish a PR, or contain an already merged version according to the task's actual delivery mode. A merged PR can still be awaiting human review. Interpret reusable authorization from the user's actual words: repository, branch/PR/task scope, authorized action, and explicit limits. Task-scoped authorization for repair delivery remains valid when a fix creates a new commit SHA; a new SHA alone does not revoke it. Authorization explicitly bound to one immutable SHA or one operation does not expand, and a changed repository, target branch/PR, task scope, action, or explicit limit still requires authority for that changed operation. Human review follows the AI delivery and cleanup step, and neither AI checks nor a merge is final human approval.
++
++A standalone request to create, inspect, ready, or merge PRs keeps this skill's original scope and does not create a human-review round unless the user explicitly connects it to an active ATHENA development delivery.
+--- a/docs/superpowers/specs/2026-09-16-post-delivery-human-review-design.md
++++ b/docs/superpowers/specs/2026-09-16-post-delivery-human-review-design.md
+@@ -1,8 +1,8 @@
+ # AI 交付后人工审查与修复闭环设计
+ 
+-> 状态：流程设计草案，供用户审阅；尚未修改正式项目规则或技能。
++> 状态：设计已确认；项目规则、技能和模板已实施。验证结果与本轮材料见 [R1 交付记录](../../testing/human-review/2026-09-16-athena-human-review/R1/ai-delivery.md)；最终人工确认尚未完成。
+ >
+-> 已确认的阶段安排：第六步是“AI 交付与环境收尾”，之后才进行人工审查。发现问题后，AI 制定修复方案、实施、审查和验证，再次交付并收尾，交回用户继续审查。用户确认通过后才完成最终交付。
++> 用户于 2026-09-16 确认完整设计。已确认的阶段安排：第六步是“AI 交付与环境收尾”，之后才进行人工审查。发现问题后，AI 制定修复方案、实施、审查和验证，再次交付并收尾，交回用户继续审查。用户确认通过后才完成最终交付。
+ 
+ ## 1. 两种完成状态
+ 
+@@ -59,7 +59,7 @@
+ 
+ 建议正式落地时，每个任务使用 `docs/testing/human-review/<任务标识>/`，轮次材料分别放在 `R1/`、`R2/` 等目录。每轮包含 `ai-delivery.md`、`review-guide.md`、`human-report.md`；较小修复方案可放在本轮交付报告的修复章节。较大修复计划沿用 `docs/superpowers/plans/`。
+ 
+-以上目录是建议的产物约定，本设计尚未创建对应流程或模板技能。首次报告提交后保留原始观察；后续补充、修复结论和复验结果注明轮次与时间，避免覆盖历史事实。
++以上目录现为实际产物约定，对应流程及模板已由项目技能 [athena-human-review](../../../.codex/skills/athena-human-review/SKILL.md) 创建。首次报告提交后保留原始观察；后续补充、修复结论和复验结果注明轮次与时间，避免覆盖历史事实。正式文件已落地，但本次独立行为评估、整体审阅和 R1 交付验证仍按当前实施状态继续。
+ 
+ ## 4. 第六步必须准备好的内容
+ 
+@@ -265,16 +265,16 @@
+ 6. 用户按 R2 指南复验，确认问题关闭，明确接受 R2 作为最终交付。
+ 7. AI 汇总最终记录，保留两轮报告及证据，任务进入“最终交付完成”。
+ 
+-## 12. 后续落地范围
+-
+-建议通过项目级规则、流程文档和项目专属技能承接这一阶段，保持上游 Superpowers 技能原文：
+-
+-- 在 `AGENTS.md` 明确第六步后的人工审查、两个完成状态、报告提交后的处理授权和最终确认条件。
+-- 在 `docs/developer-guide/superpowers-development.md` 更新阶段图、材料约定和相关技能映射。
+-- 新增项目专属的人工审查技能及指南／报告模板，负责生成具体检查、接收报告、组织修复闭环和记录最终结论。
+-- 按需补充 `docs/developer-guide/running-locally.md` 的人工审查环境恢复与交接说明，与现有收尾和通知规则保持一致。
+-
+-当前仅形成此设计草案。正式落地时再依照适用技能完成规则、模板及相关文档的修改与验证。
++## 12. 落地状态
++
++本设计已通过项目级规则、流程文档和项目专属技能承接，保持上游 Superpowers 技能原文：
++
++- `AGENTS.md` 已明确第六步后的人工审查、两个完成状态、报告提交后的处理授权和最终确认条件。
++- `docs/developer-guide/superpowers-development.md` 已补充阶段顺序、材料约定和技能映射。
++- `.codex/skills/athena-human-review/` 已包含流程入口和三份可具体化模板，负责生成实际检查、接收报告、组织修复闭环和记录最终结论。
++- `docs/developer-guide/running-locally.md` 已补充人工审查环境恢复与交接说明，并继续引用根规则的收尾和通知边界。
++
++正式有／无指导行为对照各完成五份独立样本，核心判定为 40/45 与 44/45；短答材料字段遗漏等限制、静态检查及独立审阅记录保存在 [R1 验证证据](../../testing/human-review/2026-09-16-athena-human-review/R1/evidence/README.md)。本轮实际人工指南和预填报告已生成，人工结果保持未执行，不能据 AI 评估或文件落地提前记录最终交付完成。
+ 
+ ## 13. 依据
+ 
+--- /dev/null
++++ b/docs/superpowers/plans/2026-09-16-post-delivery-human-review.md
+@@ -0,0 +1,64 @@
++# 将交付后人工审查接入 ATHENA 技能体系
++
++> 状态：用户已批准，技能与项目接入已实施；本轮 AI 交付完成，待人工审查，详细状态见 [R1 交付记录](../../testing/human-review/2026-09-16-athena-human-review/R1/ai-delivery.md)。人工确认尚未完成。
++>
++> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development for the implementation task. The coordinator owns the isolated skill behavior evaluations and delivery evidence.
++
++**目标：** 在第六步 AI 交付与环境收尾之后增加人工审查，接通问题修复、再次交付和最终人工确认。
++
++**架构：** 新增项目级 `athena-human-review` 技能和三份模板；项目规则调用它，既有技能负责调试、TDD、审查与验证。
++
++**技术栈：** Markdown、YAML；Python 技能格式与文档校验；独立代理行为评估。
++
++**Spec：** [已确认设计](../specs/2026-09-16-post-delivery-human-review-design.md)。用户于 2026-09-16 在当前会话确认完整方案并明确请求实施。
++
++## 全局约束
++
++- 阶段顺序：AI 开发与验证 → AI 交付与环境收尾 → 人工审查 → 问题修复、审查和验证 → 再次交付与收尾 → 人工确认最终交付。
++- 保留上游 Superpowers 原文；修改技能、模板与项目规则，不涉及业务代码、API 或数据库。
++- 保留当前工作区已有通知相关修改，只增量修改本任务内容；当前 rf4 工作区交付，不移动或重置用户的工作。
++- 本次不启动业务服务。测试场景为隔离的模拟材料，无实际邮件、PR、进程或网络副作用。
++- 独立代理不发送通知、不提交或推送 Git、不另派子代理。主代理负责通知与总体交付。
++- 同一任务沿用稳定的问题编号、原始报告和执行／通知记录；AI 交付与最终交付分别记录。
++
++## 验证与交付顺序
++
++- [x] 保存现有文件快照、工作区差异和上游技能哈希。
++- [x] 在修改技能之前完成五份独立无新增指导的行为基线，保存实际响应及缺口。
++- [x] 实施任务 1；实现者自检新技能和两份修改的技能，形成报告。
++- [x] 使用同一场景和相同模型完成至少五份独立有指导评估，人工检查全部输出；缺陷进入实现者修复与复验。
++- [x] 独立审阅需求符合性、任务质量及整体差异，处理有效问题。
++- [x] 验证元信息、链接、差异、源文件保护及上游技能保持不变。
++- [x] 生成本次 R1 交付报告、具体人工指南、预填报告及版本证据；报告用户待填写。
++- [x] 按累计执行时间发送一次通用通知，保留结果；交付状态为“AI 交付完成，待人工审查”。
++
++## Task 1: 实施技能、模板和项目接入
++
++**创建：** `.codex/skills/athena-human-review/SKILL.md`、`agents/openai.yaml`、`assets/ai-delivery-template.md`、`assets/review-guide-template.md`、`assets/human-report-template.md`。
++
++**修改：** `AGENTS.md`、`docs/developer-guide/superpowers-development.md`、`docs/developer-guide/running-locally.md`、`.codex/skills/athena-browser-acceptance/SKILL.md`、`.codex/skills/publish-multi-repo-prs/SKILL.md`、已确认 spec。
++
++**输入：** spec；主代理提供的基线缺口；当前工作区真实规则与授权。
++
++**输出：** 可按正常发现机制使用的项目级技能、三份可具体化模板、统一的项目入口与真实状态规则。
++
++- [x] 描述精确触发条件；实现首次交付、已提交报告处理、修复轮交付和最终人工确认四个入口；纯咨询和独立只读审阅不自动触发完整闭环。
++- [x] 模板覆盖任务／轮次／准确版本／设计依据、逐步操作与明确预期、身份和测试数据、适用时的环境恢复、检查结果和证据、问题与原始报告、环境收尾、人工结论。
++- [x] 草稿保持被审查版本稳定；完整报告可包括受阻和未执行项目。已提交报告授权已确认设计范围内的修复；明确的仅分析限制、新需求决定和既有外部操作授权继续有效。
++- [x] 修复后状态为待人工复验，保留问题编号；针对修复、受影响流程和历史受阻项重查，注明沿用历史结果的依据。
++- [x] 在根规则接入第六步后的人工阶段；现有流程文档补充技能入口及按任务／轮次存放的产物位置。
++- [x] 浏览器技能和运行说明区分本轮 AI 结束、人工环境恢复与最终交付；移除与当前根规则冲突的“不发完成邮件”表述，通知引用根规则。
++- [x] PR 技能保留原有发布授权，在开发闭环中分别报告 Git 与人工审查状态；独立 PR 请求维持其原始范围。
++- [x] 将 spec 标为设计已确认，说明实现／验证的当前事实，不提前填为最终交付完成。
++- [x] 运行 `python3 /mnt/c/Users/FundConnectHK/.codex/skills/.system/skill-creator/scripts/quick_validate.py` 分别校验新技能、浏览器技能和 PR 技能；校验 YAML UI 元信息并检查新增链接。
++- [x] 自检工作区 diff；将变更清单、验证命令与结果、未完成项写入实现报告，返回主代理继续独立评估。
++
++## 行为场景与判定
++
++独立输入覆盖首次交付、停止后的环境恢复、草稿与已提交报告、受阻报告、仅分析、缺陷与新增需求、R2 的问题追踪与证据沿用、已合并但未人工通过、失败验收通知、纯咨询／独立 PR／其他项目，以及用户明确最终确认。
++
++真实场景响应保存于本任务忽略目录，交付时归档到本次 R1 证据目录。每个响应都要人工读取并按行为评分，不能仅凭关键词命中断言通过。文档检查和模拟行为结果不证明真实业务服务验收通过。
++
++## 实际执行说明
++
++预编辑基线和全部中间响应均已保留。发现部分中间代理未读完整规则后，使用任务开始时冻结的基线和最终技能分块重跑正式对照；所有正式样本有完整读取审计。结果与残余输出限制见 [正式评估](../../testing/human-review/2026-09-16-athena-human-review/R1/evidence/comparison-assessment.md)，不把模拟行为当成真实业务验收。工作期间出现本任务之外的 Impeccable／Token／运行时文档修改，保留原样并单独记录；本任务不改写上游 Superpowers。
+--- /dev/null
++++ b/.codex/skills/athena-human-review/SKILL.md
+@@ -0,0 +1,75 @@
++---
++name: athena-human-review
++description: Use when ATHENA development reaches post-delivery human review, when a user submits an ATHENA human review report, when fixes need another review round, or when the user confirms the reviewed version as final.
++---
++
++# ATHENA 交付后人工审查
++
++把 AI 阶段完成与用户最终确认分开记录。首次交付先产出可直接填写的人工报告结果表，再补齐使用同一检查清单的指南和 AI 交付报告。
++
++## 触发边界
++
++- ATHENA 开发任务完成实现、AI 审阅、约定验证和第六步环境收尾后，生成 R1 材料。
++- 用户明确提交完整人工报告后，处理报告；报告允许包含受阻和未执行项。
++- 修复完成并再次收尾后，生成 R2、R3 等材料。
++- 用户对准确轮次和版本明确确认通过后，记录最终交付。
++
++纯咨询、独立只读审查、独立 PR 操作、其他项目，以及未明确接续的历史已完成任务不自动进入此闭环。
++
++## 每轮材料契约
++
++在 `docs/testing/human-review/<任务标识>/R<轮次>/` 按以下顺序产出并读回材料：
++
++1. 先确定本轮真实 `CHK-*` 清单，用[人工报告模板](assets/human-report-template.md)写入 `human-report.md`。预填真实任务、轮次、设计依据、完整不可缩写版本，以及每个 CHK 的具体结果行；结果为“未执行”，观察、证据和问题编号留给用户，总体结论保持待填写。读回结果表，确认每个 CHK 都已出现。
++2. 用同一 CHK 清单和[人工审查指南模板](assets/review-guide-template.md)写入 `review-guide.md`。在任何启动步骤前先给出完整预期版本及核对方法，再写身份、数据、逐步操作、可观察预期和恢复方法。读回并核对指南与报告逐项对应。
++3. 最后用[AI 交付模板](assets/ai-delivery-template.md)写入 `ai-delivery.md`，记录范围、证据、限制、Git 与人工状态、环境收尾，并链接前两份材料。读回三份材料完整性核对。
++
++三份材料使用相同任务、轮次、设计依据和完整版本。模板填写标记在实际交付中换成本轮事实；不适用项写明原因，AI 不代填用户“通过”。未提交成果记录工作区差异和可恢复补丁或等价产物。
++
++能在目标任务中实际创建并读回三份材料时，最终回复链接这三份材料即可，不需要再次粘贴整张结果表。
++
++若当前操作不能在目标任务中实际创建并读回三份材料，仍按同一顺序在回复中交付：先展示可复制的 `human-report.md` 结果表，随后给出逐项指南和 AI 交付摘要。只能写一份回答文件也属于这种文本模式，不能把未创建的三份目标材料写成已生成。下面是合格的已填写结构节选；示例值仅说明结构，实际交付换成本轮事实：
++
++```markdown
++# 人工审查报告：Notifications 重新连接期间保留旧连接
++
++- 任务：Notifications 重新连接期间保留旧连接
++- 交付轮次：R1
++- 完整版本：5e1c7f8a3d6b4c2e9f0a1b7c8d3e4f5a6b7c8d9e
++- 设计依据：docs/requirements/web-ui/notifications-proposal.md
++- 报告状态：草稿
++- 总体结论：待人工填写
++
++启动前版本核对：在目标 worktree 执行 `git rev-parse HEAD`，预期完整输出
++`5e1c7f8a3d6b4c2e9f0a1b7c8d3e4f5a6b7c8d9e`；一致后再启动环境。
++
++| 检查编号 | 检查内容 | 结果 | 实际观察 | 证据 | 问题编号 |
++| --- | --- | --- | --- | --- | --- |
++| CHK-001 | 从已连接的 Notifications 页面开始重新连接，在替换完成前返回连接区，确认原 Connected 连接仍显示且可用 | 未执行 |  |  |  |
++```
++
++这一行是文本交付的节选，不是检查范围上限；正式报告仍为指南中的每个 `CHK-*` 逐行预填。文本报告直接写入真实任务、轮次、完整不可缩写版本、设计依据和实际检查内容，并保留空白的观察、证据、问题编号及待用户填写的总体结论；可靠的交付报告引用可以补充定位，不能替代报告中的完整版本。
++
++## 四个入口
++
++### 首次交付
++
++R1 覆盖本次交付的完整人工范围，并先按上述顺序产出和读回具体结果表。只有 AI 审阅、约定验证、三份材料和收尾均有证据时，状态才是“本轮 AI 交付完成，待人工审查”；否则写“AI 阶段未完成／存在阻塞”及缺口。文档或技能任务写明无需运行栈，不为人工阶段启动服务。通知只引用根 `AGENTS.md` 的累计时长、固定内容和同任务去重规则。
++
++### 已提交报告
++
++“已提交”可由文件状态或同等自然语言表达。草稿期间保持被审查版本稳定；可协助恢复环境，但不因草稿问题修改产品。若用户要求立即修复，先保存本轮已有观察并明确切换到下一版本。
++
++收到已提交报告后，先用 `receiving-code-review` 核实，再用 `systematic-debugging` 定位；局部修复方案写入交付材料，多任务或跨层修复使用 `writing-plans`，然后对已确认设计范围内的缺陷连续实施。行为修复使用 `test-driven-development`，实施后使用 `requesting-code-review` 和 `verification-before-completion` 完成审阅与验证，并执行仍适用的真实验收。报告提交即包含这部分修复授权，不新增审批。用户明确的仅分析／先审方案限制继续优先；新需求、设计决定及外部操作仍按原授权边界处理。
++
++保留原始观察，问题编号跨轮次不重置。方案拟定或修复进行中不得提前写验证通过；只有实际修复、代码审阅和约定验证的证据均已取得，问题才能标为“AI 已验证，待人工复验”，且不能标为人工关闭。
++
++### 修复轮交付
++
++新轮次列出：原问题复验、受修复影响的关联流程、历史受阻或未执行项，以及可沿用的上轮结果。沿用项注明来源轮次、版本和影响判断，不能伪装成在新版本重新通过。
++
++### 最终人工确认
++
++仅当用户明确确认准确轮次和版本，每个必查项都有真实结论，除用户明确接受并记录范围的例外、范围调整或设计变更外其余必查项均已完成并通过，问题已有处置，AI 证据与该版本一致，且环境状态已核对，才记录“最终交付完成”。失败、受阻和未执行项保留原状态，不能为了结案改写成通过。PR 已合并、AI 测试通过、通知已发送都不能替代此确认。
++
++人工阶段位于第六步 AI 交付与环境收尾之后；该轮可以按任务既有方式保留工作区或分支、提交 PR 或已经合并。Git 操作授权按用户原话中的实际仓库、分支／PR／任务范围、动作和显式限制复用；面向同一任务修复交付的授权不因产生新提交 SHA 自动失效。明确绑定特定不可变 SHA 或一次操作的授权不得自行扩大，后续仓库、目标分支／PR、任务范围、动作或显式限制发生变化时也须按实际授权边界处理。
+--- /dev/null
++++ b/.codex/skills/athena-human-review/agents/openai.yaml
+@@ -0,0 +1,4 @@
++interface:
++  display_name: "ATHENA Human Review"
++  short_description: "Manage ATHENA post-delivery human review rounds"
++  default_prompt: "Use $athena-human-review to prepare or process the current ATHENA post-delivery human review round."
+--- /dev/null
++++ b/.codex/skills/athena-human-review/assets/ai-delivery-template.md
+@@ -0,0 +1,65 @@
++# AI 交付报告：【AI 填写任务名称】
++
++> 本模板中的 `【AI 填写】` 必须在实际交付时替换为确定值；不适用时写明原因。
++
++## 交付身份
++
++- 任务标识：【AI 填写，用于稳定目录名】
++- 交付轮次：【AI 填写，R1／R2／R3…】
++- AI 阶段状态：【AI 填写：本轮 AI 交付完成，待人工审查／AI 阶段未完成／存在阻塞】
++- 人工审查状态：【AI 填写：待人工审查／待人工复验／最终交付完成；只有用户确认后可填最后一项】
++- 仓库及 worktree：【AI 填写绝对路径】
++- 分支：【AI 填写】
++- 提交／产物版本：【AI 填写完整且不可缩写的 SHA、子模块 SHA 或其他不可变版本；不得使用省略号、“最新版本”或可变分支名代替】
++- 工作区状态：【AI 填写 clean；或列出未提交差异及可恢复补丁／产物】
++- Git 交付状态：【AI 填写未提交／已提交／PR 草稿／已合并等事实，并附可定位信息】
++
++## 范围与设计依据
++
++- 本轮交付范围：【AI 填写】
++- 明确不在本轮范围：【AI 填写】
++- 已确认需求、设计或会话决定：【AI 填写可定位链接或记录】
++- 相对上一轮的变化：【R1 写首次交付；修复轮逐项引用 ISSUE 编号】
++
++## AI 审阅与验证证据
++
++| 检查或命令 | 针对版本 | 结果 | 证据位置 |
++| --- | --- | --- | --- |
++| 【AI 填写实际执行项】 | 【AI 填写】 | 【AI 填写实际结果】 | 【AI 填写链接、日志或报告】 |
++
++- 未执行或未通过的约定验证：【AI 填写；没有则写“无”】
++- 已知限制与阻塞：【AI 填写；没有则写“无”】
++- 证据与当前版本差异：【AI 填写；没有则写“无”】
++
++## 问题与修复状态
++
++| 问题编号 | 原始报告 | 核实结论／原因 | 本轮修改 | AI 验证 | 人工状态 |
++| --- | --- | --- | --- | --- | --- |
++| 【R1 无问题时写“不适用”；修复轮沿用稳定编号】 | 【链接到原始观察】 | 【AI 填写】 | 【AI 填写】 | 【AI 填写】 | 【AI 已验证，待人工复验／用户确认关闭／其他真实状态】 |
++
++## 环境与资源收尾
++
++### 已停止
++
++- 【AI 填写环境、仓库/worktree、实例/profile、停止命令和退出核对；没有则写明本任务未启动运行环境】
++
++### 保留
++
++- 【AI 填写保留原因、归属、地址、仓库/worktree、实例/profile、会话或进程、日志、验收结果和准确停止命令；没有则写“无”】
++
++## 人工审查入口
++
++- [本轮人工审查指南](review-guide.md)
++- [本轮预填人工报告](human-report.md)
++- 提交方式：完成或受阻后，把 `human-report.md` 标为“已提交”，或在会话中明确提交同等完整内容。
++- 下一状态：等待用户对本报告所列准确版本进行人工审查；AI 通过不代表人工通过。
++
++## 三份材料完整性核对
++
++| 材料 | 实际路径 | 已写入并读回 | 内容核对 |
++| --- | --- | --- | --- |
++| `ai-delivery.md` | 【AI 填写实际路径】 | 【AI 填写是／否】 | 【任务、轮次、完整版本、证据、收尾和状态】 |
++| `review-guide.md` | 【AI 填写实际路径】 | 【AI 填写是／否】 | 【启动前版本核对、真实 CHK、操作、预期和收尾】 |
++| `human-report.md` | 【AI 填写实际路径】 | 【AI 填写是／否】 | 【每个 CHK 逐行预填、未执行、观察、证据、问题和总体结论】 |
++
++只有三行均核对为“是”才可声称材料已交付；回复中给出三份实际文件的可打开链接。
+--- /dev/null
++++ b/.codex/skills/athena-human-review/assets/human-report-template.md
+@@ -0,0 +1,57 @@
++# 人工审查报告： 【AI 预填任务名称】
++
++> AI 预填任务、轮次、准确版本、设计依据和真实检查项。用户填写结果、实际观察、问题和总体结论。AI 不代填用户“通过”。
++
++## 审查身份
++
++- 任务标识：【AI 预填】
++- 交付轮次：【AI 预填】
++- 仓库／worktree：【AI 预填】
++- 分支与提交／产物版本：【AI 预填准确、完整且不可缩写的 SHA 或其他不可变版本】
++- 设计依据：【AI 预填链接】
++- AI 交付报告：[ai-delivery.md](ai-delivery.md)
++- 人工审查指南：[review-guide.md](review-guide.md)
++- 实际环境、身份和数据：【AI 预填要求；用户填写实际差异】
++- 审查时间：【用户填写】
++- 报告状态：草稿
++- 总体结论：【用户填写：通过／存在问题／受阻】
++
++## 检查结果
++
++| 检查编号 | 检查内容（AI 预填） | 结果（用户填写） | 实际观察 | 证据 | 问题编号 |
++| --- | --- | --- | --- | --- | --- |
++| CHK-001 | 【AI 预填与指南一致的具体检查，不得保留泛化占位描述】 | 未执行 |  |  |  |
++
++【AI 为指南中的每个真实检查项预填且只预填一行；检查编号和内容逐项对应，结果初始值均为“未执行”。实际交付不得只写回填说明或用省略号代替结果行。】
++
++## 问题记录
++
++### ISSUE-001：【用户填写简短问题描述】
++
++- 发现轮次：【本轮编号】
++- 对应检查：【CHK 编号；指南外发现填“自由检查”】
++- 操作步骤：
++  1. 【用户填写实际动作】
++  2. 【用户填写输入或选择】
++- 预期结果：【按指南或设计应看到什么】
++- 实际结果：【实际看到了什么】
++- 发生情况：【必现／偶发／仅遇到一次／不确定】
++- 影响：【是否阻塞后续项目及具体范围】
++- 原始证据：【截图、日志、URL、业务记录标识；没有时写“无”】
++
++原始观察提交后保留，不用后续诊断或修复结论覆盖。AI 在交付报告中引用该问题并补充核实、修复与验证状态；下一轮仍使用同一 ISSUE 编号。
++
++## 未执行或受阻项目
++
++| 检查编号 | 状态 | 原因 | 阻塞问题编号 | 可继续的独立检查 |
++| --- | --- | --- | --- | --- |
++| 【用户填写】 | 【未执行／受阻】 | 【用户填写】 | 【没有则写“无”】 | 【用户填写】 |
++
++## 本轮结论与交接
++
++- 报告提交声明：【用户填写“本轮报告已经提交，请根据上述内容处理”，或明确确认准确版本最终通过】
++- 环境状态：【用户填写已停止／按要求保留／需要 AI 协助收尾】
++- 保留实例详情：【用途、地址、仓库/worktree、实例、会话／进程、日志和停止命令；没有则写“无”】
++- 我明确接受的例外及范围：【没有则写“无”】
++
++提交时把“报告状态”从“草稿”改为“已提交”。包含受阻和未执行项的完整报告也可以提交；如实记录即可。
+--- /dev/null
++++ b/.codex/skills/athena-human-review/assets/review-guide-template.md
+@@ -0,0 +1,73 @@
++# 人工审查指南： 【AI 填写任务名称】
++
++> AI 在实际交付时把本模板具体化。命令、地址、身份、数据和预期不得保留通用占位符。
++
++## 审查对象
++
++- 轮次：【AI 填写】
++- 仓库／worktree：【AI 填写】
++- 分支与准确完整版本：【AI 填写不可缩写的 SHA、子模块 SHA 或其他不可变版本】
++- 设计依据：【AI 填写链接】
++- 配套报告：[human-report.md](human-report.md)
++
++## 版本核对
++
++在启动任何服务或执行会修改数据的步骤前完成本节。
++
++1. 【AI 填写进入正确 worktree 的命令或操作。】
++2. 【AI 填写核对提交、子模块或未提交产物身份的准确命令。】
++3. 预期：【AI 重复写出应看到的完整、不可缩写 SHA，适用时包括每个子模块 SHA；未提交成果写出差异摘要和可恢复产物版本。】
++
++版本不符时停止会改变数据的检查，在报告中记为“受阻”，保存实际版本信息；不要强制切换或重置覆盖现有工作。
++
++## 环境恢复
++
++- 是否需要运行环境：【AI 填写需要／不需要及理由】
++- 前提与依赖：【AI 填写】
++- 启动命令、实例或 profile：【AI 从目标 worktree 和本地运行说明填入已核实命令】
++- 日志位置与就绪表现：【AI 填写】
++- 入口地址：【AI 填写】
++- 版本、前端入口、会员／管理员 bootstrap 等适用就绪检查：【AI 填写】
++
++用户可按本节启动，也可请求 AI 协助恢复。文档、技能或不需要运行栈的任务应明确写“无需启动”，不提供虚构命令。
++
++## 身份与测试数据
++
++| 用途 | 身份／权限 | 测试数据及准备方法 | 预期初始状态 |
++| --- | --- | --- | --- |
++| 【AI 填写】 | 【AI 填写实际账号、角色或不适用】 | 【AI 填写确定数据和准备方法】 | 【AI 填写】 |
++
++## 检查顺序
++
++### CHK-001：【AI 填写可观察目标】
++
++- 设计依据：【AI 填写具体条目】
++- 前置条件：【AI 填写入口、身份、数据状态和依赖】
++- 操作步骤：
++  1. 【AI 填写可照做的动作及输入值】
++  2. 【AI 继续填写；按实际需要增删步骤】
++- 明确预期：
++  1. 【AI 填写每个关键动作后可直接观察的结果、等待条件或时限】
++  2. 【AI 填写刷新、重新进入或后续状态等适用结果】
++- 记录方式：【AI 填写通过／失败／受阻／未执行所需截图、日志、URL 或业务标识】
++- 影响与恢复：【AI 填写会修改的数据及恢复方法；无影响时写“无”】
++
++【AI 为所有真实检查项复制该结构，并保持 CHK 编号在同一任务内稳定。实际指南不得保留本示例标题或泛化检查内容。每个 CHK 必须在同轮 `human-report.md` 中有且只有一条具体结果行。】
++
++## 修复轮复验范围
++
++| 分类 | 本轮检查 | 原因或沿用依据 |
++| --- | --- | --- |
++| 修复问题 | 【AI 填写 ISSUE 与 CHK；R1 写“不适用”】 | 【AI 填写】 |
++| 受影响流程 | 【AI 填写】 | 【AI 填写影响判断】 |
++| 先前受阻／未执行 | 【AI 填写】 | 【AI 填写已恢复的前提】 |
++| 沿用历史结果 | 【AI 填写来源轮次、版本和 CHK】 | 【AI 填写为什么未受影响；不得写成在本轮重测通过】 |
++
++## 本轮现场收尾
++
++- 本轮用户或 AI 启动的资源及归属：【AI 填写】
++- 准确停止命令：【AI 填写，使用同一仓库、INSTANCE/profile；无需环境时写“不适用”】
++- 停止后的核对：【AI 填写进程、端口和容器检查】
++- 需要保留时：在报告中写明用途、地址、仓库/worktree、实例、会话／进程、日志和之后的停止命令。
++
++完成独立项目后继续其他检查；受阻项及其依赖项如实保留。整轮完成或无法继续时提交报告，不要把未执行项填写为通过。

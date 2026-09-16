@@ -1,0 +1,25 @@
+{
+  "task": "2026-09-16-athena-human-review",
+  "round": "R1",
+  "version_id": "ATHENA-human-review-R1-ca2676699407d2ca",
+  "base_head": "1dfcb795dfdf3da1ecb1b63e4acc9677604d90a5",
+  "branch": "rf4",
+  "source_bundle_sha256": "ca2676699407d2ca1ad1c92c29c2be4fd7a101db1565581f39077061d8a767f5",
+  "source_sha256": {
+    "AGENTS.md": "e7bb0ae22847f2cdc0de7396b7e9234a133c8cfd5a55c6eae8af44bb61cb326e",
+    "docs/developer-guide/superpowers-development.md": "07bf9dacff11ecf4135e9ed853604eb91be1424302964fb2ca317243c40ccc62",
+    "docs/developer-guide/running-locally.md": "8f3e6edc887908339d608262fb2606c1e3b029d66d3c43c2da932e86500cd188",
+    ".codex/skills/athena-browser-acceptance/SKILL.md": "6e6e6e8ae15a421c1c73b6061b514f0c8d54ca4c4b73121056ac2c589e78de60",
+    ".codex/skills/publish-multi-repo-prs/SKILL.md": "bb58430f88e906bfe11148813abe57474662196635e776181e57a8a5050fa3db",
+    "docs/superpowers/specs/2026-09-16-post-delivery-human-review-design.md": "e38e3f7e975cb247e9ac40fea0b322d97b1fad904c3fce044a7fbe3ccc09a4f7",
+    "docs/superpowers/plans/2026-09-16-post-delivery-human-review.md": "33273bbf0a568d8b240446172bdef26ec0339f7d7b2ac5c60a7ed6210ece6103",
+    ".codex/skills/athena-human-review/SKILL.md": "b02860b571ba178dc09f3ab178d01765790c3bbd842081523ac5b21f61a8a34a",
+    ".codex/skills/athena-human-review/agents/openai.yaml": "23be1f1e95c5f91b2721b3b3c62d8b98ff7f3479a90aa2c872c8cf83a782c6f3",
+    ".codex/skills/athena-human-review/assets/ai-delivery-template.md": "2547fbe930d2e0940fe48a1cdfed1c0abde623d1ef2bec4c9c3427d464f33d7b",
+    ".codex/skills/athena-human-review/assets/human-report-template.md": "d8b89d7b4738910aee5fe3167fe03ebd18a0370d4147f5fc38db465b1d82dbe4",
+    ".codex/skills/athena-human-review/assets/review-guide-template.md": "bb380edc28aa7f15639eaf83840633488c9009a1c84363c0b8b716015abb1dba"
+  },
+  "patch_basis": "Task-start working tree snapshots, including pre-existing AGENTS.md notification edits; not clean HEAD.",
+  "scope_note": "Historical source review metadata. Only plan completion status changed afterward; current recoverable source-snapshot.zip and status-finalization.patch identify that delta. The review-time archive digest is historical, not the current archive hash.",
+  "review_time_archive_sha256": "835338cd7163254d8c209dc0de5ba58ee0e8ba36e1c38887456b62241f960978"
+}

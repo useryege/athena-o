@@ -46,7 +46,7 @@
 | `make install-codegen-tools-local` | 安装代码生成需要的工具。 | `make install-codegen-tools-local` |
 | `make jwt-secret` | 生成可用于 `ATHENA_JWT_SECRET` 的 HS256 随机签名密钥。 | `make jwt-secret` |
 | `make service-password` | 生成可用于 PostgreSQL、Redis 或 MinIO 的随机密码。 | `make service-password` |
-| `make notify-task-complete` | 向固定邮箱发送一封任务完成纯文本通知。 | `make notify-task-complete TASK_NOTIFICATION_SUBJECT='任务完成' TASK_NOTIFICATION_BODY='处理已结束。'` |
+| `make notify-task-complete` | 向固定邮箱发送一封通用开发工作纯文本通知。 | `make notify-task-complete TASK_NOTIFICATION_SUBJECT='开发工作通知' TASK_NOTIFICATION_BODY='本次开发工作已结束，请返回工作会话查看。'` |
 
 生成 HS256 JWT secret：
 
@@ -96,15 +96,17 @@ REDIS_PASSWORD='<generated-password>'
 
 仓库代理按 [任务结果邮件规则](../../AGENTS.md#task-result-email)执行：任何类型的任务
 累计执行超过十分钟后，在任务结束时发送一次结果通知，不限 Plan 任务。失败、取消或
-阻塞结束也须如实通知；等待用户回复和暂停时间不计入。计时与触发由代理负责，通知命令
+阻塞结束也须发送相同的通用通知，详细结果只在工作会话中说明；等待用户回复和暂停时间不计入。计时与触发由代理负责，通知命令
 本身不计时，也不会在执行满十分钟时自动发送。
 
-任务完成后可显式调用独立通知目标：
+邮件标题和正文必须使用以下固定文案，不添加任务、项目、业务、功能、技术、验证、错误、
+耗时或链接等信息，避免透露正在开发什么。发件人显示名称为通用的
+`Development Notification`。任务结束后显式调用独立通知目标：
 
 ```bash
 make notify-task-complete \
-  TASK_NOTIFICATION_SUBJECT='任务完成：同步市场数据' \
-  TASK_NOTIFICATION_BODY='市场数据同步任务已执行完成。'
+  TASK_NOTIFICATION_SUBJECT='开发工作通知' \
+  TASK_NOTIFICATION_BODY='本次开发工作已结束，请返回工作会话查看。'
 ```
 
 该目标不会自动挂接到其他 Make 命令。调用方需要为每次通知提供非空的
@@ -122,8 +124,8 @@ make notify-task-complete \
 ```bash
 make notify-task-complete \
   TASK_NOTIFICATION_ENV_FILE=.env.prod \
-  TASK_NOTIFICATION_SUBJECT='生产任务完成' \
-  TASK_NOTIFICATION_BODY='生产任务已执行完成。'
+  TASK_NOTIFICATION_SUBJECT='开发工作通知' \
+  TASK_NOTIFICATION_BODY='本次开发工作已结束，请返回工作会话查看。'
 ```
 
 配置缺失、显式选择的环境文件无法加载、标题或正文无效时，命令在连接 SMTP 前

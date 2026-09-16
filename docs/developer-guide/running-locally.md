@@ -255,7 +255,7 @@ Follow the [project acceptance rule](../../AGENTS.md#本地验收环境准备与
 4. Preserve startup and smoke failures, inspect the relevant logs, resolve environment issues within scope and rerun the affected checks. Do not automatically reset data, delete volumes, change product behavior or repeatedly retry an unchanged failure. An unresolved external dependency, credential, permission or user decision must be reported with attempted actions and remaining verification; passing isolated tests does not close a required real smoke check.
 5. At task completion, cancellation, pause, or an end caused by failure/blockers, save evidence and follow [task shutdown](#task-shutdown-and-retained-environments). The accepting agent performs this cleanup; the smoke command does not own the development stack. Report the actual acceptance and cleanup results separately.
 
-If the user requests only a read-only inspection, prerequisite check or no service startup, honor that boundary. A rules-only change or isolated-only test does not require starting a development stack. Required real acceptance that remains unverified prevents claiming full task completion or sending its completion notification.
+If the user requests only a read-only inspection, prerequisite check or no service startup, honor that boundary. A rules-only change or isolated-only test does not require starting a development stack. Required real acceptance that remains unverified prevents claiming the AI delivery stage complete. Task-result notification behavior remains governed by the fixed-content, elapsed-time and deduplication rules in the root `AGENTS.md`; a notification does not prove acceptance or final delivery.
 
 ### Task shutdown and retained environments
 
@@ -273,6 +273,16 @@ Before stopping, verify the checkout, instance/profile and recorded process/cont
 Confirm owned processes exited, their ports were released and their containers stopped. Save and investigate cleanup failures, and report any remaining resources instead of claiming shutdown. Failure evidence does not require a live server: after saving it, task-created temporary resources are stopped unless the user explicitly requested retaining the debugging environment.
 
 The handoff lists stopped and retained environments. For retained items, record the user's request or existing ownership, URL, checkout, instance/profile, session or PID, logs, acceptance result and exact stop command. Keeping data and evidence does not imply keeping the service running. The agent must invoke shutdown; the runtime does not detect a completed conversation task.
+
+### Restore an environment for post-delivery human review
+
+The AI delivery step stops task-owned temporary environments as described above. Human review may therefore start later from a stopped state. The concrete `review-guide.md` for that task and round must identify the exact repository/worktree and immutable version, include a version check, and fill in the applicable start command, `INSTANCE` or profile, log location, URL, identity, test data, readiness checks and stop command. Do not leave generic placeholders in a delivered guide.
+
+The user may run those instructions or ask the AI to restore the environment. Such a request authorizes the necessary startup, readiness checks and environment troubleshooting for the specified review target; it does not authorize resetting data, switching over unrelated worktrees or changing product behavior. Preserve a version, identity or data mismatch as a blocked review prerequisite before making changes that could erase the observed state.
+
+Record who started each resource. User-started review resources remain user-owned. When the AI prepares an environment for continued human inspection, retain only the specified environment and report its URL, checkout, instance/profile, session or PID, logs and exact stop command; other task-owned resources still follow normal shutdown. If the user asks the AI to end the review environment, stop and verify it through the same ownership procedure above.
+
+Documentation, skill and other review tasks that do not exercise a runtime must say that no environment is required. They do not start a stack merely to populate the human-review materials.
 
 ### Prerequisite checks
 

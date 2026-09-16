@@ -1,0 +1,4 @@
+interface:
+  display_name: "ATHENA Human Review"
+  short_description: "Manage ATHENA post-delivery human review rounds"
+  default_prompt: "Use $athena-human-review to prepare or process the current ATHENA post-delivery human review round."

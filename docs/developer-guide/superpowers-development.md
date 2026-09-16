@@ -26,6 +26,7 @@ Codex 的仓库技能发现方式见 [OpenAI 官方技能文档](https://learn.c
 | 工作隔离、验证和交付 | [using-git-worktrees](../../.agents/skills/using-git-worktrees/SKILL.md)、[verification-before-completion](../../.agents/skills/verification-before-completion/SKILL.md)、[finishing-a-development-branch](../../.agents/skills/finishing-a-development-branch/SKILL.md) |
 | 改进技能 | [writing-skills](../../.agents/skills/writing-skills/SKILL.md) |
 | ATHENA 页面检查、冒烟与浏览器回归 | [athena-browser-acceptance](../../.codex/skills/athena-browser-acceptance/SKILL.md) |
+| AI 交付后的人工审查、报告处理与修复轮交接 | [athena-human-review](../../.codex/skills/athena-human-review/SKILL.md) |
 
 由 `brainstorming` 按任务选取 Spike、Bounded 或 Architectural 路径。局部修改不必一律形成完整 spec 和 plan；需要书面方案的任务按上游技能创建相应文件。方案批准、任务执行和审查遵循所选技能，沿用用户已经明确给出的决定与授权。
 
@@ -39,12 +40,15 @@ Codex 的仓库技能发现方式见 [OpenAI 官方技能文档](https://learn.c
 | `docs/superpowers/plans/YYYY-MM-DD-<topic>.md` | Superpowers 需要的实现计划 |
 | `.superpowers/` | 临时执行记录、子代理交接和可视化会话，Git 忽略 |
 | `.worktrees/` | 项目内隔离工作树，Git 忽略 |
+| `docs/testing/human-review/<任务标识>/R<轮次>/` | 每轮具体的 AI 交付报告、人工审查指南和预填人工报告 |
 
 任务 spec 和 plan 引用相关长期文档，记录本次要改变的内容。完成实现时同步受影响的长期文档与源码链接。已有的 `讨论中`、`已确认`、`设计中`、`已确认待实现`、`已实现` 状态继续描述真实情况，不作为额外的阶段启动条件；切换流程不代表批准尚未决定的业务规则，也不代表已有方案已经实现。
 
 ## 项目技能的职责
 
 Superpowers 负责开发方法。Impeccable 负责 `ui/` 下的 UI/UX 能力，并复用任务设计讨论与批准结果。`grpc-rpc-naming`、`sync-athena-changes` 继续提供 RPC 命名、生成源与消费者同步知识；多仓库 PR 技能提供相应操作支持。[ATHENA 浏览器验收技能](../../.codex/skills/athena-browser-acceptance/SKILL.md)按请求在当前可用的内置浏览器检查、真实本地开发环境冒烟和隔离 Playwright 回归之间选择入口，并如实区分三者的证据。
+
+开发闭环的阶段顺序为：AI 开发、审阅与验证 → AI 交付及环境收尾 → 用户人工审查 → 已确认范围内的问题修复、审阅和验证 → 下一轮交付及收尾 → 用户确认准确版本最终通过。[ATHENA 人工审查技能](../../.codex/skills/athena-human-review/SKILL.md)承接首次交付、已提交报告、修复轮交付和最终确认；R1 提供完整检查范围，后续轮次保留问题编号，区分必须复验、受影响回归、历史受阻补查及有依据的历史结果沿用。AI 阶段完成和最终交付是两个独立状态。
 
 真实验收按 [AGENTS.md 的环境准备与收尾规则](../../AGENTS.md#本地验收环境准备与完成标准)复用或主动启动目标环境。任务结束后，代理默认停止本任务启动的临时服务、预览、测试替身及所属容器，保留数据与证据；用户已有环境、其他任务正在使用的环境和借用基础设施保持原样，用户明确要求保留的环境按指定范围保留。smoke 工具不启停服务不免除代理的准备和收尾责任。开发、调试和验收期间可持续运行；失败或阻塞结束任务时也先保存证据再收尾。具体命令、退出核对和交付清单见[任务收尾说明](running-locally.md#task-shutdown-and-retained-environments)。相关测试与验证遵循 Superpowers。
 
@@ -66,3 +70,5 @@ Superpowers 负责开发方法。Impeccable 负责 `ui/` 下的 UI/UX 能力，�
 ## 升级
 
 升级时先选定上游提交，完整更新来源记录列出的技能目录及其资源，保留原版内容、执行权限和许可证。核对 Codex 技能发现结果、上游文件一致性、脚本可执行性及项目说明中的链接，再更新来源提交。若新增或移除上游技能，同步目录清单和本文入口；不要只更新单个 `SKILL.md` 而遗漏配套文件。
+
+Impeccable 的上游提交、技能版本、引擎构建方式和校验值记录在 [`.agents/impeccable.json`](../../.agents/impeccable.json)。同步上游 `main` 时，技能版本号可能保持不变，应以完整提交 SHA 为准；若配套命令尚未进入已发布引擎，需从同一提交按上游发布目标构建引擎，并一起验证后更新。

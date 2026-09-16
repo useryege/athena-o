@@ -28,7 +28,7 @@ const (
 	smtpPort = 465
 
 	fixedRecipient = "2687665142@qq.com"
-	fromName       = "ATHENA Task Notification"
+	fromName       = "Development Notification"
 
 	maxAttempts    = 3
 	attemptTimeout = 10 * time.Second

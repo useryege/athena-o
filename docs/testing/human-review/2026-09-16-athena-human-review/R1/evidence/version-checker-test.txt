@@ -1,0 +1,16 @@
+Read-only version checker, isolated temporary Git fixture (not ATHENA):
+matching source: expected exit 0, actual 0
+PASS: R1 source version matches (1 files; base 443f6b2cc0e9).
+
+changed source: expected exit 1, actual 1
+Review version differs; preserve current work and confirm the target:
+Changed: sample.md
+
+missing source: expected exit 1, actual 1
+Review version differs; preserve current work and confirm the target:
+Missing: sample.md
+
+changed base HEAD: expected exit 1, actual 1
+Review version differs; preserve current work and confirm the target:
+HEAD: expected 443f6b2cc0e9a2a48e0d19937f7807424cb61c31, found df37152c641a622b2d42d20688dfa29f1229bbfe
+PASS: all four outcomes

@@ -1,0 +1,54 @@
+{
+  "arm": "guided",
+  "total_lines": 593,
+  "chunks": [
+    {
+      "file": "rules-01.md",
+      "source_lines": [
+        1,
+        100
+      ],
+      "sha256": "c4d3d45788d7818b5f917c538726b4c54dbfe39374212babcf2e2bc23c9a17c0"
+    },
+    {
+      "file": "rules-02.md",
+      "source_lines": [
+        101,
+        200
+      ],
+      "sha256": "7666a0e51082bf3b59524e5558be68195c339ae16fa1877a3541da18985c58ec"
+    },
+    {
+      "file": "rules-03.md",
+      "source_lines": [
+        201,
+        300
+      ],
+      "sha256": "e38d597097f80c12b0288c28b7a103a8cda57b522a4df055ac16507b45f84c81"
+    },
+    {
+      "file": "rules-04.md",
+      "source_lines": [
+        301,
+        400
+      ],
+      "sha256": "2d926dda51c8caa82941576fd827fe8d2659eeda79d148e0de6b5070fe3f076f"
+    },
+    {
+      "file": "rules-05.md",
+      "source_lines": [
+        401,
+        500
+      ],
+      "sha256": "1cb346af749d0460e9a6050e4a73a9a8becae64f27096e9c763279526a227ee5"
+    },
+    {
+      "file": "rules-06.md",
+      "source_lines": [
+        501,
+        593
+      ],
+      "sha256": "ab1132dca4f2e804e1b7e6cb3669c1103fcb605cb14488bfb473a0f73802bbde"
+    }
+  ]
+}

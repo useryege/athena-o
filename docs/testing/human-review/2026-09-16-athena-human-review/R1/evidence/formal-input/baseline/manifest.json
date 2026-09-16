@@ -1,0 +1,30 @@
+{
+  "arm": "baseline",
+  "total_lines": 283,
+  "chunks": [
+    {
+      "file": "rules-01.md",
+      "source_lines": [
+        1,
+        100
+      ],
+      "sha256": "0cc7cbfba2a30375b1bec4c5fe8eb05c5681d833a74ec595acff8b497b9e8217"
+    },
+    {
+      "file": "rules-02.md",
+      "source_lines": [
+        101,
+        200
+      ],
+      "sha256": "776b013b8827d4bce1ba27a7283ac69fc6c4f1a2547a85583db8629208fffeb7"
+    },
+    {
+      "file": "rules-03.md",
+      "source_lines": [
+        201,
+        283
+      ],
+      "sha256": "0a948469d70acf32973c4454c5849185a577e4815d7452aef2428b733f118d15"
+    }
+  ]
+}

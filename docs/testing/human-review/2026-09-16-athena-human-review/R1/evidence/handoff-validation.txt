@@ -1,0 +1,3 @@
+PASS: R1 source version matches (12 files; base 1dfcb795dfdf).
+PASS: three real materials read back; eight CHK rows map one-to-one; human results remain unexecuted.
+PASS: complete version identity, recoverable archive, and 76 current handoff links.

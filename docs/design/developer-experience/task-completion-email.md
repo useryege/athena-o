@@ -18,8 +18,13 @@ The agent's notification policy is defined in
 [AGENTS.md](../../../AGENTS.md#task-result-email): any task with more than ten
 minutes of cumulative execution receives one result notification when execution
 ends, regardless of Plan mode or success. The agent tracks time, excludes user
-response waits and pauses, and reports the actual outcome. The command itself
-does not measure task duration or enforce this policy.
+response waits and pauses, and reports the actual outcome only in the working
+conversation. Notification subjects must be exactly `开发工作通知`, and bodies
+must be exactly `本次开发工作已结束，请返回工作会话查看。`. No task, project,
+business, implementation, validation, failure, duration, or link details may be
+added. This generic wording applies to every outcome and does not claim success.
+The command itself does not measure task duration or enforce the caller's
+subject/body policy; agents must supply the fixed text.
 
 ## Source Locations
 
@@ -44,6 +49,7 @@ The delivery boundary is intentionally fixed in code:
 - Authentication: SMTP PLAIN over TLS.
 - Recipient: `2687665142@qq.com`.
 - Message format: UTF-8 `text/plain`.
+- Sender display name: `Development Notification`, without a project name.
 
 No Athena service, database, queue, or runtime container participates in the
 flow. The process owns only the current invocation and exits after delivery or

@@ -1,0 +1,19 @@
+{
+  "model": "gpt-5.6-sol",
+  "reasoning": "medium",
+  "scenarios_sha256": "63c66c3a05d24b124f926be86f2cd8d9ba9769a7d4230c7be41542234c7de3ac",
+  "baseline_rules_sha256": "a81ae58a791b518ac1dec5fd8c1ee0548f3cb77102d747b35df97649f68cc927",
+  "guided_rules_sha256": "ae6b6f8c67b4ca1f2a7d8fa531771a64955dfe32b4fc93d677eb880588ffd4d1",
+  "responses": {
+    "comparison-baseline/01.md": "c0bcf3213be7fa27170abda39d89579c8cae3214d5aa00126d8fd88f5461d282",
+    "comparison-baseline/02.md": "d0a6eca4213ab706371bcd516bb17d5728c03d14ba8ff54a72852a4e259e8378",
+    "comparison-baseline/03.md": "d1b2e60ba4420fdb332203e633841882a440baafb108771e50c6d93cba0b7188",
+    "comparison-baseline/04.md": "6973644fe8ebe38ab7c56f169fbe3d34060fa7fcd49b0df61496c4173534f52e",
+    "comparison-baseline/05.md": "9a6703b96426ce694ad1b3f5c2c2c9ccce77c0a164f061427056858080456e1b",
+    "guided/01.md": "a3a4438bc253d92fc62c78f1d954a49e2a2856b9d4fd55b05fd045eab1f081df",
+    "guided/02.md": "058c81dcb5bab09132c61268d15c5b02a6f3124885d2fa4418974a1d5ac18b1d",
+    "guided/03.md": "e9de4789efe56c1a7be591b5a3317cd09de7186ca714dc841e8481587e79dda9",
+    "guided/04.md": "0e414628e9812032d9441a87a2373abef1ac31362ab3c58e277a5bf5d7d79037",
+    "guided/05.md": "68edd236215ed75f3683a776af9e60f3ff077648dffba19677028e6431d76d20"
+  }
+}
