@@ -26,7 +26,7 @@
 | `REMOTE_APP_DIR` | `/root/athena` | 远端服务器上的部署目录。 |
 | `REMOTE_USER` | `root` | SSH 登录远端服务器使用的用户。 |
 | `PROD_LOG_SERVICE` | 空 | 查看生产日志时指定服务名。为空时查看全部服务。 |
-| `PROD_MIGRATE_MODULE` | `all` | 迁移目标模块。可设为 `account-state`、`worm-markets`、`notification`、`wallet`、`sports-live`、`sports-history`、`managed-oo`、`profit-sharing`、`token` 或 `all`。 |
+| `PROD_MIGRATE_MODULE` | `all` | 迁移目标模块。可设为 `account-state`、`worm-markets`、`notification`、`wallet`、`managed-oo`、`profit-sharing`、`token` 或 `all`。 |
 | `PROD_POSTGRES_VOLUME` | `athena-prod-postgres-data` | PostgreSQL external volume 名称。本地停止、远程部署和远程删除都会删除该 volume。 |
 | `PROD_REDIS_VOLUME` | `athena-prod-redis-data` | Redis AOF external volume 名称。本地停止、全新远程部署和远程删除都会删除该 volume；热部署保留。 |
 | `PROD_MINIO_VOLUME` | `athena-prod-minio-data` | MinIO external volume 名称。本地停止、全新远程部署和远程删除都会删除该 volume；热部署保留。 |
@@ -209,7 +209,7 @@ GET 和 EventSource 等无法设置请求头的浏览器传输可使用 `athenaR
 持久账号目录或访问认证 Redis。`ATHENA_WALLET_INTERNAL_AUTH_TOKEN` 也会在无关容器
 中覆盖为空，仅 `athena-wallet` 和 `athena-server` 获得同一个 required 值。
 `ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN` 仅注入 `athena-notification`、
-`athena-server` 以及 Market Radar、Sports Live、Managed OO、Worm Markets
+`athena-server` 以及 Market Radar、Managed OO、Worm Markets
 四个系统通知生产者；其他容器中的同名值会被覆盖为空。Telegram Bot Token 与
 测试/生产群组 ID 则只注入 `athena-notification`，API Server、生产者和其他容器中的
 同名值都会被覆盖为空。

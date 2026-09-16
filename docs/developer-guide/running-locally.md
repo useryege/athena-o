@@ -101,7 +101,9 @@ machine, complete the Node.js setup in [Development Environment](development-env
 before starting the stack.
 
 The full stack contains Trader Sync, API Server, Notification, Wallet, Profit Sharing,
-and UI. It defaults to the `full-stack` instance (override `INSTANCE` consistently for run/stop/reset) and its own persistent PostgreSQL, Redis,
+and UI. BSC indexers, Sports Live/History and World Cup Corners have been removed.
+The existing graph prepares only retained databases; it does not launch the two Worm processes.
+See the [removal acceptance record](../testing/module-removal-cleanup-acceptance.md) for the separately verified Worm Compose environment. It defaults to the `full-stack` instance (override `INSTANCE` consistently for run/stop/reset) and its own persistent PostgreSQL, Redis,
 and MinIO. Infrastructure binds dynamically assigned loopback ports; inspect them with
 `make runtime-status INSTANCE=full-stack`. Default business ports are API `8080`,
 UI `4000`, Trader Sync `8122`, Notification `8086`, Wallet `8088`, and Profit Sharing

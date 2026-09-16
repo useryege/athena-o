@@ -8,7 +8,7 @@ Run the Athena API server
 
 The API server is a gRPC/REST server which exposes the API consumed by the Web UI, CLI, and CI/CD systems. This command runs API server in the foreground. It can be configured by following options.
 
-ATHENA_WALLET_INTERNAL_AUTH_TOKEN must contain at least 32 bytes without whitespace and must match the Wallet service value. It is an internal service credential, not an Athena user API Key, and the server refuses startup when it is absent or invalid.
+ATHENA_WALLET_INTERNAL_AUTH_TOKEN and ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN must each contain at least 32 bytes without whitespace and match their target service. They are independent internal credentials, not Athena user API Keys, and the server refuses startup when either is absent or invalid.
 
 ```
 athena-server [flags]
@@ -19,7 +19,7 @@ athena-server [flags]
 ```
   # Start the Athena API server with default settings
   $ athena-server
-  
+
   # Start the Athena API server on a custom port and enable tracing
   $ athena-server --port 8888 --otlp-address localhost:4317
 ```
@@ -59,19 +59,18 @@ athena-server [flags]
       --rootpath string                                Used if Athena is running behind reverse proxy under subpath different from /
       --sentinel stringArray                           Redis sentinel hostname and port (e.g. athena-redis-ha-announce-0:6379).
       --sentinelmaster string                          Redis sentinel master group name. (default "master")
-      --sports-history-server-address string           Athena Sports History server address (default "127.0.0.1:8104")
-      --sports-live-server-address string              Athena Sports Live server address (default "127.0.0.1:8094")
+      --solana-server-address string                   Athena Solana discovery server address (default "127.0.0.1:8112")
       --staticassets string                            Directory path that contains additional static assets (default "/shared/app")
       --token-api-server-address string                Athena token API server address (default "127.0.0.1:8096")
       --wallet-server-address string                   Athena wallet server address (default "127.0.0.1:8088")
       --worm-markets-server-address string             Athena Worm Markets server address (default "127.0.0.1:8084")
+      --worm-trading-server-address string             Athena Worm Trading server address (default "127.0.0.1:8090")
       --x-frame-options value                          Set X-Frame-Options header in HTTP responses to value. To disable, set to "". (default "sameorigin")
 ```
 
 ### Disabled-auth development mode
 
-`--disable-auth` is restricted to non-Compose development processes listening on a
-loopback address. At startup, the server creates or reuses both isolated development
+`--disable-auth` is restricted to development processes listening on a loopback address. At startup, the server creates or reuses both isolated development
 accounts: `local-user` for the member application and `local-admin` for the
 administrator application. There is no role-selection flag or environment variable.
 
@@ -84,9 +83,8 @@ realm values do not fall back to either identity.
 
 With disabled auth enabled, `make run` serves the member application at `/` and the
 administrator application at `/admin/` at the same time; each frontend supplies its
-own realm. Before returning to normal authentication, run `make run-reset` so the
-persisted development identities cannot conflict with the authenticated account
-directory. Production Compose keeps authentication enabled, and deployment tooling
+own realm. Use a separately owned instance before returning to normal authentication; preserve
+the old development data until it is explicitly authorized for removal. Production Compose keeps authentication enabled, and deployment tooling
 rejects attempts to enable disabled-auth mode.
 
 ### SEE ALSO

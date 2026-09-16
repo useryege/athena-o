@@ -7,9 +7,8 @@ Athena 是一个面向区块链与预测市场的情报分析平台，用于采�
 
 ## 核心能力
 
-- **Market Intelligence**：同步 Polymarket 热门市场、体育市场和 Optimistic Oracle 数据，并提供价格变化与事件告警。
+- **Market Intelligence**：同步 Polymarket 热门市场、Worm 市场和 Optimistic Oracle 数据，并提供价格变化与事件告警。
 - **Token Intelligence**：处理 EVM 链上代币、交易对和钱包数据，支持项目研究、风险分析与报告。
-- **Blockchain Indexing**：索引 BSC 普通转账和 V2 Swap 事件，为交易查询与上层分析提供数据。
 - **Trader Sync Activity Alerts**：监控人工选择的低频 Polymarket 交易者，保留站内活动并发送 Telegram 普通或摘要提醒；不执行交易。
 - **Platform Services**：提供 Web UI、HTTP/gRPC API、通知服务、数据迁移以及 PostgreSQL/Redis 运行支持。
 
@@ -21,10 +20,9 @@ Athena 是一个面向区块链与预测市场的情报分析平台，用于采�
 - Docker
 - Yarn
 
-首次初始化当前数据模型时清空本地运行状态，然后启动服务：
+按[本地运行指南](docs/developer-guide/running-locally.md)配置项目 Node 与环境后启动；正常启动迁移已有数据库并保留数据：
 
 ```bash
-make run-reset
 make run
 ```
 

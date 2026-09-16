@@ -40,9 +40,9 @@
 | 实时市场 | `/market-radar/realtime` | [源码](../../../ui/src/app/member/pages/market-radar.tsx) | v21 | 按确认设计改版 · T6 |
 | 涨跌榜 | `/market-radar/movers` | [源码](../../../ui/src/app/member/pages/market-radar.tsx) | v21 | 按确认设计改版 · T6 |
 | Solana 发行候选 | `/solana` | [源码](../../../ui/src/app/member/pages/solana.tsx) | v20 | 按确认设计改版 · T5 |
-| Sports Live | `/sports-live` | [源码](../../../ui/src/app/member/pages/sports-live.tsx) | v21 | 按确认设计改版 · T6 |
-| Sports History | `/sports-history` | [源码](../../../ui/src/app/member/pages/sports-history.tsx) | v21 | 按确认设计改版 · T6 |
-| World Cup Corners | `/world-cup-corners` | [源码](../../../ui/src/app/member/pages/world-cup-corners.tsx) | v21 | 按确认设计改版 · T6 |
+| Sports Live | `/sports-live` | 源码（历史路径 `ui/src/app/member/pages/sports-live.tsx`，基线 `264d0dc1`） | v21 | 按确认设计改版 · T6 |
+| Sports History | `/sports-history` | 源码（历史路径 `ui/src/app/member/pages/sports-history.tsx`，基线 `264d0dc1`） | v21 | 按确认设计改版 · T6 |
+| World Cup Corners | `/world-cup-corners` | 源码（历史路径 `ui/src/app/member/pages/world-cup-corners.tsx`，基线 `264d0dc1`） | v21 | 按确认设计改版 · T6 |
 | Managed OO 提案 | `/managed-oo/proposals` | [源码](../../../ui/src/app/member/pages/managed-oo.tsx) | v21 | 按确认设计改版 · T6 |
 | Managed OO 争议 | `/managed-oo/disputes` | [源码](../../../ui/src/app/member/pages/managed-oo.tsx) | v21 | 按确认设计改版 · T6 |
 | 活动首页 | `/trader-sync` | [源码](../../../ui/src/app/member/pages/trader-sync/home.tsx) | v6 | 暂缓重排；共享影响回归 · T9 |

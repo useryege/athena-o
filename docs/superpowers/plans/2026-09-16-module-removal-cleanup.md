@@ -10,9 +10,9 @@
 
 **设计依据：**[删除与清理配套设计](../specs/2026-09-16-module-removal-cleanup-design.md)、[BSC 索引器删除需求](../../requirements/blockchain-data/bsc-indexer-removal.md)、[Sports 删除与 Worm 保留](../../requirements/development-runtime/sports-removal.md)。执行者必须先读设计再读本计划。
 
-**状态：**2026-09-16 按用户“优先规划清理和删除工作”编写。仅完成计划与静态核对；下方实施、部署、删库和运行验收均未执行。
+**状态：**2026-09-16 已按正式实施要求执行 T1–T9；代码、完整测试、真实本地验收、本地 Sports 两库及专属产物清理已完成。两台 BSC 主机实查目标已不存在，Gateway 保留；用户明确要求跳过 `47.245.181.189`。逐环境操作和普通环境收尾见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。最后结果通知按任务累计时长执行。
 
-**执行准备结论：**任务范围、依赖、源码落点、验证和失败处理已明确，可从 T1 开始实施。T2 的维护工具、T6 的现场手册属于明确的实施产物，当前不能当作已存在命令调用；T7 的真实环境盘点是 T8 删除的前置步骤，不需要再开展一轮业务设计。计划可以开始执行不代表远端资源和数据库连接已经核实。
+**执行结论：**T2 一次性维护工具及 T6 现场手册已实现并验证。以下保留原计划的任务说明和验证命令，复选框以实际证据更新；现场已不存在的对象记为核验完成，不伪称本轮执行过删除。主生产机按用户指示排除，其他任务环境保留，不把它们写作本轮已退役。
 
 ## 全局约束
 
@@ -54,7 +54,7 @@ T2 可独立完成工具测试；T3、T4、T5 必须组合成一致版本后发�
 | 专属部署 | 删除两个索引器的 `deploy/` 子目录和 `hack/deploy-bsc-*-indexer.sh` 精确两文件；混合 `.env`／`.env.prod`／模板只清理专属配置 |
 | 记录（新增） | `docs/operator-manual/module-removal-retirement.md` 操作手册；`docs/testing/module-removal-cleanup-acceptance.md` 验收与逐环境结果 |
 
-新增文件在本计划中是目标路径；实施后才能当作已存在工具调用。2026-09-16 源码的账户迁移最高版本为 `000003`，T3 使用 `000004_remove_sports_access.sql`；若执行前已有其他迁移占用该编号，则按实际下一个空号创建并同步本计划与测试，不覆盖其他迁移。
+规划基线账户迁移最高版本为 `000003`，执行时 `000004` 未被占用，现已追加 `000004_remove_sports_access.sql`；历史迁移未改写。地图中的新增工具、测试与文档现已存在。
 
 ### T1：建立精确清单与保留基线
 
@@ -282,7 +282,7 @@ Playwright 真正执行与清理证据由 T6 统一完成；本任务单元检�
 - [x] 移除 `docker-compose.prod.yml` 中 Sports 两服务及其依赖、专属环境项；移除两个索引器的 Make 变量／构建／镜像／部署目标、两份部署脚本和两目录。`.env` 和模板按键删除，不整文件覆盖，不更改保留凭据。
 - [x] 检查部署预检与 schema 服务列表，所有实际账户库使用者都进入不兼容 schema 的维护顺序，包括实际部署的 Solana；不照搬只含三个旧服务的列表。清理后的 API 不得因 Sports 地址／DSN／token 缺失而失败。
 - [x] 检查 `hack/prod-remote-deploy.sh` 及 Make 包装的副作用：现有 `prod-deploy-remote` 带 secrets 重置前置步骤，既有 cleanup 可能执行整 project `down --remove-orphans`。退役手册使用经核对的发布步骤与精确对象，不把这些包装命令当作安全的单模块删除入口，不为清理重置其他服务凭据。
-- [ ] 本地 `dist`、镜像、临时部署包按实际归属整理：只删除已经不被任何保留进程使用的专属产物；共享 `PROD_IMAGE`、PostgreSQL 基础镜像及混合日志／缓存保留。现场旧文件等 T8 完成定位与停服后处理。
+- [x] 本地 `dist`、镜像、临时部署包按实际归属整理：只删除已经不被任何保留进程使用的专属产物；共享 `PROD_IMAGE`、PostgreSQL 基础镜像及混合日志／缓存保留。现场旧文件等 T8 完成定位与停服后处理。
 
 **运行与预期：**
 
@@ -302,7 +302,7 @@ bash hack/production-compose_test.sh
 
 **输出：**可部署版本、实际本地验收报告和 T7／T8 可执行的逐环境手册；不把此批次写成现场已经退役。
 
-- [ ] 统一完成保留模块回归，尤其覆盖 Worm 钱包选择、连接、组合、预览、交易授权、执行／Cash Out 状态及 Notification 发送许可。不重复运行未改变输入的生成器：
+- [x] 统一完成保留模块回归，尤其覆盖 Worm 钱包选择、连接、组合、预览、交易授权、执行／Cash Out 状态及 Notification 发送许可。不重复运行未改变输入的生成器：
 
 ```bash
 go test ./internal/server/... ./internal/accountaccess/... ./internal/accountstate/... ./internal/notification/... ./internal/wallet/... ./internal/wormmarkets/... ./internal/wormtrading/... ./util/worm/... ./internal/devruntime/... ./internal/migration/... ./tools/retire-sports-notifications/... -count=1
@@ -310,11 +310,11 @@ go test -tags=integration ./internal/accountstate/... ./internal/notification/st
 go build ./cmd/... ./tools/retire-sports-notifications
 ```
 
-- [ ] 为集成测试按各包实际测试配置准备独立 PostgreSQL；记录设置与运行报告。故障注入覆盖迁移失败、行锁竞争、sending 回到 pending、超时与中断重入；不连接生产库运行 fixture。当前 Worm 业务包没有独立 Go 测试文件，`[no test files]` 只证明构建经过，不写成业务测试通过；保留能力须有 UI 场景、Wallet 既有 wire regression 和下述真实读取的相应证据。
-- [ ] 按 [本地环境准备](../../developer-guide/running-locally.md#prepare-the-development-environment-for-acceptance) 核对工作区／实例后复用正确环境，或从实施工作区用项目 Node 执行 `make run`，保存持久会话及日志。空实例和带旧权限的实例分别验证；启动不包含废弃服务配置和数据库准备。
-- [ ] 当前 `make run` 尚不能代表 Worm 两个业务进程已运行。Worm 真实回归使用此次新版本的现有生产 Compose 服务定义，在另一个独立本地 project 中显式选择 API、Worm 与必要依赖；API、Wallet、Worm 的地址和内部凭据统一指向该验收 project，不混接上一套 `make run` 环境。使用 `--no-deps` 按已列明依赖顺序启动，避免 API 的完整 `depends_on` 隐式启动其他业务；不把这一步扩写成十二应用编排实施。
-- [ ] 本地 Compose 隔离不能只依靠 project 名：当前三个存储卷使用固定 `name` 且 `external: true`。使用本任务专用环境文件，将 `PROD_POSTGRES_VOLUME`、`PROD_REDIS_VOLUME`、`PROD_MINIO_VOLUME` 全部改为包含本轮 run ID 的专用名称，先检查不存在，再创建并标记 owner；不能复用 `athena-prod-*-data` 默认卷。显式设置 `ATHENA_SERVER_BIND_ADDR=127.0.0.1` 和核对空闲的 `ATHENA_SERVER_PORT`，保存 `docker compose config --format json` 的解析结果，逐项确认卷、服务地址、挂载、凭据来源和服务集合。使用独立本地配置及测试身份；不能直接使用 `.env.prod`，也不能接管其他环境的 Telegram poller。启动前核对新镜像版本及所选 schema 准备步骤；结束时精确停止本 project 的使用者，保留专用卷和证据。若端口／卷归属不符，先修正配置后再启动。
-- [ ] 核对真实 member／admin bootstrap 后，按 [athena-browser-acceptance](../../../.codex/skills/athena-browser-acceptance/SKILL.md) 执行以下两类检查。旧路由消失、Worm 七路由和授权交互通过隔离场景验证；真实 smoke 证明当前服务与浏览器链路。Worm 行情／状态的实际读取另留 API 和页面证据，涉及资产副作用只在隔离后端验证。
+- [x] 为集成测试按各包实际测试配置准备独立 PostgreSQL；记录设置与运行报告。故障注入覆盖迁移失败、行锁竞争、sending 回到 pending、超时与中断重入；不连接生产库运行 fixture。当前 Worm 业务包没有独立 Go 测试文件，`[no test files]` 只证明构建经过，不写成业务测试通过；保留能力须有 UI 场景、Wallet 既有 wire regression 和下述真实读取的相应证据。
+- [x] 按 [本地环境准备](../../developer-guide/running-locally.md#prepare-the-development-environment-for-acceptance) 核对工作区／实例后复用正确环境，或从实施工作区用项目 Node 执行 `make run`，保存持久会话及日志。空实例和带旧权限的实例分别验证；启动不包含废弃服务配置和数据库准备。
+- [x] 当前 `make run` 尚不能代表 Worm 两个业务进程已运行。Worm 真实回归使用此次新版本的现有生产 Compose 服务定义，在另一个独立本地 project 中显式选择 API、Worm 与必要依赖；API、Wallet、Worm 的地址和内部凭据统一指向该验收 project，不混接上一套 `make run` 环境。使用 `--no-deps` 按已列明依赖顺序启动，避免 API 的完整 `depends_on` 隐式启动其他业务；不把这一步扩写成十二应用编排实施。
+- [x] 本地 Compose 隔离不能只依靠 project 名：当前三个存储卷使用固定 `name` 且 `external: true`。使用本任务专用环境文件，将 `PROD_POSTGRES_VOLUME`、`PROD_REDIS_VOLUME`、`PROD_MINIO_VOLUME` 全部改为包含本轮 run ID 的专用名称，先检查不存在，再创建并标记 owner；不能复用 `athena-prod-*-data` 默认卷。显式设置 `ATHENA_SERVER_BIND_ADDR=127.0.0.1` 和核对空闲的 `ATHENA_SERVER_PORT`，保存 `docker compose config --format json` 的解析结果，逐项确认卷、服务地址、挂载、凭据来源和服务集合。使用独立本地配置及测试身份；不能直接使用 `.env.prod`，也不能接管其他环境的 Telegram poller。启动前核对新镜像版本及所选 schema 准备步骤；结束时精确停止本 project 的使用者，保留专用卷和证据。若端口／卷归属不符，先修正配置后再启动。
+- [x] 核对真实 member／admin bootstrap 后，按 [athena-browser-acceptance](../../../.codex/skills/athena-browser-acceptance/SKILL.md) 执行以下两类检查。旧路由消失、Worm 七路由和授权交互通过隔离场景验证；真实 smoke 证明当前服务与浏览器链路。Worm 行情／状态的实际读取另留 API 和页面证据，涉及资产副作用只在隔离后端验证。
 
 ```bash
 make ui-acceptance
@@ -325,9 +325,9 @@ make ui-acceptance UI_ACCEPTANCE_MODE=smoke
 
 真实服务未就绪时检查日志、修复已授权环境问题并重验；不能只凭端口监听、页面 200 或隔离用例通过完成验收。Worm 供应商或必要凭据确实不可用时标记对应验收未完成，数据删除的前置验证不能写成已通过。
 
-- [ ] 手册明确 T7／T8 的只读清单格式、资源识别、超时和失败停止点，链接现有部署资料。失去源码目标的长期文档改为已退役说明／历史路径，不留下坏链接。当前 active 文档不再指导启动废弃模块；历史设计、批准与验收事实保留。
-- [ ] 运行适用差异审阅及 `git diff --check`，核对活动入口无残留；移除仅依赖旧功能的构建／测试项。记录所有未解决问题，不能绕过 schema／权限检查使构建通过。
-- [ ] 结束本地验收时，按 owner 停止本任务启动的临时进程与 Compose 服务，核验端口及容器退出；保留数据卷、日志和报告，借用／用户原有环境保持原样。普通测试收尾不得执行四库退役操作。
+- [x] 手册明确 T7／T8 的只读清单格式、资源识别、超时和失败停止点，链接现有部署资料。失去源码目标的长期文档改为已退役说明／历史路径，不留下坏链接。当前 active 文档不再指导启动废弃模块；历史设计、批准与验收事实保留。
+- [x] 运行适用差异审阅及 `git diff --check`，核对活动入口无残留；移除仅依赖旧功能的构建／测试项。记录所有未解决问题，不能绕过 schema／权限检查使构建通过。
+- [x] 结束本地验收时，按 owner 停止本任务启动的临时进程与 Compose 服务，核验端口及容器退出；保留数据卷、日志和报告，借用／用户原有环境保持原样。普通测试收尾不得执行四库退役操作。
 
 ### T7：逐环境只读盘点，锁定真实退役对象
 
@@ -349,11 +349,11 @@ preserved_resources: Gateway, Worm, core processes, shared storage and networks
 steps: action, started_at, finished_at, result, evidence, remaining_objects
 ```
 
-- [ ] 从实际本地 runtime 状态、生产 Compose project 和部署配置确定本地、主生产、两个索引器环境。执行 `docker ps -a --no-trunc`、`docker inspect`、`docker volume inspect` 和有界 PostgreSQL catalog 查询；记录同机 Gateway 基线。不得把 `.env.prod` 中的覆盖库名遗漏。
-- [ ] 历史索引器线索固定为 `47.245.183.140:/opt/athena-bsc-transaction-indexer`、`47.254.154.128:/opt/athena-bsc-swap-indexer`；默认卷分别为 `athena-bsc-transaction-indexer-postgres-data`、`athena-bsc-swap-indexer-postgres-data`。只有现场 project 标签和实际挂载吻合才进入删除集合。
-- [ ] 对共享 PostgreSQL 读取四库的实际归属、OID 和连接；查询同实例全部库及使用者，形成保留名单。对专属索引器卷读取全部挂载消费者，包括已停止容器；不因只有目标程序在线就推断卷独占。
-- [ ] 识别 systemd／Compose restart policy／定时任务／旧部署自动重建入口，记录精确禁用方法。记录正常 schema 维护所需暂停的同库使用者，区分临时维护与永久退役。
-- [ ] 清单先以只读结果交付可审阅记录；既有删除范围和无备份决定不重复审批。对象不明、身份变化或连接占用无法定位时停止该对象后续删除并记录原因，继续不依赖它的只读核对。
+- [x] 从实际本地 runtime 状态、生产 Compose project 和部署配置确定本地、两个索引器环境；主生产完成初始只读定位后由用户明确排除，不再操作。执行 `docker ps -a --no-trunc`、`docker inspect`、`docker volume inspect` 和有界 PostgreSQL catalog 查询；记录同机 Gateway 基线。不得把 `.env.prod` 中的覆盖库名遗漏。
+- [x] 历史索引器线索固定为 `47.245.183.140:/opt/athena-bsc-transaction-indexer`、`47.254.154.128:/opt/athena-bsc-swap-indexer`；默认卷分别为 `athena-bsc-transaction-indexer-postgres-data`、`athena-bsc-swap-indexer-postgres-data`。只有现场 project 标签和实际挂载吻合才进入删除集合。
+- [x] 对共享 PostgreSQL 读取四库的实际归属、OID 和连接；查询同实例全部库及使用者，形成保留名单。对专属索引器卷读取全部挂载消费者，包括已停止容器；不因只有目标程序在线就推断卷独占。
+- [x] 识别 systemd／Compose restart policy／定时任务／旧部署自动重建入口，记录精确禁用方法。记录正常 schema 维护所需暂停的同库使用者，区分临时维护与永久退役。
+- [x] 清单先以只读结果交付可审阅记录；既有删除范围和无备份决定不重复审批。对象不明、身份变化或连接占用无法定位时停止该对象后续删除并记录原因，继续不依赖它的只读核对。
 
 ### T8：发布新版本、清理通知并直接删除专属数据
 
@@ -363,16 +363,16 @@ steps: action, started_at, finished_at, result, evidence, remaining_objects
 
 **输出：**每环境明确的成功／部分完成／失败结果；不同主机、数据库与 Docker 资源不承诺原子删除或数据回滚。
 
-- [ ] 每环境只允许一个退役执行者。每个破坏性步骤前重新读取身份，核对容器 ID／标签、数据库服务身份与 OID、卷挂载；与清单不符则停止依赖该对象的后续删除，不根据近似名称替换目标。
-- [ ] 先从正常发布入口撤下旧用户业务和权限写入版本，再按 owner 停止四类专属生产者及自动拉起来源。Docker 对象按精确 ID 停止；本地进程通过其原仓库／INSTANCE 的停止入口处理，保留识别记录直到核验退出。Worm 和核心不作为永久退役对象。
-- [ ] 完成实际同库使用者的维护停机，使用新版本 `athena-account-state-migrate up`、`verify` 后再启动一致的新版本消费者。使用现有正确密钥和配置，不运行 secrets 重置，不在旧代码在线写入 Sports 权限时修改约束。迁移／验证失败不发布，保持失败记录并修复新版本。
-- [ ] 确认所有 Sports 生产者已退出后，运行 T2 工具先只读检查，再执行 `--apply --timeout=5m`；等待 Notification 既有恢复与发送结果。超时或 sender 归属不明时先按原恢复流程处置，不改写 sending 为 cancelled 或伪造成功。
-- [ ] 验证新版本登录、账户、Wallet、Notification、Worm 及同机 Gateway 正常，旧接口不提供业务；确认六来源 `pending=0`、`sending=0`。如失败，停止后续数据删除，记录已经完成的不可逆步骤。
-- [ ] 共享 PostgreSQL：连接该实例非目标维护库，设置有限 lock／statement 超时，查询 `pg_stat_activity` 确认目标无消费者。依次按精确名称删除实际 `sports_live`、`sports_history`（以及确实位于共享实例的目标 BSC 库），标识符通过 `pgx.Identifier{databaseName}.Sanitize()` 或 psql 标识符变量引用；不得拼接未校验文本，不使用 `WITH (FORCE)` 或强踢未知连接。每删一库立即重新查询 catalog。
-- [ ] 独占索引器存储：确认目标程序和专属 PostgreSQL 都退出，停止并移除精确容器，再次确认专属卷无任何消费者，再删除清单中的专属卷。卷内整个实例确实仅属于该索引器时，删卷完成对应数据库数据删除，不另启动旧数据库补做 DROP；共享数据库卷不能走此路径。
-- [ ] 完成停服与数据删除后，清理明确专属的二进制、环境文件、Compose／启动文件和部署临时包；精确目录清空后才能删除目录。专属镜像确认无保留引用后删除；Sports 共用的 `PROD_IMAGE` 随正常版本替换，不作为专属镜像删除。保留日志和定位证据。
-- [ ] 单次进程／容器正常停止预算 30 秒，单项 SQL／Docker 操作预算 60 秒；遇到未退出／锁超时保留失败对象，不扩大信号或删除范围。Notification 总等待使用工具的 5 分钟预算；不能通过无界轮询掩盖卡住。
-- [ ] 失败或中断后从实际状态重新核对；同一已识别对象确认不存在可记为完成，已成功删除不重建。新 ID、重新出现的库或卷必须重新核对。任一未完成项返回非零并记入结果，不宣称整个环境已清理。
+- [x] 每环境只允许一个退役执行者。每个破坏性步骤前重新读取身份，核对容器 ID／标签、数据库服务身份与 OID、卷挂载；与清单不符则停止依赖该对象的后续删除，不根据近似名称替换目标。
+- [x] 先从正常发布入口撤下旧用户业务和权限写入版本，再按 owner 停止四类专属生产者及自动拉起来源。Docker 对象按精确 ID 停止；本地进程通过其原仓库／INSTANCE 的停止入口处理，保留识别记录直到核验退出。Worm 和核心不作为永久退役对象。
+- [x] 完成实际同库使用者的维护停机，使用新版本 `athena-account-state-migrate up`、`verify` 后再启动一致的新版本消费者。使用现有正确密钥和配置，不运行 secrets 重置，不在旧代码在线写入 Sports 权限时修改约束。迁移／验证失败不发布，保持失败记录并修复新版本。
+- [x] 确认所有 Sports 生产者已退出后，运行 T2 工具先只读检查，再执行 `--apply --timeout=5m`；等待 Notification 既有恢复与发送结果。超时或 sender 归属不明时先按原恢复流程处置，不改写 sending 为 cancelled 或伪造成功。
+- [x] 验证新版本登录、账户、Wallet、Notification、Worm 及同机 Gateway 正常，旧接口不提供业务；确认六来源 `pending=0`、`sending=0`。如失败，停止后续数据删除，记录已经完成的不可逆步骤。
+- [x] 共享 PostgreSQL：连接该实例非目标维护库，设置有限 lock／statement 超时，查询 `pg_stat_activity` 确认目标无消费者。依次按精确名称删除实际 `sports_live`、`sports_history`（以及确实位于共享实例的目标 BSC 库），标识符通过 `pgx.Identifier{databaseName}.Sanitize()` 或 psql 标识符变量引用；不得拼接未校验文本，不使用 `WITH (FORCE)` 或强踢未知连接。每删一库立即重新查询 catalog。
+- [x] 独占索引器存储：两台现场实查无目标容器、卷和程序，按核验已不存在完成，未执行本轮删卷。原操作要求保留供复用：确认目标程序和专属 PostgreSQL 都退出，停止并移除精确容器，再次确认专属卷无任何消费者，再删除清单中的专属卷。卷内整个实例确实仅属于该索引器时，删卷完成对应数据库数据删除，不另启动旧数据库补做 DROP；共享数据库卷不能走此路径。
+- [x] 完成停服与数据删除后，清理明确专属的二进制、环境文件、Compose／启动文件和部署临时包；精确目录清空后才能删除目录。专属镜像确认无保留引用后删除；Sports 共用的 `PROD_IMAGE` 随正常版本替换，不作为专属镜像删除。保留日志和定位证据。
+- [x] 单次进程／容器正常停止预算 30 秒，单项 SQL／Docker 操作预算 60 秒；遇到未退出／锁超时保留失败对象，不扩大信号或删除范围。Notification 总等待使用工具的 5 分钟预算；不能通过无界轮询掩盖卡住。
+- [x] 失败或中断后从实际状态重新核对；同一已识别对象确认不存在可记为完成，已成功删除不重建。新 ID、重新出现的库或卷必须重新核对。任一未完成项返回非零并记入结果，不宣称整个环境已清理。
 
 ### T9：最终核验、文档收尾与交付
 
@@ -382,12 +382,13 @@ steps: action, started_at, finished_at, result, evidence, remaining_objects
 
 **输出：**代码清理、运行退役、数据删除三项分别可核验的结论。
 
-- [ ] 仓库：四个命令和对应实现消失，旧路由／权限／生成入口不再存在；重新构建不会恢复废弃能力。账户历史迁移、退役工具来源及历史文档的旧名称有明确保留理由。
-- [ ] 每环境：实际查询证明旧进程／容器退出、所属端口释放、自动拉起消除、四库或其独占卷不存在、专属部署文件不可再启动；共享 API 仍监听不等于旧业务仍存在，按具体业务路由核验。
-- [ ] 保留能力：Worm 两服务、两库、权限、签名／凭据与页面回归有证据；账户、Wallet、Notification 共享账本、其他业务和同机 Gateway 正常。最终检查不发送新的测试通知或资产变更。
-- [ ] 文档只把实际完成项改为“已实施／已退役”；远端未执行或外部验证受阻时单列环境与原因。本地代码通过不替代生产退役，停止命令成功不替代数据删除核验。
-- [ ] 按 AGENTS.md 收尾本任务临时环境，列明已停止和仍保留环境、归属、地址、日志及准确停止命令。退役目标的四库直接删除与普通测试环境的数据保留分别记录。
-- [ ] 在最终答复前按 [verification-before-completion](../../../.agents/skills/verification-before-completion/SKILL.md) 核对实际证据；任务累计执行超过 600 秒时按 AGENTS.md 发送一次如实的任务结果邮件。仍有未完成项时不使用“全部完成”。
+- [x] 仓库：四个命令和对应实现消失，旧路由／权限／生成入口不再存在；重新构建不会恢复废弃能力。账户历史迁移、退役工具来源及历史文档的旧名称有明确保留理由。
+- [x] 每环境：实际查询证明旧进程／容器退出、所属端口释放、自动拉起消除、四库或其独占卷不存在、专属部署文件不可再启动；共享 API 仍监听不等于旧业务仍存在，按具体业务路由核验。
+- [x] 保留能力：Worm 两服务、两库、权限、签名／凭据与页面回归有证据；账户、Wallet、Notification 共享账本、其他业务和同机 Gateway 正常。最终检查不发送新的测试通知或资产变更。
+- [x] 文档只把实际完成项改为“已实施／已退役”；远端未执行或外部验证受阻时单列环境与原因。本地代码通过不替代生产退役，停止命令成功不替代数据删除核验。
+- [x] 按 AGENTS.md 收尾本任务临时环境，列明已停止和仍保留环境、归属、地址、日志及准确停止命令。退役目标的四库直接删除与普通测试环境的数据保留分别记录。
+- [x] 在最终答复前按 [verification-before-completion](../../../.agents/skills/verification-before-completion/SKILL.md) 核对实际证据；按用户调整后的实施与验收范围无未解决项，跳过主机及后续功能单独列明。
+- [ ] 任务累计执行超过 600 秒，最终交付前按 AGENTS.md 发送一次如实的任务结果邮件并记录命令退出结果。
 
 ## 计划自查与需求覆盖
 
@@ -403,4 +404,4 @@ steps: action, started_at, finished_at, result, evidence, remaining_objects
 | 身份变化、锁失败、部分成功、中断与重入 | T2、T6、T7、T8 |
 | 实际浏览器与保留业务验收、临时环境收尾 | T6、T9 |
 
-本计划不扩大删除范围，不重开已经确认的业务决定；现场对象 ID、真实连接与健康状况属于执行证据。设计和计划齐备不代表上述现场条件已经验证。
+本计划不扩大删除范围，不重开已经确认的业务决定。实际对象 ID、数据库身份、删除／缺席结果、保留能力和收尾证据见验收记录；复选框不表示对用户排除的主机做过发布或删除。
