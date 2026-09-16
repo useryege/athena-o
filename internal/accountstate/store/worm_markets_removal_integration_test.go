@@ -133,6 +133,7 @@ func TestWormMarketsRemovalWaitsForAccountSessionGate(t *testing.T) {
 	waitForWormMarketsGateWaiter(t, ctx, db, done)
 	rowLock, err := db.Pool.Begin(ctx)
 	require.NoError(t, err)
+	defer rowLock.Rollback(context.Background())
 	_, err = rowLock.Exec(ctx, `SELECT account_id FROM account_access WHERE account_id=$1 FOR UPDATE NOWAIT`, accountID)
 	require.NoError(t, err, "migration must acquire the advisory gate before the account row lock")
 	require.NoError(t, rowLock.Rollback(ctx))
