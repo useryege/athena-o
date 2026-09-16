@@ -26,5 +26,14 @@ with tempfile.TemporaryDirectory(prefix='worm-trading-deploy-') as temp:
     calls=[json.loads(line) for line in (path/'argv').read_text().splitlines()];assert len(calls)==1
     argv=calls[0];assert argv[argv.index('-f')+1]=='deploy/worm-trading/Dockerfile';assert argv[argv.index('-t')+1]==env['WORM_TRADING_IMAGE']
     assert not pathlib.Path('unexpected-injection').exists()
-    print('Trading independent Compose and literal build argv passed')
+    default_env = dict(env)
+    for key in ['WORM_TRADING_IMAGE', 'MAKEFLAGS', 'MFLAGS', 'MAKEOVERRIDES']:
+        default_env.pop(key, None)
+    result=subprocess.run(['make','--no-print-directory','build-service-image','SERVICE=worm-trading'],env=default_env,capture_output=True,text=True)
+    assert result.returncode==0,result.stderr
+    calls=[json.loads(line) for line in (path/'argv').read_text().splitlines()];assert len(calls)==2
+    default_argv=calls[1]
+    assert default_argv[default_argv.index('-f')+1]=='deploy/worm-trading/Dockerfile'
+    assert default_argv[default_argv.index('-t')+1]=='athena-worm-trading:local', default_argv
+    print('Trading independent Compose, default image tag, and literal custom build argv passed')
 PY
