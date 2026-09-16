@@ -64,8 +64,8 @@ T2 可独立完成工具测试；T3、T4、T5 必须组合成一致版本后发�
 
 **输出：**`source-inventory.txt`、`preserved-inventory.txt`、基线版本和工作区状态；验收记录分列代码、运行、数据状态。
 
-- [ ] 记录工作区路径、分支、HEAD、未提交文件和实际工具版本；检查 `rg`、Go、Python、Docker、Node／Yarn、psql 及生成工具。读取 `ui/.nvmrc`，实施和测试按该版本选 Node。
-- [ ] 用精确入口和引用建立清单，追踪共享文件的真正消费者，不按 `sports`、`BSC` 或 `Polymarket` 词根整包删除：
+- [x] 记录工作区路径、分支、HEAD、未提交文件和实际工具版本；检查 `rg`、Go、Python、Docker、Node／Yarn、psql 及生成工具。读取 `ui/.nvmrc`，实施和测试按该版本选 Node。
+- [x] 用精确入口和引用建立清单，追踪共享文件的真正消费者，不按 `sports`、`BSC` 或 `Polymarket` 词根整包删除：
 
 ```bash
 rg -n 'sportslive|sportshistory|worldcupcorners|SportsLive|SportsHistory|WorldCupCorners|bscinbound|bscswap' cmd internal common pkg ui/src hack deploy Makefile sqlc.yaml docker-compose.prod.yml
@@ -73,9 +73,9 @@ rg -n 'sports-models|sports-market-card' ui/src ui/e2e
 rg -n 'worm-markets|worm-trading|worm_markets|worm_trading|WormExecutionSigner' cmd internal ui/src docker-compose.prod.yml
 ```
 
-- [ ] 明确允许保留旧名称的位置：已应用历史迁移、退役维护工具精确来源清单、删除回归断言、带退役标记的历史设计／证据；它们不是活动功能入口。`util/worm` 的体育市场和相关 `sports` 数据语义保留。
-- [ ] 记录已有六项本地应用的实际清单及 Worm 当前运行方式；新十二应用编排尚未实施，后续验收不伪报该目标已达成。计划中的远端 IP 和默认卷只作线索，此时不认定资源存在。
-- [ ] 先保存旧部署文件的定位信息和停止方法，再在 T3／T5 删除源码；只保留操作证据，不保留可自动拉起旧业务的部署副本。
+- [x] 明确允许保留旧名称的位置：已应用历史迁移、退役维护工具精确来源清单、删除回归断言、带退役标记的历史设计／证据；它们不是活动功能入口。`util/worm` 的体育市场和相关 `sports` 数据语义保留。
+- [x] 记录已有六项本地应用的实际清单及 Worm 当前运行方式；新十二应用编排尚未实施，后续验收不伪报该目标已达成。计划中的远端 IP 和默认卷只作线索，此时不认定资源存在。
+- [x] 先保存旧部署文件的定位信息和停止方法，再在 T3／T5 删除源码；只保留操作证据，不保留可自动拉起旧业务的部署副本。
 
 ### T2：实现一次性 Sports 通知退役工具
 
