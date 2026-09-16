@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"net/url"
 	"testing"
 	"time"
 
@@ -16,11 +17,16 @@ import (
 
 func TestRunReadOnlyApplyReentryAndMutualExclusion(t *testing.T) {
 	db := pgtest.New(t, migrations.FS, migrations.Dir)
-	t.Setenv("ATHENA_ACCOUNT_STATE_POSTGRES_DSN", db.DSN)
+	dsn, err := url.Parse(db.DSN)
+	require.NoError(t, err)
+	q := dsn.Query()
+	q.Set("pool_max_conns", "1")
+	dsn.RawQuery = q.Encode()
+	t.Setenv("ATHENA_ACCOUNT_STATE_POSTGRES_DSN", dsn.String())
 	ctx := context.Background()
 	_, topicErr := db.Pool.Exec(ctx, `INSERT INTO system_notification_topics(telegram_chat,label,message_thread_id) VALUES('test','default',1)`)
 	require.NoError(t, topicErr)
-	_, err := db.Pool.Exec(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label,payload,payload_digest) VALUES('polymarket.sports-live-score','info','hello','telegram','pending','test','default','{}',decode(repeat('ab',32),'hex'))`)
+	_, err = db.Pool.Exec(ctx, `INSERT INTO system_notification_deliveries(source,severity,body,channel,status,telegram_chat,topic_label,payload,payload_digest) VALUES('polymarket.sports-live-score','info','hello','telegram','pending','test','default','{}',decode(repeat('ab',32),'hex'))`)
 	require.NoError(t, err)
 	var out bytes.Buffer
 	require.NoError(t, run(ctx, nil, &out))

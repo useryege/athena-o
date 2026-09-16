@@ -74,16 +74,18 @@ func run(ctx context.Context, args []string, out io.Writer) (runErr error) {
 	}
 	defer pool.Close()
 	operationCtx, operationCancel := context.WithTimeout(ctx, 5*time.Second)
-	lock, err := pool.Acquire(operationCtx)
+	pooledLock, err := pool.Acquire(operationCtx)
 	if err != nil {
 		operationCancel()
 		return err
 	}
-	// Close the physical session, never return a session advisory lock to the pool.
+	// Detach before taking the advisory lock so even a single-connection pool
+	// has capacity for the maintenance queries. Close the physical session at exit.
+	lock := pooledLock.Hijack()
 	defer func() {
 		closeCtx, closeCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer closeCancel()
-		_ = lock.Hijack().Close(closeCtx)
+		_ = lock.Close(closeCtx)
 	}()
 	err = lock.QueryRow(operationCtx, `SELECT current_database(),oid::bigint,current_user,coalesce(inet_server_addr()::text,'local'),coalesce(inet_server_port(),0),pg_postmaster_start_time() FROM pg_database WHERE datname=current_database()`).Scan(&r.Database, &r.DatabaseOID, &r.User, &r.ServerAddress, &r.ServerPort, &r.ServerStartedAt)
 	if err != nil {
