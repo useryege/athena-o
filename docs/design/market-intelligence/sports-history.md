@@ -1,6 +1,6 @@
 # Sports History
 
-> 设计状态：已实现
+> 状态：现有代码已实现；[Sports 板块删除已确认，尚未实施](../../requirements/development-runtime/sports-removal.md)。2026-09-16 已确认其专属历史数据直接删除，Worm Markets／Trading 保留。本文记录删除前的能力与源码，供清理定位；不作为继续提供 Sports 的要求。
 
 ## Scope
 

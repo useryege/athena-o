@@ -1,6 +1,8 @@
 # Worm Market Combinations
 
-> 设计状态：已实现
+> 范围修订（2026-09-16）：用户明确保留 Worm Markets 和 Worm Trading，撤回此前 Worm 删除决定。本文业务及其页面、权限、配置、签名、凭据和数据继续保留；详见[Sports 删除与 Worm 保留决定](../../requirements/development-runtime/sports-removal.md)。现有实现与原有设计继续按本文维护。
+
+> 访问接入目标（2026-09-16 已确认，尚未实施）：Worm Markets／Trading 共用一个 `worm` 访问开关，原有两类账户权限分别保留。新的用户请求受控，已受理后台工作继续按原规则处理；重新开放不自动补发交易。具体入口、验证回调与页面驱动边界见[访问接入设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)，独立进程、配置与就绪见[运行配套](../../superpowers/specs/2026-09-15-local-full-stack-design.md#33-worm-两服务接入)。下文仍描述现有业务实现。
 
 ## Scope
 

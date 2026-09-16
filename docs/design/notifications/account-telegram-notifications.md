@@ -2,6 +2,8 @@
 
 > 设计状态：已实现
 
+> 关联目标已收缩为[板块访问开关](../../requirements/development-runtime/business-access-control.md)。关闭用户访问不暂停业务通知、发送许可或后台调度；原整组运行控制 Q03 的消息暂停与随组恢复不再作为本期实施要求。通知继续遵守下文既有账户资格、绑定、发送与恢复规则；访问开关尚未实施。
+
 ## 范围
 
 账户 Telegram 通知在 `athena-notification` 进程中负责普通账户绑定与持久私聊投递，包括浏览器绑定尝试、Bot 更新消费、账户与 Telegram 私聊的一对一关系、绑定 revision、投递幂等及不可达收件人恢复。

@@ -11,7 +11,7 @@
   - [Superpowers Development Workflow](#superpowers-development-workflow)
   - [本地验收环境准备与完成标准](#本地验收环境准备与完成标准)
   - [Chinese Plans](#chinese-plans)
-  - [Plan Implementation Completion Email](#plan-implementation-completion-email)
+  - [Task Result Email](#task-result-email)
   - [Impeccable Integration](#impeccable-integration)
   - [本地图片路径规则](#本地图片路径规则)
 
@@ -65,7 +65,7 @@ Do not preserve historical compatibility. When implementing changes:
 - 先确认目标地址、运行进程及其所属仓库/worktree。正确且健康的已有环境直接复用；未启动时按[本地运行说明](docs/developer-guide/running-locally.md#prepare-the-development-environment-for-acceptance)选择项目 Node 版本，从目标仓库执行 `make run`，保存持久运行会话及日志。这些必要操作无须再次请求用户确认。
 - smoke 命令本身不启停开发服务；执行验收的代理负责准备环境。不得把工具的职责边界解释成代理不能执行 `make run`。启动后检查进程、前端入口和会员/管理员 bootstrap，再执行真实 smoke 并检查退出结果和报告；端口监听或 HTTP 200 不等于验收通过。
 - 失败时保留证据，检查相关日志，在已授权范围内解决环境问题并重验。只有确实无法自行解决的外部依赖、凭据、权限或需要用户决定的问题，才报告阻塞，写明尝试、原因和未完成项；验收任务本身不授权扩大为产品行为修改。
-- 必要的真实验收未通过时，区分“实现完成”和“验收未完成”，不得宣称整个任务完成，也不得发送整个任务的完成通知。隔离测试、受控场景和预检不能替代真实环境验收。
+- 必要的真实验收未通过时，区分“实现完成”和“验收未完成”，不得宣称整个任务完成；达到下文任务结果邮件的时长条件时，仍须发送如实说明未完成项及阻塞或失败原因的结果通知。隔离测试、受控场景和预检不能替代真实环境验收。
 - 开发、调试或验收任务结束时，默认停止本任务启动的临时服务、预览、测试替身及所属容器，保留数据库、数据卷、日志、截图和验收报告。完成、取消、暂停，以及保存证据后以失败或阻塞结束任务，均须收尾；任务仍在持续调试或验收时可保持运行，不以单次回复结束作为停服时点。
 - 用户在任务前启动的服务、其他任务正在使用的环境和借用的共享基础设施保持原样。长期主开发环境须由用户明确指定；只有用户明确要求继续查看或保留现场调试时，才保留本任务中对应的环境，不能据此保留所有分支和测试实例。
 - 收尾由执行任务的代理主动完成：先核对仓库/worktree、实例和资源归属，再从同一仓库使用带相同 `INSTANCE` / profile 的 `make stop`、`make stop-instance` 或对应工具的停止入口；独立测试替身和预览也须按记录停止。不得自动执行 `make run-reset`、删除数据卷、停止借用的基础设施或终止归属不明的进程。
@@ -76,21 +76,25 @@ Do not preserve historical compatibility. When implementing changes:
 
 When outlining or listing a plan (implementation steps, task breakdown, approach summary, etc.), write the plan in Chinese (简体中文).
 
-### Plan Implementation Completion Email
+### Task Result Email
 
-After a user-confirmed plan has been fully implemented, including all required code, configuration, documentation, and verification, send exactly one completion email from the repository root before returning the final response:
+任何类型的任务，只要累计执行时间超过十分钟（严格大于 600 秒），都必须在任务结束时、最终回复前，从仓库根目录调用一次以下命令发送结果邮件。此规则适用于计划、实施、调试、审阅、研究及文档等任务，不要求进入 Plan 模式或事先确认实施计划。
+
+- 从开始处理任务起记录执行时间，包括分析、工具运行、测试、验证和环境收尾；等待用户回复或任务暂停期间不计入。同一任务跨轮次继续执行时累计计时，并行子任务的重叠时间只计一次。
+- 累计执行时间不超过十分钟时不发送。超过十分钟后继续执行，等任务结束再通知；不在到达时限时发送进度邮件，也不定期重复通知。
+- 任务完成、失败、取消，或因阻塞结束本次执行时，达到时长条件都须发送。邮件必须如实说明实际状态、成果、验证结果及未完成项；仅在全部必要工作和验证完成后使用“任务完成”。只写完计划时，应明确成果是计划文档，不能称实施完成。
+- 同一任务由主代理统一发送一次，子代理不单独发送；保留通知结果，避免跨轮次重复调用。
 
 ```bash
 make notify-task-complete \
-  TASK_NOTIFICATION_SUBJECT='任务完成：<简短任务名称>' \
-  TASK_NOTIFICATION_BODY='已完成：<核心成果>；验证：<验证结果>。'
+  TASK_NOTIFICATION_SUBJECT='任务结果：<简短任务名称>（<实际状态>）' \
+  TASK_NOTIFICATION_BODY='状态：<实际状态>；累计执行：<耗时>；成果：<核心成果>；验证：<实际验证结果或未执行>；未完成项：<未完成项及原因或无>。'
 ```
 
-- Do not send this notification when only the plan has been written, or when implementation is incomplete, blocked, failed, or cancelled.
-- Write a short subject and body in Simplified Chinese. Do not include passwords, tokens, API keys, or any other secrets.
-- Use the default `.env` notification configuration; this rule does not switch to `.env.prod`.
-- Wait for the Make command to finish before returning the final response.
-- If the notification still fails after the command's built-in retries, keep the implementation task complete but report the notification failure and a credential-safe error summary in the final response. Do not claim that the email was sent.
+- 标题和正文使用简短的简体中文，不包含密码、令牌、API 密钥等秘密信息。
+- 使用默认 `.env` 通知配置，不切换到 `.env.prod`。
+- 等待 Make 命令结束后再给出最终回复。
+- 若命令内置重试耗尽后仍失败，保持任务实际结果，在最终回复中说明通知失败并提供不含凭据的错误摘要，不得声称邮件已发送。
 
 ### Impeccable Integration
 

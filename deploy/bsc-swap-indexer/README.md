@@ -1,5 +1,7 @@
 # BSC Swap Indexer 独立部署
 
+> [删除已确认，尚未实施](../../docs/requirements/blockchain-data/bsc-indexer-removal.md)（2026-09-15）。本服务已移出本地与生产目标服务清单；以下保留现有部署方式供后续退役定位，不作为新增部署指引。本轮仅维护文档，未操作远端实例或数据。
+
 `athena-bsc-swap-indexer` 使用独立可执行文件、Docker 镜像、Docker Compose 和 PostgreSQL 18 数据卷，不依赖或重启主 ATHENA 服务。本说明面向专用服务器 `47.254.154.128`；当前代码交付不会自动修改该服务器。
 
 ## 服务边界

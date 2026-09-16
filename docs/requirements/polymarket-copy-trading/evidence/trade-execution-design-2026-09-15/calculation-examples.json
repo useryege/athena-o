@@ -1,0 +1,36 @@
+{
+  "kind": "offline_decimal_design_examples_not_implementation_tests",
+  "price": {
+    "reference": "0.53",
+    "slippage": "0.02",
+    "tick": "0.01",
+    "buy_bound": "0.54",
+    "sell_bound": "0.52",
+    "buy_principal": "10",
+    "buy_requested_shares": "18.5186",
+    "buy_ratio_within_bound": true
+  },
+  "sell": {
+    "available": "5.123456",
+    "submitted_shares": "5.12",
+    "dust": "0.003456",
+    "requested_amount": "2.6624",
+    "sell_ratio_within_bound": true
+  },
+  "fee": {
+    "assumptions": "single price 0.50, rate 0.05, exponent 1, no builder fee; separately assumed validated stable contract fee cap 500 bps",
+    "principal": "10",
+    "estimated_fee": "0.250",
+    "estimated_total": "10.250",
+    "reserved_fee": "0.500000",
+    "reserved_total": "10.500000"
+  },
+  "reservation": {
+    "original_balance": "100",
+    "original_reservation": "30",
+    "balance_after_confirmed_debit": "88",
+    "remaining_possible_debit": "18",
+    "available": "70",
+    "available_after_original_order_fully_ended": "88"
+  }
+}

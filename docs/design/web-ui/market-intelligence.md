@@ -1,5 +1,7 @@
 # 市场、赛事与 Managed OO 会员页面
 
+> 目标范围更新（2026-09-16）：[Sports 删除、Worm 保留](../../requirements/development-runtime/sports-removal.md)已确认，尚未实施。Sports Live／History、World Cup Corners 转为清理范围；Worm、Market Radar、Managed OO 继续按各自需求维护。
+
 八页前端消费既有 service DTO，沿用 [v21 布局](../../requirements/web-ui/market-intelligence-batch-proposal.md)与 [v23 一致性契约](../../requirements/web-ui/theme-consistency-contract.md)。本说明记录 T6 的页面实现边界；外部 Polymarket、Polygon 和扫描链路的可用性须另行验收。
 
 ## 页面与数据阅读

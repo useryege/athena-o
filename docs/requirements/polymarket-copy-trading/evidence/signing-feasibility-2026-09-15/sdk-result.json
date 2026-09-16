@@ -1,0 +1,9 @@
+{
+  "scope": "Synthetic offline signatures; no keys, auth requests, or transactions sent to any network",
+  "sdkSourceCommit": "983a10a7579c95043d4099f60873ff7ea817e5a0",
+  "payloads": 26,
+  "mutationChecks": 146,
+  "externalSignerWorkflow": "pass",
+  "directSignatureBytes": 65,
+  "depositOrderSignatureBytes": 317
+}

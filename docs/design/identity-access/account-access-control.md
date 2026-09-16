@@ -1,10 +1,14 @@
 # 账户访问控制
 
+> 目标范围更新（2026-09-16）：[Sports 删除、Worm 保留](../../requirements/development-runtime/sports-removal.md)已确认，尚未实施。只清理 Sports Live／History 与 World Cup Corners 三类模块定义、授权矩阵和失效授权；Worm 两类权限及其余权限保留。下文十一模块矩阵仍描述现有代码。
+
 > 设计状态：已实现
 
 > 新增目标：[单客户端登录](../../requirements/identity-access/single-client-login.md)已确认，新登录生效后旧登录立即失效，由[单客户端登录目标设计](single-client-login.md)承接。该账号级会话约束尚未实现；本文既有模块权限与 realm 边界继续有效。
 
 > 交易目标：用户已确认[手动交易共用现有 Trader Sync 权限](../trading/polymarket-manual-trading.md#shared-trader-sync-access)，钱包操作权限和归属继续独立核验。该交易能力尚未实现；当前模块矩阵仍按下文所列源码运行。
+
+> 访问接入目标（2026-09-16 已确认，尚未实施）：普通 Wallet、登录与账户权限保持核心能力；Worm 用户钱包选择、连接、交易及其专属二次验证受同一 `worm` 开关约束。Google 共用回调按可信验证目的区分，关闭时不签发新的 Worm 凭据或交易授权；已有后台工作与内部目的绑定签名按原规则处理。详见[访问接入设计](../../superpowers/specs/2026-09-15-business-access-control-design.md#24-worm-原始-http-与二次验证入口)，不合并或改写 `worm_markets`／`worm_trading` 账户权限。
 
 ## 范围
 

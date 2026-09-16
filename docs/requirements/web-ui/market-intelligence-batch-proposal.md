@@ -1,5 +1,7 @@
 # v21 市场、赛事与 Managed OO 八页集中视觉提案
 
+> 范围更新（2026-09-15）：Sports Live、Sports History 与 World Cup Corners 已确认删除；本批 Market Radar、Managed OO 与共用视觉规则继续有效。[删除尚未实施](../development-runtime/sports-removal.md)；下文批准记录、原覆盖清单及历史验收证据保留当时事实。
+
 > 状态：本批展示视觉已确认。用户于 2026-09-14 对集中展示的八页桌面／手机十六张主图反馈“确认”，整批确认范围见 [v21 确认记录](previews/theme-market-intelligence-v21-approval.json)。交付时的审阅记录保持原字节；本次确认不表示正式前端已实施或真实业务验收通过。
 
 ## 范围与沿用基准

@@ -1,0 +1,136 @@
+{
+  "checkedAt": "2026-09-15T10:03:07.520038+00:00",
+  "kind": "documentation_and_source_review",
+  "sdkCommit": "983a10a7579c95043d4099f60873ff7ea817e5a0",
+  "sdkSources": [
+    {
+      "path": "packages/client/src/wallet.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/wallet.ts",
+      "sha256": "bcab855f644adec6c5f0b22c769b3228a01a20daf4cb79f5ec19e422c413d04d"
+    },
+    {
+      "path": "packages/client/src/clients.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/clients.ts",
+      "sha256": "1c77ea7e224d4b475edd49cd68fca47c30a75745ec4b4d75ab6c474f5898736e"
+    },
+    {
+      "path": "packages/client/src/actions/auth.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/auth.ts",
+      "sha256": "c00a174e3e20e47bd621c4d65a86447262c93720811d878d1dfeca822596c8e9"
+    },
+    {
+      "path": "packages/client/src/actions/gasless.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/gasless.ts",
+      "sha256": "27e2aa4bfa41d8c2d76531bdda484046ecfecab66e8f0229010acf4aa6bd9aa0"
+    },
+    {
+      "path": "packages/client/src/actions/approvals.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/approvals.ts",
+      "sha256": "d104e43ce44316472235cd67f0dc4b208dca4dbc9c80a3405e98e57e6f9f95a1"
+    },
+    {
+      "path": "packages/client/src/environments.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/environments.ts",
+      "sha256": "7b530d7d7667f7bc5c4a8e7a4ae528f76e53c58565d00d4c276f6acd414df6e3"
+    },
+    {
+      "path": "packages/client/src/authentication.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/authentication.ts",
+      "sha256": "51ebbaf882426c33f5a9510c8967d1e0f111e7c668f767f40e35ca3c920c6f01"
+    }
+  ],
+  "downloadedDocuments": [
+    {
+      "file": "wallets-auth.md",
+      "url": "https://docs.polymarket.com/trading/wallets-auth.md",
+      "resolved_url": "https://docs.polymarket.com/trading/wallets-auth.md",
+      "status": 200,
+      "sha256": "bd16933a33ff6d3999cc551e6b3e3663480e7064f8e5eec86e72772907596e44",
+      "bytes": 54438
+    },
+    {
+      "file": "builders.md",
+      "url": "https://docs.polymarket.com/programs/builders/overview.md",
+      "resolved_url": "https://docs.polymarket.com/programs/builders/overview.md",
+      "status": 200,
+      "sha256": "5572dc4760951b8aca5f736c753a6864802c4253a21d134f067036a610a50eca",
+      "bytes": 3689
+    },
+    {
+      "file": "deployed.md",
+      "url": "https://docs.polymarket.com/api-reference/relayer/check-if-a-wallet-is-deployed.md",
+      "resolved_url": "https://docs.polymarket.com/api-reference/relayer/check-if-a-wallet-is-deployed.md",
+      "status": 200,
+      "sha256": "206e3d3cef81ac6f168122561478f3cdf6fd9c4bbe6fb3859f1fc2dda53450a4",
+      "bytes": 3967
+    }
+  ],
+  "otherOfficialSources": [
+    "https://docs.polymarket.com/resources/contracts",
+    "https://help.polymarket.com/en/articles/13369887-how-to-deposit",
+    "https://help.polymarket.com/en/articles/13369877-how-to-sign-up"
+  ],
+  "sourceFindings": [
+    {
+      "id": "ACCOUNT-1",
+      "source": "packages/client/src/wallet.ts",
+      "symbols": [
+        "resolveAccountIdentity",
+        "classifyAccount"
+      ],
+      "finding": "Unmatched signer/wallet pairs fall back to SESSION_KEY and DEPOSIT_WALLET; classification alone is not owner verification."
+    },
+    {
+      "id": "ACCOUNT-2",
+      "source": "packages/client/src/clients.ts",
+      "symbols": [
+        "createSecureClient",
+        "beginAuthentication",
+        "resolveRequestedWallet",
+        "deployDefaultDepositWallet"
+      ],
+      "finding": "Secure client initialization may sign CLOB authentication, create credentials and deploy a missing Deposit Wallet even with an explicit account; it is not a read-only constructor."
+    },
+    {
+      "id": "ACCOUNT-3",
+      "source": "packages/client/src/wallet.ts",
+      "symbols": [
+        "deriveUupsDepositWalletAddress",
+        "deriveBeaconDepositWalletAddress"
+      ],
+      "finding": "Existing UUPS and current beacon Deposit Wallets have distinct address derivations; new factory deployment must not be assumed to create an old counterfactual address."
+    },
+    {
+      "id": "ACCOUNT-4",
+      "source": "packages/client/src/actions/gasless.ts",
+      "symbols": [
+        "isWalletDeployed",
+        "prepareDepositWalletGaslessTransaction",
+        "resignDepositWalletExecuteRequest"
+      ],
+      "finding": "Deployment checks do not imply trading readiness; the default gasless workflow may re-sign on a nonce error, which ATHENA must control through its persisted attempt."
+    },
+    {
+      "id": "ACCOUNT-5",
+      "source": "https://help.polymarket.com/en/articles/13369887-how-to-deposit",
+      "finding": "Website deposit addresses depend on profile and network; a signer or trading account address must not be presented as a generic deposit destination."
+    }
+  ],
+  "scope": {
+    "walletPrivateKeysRead": false,
+    "credentialIssuance": false,
+    "accountDeployment": false,
+    "approvalOrOrderSubmission": false,
+    "authenticatedWebsiteVisit": false,
+    "productCodeChanged": false,
+    "servicesStarted": false
+  },
+  "unverified": [
+    "Real Builder or Relayer access",
+    "Current contract control for user-selected accounts",
+    "Website and API account equivalence",
+    "Credential acceptance and account restrictions",
+    "Deployment, allowance, order or redemption execution",
+    "Real failure recovery"
+  ]
+}

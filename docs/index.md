@@ -30,6 +30,7 @@ Athena is a trading/project sync system for the blockchain.
 ## Operations
 
 - [Makefile Commands and Deployment](operator-manual/makefile-commands.md)
-- [BSC Transaction Indexer Server](bsc-transaction-indexer-server.md)
-- [BSC Swap Indexer Server](bsc-swap-indexer-server.md)
+- [两个 BSC 索引器删除需求](requirements/blockchain-data/bsc-indexer-removal.md)（已确认，尚未实施）
+- [BSC Transaction Indexer Server](bsc-transaction-indexer-server.md)（历史资源记录，退役待实施）
+- [BSC Swap Indexer Server](bsc-swap-indexer-server.md)（历史资源记录，退役待实施）
 - [Etherscan Gateway Servers](etherscan-gateway-servers.md)

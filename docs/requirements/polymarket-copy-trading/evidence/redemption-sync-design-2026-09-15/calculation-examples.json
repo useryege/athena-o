@@ -1,0 +1,79 @@
+{
+  "kind": "offline_integer_arithmetic_examples_not_runtime_tests",
+  "unit_decimals_assumption": 6,
+  "scope": "CTF independent index-set payout arithmetic; actual adapter and router deployment remains unverified",
+  "cases": [
+    {
+      "name": "resolved_yes",
+      "balance_base_units": [
+        "10000000",
+        "3000000"
+      ],
+      "payout_numerators": [
+        "1",
+        "0"
+      ],
+      "payout_denominator": "1",
+      "payouts_base_units": [
+        "10000000",
+        "0"
+      ],
+      "total_base_units": "10000000",
+      "positive_payout": true
+    },
+    {
+      "name": "resolved_equal",
+      "balance_base_units": [
+        "10000000",
+        "3000000"
+      ],
+      "payout_numerators": [
+        "1",
+        "1"
+      ],
+      "payout_denominator": "2",
+      "payouts_base_units": [
+        "5000000",
+        "1500000"
+      ],
+      "total_base_units": "6500000",
+      "positive_payout": true
+    },
+    {
+      "name": "round_each_index_set",
+      "balance_base_units": [
+        "1",
+        "1"
+      ],
+      "payout_numerators": [
+        "1",
+        "1"
+      ],
+      "payout_denominator": "2",
+      "payouts_base_units": [
+        "0",
+        "0"
+      ],
+      "total_base_units": "0",
+      "positive_payout": false
+    },
+    {
+      "name": "micro_positive",
+      "balance_base_units": [
+        "3",
+        "0"
+      ],
+      "payout_numerators": [
+        "1",
+        "1"
+      ],
+      "payout_denominator": "2",
+      "payouts_base_units": [
+        "1",
+        "0"
+      ],
+      "total_base_units": "1",
+      "positive_payout": true
+    }
+  ]
+}

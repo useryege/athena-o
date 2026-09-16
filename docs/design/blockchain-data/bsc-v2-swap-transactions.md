@@ -1,6 +1,8 @@
 # BSC V2 Swap Transactions
 
-> 设计状态：已实现
+> 状态：现有代码已实现；[删除需求已确认，尚未实施](../../requirements/blockchain-data/bsc-indexer-removal.md)（2026-09-15）。
+>
+> 本文保留删除实施前的源码与服务边界说明，供后续清理定位。该索引器已移出本地与生产目标服务清单，不再作为后续业务依赖；当前源码和既有部署尚未在本轮处理。
 
 ## Scope
 

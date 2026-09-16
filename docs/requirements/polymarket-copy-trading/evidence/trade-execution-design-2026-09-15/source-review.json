@@ -1,0 +1,155 @@
+{
+  "checkedAt": "2026-09-15T10:30:52.791913+00:00",
+  "kind": "documentation_and_source_review",
+  "athenaHead": "acbb9889bfbbb4080fb6504a31613ece89ccdc66",
+  "sdkCommit": "983a10a7579c95043d4099f60873ff7ea817e5a0",
+  "sdkSources": [
+    {
+      "path": "packages/client/src/actions/orders/amounts.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/orders/amounts.ts",
+      "sha256": "1938bfdcbfebbd4dfaaf9337f66a2c8a7f02350f3da2c3519fd0f7c4e2b9fedb"
+    },
+    {
+      "path": "packages/client/src/actions/orders/context.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/orders/context.ts",
+      "sha256": "055abd43eecd5a4acf426c28a1511bf7ec2104875df7427fc63ca8dc7b0e4510"
+    },
+    {
+      "path": "packages/client/src/actions/orders/market.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/orders/market.ts",
+      "sha256": "96b9cf6c744f8dbf5d88df8139dc47ba7a605c6b1fe5cc3852a3d3cfa5bb0983"
+    },
+    {
+      "path": "packages/client/src/actions/orders/post.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/orders/post.ts",
+      "sha256": "a040e9da6f8efe8c088e411d8df0de52c7785500a8fddf37e0d87c7922657405"
+    },
+    {
+      "path": "packages/client/src/actions/orders/settlement.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/orders/settlement.ts",
+      "sha256": "6c1a5fd8855c67608b337a72da5d1a5344a307acd83c1544a0249dc7534d9a19"
+    },
+    {
+      "path": "packages/client/src/actions/account.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/account.ts",
+      "sha256": "462f390415e584c6322c318343af8565dc91ae7afcc982a81952af40a2c5c966"
+    },
+    {
+      "path": "packages/bindings/src/clob/account.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/bindings/src/clob/account.ts",
+      "sha256": "680ba009ea611efc3bd7072b74f7de5984d19ae05bb138574bd237b09e5ab036"
+    }
+  ],
+  "downloadedDocuments": {
+    "fetched_at": "2026-09-15T10:21:09.112895+00:00",
+    "sources": [
+      {
+        "file": "fees.md",
+        "url": "https://docs.polymarket.com/trading/fees.md",
+        "http_status": 200,
+        "bytes": 8128,
+        "sha256": "8e246189f6ca85b8b8782e1d76a769cf98672a98c4c63d8bbe6150d659db8d7c"
+      },
+      {
+        "file": "builder-fees.md",
+        "url": "https://docs.polymarket.com/programs/builders/fees.md",
+        "http_status": 200,
+        "bytes": 6468,
+        "sha256": "d901d8aed05ebf3d50e7654050030cdca0c279ddb2ee717d5d210adeec1c0773"
+      },
+      {
+        "file": "place-orders.md",
+        "url": "https://docs.polymarket.com/trading/place-orders.md",
+        "http_status": 200,
+        "bytes": 61459,
+        "sha256": "a3426c3ac3c04c96a4e988009cd6e603d22622a31e1b3c02a453ce3ac22d7563"
+      },
+      {
+        "file": "lifecycle.md",
+        "url": "https://docs.polymarket.com/concepts/order-lifecycle.md",
+        "http_status": 200,
+        "bytes": 8341,
+        "sha256": "854236c2602d4268c72d61f3c568f85ffb3f5e58071486abe8c88cecde9d8e76"
+      },
+      {
+        "file": "market-details.md",
+        "url": "https://docs.polymarket.com/market-data/market-details.md",
+        "http_status": 200,
+        "bytes": 31237,
+        "sha256": "6996afeeb98c76da4f983cca1d0256708600d213fbad41a62a17e3bef5f74e90"
+      }
+    ]
+  },
+  "contractSources": {
+    "repository": "Polymarket/ctf-exchange-v2",
+    "commit": "ccc0596074f4dfd62c944fbca4de252893b82b4b",
+    "fetched_at": "2026-09-15T10:22:48.357599+00:00",
+    "sources": [
+      {
+        "file": "v2-Fees.sol",
+        "repository_path": "src/exchange/mixins/Fees.sol",
+        "url": "https://raw.githubusercontent.com/Polymarket/ctf-exchange-v2/ccc0596074f4dfd62c944fbca4de252893b82b4b/src/exchange/mixins/Fees.sol",
+        "sha256": "38af8b9878e55bdddc3669e5771ba995321d7546716be894c851b723cad973fe"
+      },
+      {
+        "file": "v2-Trading.sol",
+        "repository_path": "src/exchange/mixins/Trading.sol",
+        "url": "https://raw.githubusercontent.com/Polymarket/ctf-exchange-v2/ccc0596074f4dfd62c944fbca4de252893b82b4b/src/exchange/mixins/Trading.sol",
+        "sha256": "dd8d18fca897e664583a93944b379435e6f70e84f4190c39d669b2be62596012"
+      },
+      {
+        "file": "v2-CTFExchange.sol",
+        "repository_path": "src/exchange/CTFExchange.sol",
+        "url": "https://raw.githubusercontent.com/Polymarket/ctf-exchange-v2/ccc0596074f4dfd62c944fbca4de252893b82b4b/src/exchange/CTFExchange.sol",
+        "sha256": "cde0437ecabdddfabfd365d557591533e8a717a7fc5be0a240ca2b0082fb0a8c"
+      }
+    ]
+  },
+  "additionalOfficialReferences": [
+    "https://docs.polymarket.com/api-reference/trade/get-single-order-by-id"
+  ],
+  "localSources": [
+    {
+      "path": "internal/accountstate/txgate/gate.go",
+      "sha256": "767e5a3c814b86d4d986d791ace480a7ede69130fb3c3f963d0e1089c93011a6"
+    },
+    {
+      "path": "internal/notification/summary_source.go",
+      "sha256": "2fa1bc0c331dae782e3f2e28b8ca621351f64c92bcc1f94a9c51ca5c75fe059b"
+    },
+    {
+      "path": "internal/wallet/service.go",
+      "sha256": "d1eaa80473ab2f21f315fc66a840b41559eb3f2ea64ff1dc3dd29908e82974db"
+    }
+  ],
+  "scope": {
+    "public_documents_read": true,
+    "public_contract_source_read": true,
+    "private_key_read": false,
+    "private_api_called": false,
+    "signed_order_created": false,
+    "real_transaction_sent": false,
+    "live_contract_state_verified": false,
+    "runtime_implementation_changed": false,
+    "offline_decimal_examples": "calculation-examples.json"
+  },
+  "findings": [
+    "SDK protected market order rounds requested amount upward, preserving the actual amount-ratio price boundary.",
+    "SDK maxSpend may reduce pre-fee principal; ATHENA must validate unchanged signed principal.",
+    "FAK orderType is outside the EIP-712 order and must also be bound in the complete dispatch envelope.",
+    "Settlement helper covers response trade IDs; empty trade IDs do not prove the full order ended.",
+    "balance-allowance schema does not establish complete reservation coverage.",
+    "Pinned V2 fee ceiling is mutable; zero disables the check. Source defaults are not live values or immutable user fee guarantees."
+  ],
+  "unverified": [
+    "Actual deployment and fee grouping/rounding, total fee coverage and mutable cap changes",
+    "V3 fee/reservation and settlement paths for supported single outcomes",
+    "Private order identity and recovery coverage across channels",
+    "Current available balance coverage and external pending orders",
+    "Actual login/admission/revocation races and crash recovery",
+    "Redemption contract scope, asset sync and desktop/mobile UI acceptance"
+  ],
+  "fetchNotes": [
+    "GitHub anonymous commit API returned HTTP 403 rate limit; fixed source revision subsequently resolved through public git ls-remote and three raw files fetched at that revision."
+  ]
+}

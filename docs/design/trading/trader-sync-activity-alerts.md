@@ -55,7 +55,7 @@ Copy Trading 不在本设计内。本文维护后端和跨层数据契约，已�
 | [发送许可](../../../internal/notification/store/attempts.go)已在短事务提交 sending 与 attempt；[worker](../../../internal/notification/worker.go)以实际 HTTP 起点和结果 CAS 补记，unknown 不重发，绑定变化写永久墓碑。 | 共享并发调度、单 sender 登记和显式停止恢复已经实现；产品 grant 撤权钩子已在账户存储提交前接入，现有入队绑定不能代替活动形成时的资格快照。 |
 | [Bot update](../../../internal/notification/store/bot_updates.go)将绑定变更、回复 outbox 和消费进度原子提交；[poller](../../../internal/notification/poller.go)只调用该入口，reply 复用 worker 的发送许可。 | reply 与 Trader Sync summary head 已接入跨 chat 公平调度、统一预算和停止确认恢复；冻结 parts 继续复用 account delivery。 |
 | [Profile 适配器](../../../util/polymarket/profile_identity.go)、[六区间 P/L](../../../internal/tradersync/pnl.go)与[目标确认](../../../internal/tradersync/target_resolver.go)已实现精确数值、逐字段 evidence、owner token 与公开入口。 | 实网样本的五个非 ALL 区间缺 reference，ALL 金额缺舍入依据，因此相应字段仍为 unavailable；HTTP 200 或曲线存在不能替代六区间金额证据。 |
-| [Managed OO](../../../internal/managedoo/log_sync.go)与 [BSC Swap](../../../internal/bscswap/scanner.go)有持久游标扫描。 | 业务事件、网络及中断回补语义不同，不能直接沿用为 Trader Sync 监控。 |
+| [Managed OO](../../../internal/managedoo/log_sync.go)有持久游标扫描；[两个独立 BSC 索引器已确认删除、尚未实施](../../requirements/blockchain-data/bsc-indexer-removal.md)。 | Managed OO 的业务事件与中断回补语义不同，不能直接沿用为 Trader Sync 监控；BSC 索引器不再作为后续实现依赖。 |
 | 独立 Trader Sync types、TargetResolver、SubscriptionService、Collector、BaselineRegistrar、ActivityProjector、摘要协调、公开 API facade 与独立 `athena-trader-sync` runtime 已组合。 | 本地真实组件链与浏览器链均有验收；录制/合成来源、loopback provider 和有限运行不代表公网生产 SLO 或供应商静默漏推完整性。 |
 
 ## 关键决定

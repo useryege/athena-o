@@ -182,7 +182,7 @@ WebSocket 的 `eth_subscribe("logs", filter)` 也接受合约及 topic 过滤；
 | 持续运行、确认状态与实时恢复 | 中 | 需要识别监控中断、恢复实时观察并去重；按当前范围不做历史补查，不以补齐旧区间作为恢复条件。 |
 | Combos 全范围支持 | 中等偏高，范围仍需细化 | 事件与单笔市场映射样本可行；不能依赖每笔交易必有同交易生命周期记录，产品表达未对齐。 |
 
-仓库已有 [Polygon 增量日志扫描](../../../internal/managedoo/log_sync.go)和 [BSC finalized 扫描](../../../internal/bscswap/scanner.go)可参考。前者处理预言机事件，后者固定 BSC 与 Swap 语义；都不能直接启用来宣称 Trader Sync 已经具备上述能力。
+仓库已有 [Polygon 增量日志扫描](../../../internal/managedoo/log_sync.go)可参考，但它处理预言机事件，不能直接启用来宣称 Trader Sync 已经具备上述能力。[两个独立 BSC 索引器已确认删除、尚未实施](../blockchain-data/bsc-indexer-removal.md)，此前列出的 BSC finalized 扫描不再作为后续实现依赖。
 
 持续运行的实时采集方式留给后续技术设计；这一选择不改变已经证实的账户过滤能力。当前需求不补读中断时遗漏的历史成交，恢复后从新的实时边界继续；订阅只推送当前事件的限制与此取舍一致。收到未最终确认日志仍不等于已经不可逆，确认状态和活动事实正确性需要单独处理，不能因取消历史补查而忽略。[订阅限制](https://geth.ethereum.org/docs/interacting-with-geth/rpc/pubsub)、[Polygon 最终确认](https://docs.polygon.technology/pos/concepts/finality/finality)
 

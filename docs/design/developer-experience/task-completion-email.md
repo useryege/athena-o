@@ -14,6 +14,13 @@ whether a task succeeded, schedule notifications, or provide a general-purpose
 email client. HTML, attachments, CC, BCC, dynamic recipients, and arbitrary
 SMTP servers are outside its boundary.
 
+The agent's notification policy is defined in
+[AGENTS.md](../../../AGENTS.md#task-result-email): any task with more than ten
+minutes of cumulative execution receives one result notification when execution
+ends, regardless of Plan mode or success. The agent tracks time, excludes user
+response waits and pauses, and reports the actual outcome. The command itself
+does not measure task duration or enforce this policy.
+
 ## Source Locations
 
 | Concern | Source | Key symbols |

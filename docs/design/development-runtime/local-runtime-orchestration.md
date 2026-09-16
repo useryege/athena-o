@@ -2,6 +2,10 @@
 
 > 设计状态：Trader Sync 独立进程、gRPC、schema 工具与实例运行器已实现；Redis持久重启修复、两次真实全栈重启及最终Chrome验收通过，见[验收记录](../../testing/trader-sync-independent-service-acceptance.md)。
 
+> 关联目标已调整为[板块访问开关简化方案](../../requirements/development-runtime/business-access-control.md)：本期只限制用户访问，进程及后台任务继续运行；原整组运行控制、默认停任务和新增 Runtime Control 的设计已暂停。服务清单扩展、核心分类、两个 BSC 索引器与 Sports 删除决定、Worm 保留决定，以及本地独立资源、Manager 使用五个远端 Gateway 的边界继续保留。访问范围及默认／重启规则已确认，尚未实施：首次默认关闭，之后保留管理员设置，重启不改变开关；下文描述现有运行命令与资源管理。
+
+> [make run 全栈启动配套提案](../../superpowers/specs/2026-09-15-local-full-stack-design.md)原十程序版本已于 2026-09-16 获采用；随后保留 Worm，目标扩充为十二程序，Worm 独立入口、配置、鉴权、就绪与停止设计已补齐；两业务服务共用一个 Worm 访问开关。独立入口、按需存储准备、即时进度、核心先就绪及业务失败隔离继续沿用。尚未实施；下文六程序清单与当前失败收尾方式仍是现状，不代表新提案已落地。
+
 ## 范围与服务边界
 
 本地运行器提供按服务选择的构建、启动、seed、状态、停止和重置入口，以及显式全栈入口。遵守[服务开发规范 SDS-R1 至 SDS-R8](../../developer-guide/service-development-standards.md)。批准依据为[服务职责与事务](../../superpowers/specs/2026-09-13-trader-sync-service-boundaries-design.md)、[本地运行](../../superpowers/specs/2026-09-13-trader-sync-local-runtime-design.md)和[内部字段契约](../../superpowers/specs/2026-09-13-trader-sync-grpc-contract-design.md)；历史规格保留批准时的事实。

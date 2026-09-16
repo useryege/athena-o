@@ -1,6 +1,10 @@
 # 会员应用壳
 
+> 目标范围更新（2026-09-16）：[Sports 删除、Worm 保留](../../requirements/development-runtime/sports-removal.md)已确认，尚未实施。只移除 Sports Live／History、World Cup Corners 的导航、路由、页面与权限展示；Worm 全部页面、登录、Wallet 和其他板块保留。下文仍记录现有界面。
+
 > 设计状态：已实现
+
+> 关联目标改为[板块访问开关简化方案](../../requirements/development-runtime/business-access-control.md)，尚未实施。页面展示“开放访问／关闭访问”，不暗示后台任务停止；前台页面关闭后最多 5 秒隐藏正文、断线隐藏及恢复前确认的既定体验继续沿用。原运行控制状态与后台收尾设计已暂停，登录和账户模块权限仍独立成立。 [接口、存储与页面接入技术提案](../../superpowers/specs/2026-09-15-business-access-control-design.md)已于 2026-09-16 获采用，尚未实施；拟在 Service Status 增加访问页签，并以共用路由边界控制业务正文，当前代码尚未接入。Worm 已确认共用一个访问开关：管理员只显示一行 Worm 设置，会员七条现有路由及其弹窗统一受控；关闭时停止浏览器交易驱动，重新开放不自动补发交易，原有两个模块权限分别保留。
 
 ## 范围
 

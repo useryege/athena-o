@@ -1,0 +1,147 @@
+{
+  "date": "2026-09-15",
+  "mode": "static-design-preview",
+  "synthetic": true,
+  "approvalStatus": "approved",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "2354c084f718a1f59d653cd075bdb67f2581cbcb74b91064ea0355139740238e"
+    },
+    {
+      "path": "checks-first-pass.json",
+      "sha256": "99d94e4a3a56a19eab03b303d2fcd0e45fdbc311ad787ca163861874480e3d7c"
+    },
+    {
+      "path": "checks.json",
+      "sha256": "8c2ea22575d3919a168433d940965b92bcf0b21de099d9639b49227a724295b1"
+    },
+    {
+      "path": "index.html",
+      "sha256": "0b28e21ef37be1956229a6e4625e71dffd12f4c0ef8de44e71343a11daca09c8"
+    },
+    {
+      "path": "preview.css",
+      "sha256": "2090a0af16d86547087690a1e8cc44588b5f8cf99d6df498a450917916471bbd"
+    },
+    {
+      "path": "preview.js",
+      "sha256": "2a9f35c2f7209dd6b16e05576bdd329a655bb7459f77bf3dbc28687d3312fabf"
+    },
+    {
+      "path": "screenshots/buy-desktop.png",
+      "sha256": "69a7ba3940ebfeac21bd5260ca57b7507c9066e67021a49c26685fe816221d24"
+    },
+    {
+      "path": "screenshots/buy-expired-mobile.png",
+      "sha256": "112aeb21df9b2b616bc02648a050e176b831034028110e1e39c7b4f761817741"
+    },
+    {
+      "path": "screenshots/buy-mobile.png",
+      "sha256": "391e7c9d148573f7d384f44cfe92b80fa7f64035c9980cbd6e7b9d54b67baa23"
+    },
+    {
+      "path": "screenshots/history-desktop.png",
+      "sha256": "0c60d2a94b7705e1488d4960e9503f995152adaf7ec63e013038c9a97341d039"
+    },
+    {
+      "path": "screenshots/history-mobile.png",
+      "sha256": "f2f6d5db8fda93a6657ba534255c7ef26115e0e9fd83d7e08518910699b7f8b2"
+    },
+    {
+      "path": "screenshots/history-page-expired-mobile.png",
+      "sha256": "c50a4d68fb8ae898a3e20714dacd8c4cb17aa25d8cb5d0264ae5781c717640b6"
+    },
+    {
+      "path": "screenshots/positions-desktop.png",
+      "sha256": "1f357f70d53617ed2051af0140013e3a1b9fc8cfdc223a3e2c6a55c9aa878da0"
+    },
+    {
+      "path": "screenshots/positions-mobile.png",
+      "sha256": "34c38632cc0b29d10eae45800a970ee354f08a088d1efe422cb475d57a15f9c6"
+    },
+    {
+      "path": "screenshots/positions-partial-error-mobile.png",
+      "sha256": "47aa2b3ef095325cf0d98f4ef0b52fb1d2cb0b844656a5ced4cfc3b876fbf39c"
+    },
+    {
+      "path": "screenshots/record-desktop.png",
+      "sha256": "9b158c9ca8d0b473748c2005362d723a121b1b593fae1675ae9278f68d9ca490"
+    },
+    {
+      "path": "screenshots/record-mobile.png",
+      "sha256": "2e035a6cfa26b7aef3d989b32d16e4527c5b748ed1cbd634a65232c09e1f8462"
+    },
+    {
+      "path": "screenshots/record-unknown-mobile.png",
+      "sha256": "5aba07a9db21872e4e131c1740e14d12d6b035c4514b35c9ac9e3abaf6b64615"
+    },
+    {
+      "path": "screenshots/redeem-desktop.png",
+      "sha256": "d79c68caeeb8c4e618b7b5710d9512f83f86400cceb88fb94ec3e77cd3be2bd1"
+    },
+    {
+      "path": "screenshots/redeem-mobile.png",
+      "sha256": "6f3950cf4fa312dca01041103ecc7366a4dea69dea4b84d6b0a450dbd98ec4f2"
+    },
+    {
+      "path": "screenshots/redeem-preparation-mobile.png",
+      "sha256": "677d09b0343b872c98983abded0668256564c9db6a2610e1b2d6402f39c4eb91"
+    },
+    {
+      "path": "screenshots/sell-desktop.png",
+      "sha256": "68bdca4bd6bd397913a260ffae72c5017e7d680c7185614b59f7efb16e225945"
+    },
+    {
+      "path": "screenshots/sell-first-mobile.png",
+      "sha256": "468251da6b4bf7cf8c92282638dbb41c295f64578328656883a716fb3cc7fc23"
+    },
+    {
+      "path": "screenshots/sell-mobile.png",
+      "sha256": "e263a013d6b9112d8f9da1f10ca9278f864d3a759f54a6c8f47f712f6de614f5"
+    },
+    {
+      "path": "screenshots/trades-desktop.png",
+      "sha256": "5a830be06c413e0eb5e43f5ec54b15f1bf02583e88b9908282a74c64eeb55201"
+    },
+    {
+      "path": "screenshots/trades-mobile.png",
+      "sha256": "5123833b4949772b374992479f4dd040f2092a8efba72df48cb0efc8fc90b436"
+    },
+    {
+      "path": "screenshots/wallet-desktop.png",
+      "sha256": "5042fa31d3d51739ad218d9b76593f80512906421b98dd8173af794aaf781923"
+    },
+    {
+      "path": "screenshots/wallet-enable-unknown-mobile.png",
+      "sha256": "1e103a4781ffef3cf4e53404444e06acb17d9c3c86bb984b2119c29996ff5313"
+    },
+    {
+      "path": "screenshots/wallet-mobile.png",
+      "sha256": "6f730f25a187bb9dbc375925dbba48461afe91c3ed3d162cf70f05276755954a"
+    },
+    {
+      "path": "verify.cjs",
+      "sha256": "2870a26d4a3c7933103db8fac03b3f6709e62cacb0ee40bdaafdf118ca5b1443"
+    }
+  ],
+  "sharedVisualSources": [
+    {
+      "path": "ui/src/app/styles/tokens.css",
+      "sha256": "8d8d9cd2032865a588a193155152fca085c642f4ad8fa8b46222814e791591f3"
+    },
+    {
+      "path": "ui/src/assets/fonts.css",
+      "sha256": "09433f3b4159e56961760edd305ef2a64e3a43789d2c4de65d0cbfa19a915cd5"
+    },
+    {
+      "path": "ui/src/assets/fonts/athena/InterVariable.woff2",
+      "sha256": "693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3"
+    },
+    {
+      "path": "ui/src/assets/fonts/athena/JetBrainsMono-Regular.woff2",
+      "sha256": "f1a7a03672cdd494ce0d5543fac6e4360fe22403c6de297fdc2e55a815f7baff"
+    }
+  ],
+  "approvalRecord": "approval.json"
+}

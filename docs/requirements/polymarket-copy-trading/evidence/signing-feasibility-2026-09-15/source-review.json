@@ -1,0 +1,113 @@
+{
+  "checkedAt": "2026-09-15T09:53:29.439409+00:00",
+  "athenaHead": "acbb9889bfbbb4080fb6504a31613ece89ccdc66",
+  "sdk": {
+    "repository": "https://github.com/Polymarket/ts-sdk",
+    "commit": "983a10a7579c95043d4099f60873ff7ea817e5a0",
+    "packageVersion": "0.10.0"
+  },
+  "runtimes": {
+    "go": "go version go1.27.1 linux/amd64",
+    "node": "v24.14.1"
+  },
+  "dependencies": {
+    "@polymarket/client": "0.10.0",
+    "tsx": "4.23.13",
+    "viem": "2.56.5"
+  },
+  "officialDocuments": [
+    "https://docs.polymarket.com/getting-started/api",
+    "https://docs.polymarket.com/trading/wallets-auth",
+    "https://docs.polymarket.com/trading/place-orders",
+    "https://docs.polymarket.com/getting-started/typescript"
+  ],
+  "sources": [
+    {
+      "path": "internal/wallet/keys.go",
+      "sha256": "982d8987c0abb077f10551b576fa75248f8731b4e22c3106812e3b362139cbb5"
+    },
+    {
+      "path": "internal/wallet/service.go",
+      "sha256": "d1eaa80473ab2f21f315fc66a840b41559eb3f2ea64ff1dc3dd29908e82974db"
+    },
+    {
+      "path": "internal/wallet/wallet.proto",
+      "sha256": "6a5bc116f190d0c15affdc1a4016551e618908eae8a5c405388d10f0bd41523e"
+    },
+    {
+      "path": "internal/wallet/worm_execution_signer.go",
+      "sha256": "d41b0d9e83aaa04acefe98482731b7a1090406b39cdec1f4dc6975cbca9d0a6c"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "b466118e0a21ad74f212ea425d569adb3c60b04d402c81e2cf2b7494e305281f"
+    }
+  ],
+  "upstreamSources": [
+    {
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/types.ts",
+      "sha256": "10511d3dde89a275bc2e09b7cf80ab90a11b6a36a8bc11d3a350cbdb04be44bc"
+    },
+    {
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/authentication.ts",
+      "sha256": "51ebbaf882426c33f5a9510c8967d1e0f111e7c668f767f40e35ca3c920c6f01"
+    },
+    {
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/exchange.ts",
+      "sha256": "892923940c1caffc2226afe96170fb4e87d81d9bc2bcff6ac0e85031a29171c9"
+    },
+    {
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/workflow.ts",
+      "sha256": "ffc2884d4ac103e0d1a27631bcfe0ed30f78bdada898144882414d8bfc172635"
+    },
+    {
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/wallet.ts",
+      "sha256": "bcab855f644adec6c5f0b22c769b3228a01a20daf4cb79f5ec19e422c413d04d"
+    },
+    {
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/orders/typed-data.ts",
+      "sha256": "ea5acac9dcc148c4bb2873396ec0db7d8065ee41c720fbf13e59ed50c4422ed8"
+    },
+    {
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/orders/orders.ts",
+      "sha256": "ac63480e24317bd52d0ee74d9e7549db7a9ae6b2a8e2b8d528f3cf75a6f0bf31"
+    },
+    {
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/orders/context.ts",
+      "sha256": "055abd43eecd5a4acf426c28a1511bf7ec2104875df7427fc63ca8dc7b0e4510"
+    },
+    {
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/gasless.ts",
+      "sha256": "27e2aa4bfa41d8c2d76531bdda484046ecfecab66e8f0229010acf4aa6bd9aa0"
+    },
+    {
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/approvals.ts",
+      "sha256": "d104e43ce44316472235cd67f0dc4b208dca4dbc9c80a3405e98e57e6f9f95a1"
+    }
+  ],
+  "probe": {
+    "retention": "throwaway; excluded from product source",
+    "directory": "/home/yege/work/athena/.superpowers/polymarket-signing-spike-y0qAyH",
+    "scripts": [
+      {
+        "name": "probe.mts",
+        "sha256": "4e1e9c83821247e63046dd5a5805da363c9b4d2838fa012f91ea531e124ab82d"
+      },
+      {
+        "name": "probe.go",
+        "sha256": "645b78817af1c6326bcb3739b448b5510c5a090951d72650598c95b05804a99a"
+      }
+    ],
+    "goExitCode": 0,
+    "sdkExitCode": 0
+  },
+  "limitations": [
+    "Synthetic identities and order data only",
+    "No real credential issuance, account setup, token approval, order submission, settlement, or redemption",
+    "No ATHENA signing RPC, authentication boundary, permission enforcement, or idempotency implementation",
+    "No real smart-contract signature verification; recovered owner and byte equality verified offline",
+    "Nonce for batch supplied by local stub; global fetch throws in probe",
+    "Signatures alone do not establish supported or allowlisted real accounts",
+    "Mutations check binding of already signed fields, not enforcement by an implemented signer service"
+  ]
+}

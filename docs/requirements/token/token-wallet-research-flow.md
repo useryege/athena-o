@@ -173,7 +173,7 @@ L1–L5 每个钱包都整理以下两份清单；L5 停止向外扩展不影响
 
 Etherscan 的 [普通交易接口](https://docs.etherscan.io/api-reference/endpoint/txlist)和[交易回执接口](https://docs.etherscan.io/api-reference/endpoint/ethgettransactionreceipt)提供交易与日志事实，具体项目及行为由本项目解析。以 [Uniswap Universal Router](https://developers.uniswap.org/docs/protocols/universal-router/concepts/commands) 为例，同一个 `execute` 入口可以包含 V2、V3、V4 交易命令以及其他操作，因此不能仅凭顶层方法名确定交易版本或参与项目。
 
-仓库现有、独立于本阶段 ETH 范围的 [BSC V2 Swap 索引](../../design/blockchain-data/bsc-v2-swap-transactions.md)仅筛选包含固定 V2 `Swap` topic 的交易哈希，[ATHENA 聚合合约](../../design/token-intelligence/athena-contract.md)中的 V2 范围属于当前池与状态查询。两者均不作为钱包历史研究的唯一交易入口或协议覆盖上限。本节的历史交易解析不开展通用底池研究；只允许为 L1 资产估值读取固定可信路径在同一观察区块的必要池状态。
+[两个独立 BSC 索引器已确认删除、尚未实施](../blockchain-data/bsc-indexer-removal.md)，不再作为钱包历史研究的后续依赖；本阶段 ETH 范围及未来 BSC 接入方向不受此删除决定影响。[ATHENA 聚合合约](../../design/token-intelligence/athena-contract.md)中的 V2 范围属于当前池与状态查询，不作为钱包历史研究的唯一交易入口或协议覆盖上限。本节的历史交易解析不开展通用底池研究；只允许为 L1 资产估值读取固定可信路径在同一观察区块的必要池状态。
 
 ## 去重、复用与项目关联
 

@@ -1,5 +1,7 @@
 # Etherscan Gateway Servers
 
+> 2026-09-15 [服务清单核对](requirements/development-runtime/service-inventory-review.md)：本地与生产环境文件均配置以下五个 Gateway，本轮未验证远端实时运行状态。R21 已确认本地独立 Manager 继续使用该远端池，Gateway 保持核心常开，不纳入本地运行器的启动、停止、重启或清理范围；API 额度是否独立取决于密钥配置。后两台主机上的 BSC 索引器已确认删除，但同机 Gateway 与共享资源继续保留，索引器退役不包含停用整台主机。
+
 本文记录 Etherscan Gateway 当前使用的五台服务器。服务器顺序与 `.env`
 中的 `ETHERSCAN_GATEWAY_IPS` 配置一一对应：
 

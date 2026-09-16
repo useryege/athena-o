@@ -1,6 +1,10 @@
 # 系统通知运营
 
+> 目标范围更新（2026-09-16）：[Sports 删除、Worm 保留](../../requirements/development-runtime/sports-removal.md)已确认，尚未实施。只移除 Sports Live 专属告警生产、配置并按精确来源取消未发送消息；Worm Markets、Market Radar、Managed OO、Trader Sync 等来源和共享 Notification 保留。共享发送账本保留真实事实，不属于四个专属历史数据库的删除范围。
+
 > 设计状态：已实现
+
+> 关联目标已收缩为[板块访问开关](../../requirements/development-runtime/business-access-control.md)。Notification 保持核心能力，关闭板块用户访问不暂停后台业务告警或通知发送；原组级停止确认、许可暂停与收尾改造已暂停。核心通知历史及现有投递、资格、未知结果处理仍遵守下文规则；访问开关尚未实施。
 
 ## 范围
 

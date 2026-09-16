@@ -1,0 +1,230 @@
+{
+  "checkedAt": "2026-09-15T10:47:30.899310+00:00",
+  "kind": "documentation_source_and_existing_sample_review",
+  "athenaHead": "acbb9889bfbbb4080fb6504a31613ece89ccdc66",
+  "sdkCommit": "983a10a7579c95043d4099f60873ff7ea817e5a0",
+  "sdkSources": [
+    {
+      "path": "packages/client/src/actions/positions.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/positions.ts",
+      "sha256": "ef1891f28deecc80e80d0269fcd4d9f597fec88786135b7e0cdddef9e4842e24"
+    },
+    {
+      "path": "packages/client/src/abis.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/abis.ts",
+      "sha256": "990910f09cbcbc341bd1451b58def1d2fba48b0d8cbb94e840864e25e6cb45e8"
+    },
+    {
+      "path": "packages/client/src/protocol.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/protocol.ts",
+      "sha256": "d8b77509ce984969683c10f19a5d076f75f2175a2df7e4eb1d42cb197e6a9a96"
+    },
+    {
+      "path": "packages/client/src/actions/gasless.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/client/src/actions/gasless.ts",
+      "sha256": "27e2aa4bfa41d8c2d76531bdda484046ecfecab66e8f0229010acf4aa6bd9aa0"
+    },
+    {
+      "path": "packages/bindings/src/data/activity.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/bindings/src/data/activity.ts",
+      "sha256": "e7098ea0013d0d25f2b0ce8c9c5524c7fb98eea492d876457d6a25bdb810808d"
+    },
+    {
+      "path": "packages/bindings/src/data/portfolio.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/bindings/src/data/portfolio.ts",
+      "sha256": "37e4f85dc525c980c9a87478696742b73767e93ed5863bf999d7478e5441fe40"
+    },
+    {
+      "path": "packages/bindings/src/data/envelope.ts",
+      "url": "https://github.com/Polymarket/ts-sdk/blob/983a10a7579c95043d4099f60873ff7ea817e5a0/packages/bindings/src/data/envelope.ts",
+      "sha256": "ae2a53605c8e1842afefae417f6f8a114191d02f1ca1ae19fdef82c9974542fc"
+    }
+  ],
+  "downloadedDocuments": {
+    "fetched_at": "2026-09-15T10:36:39.760209+00:00",
+    "sources": [
+      {
+        "file": "manage-positions.md",
+        "url": "https://docs.polymarket.com/trading/positions/manage.md",
+        "status": 200,
+        "bytes": 26770,
+        "sha256": "5afcfb094e4199a4ab2157deaeabd038b2e688c353273e8ccc78005b2341964d"
+      },
+      {
+        "file": "positions.md",
+        "url": "https://docs.polymarket.com/api-reference/wallet/list-positions-for-a-user-or-market.md",
+        "status": 200,
+        "bytes": 25592,
+        "sha256": "0b10fd605be3aedff5dc5c3d3f2edf55e7cf98fcf2354e5b3659d5a58f633d82"
+      },
+      {
+        "file": "trades.md",
+        "url": "https://docs.polymarket.com/api-reference/feeds/list-trades.md",
+        "status": 200,
+        "bytes": 16824,
+        "sha256": "0402f0c3b3507ce671c3e622f2449d7411e36fb45aea1688aa130a829735d13f"
+      },
+      {
+        "file": "activity.md",
+        "url": "https://docs.polymarket.com/api-reference/feeds/list-account-activity.md",
+        "status": 200,
+        "bytes": 18429,
+        "sha256": "0728c220657b28d9239fc9a828efbb5a8a2d7061e07f5e9ae567b8a67b8c9b82"
+      },
+      {
+        "file": "resolution.md",
+        "url": "https://docs.polymarket.com/concepts/resolution.md",
+        "status": 200,
+        "bytes": 7514,
+        "sha256": "83f04e4bc2caadf4bee9c51abc9df2a5c94e8e95a3c367ef39e386e81c00fec3"
+      },
+      {
+        "file": "freshness.md",
+        "url": "https://docs.polymarket.com/api-reference/service/get-data-freshness.md",
+        "status": 200,
+        "bytes": 18008,
+        "sha256": "6ae3473cf7dcc1c8f6f95c0ab54fd55191d181b2026b78e4e9313bfebcdd81ec"
+      }
+    ]
+  },
+  "upstreamCtfSource": {
+    "url": "https://raw.githubusercontent.com/gnosis/conditional-tokens-contracts/master/contracts/ConditionalTokens.sol",
+    "sha256": "89f8ca9fd646044e22036c96fe04f7c5e78b7c4a628aa0bbf2abccacfcc84a08",
+    "bytes": 15762,
+    "scope": "upstream CTF payout arithmetic only; not actual deployed adapter verification"
+  },
+  "existingSamples": [
+    {
+      "path": "docs/requirements/polymarket-copy-trading/evidence/timetowander-public-account-2026-09-14/responses/positions-closed.json.gz",
+      "sha256": "b9342f87affe4178d6c0b3c4315b13d17e93ad88a9a8c712bea4115df1b33e0a",
+      "row_count": 769,
+      "fields": [
+        "archived",
+        "avg_price",
+        "condition_id",
+        "current_price",
+        "current_size",
+        "current_value",
+        "end_date",
+        "entry_cost_usdc",
+        "entry_fees_usdc",
+        "event_id",
+        "event_slug",
+        "icon",
+        "last_event_at",
+        "mergeable",
+        "name",
+        "negative_risk",
+        "opposite_outcome",
+        "opposite_token_id",
+        "outcome",
+        "outcome_index",
+        "percent_pnl",
+        "percent_realized_pnl",
+        "profile_image",
+        "proxy_wallet",
+        "realized_pnl",
+        "redeemable",
+        "slug",
+        "status",
+        "title",
+        "token_id",
+        "total_cost_usdc",
+        "total_pnl",
+        "total_size",
+        "unrealized_pnl",
+        "verified"
+      ],
+      "positive_current_size_rows": 265
+    },
+    {
+      "path": "docs/requirements/polymarket-copy-trading/evidence/timetowander-public-account-2026-09-14/responses/trades-all-roles-page1.json.gz",
+      "sha256": "f908f02e1de8aa8ee7556fa65d941fe7be61eaa846c40148c033803dcf899a70",
+      "row_count": 1000,
+      "fields": [
+        "bio",
+        "condition_id",
+        "event_slug",
+        "icon",
+        "name",
+        "outcome",
+        "outcome_index",
+        "price",
+        "profile_image",
+        "profile_image_optimized",
+        "proxy_wallet",
+        "pseudonym",
+        "side",
+        "size",
+        "slug",
+        "timestamp",
+        "title",
+        "token_id",
+        "transaction_hash"
+      ],
+      "distinct_field_sets": 1,
+      "dedicated_row_id_present": false
+    },
+    {
+      "path": "docs/requirements/polymarket-copy-trading/evidence/timetowander-public-account-2026-09-14/responses/activity-redeem-sample.json.gz",
+      "sha256": "0e620be6aa9e2a5f7e9c4818064ed9c4700c09d42eeb8f88f7847a090eb4548e",
+      "row_count": 10,
+      "fields": [
+        "bio",
+        "condition_id",
+        "event_slug",
+        "icon",
+        "name",
+        "outcome",
+        "outcome_index",
+        "price",
+        "profile_image",
+        "profile_image_optimized",
+        "proxy_wallet",
+        "pseudonym",
+        "side",
+        "size",
+        "slug",
+        "timestamp",
+        "title",
+        "token_id",
+        "transaction_hash",
+        "type",
+        "usdc_size"
+      ]
+    }
+  ],
+  "localSources": [
+    {
+      "path": "util/polymarket/data.go",
+      "sha256": "e1995e831dcc7abaf4074f563eff151aa69d2fe901697369282cd8bbbde55fcd"
+    }
+  ],
+  "scope": {
+    "private_key_read": false,
+    "private_api_called": false,
+    "new_public_wallet_scan_performed": false,
+    "contract_simulation_performed": false,
+    "real_approval_or_redemption_sent": false,
+    "live_deployment_verified": false,
+    "implementation_changed": false,
+    "integer_examples": "calculation-examples.json"
+  },
+  "findings": [
+    "CTF helper encodes both binary index sets and no amount; actual affected balances must be disclosed.",
+    "Protocol V2 position-specific router redemption freezes outcome and amount; generic market workflow can produce multiple calls.",
+    "EOA multi-call workflow sends separate transactions; do not describe it as atomic.",
+    "CTF independent index-set payout uses floor before summing, and 50/50 resolution cannot use a winner-only formula.",
+    "OPEN include_archived does not include inactive; CLOSED must omit include_archived=true.",
+    "Time-bounded positions omit rows without last_event_at, requiring unbounded periodic inventories.",
+    "Existing CLOSED sample contains 265 positive-size rows; existing trade sample has no dedicated per-fill identity.",
+    "Data API freshness reports overall lag and its snapshot age, not per-wallet completion."
+  ],
+  "unverified": [
+    "Actual adapter/router deployments and allowed operators",
+    "Account-specific redemption, fees, internal execution and payout receipt",
+    "Historical contract coverage, archival RPC completeness and indexed asset gaps",
+    "Canonical per-fill identity across sources, reorg and late correction recovery",
+    "Stable local pagination, access/session races and frontend acceptance"
+  ]
+}

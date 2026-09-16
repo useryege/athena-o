@@ -1,0 +1,269 @@
+{
+  "goEthereumVersion": "v1.17.2",
+  "mutationChecks": 146,
+  "payloads": 26,
+  "results": [
+    {
+      "digest": "0x8784438e0e2a5035794918f18c9b139f8b252a32e6c3a61561d15505ec37731a",
+      "digestEqual": true,
+      "id": "clob-auth",
+      "mutationChecks": 1,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0xfd6e5ef58dcf1d796377c202687ce5e3ebc1e1694a3c3b20bb243ce31cfe84a7",
+      "digestEqual": true,
+      "id": "standard-v2-type0-BUY",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0x9ec312f363a5c91c368330773762bfa4b3a614d5bfa91e826283edd989b54fc2",
+      "digestEqual": true,
+      "id": "standard-v2-type0-SELL",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0x30e45730569da6267f476897936db9c2e238521fa648ad106bd006a3f01a5ff1",
+      "digestEqual": true,
+      "id": "standard-v2-type1-BUY",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0x3d9b7585b58067470e572ab94c0c9506cc34248a717811d049d2280b13e00677",
+      "digestEqual": true,
+      "id": "standard-v2-type1-SELL",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0xf313de1476ea57d8e6926300169e62e4cd571b6dfadd8a55a7260d320eb71747",
+      "digestEqual": true,
+      "id": "standard-v2-type2-BUY",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0x29fa4210fd7c0149483c04439432efaac37b51e8d720825c7d428d3ace64b712",
+      "digestEqual": true,
+      "id": "standard-v2-type2-SELL",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0x12f2c616f68b7b23585b6b12b39f2a1ed3ed7745c572e72ed39cdb15de03a04e",
+      "digestEqual": true,
+      "id": "standard-v2-type3-BUY",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 317,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0xa0f0ad46271472d3d59d5b422942a89f3ba8ee6a3a14f5b30bd6e948a0ab00ce",
+      "digestEqual": true,
+      "id": "standard-v2-type3-SELL",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 317,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0xca3555a9cbd880391aeff04835a066842d0f1def867284870bb7bba81b55041a",
+      "digestEqual": true,
+      "id": "neg-risk-v2-type0-BUY",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0xc6f5e3223aa78ce44a2da194620cd103973368d1f6bc0c25920d4a11d008de30",
+      "digestEqual": true,
+      "id": "neg-risk-v2-type0-SELL",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0xdb784674befea6925103dd3a8a394c9f1ea0ff67dbabe2d1e4842da4b0b7a7b5",
+      "digestEqual": true,
+      "id": "neg-risk-v2-type1-BUY",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0xdf07413b6b21773a24a83db4cc0bd2f2ee64181a547033890a969e13de96d835",
+      "digestEqual": true,
+      "id": "neg-risk-v2-type1-SELL",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0x002fbc8ce73ee8a6c8db36cd0209fa8be4113cd624ca17be2b62b027c6bfb4df",
+      "digestEqual": true,
+      "id": "neg-risk-v2-type2-BUY",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0xe582600f69133534ce62d743a42996d5cf93309cddf4d45a4fda1ae2ca6910b0",
+      "digestEqual": true,
+      "id": "neg-risk-v2-type2-SELL",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0xbeac7eb3dfb3be185ca617ce04fb00fca31d9332b1ce4a1ac90e1eadb205cf64",
+      "digestEqual": true,
+      "id": "neg-risk-v2-type3-BUY",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 317,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0x47fedbb764adba72c374ba7bf93a587f31f2dfcef5f47785e6bc2109054d90b1",
+      "digestEqual": true,
+      "id": "neg-risk-v2-type3-SELL",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 317,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0xa3cfc4c8949be7161c9fc43b0515125ca535836462c9686eab775f496fe1560d",
+      "digestEqual": true,
+      "id": "exchange-v3-type0-BUY",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0x0f77eb58fa3c56580a4a551fecbc3f251ddb3fa8ea0cff6e9ff44b3d9e76d3ef",
+      "digestEqual": true,
+      "id": "exchange-v3-type0-SELL",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0xf881b2391828436cdcdf0cde14dfc1ff036ebf99d835fd9287eed324d47bc415",
+      "digestEqual": true,
+      "id": "exchange-v3-type1-BUY",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0x8fc5cdee030f4acd52c60c41e5655e196ef1e658af023004bf0f64a52c686d85",
+      "digestEqual": true,
+      "id": "exchange-v3-type1-SELL",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0x14120a3a083493d9841b352c00e9ccebad187f97b71b89c384fe1b6c8bc48194",
+      "digestEqual": true,
+      "id": "exchange-v3-type2-BUY",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0xdd533d0b6970f38a92abbe627d7f0b4982eeb523d8e319d911d01d623b456376",
+      "digestEqual": true,
+      "id": "exchange-v3-type2-SELL",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0x340ca4f4f75f9fb45d8b3de212a824aa2bb303d0ae4a19deabf50aa630fbf57d",
+      "digestEqual": true,
+      "id": "exchange-v3-type3-BUY",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 317,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0x3ddc9cefd0f669937712ad9b5e0d81ee0dd6ab2b3ac7f2cb39ddfd9672dd2ad4",
+      "digestEqual": true,
+      "id": "exchange-v3-type3-SELL",
+      "mutationChecks": 6,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 317,
+      "signatureEqual": true,
+      "wireEqual": true
+    },
+    {
+      "digest": "0xfec346b3e70e4c47caaa98054c92b0e089e8e476a51dfc9b52e4b5cfea41993a",
+      "digestEqual": true,
+      "id": "deposit-approval-batch",
+      "mutationChecks": 1,
+      "recoveredSignerEqual": true,
+      "signatureBytes": 65,
+      "signatureEqual": true,
+      "wireEqual": true
+    }
+  ],
+  "scope": "Offline synthetic signatures only; no live account or remote execution verified",
+  "status": "pass"
+}

@@ -2,6 +2,8 @@
 
 > 设计状态：已实现
 
+> 关联目标已调整为[板块访问开关](../../requirements/development-runtime/business-access-control.md)：关闭用户访问不停止后台对 Etherscan 的调用，Manager／Gateway 与管理员检查继续运行。本地独立 Manager 使用五个远端 Gateway 的已确认环境边界保留，本地运行器不操作远端实例；API 额度由密钥配置决定。原严格运行停止方案已暂停，新访问开关尚未实施；下文仍描述现有调度能力。
+
 ## Scope
 
 The Etherscan Manager is ATHENA's internal gRPC entry point for Etherscan-backed

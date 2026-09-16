@@ -1,0 +1,594 @@
+{
+  "mode": "static-design-preview",
+  "target": "file:///home/yege/work/athena/docs/requirements/web-ui/previews/trader-sync-manual-trading-v1/index.html",
+  "synthetic": true,
+  "startedAt": "2026-09-15T11:12:36.650Z",
+  "screenshots": [
+    "screenshots/wallet-desktop.png",
+    "screenshots/wallet-mobile.png",
+    "screenshots/buy-desktop.png",
+    "screenshots/buy-mobile.png",
+    "screenshots/sell-desktop.png",
+    "screenshots/sell-mobile.png",
+    "screenshots/redeem-desktop.png",
+    "screenshots/redeem-mobile.png",
+    "screenshots/positions-desktop.png",
+    "screenshots/positions-mobile.png",
+    "screenshots/history-desktop.png",
+    "screenshots/history-mobile.png",
+    "screenshots/trades-desktop.png",
+    "screenshots/trades-mobile.png",
+    "screenshots/record-desktop.png",
+    "screenshots/record-mobile.png",
+    "screenshots/wallet-enable-unknown-mobile.png",
+    "screenshots/buy-expired-mobile.png",
+    "screenshots/sell-first-mobile.png",
+    "screenshots/redeem-preparation-mobile.png",
+    "screenshots/positions-partial-error-mobile.png",
+    "screenshots/history-page-expired-mobile.png",
+    "screenshots/record-unknown-mobile.png"
+  ],
+  "layout": [
+    {
+      "page": "wallet",
+      "variant": "desktop",
+      "viewport": 1440,
+      "width": 1440,
+      "bodyFont": "16px",
+      "headingFont": "28px",
+      "overflow": []
+    },
+    {
+      "page": "wallet",
+      "variant": "mobile",
+      "viewport": 390,
+      "width": 390,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "buy",
+      "variant": "desktop",
+      "viewport": 1440,
+      "width": 1440,
+      "bodyFont": "16px",
+      "headingFont": "28px",
+      "overflow": []
+    },
+    {
+      "page": "buy",
+      "variant": "mobile",
+      "viewport": 390,
+      "width": 390,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "sell",
+      "variant": "desktop",
+      "viewport": 1440,
+      "width": 1440,
+      "bodyFont": "16px",
+      "headingFont": "28px",
+      "overflow": []
+    },
+    {
+      "page": "sell",
+      "variant": "mobile",
+      "viewport": 390,
+      "width": 390,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "redeem",
+      "variant": "desktop",
+      "viewport": 1440,
+      "width": 1440,
+      "bodyFont": "16px",
+      "headingFont": "28px",
+      "overflow": []
+    },
+    {
+      "page": "redeem",
+      "variant": "mobile",
+      "viewport": 390,
+      "width": 390,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "positions",
+      "variant": "desktop",
+      "viewport": 1440,
+      "width": 1440,
+      "bodyFont": "16px",
+      "headingFont": "28px",
+      "overflow": []
+    },
+    {
+      "page": "positions",
+      "variant": "mobile",
+      "viewport": 390,
+      "width": 390,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "history",
+      "variant": "desktop",
+      "viewport": 1440,
+      "width": 1440,
+      "bodyFont": "16px",
+      "headingFont": "28px",
+      "overflow": []
+    },
+    {
+      "page": "history",
+      "variant": "mobile",
+      "viewport": 390,
+      "width": 390,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "trades",
+      "variant": "desktop",
+      "viewport": 1440,
+      "width": 1440,
+      "bodyFont": "16px",
+      "headingFont": "28px",
+      "overflow": []
+    },
+    {
+      "page": "trades",
+      "variant": "mobile",
+      "viewport": 390,
+      "width": 390,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "record",
+      "variant": "desktop",
+      "viewport": 1440,
+      "width": 1440,
+      "bodyFont": "16px",
+      "headingFont": "28px",
+      "overflow": []
+    },
+    {
+      "page": "record",
+      "variant": "mobile",
+      "viewport": 390,
+      "width": 390,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "wallet",
+      "variant": "enable-unknown-mobile",
+      "viewport": 390,
+      "width": 390,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "buy",
+      "variant": "expired-mobile",
+      "viewport": 390,
+      "width": 390,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "sell",
+      "variant": "first-mobile",
+      "viewport": 390,
+      "width": 390,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "redeem",
+      "variant": "preparation-mobile",
+      "viewport": 390,
+      "width": 390,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "positions",
+      "variant": "partial-error-mobile",
+      "viewport": 390,
+      "width": 390,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "history",
+      "variant": "page-expired-mobile",
+      "viewport": 390,
+      "width": 390,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "record",
+      "variant": "unknown-mobile",
+      "viewport": 390,
+      "width": 390,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "wallet",
+      "variant": "320px",
+      "viewport": 320,
+      "width": 320,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "wallet",
+      "variant": "320px-text-200",
+      "viewport": 320,
+      "width": 320,
+      "bodyFont": "32px",
+      "headingFont": "48px",
+      "overflow": []
+    },
+    {
+      "page": "buy",
+      "variant": "320px",
+      "viewport": 320,
+      "width": 320,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "buy",
+      "variant": "320px-text-200",
+      "viewport": 320,
+      "width": 320,
+      "bodyFont": "32px",
+      "headingFont": "48px",
+      "overflow": []
+    },
+    {
+      "page": "sell",
+      "variant": "320px",
+      "viewport": 320,
+      "width": 320,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "sell",
+      "variant": "320px-text-200",
+      "viewport": 320,
+      "width": 320,
+      "bodyFont": "32px",
+      "headingFont": "48px",
+      "overflow": []
+    },
+    {
+      "page": "redeem",
+      "variant": "320px",
+      "viewport": 320,
+      "width": 320,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "redeem",
+      "variant": "320px-text-200",
+      "viewport": 320,
+      "width": 370,
+      "bodyFont": "32px",
+      "headingFont": "48px",
+      "overflow": []
+    },
+    {
+      "page": "positions",
+      "variant": "320px",
+      "viewport": 320,
+      "width": 320,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "positions",
+      "variant": "320px-text-200",
+      "viewport": 320,
+      "width": 473,
+      "bodyFont": "32px",
+      "headingFont": "48px",
+      "overflow": [
+        {
+          "tag": "SPAN",
+          "text": "3 positions in this view",
+          "right": 351.1875
+        },
+        {
+          "tag": "TD",
+          "text": "Will the September policy rate decision be a cut?YesPosition details60.007 available · 15.000 reserv",
+          "right": 473
+        },
+        {
+          "tag": "H3",
+          "text": "Will the September policy rate decision be a cut?",
+          "right": 473
+        },
+        {
+          "tag": "DETAILS",
+          "text": "Position details60.007 available · 15.000 reserved. Asset identity and source evidence remain availa",
+          "right": 473
+        },
+        {
+          "tag": "SUMMARY",
+          "text": "Position details",
+          "right": 473
+        },
+        {
+          "tag": "P",
+          "text": "60.007 available · 15.000 reserved. Asset identity and source evidence remain available here.",
+          "right": 473
+        },
+        {
+          "tag": "SPAN",
+          "text": "75.007",
+          "right": 374
+        },
+        {
+          "tag": "SPAN",
+          "text": "60.007 available",
+          "right": 374
+        }
+      ]
+    },
+    {
+      "page": "history",
+      "variant": "320px",
+      "viewport": 320,
+      "width": 320,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "history",
+      "variant": "320px-text-200",
+      "viewport": 320,
+      "width": 320,
+      "bodyFont": "32px",
+      "headingFont": "48px",
+      "overflow": []
+    },
+    {
+      "page": "trades",
+      "variant": "320px",
+      "viewport": 320,
+      "width": 320,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "trades",
+      "variant": "320px-text-200",
+      "viewport": 320,
+      "width": 320,
+      "bodyFont": "32px",
+      "headingFont": "48px",
+      "overflow": []
+    },
+    {
+      "page": "record",
+      "variant": "320px",
+      "viewport": 320,
+      "width": 320,
+      "bodyFont": "16px",
+      "headingFont": "24px",
+      "overflow": []
+    },
+    {
+      "page": "record",
+      "variant": "320px-text-200",
+      "viewport": 320,
+      "width": 320,
+      "bodyFont": "32px",
+      "headingFont": "48px",
+      "overflow": []
+    }
+  ],
+  "a11y": [
+    {
+      "page": "wallet",
+      "variant": "desktop",
+      "violations": []
+    },
+    {
+      "page": "wallet",
+      "variant": "mobile",
+      "violations": []
+    },
+    {
+      "page": "buy",
+      "variant": "desktop",
+      "violations": []
+    },
+    {
+      "page": "buy",
+      "variant": "mobile",
+      "violations": []
+    },
+    {
+      "page": "sell",
+      "variant": "desktop",
+      "violations": []
+    },
+    {
+      "page": "sell",
+      "variant": "mobile",
+      "violations": []
+    },
+    {
+      "page": "redeem",
+      "variant": "desktop",
+      "violations": []
+    },
+    {
+      "page": "redeem",
+      "variant": "mobile",
+      "violations": []
+    },
+    {
+      "page": "positions",
+      "variant": "desktop",
+      "violations": []
+    },
+    {
+      "page": "positions",
+      "variant": "mobile",
+      "violations": []
+    },
+    {
+      "page": "history",
+      "variant": "desktop",
+      "violations": []
+    },
+    {
+      "page": "history",
+      "variant": "mobile",
+      "violations": []
+    },
+    {
+      "page": "trades",
+      "variant": "desktop",
+      "violations": []
+    },
+    {
+      "page": "trades",
+      "variant": "mobile",
+      "violations": []
+    },
+    {
+      "page": "record",
+      "variant": "desktop",
+      "violations": []
+    },
+    {
+      "page": "record",
+      "variant": "mobile",
+      "violations": []
+    }
+  ],
+  "interactions": [
+    {
+      "name": "First BUY amount is empty",
+      "passed": true
+    },
+    {
+      "name": "First price deviation is empty",
+      "passed": true
+    },
+    {
+      "name": "First BUY cannot submit without input",
+      "passed": true
+    },
+    {
+      "name": "Overprecision principal is rejected",
+      "passed": true
+    },
+    {
+      "name": "Valid inputs produce a reviewable quote",
+      "passed": true
+    },
+    {
+      "name": "Same-page confirmation opens the original result without a modal",
+      "passed": true
+    },
+    {
+      "name": "First SELL has no preselected percentage",
+      "passed": true
+    },
+    {
+      "name": "100% SELL keeps reserved shares separate and displays dust",
+      "passed": true
+    },
+    {
+      "name": "Submitted SELL result retains confirmed share quantity",
+      "passed": true
+    },
+    {
+      "name": "Unknown result has no duplicate submit action",
+      "passed": true
+    },
+    {
+      "name": "Full redemption displays the zero-payout outcome",
+      "passed": true
+    },
+    {
+      "name": "Redemption has no slippage input",
+      "passed": true
+    },
+    {
+      "name": "Required preparation blocks redemption confirmation",
+      "passed": true
+    },
+    {
+      "name": "Ongoing approval requires explicit acknowledgment",
+      "passed": true
+    },
+    {
+      "name": "Enablement has its own progress context",
+      "passed": true
+    },
+    {
+      "name": "Unbound wallet positions remain filterable",
+      "passed": true
+    },
+    {
+      "name": "Unbound position retains its original account",
+      "passed": true
+    },
+    {
+      "name": "Expired quote cannot submit",
+      "passed": true
+    },
+    {
+      "name": "Replaced login removes the trade form",
+      "passed": true
+    },
+    {
+      "name": "Keyboard can reach the skip link",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "networkRequests": [],
+  "browser": "148.0.7778.96",
+  "finishedAt": "2026-09-15T11:12:43.116Z",
+  "browserClosed": true
+}
