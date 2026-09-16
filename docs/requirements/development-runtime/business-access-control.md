@@ -38,7 +38,7 @@
 
 ## 4. 范围与默认值
 
-本期设置六个访问开关：Trader Sync、Solana、Market Radar、Managed OO、Profit Sharing、Worm。**Worm Markets 与 Worm Trading 共用一个 `worm` 开关**，两个独立服务、原有两类账户权限和业务数据继续保留；不拆成两个访问设置。Token 保留为第七个产品板块，详细接入仍待重构完成，暂不提供开关，不根据旧九进程设计新业务。删除范围只包含两个 BSC 索引器与 Sports（含 World Cup Corners）。
+本期设置六个访问开关：Trader Sync、Solana、Market Radar、Managed OO、Profit Sharing、Worm Trading。**`worm` 只对应 Worm Trading**，保留其账户权限和业务数据；Worm Markets 及其专属数据按[独立删除需求](worm-markets-removal.md)退役。Token 保留为第七个产品板块，详细接入仍待重构完成，暂不提供开关，不根据旧九进程设计新业务。两个 BSC 索引器与 Sports（含 World Cup Corners）的既有删除决定保持。
 
 本地与生产保存各自的访问配置；原本地独立进程、存储及 Manager 使用五个远端 Gateway 的环境边界继续沿用。`make run` 的服务编排与访问开关分开处理，程序启动后可以正常执行自身后台业务。本次文档调整没有启动任何环境或恢复当前暂停的采集。
 
@@ -51,21 +51,21 @@
 
 ### 4.1 Worm 交易处理边界
 
-**确认记录（2026-09-16）**：用户表示“统一使用一个开关。然后交易处理方式按照你的建议”，采用以下规则：
+**确认记录（2026-09-16）**：用户表示“统一使用一个开关。然后交易处理方式按照你的建议”，采用以下规则；最新 Markets 删除决定将其适用对象收敛为 Trading，原 Markets 采集与告警随独立退役删除：
 
-- 关闭 Worm 后，行情、钱包选择与连接、组合、预览、交易、Cash Out、历史查询及其专属二次验证等新的用户请求统一拦截；会员与管理员适用同一规则。
+- 关闭 Worm Trading 后，按需市场查询、钱包选择与连接、组合、预览、交易、Cash Out、历史查询及其专属二次验证等新的用户请求统一拦截；会员与管理员适用同一规则。
 - 已通过准入的请求和已受理的后台工作按原业务规则处理，不自动取消、平仓或撤销授权；后台采集、恢复和通知继续运行，原有权限、授权期限和风控检查不变。
 - 多步骤交易 Run 按每次浏览器请求判断。例如第二笔已受理则继续处理，第三笔尚未获准入则不发送；不能把 Run 已创建理解为后续所有用户请求都已获准入。
 - 页面关闭访问时停止浏览器的心跳、轮询和下一步交易驱动。重新开放后读取实际结果，由用户按现有授权规则明确继续；不自动补发、恢复驱动或重放交易。
 - 已授权并由后台自动推进的 Cash Out 批次属于已受理工作，仍可按原规则处理后续项目；尚需用户授权或继续的阶段必须等待重新开放和明确操作。访问开关不新增后台暂停协议。
 
-接口与页面的具体覆盖见[访问接入设计](../../superpowers/specs/2026-09-15-business-access-control-design.md#24-worm-原始-http-与二次验证入口)，两个进程的配置与就绪见[全栈启动设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md#33-worm-两服务接入)。
+接口与页面的具体覆盖见[访问接入设计](../../superpowers/specs/2026-09-15-business-access-control-design.md#24-worm-原始-http-与二次验证入口)，Trading 的配置与就绪见[全栈启动设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md#33-worm-trading-接入)。
 
 ## 5. 本期移出的内容
 
 不新增 Runtime Control 服务；不设计成员注册、心跳租约、运行代次、整组启动就绪、任务取消与收尾、通知暂停、跨组依赖启停、故障自动停组或停止生效确认。D01–D03 在原运行控制范围内的确认事实保留，但不再作为本期实施依据。
 
-后台业务自身已有的故障处理、请求超时和任务恢复仍然成立；移出的是访问开关新增的运行协调职责。BSC／Sports 删除、Worm 保留、核心分类、环境归属及 Token 延期决定继续有效。
+后台业务自身已有的故障处理、请求超时和任务恢复仍然成立；移出的是访问开关新增的运行协调职责。BSC／Sports 删除、Worm Markets 删除与 Trading 保留、核心分类、环境归属及 Token 延期决定继续有效。
 
 ## 6. 核对依据与验收重点
 
@@ -73,6 +73,6 @@
 
 未来验收只需围绕：关闭时普通调用和直接 API 调用均被拒绝；核心及开关管理可用；已接收工作和后台任务继续运行；重新开放后按原权限访问；页面隐藏与恢复正确；本地／生产配置隔离；首次默认关闭，并分别验证开放／关闭设置在重启后保持原值。
 
-当前只有文档和源码入口核对，没有实现、构建或运行验收。[接口、存储与页面接入设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)已于 2026-09-16 获采用并补齐 Worm：一张配置表、三个接口、六个可控板块，以及 Service Status 的访问页签；Token 保留标识并显示接入延期。六板块共覆盖 42 个现有公共 RPC，另包含 Worm 原始 HTTP 与二次验证入口。本次确认不恢复旧运行控制的复杂协议。
+当前只有文档和源码入口核对，没有实现、构建或运行验收。[接口、存储与页面接入设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)已于 2026-09-16 获采用并补齐 Worm：一张配置表、三个接口、六个可控板块，以及 Service Status 的访问页签；Token 保留标识并显示接入延期。移除 Markets 后六板块目标覆盖 39 个公共 RPC，另包含 Worm 原始 HTTP 与二次验证入口。本次确认不恢复旧运行控制的复杂协议。
 
-启动配套已形成[make run 全栈设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md)，已于 2026-09-16 获采用并补齐 Worm 两服务，目标共十二个应用；其进程启动与停止不改写访问配置。[删除与清理配套设计](../../superpowers/specs/2026-09-16-module-removal-cleanup-design.md)也已完成自查及补充。这三份设计均尚未实施，Token 专属接入继续延期。
+启动配套已形成[make run 全栈设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md)，原十二应用版本已于 2026-09-16 获采用；最新 Markets 删除决定将目标调整为十一个应用，仅保留 Trading；其进程启动与停止不改写访问配置。[删除与清理配套设计](../../superpowers/specs/2026-09-16-module-removal-cleanup-design.md)也已完成自查及补充。这三份设计均尚未实施，Token 专属接入继续延期。

@@ -2,11 +2,11 @@
 
 > 核对日期：2026-09-15，工作区 `rf4`。目标成员依据已确认需求与目标设计；现状依据源码、仓库部署配置及本地环境文件，不代表已检查现有服务器的实时健康。
 >
-> 当前范围：改为[板块访问开关简化方案](business-access-control.md)，原整组运行控制暂停。本文件继续提供进程与环境的静态核对，保留核心分类、六个可控板块与延期接入的 Token、BSC／Sports 删除决定及本地独立进程／存储、使用五个远端 Gateway 的安排；业务默认停止和成员启停要求仅属原方案历史。
+> 当前范围：改为[板块访问开关简化方案](business-access-control.md)，原整组运行控制暂停。本文件继续提供进程与环境的静态核对，保留核心分类、六个可控板块与延期接入的 Token、BSC／Sports 删除及 Worm Markets 退役决定及本地独立进程／存储、使用五个远端 Gateway 的安排；业务默认停止和成员启停要求仅属原方案历史。
 >
 > 实现状态：访问开关与清单扩展尚未实施，原整组运行控制未实现且已暂停。本轮没有启动服务、连接远端服务器、恢复采集或修改运行配置。
 
-> [本期 make run 配套提案](../../superpowers/specs/2026-09-15-local-full-stack-design.md)已于 2026-09-16 获采用，尚未实施：原五核心／五业务版本已采用；2026-09-16 保留 Worm 后目标覆盖五核心／七业务，共 12 个本地应用，Worm 独立入口、配置、就绪和停止设计已补齐，两服务共用一个访问开关；Token 旧九角色暂不加入，远端 Gateway 单列。下文 16／15 个业务角色仍仅为现状统计。[删除与清理配套设计](../../superpowers/specs/2026-09-16-module-removal-cleanup-design.md)另列旧实例、共享资源和专属历史数据，尚未实施。
+> [本期 make run 配套提案](../../superpowers/specs/2026-09-15-local-full-stack-design.md)已采用，尚未实施；最新 [Markets 删除、Trading 保留决定](worm-markets-removal.md)将目标由原十二应用收敛为五核心／六业务，共 11 个本地应用。Trading 承接按需市场查询，`worm` 开关只对应 Trading。下表 16／15 是包含待删除 Markets 的当前源码／部署统计，不能当作保留目标数量。BSC／Sports 清理与本次 Markets 退役分开记录。
 
 ## Token 设计依据与延期范围
 
@@ -33,7 +33,7 @@
 
 原[统一运行控制架构](../../superpowers/specs/2026-09-15-business-group-control-design.md)建议的 `athena-runtime-control` 尚未实现且已暂停；新的用户访问开关不新增该进程。
 
-当前保留能力共对应 **16 个业务进程角色**。生产 Compose 包含其中 15 个，缺少 Solana；数字包含待重构的 Token 旧九角色，不是目标部署数量，也不含核心进程、第三方服务、部署工具或副本数。本期访问开关不控制这些后台进程或任务的运行。
+下表当前代码共对应 **16 个业务进程角色**，其中 Markets 待删除。生产 Compose 包含其中 15 个，缺少 Solana且包含旧 Markets；数字包含待重构的 Token 旧九角色，不是目标部署数量，也不含核心进程、第三方服务、部署工具或副本数。本期访问开关不控制这些后台进程或任务的运行。
 
 ### Token 旧实现的九个角色：差距与清理依据
 
@@ -51,7 +51,7 @@
 
 旧六类 Collector 复用同一个命令入口，以不同参数运行。目标研究运行时已明确不沿用固定六类任务、整项目终态屏障或单个不可变画像，`simulation_result` 不进入新运行模型；这些旧入口需在重构中按目标替换或清理。Etherscan Manager／Gateway 属于共享核心服务。
 
-服务健康仍需按实际能力判断，不能只检查进程存在；健康信息与本期访问开关独立。本期六个可控板块包含 Worm，Token 接入延期。Worm Trading 实际调用 Worm Markets 与核心 Wallet；已纳入运行配套的配置、就绪和停止设计。Worm 两服务共用一个访问设置，服务故障不自动改写该设置。
+服务健康仍需按实际能力判断，不能只检查进程存在；健康信息与本期访问开关独立。本期六个可控板块包含 Worm，Token 接入延期。当前 Worm Trading 实际调用 Markets 与核心 Wallet。目标移除 Markets 依赖，由 Trading 承接目录并增加显式账户权限只读依赖；`worm` 只控制 Trading 用户访问，服务故障不自动改写该设置。具体配置与失败边界见[新设计](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)。
 
 ## 核心与基础设施范围
 

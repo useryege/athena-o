@@ -1,8 +1,8 @@
 # Worm Markets
 
-> 范围修订（2026-09-16）：用户明确保留 Worm Markets 和 Worm Trading，撤回此前 Worm 删除决定。本文业务及其页面、权限、配置、签名、凭据和数据继续保留；详见[Sports 删除与 Worm 保留决定](../../requirements/development-runtime/sports-removal.md)。现有实现与原有设计继续按本文维护。
+> 范围修订（2026-09-16 最新决定）：删除 Worm Markets 及其专属数据，保留 Worm Trading；用户已采用由 Trading 统一承接按需市场查询的方案 A。此前双服务保留决定被覆盖。见[删除需求](../../requirements/development-runtime/worm-markets-removal.md)及[目标设计](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)。新技术细节待整体审阅，尚未实施；下文保留当前源码的实际行为，Markets 依赖不得当作目标架构。
 
-> 访问接入目标（2026-09-16 已确认，尚未实施）：Worm Markets／Trading 共用一个 `worm` 访问开关，原有两类账户权限分别保留。新的用户请求受控，已受理后台工作继续按原规则处理；重新开放不自动补发交易。具体入口、验证回调与页面驱动边界见[访问接入设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)，独立进程、配置与就绪见[运行配套](../../superpowers/specs/2026-09-15-local-full-stack-design.md#33-worm-两服务接入)。下文仍描述现有业务实现。
+> 访问接入目标：`worm` 开关只对应 Trading，`worm_markets` 权限和公共接口随退役删除；Trading 现有权限、授权与已受理工作处理规则保留。访问开关及本地全栈扩展仍未实施，见[访问设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)与[运行设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md#33-worm-trading-接入)。
 
 ## Scope
 

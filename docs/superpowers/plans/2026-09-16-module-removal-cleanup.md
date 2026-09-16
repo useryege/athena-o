@@ -1,5 +1,7 @@
 # 两个 BSC 索引器与 Sports 删除清理实施计划
 
+> 最新边界（2026-09-16）：用户另行确认删除 Markets 及其专属数据，采用 [Trading 统一承接目录](../specs/2026-09-16-worm-trading-market-query-design.md)。本文件仍只执行 BSC／Sports 原删除范围，不自行扩大删库或通知来源；下文 Worm 双服务保留基线仅适用于内聚重构前。执行时按目标分支实际状态调整保留回归，不能为通过旧检查重建 Markets。两个任务的账户迁移、约束和共享生成产物必须协调。
+
 > **供执行代理：**使用 [executing-plans](../../../.agents/skills/executing-plans/SKILL.md) 逐项执行并复核；需要子代理时按用户选择使用 [subagent-driven-development](../../../.agents/skills/subagent-driven-development/SKILL.md)。用下方复选框记录实际结果。
 
 **目标：**删除两个 BSC 索引器、Sports Live／History、World Cup Corners 的产品能力及专属运行资源，直接删除其历史数据，同时保留 Worm、核心服务和其他业务。
@@ -16,7 +18,7 @@
 
 ## 全局约束
 
-- 删除对象固定为四个独立程序和一个 API 内嵌业务；本期不实施访问开关，也不将十二应用全栈作为清理交付前提。
+- 删除对象固定为四个独立程序和一个 API 内嵌业务；本期不实施访问开关，也不将目标十一应用全栈作为清理交付前提。
 - `worm_markets`、`worm_trading`、账户、钱包、私钥、头像、资产、Notification 共享账本和其他业务数据保留。Token 旧代码和数据不删除；其运行接入调整属于后续计划。
 - 四个目标历史库 `bsc_inbound`、`bsc_swap`、`sports_live`、`sports_history` 直接删除，**不导出备份或建立历史归档**。数据库覆盖名、容器及卷必须按实际 owner 核对。
 - “核心不提供管理员停服开关”不取消已有不兼容 schema 的发布维护流程；同库消费者退出后执行 `up` → `verify` → 新版本启动。
@@ -74,7 +76,7 @@ rg -n 'worm-markets|worm-trading|worm_markets|worm_trading|WormExecutionSigner' 
 ```
 
 - [ ] 明确允许保留旧名称的位置：已应用历史迁移、退役维护工具精确来源清单、删除回归断言、带退役标记的历史设计／证据；它们不是活动功能入口。`util/worm` 的体育市场和相关 `sports` 数据语义保留。
-- [ ] 记录已有六项本地应用的实际清单及 Worm 当前运行方式；新十二应用编排尚未实施，后续验收不伪报该目标已达成。计划中的远端 IP 和默认卷只作线索，此时不认定资源存在。
+- [ ] 记录已有六项本地应用的实际清单及 Worm 当前运行方式；目标十一应用编排尚未实施，后续验收不伪报该目标已达成。计划中的远端 IP 和默认卷只作线索，此时不认定资源存在。
 - [ ] 先保存旧部署文件的定位信息和停止方法，再在 T3／T5 删除源码；只保留操作证据，不保留可自动拉起旧业务的部署副本。
 
 ### T2：实现一次性 Sports 通知退役工具
@@ -312,7 +314,7 @@ go build ./cmd/... ./tools/retire-sports-notifications
 
 - [ ] 为集成测试按各包实际测试配置准备独立 PostgreSQL；记录设置与运行报告。故障注入覆盖迁移失败、行锁竞争、sending 回到 pending、超时与中断重入；不连接生产库运行 fixture。当前 Worm 业务包没有独立 Go 测试文件，`[no test files]` 只证明构建经过，不写成业务测试通过；保留能力须有 UI 场景、Wallet 既有 wire regression 和下述真实读取的相应证据。
 - [ ] 按 [本地环境准备](../../developer-guide/running-locally.md#prepare-the-development-environment-for-acceptance) 核对工作区／实例后复用正确环境，或从实施工作区用项目 Node 执行 `make run`，保存持久会话及日志。空实例和带旧权限的实例分别验证；启动不包含废弃服务配置和数据库准备。
-- [ ] 当前 `make run` 尚不能代表 Worm 两个业务进程已运行。Worm 真实回归使用此次新版本的现有生产 Compose 服务定义，在另一个独立本地 project 中显式选择 API、Worm 与必要依赖；API、Wallet、Worm 的地址和内部凭据统一指向该验收 project，不混接上一套 `make run` 环境。使用 `--no-deps` 按已列明依赖顺序启动，避免 API 的完整 `depends_on` 隐式启动其他业务；不把这一步扩写成十二应用编排实施。
+- [ ] 当前 `make run` 尚不能代表 Worm 两个业务进程已运行。Worm 真实回归使用此次新版本的现有生产 Compose 服务定义，在另一个独立本地 project 中显式选择 API、Worm 与必要依赖；API、Wallet、Worm 的地址和内部凭据统一指向该验收 project，不混接上一套 `make run` 环境。使用 `--no-deps` 按已列明依赖顺序启动，避免 API 的完整 `depends_on` 隐式启动其他业务；不把这一步扩写成十一应用编排实施。
 - [ ] 本地 Compose 隔离不能只依靠 project 名：当前三个存储卷使用固定 `name` 且 `external: true`。使用本任务专用环境文件，将 `PROD_POSTGRES_VOLUME`、`PROD_REDIS_VOLUME`、`PROD_MINIO_VOLUME` 全部改为包含本轮 run ID 的专用名称，先检查不存在，再创建并标记 owner；不能复用 `athena-prod-*-data` 默认卷。显式设置 `ATHENA_SERVER_BIND_ADDR=127.0.0.1` 和核对空闲的 `ATHENA_SERVER_PORT`，保存 `docker compose config --format json` 的解析结果，逐项确认卷、服务地址、挂载、凭据来源和服务集合。使用独立本地配置及测试身份；不能直接使用 `.env.prod`，也不能接管其他环境的 Telegram poller。启动前核对新镜像版本及所选 schema 准备步骤；结束时精确停止本 project 的使用者，保留专用卷和证据。若端口／卷归属不符，先修正配置后再启动。
 - [ ] 核对真实 member／admin bootstrap 后，按 [athena-browser-acceptance](../../../.codex/skills/athena-browser-acceptance/SKILL.md) 执行以下两类检查。旧路由消失、Worm 七路由和授权交互通过隔离场景验证；真实 smoke 证明当前服务与浏览器链路。Worm 行情／状态的实际读取另留 API 和页面证据，涉及资产副作用只在隔离后端验证。
 

@@ -4,7 +4,7 @@
 >
 > 本轮只维护设计，没有执行 `make run`、连接远端 Gateway、恢复 Solana 采集或修改环境配置。当前实际命令行为仍见[本地运行说明](../../developer-guide/running-locally.md)。
 
-> 范围修订（2026-09-16）：Worm Markets／Trading 保留，目标由原十程序扩充为十二程序；用户确认两项服务共用一个 Worm 访问开关。本次已补齐两服务的独立入口、配置、存储、内部授权、就绪和停止顺序；访问关闭不停止进程或后台工作，重新开放不自动补发用户交易。
+> 范围修订（2026-09-16 最新决定）：[Markets 删除与 Trading 内聚](2026-09-16-worm-trading-market-query-design.md)方案 A 已采用，Markets 专属数据直接删除。目标调整为 11 个应用、5 个应用数据库；`worm` 只对应 Trading。删除与接入均尚未实施。
 
 ## 1. 目标与实现选择
 
@@ -16,7 +16,7 @@
 
 ## 2. 本期服务清单
 
-目标覆盖 **12 个本地常驻应用程序**，不包括运行器、一次性准备工具及基础设施容器。下面是拟实施清单，不是当前 `make run` 已有能力；默认端口均绑定 loopback，可按实例显式改配。
+目标覆盖 **11 个本地常驻应用程序**，不包括运行器、一次性准备工具及基础设施容器。下面是拟实施清单，不是当前 `make run` 已有能力；默认端口均绑定 loopback，可按实例显式改配。
 
 | 运行器标识 | 程序 | 分类 | 默认端口 | 构建入口 |
 | --- | --- | --- | --- | --- |
@@ -30,12 +30,11 @@
 | `market-radar` | `athena-market-radar` | 业务 | 8092 | 补齐 `./cmd/athena-market-radar` 独立 main |
 | `managed-oo` | `athena-managed-oo` | 业务 | 8106 | 补齐 `./cmd/athena-managed-oo` 独立 main |
 | `profit-sharing` | `athena-profit-sharing` | 业务 | 8108 | 补齐 `./cmd/athena-profit-sharing` 独立 main |
-| `worm-markets` | `athena-worm-markets` | 业务 | 8084 | 保留现有 commands，补齐独立 main 与运行器接入 |
 | `worm-trading` | `athena-worm-trading` | 业务 | 8090 | 保留现有 commands，补齐独立 main 与运行器接入 |
 
 - 五个远端 Etherscan Gateway 作为已有外部核心服务连接，既不构建也不启动本地副本；Manager 与管理员网关检查使用同一组已选择的地址。
 - Token 完成重构后再确定进程接入，不把旧九角色加入本期全栈。启动摘要显示“Token：接入延期”，不显示启动成功或虚假可用状态。
-- 两个 BSC 索引器、Sports、World Cup Corners 不加入目标清单。Worm 两服务回到保留清单，配置及能力不得清理。Temporal 没有核对到当前运行消费者，本期不创建其空数据库或常驻进程。
+- 两个 BSC 索引器、Sports、World Cup Corners 不加入目标清单。Trading 保留；Markets 从目标清单移出，其交易目录由 Trading 承接。Temporal 没有核对到当前运行消费者，本期不创建其空数据库或常驻进程。
 - `FullStackServices()`、单服务注册表和服务状态读取共用同一份程序定义，取消全栈私下覆盖 Wallet／Profit Sharing 构建方式的做法。每项定义包含构建入口、参数、环境白名单、存储准备、探测方式及时间预算。
 - 单独选择服务只准备其声明的基础设施；不隐式启动 API、UI 或其他业务程序。需要组合时使用显式 `run-services` 集合。
 
@@ -61,52 +60,44 @@
 | `wallet` 数据库 | Wallet 的迁移与验证 |
 | `managed_oo` 数据库 | Managed OO 的迁移与验证 |
 | `profit_sharing` 数据库 | Profit Sharing 的迁移与验证 |
-| `worm_markets` 数据库 | Worm Markets 的迁移与验证，已有数据保留 |
 | `worm_trading` 数据库 | Worm Trading 的迁移与验证，已有数据保留 |
 | Redis | API 当前会话与认证等依赖 |
 | MinIO 及私有头像 bucket | API 头像资源；按既有配置准备并保留 |
 
 Market Radar 当前读模型在内存中，Manager 不需要新增数据库。按实际服务选择创建上述数据库，不调用 `--module all`。停止后再次启动复用原 volume、账户、配置、业务记录与采集 checkpoint。
 
-账户 schema 继续用独立 `athena-account-state-migrate` 执行 up／verify；Wallet／Managed OO／Profit Sharing／Worm Markets／Worm Trading 的迁移工具增加独立 main，按显式模块选择运行，不经聚合 `cmd/main.go` 构建所有业务程序。
+账户 schema 继续用独立 `athena-account-state-migrate` 执行 up／verify；Wallet／Managed OO／Profit Sharing／Worm Trading 的迁移工具增加独立 main，按显式模块选择运行，不经聚合 `cmd/main.go` 构建所有业务程序。
 
 Solana 当前在服务启动内执行 `Store.Migrate`。接入时将迁移动作放到该服务命令的独立 `schema up`／`schema verify` 子命令，均只处理存储并退出；运行路径只读验证，不启动扫描后再准备 schema。上述子命令为待实现接口。它与账户 schema 在同一个本实例数据库执行，避免另起一个没有账户权限表的空库。
 
 保留最小开发身份的既有初始化，重复启动不重新授予被撤销的权限，不自动创建订阅、下单或制造业务数据。访问开关表缺行按关闭处理，正常启动不执行“全部设为关闭”或“全部设为开放”。
 
-当前 `fullStackModules()` 仍包含待删除模块与旧 Token 的准备。实施时移除这些全栈准备和强制配置依赖；Worm 数据库及配置继续保留。Sports 与两个 BSC 索引器的专属历史数据已确认直接删除，使用独立退役步骤处理；普通启动和停止不执行该删除。旧 Token 数据不在此次删除范围。若 API 初始化仍强依赖这些未选择模块，需解除该启动依赖，不能保留无效 DSN 或假服务来满足检查；这不扩展为旧 Token 业务重构。
+当前 `fullStackModules()` 仍包含待删除模块与旧 Token 的准备。实施时移除这些全栈准备和强制配置依赖；Trading 数据库及配置保留；Markets 准备及配置删除。Markets、Sports 与两个 BSC 索引器的专属历史数据已确认直接删除，使用独立退役步骤处理；普通启动和停止不执行该删除。旧 Token 数据不在此次删除范围。若 API 初始化仍强依赖这些未选择模块，需解除该启动依赖，不能保留无效 DSN 或假服务来满足检查；这不扩展为旧 Token 业务重构。
 
-### 3.3 Worm 两服务接入
+### 3.3 Worm Trading 接入
 
-Worm Markets 拥有市场采集与通知，Worm Trading 拥有组合、预览、交易、Cash Out 和恢复工作。二者继续各自运行；API 只负责用户入口、身份及访问检查，不在 API 内启动它们的后台任务。`worm` 访问状态只由 API 查询，两个业务进程不接收启停指令。
+Trading 拥有按需市场目录、组合、预览、交易、Cash Out 与恢复；API 只承接用户入口和准入，不启动 Trading 后台工作。目录组件无采集循环和 Markets 存储。具体业务与服务侧授权见[内聚设计](2026-09-16-worm-trading-market-query-design.md)。
 
-**入口与地址**：分别补齐 `cmd/athena-worm-markets/main.go`、`cmd/athena-worm-trading/main.go`，调用各自现有 `commands`，支持独立构建与局部选择。独立 schema 工具按 `worm-markets`／`worm-trading` 明确准备各自数据库；业务启动只验证，不混入 Sports 或旧 Token 迁移。
+补齐 `cmd/athena-worm-trading/main.go` 与独立 schema 工具，支持局部选择；只准备 `worm_trading` 和显式依赖的账户 schema 验证，不构建 Markets、不创建其库或复用其 DSN。
 
 | 配置／资源 | 消费者与规则 |
 | --- | --- |
-| `ATHENA_WORM_MARKETS_LISTEN_ADDRESS`、`--port` | Markets 默认 loopback:8084。当前命令只给 `--port` 常量默认值；本期新增 `ATHENA_WORM_MARKETS_PORT` 的环境读取，运行器解析同值并显式传参，不能声称现有命令已支持该环境项 |
-| `ATHENA_WORM_TRADING_LISTEN_ADDRESS`、`ATHENA_WORM_TRADING_PORT` | Trading 已支持，默认 loopback:8090，运行器显式传监听参数 |
-| `ATHENA_WORM_MARKETS_SERVER_ADDRESS` | API 和 Trading 指向所选本地 Markets；必须与实际监听端口一致 |
-| `ATHENA_WORM_TRADING_SERVER_ADDRESS` | API 指向所选本地 Trading |
-| `ATHENA_WORM_MARKETS_POSTGRES_DSN`、`ATHENA_WORM_TRADING_POSTGRES_DSN` | 分别只注入所属服务和 schema 工具，使用本实例 `worm_markets`、`worm_trading`，原有记录和凭据保留 |
-| `ATHENA_WORM_MARKETS_API_BASE_URL` | Markets 沿用现有 Worm provider 默认值或显式配置；不生成供应商凭据 |
-| `ATHENA_WORM_MARKETS_NOTIFICATION_ENABLED`、`ATHENA_WORM_MARKETS_NOTIFICATION_SERVER_ADDRESS` | 沿用默认开启通知及现有配置；全栈地址注入本实例 Notification，使用其既有内部认证 token |
-| `ATHENA_WORM_TRADING_SOLANA_RPC_URL` | Trading 沿用既有 Solana mainnet 默认值或显式 provider；保留 genesis、USDC program／decimals 验证，不因本地运行改为假数据或其他链 |
-| Trading 现有预算与限流 | 白名单保留 `ATHENA_WORM_TRADING_RPC_ATTEMPT_TIMEOUT`、`BALANCE_BUDGET`、`RPC_RATE_LIMIT`、`RPC_RATE_BURST`、`WORM_API_ATTEMPT_TIMEOUT`、`POSITION_BUDGET`、`POSITION_CONCURRENCY`；后六项均补同一 `ATHENA_WORM_TRADING_` 前缀，沿用命令现有默认值与校验 |
-| `ATHENA_WORM_MARKETS_INTERNAL_AUTH_TOKEN`（本期新增） | Markets 校验、API 与 Trading 客户端携带；独立目的 token，最少 32 字节且无空白。当前 Markets 无内部认证，须在本期同时补齐服务与调用方，不能仅配置字段而不执行校验 |
-| `ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN` | API 与 Trading 沿用既有内部 Bearer 认证，不能以访问设置代替服务身份 |
-| `ATHENA_WALLET_SERVER_ADDRESS`、`ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN` | Trading 连接本实例 Wallet 专用 signer；signer token 仅 Wallet／Trading 可得，API 保留原普通 Wallet 客户端能力，不获得执行 signer token |
-| `ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY` | 仅 Trading 解密自身持久凭据；沿用原格式和有效性校验，重启必须复用。API 不获得该 key，schema 工具不需解密业务凭据 |
+| `ATHENA_WORM_TRADING_LISTEN_ADDRESS`、`ATHENA_WORM_TRADING_PORT` | Trading 默认 loopback:8090，运行器统一解析并显式传参 |
+| `ATHENA_WORM_TRADING_SERVER_ADDRESS` | API 指向选定 Trading；无 Markets 地址注入 |
+| `ATHENA_WORM_TRADING_POSTGRES_DSN` | 所属服务及 schema 工具连接本实例 `worm_trading`，保留原记录 |
+| `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` | Trading 新目录／改变的组合写 RPC 使用权限只读 reader，连接同环境账户库；账户迁移仍由其 owner 工具执行 |
+| `ATHENA_WORM_TRADING_SOLANA_RPC_URL` | 沿用 mainnet、genesis、USDC program／decimals 检查 |
+| 现有 Trading 预算／限流配置 | 保留 RPC attempt、balance budget、RPC rate／burst、Worm API attempt、position budget／concurrency 的现有配置及默认值 |
+| `ATHENA_WORM_TRADING_CATALOG_BUDGET`（内聚设计新增） | 默认 45 秒，总预算包含限流等待；不小于默认 5 秒的上游单次预算 |
+| `ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN` | API 与 Trading 的内部 Bearer；新目录同时携带可信账户身份并由 Trading 读取当前权限 |
+| `ATHENA_WALLET_SERVER_ADDRESS`、`ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN` | Trading 连接同环境 Wallet 专用 signer，API 不获得 signer token |
+| `ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY` | 仅 Trading 使用；已有数据必须复用原 key，缺失／冲突应失败，不能清空记录或换 key 冒充恢复 |
 
-全栈首次空实例按实例持久凭据机制准备内部 token 和本地加密 key；已有数据时复用其原 key，缺失／冲突应明确失败，不生成新 key 冒充恢复成功，也不清空连接记录。运行器按进程白名单传入；API 子进程不能从父环境继承 Trading 专用 signer token 或加密 key。正常重启不自动连接钱包、二次授权、创建交易或重置访问开关；现有后台恢复照常执行。
+目录生产客户端固定到 Trading 已采用的 Worm 地址，复用未认证工厂限流器；不继承 Markets Base URL、通知开关、通知地址、端口或拟新增内部 token。API 进程不得从父环境继承 Trading signer token 和加密 key。
 
-Markets 新增内部鉴权仅允许受信任服务调用，健康探测保留原私网可读约定；Trading 已有鉴权继续保留。API／Trading 的 Markets 客户端构造与所有真实消费者同步传入 token，保留 RPC deadline 和取消；无凭据请求不可通过内部端口读取业务数据。生产部署同步注入对应凭据、限制内部网络入口，保留现有 Wallet 目的绑定、账户和对象归属授权。前端二次验证入口由 API 的 `worm` 开关处理，内部工作者的签名调用不读取该开关。
+**就绪与失败**：核心 Wallet 及账户 schema 准备后启动 Trading。先验证配置、数据库与既有恢复，再由 Solana 探测按现有条件报告空名称 gRPC 健康。权限库是已知共享故障域，新目录／组合写请求在运行时读取失败则拒绝；已受理 worker 继续原恢复规则。Trading 的 SERVING 不等于 Worm 目录或真实交易已验收，上游失败独立显示；其他业务不因此停止，访问设置不改写。
 
-**就绪与故障**：核心 Wallet／Notification 就绪后先启动 Markets，再启动 Trading；两者均使用 gRPC 健康服务的空名称 `""`。Markets 的现有 `SERVING` 表示服务启动完成，不能当作已成功采集供应商数据。Trading 先完成数据库连接及既有连接尝试恢复，再由 Solana 探测确认 genesis、USDC program 和 decimals 后转为 `SERVING`；监听建立但一直 `NOT_SERVING` 按第 5 节预算失败，不能跳过探测强行报成功。
-
-Markets 启动失败后仍尝试 Trading 的独立启动，记录其 Markets 依赖不可用；Trading 自身的 `SERVING` 不证明市场目录、Wallet 签名或 Worm 交易全链路成功。全栈摘要保留 Markets 失败，因此不能报十二项全部就绪；运行期间依赖异常按实际健康和调用错误展示，不杀另一服务、不自动改写共同访问开关。外部 Worm 暂时失败而本地仍可服务时单列供应商异常，交易可用性须由业务验收确认。
-
-**停止**：用户真正停止实例时先关 API／UI 入口，再停 Trading、Markets，最后停其使用的 Wallet／Notification 等核心和自有基础设施。各自复用命令的 signal／gRPC shutdown／服务 Stop，受运行器预算及归属核验约束；达到强制退出条件时如实记录，不能保证已发出的外部交易被撤销。两个数据库、授权记录和凭据保留，下次按原业务规则恢复；只关闭访问开关不会进入这些停止步骤。
+**停止**：先关 API／UI 入口，再有界停止 Trading，最后按资源归属处理 Wallet 等自有依赖；保留 Trading 数据、原 key 和未决任务。Markets 专属永久退役按独立设计执行，不放入正常 stop 或 run。
 
 ## 4. 启动流程
 
@@ -117,7 +108,7 @@ Markets 启动失败后仍尝试 Trading 的独立启动，记录其 Markets 依
 3. **配置检查与构建**：检查所选服务配置和地址一致性，构建独立程序及 schema 工具，日志从开始即落盘。先发现构建错误，再启动应用进程；Go 自身缓存可复用，但每次按当前源码验证构建。
 4. **基础设施与 schema**：创建或复用本实例基础设施，执行所选 schema up／verify，准备头像 bucket，保存本实例地址与凭据。共享准备失败时停止本轮，不绕过失败步骤。
 5. **核心入口就绪**：启动 Wallet、Notification、Manager，然后 API、UI；核对核心健康与会员／管理员 bootstrap。输出“核心入口可用，业务仍在启动”，此时不能宣布全栈完成。
-6. **业务启动**：启动 Trader Sync、Solana、Market Radar、Managed OO、Profit Sharing 和 Worm 两服务，逐项检查初始就绪；Worm Markets 在 Worm Trading 之前启动。其所需 Wallet、Notification 已在核心阶段启动，具体连接与配置按第 3.3 节注入。程序按原规则开始后台工作，即使对应用户访问仍关闭。
+6. **业务启动**：启动 Trader Sync、Solana、Market Radar、Managed OO、Profit Sharing 和 Worm Trading，逐项检查初始就绪；Markets 不启动。所需核心能力已在核心阶段启动，具体连接与配置按第 3.3 节注入。程序按原规则开始后台工作，即使对应用户访问仍关闭。
 7. **结果摘要**：全部所选应用就绪后打印全栈结果、两个页面地址、访问状态、远端依赖状态、日志目录和停止命令。随后前台保持运行、等待 Ctrl+C，并继续报告进程退出事件。
 
 本地配置检查不意味着连接已验证。基础设施创建和进程启动仍可能失败，必须保留当时错误；已存在的同实例 supervisor 不重复启动，报告其归属和状态入口。端口被其他实例或未知程序占用时报告冲突，不自行换端口、杀进程或接管现场。
@@ -168,7 +159,7 @@ Notification 的较长预算覆盖现有非首次启动至少 60 秒恢复屏障
 [准备] 复用本实例 PostgreSQL、Redis、MinIO
 [核心] 5/5 就绪，业务仍在启动
 [业务] 7/7 就绪
-[结果] 本期 12 个本地应用已就绪
+[结果] 本期 11 个本地应用已就绪
 会员：http://localhost:4000/
 管理员：http://localhost:4000/admin/
 用户访问：首次未配置的已登记板块默认关闭；后台任务正常运行
@@ -205,14 +196,14 @@ Solana 纳入同一资源所有者后，停止使用 `ATHENA_RUN_PROFILE` 分支
 
 AI 实施验收覆盖：
 
-1. 空实例与已有数据实例分别启动；12 个应用清单、6 个本期数据库及基础设施归属正确，Worm 两服务和数据库纳入；旧 Token／Sports／Temporal 不被全栈隐式创建或启动。
+1. 空实例与已有数据实例分别启动；11 个应用清单、5 个本期数据库及基础设施归属正确，Trading 与账户权限读取依赖纳入，Markets 不启动、不建库；旧 Token／Sports／Temporal 不被全栈隐式创建或启动。
 2. 冷构建、缺 Node／UI 依赖、Docker 不可用、端口冲突、迁移失败和慢启动均有即时输出与有界结果；包含运行器编译阶段的 Ctrl+C。
 3. 本地消费者实际连接本实例地址；Manager 与管理员检查连接同一组远端 Gateway；停止测试证明远端资源未被操作。
 4. 核心启动失败、业务启动失败和运行期间退出分别符合故障范围；Notification 的真实恢复屏障不被跳过，外部不可用不被当作成功。
 5. 独立服务构建不导入无关命令，局部选择只准备必要基础设施；Solana 使用同环境账户／业务 schema，后台扫描按本期运行目标执行。
 6. 会员／管理员 bootstrap、真实页面 smoke 与访问开关验收通过；关闭访问后后台继续、重启保存开关与业务数据。页面 200 或端口监听不能替代这组验收。
 7. 默认与自定义实例、不同 checkout、根路径与前缀路径、Ctrl+C 和外部停止均能精确收尾；数据库数据及证据保留，共享／其他实例未被影响。
-8. Worm 独立构建与局部运行只准备所属存储；自定义端口同时改变消费者地址。Markets 内部无凭据／错误凭据被拒绝，API／Trading 正常携带服务身份；API 无执行 signer token 和凭据加密 key。Trading 的数据库恢复、Solana 配置错误和就绪超时有真实失败证据；Markets 故障不伪报全栈成功或自动停止 Trading。停止顺序、既有凭据重启解密和后台恢复分别验证。
+8. Trading 独立构建与局部运行只准备声明存储；自定义端口同步消费者。无 Markets 程序／配置／数据库仍能运行；内部 Bearer、可信账户与服务侧权限正确，API 无 signer token／加密 key。权限库或 Solana 配置错误、就绪超时、上游失败和有界停止分别保留证据；原 key 重启解密与未决任务恢复不变。
 
 本轮仅进行静态设计核对，上述运行结果均待实施验证。服务编排到位不等于全部业务重构完成；Token 与完整删除退役仍按各自范围交付。
 
@@ -223,3 +214,5 @@ AI 实施验收覆盖：
 遵守[服务开发规范](../../developer-guide/service-development-standards.md) SDS-R2／R3／R4／R5／R7／R8：API 不承载新增后台任务、服务独立构建与配置、故障明确、资源按 owner 回收、文档区分目标与现状，验证覆盖实际改动。共享账户数据库的共同故障域与既有事务保持原设计；改动生成源时同步对应消费者。
 
 **确认记录（2026-09-16）**：用户先采用 10 程序清单、核心先可用／业务失败保留核心、按阶段可见输出及有界等待、统一局部运行入口、停止保留数据；随后明确保留 Worm，并确认“统一使用一个开关。然后交易处理方式按照你的建议”。目标扩充为十二程序，本次已补齐 Worm 配置、授权、就绪、失败与停止设计。[删除与清理配套设计](2026-09-16-module-removal-cleanup-design.md)已完成自查及补充，三份设计均尚未实施；Token 专属接入继续延期。
+
+**最新决定（2026-09-16）**：用户采用 Trading 集中承接按需目录、删除 Markets 及其专属数据；历史十二程序确认由当前十一程序目标覆盖。本次只同步目标文档，尚未扩展运行器或实施退役。

@@ -2,9 +2,9 @@
 
 > 状态：2026-09-16 方案已获用户采用，尚未实施。用户表示“先通过你这套方案”，本设计与 make run 配套一起记录通过；[访问控制范围和默认／重启规则](../../requirements/development-runtime/business-access-control.md)继续有效。
 >
-> 本轮覆盖统一入口、配置与页面接入。[`make run` 启动配套](2026-09-15-local-full-stack-design.md)已获采用并补齐 Worm；两个 BSC 索引器与 Sports 删除、Worm 保留的[删除与清理配套设计](2026-09-16-module-removal-cleanup-design.md)已完成自查及补充；Token 详细接入继续延期。原 D01–D03 运行控制设计保持暂停。
+> 本轮覆盖统一入口、配置与页面接入。[`make run` 启动配套](2026-09-15-local-full-stack-design.md)已获采用并补齐 Worm；两个 BSC 索引器与 Sports 删除、Trading 保留的[删除与清理配套设计](2026-09-16-module-removal-cleanup-design.md)已完成自查及补充；Token 详细接入继续延期。原 D01–D03 运行控制设计保持暂停。
 
-> 范围修订（2026-09-16）：用户确认 Worm Markets／Trading 统一使用一个访问开关，并采用已受理工作继续、新用户请求拦截、重新开放不自动补发的交易处理方式。完整清单为六个可控板块、42 个现有公共 RPC，另覆盖 Worm 原始 HTTP、二次验证与七条页面路由；本文已补齐该接入设计，尚未实施。
+> 范围修订（2026-09-16 最新决定）：[Markets 删除与 Trading 内聚](2026-09-16-worm-trading-market-query-design.md)方案 A 已采用，Markets 专属数据直接删除。`worm` 只对应 Trading，目标为六个可控板块、39 个公共 RPC，另覆盖 Trading 原始 HTTP、二次验证和七条路由；访问开关仍未实施。
 
 ## 1. 实现选择
 
@@ -32,7 +32,7 @@ flowchart LR
 
 ### 2.1 公共 gRPC 接入清单
 
-下表依据当前公共 proto 核对，六个板块共 **42 个受控 RPC**，包含原五板块 36 个和 Worm 6 个。登记使用完整 RPC 名称，不按 URL 文本模糊匹配。表中服务下每个方法均受该板块开关约束，原有读写权限和账户资格继续生效。
+下表以现有公共 proto 为依据列目标清单：删除 Markets 三个 RPC 后，六个板块共 **39 个受控 RPC**，包含原五板块 36 个和 Trading 3 个；删除本身尚未实施。登记使用完整 RPC 名称，不按 URL 文本模糊匹配。表中服务下每个方法均受该板块开关约束，原有读写权限和账户资格继续生效。
 
 | 板块标识 | 公共服务 | 本期受控方法 |
 | --- | --- | --- |
@@ -41,10 +41,9 @@ flowchart LR
 | `market_radar` | `marketradar.MarketRadarService` | `GetMarketRadarStatus`、`ListHotMarkets`、`ListRealtimeMarkets`、`ListMarketMovers` |
 | `managed_oo` | `managedoo.ManagedOOService` | `GetManagedOOStatus`、`ScanManagedOOBlock`、`ListManagedOOProposals`、`ListManagedOODisputes` |
 | `profit_sharing` | `profitsharing.ProfitSharingService` | `ListRounds`、`GetRound`、`CreateRound`、`UpdateRound`、`OpenRound`、`PublishRound`、`CloseBallot`、`UpdateProposal`、`SubmitProposal`、`ReopenProposal`、`SubmitVote` |
-| `worm` | `wormmarkets.WormMarketsService` | `GetWormMarketsStatus`、`GetWormEvent`、`ListWormEvents` |
 | `worm` | `wormtrading.WormTradingService` | `GetWormTradingStatus`、`ListWalletBalances`、`ListWalletTradingActivity` |
 
-`worm` 是两项服务共用的访问配置标识；原 `worm_markets`、`worm_trading` 账户权限继续分别判断，不合并权限或程序。`token` 保留为未来板块标识，暂不设计旧 Token RPC、进程或页面的接入。管理员界面对 Token 显示“接入待重构”，没有开关，不声称旧 Token 接口已经受控。Token 接入时再补齐其公共接口清单；不据此开放新的 Token 页面或接口。
+`worm` 是 Worm Trading 的访问配置标识；保留 `worm_trading` 权限，移除 `worm_markets` 权限与对应公共接口，不自动转授 Trading 权限。`token` 保留为未来板块标识，暂不设计旧 Token RPC、进程或页面的接入。管理员界面对 Token 显示“接入待重构”，没有开关，不声称旧 Token 接口已经受控。Token 接入时再补齐其公共接口清单；不据此开放新的 Token 页面或接口。
 
 Trader Sync 将来加入的手动交易用户入口应归入 `trader_sync`，沿用其目标业务文档；本清单不把尚未实现的交易接口当作现有能力。
 
@@ -55,7 +54,7 @@ Trader Sync 将来加入的手动交易用户入口应归入 `trader_sync`，沿
 - Solana／Market Radar／Managed OO／Worm 的业务状态查询属于各自业务页面，列入受控范围；管理员通用健康接口继续提供健康信息。
 - Profit Sharing 的会员资格、管理员操作与普通模块权限是不同授权路径，统一准入不能遗漏这些接口。Wallet 虽在模块权限表中，仍属常开核心能力。
 - 业务间调用使用既有内部服务鉴权，访问开关不进入内部业务 gRPC 服务。内部端口继续只接受可信服务身份，不能提供面向用户的绕过入口；请求头、自称管理员或 `DisableAuth` 均不能跳过已接入板块的开关。
-- Sports 属于待删除范围；Token 详细接入延期；Worm 属于保留并纳入本期接入的范围。不得将 Worm 误列为删除对象，或因入口遗漏默认放行。
+- Sports 属于待删除范围；Token 详细接入延期；Trading 保留并纳入本期接入，Markets 按独立设计退役。不得误删 Trading 或因入口遗漏默认放行。
 
 ### 2.3 检查位置与生效
 
@@ -93,7 +92,7 @@ API 向 Google／Phantom 及开发验证处理器注入同一个访问检查能�
 
 Worm HTTP handler 现有错误序列化也须保留第 4 节的稳定 reason；仅给 gRPC 错误增加详情不足以覆盖原始 HTTP。覆盖校验同时枚举 gRPC、业务 mux、`publicHandlers` 和共享 callback 的目的分支；开发身份模式也必须受控。暂停、终止、断开连接等仍是新的用户操作，本期没有关闭后的业务操作白名单；普通退出登录、核心 Wallet、账户权限及健康接口继续可用。
 
-**内部端口边界**：Trading 已有内部 Bearer 认证；Markets 当前 `CreateGRPC` 没有内部认证拦截器，本期接入须补齐 Markets 的 unary／stream 服务鉴权和 API、Trading 客户端凭据注入。使用独立 `ATHENA_WORM_MARKETS_INTERNAL_AUTH_TOKEN`，沿用现有内部 token 的最少 32 字节、无空白校验；除健康探测外的内部 RPC 均认证，生产限制到受信任服务网络，本地绑定 loopback。业务用户只经 API 入口调用，不能直接借内部端口绕过访问检查；后台可信调用继续执行原业务权限，不读取访问开关。不新增服务或控制协议，具体注入与部署边界见[运行配套](2026-09-15-local-full-stack-design.md#33-worm-两服务接入)。
+**内部端口边界**：Trading 沿用内部 Bearer，迁入目录和改变的组合写 RPC 另按[内聚设计](2026-09-16-worm-trading-market-query-design.md#4-身份权限与事务)传递可信账户身份并执行服务侧权限查询。删除 Markets 客户端与端口，不实施原拟新增 Markets token。生产限制 Trading 在受信任网络，本地绑定 loopback；后台目录调用为同进程调用，不读取访问开关，既有授权与恢复不变。
 
 ## 3. 配置存储
 
@@ -144,7 +143,7 @@ Worm HTTP handler 现有错误序列化也须保留第 4 节的稳定 reason；�
 
 在现有 **Service Status** 增加第四个页签 **Module Access（板块访问）**，保留默认 Services 及原三个来源的布局、独立请求和健康语义。开关页签的失败不遮盖健康页签，关闭某个板块也不会关闭这个管理入口。
 
-桌面使用一张紧凑表：**板块／访问状态／最后修改人和时间／操作**。六个已登记板块各占一行，Worm 只显示一行，附注“Markets 与 Trading 共用”；Token 另显示“接入待重构”，无状态开关。手机沿用现有按行分组方式，把修改信息放在状态下面，按钮保留完整文字与可点区域。
+桌面使用一张紧凑表：**板块／访问状态／最后修改人和时间／操作**。六个已登记板块各占一行，Worm Trading 只显示一行，对应 `worm` 标识；Token 另显示“接入待重构”，无状态开关。手机沿用现有按行分组方式，把修改信息放在状态下面，按钮保留完整文字与可点区域。
 
 页面固定说明：“关闭访问会拦截新的用户请求；后台任务和通知继续运行。”开放／关闭均使用明确文字按钮，点击后直接保存，不增加确认弹窗或全表保存步骤。等待时显示“保存中”，成功后才更新当前值；失败保留上次确认值并标注错误，状态无法确认时禁用设置直至重读成功。此处不展示启动、停止中或收尾进度。
 
@@ -192,7 +191,7 @@ Worm 现有七条会员路由统一使用 `worm`：`/worm-trading`、`/worm-trad
 | --- | --- |
 | 数据库 | `internal/accountstate/store/migrations/`、`queries/`、SQLStore；同步实际受影响的 sqlc 输出与账户 schema contract，启动只验证 schema，不重置设置 |
 | API | 新 moduleaccess proto／handler／准入函数，`internal/server/authz.go`、`athena-server.go`；更新生成 Go／gateway／Swagger 与实际消费者 |
-| Worm 接入 | 七组原始 HTTP handler，Google／Phantom／开发验证及回调，Worm 请求服务和页面驱动；Markets 内部鉴权与 API／Trading 客户端配置，原业务 proto 与持久状态不因开关改名 |
+| Worm 接入 | 七组原始 HTTP handler，Google／Phantom／开发验证及回调，Worm 请求服务和页面驱动；Trading 内部鉴权与账户身份、配置；Markets 契约及依赖按独立重构删除，持久交易状态不因开关改名 |
 | 前端 | 新共用访问状态与请求错误分类；会员／管理员 `app.tsx` 路由边界；管理员新页签组件及 service 注册，沿用现有样式组件 |
 | 长期文档 | 当前访问需求、会员／管理员及共享应用壳、需求／设计索引同步状态；原运行控制文档继续保持历史标记 |
 
@@ -202,7 +201,7 @@ Worm 现有七条会员路由统一使用 `worm`：`/worm-trading`、`/worm-trad
 
 实现时至少验证以下六组行为：
 
-1. 42 个当前受控 RPC、Worm 28 项业务 HTTP 注册、16 项专属验证注册及四种 Google 回调目的分类完整；HTTP JSON、直接 gRPC／gRPC-Web、原始 HTTP 和开发身份模式均被关闭开关拦截，管理员业务和原本允许的 API Key 调用同样受控，核心及健康入口可用。内部 Markets／Trading 无凭据调用拒绝，合法后台调用不受开关影响。
+1. 39 个目标受控 RPC、Worm 28 项业务 HTTP 注册、16 项专属验证注册及四种 Google 回调目的分类完整；HTTP JSON、直接 gRPC／gRPC-Web、原始 HTTP 和开发身份模式均被关闭开关拦截，管理员业务和原本允许的 API Key 调用同样受控，核心及健康入口可用。内部 Trading 无凭据调用拒绝，合法后台调用不受开关影响。
 2. 首次默认关闭，开放与关闭均能保存；本地／生产配置隔离、整体和单进程重启均不改值；并发修改与响应丢失能如实显示当前设置。
 3. 非管理员不能修改，管理员 API Key 不能写设置；关闭不更改账户权限、订阅状态或通知资格；原权限不足时仍拒绝业务请求。
 4. 受控请求已准入后允许完成；后台任务、内部服务调用及通知继续运行。Worm 第二笔已受理、第三笔未准入时只处理已受理步骤；已授权后台 Cash Out 批次仍遵守原流程。验证发起后关闭、再返回 callback 时不签发新授权；普通登录不受影响。
@@ -212,3 +211,5 @@ Worm 现有七条会员路由统一使用 `worm`：`/worm-trading`、`/worm-trad
 本轮仅核对源码和文档；实施时完成适用的存储／API／UI 测试及真实浏览器验收。完整服务编排、删除实施和 Token 专属接入分别记录其范围与结果，不能由本方案的局部验收代替。
 
 **确认记录（2026-09-16）**：用户先采用一张表与三个接口、统一准入边界、Service Status 新页签直接保存及 Token 延期。其后保留 Worm，并明确“统一使用一个开关。然后交易处理方式按照你的建议”。本文已补齐共用 `worm` 设置、完整用户入口、内部端口鉴权、七条页面路由和按请求处理的交易边界；相关运行配套同步更新。本次通过不代表代码已实施，原 D01–D03 仍暂停。
+
+**最新范围覆盖**：Markets 删除后，上述 39 RPC、Trading 一行设置与原 HTTP／回调覆盖是目标；前段双服务共用的历史确认不再授权保留 Markets。未实施的开关不成为本次 Trading 内聚与 Markets 退役的前置条件。
