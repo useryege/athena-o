@@ -16,6 +16,16 @@ import (
 )
 
 func TestFullStackExplicitServicesAndEnvironment(t *testing.T) {
+	modules := map[string]bool{}
+	for _, module := range fullStackModules() {
+		modules[module.Name] = true
+	}
+	if modules["sports-live"] || modules["sports-history"] {
+		t.Fatal("retired Sports databases would be prepared")
+	}
+	if !modules["worm-markets"] || !modules["worm-trading"] {
+		t.Fatal("Worm storage removed")
+	}
 	want := []string{"trader-sync", "profit-sharing", "notification", "wallet", "ui", "api-server"}
 	if got := FullStackServices(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("full stack: %v", got)
@@ -150,17 +160,17 @@ func TestFullStackStopResetCannotTouchLocalInstanceOrOtherCheckout(t *testing.T)
 	}
 }
 
-func TestFullStackLegacyDatabaseList(t *testing.T) {
+func TestFullStackRetainedDatabaseList(t *testing.T) {
 	var names, databases []string
 	for _, module := range fullStackModules() {
 		names = append(names, module.Name)
 		databases = append(databases, module.Database)
 	}
-	if !reflect.DeepEqual(names, []string{"worm-markets", "worm-trading", "wallet", "sports-live", "sports-history", "managed-oo", "profit-sharing", "token"}) {
-		t.Fatalf("legacy modules changed: %v", names)
+	if !reflect.DeepEqual(names, []string{"worm-markets", "worm-trading", "wallet", "managed-oo", "profit-sharing", "token"}) {
+		t.Fatalf("retained modules changed: %v", names)
 	}
-	if !reflect.DeepEqual(databases, []string{"worm_markets", "worm_trading", "wallet", "sports_live", "sports_history", "managed_oo", "profit_sharing", "token"}) {
-		t.Fatalf("legacy databases changed: %v", databases)
+	if !reflect.DeepEqual(databases, []string{"worm_markets", "worm_trading", "wallet", "managed_oo", "profit_sharing", "token"}) {
+		t.Fatalf("retained databases changed: %v", databases)
 	}
 }
 

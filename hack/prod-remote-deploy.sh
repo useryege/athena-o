@@ -363,7 +363,13 @@ compose stop -t 40 athena-trader-sync
 running="$(compose ps --status running -q athena-trader-sync)"
 if [ -n "$running" ]; then echo 'Trader Sync has not exited' >&2; exit 1; fi
 if [ "$ACCOUNT_STATE_CHANGED" = true ]; then
-  compose up -d --no-deps --force-recreate athena-server athena-notification athena-trader-sync
+  if ((${#ACCOUNT_STATE_RESTART_SERVICES[@]})); then
+    compose up -d --no-deps --force-recreate "${ACCOUNT_STATE_RESTART_SERVICES[@]}"
+  fi
+  # The selected service may have been stopped before maintenance.
+  if [[ " ${ACCOUNT_STATE_RESTART_SERVICES[*]} " != *" athena-trader-sync "* ]]; then
+    compose up -d --no-deps --force-recreate athena-trader-sync
+  fi
 else
   compose up -d --no-deps --force-recreate athena-trader-sync
 fi

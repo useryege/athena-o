@@ -11,9 +11,37 @@ account_state_prepare() {
     echo 'Account-state schema is incompatible. Coordinate maintenance and confirm all consumers outside this Compose project are stopped; set PROD_ACCOUNT_STATE_MAINTENANCE=true and PROD_ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED=true.' >&2
     return 1
   fi
-  compose stop -t 40 athena-server athena-notification athena-trader-sync
-  local running
-  running="$(compose ps --status running -q athena-server athena-notification athena-trader-sync)" || return
+  # Resolve the actual configured consumers, including profile-specific Solana.
+  # Differently spelled DSNs require an operator identity check, not a guess.
+  local config consumers running restart
+  config="$(compose --profile '*' config --format json)" || return
+  consumers="$(printf '%s' "$config" | python3 -c '
+import json, sys
+services = json.load(sys.stdin)["services"]
+key = "ATHENA_ACCOUNT_STATE_POSTGRES_DSN"
+authority = services["athena-account-state-migrate"]["environment"][key]
+if not authority: raise SystemExit("Missing account-state schema authority DSN")
+names = []
+for name, service in services.items():
+    if "tools" in service.get("profiles", []): continue
+    dsn = service.get("environment", {}).get(key)
+    if not dsn: continue
+    if dsn != authority: raise SystemExit("Reconcile account-state database identity for " + name)
+    names.append(name)
+if not names: raise SystemExit("No managed account-state consumers identified")
+print("\n".join(names))
+')" || return
+  local -a account_state_consumers
+  mapfile -t account_state_consumers <<<"$consumers"
+  restart="$(compose ps --status running --services "${account_state_consumers[@]}")" || return
+  # shellcheck disable=SC2034 # Used by the sourcing TS-only deployment path.
+  ACCOUNT_STATE_RESTART_SERVICES=()
+  if [[ -n "$restart" ]]; then
+    # shellcheck disable=SC2034 # Used by the sourcing TS-only deployment path.
+    mapfile -t ACCOUNT_STATE_RESTART_SERVICES <<<"$restart"
+  fi
+  compose stop -t 30 "${account_state_consumers[@]}"
+  running="$(compose ps --status running -q "${account_state_consumers[@]}")" || return
   if [[ -n "$running" ]]; then
     echo 'Account-state consumers have not exited; refusing migration.' >&2
     return 1
@@ -29,7 +57,7 @@ account_state_prepare() {
 other_schema_up() {
   local module
   if [[ "${MIGRATE_MODULE:-all}" == all ]]; then
-    for module in worm-markets worm-trading wallet sports-live sports-history managed-oo profit-sharing token; do
+    for module in worm-markets worm-trading wallet managed-oo profit-sharing token; do
       compose --profile tools run --rm athena-migrate athena up --module "$module"
     done
   elif [[ "$MIGRATE_MODULE" != account-state ]]; then

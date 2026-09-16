@@ -24,8 +24,6 @@ node_modules/
 .*.swp
 rerunreport.txt
 .env
-.env.bsc-transaction-indexer
-.env.bsc-swap-indexer
 secrets/
 
 # ignore built binaries

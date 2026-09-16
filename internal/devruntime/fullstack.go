@@ -38,8 +38,6 @@ func fullStackModules() []fullStackModule {
 		{"worm-markets", "worm_markets", "ATHENA_WORM_MARKETS_POSTGRES_DSN"},
 		{"worm-trading", "worm_trading", "ATHENA_WORM_TRADING_POSTGRES_DSN"},
 		{"wallet", "wallet", "ATHENA_WALLET_POSTGRES_DSN"},
-		{"sports-live", "sports_live", "ATHENA_SPORTS_LIVE_POSTGRES_DSN"},
-		{"sports-history", "sports_history", "ATHENA_SPORTS_HISTORY_POSTGRES_DSN"},
 		{"managed-oo", "managed_oo", "ATHENA_MANAGED_OO_POSTGRES_DSN"},
 		{"profit-sharing", "profit_sharing", "ATHENA_PROFIT_SHARING_POSTGRES_DSN"},
 		{"token", "token", "ATHENA_TOKEN_POSTGRES_DSN"},

@@ -191,47 +191,6 @@ services:
     expose:
       - "8092"
 
-  athena-sports-live:
-    image: ${PROD_IMAGE:-athena:local}
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      athena-notification:
-        condition: service_started
-    env_file:
-      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
-    environment:
-      <<: *without-auth-secrets
-      ATHENA_BINARY_NAME: athena-sports-live
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_SPORTS_LIVE_LISTEN_ADDRESS: 0.0.0.0
-      ATHENA_SPORTS_LIVE_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=sports_live sslmode=disable
-      ATHENA_SPORTS_LIVE_NOTIFICATION_ENABLED: "true"
-      ATHENA_SPORTS_LIVE_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
-      ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN: ${ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN:?ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN is required}
-    command: ["athena", "--port", "8094"]
-    expose:
-      - "8094"
-
-  athena-sports-history:
-    image: ${PROD_IMAGE:-athena:local}
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file:
-      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
-    environment:
-      <<: *without-auth-secrets
-      ATHENA_BINARY_NAME: athena-sports-history
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_SPORTS_HISTORY_LISTEN_ADDRESS: 0.0.0.0
-      ATHENA_SPORTS_HISTORY_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=sports_history sslmode=disable
-    command: ["athena", "--port", "8104"]
-    expose:
-      - "8104"
-
   athena-managed-oo:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
@@ -524,8 +483,6 @@ services:
       ATHENA_ACCOUNT_STATE_POSTGRES_DSN: ${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:?ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required}
       ATHENA_WORM_MARKETS_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm_markets sslmode=disable
       ATHENA_WORM_TRADING_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm_trading sslmode=disable
-      ATHENA_SPORTS_LIVE_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=sports_live sslmode=disable
-      ATHENA_SPORTS_HISTORY_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=sports_history sslmode=disable
       ATHENA_MANAGED_OO_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=managed_oo sslmode=disable
       ATHENA_PROFIT_SHARING_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=profit_sharing sslmode=disable
       ATHENA_WALLET_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=wallet sslmode=disable
@@ -552,10 +509,6 @@ services:
       athena-worm-trading:
         condition: service_started
       athena-market-radar:
-        condition: service_started
-      athena-sports-live:
-        condition: service_started
-      athena-sports-history:
         condition: service_started
       athena-managed-oo:
         condition: service_started
@@ -648,8 +601,6 @@ services:
       ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY: ""
       ATHENA_WORM_TRADING_POSTGRES_DSN: ""
       ATHENA_MARKET_RADAR_SERVER_ADDRESS: athena-market-radar:8092
-      ATHENA_SPORTS_LIVE_SERVER_ADDRESS: athena-sports-live:8094
-      ATHENA_SPORTS_HISTORY_SERVER_ADDRESS: athena-sports-history:8104
       ATHENA_MANAGED_OO_SERVER_ADDRESS: athena-managed-oo:8106
       ATHENA_PROFIT_SHARING_SERVER_ADDRESS: athena-profit-sharing:8108
       ATHENA_TOKEN_API_SERVER_ADDRESS: athena-token-api:8096

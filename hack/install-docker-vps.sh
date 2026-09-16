@@ -147,5 +147,3 @@ REMOTE_SCRIPT
 
 echo
 echo "Remote Docker dependency is ready."
-echo "Deploy the BSC transaction indexer with:"
-echo "make deploy-bsc-transaction-indexer-vps REMOTE_HOST=${REMOTE_HOST} BSC_INDEXER_ENV_FILE=.env.bsc-transaction-indexer"
