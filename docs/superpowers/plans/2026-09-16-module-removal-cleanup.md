@@ -388,7 +388,7 @@ steps: action, started_at, finished_at, result, evidence, remaining_objects
 - [x] 文档只把实际完成项改为“已实施／已退役”；远端未执行或外部验证受阻时单列环境与原因。本地代码通过不替代生产退役，停止命令成功不替代数据删除核验。
 - [x] 按 AGENTS.md 收尾本任务临时环境，列明已停止和仍保留环境、归属、地址、日志及准确停止命令。退役目标的四库直接删除与普通测试环境的数据保留分别记录。
 - [x] 在最终答复前按 [verification-before-completion](../../../.agents/skills/verification-before-completion/SKILL.md) 核对实际证据；按用户调整后的实施与验收范围无未解决项，跳过主机及后续功能单独列明。
-- [ ] 任务累计执行超过 600 秒，最终交付前按 AGENTS.md 发送一次如实的任务结果邮件并记录命令退出结果。
+- [x] 任务累计执行超过 600 秒，最终交付前按 AGENTS.md 发送一次如实的任务结果邮件并记录命令退出结果；2026-09-16 03:18:25 UTC SMTP 首次尝试接受，命令退出 0，发送时累计 85 分 57 秒。
 
 ## 计划自查与需求覆盖
 
