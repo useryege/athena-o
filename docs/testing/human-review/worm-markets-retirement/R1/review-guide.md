@@ -48,24 +48,55 @@ git -C "$FIELD_MAIN" diff --quiet "$PRODUCT_SHA" -- . \
   ':(exclude)docs' ':(exclude).agents' ':(exclude).codex' \
   ':(exclude)AGENTS.md' ':(exclude)tools/task-completion-email/main.go'
 
-# 拒绝会进入 Go/UI/部署构建的未跟踪或忽略输入；不扫描 node_modules、dist、.run、.tmp 等输出目录。
-RUNTIME_INPUT_PATHS=(
-  cmd common internal pkg tools ui/src ui/e2e hack deploy assets
-  Makefile go.mod go.sum Dockerfile Dockerfile.dev docker-compose.prod.yml sqlc.yaml
+# 扫描全仓未跟踪／忽略输入。只排除文档、技能、已知运行输出、当前 recipe
+# 不读取的本地文件、另一个任务的邮件工具，以及下方单独做精确指纹核对的 vendor。
+mapfile -d '' -t ALL_UNTRACKED_INPUTS < <(
+  git -C "$FIELD_MAIN" ls-files -z --others --exclude-standard
 )
-mapfile -d '' -t UNTRACKED_RUNTIME_INPUTS < <(
-  git -C "$FIELD_MAIN" ls-files -z --others --exclude-standard -- \
-    "${RUNTIME_INPUT_PATHS[@]}" ':(exclude)tools/task-completion-email/main.go'
+mapfile -d '' -t ALL_IGNORED_INPUTS < <(
+  git -C "$FIELD_MAIN" ls-files -z --others --ignored --exclude-standard
 )
-mapfile -d '' -t IGNORED_RUNTIME_INPUTS < <(
-  git -C "$FIELD_MAIN" ls-files -z --others --ignored --exclude-standard -- \
-    "${RUNTIME_INPUT_PATHS[@]}" ':(exclude)tools/task-completion-email/main.go'
-)
-if ((${#UNTRACKED_RUNTIME_INPUTS[@]} || ${#IGNORED_RUNTIME_INPUTS[@]})); then
-  printf 'untracked runtime input: %q\n' "${UNTRACKED_RUNTIME_INPUTS[@]}"
-  printf 'ignored runtime input: %q\n' "${IGNORED_RUNTIME_INPUTS[@]}"
+UNKNOWN_INPUTS=()
+for path in "${ALL_UNTRACKED_INPUTS[@]}" "${ALL_IGNORED_INPUTS[@]}"; do
+  case "$path" in
+    docs/*|.agents/*|.codex/*|tools/task-completion-email/main.go) ;;
+    .run/*|.tmp/*|.worktrees/*|.superpowers/*|dist/*) ;;
+    ui/node_modules/*|ui/dist/*|ui/coverage/*|ui/junit.xml) ;;
+    .impeccable/*|.playwright-mcp/*|.scratch/*) ;;
+    vendor/*|.env|PLAN*.md|rerunreport.txt) ;;
+    *) UNKNOWN_INPUTS+=("$path") ;;
+  esac
+done
+if ((${#UNKNOWN_INPUTS[@]})); then
+  printf 'unknown checkout input: %q\n' "${UNKNOWN_INPUTS[@]}"
   exit 1
 fi
+
+# vendor 被 Go 构建自动使用；核对全部相对路径及逐文件 SHA-256 的规范化摘要。
+python3 - "$FIELD_MAIN/vendor" <<'PY_VENDOR_DIGEST'
+import hashlib, json, pathlib, sys
+
+root = pathlib.Path(sys.argv[1])
+if not root.is_dir():
+    raise SystemExit(f"vendor directory missing: {root}")
+manifest = {}
+for path in root.rglob("*"):
+    if path.is_symlink():
+        raise SystemExit(f"unexpected vendor symlink: {path}")
+    if path.is_file():
+        relative = path.relative_to(root).as_posix()
+        manifest[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
+    elif not path.is_dir():
+        raise SystemExit(f"unexpected vendor entry: {path}")
+payload = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
+digest = hashlib.sha256(payload).hexdigest()
+if len(manifest) != 10872:
+    raise SystemExit(f"vendor file count changed: {len(manifest)}")
+expected = "5cd2a996eab7d974e7396fd05ceae5214552861d2b7c87e33fe4870c6d1321a1"
+if digest != expected:
+    raise SystemExit(f"vendor digest changed: {digest}")
+print(f"vendor files={len(manifest)} digest={digest}")
+PY_VENDOR_DIGEST
 
 # 两个 ignored 本地运行输入必须仍是本轮核对过的 profile 与拒发替身。
 PROFILE="$REVIEW_WT/.superpowers/sdd/2026-09-16-worm-trading-market-query/runtime/field-full-stack.env"
@@ -82,7 +113,7 @@ d66c0c3d07a16e3050600fd244e349cbcd79c575
 1dfcb795dfdf3da1ecb1b63e4acc9677604d90a5
 ~~~
 
-MATERIAL_SHA 不写入材料正文，执行命令时从正式目录解析，并在交付记录中记录完整值。<code>FIELD_MAIN</code> 可保留其他任务的文档、技能及明确排除的 task-completion-email 修改；未知 runtime 输入或本地受控文件摘要不符时必须记为受阻，不得清理、覆盖或继续启动。
+MATERIAL_SHA 不写入材料正文，执行命令时从正式目录解析，并在交付记录中记录完整值。<code>FIELD_MAIN</code> 可保留其他任务的文档、技能、已知构建／运行输出及明确排除的 task-completion-email 修改；<code>vendor/</code> 必须保持 10,872 个文件和上述规范化摘要。其他未知 checkout 输入或本地受控文件摘要不符时必须记为受阻，不得清理、覆盖或继续启动。
 
 ## 禁止操作
 
@@ -114,13 +145,18 @@ CHK-001 至 CHK-004 只读取既有证据，不需要启动环境。CHK-005 至 
 
 ### 1. 执行时归属预检并创建本轮记录
 
-在任何启动前从终端 C 执行。它要求同一 checkout 的 `full-stack` 状态为 stopped，固定应用／helper／borrower 端口均无监听，并以 noclobber 创建本轮唯一 active record。发现已有环境、端口或旧记录时立即记为受阻；不得借用、停止或覆盖它们。
+在任何启动前从终端 C 执行。它要求同一 checkout 的 `full-stack` 状态为 stopped，固定应用／helper／borrower 端口均无监听，并以 noclobber 创建本轮唯一 active record。本轮目录直接创建在 W/evidence 下，权限为 700，文件受 umask 077 保护；成功或失败都保留。发现已有环境、端口或旧记录时立即记为受阻；不得借用、停止或覆盖它们。
 
 ~~~bash
 set -e
+umask 077
 FIELD_MAIN=/home/yege/work/athena
+REVIEW_WT=/home/yege/work/athena/.worktrees/worm-markets-retirement
 ACTIVE_RECORD=/tmp/worm-markets-retirement-R1-active
 STATE="$FIELD_MAIN/.run/instances/full-stack/state.json"
+EVIDENCE_ROOT="$REVIEW_WT/.superpowers/sdd/2026-09-16-worm-trading-market-query/evidence"
+PROFILE_SOURCE="$REVIEW_WT/.superpowers/sdd/2026-09-16-worm-trading-market-query/runtime/field-full-stack.env"
+HELPER_SOURCE="$REVIEW_WT/.superpowers/sdd/2026-09-16-worm-trading-market-query/runtime/telegram-substitute.py"
 
 test ! -e "$ACTIVE_RECORD"
 test -f "$STATE"
@@ -134,22 +170,23 @@ for port in 4000 8080 8086 8088 8090 8108 8122 61907; do
   fi
 done
 
-R1_RUN_DIR=$(mktemp -d /tmp/worm-markets-retirement-R1-XXXXXXXX)
+test "$(sha256sum "$PROFILE_SOURCE" | awk '{print $1}')" = c1629c0b439579ec93decea15319f71a4a5a4058bc556bb41fe7fe8be43d42d0
+test "$(sha256sum "$HELPER_SOURCE" | awk '{print $1}')" = debd3134fc2466c68f2ab33c41c186145d885603c0830ed51cd5a62790dc1c4e
+test -d "$EVIDENCE_ROOT"
+R1_RUN_DIR=$(mktemp -d "$EVIDENCE_ROOT/human-review-R1-XXXXXXXX")
 BORROWER_INSTANCE="worm-retirement-human-r1-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+install -m 600 "$PROFILE_SOURCE" "$R1_RUN_DIR/field-full-stack.env"
+install -m 700 "$HELPER_SOURCE" "$R1_RUN_DIR/telegram-substitute.py"
+sha256sum "$R1_RUN_DIR/field-full-stack.env" "$R1_RUN_DIR/telegram-substitute.py" > "$R1_RUN_DIR/input-sha256.txt"
 printf '%s\n' "$BORROWER_INSTANCE" > "$R1_RUN_DIR/borrower-instance"
+cp "$STATE" "$R1_RUN_DIR/preflight-full-stack-state.json"
 jq '{checkedAt: (now | todateiso8601), Key, RunID, Phase, Supervisor}' "$STATE" > "$R1_RUN_DIR/preflight-full-stack.json"
 if ! (set -o noclobber; printf '%s\n' "$R1_RUN_DIR" > "$ACTIVE_RECORD") 2>/dev/null; then
-  python3 - "$R1_RUN_DIR" <<'PY_CLEAN_RECORD'
-import pathlib, sys
-root = pathlib.Path(sys.argv[1])
-(root / "borrower-instance").unlink()
-(root / "preflight-full-stack.json").unlink()
-root.rmdir()
-PY_CLEAN_RECORD
-  echo 'another R1 run record already exists; inspect it before continuing' >&2
+  echo "another R1 run record already exists; new blocked evidence retained at $R1_RUN_DIR" >&2
   exit 1
 fi
-printf 'active record: %s\nborrower instance: %s\n' "$R1_RUN_DIR" "$BORROWER_INSTANCE"
+printf 'active record: %s\nborrower instance: %s\nevidence directory: %s\n' \
+  "$R1_RUN_DIR" "$BORROWER_INSTANCE" "$R1_RUN_DIR"
 ~~~
 
 active record 存在后，所有终端都先从该文件加载本轮目录，不自行重建名称：
@@ -172,7 +209,7 @@ REVIEW_WT=/home/yege/work/athena/.worktrees/worm-markets-retirement
 ACTIVE_RECORD=/tmp/worm-markets-retirement-R1-active
 R1_RUN_DIR=$(cat "$ACTIVE_RECORD")
 cd "$REVIEW_WT"
-python3 -u "$REVIEW_WT/.superpowers/sdd/2026-09-16-worm-trading-market-query/runtime/telegram-substitute.py" > "$R1_RUN_DIR/helper.log" 2>&1 &
+python3 -u "$R1_RUN_DIR/telegram-substitute.py" > "$R1_RUN_DIR/helper.log" 2>&1 &
 HELPER_PID=$!
 for _ in $(seq 1 50); do
   kill -0 "$HELPER_PID" 2>/dev/null || { cat "$R1_RUN_DIR/helper.log" >&2; exit 1; }
@@ -211,7 +248,7 @@ LAUNCHER_START_TICKS=$(awk '{print $22}' "/proc/$LAUNCHER_PID/stat")
 LAUNCHER_CWD=$(readlink -f "/proc/$LAUNCHER_PID/cwd")
 jq -n --argjson pid "$LAUNCHER_PID" --argjson startTicks "$LAUNCHER_START_TICKS" --arg cwd "$LAUNCHER_CWD" \
   '{pid: $pid, startTicks: $startTicks, cwd: $cwd}' > "$R1_RUN_DIR/full-stack-launcher.json"
-ATHENA_NOTIFICATION_TELEGRAM_API_URL=http://127.0.0.1:61907 make run INSTANCE=full-stack   ENV_FILE="$REVIEW_WT/.superpowers/sdd/2026-09-16-worm-trading-market-query/runtime/field-full-stack.env"
+ATHENA_NOTIFICATION_TELEGRAM_API_URL=http://127.0.0.1:61907 make run INSTANCE=full-stack   ENV_FILE="$R1_RUN_DIR/field-full-stack.env"
 ~~~
 
 报告 <code>instance full-stack is ready</code> 后，在终端 C 核对当前 supervisor 是上述 launcher 的后代、state 身份与实际进程一致，才写入 `full-stack-owned.json` 和 owned-start 标记。如果 `make run` 失败、launcher 身份已变或 supervisor 不是其后代，不得写 owned 标记、不得停止当前 `full-stack`，记录受阻并保留 active record。
@@ -243,6 +280,7 @@ while test "$CURRENT_PID" -gt 1; do
   CURRENT_PID=$(awk '{print $4}' "/proc/$CURRENT_PID/stat")
 done
 test "$DESCENDANT" = true
+cp "$STATE" "$R1_RUN_DIR/full-stack-owned-state.json"
 jq '{Key, RunID, Phase, Supervisor, Endpoints}' "$STATE" > "$R1_RUN_DIR/full-stack-owned.json"
 touch "$R1_RUN_DIR/full-stack-owned-start"
 
@@ -274,8 +312,7 @@ export R1_RUN_DIR BORROWER_INSTANCE BORROWER_ENV
 ~~~bash
 set -e
 FIELD_MAIN=/home/yege/work/athena
-REVIEW_WT=/home/yege/work/athena/.worktrees/worm-markets-retirement
-python3 - "$REVIEW_WT/.superpowers/sdd/2026-09-16-worm-trading-market-query/runtime/field-full-stack.env"   "$FIELD_MAIN/.run/instances/full-stack/environment.json" "$BORROWER_ENV" <<'PY_BORROWER_ENV'
+python3 - "$R1_RUN_DIR/field-full-stack.env"   "$FIELD_MAIN/.run/instances/full-stack/environment.json" "$BORROWER_ENV" <<'PY_BORROWER_ENV'
 import json, pathlib, shlex, sys, urllib.parse
 profile, runtime_path, output = map(pathlib.Path, sys.argv[1:])
 runtime = json.loads(runtime_path.read_text())
@@ -321,6 +358,7 @@ cd /home/yege/work/athena
 make runtime-status INSTANCE="$BORROWER_INSTANCE"
 BORROWER_STATE="$PWD/.run/instances/$BORROWER_INSTANCE/state.json"
 test "$(jq -r '.Phase' "$BORROWER_STATE")" = running
+cp "$BORROWER_STATE" "$R1_RUN_DIR/borrower-owned-state.json"
 jq '{Key, RunID, Phase, Supervisor}' "$BORROWER_STATE" > "$R1_RUN_DIR/borrower-owned.json"
 touch "$R1_RUN_DIR/borrower-owned-start"
 curl -fsS -o /dev/null -w 'catalog %{http_code}\n'   -H 'X-Athena-Application-Realm: member'   http://127.0.0.1:4000/api/v1/worm-trading/events/2igwY6nZGmC8S3apwxx3N8C9xyLKuQZ6tT2KmedtTZBF
@@ -502,10 +540,14 @@ mapfile -t DYNAMIC_PORTS < <(
 )
 
 cd "$FIELD_MAIN"
-make stop-instance INSTANCE="$BORROWER_INSTANCE"
-make runtime-status INSTANCE="$BORROWER_INSTANCE"
-make stop INSTANCE=full-stack
-make runtime-status INSTANCE=full-stack
+make stop-instance INSTANCE="$BORROWER_INSTANCE" > "$R1_RUN_DIR/borrower-stop.log" 2>&1
+make runtime-status INSTANCE="$BORROWER_INSTANCE" > "$R1_RUN_DIR/borrower-status-after-stop.log" 2>&1
+test "$(jq -r '.Phase' "$BORROWER_STATE")" = stopped
+cp "$BORROWER_STATE" "$R1_RUN_DIR/borrower-after-stop-state.json"
+make stop INSTANCE=full-stack > "$R1_RUN_DIR/full-stack-stop.log" 2>&1
+make runtime-status INSTANCE=full-stack > "$R1_RUN_DIR/full-stack-status-after-stop.log" 2>&1
+test "$(jq -r '.Phase' "$FULL_STATE")" = stopped
+cp "$FULL_STATE" "$R1_RUN_DIR/full-stack-after-stop-state.json"
 test "$(awk '{print $22}' "/proc/$HELPER_PID/stat")" = "$HELPER_START_TICKS"
 test "$(readlink -f "/proc/$HELPER_PID/cwd")" = "$HELPER_CWD"
 kill -TERM "$HELPER_PID"
@@ -514,28 +556,32 @@ for _ in $(seq 1 50); do
   sleep 0.1
 done
 test ! -e "/proc/$HELPER_PID"
+jq -n --argjson pid "$HELPER_PID" --arg stoppedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  '{pid: $pid, exited: true, stoppedAt: $stoppedAt}' > "$R1_RUN_DIR/helper-after-stop.json"
 
+: > "$R1_RUN_DIR/post-stop-ports.txt"
 for port in 4000 8080 8086 8088 8090 8108 8122 61907 "${DYNAMIC_PORTS[@]}"; do
   if ss -ltnH "sport = :$port" | grep -q .; then
     echo "still-listening $port" >&2
     exit 1
   fi
+  printf 'free %s\n' "$port" >> "$R1_RUN_DIR/post-stop-ports.txt"
 done
 
 test "$(cat "$ACTIVE_RECORD")" = "$R1_RUN_DIR"
-python3 - "$ACTIVE_RECORD" "$R1_RUN_DIR" <<'PY_CLEAN_SUCCESS'
-import pathlib, sys
-active, root = map(pathlib.Path, sys.argv[1:])
-for name in (
-    "borrower-instance", "trading.env", "preflight-full-stack.json",
-    "helper.log", "helper-owned.json", "full-stack-launcher.json",
-    "full-stack-owned.json", "full-stack-owned-start",
-    "borrower-owned.json", "borrower-owned-start",
-):
-    (root / name).unlink(missing_ok=True)
-root.rmdir()
-active.unlink()
-PY_CLEAN_SUCCESS
+jq -n \
+  --arg completedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg evidenceDirectory "$R1_RUN_DIR" \
+  --arg borrowerInstance "$BORROWER_INSTANCE" \
+  --arg borrowerRunID "$(jq -r '.RunID' "$R1_RUN_DIR/borrower-owned.json")" \
+  --arg fullStackRunID "$(jq -r '.RunID' "$R1_RUN_DIR/full-stack-owned.json")" \
+  '{completedAt: $completedAt, evidenceDirectory: $evidenceDirectory,
+    borrowerInstance: $borrowerInstance, borrowerRunID: $borrowerRunID,
+    fullStackRunID: $fullStackRunID, helperExited: true,
+    borrowerPhase: "stopped", fullStackPhase: "stopped", portsReleased: true}' \
+  > "$R1_RUN_DIR/cleanup-status.json"
+unlink "$ACTIVE_RECORD"
+printf 'cleanup complete; evidence retained at %s\n' "$R1_RUN_DIR"
 ~~~
 
-终端 A 的 `wait` 此时应以 SIGTERM 状态返回。停止块在清理 active record 前已经从本轮 <code>full-stack-owned.json</code> 读取动态 PostgreSQL／Redis／MinIO 端口，并连同固定端口逐一确认无监听，不使用历史端口常量。停止命令保留原三个卷，禁止 reset。任何身份、停止或端口核对失败都保存两个 instance 目录、active record 和日志并记录受阻，不终止归属不明进程。
+终端 A 的 `wait` 此时应以 SIGTERM 状态返回。停止块在移除 stable active 指针前已经从本轮 <code>full-stack-owned.json</code> 读取动态 PostgreSQL／Redis／MinIO 端口，并连同固定端口逐一确认无监听，不使用历史端口常量。停止命令保留原三个卷，禁止 reset。成功时只删除 <code>/tmp</code> 下的 active 指针；W/evidence 中权限受限的本轮目录、输入 profile／helper、日志、完整前后 state、身份记录、owned-start 标记、端口与结束状态全部保留，并打印证据路径。任何身份、停止或端口核对失败都保存两个 instance 目录、active record 和上述证据并记录受阻，不终止归属不明进程。
