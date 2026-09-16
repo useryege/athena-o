@@ -4,6 +4,7 @@
 # succeed in an explicitly coordinated maintenance window before any restart.
 account_state_prepare() {
   ACCOUNT_STATE_CHANGED=false
+  ACCOUNT_STATE_RESTART_SERVICES=()
   if compose --profile tools run --rm --no-deps athena-account-state-migrate verify; then
     return 0
   fi
@@ -24,8 +25,9 @@ if not authority: raise SystemExit("Missing account-state schema authority DSN")
 names = []
 for name, service in services.items():
     if "tools" in service.get("profiles", []): continue
+    if service.get("labels", {}).get("io.athena.account-state.consumer") != "true": continue
     dsn = service.get("environment", {}).get(key)
-    if not dsn: continue
+    if not dsn: raise SystemExit("Missing account-state DSN for " + name)
     if dsn != authority: raise SystemExit("Reconcile account-state database identity for " + name)
     names.append(name)
 if not names: raise SystemExit("No managed account-state consumers identified")
@@ -62,5 +64,12 @@ other_schema_up() {
     done
   elif [[ "$MIGRATE_MODULE" != account-state ]]; then
     compose --profile tools run --rm athena-migrate athena up --module "$MIGRATE_MODULE"
+  fi
+}
+
+# Restore explicitly named services even when they use an opt-in profile.
+account_state_restore() {
+  if [[ "$ACCOUNT_STATE_CHANGED" == true ]] && ((${#ACCOUNT_STATE_RESTART_SERVICES[@]})); then
+    compose up -d --no-deps --force-recreate "${ACCOUNT_STATE_RESTART_SERVICES[@]}"
   fi
 }

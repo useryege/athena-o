@@ -63,9 +63,12 @@ schema 不兼容时脚本拒绝继续，除非操作者已安排维护窗口、�
 `PROD_ACCOUNT_STATE_EXTERNAL_CONSUMERS_STOPPED=true`。这两个值是操作者的事实声明，
 脚本无法发现其他主机或其他 Compose 项目中全部同库连接者。
 
-获授权的维护顺序固定为：停止 API、Notification、Trader Sync → 确认三个服务退出 →
-独立 tool `up` → 独立 tool `verify` → 启动服务。任一迁移/验证失败都不会启动消费者。
-TS 专项部署若确实改变 schema，也会恢复被停止的三个消费者。全栈部署的其他 schema
+获授权的维护顺序为：从全部 profiles 的 Compose 配置识别标记
+`io.athena.account-state.consumer: "true"` 的真实消费者并核对其 DSN → 停止并确认退出 →
+独立 tool `up` → 独立 tool `verify` → 显式恢复维护前运行项（包括 profile 服务）。
+现有 API、Notification、Trader Sync 已标记；新增同库 Solana 等服务必须同样标记，
+仅继承 env_file 中的 DSN 不代表实际使用账户库。其他 project/主机的使用者仍需现场核对。
+任一迁移/验证失败都不会启动消费者。TS 专项、热部署和本地部署都保留恢复名单。全栈部署的其他 schema
 仍由原聚合 migrator 处理，明确排除 account-state，防止另一镜像越过该数据库的维护边界。
 单活采集重启期间会中断，重启恢复并展示中断，不历史补查，不提供滚动零停机保证。
 

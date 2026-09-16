@@ -435,13 +435,11 @@ REMOTE
 )"
 
   echo "Running Athena migrations on ${REMOTE}..."
-  # Remote variables expand in bash on the target host.
-  # shellcheck disable=SC2016
-  prod_remote_exec 'cd "$APP_DIR"; account_state_prepare; other_schema_up'
-
-  echo "Recreating Athena backend services on ${REMOTE}..."
+  echo "Recreating Athena backend services after verified migrations on ${REMOTE}..."
   prod_remote_exec "$(cat <<'REMOTE'
 cd "$APP_DIR"
+account_state_prepare
+other_schema_up
 mapfile -t athena_services < <(compose config --services | awk '/^athena-/ && $0 != "athena-migrate" && $0 != "athena-account-state-migrate" && $0 != "athena-server" { print }')
 if ((${#athena_services[@]} == 0)); then
   echo 'No Athena backend services found in docker-compose.prod.yml.'
@@ -449,6 +447,7 @@ if ((${#athena_services[@]} == 0)); then
 fi
 compose up -d --no-deps --force-recreate "${athena_services[@]}"
 compose up -d --no-deps --force-recreate athena-server
+account_state_restore
 compose ps
 REMOTE
 )"
@@ -500,12 +499,7 @@ prod_remote_exec 'cd "$APP_DIR"; compose up -d --wait --wait-timeout 120 postgre
 echo "Running Athena migrations on ${REMOTE}..."
 # Remote variables expand in bash on the target host.
 # shellcheck disable=SC2016
-prod_remote_exec 'cd "$APP_DIR"; account_state_prepare; other_schema_up'
-
-echo "Starting Athena on ${REMOTE}..."
-# Remote variables expand in bash on the target host.
-# shellcheck disable=SC2016
-prod_remote_exec 'cd "$APP_DIR"; compose up -d'
+prod_remote_exec 'cd "$APP_DIR"; account_state_prepare; other_schema_up; compose up -d; account_state_restore'
 
 echo "Remote deployment status:"
 # Remote variables expand in bash on the target host.

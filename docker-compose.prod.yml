@@ -236,6 +236,8 @@ services:
   # ATHENA_URL is consumed by the summary source before Start.
   # Its pool is owned by this process; TS proxy never configures Telegram.
   athena-notification:
+    labels:
+      io.athena.account-state.consumer: "true"
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
     depends_on:
@@ -421,6 +423,8 @@ services:
     expose: ["8118"]
 
   athena-trader-sync:
+    labels:
+      io.athena.account-state.consumer: "true"
     image: ${TRADER_SYNC_IMAGE:-athena-trader-sync:local}
     restart: unless-stopped
     stop_grace_period: 40s
@@ -490,6 +494,8 @@ services:
     command: ["athena", "status", "--module", "all"]
 
   athena-server:
+    labels:
+      io.athena.account-state.consumer: "true"
     image: ${PROD_IMAGE:-athena:local}
     user: ${ATHENA_SERVER_CONTAINER_USER:-999:999}
     restart: unless-stopped

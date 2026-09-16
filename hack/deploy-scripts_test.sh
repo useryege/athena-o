@@ -78,7 +78,7 @@ for ((index = 0; index < ${#argv[@]}; index++)); do
   fi
 done
 if [[ "$*" == *'config --format json'* ]]; then
-  printf '%s\n' '{"services":{"athena-server":{"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-notification":{"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-trader-sync":{"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-solana-discovery":{"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-account-state-migrate":{"profiles":["tools"],"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-wallet":{"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":""}}}}'
+  printf '%s\n' '{"services":{"athena-server":{"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-notification":{"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-trader-sync":{"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-solana-discovery":{"profiles":["solana"],"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-account-state-migrate":{"profiles":["tools"],"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-wallet":{"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}}}}'
   exit 0
 fi
 if [[ "$*" == *'athena-account-state-migrate verify'* && "${TEST_FAIL_SCHEMA_VERIFY:-}" == yes && -f "${TEST_VOLUME_DIR}/../schema-up" ]]; then exit 47; fi
@@ -270,6 +270,8 @@ TEST_SCHEMA_CHANGE=yes bash "${fixture}/hack/prod-remote-deploy.sh" hot-deploy >
 assert_order 'stop -t 30 athena-server athena-notification athena-trader-sync athena-solana-discovery' 'ps --status running -q athena-server athena-notification athena-trader-sync athena-solana-discovery'
 assert_order 'ps --status running -q athena-server athena-notification athena-trader-sync athena-solana-discovery' 'athena-account-state-migrate up'
 assert_order 'athena-account-state-migrate up' '--force-recreate athena-a'
+rg -q -F 'up -d --no-deps --force-recreate athena-server athena-notification athena-trader-sync athena-solana-discovery' "${TEST_LOG}"
+if rg 'stop -t 30' "${TEST_LOG}" | rg -q 'athena-wallet'; then exit 1; fi
 # Verify after up, not merely a version comparison.
 awk '/athena-account-state-migrate up/{up=1;next} up && /athena-account-state-migrate verify/{found=1} END{exit !found}' "${TEST_LOG}"
 # Schema-changing TS-only deployment must restore the other drained consumers.
@@ -310,6 +312,7 @@ rm -f "${TEST_VOLUME_DIR}/../schema-up"
 TEST_SCHEMA_CHANGE=yes bash "${fixture}/hack/prod-start-local.sh" >"${tmp}/prod-local.out" 2>&1
 assert_order 'stop -t 30 athena-server athena-notification athena-trader-sync athena-solana-discovery' 'athena-account-state-migrate up'
 assert_order 'athena-account-state-migrate up' 'athena-migrate athena up'
+rg -q -F 'up -d --no-deps --force-recreate athena-server athena-notification athena-trader-sync athena-solana-discovery' "${TEST_LOG}"
 : >"${TEST_LOG}"
 rm -f "${TEST_VOLUME_DIR}/../schema-up"
 if TEST_SCHEMA_CHANGE=yes TEST_FAIL_SCHEMA_UP=yes bash "${fixture}/hack/prod-start-local.sh" >"${tmp}/prod-local-fail.out" 2>&1; then exit 1; fi
