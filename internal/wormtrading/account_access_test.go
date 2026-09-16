@@ -63,6 +63,7 @@ func TestCatalogAccountAuthorization(t *testing.T) {
 		{name: "missing row", ids: []string{catalogAccountID}, err: pgx.ErrNoRows, want: codes.PermissionDenied, storeCalls: 1},
 		{name: "not found", ids: []string{catalogAccountID}, err: status.Error(codes.NotFound, "missing"), want: codes.PermissionDenied, storeCalls: 1},
 		{name: "invalid persisted matrix from SQL reader", ids: []string{catalogAccountID}, err: fmt.Errorf("invalid persisted access: %w", status.Error(codes.InvalidArgument, "missing module")), want: codes.Internal, storeCalls: 1},
+		{name: "persisted unknown module", ids: []string{catalogAccountID}, err: fmt.Errorf("unknown module: %w", accountaccess.ErrInvalidPersistedAccess), want: codes.Internal, storeCalls: 1},
 		{name: "database failure", ids: []string{catalogAccountID}, err: errors.New("offline"), want: codes.Unavailable, storeCalls: 1},
 		{name: "cancel", ids: []string{catalogAccountID}, err: context.Canceled, want: codes.Canceled, storeCalls: 1},
 		{name: "deadline", ids: []string{catalogAccountID}, err: context.DeadlineExceeded, want: codes.DeadlineExceeded, storeCalls: 1},

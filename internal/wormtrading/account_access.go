@@ -53,8 +53,8 @@ func (s *Service) authorizeCatalogAccount(ctx context.Context, owner string, req
 			return "", status.Error(codes.PermissionDenied, "account access denied")
 		case status.Code(err) == codes.Canceled, status.Code(err) == codes.DeadlineExceeded:
 			return "", err
-		// The SQL reader validates the durable matrix before returning it.
-		case status.Code(err) == codes.InvalidArgument:
+		// The SQL reader identifies corruption separately from query failures.
+		case errors.Is(err, accountaccess.ErrInvalidPersistedAccess), status.Code(err) == codes.InvalidArgument:
 			return "", status.Error(codes.Internal, "invalid persisted account access")
 		default:
 			return "", status.Error(codes.Unavailable, "account access store is unavailable")

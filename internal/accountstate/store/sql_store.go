@@ -212,14 +212,14 @@ func (s *SQLStore) GetAccountAccess(ctx context.Context, accountID string) (acco
 	}
 	returnedID, err := accountIDFromPG(head.AccountID)
 	if err != nil {
-		return accountaccess.Access{}, fmt.Errorf("project account %q access head ID: %w", canonicalID, err)
+		return accountaccess.Access{}, fmt.Errorf("%w: project account %q access head ID: %w", accountaccess.ErrInvalidPersistedAccess, canonicalID, err)
 	}
 	if returnedID != canonicalID {
-		return accountaccess.Access{}, fmt.Errorf("account %q access query returned head for %q", canonicalID, returnedID)
+		return accountaccess.Access{}, fmt.Errorf("%w: account %q access query returned head for %q", accountaccess.ErrInvalidPersistedAccess, canonicalID, returnedID)
 	}
 	access, err := accessFromHead(returnedID, head.Administrator, head.LoginEnabled, head.ApiKeyEnabled, head.ProfitSharingEnabled, head.Revision)
 	if err != nil {
-		return accountaccess.Access{}, err
+		return accountaccess.Access{}, fmt.Errorf("%w: %w", accountaccess.ErrInvalidPersistedAccess, err)
 	}
 	moduleRows, err := txQueries.ListAccountModuleAccessByAccount(ctx, accountIDValue)
 	if err != nil {
@@ -227,11 +227,11 @@ func (s *SQLStore) GetAccountAccess(ctx context.Context, accountID string) (acco
 	}
 	result := map[string]accountaccess.Access{canonicalID: access}
 	if err := attachModuleAccess(result, moduleRows); err != nil {
-		return accountaccess.Access{}, err
+		return accountaccess.Access{}, fmt.Errorf("%w: %w", accountaccess.ErrInvalidPersistedAccess, err)
 	}
 	access = result[canonicalID]
 	if err := access.Validate(); err != nil {
-		return accountaccess.Access{}, fmt.Errorf("account %q has invalid persisted access: %w", canonicalID, err)
+		return accountaccess.Access{}, fmt.Errorf("%w: account %q: %w", accountaccess.ErrInvalidPersistedAccess, canonicalID, err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return accountaccess.Access{}, fmt.Errorf("commit account %q access snapshot: %w", canonicalID, err)
