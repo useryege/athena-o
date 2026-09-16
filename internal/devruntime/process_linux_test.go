@@ -16,17 +16,26 @@ import (
 func temporaryProcess(t *testing.T, script string) (*exec.Cmd, ProcessIdentity) {
 	t.Helper()
 	c := exec.Command("/bin/sh", "-c", script)
-	c.Env = append(os.Environ(), RunIDEnv+"=test-"+NewRunID())
+	runID := "test-" + NewRunID()
+	c.Env = append(os.Environ(), RunIDEnv+"="+runID)
 	c.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	if e := c.Start(); e != nil {
 		t.Fatal(e)
 	}
 	t.Cleanup(func() { _ = c.Process.Kill(); _ = c.Wait() })
-	p, e := ReadProcess(c.Process.Pid)
-	if e != nil {
-		t.Fatal(e)
+	// Start can return while /proc still exposes the pre-exec environment.
+	// Wait for this test's exact marker before recording an owned identity.
+	deadline := time.Now().Add(time.Second)
+	for {
+		p, e := ReadProcess(c.Process.Pid)
+		if e == nil && p.RunID == runID {
+			return c, p
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("process identity did not acquire its run marker: identity=%+v error=%v", p, e)
+		}
+		time.Sleep(time.Millisecond)
 	}
-	return c, p
 }
 func TestSameProcessRejectsIdentityReuse(t *testing.T) {
 	p := ProcessIdentity{PID: 42, PGID: 42, StartTicks: 123, BootID: "boot", Exe: "/bin/test", RunID: "run"}

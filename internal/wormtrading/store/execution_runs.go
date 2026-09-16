@@ -1665,7 +1665,10 @@ func (s *SQLStore) MarkExecutionStepSigning(
 	if err != nil {
 		return nil, fmt.Errorf("advance execution signing phase: %w", err)
 	}
-	step := mapExecutionRunStep(row)
+	step, err := loadExecutionRunStep(ctx, s.queries, row)
+	if err != nil {
+		return nil, err
+	}
 	return &step, nil
 }
 
@@ -1702,7 +1705,10 @@ func (s *SQLStore) RecordExecutionStepSigned(
 	if err != nil {
 		return nil, fmt.Errorf("record signed execution step: %w", err)
 	}
-	step := mapExecutionRunStep(row)
+	step, err := loadExecutionRunStep(ctx, s.queries, row)
+	if err != nil {
+		return nil, err
+	}
 	return &step, nil
 }
 

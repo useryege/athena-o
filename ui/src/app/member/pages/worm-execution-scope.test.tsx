@@ -267,3 +267,11 @@ test.each([
         expect(remaining.props.loading).toBe(false);
     }
 });
+
+test('retirement preserves frozen execution and step history without Markets navigation', async () => {
+    await mount();
+    expect(services.wormTrading.getExecutionRun).toHaveBeenCalled();
+    expect(services.wormTrading.listExecutionRunSteps).toHaveBeenCalled();
+    expect(JSON.stringify(tree.toJSON())).toContain('September market basket');
+    expect(JSON.stringify(tree.toJSON())).not.toContain('Worm Markets');
+});

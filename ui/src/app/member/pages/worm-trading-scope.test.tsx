@@ -70,3 +70,10 @@ test('late Worm save cannot navigate or notify after an issuer switch', async ()
     expect(window.location.pathname).toBe(fixture.route);
     expect(JSON.stringify(tree.toJSON())).not.toContain('Late previous saved result');
 });
+
+test('retirement keeps Trading editor and its saved selection without any Markets grant', async () => {
+    await mount();
+    expect(services.wormTrading.getEvent).toHaveBeenCalledWith(event.eventConditionId);
+    expect(nameInput().props.value).toBe('September market basket');
+    expect(JSON.stringify(tree.toJSON())).not.toContain('Worm Markets');
+});

@@ -488,7 +488,10 @@ test('theme:worm-delete-scope browser history leaving the list destroys the pend
     await expect(page.getByRole('heading', {name: 'New combination', exact: true})).toBeVisible();
     await page.goBack();
     await expect(page.getByRole('heading', {name: data.heading, exact: true})).toBeVisible();
-    await page.getByRole('button', {name: /Delete$/}).first().click();
+    await page
+        .getByRole('button', {name: /Delete$/})
+        .first()
+        .click();
     await expect(page.getByRole('dialog', {name: 'Delete September market basket?'})).toBeVisible();
     await page.screenshot({path: info.outputPath('before-navigation.png')});
     await page.goForward();
@@ -510,7 +513,10 @@ for (const transition of ['issuer', 'account', 'revision', 'revoke-restore', 'A-
         const user = structuredClone(original);
         writeReplies(data, '/api/v1/session/userinfo', 'GET', user);
         const ledger = await go(page, data);
-        await page.getByRole('button', {name: /Delete$/}).first().click();
+        await page
+            .getByRole('button', {name: /Delete$/})
+            .first()
+            .click();
         await expect(page.getByRole('dialog', {name: 'Delete September market basket?'})).toBeVisible();
         if (transition === 'issuer') user.iss = 'replacement-issuer';
         if (transition === 'account' || transition === 'A-B-A') user.accountId = '33333333-3333-4333-8333-333333333333';
@@ -545,7 +551,10 @@ for (const status of [200, 409, 503]) {
         const reply = data.replies.find(r => r.method === 'DELETE')!;
         reply.delayMs = 300;
         const ledger = await go(page, data);
-        await page.getByRole('button', {name: /Delete$/}).first().click();
+        await page
+            .getByRole('button', {name: /Delete$/})
+            .first()
+            .click();
         const dialog = page.getByRole('dialog', {name: 'Delete September market basket?'});
         await expect(dialog.getByText('This permanently removes the saved combination and its 2 selected markets.', {exact: true})).toBeVisible();
         if (status === 200) Object.assign(list.json as any, {items: [], total: 0});
@@ -561,7 +570,10 @@ for (const status of [200, 409, 503]) {
             reply.status = 200;
             reply.json = {};
             Object.assign(list.json as any, {items: [], total: 0});
-            await page.getByRole('button', {name: /Delete$/}).first().click();
+            await page
+                .getByRole('button', {name: /Delete$/})
+                .first()
+                .click();
             await page.getByRole('dialog').getByRole('button', {name: 'Delete combination', exact: true}).click();
             await expect(page.getByText('No saved combinations', {exact: true})).toBeVisible();
             expect(ledger.requests.filter(r => r.method !== 'GET')).toEqual([first[0], first[0]]);
@@ -569,5 +581,59 @@ for (const status of [200, 409, 503]) {
         checkReads(ledger);
         await info.attach('request-ledger.json', {body: JSON.stringify(ledger), contentType: 'application/json'});
         await page.screenshot({path: info.outputPath(`delete-${status}.png`)});
+    });
+}
+
+// Filtered retirement acceptance stays in the existing isolated fixture suite.
+for (const width of [1440, 390]) {
+    for (const id of ['worm-assets', 'worm-combinations', 'worm-combinations-edit', 'worm-combinations-new']) {
+        test(`worm-retirement retained ${id} ${width}px`, async ({page}, info) => {
+            await page.setViewportSize({width, height: 900});
+            const ledger = await openThemeCase(page, id);
+            await expect(page.getByText('Worm Markets', {exact: true})).toHaveCount(0);
+            await expect(page.getByText('Page not found', {exact: true})).toHaveCount(0);
+            expect(ledger.requests.some(request => request.path.includes('/worm-markets'))).toBe(false);
+            expect(ledger.requests.every(request => request.method === 'GET')).toBe(true);
+            await page.screenshot({path: info.outputPath(`${id}-${width}.png`), fullPage: true});
+            assertThemeLedger(ledger);
+        });
+    }
+    for (const status of [200, 403]) {
+        test(`worm-retirement combination save ${status} ${width}px`, async ({page}) => {
+            await page.setViewportSize({width, height: 900});
+            const data = scenario('worm-combinations-edit');
+            const detail = data.replies.find(reply => reply.path.includes('/combinations/'))!;
+            writeReplies(
+                data,
+                detail.path,
+                'PUT',
+                status === 200 ? {...(detail.json as any), revision: 8, name: 'Retained Trading basket'} : {message: 'Trading write access denied'},
+                status
+            );
+            const ledger = await go(page, data);
+            await page.getByRole('textbox', {name: 'Combination name', exact: false}).fill('Retained Trading basket');
+            await page.getByRole('button', {name: 'Save changes', exact: true}).click();
+            await expect.poll(() => ledger.requests.filter(request => request.method === 'PUT').length).toBe(1);
+            if (status === 200) await expect(page.getByRole('heading', {name: 'Worm Trading Combinations', exact: true})).toBeVisible();
+            else {
+                await expect(page.getByRole('textbox', {name: 'Combination name', exact: false})).toHaveValue('Retained Trading basket');
+                await expect(page.getByText('Trading write access denied', {exact: true})).toBeVisible();
+            }
+            expect(ledger.requests.filter(request => request.method !== 'GET')).toHaveLength(1);
+            expect(ledger.requests.filter(request => request.path.includes('/events/')).every(request => request.path.startsWith('/api/v1/worm-trading/events/'))).toBe(true);
+            checkReads(ledger);
+        });
+    }
+    test(`worm-retirement partial catalog failure preserves saved selections ${width}px`, async ({page}) => {
+        await page.setViewportSize({width, height: 900});
+        const data = scenario('worm-combinations-edit');
+        eventReply(data).status = 503;
+        eventReply(data).json = {message: 'Owned catalog unavailable'};
+        const ledger = await go(page, data);
+        await expect(page.getByText('Some saved Events could not be refreshed', {exact: true})).toBeVisible();
+        await expect(page.locator('.worm-combination-selection')).toHaveCount(2);
+        await expect(page.getByRole('textbox', {name: 'Combination name', exact: false})).toHaveValue('September market basket');
+        expect(ledger.requests.every(request => request.method === 'GET')).toBe(true);
+        checkReads(ledger);
     });
 }

@@ -45,7 +45,6 @@ export const executionLedger = (ledger: ThemeLedger, writes: Array<{path: string
     assertThemeLedger(ledger);
 };
 const runReply = (data: ThemeCase) => data.replies.find(r => /\/executions\/[^/]+$/.test(r.path))!;
-const planReply = (data: ThemeCase) => data.replies.find(r => /\/execution-plans\/[^/]+$/.test(r.path))!;
 const stepReply = (data: ThemeCase) => data.replies.find(r => r.path.endsWith('/steps'))!;
 const post = (data: ThemeCase, path: string, json: unknown, delayMs = 0) => data.replies.push({method: 'POST', path, realm: 'member', status: 200, json, delayMs});
 const commandBody = (revision: number) => ({commandId: expect.stringMatching(/^[0-9a-f-]{36}$/), expectedRevision: revision});
@@ -415,3 +414,30 @@ for (const state of ['completed', 'unknown'] as const)
                 `/api/v1/worm-trading/executions/${latest.id}/steps`
             ]);
         });
+
+for (const width of [1440, 390]) {
+    for (const id of ['worm-preview', 'worm-executions', 'worm-execution-detail']) {
+        test(`worm-retirement retained ${id} ${width}px`, async ({page}, info) => {
+            await page.setViewportSize({width, height: 900});
+            const ledger = await executionOpen(page, executionScenario(id));
+            await expect(page.getByText('Worm Markets', {exact: true})).toHaveCount(0);
+            await expect(page.getByText('September market basket', {exact: true}).filter({visible: true}).first()).toBeVisible();
+            executionLedger(ledger);
+            await capture(page, info, `retirement-${id}-${width}`);
+        });
+    }
+    test(`worm-retirement preview creates frozen Run without executing ${width}px`, async ({page}) => {
+        await page.setViewportSize({width, height: 900});
+        const data = executionScenario('worm-preview');
+        const detail = executionScenario('worm-execution-detail');
+        data.replies.push(...detail.replies.slice(1));
+        post(data, '/api/v1/worm-trading/executions', runReply(detail).json);
+        const ledger = await executionOpen(page, data);
+        await page.getByRole('button', {name: 'Prepare live execution', exact: true}).click();
+        await expect(page.getByRole('button', {name: 'Authorize', exact: true})).toBeVisible();
+        expect(ledger.requests.filter(request => request.method === 'POST')).toHaveLength(1);
+        expect(ledger.requests.find(request => request.method === 'POST')!.path).toBe('/api/v1/worm-trading/executions');
+        await expect(page.getByRole('button', {name: 'Start', exact: true})).toHaveCount(0);
+        assertThemeLedger(ledger);
+    });
+}

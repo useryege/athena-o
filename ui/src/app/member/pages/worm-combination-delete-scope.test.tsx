@@ -180,3 +180,10 @@ test('closing an already submitted dialog retains single-flight until its reques
     });
     expect(tree.root.findAllByType(Button).find(button => button.props.children === 'Delete')!.props.loading).toBe(false);
 });
+
+test('retirement preserves readable combinations while Trading write access removes delete', async () => {
+    await update(authorization(rawUser.accountId, 'issuer-A', 2, false));
+    expect(JSON.stringify(tree.toJSON())).toContain(item.name);
+    expect(tree.root.findAllByType(Button).filter(button => button.props.children === 'Delete')).toHaveLength(0);
+    expect(services.wormTrading.deleteMarketCombination).not.toHaveBeenCalled();
+});
