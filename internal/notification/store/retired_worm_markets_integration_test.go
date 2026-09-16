@@ -120,6 +120,50 @@ func TestRetireWormMarketsDoesNotRewriteSending(t *testing.T) {
 	require.Equal(t, "sending", deliveryState(t, s, ref))
 }
 
+func TestRetireWormMarketsAuthorizeTxLockSkipsToOtherPending(t *testing.T) {
+	s, lockedRef := wormMarketsFixture(t, "worm-markets.new-event")
+	otherRef := delivery.WorkRef{
+		Kind: "system",
+		ID:   cloneSystemDelivery(t, s, lockedRef, "worm-markets.live-event", "pending"),
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	authorizeTx, err := s.pool.Begin(ctx)
+	require.NoError(t, err)
+	defer authorizeTx.Rollback(context.Background())
+	permit, err := s.AuthorizeTx(ctx, authorizeTx, testPermitCandidate(lockedRef), uuid.New(), nil)
+	require.NoError(t, err)
+	require.NotEqual(t, uuid.Nil, permit.AttemptID)
+	var txStatus string
+	require.NoError(t, authorizeTx.QueryRow(ctx, `SELECT status FROM system_notification_deliveries WHERE id=$1`, lockedRef.ID).Scan(&txStatus))
+	require.Equal(t, "sending", txStatus)
+	// Outside the uncommitted authorization transaction, retirement sees this
+	// row as pending but must skip its permit row lock and continue the batch.
+	require.Equal(t, "pending", deliveryState(t, s, lockedRef))
+
+	counts, err := s.RetireWormMarketsNotifications(ctx, 100)
+	require.NoError(t, err)
+	require.Equal(t, WormMarketsRetirementCounts{Cancelled: 1, Pending: 1}, counts)
+	require.Equal(t, "cancelled", deliveryState(t, s, otherRef))
+	require.Equal(t, "pending", deliveryState(t, s, lockedRef))
+
+	require.NoError(t, authorizeTx.Commit(ctx))
+	require.Equal(t, "sending", deliveryState(t, s, lockedRef))
+	require.NoError(t, s.RecordStarted(ctx, permit, permit.AuthorizedAt.Add(time.Millisecond)))
+	var currentAttempt string
+	var attemptRows int64
+	require.NoError(t, s.pool.QueryRow(ctx, `SELECT current_attempt_id::text FROM system_notification_deliveries WHERE id=$1`, lockedRef.ID).Scan(&currentAttempt))
+	require.NoError(t, s.pool.QueryRow(ctx, `SELECT count(*) FROM notification_delivery_attempts WHERE id=$1 AND work_kind='system' AND work_id=$2 AND started_at IS NOT NULL`, permit.AttemptID, lockedRef.ID).Scan(&attemptRows))
+	require.Equal(t, permit.AttemptID.String(), currentAttempt)
+	require.EqualValues(t, 1, attemptRows)
+
+	counts, err = s.RetireWormMarketsNotifications(ctx, 100)
+	require.NoError(t, err)
+	require.Equal(t, WormMarketsRetirementCounts{Sending: 1}, counts)
+	require.Equal(t, "sending", deliveryState(t, s, lockedRef))
+}
+
 func TestRetireWormMarketsRetryReturnsToPendingThenCancels(t *testing.T) {
 	s, ref := wormMarketsFixture(t, "worm-markets.live-event")
 	ctx := context.Background()
