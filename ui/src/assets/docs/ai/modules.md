@@ -8,7 +8,6 @@ Athena evaluates authorization on the server for every protected operation. Prod
 | --- | --- | --- |
 | `market_radar` | Hot markets, realtime market windows, movers, and Market Radar status | `READ` |
 | `managed_oo` | Managed Optimistic Oracle proposal/dispute reads; manual block scans are write operations | `READ_WRITE` |
-| `worm_markets` | Worm event status, event lists, event details, market rules, and history | `READ` |
 | `worm_trading` | Current-account Solana wallet summaries plus live mainnet SOL and Circle native USDC balances; write authority is reserved for trading operations | `READ_WRITE` |
 | `token` | Token projects, one-time collection evidence, immutable profiles, market and operations data; policy and checkpoint mutations | `READ_WRITE` |
 | `wallet` | Owner-scoped EVM and Solana wallets; metadata and avatar reads; remark and avatar writes; session-only create, import, and private-key reveal operations | `READ_WRITE` |

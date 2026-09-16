@@ -172,4 +172,5 @@ test('source tabs declare independent source panels without additional reads', a
     const before = jest.mocked(services.adminNotifications.getRuntimeStatus).mock.calls.length;
     expect(tabs.props.items.find((item: any) => item.key === 'notifications').children).toBeDefined();
     expect(services.adminNotifications.getRuntimeStatus).toHaveBeenCalledTimes(before);
+    expect(text()).not.toContain('Worm Markets');
 });

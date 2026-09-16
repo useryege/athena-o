@@ -1,6 +1,3 @@
-SELECT 'CREATE DATABASE worm_markets'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'worm_markets')\gexec
-
 SELECT 'CREATE DATABASE wallet'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'wallet')\gexec
 

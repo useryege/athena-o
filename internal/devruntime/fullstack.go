@@ -35,7 +35,6 @@ type fullStackModule struct{ Name, Database, DSNEnv string }
 
 func fullStackModules() []fullStackModule {
 	return []fullStackModule{
-		{"worm-markets", "worm_markets", "ATHENA_WORM_MARKETS_POSTGRES_DSN"},
 		{"worm-trading", "worm_trading", "ATHENA_WORM_TRADING_POSTGRES_DSN"},
 		{"wallet", "wallet", "ATHENA_WALLET_POSTGRES_DSN"},
 		{"managed-oo", "managed_oo", "ATHENA_MANAGED_OO_POSTGRES_DSN"},

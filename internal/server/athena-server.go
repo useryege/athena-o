@@ -63,7 +63,6 @@ import (
 	serverwallet "github.com/useryege/athena/internal/server/wallet"
 	"github.com/useryege/athena/internal/server/walletavatarhttp"
 	"github.com/useryege/athena/internal/server/walletsecrethttp"
-	serverwormmarkets "github.com/useryege/athena/internal/server/wormmarkets"
 	serverwormtrading "github.com/useryege/athena/internal/server/wormtrading"
 	solanaapiclient "github.com/useryege/athena/internal/solanadiscovery/apiclient"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
@@ -71,7 +70,6 @@ import (
 	tradersyncstore "github.com/useryege/athena/internal/tradersync/store"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	"github.com/useryege/athena/internal/walletsecret"
-	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	wormtradingapiclient "github.com/useryege/athena/internal/wormtrading/apiclient"
 	"github.com/useryege/athena/pkg/apiclient"
 	appbootstrappkg "github.com/useryege/athena/pkg/apiclient/appbootstrap"
@@ -112,7 +110,6 @@ import (
 	tokenapipkg "github.com/useryege/athena/pkg/apiclient/tokenapi"
 	versionpkg "github.com/useryege/athena/pkg/apiclient/version"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
-	wormmarketspkg "github.com/useryege/athena/pkg/apiclient/wormmarkets"
 	wormtradingpkg "github.com/useryege/athena/pkg/apiclient/wormtrading"
 )
 
@@ -221,7 +218,6 @@ type AthenaServerOpts struct {
 	WalletClientset                   walletapiclient.Clientset
 	MarketRadarClientset              marketradarapiclient.Clientset
 	ManagedOOClientset                managedooapiclient.Clientset
-	WormMarketsClientset              wormmarketsapiclient.Clientset
 	WormTradingClientset              wormtradingapiclient.Clientset
 	ProfitSharingClientset            profitsharingapiclient.Clientset
 	TokenAPIClientset                 tokenapiapiclient.Clientset
@@ -644,7 +640,6 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	walletpkg.RegisterWalletServiceServer(grpcS, server.serviceSet.WalletService)
 	marketradarpkg.RegisterMarketRadarServiceServer(grpcS, server.serviceSet.MarketRadarService)
 	managedoopkg.RegisterManagedOOServiceServer(grpcS, server.serviceSet.ManagedOOService)
-	wormmarketspkg.RegisterWormMarketsServiceServer(grpcS, server.serviceSet.WormMarketsService)
 	wormtradingpkg.RegisterWormTradingServiceServer(grpcS, server.serviceSet.WormTradingService)
 	profitsharingpkg.RegisterProfitSharingServiceServer(grpcS, server.serviceSet.ProfitSharingService)
 	tokenapipkg.RegisterTokenCatalogServiceServer(grpcS, server.serviceSet.TokenServices)
@@ -672,7 +667,6 @@ type AthenaServiceSet struct {
 	WalletService        *serverwallet.Server
 	MarketRadarService   *servermarketradar.Server
 	ManagedOOService     *servermanagedoo.Server
-	WormMarketsService   *serverwormmarkets.Server
 	WormTradingService   *serverwormtrading.Server
 	ProfitSharingService *serverprofitsharing.Server
 	TokenServices        *servertokenapi.Server
@@ -694,7 +688,6 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 	walletService := serverwallet.NewServer(server.WalletClientset, server.walletAvatarHTTP.DeleteObjectBestEffort)
 	marketRadarService := servermarketradar.NewServer(server.MarketRadarClientset)
 	managedOOService := servermanagedoo.NewServer(server.ManagedOOClientset)
-	wormMarketsService := serverwormmarkets.NewServer(server.WormMarketsClientset)
 	wormTradingService := serverwormtrading.NewServer(server.WalletClientset, server.WormTradingClientset)
 	profitSharingService := serverprofitsharing.NewServer(server.ProfitSharingClientset, server.credentialMgr, server.accessController, server.accountCenter)
 	// token api service
@@ -709,7 +702,6 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		server.WalletClientset,
 		server.MarketRadarClientset,
 		server.ManagedOOClientset,
-		server.WormMarketsClientset,
 		server.WormTradingClientset,
 		server.ProfitSharingClientset,
 		server.TokenAPIClientset,
@@ -737,7 +729,6 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		WalletService:        walletService,
 		MarketRadarService:   marketRadarService,
 		ManagedOOService:     managedOOService,
-		WormMarketsService:   wormMarketsService,
 		WormTradingService:   wormTradingService,
 		ProfitSharingService: profitSharingService,
 		TokenServices:        tokenAPIService,
@@ -1115,7 +1106,6 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, walletpkg.RegisterWalletServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, marketradarpkg.RegisterMarketRadarServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, managedoopkg.RegisterManagedOOServiceHandler, gwmux, conn)
-	mustRegisterGWHandler(ctx, wormmarketspkg.RegisterWormMarketsServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, wormtradingpkg.RegisterWormTradingServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, profitsharingpkg.RegisterProfitSharingServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenCatalogServiceHandler, gwmux, conn)

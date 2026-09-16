@@ -512,11 +512,6 @@
                             "errorMessage": ""
                         },
                         {
-                            "name": "worm-markets",
-                            "status": "SERVING",
-                            "errorMessage": ""
-                        },
-                        {
                             "name": "worm-trading",
                             "status": "SERVING",
                             "errorMessage": ""

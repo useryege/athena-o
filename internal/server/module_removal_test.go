@@ -18,10 +18,10 @@ func TestRemovedModuleRegistrations(t *testing.T) {
 	g := s.newGRPCServer()
 	defer g.Stop()
 	services := g.GetServiceInfo()
-	for _, name := range []string{"sportslive.SportsLiveService", "sportshistory.SportsHistoryService", "worldcupcorners.WorldCupCornersService"} {
+	for _, name := range []string{"sportslive.SportsLiveService", "sportshistory.SportsHistoryService", "worldcupcorners.WorldCupCornersService", "wormmarkets.WormMarketsService"} {
 		require.NotContains(t, services, name)
 	}
-	for _, name := range []string{"wormmarkets.WormMarketsService", "wormtrading.WormTradingService", "wallet.WalletService", "account.AccountService", "grpc.health.v1.Health"} {
+	for _, name := range []string{"wormtrading.WormTradingService", "wallet.WalletService", "account.AccountService", "grpc.health.v1.Health"} {
 		require.Contains(t, services, name)
 	}
 	conn, err := grpc.NewClient("127.0.0.1:1", grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -29,7 +29,7 @@ func TestRemovedModuleRegistrations(t *testing.T) {
 	defer conn.Close()
 	s.StaticAssetsDir = t.TempDir()
 	h := s.newHTTPServer(context.Background(), 0, http.NotFoundHandler(), conn).Handler
-	for _, path := range []string{"/api/v1/sports-live/status", "/api/v1/sports-history/status", "/api/v1/world-cup-corners/dataset"} {
+	for _, path := range []string{"/api/v1/sports-live/status", "/api/v1/sports-history/status", "/api/v1/world-cup-corners/dataset", "/api/v1/worm-markets/status"} {
 		response := httptest.NewRecorder()
 		h.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
 		require.Equal(t, http.StatusNotFound, response.Code, path)

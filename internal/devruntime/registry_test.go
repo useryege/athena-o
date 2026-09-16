@@ -2,6 +2,7 @@ package devruntime
 
 import (
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -29,6 +30,18 @@ func TestResolveSelectedServices(t *testing.T) {
 	}
 	if _, err := resolveInfrastructure([]string{"a"}, map[string][]string{"a": {"b"}, "b": {"a"}}); err == nil {
 		t.Fatal("accepted cycle")
+	}
+}
+
+func TestRegistryDoesNotExposeWormMarketsConfiguration(t *testing.T) {
+	if _, err := ResolveServices([]string{"worm-markets"}); err == nil {
+		t.Fatal("retired Worm Markets service remains selectable")
+	}
+	api := serviceRegistry()["api-server"]
+	for _, key := range api.EnvironmentKeys {
+		if strings.HasPrefix(key, "ATHENA_WORM_MARKETS_") {
+			t.Fatalf("retired Worm Markets configuration remains: %s", key)
+		}
 	}
 }
 

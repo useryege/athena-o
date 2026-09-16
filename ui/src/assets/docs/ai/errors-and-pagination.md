@@ -63,10 +63,4 @@ GET /api/v1/market-radar/hot-markets?limit=100
 
 ### Cursor
 
-Worm event listing uses `limit` with an opaque `cursor` and returns `next_cursor`. Pass a nonempty `next_cursor` unchanged into the next request. An empty `next_cursor` means there is no next page for that traversal.
-
-```http
-GET /api/v1/worm-markets/events?limit=100&cursor=<opaque-cursor>
-```
-
 Do not parse a cursor, synthesize page numbers for a cursor endpoint, or assume that a `limit` endpoint returns a total count. Preserve the filters and sort option across every page of one traversal.

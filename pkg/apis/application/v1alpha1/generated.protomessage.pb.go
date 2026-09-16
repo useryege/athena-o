@@ -178,9 +178,3 @@ func (*TraderSyncTradeMetadata) ProtoMessage() {}
 func (*WalletItem) ProtoMessage() {}
 
 func (*WalletStatus) ProtoMessage() {}
-
-func (*WormMarketsEventItem) ProtoMessage() {}
-
-func (*WormMarketsMarginPositionEstimateItem) ProtoMessage() {}
-
-func (*WormMarketsMarketItem) ProtoMessage() {}

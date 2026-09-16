@@ -23,8 +23,8 @@ func TestFullStackExplicitServicesAndEnvironment(t *testing.T) {
 	if modules["sports-live"] || modules["sports-history"] {
 		t.Fatal("retired Sports databases would be prepared")
 	}
-	if !modules["worm-markets"] || !modules["worm-trading"] {
-		t.Fatal("Worm storage removed")
+	if modules["worm-markets"] || !modules["worm-trading"] {
+		t.Fatal("retired Markets storage or retained Trading storage changed")
 	}
 	want := []string{"trader-sync", "profit-sharing", "notification", "wallet", "ui", "api-server"}
 	if got := FullStackServices(); !reflect.DeepEqual(got, want) {
@@ -166,11 +166,19 @@ func TestFullStackRetainedDatabaseList(t *testing.T) {
 		names = append(names, module.Name)
 		databases = append(databases, module.Database)
 	}
-	if !reflect.DeepEqual(names, []string{"worm-markets", "worm-trading", "wallet", "managed-oo", "profit-sharing", "token"}) {
+	if !reflect.DeepEqual(names, []string{"worm-trading", "wallet", "managed-oo", "profit-sharing", "token"}) {
 		t.Fatalf("retained modules changed: %v", names)
 	}
-	if !reflect.DeepEqual(databases, []string{"worm_markets", "worm_trading", "wallet", "managed_oo", "profit_sharing", "token"}) {
+	if !reflect.DeepEqual(databases, []string{"worm_trading", "wallet", "managed_oo", "profit_sharing", "token"}) {
 		t.Fatalf("retained databases changed: %v", databases)
+	}
+}
+
+func TestFullStackDoesNotPrepareWormMarkets(t *testing.T) {
+	for _, module := range fullStackModules() {
+		if module.Name == "worm-markets" || module.Database == "worm_markets" {
+			t.Fatalf("retired module would be recreated: %+v", module)
+		}
 	}
 }
 

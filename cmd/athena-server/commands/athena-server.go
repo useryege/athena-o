@@ -23,7 +23,6 @@ import (
 	solanaapiclient "github.com/useryege/athena/internal/solanadiscovery/apiclient"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
-	wormmarketsapiclient "github.com/useryege/athena/internal/wormmarkets/apiclient"
 	wormtradingapiclient "github.com/useryege/athena/internal/wormtrading/apiclient"
 	"github.com/useryege/athena/pkg/stats"
 	cacheutil "github.com/useryege/athena/util/cache"
@@ -62,7 +61,6 @@ func NewCommand() *cobra.Command {
 		walletServerAddress        string
 		marketRadarServerAddress   string
 		managedOOServerAddress     string
-		wormMarketsServerAddress   string
 		wormTradingServerAddress   string
 		profitSharingServerAddress string
 		tokenAPIServerAddress      string
@@ -146,11 +144,6 @@ func NewCommand() *cobra.Command {
 				return fmt.Errorf("create Managed OO clientset: %w", err)
 			}
 			defer utilio.Close(managedOOClientset)
-			wormMarketsClientset, err := wormmarketsapiclient.NewWormMarketsClientset(wormMarketsServerAddress)
-			if err != nil {
-				return fmt.Errorf("create Worm Markets clientset: %w", err)
-			}
-			defer utilio.Close(wormMarketsClientset)
 			wormTradingClientset, err := wormtradingapiclient.NewWormTradingClientset(
 				wormTradingServerAddress,
 				env.StringFromEnv(wormtradingapiclient.InternalAuthTokenEnv, ""),
@@ -194,7 +187,6 @@ func NewCommand() *cobra.Command {
 				WalletClientset:                   walletclientset,
 				MarketRadarClientset:              marketRadarClientset,
 				ManagedOOClientset:                managedOOClientset,
-				WormMarketsClientset:              wormMarketsClientset,
 				WormTradingClientset:              wormTradingClientset,
 				ProfitSharingClientset:            profitSharingClientset,
 				TokenAPIClientset:                 tokenAPIClientset,
@@ -281,7 +273,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&walletServerAddress, "wallet-server-address", env.StringFromEnv("ATHENA_WALLET_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWallet)), "Athena wallet server address")
 	command.Flags().StringVar(&marketRadarServerAddress, "market-radar-server-address", env.StringFromEnv("ATHENA_MARKET_RADAR_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortMarketRadar)), "Athena Market Radar server address")
 	command.Flags().StringVar(&managedOOServerAddress, "managed-oo-server-address", env.StringFromEnv("ATHENA_MANAGED_OO_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortManagedOO)), "Athena Managed OO server address")
-	command.Flags().StringVar(&wormMarketsServerAddress, "worm-markets-server-address", env.StringFromEnv("ATHENA_WORM_MARKETS_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWormMarkets)), "Athena Worm Markets server address")
 	command.Flags().StringVar(&wormTradingServerAddress, "worm-trading-server-address", env.StringFromEnv("ATHENA_WORM_TRADING_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortWormTrading)), "Athena Worm Trading server address")
 	command.Flags().StringVar(&profitSharingServerAddress, "profit-sharing-server-address", env.StringFromEnv("ATHENA_PROFIT_SHARING_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortProfitSharing)), "Athena Profit Sharing server address")
 	command.Flags().StringVar(&tokenAPIServerAddress, "token-api-server-address", env.StringFromEnv("ATHENA_TOKEN_API_SERVER_ADDRESS", fmt.Sprintf("%s:%d", common.DefaultLocalGRPCHost, common.DefaultPortTokenAPI)), "Athena token API server address")

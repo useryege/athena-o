@@ -10,7 +10,6 @@ import (
 	profitsharingstore "github.com/useryege/athena/internal/profitsharing/store"
 	tokenpostgres "github.com/useryege/athena/internal/token/adapters/postgres"
 	walletstore "github.com/useryege/athena/internal/wallet/store"
-	wormmarketsstore "github.com/useryege/athena/internal/wormmarkets/store"
 	wormtradingstore "github.com/useryege/athena/internal/wormtrading/store"
 )
 
@@ -29,7 +28,6 @@ type Module struct {
 
 var modules = []Module{
 	{Name: "account-state", DSNEnv: schema.DSNEnv, Database: "athena", Migrations: accountstatemigrations.FS, Dir: accountstatemigrations.Dir},
-	{Name: "worm-markets", DSNEnv: "ATHENA_WORM_MARKETS_POSTGRES_DSN", Database: "worm_markets", Migrations: wormmarketsstore.Migrations(), Dir: MigrationDir},
 	{Name: "worm-trading", DSNEnv: "ATHENA_WORM_TRADING_POSTGRES_DSN", Database: "worm_trading", Migrations: wormtradingstore.Migrations(), Dir: MigrationDir},
 	{Name: "wallet", DSNEnv: "ATHENA_WALLET_POSTGRES_DSN", Database: "wallet", Migrations: walletstore.Migrations(), Dir: MigrationDir},
 	{Name: "managed-oo", DSNEnv: "ATHENA_MANAGED_OO_POSTGRES_DSN", Database: "managed_oo", Migrations: managedoostore.Migrations(), Dir: MigrationDir},

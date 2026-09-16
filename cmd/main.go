@@ -20,7 +20,6 @@ import (
 	athenaTokenCollectorCommands "github.com/useryege/athena/cmd/athena-token-collector/commands"
 	athenaTokenProfileBuilderCommands "github.com/useryege/athena/cmd/athena-token-profile-builder/commands"
 	athenaWalletCommands "github.com/useryege/athena/cmd/athena-wallet/commands"
-	athenaWormMarketsCommands "github.com/useryege/athena/cmd/athena-worm-markets/commands"
 	athenaWormTradingCommands "github.com/useryege/athena/cmd/athena-worm-trading/commands"
 	"github.com/useryege/athena/util/log"
 )
@@ -69,8 +68,6 @@ func main() {
 		command = athenaTokenProfileBuilderCommands.NewCommand()
 	case "athena-wallet":
 		command = athenaWalletCommands.NewCommand()
-	case "athena-worm-markets":
-		command = athenaWormMarketsCommands.NewCommand()
 	case "athena-worm-trading":
 		command = athenaWormTradingCommands.NewCommand()
 	case "athena-migrate":

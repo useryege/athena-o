@@ -121,37 +121,12 @@ services:
       ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID: ${ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID:?ATHENA_ACCOUNT_AVATAR_S3_ACCESS_KEY_ID is required}
       ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY: ${ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY:?ATHENA_ACCOUNT_AVATAR_S3_SECRET_ACCESS_KEY is required}
 
-  athena-worm-markets:
-    image: ${PROD_IMAGE:-athena:local}
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      athena-notification:
-        condition: service_started
-    env_file:
-      - ${ATHENA_COMPOSE_ENV_FILE:-.env}
-    environment:
-      <<: *without-auth-secrets
-      ATHENA_BINARY_NAME: athena-worm-markets
-      ATHENA_POSTGRES_AUTO_MIGRATE: "false"
-      ATHENA_WORM_MARKETS_LISTEN_ADDRESS: 0.0.0.0
-      ATHENA_WORM_MARKETS_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm_markets sslmode=disable
-      ATHENA_WORM_MARKETS_NOTIFICATION_ENABLED: "true"
-      ATHENA_WORM_MARKETS_NOTIFICATION_SERVER_ADDRESS: athena-notification:8086
-      ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN: ${ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN:?ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN is required}
-    command: ["athena", "--port", "8084"]
-    expose:
-      - "8084"
-
   athena-worm-trading:
     image: ${PROD_IMAGE:-athena:local}
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
-      athena-worm-markets:
-        condition: service_started
       athena-wallet:
         condition: service_started
     env_file:
@@ -167,7 +142,6 @@ services:
       ATHENA_WORM_TRADING_SOLANA_RPC_URL: ${ATHENA_WORM_TRADING_SOLANA_RPC_URL:?ATHENA_WORM_TRADING_SOLANA_RPC_URL is required}
       ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY: ${ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY:?ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY is required}
       ATHENA_WORM_TRADING_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm_trading sslmode=disable
-      ATHENA_WORM_MARKETS_SERVER_ADDRESS: athena-worm-markets:8084
     command: ["athena", "--port", "8090"]
     expose:
       - "8090"
@@ -485,7 +459,6 @@ services:
       <<: *without-auth-secrets
       ATHENA_BINARY_NAME: athena-migrate
       ATHENA_ACCOUNT_STATE_POSTGRES_DSN: ${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:?ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required}
-      ATHENA_WORM_MARKETS_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm_markets sslmode=disable
       ATHENA_WORM_TRADING_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=worm_trading sslmode=disable
       ATHENA_MANAGED_OO_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=managed_oo sslmode=disable
       ATHENA_PROFIT_SHARING_POSTGRES_DSN: host=postgres port=5432 user=${POSTGRES_USER:-athena} password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required} dbname=profit_sharing sslmode=disable
@@ -509,8 +482,6 @@ services:
       athena-notification:
         condition: service_started
       athena-wallet:
-        condition: service_started
-      athena-worm-markets:
         condition: service_started
       athena-worm-trading:
         condition: service_started
@@ -600,7 +571,6 @@ services:
       ATHENA_WALLET_SERVER_ADDRESS: athena-wallet:8088
       ATHENA_WALLET_INTERNAL_AUTH_TOKEN: ${ATHENA_WALLET_INTERNAL_AUTH_TOKEN:?ATHENA_WALLET_INTERNAL_AUTH_TOKEN is required}
       ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN: ""
-      ATHENA_WORM_MARKETS_SERVER_ADDRESS: athena-worm-markets:8084
       ATHENA_WORM_TRADING_SERVER_ADDRESS: athena-worm-trading:8090
       ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN: ${ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN:?ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN is required}
       ATHENA_WORM_TRADING_SOLANA_RPC_URL: ""

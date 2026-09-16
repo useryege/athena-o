@@ -20,8 +20,6 @@ const (
 const (
 	// Athena API Server
 	DefaultPortAthenaAPIServer = 8080
-	// Athena Worm Markets
-	DefaultPortWormMarkets = 8084
 	// Athena Notification
 	DefaultPortNotification = 8086
 	// Athena Wallet
@@ -46,7 +44,6 @@ const (
 const (
 	DefaultLocalGRPCHost           = "127.0.0.1"
 	DefaultAddressAPIServer        = "0.0.0.0"
-	DefaultAddressWormMarkets      = "0.0.0.0"
 	DefaultAddressNotification     = "0.0.0.0"
 	DefaultAddressMarketRadar      = "0.0.0.0"
 	DefaultAddressManagedOO        = "0.0.0.0"

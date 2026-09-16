@@ -8,10 +8,13 @@ func TestModulesHaveOneAthenaOwner(t *testing.T) {
 			t.Fatalf("retired module still migrates: %s", name)
 		}
 	}
-	for _, name := range []string{"worm-markets", "worm-trading"} {
+	for _, name := range []string{"worm-trading"} {
 		if _, err := Select(name); err != nil {
 			t.Fatalf("Worm migration removed: %v", err)
 		}
+	}
+	if _, err := Select("worm-markets"); err == nil {
+		t.Fatal("retired worm-markets migration module remains registered")
 	}
 	count := 0
 	for _, module := range Modules() {

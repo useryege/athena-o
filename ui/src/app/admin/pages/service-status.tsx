@@ -15,7 +15,6 @@ const serviceLabels: Record<string, string> = {
     'wallet': 'Wallet',
     'market-radar': 'Market Radar',
     'managed-oo': 'Managed OO',
-    'worm-markets': 'Worm Markets',
     'worm-trading': 'Worm Trading',
     'profit-sharing': 'Profit Sharing',
     'token-api': 'Token API'

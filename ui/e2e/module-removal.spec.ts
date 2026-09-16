@@ -19,12 +19,12 @@ for (const oldPath of ['/sports-live', '/sports-history', '/world-cup-corners'])
     });
 }
 
-test('removed module: administrator grants preserve Worm and Wallet', async ({page}) => {
+test('removed module: administrator grants preserve Trading and Wallet', async ({page}) => {
     const ledger = await openThemeCase(page, 'admin-accounts');
-    for (const label of ['Sports Live', 'Sports History', 'World Cup Corners']) {
+    for (const label of ['Sports Live', 'Sports History', 'World Cup Corners', 'Worm Markets']) {
         await expect(page.getByText(label, {exact: true})).toHaveCount(0);
     }
-    for (const label of ['Worm Markets', 'Worm Trading', 'Wallet']) {
+    for (const label of ['Worm Trading', 'Wallet']) {
         await expect(page.getByText(label, {exact: true}).first()).toBeVisible();
     }
     assertThemeLedger(ledger);
