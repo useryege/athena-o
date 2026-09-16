@@ -73,7 +73,7 @@ func TestAccountCreationQueriesReturnFirstInsertedRow(t *testing.T) {
 			require.Equal(t, "standard", profile.AccountTier)
 			require.EqualValues(t, 1, profile.Revision)
 			var modules int
-			if err := db.Pool.QueryRow(ctx, "SELECT count(*) FROM account_module_access WHERE account_id=$1", row.id).Scan(&modules); err != nil || modules != 8 {
+			if err := db.Pool.QueryRow(ctx, "SELECT count(*) FROM account_module_access WHERE account_id=$1", row.id).Scan(&modules); err != nil || modules != 7 {
 				t.Fatalf("returned account module rows=%d error=%v", modules, err)
 			}
 		})

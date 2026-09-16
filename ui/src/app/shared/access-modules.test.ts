@@ -12,3 +12,11 @@ test('Solana is a selectable read-only module in the complete access matrix', ()
     expect(allowedAccessLevels(definition!)).toEqual([AccountDataAccess.None, AccountDataAccess.Read]);
     expect(parseAccountDataModule('ACCOUNT_DATA_MODULE_SOLANA')).toBe(AccountDataModule.Solana);
 });
+
+test('Worm Markets is absent while stable module numbers remain available', () => {
+    expect(accountDataModules).toHaveLength(7);
+    expect(accountDataModules.some(item => item.id === 'worm_markets')).toBe(false);
+    expect(parseAccountDataModule(5)).toBeUndefined();
+    expect(parseAccountDataModule('ACCOUNT_DATA_MODULE_WORM_MARKETS')).toBeUndefined();
+    expect(parseAccountDataModule(11)).toBe(AccountDataModule.WormTrading);
+});

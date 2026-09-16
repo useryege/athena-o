@@ -315,7 +315,6 @@ func (s *SQLStore) UpdateAccountAccess(ctx context.Context, accountID string, ne
 		}
 		rowsAffected, err := txQueries.ReplaceAccountModuleAccess(ctx, accountstatesqlc.ReplaceAccountModuleAccessParams{
 			MarketRadarAccessLevel: string(next.Modules[accountaccess.ModuleMarketRadar]), ManagedOoAccessLevel: string(next.Modules[accountaccess.ModuleManagedOO]),
-			WormMarketsAccessLevel: string(next.Modules[accountaccess.ModuleWormMarkets]),
 			WormTradingAccessLevel: string(next.Modules[accountaccess.ModuleWormTrading]),
 			TokenAccessLevel:       string(next.Modules[accountaccess.ModuleToken]),
 			SolanaAccessLevel:      string(next.Modules[accountaccess.ModuleSolana]),

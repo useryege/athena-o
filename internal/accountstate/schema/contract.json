@@ -1942,7 +1942,7 @@
   {
     "kind": "constraint",
     "name": "account_module_access.account_module_access_module_check",
-    "definition": "CHECK ((module = ANY (ARRAY['market_radar'::text, 'managed_oo'::text, 'worm_markets'::text, 'worm_trading'::text, 'token'::text, 'solana'::text, 'wallet'::text, 'trader_sync'::text]))) validated=t"
+    "definition": "CHECK ((module = ANY (ARRAY['market_radar'::text, 'managed_oo'::text, 'worm_trading'::text, 'token'::text, 'solana'::text, 'wallet'::text, 'trader_sync'::text]))) validated=t"
   },
   {
     "kind": "constraint",

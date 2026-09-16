@@ -49,7 +49,6 @@ type accountDataModuleMapping struct {
 var canonicalAccountDataModules = []accountDataModuleMapping{
 	{module: accountaccesscore.ModuleMarketRadar, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_MARKET_RADAR},
 	{module: accountaccesscore.ModuleManagedOO, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_MANAGED_OO},
-	{module: accountaccesscore.ModuleWormMarkets, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_WORM_MARKETS},
 	{module: accountaccesscore.ModuleWormTrading, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_WORM_TRADING},
 	{module: accountaccesscore.ModuleToken, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_TOKEN},
 	{module: accountaccesscore.ModuleSolana, api: account.AccountDataModule_ACCOUNT_DATA_MODULE_SOLANA},

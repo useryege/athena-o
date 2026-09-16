@@ -160,10 +160,6 @@ var moduleGRPCRules = map[string]grpcModuleRule{
 	"/managedoo.ManagedOOService/ListManagedOODisputes":  moduleRead(accountaccess.ModuleManagedOO),
 	"/managedoo.ManagedOOService/ScanManagedOOBlock":     moduleWrite(accountaccess.ModuleManagedOO),
 
-	"/wormmarkets.WormMarketsService/GetWormMarketsStatus": moduleRead(accountaccess.ModuleWormMarkets),
-	"/wormmarkets.WormMarketsService/GetWormEvent":         moduleRead(accountaccess.ModuleWormMarkets),
-	"/wormmarkets.WormMarketsService/ListWormEvents":       moduleRead(accountaccess.ModuleWormMarkets),
-
 	"/wormtrading.WormTradingService/GetWormTradingStatus":      moduleRead(accountaccess.ModuleWormTrading),
 	"/wormtrading.WormTradingService/ListWalletBalances":        moduleRead(accountaccess.ModuleWormTrading),
 	"/wormtrading.WormTradingService/ListWalletTradingActivity": moduleRead(accountaccess.ModuleWormTrading),

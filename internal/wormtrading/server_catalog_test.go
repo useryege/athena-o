@@ -53,21 +53,20 @@ func TestCatalogRPCAuthAndCurrentAccess(t *testing.T) {
 	})}
 	client := newCatalogRPCClient(t, s)
 	for _, tc := range []struct {
-		name, bearer             string
-		ids                      []string
-		level                    accountaccess.AccessLevel
-		disabled, admin, markets bool
-		err                      error
-		want                     codes.Code
+		name, bearer    string
+		ids             []string
+		level           accountaccess.AccessLevel
+		disabled, admin bool
+		err             error
+		want            codes.Code
 	}{
 		{name: "missing bearer", ids: []string{catalogAccountID}, want: codes.Unauthenticated},
 		{name: "wrong bearer", bearer: "Bearer wrong", ids: []string{catalogAccountID}, want: codes.Unauthenticated},
 		{name: "missing identity", bearer: "Bearer catalog-test-token", want: codes.Unauthenticated},
 		{name: "duplicate", bearer: "Bearer catalog-test-token", ids: []string{catalogAccountID, catalogAccountID}, want: codes.Unauthenticated},
 		{name: "noncanonical", bearer: "Bearer catalog-test-token", ids: []string{strings.ToUpper(catalogAccountID)}, want: codes.Unauthenticated},
-		{name: "markets only", markets: true, want: codes.PermissionDenied},
 		{name: "read", level: accountaccess.AccessLevelRead, want: codes.OK},
-		{name: "revoked", want: codes.PermissionDenied},
+		{name: "trading none", want: codes.PermissionDenied},
 		{name: "read write", level: accountaccess.AccessLevelReadWrite, want: codes.OK},
 		{name: "disabled", level: accountaccess.AccessLevelRead, disabled: true, want: codes.PermissionDenied},
 		{name: "admin", admin: true, want: codes.PermissionDenied},
@@ -81,9 +80,6 @@ func TestCatalogRPCAuthAndCurrentAccess(t *testing.T) {
 			}
 			access.LoginEnabled = !tc.disabled
 			access.Administrator = tc.admin
-			if tc.markets {
-				access.Modules[accountaccess.ModuleWormMarkets] = accountaccess.AccessLevelRead
-			}
 			storeErr = tc.err
 			md := metadata.MD{}
 			if tc.bearer != "" {

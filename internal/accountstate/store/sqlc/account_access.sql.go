@@ -152,15 +152,14 @@ UPDATE account_module_access AS module_access
 SET access_level = CASE module_access.module
   WHEN 'market_radar' THEN $1::text
   WHEN 'managed_oo' THEN $2::text
-  WHEN 'worm_markets' THEN $3::text
-  WHEN 'worm_trading' THEN $4::text
-  WHEN 'token' THEN $5::text
-  WHEN 'solana' THEN $6::text
-  WHEN 'wallet' THEN $7::text
-  WHEN 'trader_sync' THEN $8::text
+  WHEN 'worm_trading' THEN $3::text
+  WHEN 'token' THEN $4::text
+  WHEN 'solana' THEN $5::text
+  WHEN 'wallet' THEN $6::text
+  WHEN 'trader_sync' THEN $7::text
   ELSE module_access.access_level
 END
-WHERE module_access.account_id = $9::uuid
+WHERE module_access.account_id = $8::uuid
   AND EXISTS (
     SELECT 1
     FROM athena_account AS account
@@ -172,7 +171,6 @@ WHERE module_access.account_id = $9::uuid
 type ReplaceAccountModuleAccessParams struct {
 	MarketRadarAccessLevel string
 	ManagedOoAccessLevel   string
-	WormMarketsAccessLevel string
 	WormTradingAccessLevel string
 	TokenAccessLevel       string
 	SolanaAccessLevel      string
@@ -185,7 +183,6 @@ func (q *Queries) ReplaceAccountModuleAccess(ctx context.Context, arg ReplaceAcc
 	result, err := q.db.Exec(ctx, replaceAccountModuleAccess,
 		arg.MarketRadarAccessLevel,
 		arg.ManagedOoAccessLevel,
-		arg.WormMarketsAccessLevel,
 		arg.WormTradingAccessLevel,
 		arg.TokenAccessLevel,
 		arg.SolanaAccessLevel,

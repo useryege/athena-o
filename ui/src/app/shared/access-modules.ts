@@ -7,7 +7,6 @@ export enum AccountDataAccess {
 export enum AccountDataModule {
     MarketRadar = 1,
     ManagedOO = 4,
-    WormMarkets = 5,
     Token = 8,
     Wallet = 9,
     WormTrading = 11,
@@ -48,15 +47,6 @@ export const accountDataModules: AccountDataModuleDefinition[] = [
         description: 'Managed Optimistic Oracle proposals, disputes, and block parsing.',
         group: 'markets',
         maxAccess: AccountDataAccess.ReadWrite
-    },
-    {
-        module: AccountDataModule.WormMarkets,
-        id: 'worm_markets',
-        label: 'Worm Markets',
-        description: 'Standalone Worm market data APIs.',
-        group: 'markets',
-        maxAccess: AccountDataAccess.Read,
-        apiOnly: true
     },
     {
         module: AccountDataModule.WormTrading,

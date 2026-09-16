@@ -14,7 +14,6 @@ type Module string
 const (
 	ModuleMarketRadar Module = "market_radar"
 	ModuleManagedOO   Module = "managed_oo"
-	ModuleWormMarkets Module = "worm_markets"
 	ModuleWormTrading Module = "worm_trading"
 	ModuleToken       Module = "token"
 	ModuleSolana      Module = "solana"
@@ -25,7 +24,6 @@ const (
 var allModules = [...]Module{
 	ModuleMarketRadar,
 	ModuleManagedOO,
-	ModuleWormMarkets,
 	ModuleWormTrading,
 	ModuleToken,
 	ModuleSolana,
@@ -52,7 +50,7 @@ func AllModules() []Module {
 // MaxAccessLevel returns the highest meaningful level for a known module.
 func MaxAccessLevel(module Module) (AccessLevel, bool) {
 	switch module {
-	case ModuleMarketRadar, ModuleWormMarkets, ModuleSolana:
+	case ModuleMarketRadar, ModuleSolana:
 		return AccessLevelRead, true
 	case ModuleManagedOO, ModuleWormTrading, ModuleToken, ModuleWallet, ModuleTraderSync:
 		return AccessLevelReadWrite, true

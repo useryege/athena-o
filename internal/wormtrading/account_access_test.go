@@ -38,6 +38,8 @@ func TestCatalogAccountRejectsDuplicateIdentity(t *testing.T) {
 	require.Equal(t, codes.Unauthenticated, status.Code(err))
 }
 func TestCatalogAccountAuthorization(t *testing.T) {
+	retiredModuleAccess := catalogAccess(accountaccess.AccessLevelNone)
+	retiredModuleAccess.Modules[accountaccess.Module("worm_markets")] = accountaccess.AccessLevelRead
 	for _, tc := range []struct {
 		name       string
 		ids        []string
@@ -56,7 +58,8 @@ func TestCatalogAccountAuthorization(t *testing.T) {
 		{name: "owner mismatch", ids: []string{catalogAccountID}, owner: "another", want: codes.PermissionDenied},
 		{name: "read", ids: []string{catalogAccountID}, access: catalogAccess(accountaccess.AccessLevelRead), want: codes.OK, storeCalls: 1},
 		{name: "read write", ids: []string{catalogAccountID}, access: catalogAccess(accountaccess.AccessLevelReadWrite), want: codes.OK, storeCalls: 1},
-		{name: "none", ids: []string{catalogAccountID}, access: catalogAccess(accountaccess.AccessLevelNone), want: codes.PermissionDenied, storeCalls: 1},
+		{name: "trading none valid matrix", ids: []string{catalogAccountID}, access: catalogAccess(accountaccess.AccessLevelNone), want: codes.PermissionDenied, storeCalls: 1},
+		{name: "retired raw module corrupts matrix", ids: []string{catalogAccountID}, access: retiredModuleAccess, want: codes.Internal, storeCalls: 1},
 		{name: "read cannot write", ids: []string{catalogAccountID}, owner: catalogAccountID, access: catalogAccess(accountaccess.AccessLevelRead), required: accountaccess.AccessLevelReadWrite, want: codes.PermissionDenied, storeCalls: 1},
 		{name: "write", ids: []string{catalogAccountID}, owner: catalogAccountID, access: catalogAccess(accountaccess.AccessLevelReadWrite), required: accountaccess.AccessLevelReadWrite, want: codes.OK, storeCalls: 1},
 		{name: "invalid matrix", ids: []string{catalogAccountID}, access: accountaccess.Access{LoginEnabled: true}, want: codes.Internal, storeCalls: 1},

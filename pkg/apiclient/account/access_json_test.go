@@ -8,7 +8,7 @@ import (
 )
 
 func TestAccountAccessJSONIndependentFlags(t *testing.T) {
-	modules := []AccountDataModule{1, 4, 5, 8, 9, 11, 12, 13}
+	modules := []AccountDataModule{1, 4, 8, 9, 11, 12, 13}
 	var moduleJSON []string
 	var grants []*AccountModuleAccess
 	for _, module := range modules {

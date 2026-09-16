@@ -128,7 +128,6 @@ WITH inserted_account AS (
     VALUES
       ('market_radar'),
       ('managed_oo'),
-      ('worm_markets'),
       ('worm_trading'),
       ('token'),
       ('solana'),
@@ -158,7 +157,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 8
+  AND (SELECT COUNT(*) FROM inserted_modules) = 7
   AND EXISTS (SELECT 1 FROM inserted_profile);
 
 -- name: CreateAdministratorAccount :one
@@ -206,7 +205,6 @@ WITH inserted_account AS (
     VALUES
       ('market_radar'),
       ('managed_oo'),
-      ('worm_markets'),
       ('worm_trading'),
       ('token'),
       ('solana'),
@@ -236,7 +234,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 8
+  AND (SELECT COUNT(*) FROM inserted_modules) = 7
   AND EXISTS (SELECT 1 FROM inserted_profile);
 
 -- name: CreateDevelopmentMember :one
@@ -277,7 +275,6 @@ WITH inserted_account AS (
     VALUES
       ('market_radar', 'read'),
       ('managed_oo', 'read_write'),
-      ('worm_markets', 'read'),
       ('worm_trading', 'read_write'),
       ('token', 'read_write'),
       ('solana', 'read'),
@@ -307,7 +304,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 8
+  AND (SELECT COUNT(*) FROM inserted_modules) = 7
   AND EXISTS (SELECT 1 FROM inserted_profile);
 
 -- name: CreateDevelopmentAdministrator :one
@@ -348,7 +345,6 @@ WITH inserted_account AS (
     VALUES
       ('market_radar'),
       ('managed_oo'),
-      ('worm_markets'),
       ('worm_trading'),
       ('token'),
       ('solana'),
@@ -378,7 +374,7 @@ SELECT account_id,
        last_login_at
 FROM inserted_account
 WHERE EXISTS (SELECT 1 FROM inserted_access)
-  AND (SELECT COUNT(*) FROM inserted_modules) = 8
+  AND (SELECT COUNT(*) FROM inserted_modules) = 7
   AND EXISTS (SELECT 1 FROM inserted_profile);
 
 -- name: RecordAccountLogin :one

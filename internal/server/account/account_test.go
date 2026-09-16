@@ -9,7 +9,7 @@ import (
 func TestTraderSyncAPIMatrix(t *testing.T) {
 	a := core.Access{Modules: core.MaximumModuleAccess()}
 	wire := ToAPIAccountAccess(a)
-	if len(wire.ModuleAccess) != 8 {
+	if len(wire.ModuleAccess) != 7 {
 		t.Fatal(len(wire.ModuleAccess))
 	}
 	var sync *api.AccountModuleAccess
@@ -34,7 +34,7 @@ func TestTraderSyncAPIMatrix(t *testing.T) {
 func TestSolanaWireMatrixRetainsToken(t *testing.T) {
 	modules := core.MaximumModuleAccess()
 	wire := ToAPIAccountAccess(core.Access{Modules: modules})
-	if len(wire.ModuleAccess) != 8 {
+	if len(wire.ModuleAccess) != 7 {
 		t.Fatalf("module count = %d", len(wire.ModuleAccess))
 	}
 	var foundSolana, foundToken bool

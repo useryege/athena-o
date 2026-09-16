@@ -75,13 +75,13 @@ func TestSportsRemovalFreshAndUpgrade(t *testing.T) {
 				for i, id := range ids {
 					a, err := s.GetAccountAccess(ctx, id)
 					require.NoError(t, err)
-					require.Len(t, a.Modules, 8)
+					require.Len(t, a.Modules, 7)
 					require.True(t, a.LoginEnabled)
 					require.True(t, a.APIKeyEnabled)
-					require.EqualValues(t, 4, a.Revision)
+					require.EqualValues(t, 5, a.Revision)
 					require.Equal(t, i == 0, a.IsPending())
 					if i == 1 {
-						require.Equal(t, accountaccess.AccessLevelRead, a.Modules[accountaccess.ModuleWormMarkets])
+						require.NotContains(t, a.Modules, accountaccess.Module("worm_markets"))
 						require.Equal(t, accountaccess.AccessLevelReadWrite, a.Modules[accountaccess.ModuleWormTrading])
 						require.Equal(t, accountaccess.AccessLevelReadWrite, a.Modules[accountaccess.ModuleWallet])
 					}
