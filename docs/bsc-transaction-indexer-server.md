@@ -1,6 +1,6 @@
 # BSC Transaction Indexer Server (LXM)
 
-> [删除需求已确认，部署退役待实施](requirements/blockchain-data/bsc-indexer-removal.md)（2026-09-15）。本轮未检查或操作远端实例、数据库与数据卷。
+> 2026-09-16 现场核验：`47.245.183.140` 上无索引器容器、卷、专属镜像、部署目录或自动启动残留；仅保留 PostgreSQL 基础镜像及仍为 SERVING 的 Etherscan Gateway。本轮未执行删除；历史数据库已随原独占卷不存在，不能将其记作本轮 DROP。详细机器身份与证据见[验收记录](testing/module-removal-cleanup-acceptance.md)。主机和 Gateway 保留。
 
 本文保留 BSC 入账普通交易索引器的历史服务器与部署记录，供后续退役定位资源。
 该服务采用独立部署和 gRPC 查询接口；以下状态以各节原核对日期为准，不代表本轮已确认仍在运行或存在主服务调用方。
@@ -76,9 +76,9 @@ ATHENA_BSC_INBOUND_TELEMETRY_LISTEN_ADDRESS=0.0.0.0:8131
 gRPC 当前没有 TLS 或 token 验证。TCP `8130` 必须由云安全组或服务器防火墙
 限制为仅允许授权调用方访问，不应面向任意公网客户端开放。
 
-## 部署和更新
+## 历史部署和更新（入口已删除，不再执行）
 
-从 ATHENA 仓库根目录执行：
+以下为删除前部署记录，当前命令已移除；退役操作使用[清理手册](operator-manual/module-removal-retirement.md)：
 
 ```bash
 make deploy-bsc-transaction-indexer-vps \
@@ -95,7 +95,7 @@ Compose 容器。它不会删除 PostgreSQL 命名卷，扫描会从数据库中
 满足创建交易之前的严格查询语义。
 
 完整的安装、部署、备份和恢复说明见
-[BSC Transaction Indexer 独立部署](../deploy/bsc-transaction-indexer/README.md)。
+BSC Transaction Indexer 独立部署（历史路径 `deploy/bsc-transaction-indexer/README.md`，基线 `264d0dc1`）。
 当前运行设计见
 [BSC Inbound Normal Transactions](design/blockchain-data/bsc-inbound-normal-transactions.md)。
 

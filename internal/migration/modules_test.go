@@ -3,6 +3,16 @@ package migration
 import "testing"
 
 func TestModulesHaveOneAthenaOwner(t *testing.T) {
+	for _, name := range []string{"sports-live", "sports-history"} {
+		if _, err := Select(name); err == nil {
+			t.Fatalf("retired module still migrates: %s", name)
+		}
+	}
+	for _, name := range []string{"worm-markets", "worm-trading"} {
+		if _, err := Select(name); err != nil {
+			t.Fatalf("Worm migration removed: %v", err)
+		}
+	}
 	count := 0
 	for _, module := range Modules() {
 		if module.Name == "notification" || module.Database == "notification" {

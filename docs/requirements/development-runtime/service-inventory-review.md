@@ -4,9 +4,9 @@
 >
 > 当前范围：改为[板块访问开关简化方案](business-access-control.md)，原整组运行控制暂停。本文件继续提供进程与环境的静态核对，保留核心分类、六个可控板块与延期接入的 Token、BSC／Sports 删除及 Worm Markets 退役决定及本地独立进程／存储、使用五个远端 Gateway 的安排；业务默认停止和成员启停要求仅属原方案历史。
 >
-> 实现状态：访问开关与清单扩展尚未实施，原整组运行控制未实现且已暂停。本轮没有启动服务、连接远端服务器、恢复采集或修改运行配置。
+> 实现状态：访问开关与清单扩展尚未实施，原整组运行控制未实现且已暂停。2026-09-15 静态核对没有操作环境；后续 2026-09-16 删除清理已执行，真实本地验收与逐环境结果见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。
 
-> [本期 make run 配套提案](../../superpowers/specs/2026-09-15-local-full-stack-design.md)已采用，尚未实施；最新 [Markets 删除、Trading 保留决定](worm-markets-removal.md)将目标由原十二应用收敛为五核心／六业务，共 11 个本地应用。Trading 承接按需市场查询，`worm` 开关只对应 Trading。下表 16／15 是包含待删除 Markets 的当前源码／部署统计，不能当作保留目标数量。BSC／Sports 清理与本次 Markets 退役分开记录。
+> [本期 make run 配套提案](../../superpowers/specs/2026-09-15-local-full-stack-design.md)已采用，尚未实施；最新 [Markets 删除、Trading 保留决定](worm-markets-removal.md)将目标由原十二应用收敛为五核心／六业务，共 11 个本地应用。Trading 承接按需市场查询，`worm` 开关只对应 Trading。下表 16／15 是包含待删除 Markets 的当前源码／部署统计，不能当作保留目标数量。BSC／Sports 清理与本次 Markets 退役分开记录。[BSC／Sports 删除清理](../../superpowers/specs/2026-09-16-module-removal-cleanup-design.md)已按确认范围实施，逐环境结果见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。
 
 ## Token 设计依据与延期范围
 
@@ -18,7 +18,7 @@
 
 ## 当前代码与部署核对
 
-下表只描述尚未删除的当前实现，供差距与清理核对使用。Token 重构和 Trader Sync 手动交易等目标能力不能冒充已存在的进程；现有进程清单也不能反向限定目标设计。
+下表只描述删除清理后保留的当前实现，供差距与清理核对使用。Token 重构和 Trader Sync 手动交易等目标能力不能冒充已存在的进程；现有进程清单也不能反向限定目标设计。
 
 | 业务组 | 当前业务进程 | 本轮核对到的共享或外部依赖 | 当前默认本地全栈 | 当前生产 Compose |
 | --- | --- | --- | --- | --- |
@@ -76,7 +76,7 @@
 - 五个 Gateway 的部署方式与位置见[服务器记录](../../etherscan-gateway-servers.md)：独立主机上的 systemd 服务，当前主生产 Compose 不启动这些进程。
 - Manager 只调度请求，不负责启停或部署 Gateway。Gateway 的常开要求不等于本地 `make run` 可以控制远端机器。
 - `47.254.154.128` 与 `47.245.183.140` 同时出现在 Gateway 和 BSC 索引器服务器记录中。索引器删除仅清理其所属资源，必须保留同机 Gateway，不能据此停用整台主机或清理共享资源。
-- 本轮仅核对文件，未执行 SSH、网关请求或第三方额度探测。文件配置可能被运行时环境变量覆盖，不能当作已验证的实际连接状态。
+- 原静态核对仅检查文件；后续清理任务对两台索引器同机 Gateway 执行了只读健康核验，均为 SERVING，其余 Gateway 不由该结果代替。文件配置可能被运行时环境变量覆盖，不能当作已验证的实际连接状态。
 
 ### 已确认安排
 
@@ -84,21 +84,21 @@
 
 | 项目 | 已确认的运行边界 |
 | --- | --- |
-| 本地进程与存储 | UI、API、Wallet、Notification、Etherscan Manager 及保留业务（含 Worm 两服务）的进程由本地实例管理；PostgreSQL、Redis、MinIO 与生产隔离；访问首次默认关闭，后续保留管理员设置，重启不重置；后台不随访问开关停止 |
+| 本地进程与存储 | UI、API、Wallet、Notification、Etherscan Manager 及保留业务（含 Worm Trading）的进程由本地实例管理；Markets 按独立计划退役，不纳入十一应用目标；PostgreSQL、Redis、MinIO 与生产隔离；访问首次默认关闭，后续保留管理员设置，重启不重置；后台不随访问开关停止 |
 | 生产进程与存储 | 使用生产自身的业务、核心进程与存储，访问配置与本地相互独立 |
 | 远端 Gateway | 本地和生产各自的 Manager 连接现有五个远端 Gateway；本地不新增 Gateway 进程 |
 | 管理员网关检查 | 本地状态查询和探测指向同一组已选择的远端 Gateway，不把远端进程显示成本地启动的进程 |
 | 启停与资源清理 | 远端 Gateway 常开，不提供业务启停按钮；本地 `make run`、停止、重启和清理不部署、停止、重启或清理这些远端实例 |
 | API key 与额度 | 由各环境的实际密钥配置决定，不因 Manager 或数据库独立就宣称第三方额度隔离 |
 
-五个远端地址是当前配置池，部署位置见上文核对事实和服务器记录。本地编排扩展实施仍须检查连接、鉴权和配置一致性；本次确认没有执行远端检查或修改既有部署。
+五个远端地址是当前配置池，部署位置见上文核对事实和服务器记录。本地编排扩展实施仍须检查连接、鉴权和配置一致性；该次设计确认没有执行远端检查或修改既有部署；后续删除任务的实际核验单独见验收记录。
 
 ## 原整组运行控制的接入差距（历史，当前不推进）
 
 1. 当前 `FullStackServices()` 只选择 Trader Sync、Profit Sharing、Notification、Wallet、UI 和 API Server。补齐保留业务进程及 Manager，并为所有业务实现初始化前的默认停止和常驻管理通道；不能直接启动旧命令后再关闭采集。
 2. Solana 需接入统一实例编排与生产部署，明确同环境账户库、业务表、schema 与内部鉴权；现有 profile 的“启动即扫描”不能直接作为目标默认行为。本轮不恢复既有暂停采集。
 3. Token 详细接入设计按用户要求推迟到其重构完成后，再核对实际成员、依赖、配置与就绪／收尾证据。本轮保留组级范围与通用接入要求，不固定沿用旧九成员，也不要求先改造旧采集与画像入口。
-4. 原时点曾将 BSC、Worm、Sports 全部列为删除；2026-09-16 已修订为仅删除 BSC／Sports，Worm 两服务、数据库、配置和依赖全部保留。删除对象的专属历史数据直接删除，运行资源尚未操作。
+4. 原时点曾将 BSC、Worm、Sports 全部列为删除；2026-09-16 曾修订为仅删除 BSC／Sports、保留 Worm 两服务，该时点边界用于已完成的 BSC／Sports 清理。之后用户确认 Markets 及其专属数据按独立计划退役、Trading 承接目录；最新目标覆盖此前双服务保留安排，Markets 退役尚未实施。BSC／Sports 实际代码、运行和数据处理已分别记录在验收记录。
 5. 本轮在 `cmd`、`internal`、主生产 Compose 和 Procfile 未发现 Temporal 运行消费者，仅本地全栈创建两个 Temporal 数据库。目标清单不据此新增 Temporal 常驻服务；初始化残留和旧数据分别处理。
 6. 服务清单、API 客户端地址、数据库准备、权限／业务准入、健康与控制展示必须同步。本地与生产共享分组语义，运行资源和控制状态按环境隔离。
 
@@ -109,4 +109,4 @@
 - [Trader Sync runtime](../../../internal/tradersync/runtime.go)、[Solana 命令](../../../cmd/athena-solana-discovery/commands/command.go)、[Solana 当前运行说明](../../developer-guide/running-locally.md)。
 - [Market Radar](../../design/market-intelligence/market-radar.md)、[Managed OO](../../design/market-intelligence/managed-oo.md)、[Profit Sharing](../../design/governance/profit-sharing.md)、[Etherscan Manager](../../design/blockchain-data/etherscan-manager.md)。
 
-当前证据限于静态源码与配置核对。新访问开关的接入与验证范围以[简化方案](business-access-control.md)为准；原进程控制的默认停止与真实启停验证不纳入本期。
+本文件原核对证据限于静态源码与配置；后续 BSC／Sports 真实验收与退役结果见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。新访问开关的接入与验证范围以[简化方案](business-access-control.md)为准；原进程控制的默认停止与真实启停验证不纳入本期。

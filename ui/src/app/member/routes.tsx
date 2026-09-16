@@ -19,9 +19,6 @@ export const MarketRadarHotPage = React.lazy(() => import('./pages/market-radar'
 export const MarketRadarRealtimePage = React.lazy(() => import('./pages/market-radar').then(module => ({default: module.MarketRadarRealtimePage})));
 export const MarketRadarMoversPage = React.lazy(() => import('./pages/market-radar').then(module => ({default: module.MarketRadarMoversPage})));
 export const SolanaPage = React.lazy(() => import('./pages/solana').then(module => ({default: module.SolanaPage})));
-export const SportsLivePage = React.lazy(() => import('./pages/sports-live').then(module => ({default: module.SportsLivePage})));
-export const SportsHistoryPage = React.lazy(() => import('./pages/sports-history').then(module => ({default: module.SportsHistoryPage})));
-export const WorldCupCornersPage = React.lazy(() => import('./pages/world-cup-corners').then(module => ({default: module.WorldCupCornersPage})));
 export const ManagedOOProposalsPage = React.lazy(() => import('./pages/managed-oo').then(module => ({default: module.ManagedOOProposalsPage})));
 export const ManagedOODisputesPage = React.lazy(() => import('./pages/managed-oo').then(module => ({default: module.ManagedOODisputesPage})));
 export const NotificationsPage = React.lazy(() => import('./pages/notifications').then(module => ({default: module.NotificationsPage})));

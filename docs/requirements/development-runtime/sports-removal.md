@@ -2,15 +2,15 @@
 
 > 需求状态：2026-09-16 Sports 删除与专属历史数据直接删除已确认。最新决定另行删除 Worm Markets，仅保留 Trading，见[Worm 删除与保留需求](worm-markets-removal.md)；该决定覆盖本文早先双服务保留表述。本文件继续只负责 Sports 范围。
 >
-> 实现状态：尚未实施。当前只维护设计，未删除代码、配置、进程、数据库或远端资源。历史数据决定不代表已经执行删除。
+> 实现状态（2026-09-16）：代码、协议、八权限契约、页面与运行配置已删除；空库/升级、通知维护及真实本地保留能力验证已有证据。数据库与运行退役分别记录在[验收记录](../../testing/module-removal-cleanup-acceptance.md)；主生产机按用户后续指示跳过。
 
 ## 1. 删除范围
 
 | 对象 | 删除功能 | 现有主要入口 |
 | --- | --- | --- |
-| Sports Live | 实时赛事同步、价格历史、比分与价格告警、查询和页面 | [命令](../../../cmd/athena-sports-live)、[模块](../../../internal/sportslive)、[设计](../../design/market-intelligence/sports-live.md) |
-| Sports History | 历史赛事同步、启动刷新、手动刷新、价格历史、查询和页面 | [命令](../../../cmd/athena-sports-history)、[模块](../../../internal/sportshistory)、[设计](../../design/market-intelligence/sports-history.md) |
-| World Cup Corners | 世界杯角球统计、筛选、查询、静态数据和页面 | [API 内嵌业务](../../../internal/server/worldcupcorners)、[页面](../../../ui/src/app/member/pages/world-cup-corners.tsx) |
+| Sports Live | 实时赛事同步、价格历史、比分与价格告警、查询和页面 | 命令（历史路径 `cmd/athena-sports-live`，基线 `264d0dc1`）、模块（历史路径 `internal/sportslive`，基线 `264d0dc1`）、[设计](../../design/market-intelligence/sports-live.md) |
+| Sports History | 历史赛事同步、启动刷新、手动刷新、价格历史、查询和页面 | 命令（历史路径 `cmd/athena-sports-history`，基线 `264d0dc1`）、模块（历史路径 `internal/sportshistory`，基线 `264d0dc1`）、[设计](../../design/market-intelligence/sports-history.md) |
+| World Cup Corners | 世界杯角球统计、筛选、查询、静态数据和页面 | API 内嵌业务（历史路径 `internal/server/worldcupcorners`，基线 `264d0dc1`）、页面（历史路径 `ui/src/app/member/pages/world-cup-corners.tsx`，基线 `264d0dc1`） |
 
 从本地与生产目标服务、会员导航、页面、管理员权限及板块访问开关中移除，不保留隐藏页面或兼容业务接口。这里是两个独立程序和一个 API 内嵌业务。
 
@@ -46,8 +46,8 @@
 
 2026-09-15 曾确认 Worm 与 Sports 一起删除，[原 R19](business-group-control.md#confirmed)保留该时点事实。2026-09-16 用户明确保留 Worm，覆盖此前 Worm 删除决定；随后确认剩余删除对象的历史数据直接删除。
 
-具体顺序与边界见[删除与清理配套设计](../../superpowers/specs/2026-09-16-module-removal-cleanup-design.md)。2026-09-16 用户再次确认删除范围；配套自查已补齐追加迁移和 schema 契约、专属部署产物清理、失败与中断重入，尚未实施。Worm 的新增启动／访问接入已由对应设计补齐，尚未实施；保留其现有能力与数据的决定不变。遵守[服务开发规范](../../developer-guide/service-development-standards.md)的适用规则；本轮仅以文档链接、范围及格式检查验证设计维护。
+具体顺序与边界见[删除与清理配套设计](../../superpowers/specs/2026-09-16-module-removal-cleanup-design.md)。2026-09-16 用户再次确认删除范围；追加迁移、schema 契约、专属部署入口清理及失败／中断重入现已实施和验证，逐环境执行证据见验收记录。Worm 的新增全栈启动／统一访问开关仍未实施，属于后续任务；现有能力与数据继续保留。服务边界、事务、有限超时与验证遵守[服务开发规范](../../developer-guide/service-development-standards.md)的适用规则。
 
-2026-09-16 已按用户优先顺序整理[删除清理实施计划](../../superpowers/plans/2026-09-16-module-removal-cleanup.md)，覆盖仓库清理、本地验收、现场退役与直接删库、最终核验。当前仅完成规划，尚未执行删除。
+2026-09-16 已按用户优先顺序整理[删除清理实施计划](../../superpowers/plans/2026-09-16-module-removal-cleanup.md)，覆盖仓库清理、本地验收、现场退役与直接删库、最终核验。当前执行状态以验收记录为准。
 
 2026-09-16 最新决定：用户要求删除 Markets、选择专属数据直接删除并采用方案 A；按需市场查询归 Trading。此前两者保留的确认记录仅保留历史含义，以[最新需求](worm-markets-removal.md)为准。

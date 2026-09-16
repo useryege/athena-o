@@ -43,7 +43,7 @@ History 保留最近 72h 已完赛赛事、整场历史与同步状态。Scratch
 
 Corners 先呈现统计口径、样本与阶段命中比例，再给出可按球队、阶段和命中筛选的比赛记录。8 场数据明确为合成样本，不冒充真实 64 场赛事。O6.5 按 90 分钟加补时计算；full-match 额外包含加时，点球独立记录。整体 5/8＝62.5%、淘汰赛 3/6＝50%、平均 7.75 来自同一数组；支持 90 分钟／全场排序和口径说明。三个 Sports 页面沿当前源码不新增分页。
 
-来源：[Live React](../../../ui/src/app/member/pages/sports-live.tsx)、[History React](../../../ui/src/app/member/pages/sports-history.tsx)、[赛事卡](../../../ui/src/app/member/pages/sports-market-card.tsx)、[Corners React](../../../ui/src/app/member/pages/world-cup-corners.tsx)；[Live 服务](../../../ui/src/app/shared/services/sports-live-service.ts)、[History 服务](../../../ui/src/app/shared/services/sports-history-service.ts)、[Corners 服务](../../../ui/src/app/shared/services/world-cup-corners-service.ts)；[Live 长期设计](../../design/market-intelligence/sports-live.md)、[History 长期设计](../../design/market-intelligence/sports-history.md)。
+来源：Live React（历史路径 `ui/src/app/member/pages/sports-live.tsx`，基线 `264d0dc1`）、History React（历史路径 `ui/src/app/member/pages/sports-history.tsx`，基线 `264d0dc1`）、赛事卡（历史路径 `ui/src/app/member/pages/sports-market-card.tsx`，基线 `264d0dc1`）、Corners React（历史路径 `ui/src/app/member/pages/world-cup-corners.tsx`，基线 `264d0dc1`）；Live 服务（历史路径 `ui/src/app/shared/services/sports-live-service.ts`，基线 `264d0dc1`）、History 服务（历史路径 `ui/src/app/shared/services/sports-history-service.ts`，基线 `264d0dc1`）、Corners 服务（历史路径 `ui/src/app/shared/services/world-cup-corners-service.ts`，基线 `264d0dc1`）；[Live 长期设计](../../design/market-intelligence/sports-live.md)、[History 长期设计](../../design/market-intelligence/sports-history.md)。
 
 ### Managed OO 提案与争议
 

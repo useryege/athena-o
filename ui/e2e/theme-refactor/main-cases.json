@@ -180,51 +180,6 @@
     ]
   },
   {
-    "id": "markets-live",
-    "references": [
-      {
-        "view": "desktop",
-        "file": "docs/requirements/web-ui/previews/theme-sports-v21-live-desktop.png",
-        "sha256": "2f1146db8f5ffc12dd960d28759f8e563106ffdab199cb2fa4706032cbde9b04"
-      },
-      {
-        "view": "mobile",
-        "file": "docs/requirements/web-ui/previews/theme-sports-v21-live-mobile.png",
-        "sha256": "9173ee276bb2d4b41b88be5664fcdccae7431ff6d41aaae8cb931dbd3496ae88"
-      }
-    ]
-  },
-  {
-    "id": "markets-history",
-    "references": [
-      {
-        "view": "desktop",
-        "file": "docs/requirements/web-ui/previews/theme-sports-v21-history-desktop.png",
-        "sha256": "05d0692f2c6ec25ea6a7bd83f7b05341a69c7b43b2c67a07199ff7a5858a71cd"
-      },
-      {
-        "view": "mobile",
-        "file": "docs/requirements/web-ui/previews/theme-sports-v21-history-mobile.png",
-        "sha256": "0fed611b4cb30964dc8b5b67cf0f5129af653ad7edfd0e09d886fda89640027a"
-      }
-    ]
-  },
-  {
-    "id": "markets-corners",
-    "references": [
-      {
-        "view": "desktop",
-        "file": "docs/requirements/web-ui/previews/theme-sports-v21-corners-desktop.png",
-        "sha256": "dd9a826ac9deaf31b3bf2cdf014283338801f307dd848be109b8df97fbc206de"
-      },
-      {
-        "view": "mobile",
-        "file": "docs/requirements/web-ui/previews/theme-sports-v21-corners-mobile.png",
-        "sha256": "3011d037986c4da137dfb593a557cea0a834dcb7a2230d1effe65088f070284f"
-      }
-    ]
-  },
-  {
     "id": "markets-proposals",
     "references": [
       {

@@ -30,16 +30,12 @@ const (
 	DefaultPortWormTrading = 8090
 	// Athena Market Radar
 	DefaultPortMarketRadar = 8092
-	// Athena Sports Live
-	DefaultPortSportsLive = 8094
 	// Athena Token API
 	DefaultPortTokenAPI = 8096
 	// Athena Etherscan Manager
 	DefaultPortEtherscanManager = 8100
 	// Athena Etherscan Gateway
 	DefaultPortEtherscanGateway = 8102
-	// Athena Sports History
-	DefaultPortSportsHistory = 8104
 	// Athena Managed OO
 	DefaultPortManagedOO = 8106
 	// Athena Profit Sharing
@@ -53,8 +49,6 @@ const (
 	DefaultAddressWormMarkets      = "0.0.0.0"
 	DefaultAddressNotification     = "0.0.0.0"
 	DefaultAddressMarketRadar      = "0.0.0.0"
-	DefaultAddressSportsLive       = "0.0.0.0"
-	DefaultAddressSportsHistory    = "0.0.0.0"
 	DefaultAddressManagedOO        = "0.0.0.0"
 	DefaultAddressProfitSharing    = "0.0.0.0"
 	DefaultAddressTokenAPI         = "0.0.0.0"

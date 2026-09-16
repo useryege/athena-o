@@ -17,12 +17,14 @@ type Querier interface {
 	AuthorizeSystemDelivery(ctx context.Context, arg AuthorizeSystemDeliveryParams) (int64, error)
 	CancelPendingAccountNotificationDeliveries(ctx context.Context, accountID pgtype.UUID) (int64, error)
 	CancelPendingAccountNotificationDeliveriesForBinding(ctx context.Context, arg CancelPendingAccountNotificationDeliveriesForBindingParams) (int64, error)
+	CancelRetiredSportsPending(ctx context.Context, limit int32) (int64, error)
 	CancelTelegramBindingReplies(ctx context.Context, accountID pgtype.UUID) error
 	CancelTelegramBindingRepliesForBinding(ctx context.Context, arg CancelTelegramBindingRepliesForBindingParams) error
 	ClaimPendingAccountNotificationDeliveries(ctx context.Context, arg ClaimPendingAccountNotificationDeliveriesParams) ([]ClaimPendingAccountNotificationDeliveriesRow, error)
 	ClaimPendingSystemNotificationDeliveries(ctx context.Context, arg ClaimPendingSystemNotificationDeliveriesParams) ([]ClaimPendingSystemNotificationDeliveriesRow, error)
 	ClaimPendingTelegramBindingReplies(ctx context.Context, arg ClaimPendingTelegramBindingRepliesParams) ([]TelegramBindingReply, error)
 	ConsumeTelegramUpdate(ctx context.Context, updateID int64) (int64, error)
+	CountRetiredSports(ctx context.Context) (CountRetiredSportsRow, error)
 	CountSystemNotificationDeliveries(ctx context.Context, arg CountSystemNotificationDeliveriesParams) (int64, error)
 	CreateAccountNotificationDelivery(ctx context.Context, arg CreateAccountNotificationDeliveryParams) (CreateAccountNotificationDeliveryRow, error)
 	CreateDeliveryAttempt(ctx context.Context, arg CreateDeliveryAttemptParams) (NotificationDeliveryAttempt, error)

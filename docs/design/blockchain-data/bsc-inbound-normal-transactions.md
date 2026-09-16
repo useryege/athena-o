@@ -1,8 +1,6 @@
 # BSC Inbound Normal Transactions
 
-> 状态：现有代码已实现；[删除需求已确认，尚未实施](../../requirements/blockchain-data/bsc-indexer-removal.md)（2026-09-15）。
->
-> 本文保留删除实施前的源码与服务边界说明，供后续清理定位。该索引器已移出本地与生产目标服务清单，不再作为后续业务依赖；当前源码和既有部署尚未在本轮处理。
+> 当前状态（2026-09-16）：专属代码、契约、构建和部署入口已删除。本文保留删除前设计与历史路径；逐环境运行/数据状态以[清理验收记录](../../testing/module-removal-cleanup-acceptance.md)为准，不代表本轮执行了历史数据删除。
 
 ## Scope
 
@@ -14,17 +12,17 @@ BEP-20 transfers, internal transactions, execution traces, swaps, outbound histo
 
 | Concern | Source | Key symbols |
 | --- | --- | --- |
-| Standalone process | [cmd/athena-bsc-transaction-indexer](../../../cmd/athena-bsc-transaction-indexer) | `main`, `commands.NewCommand` |
-| Deployment bundle | [deploy/bsc-transaction-indexer](../../../deploy/bsc-transaction-indexer) | dedicated `Dockerfile`, Compose services `postgres` and `indexer` |
+| Standalone process | cmd/athena-bsc-transaction-indexer（历史路径 `cmd/athena-bsc-transaction-indexer`，基线 `264d0dc1`） | `main`, `commands.NewCommand` |
+| Deployment bundle | deploy/bsc-transaction-indexer（历史路径 `deploy/bsc-transaction-indexer`，基线 `264d0dc1`） | dedicated `Dockerfile`, Compose services `postgres` and `indexer` |
 | Remote Docker bootstrap | [hack/install-docker-vps.sh](../../../hack/install-docker-vps.sh) | idempotent Ubuntu Docker Engine and Compose installation |
-| Remote deployment | [hack/deploy-bsc-transaction-indexer.sh](../../../hack/deploy-bsc-transaction-indexer.sh) | image build, SSH transfer, idempotent Compose update |
-| Finalized block ingestion | [internal/bscinbound/scanner.go](../../../internal/bscinbound/scanner.go) | `Scanner.Run`, `Scanner.runOnce` |
-| BSC node access | [internal/bscinbound/node.go](../../../internal/bscinbound/node.go) | `DialNode`, `Node.FinalizedHeader` |
-| Public gRPC contract | [internal/bscinbound/bscinbound.proto](../../../internal/bscinbound/bscinbound.proto) | `BscInboundTransactionService`, `ListInboundNormalTransactions` |
-| Query behavior | [internal/bscinbound/service.go](../../../internal/bscinbound/service.go) | `Service.ListInboundNormalTransactions` |
-| PostgreSQL boundary | [internal/bscinbound/store/store.go](../../../internal/bscinbound/store/store.go) | `Store.CommitBatch`, `Store.ListInboundNormalTransactions` |
-| Schema | [internal/bscinbound/store/migrations/000001_init.sql](../../../internal/bscinbound/store/migrations/000001_init.sql) | `inbound_normal_transaction`, `bsc_inbound_scan_checkpoint` |
-| Health and metrics | [internal/bscinbound/telemetry.go](../../../internal/bscinbound/telemetry.go) | `Metrics`, `TelemetryServer` |
+| Remote deployment | hack/deploy-bsc-transaction-indexer.sh（历史路径 `hack/deploy-bsc-transaction-indexer.sh`，基线 `264d0dc1`） | image build, SSH transfer, idempotent Compose update |
+| Finalized block ingestion | internal/bscinbound/scanner.go（历史路径 `internal/bscinbound/scanner.go`，基线 `264d0dc1`） | `Scanner.Run`, `Scanner.runOnce` |
+| BSC node access | internal/bscinbound/node.go（历史路径 `internal/bscinbound/node.go`，基线 `264d0dc1`） | `DialNode`, `Node.FinalizedHeader` |
+| Public gRPC contract | internal/bscinbound/bscinbound.proto（历史路径 `internal/bscinbound/bscinbound.proto`，基线 `264d0dc1`） | `BscInboundTransactionService`, `ListInboundNormalTransactions` |
+| Query behavior | internal/bscinbound/service.go（历史路径 `internal/bscinbound/service.go`，基线 `264d0dc1`） | `Service.ListInboundNormalTransactions` |
+| PostgreSQL boundary | internal/bscinbound/store/store.go（历史路径 `internal/bscinbound/store/store.go`，基线 `264d0dc1`） | `Store.CommitBatch`, `Store.ListInboundNormalTransactions` |
+| Schema | internal/bscinbound/store/migrations/000001_init.sql（历史路径 `internal/bscinbound/store/migrations/000001_init.sql`，基线 `264d0dc1`） | `inbound_normal_transaction`, `bsc_inbound_scan_checkpoint` |
+| Health and metrics | internal/bscinbound/telemetry.go（历史路径 `internal/bscinbound/telemetry.go`，基线 `264d0dc1`） | `Metrics`, `TelemetryServer` |
 
 ## Architecture
 

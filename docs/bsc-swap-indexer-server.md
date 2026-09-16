@@ -1,6 +1,6 @@
 # BSC Swap Indexer Server (47.254.154.128)
 
-> [删除需求已确认，部署退役待实施](requirements/blockchain-data/bsc-indexer-removal.md)（2026-09-15）。本轮未检查或操作远端实例、数据库与数据卷。
+> 2026-09-16 现场核验：`47.254.154.128` 上无索引器容器、卷、专属镜像、部署目录或自动启动残留；仅保留 PostgreSQL 基础镜像及仍为 SERVING 的 Etherscan Gateway。本轮未执行删除；历史数据库已随原独占卷不存在，不能将其记作本轮 DROP。详细机器身份与证据见[验收记录](testing/module-removal-cleanup-acceptance.md)。主机和 Gateway 保留。
 
 本文保留 BSC V2 Swap 索引器的历史服务器与部署记录，供后续退役定位资源。
 该服务采用独立部署和 gRPC 查询接口；以下状态以各节原核对日期为准，不代表本轮已确认仍在运行或存在其他服务调用方。
@@ -92,9 +92,9 @@ finalized 高度，因此 `readyz` 返回 HTTP 503，属于预期状态。
 仍会持续增长；40 GiB 系统盘只适合作为当前容量，运维必须持续观察数据库体积
 和剩余磁盘，提前安排扩容或容量告警。
 
-## 部署和更新
+## 历史部署和更新（入口已删除，不再执行）
 
-从 ATHENA 仓库根目录执行：
+以下为删除前部署记录，当前命令已移除；退役操作使用[清理手册](operator-manual/module-removal-retirement.md)：
 
 ```bash
 make deploy-bsc-swap-indexer-vps \
@@ -107,7 +107,7 @@ Compose 容器。它不会删除 PostgreSQL 命名卷，扫描会从数据库中
 继续。
 
 完整部署说明见
-[BSC Swap Indexer 独立部署](../deploy/bsc-swap-indexer/README.md)。当前运行设计见
+BSC Swap Indexer 独立部署（历史路径 `deploy/bsc-swap-indexer/README.md`，基线 `264d0dc1`）。当前运行设计见
 [BSC V2 Swap Transactions](design/blockchain-data/bsc-v2-swap-transactions.md)。
 
 ## 日常检查

@@ -314,16 +314,14 @@ func (s *SQLStore) UpdateAccountAccess(ctx context.Context, accountID string, ne
 			return fmt.Errorf("account %q access update returned revision %d after expected revision %d", canonicalID, head.Revision, expectedRevision)
 		}
 		rowsAffected, err := txQueries.ReplaceAccountModuleAccess(ctx, accountstatesqlc.ReplaceAccountModuleAccessParams{
-			MarketRadarAccessLevel: string(next.Modules[accountaccess.ModuleMarketRadar]), SportsLiveAccessLevel: string(next.Modules[accountaccess.ModuleSportsLive]),
-			SportsHistoryAccessLevel: string(next.Modules[accountaccess.ModuleSportsHistory]), ManagedOoAccessLevel: string(next.Modules[accountaccess.ModuleManagedOO]),
-			WormMarketsAccessLevel:     string(next.Modules[accountaccess.ModuleWormMarkets]),
-			WormTradingAccessLevel:     string(next.Modules[accountaccess.ModuleWormTrading]),
-			WorldCupCornersAccessLevel: string(next.Modules[accountaccess.ModuleWorldCupCorners]),
-			TokenAccessLevel:           string(next.Modules[accountaccess.ModuleToken]),
-			SolanaAccessLevel:          string(next.Modules[accountaccess.ModuleSolana]),
-			WalletAccessLevel:          string(next.Modules[accountaccess.ModuleWallet]),
-			TraderSyncAccessLevel:      string(next.Modules[accountaccess.ModuleTraderSync]),
-			AccountID:                  accountIDValue,
+			MarketRadarAccessLevel: string(next.Modules[accountaccess.ModuleMarketRadar]), ManagedOoAccessLevel: string(next.Modules[accountaccess.ModuleManagedOO]),
+			WormMarketsAccessLevel: string(next.Modules[accountaccess.ModuleWormMarkets]),
+			WormTradingAccessLevel: string(next.Modules[accountaccess.ModuleWormTrading]),
+			TokenAccessLevel:       string(next.Modules[accountaccess.ModuleToken]),
+			SolanaAccessLevel:      string(next.Modules[accountaccess.ModuleSolana]),
+			WalletAccessLevel:      string(next.Modules[accountaccess.ModuleWallet]),
+			TraderSyncAccessLevel:  string(next.Modules[accountaccess.ModuleTraderSync]),
+			AccountID:              accountIDValue,
 		})
 		if err != nil {
 			return fmt.Errorf("replace account %q module access: %w", canonicalID, err)

@@ -1,6 +1,6 @@
 # Sports History
 
-> 状态：现有代码已实现；[Sports 板块删除已确认，尚未实施](../../requirements/development-runtime/sports-removal.md)。2026-09-16 已确认其专属历史数据直接删除，Worm Markets／Trading 保留。本文记录删除前的能力与源码，供清理定位；不作为继续提供 Sports 的要求。
+> 当前状态（2026-09-16）：专属代码、契约、构建和部署入口已删除。本文保留删除前设计与历史路径；逐环境运行/数据状态以[清理验收记录](../../testing/module-removal-cleanup-acceptance.md)为准，不代表本轮执行了历史数据删除。
 
 ## Scope
 
@@ -21,16 +21,16 @@ access remains in the shared provider adapter under `util/polymarket`.
 | Concern | Source | Key symbols |
 | --- | --- | --- |
 | Binary dispatch | [cmd/main.go](../../../cmd/main.go) | `main`, `ATHENA_BINARY_NAME` dispatch |
-| Process composition and configuration | [cmd/athena-sports-history/commands/athena-sports-history.go](../../../cmd/athena-sports-history/commands/athena-sports-history.go) | `NewCommand` |
-| Lifecycle and synchronization state | [internal/sportshistory/service.go](../../../internal/sportshistory/service.go) | `Service`, `Start`, `Stop`, `sportsHistorySyncStatus` |
-| Event synchronization, reads, and refresh | [internal/sportshistory/sports_history.go](../../../internal/sportshistory/sports_history.go) | `runSportsHistorySync`, `refreshSportsHistory`, `syncSportsHistory`, `RefreshSportsHistory` |
-| Price-history synchronization | [internal/sportshistory/price_history.go](../../../internal/sportshistory/price_history.go) | `syncSportsHistoryPriceHistory`, `syncSportsHistoryPriceHistoryBatch` |
-| gRPC lifecycle and health | [internal/sportshistory/server.go](../../../internal/sportshistory/server.go) | `Server`, `NewServer`, `Start`, `Stop` |
-| Durable store and transactions | [internal/sportshistory/store/sports_history_store.go](../../../internal/sportshistory/store/sports_history_store.go) | `SyncSportsHistory`, `BatchUpsertSportsHistoryPricePoints`, `GetSportsHistoryLastSuccessAt` |
-| PostgreSQL connection and schema | [internal/sportshistory/store/sql_store.go](../../../internal/sportshistory/store/sql_store.go), [internal/sportshistory/store/migrations/000001_init.sql](../../../internal/sportshistory/store/migrations/000001_init.sql) | `NewSQLStoreSource`, `sports_history_event`, `sports_history_market`, `sports_history_price_point` |
-| Internal service contract | [internal/sportshistory/sports_history.proto](../../../internal/sportshistory/sports_history.proto) | `SportsHistoryService` |
-| Public HTTP/gRPC contract and proxy | [internal/server/sportshistory/sportshistory.proto](../../../internal/server/sportshistory/sportshistory.proto), [internal/server/sportshistory/sportshistory.go](../../../internal/server/sportshistory/sportshistory.go) | `SportsHistoryService`, `Server` |
-| Internal gRPC connection ownership | [internal/sportshistory/apiclient/apiclient.go](../../../internal/sportshistory/apiclient/apiclient.go), [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewSportsHistoryClientset`, `ClientConnection` |
+| Process composition and configuration | cmd/athena-sports-history/commands/athena-sports-history.go（历史路径 `cmd/athena-sports-history/commands/athena-sports-history.go`，基线 `264d0dc1`） | `NewCommand` |
+| Lifecycle and synchronization state | internal/sportshistory/service.go（历史路径 `internal/sportshistory/service.go`，基线 `264d0dc1`） | `Service`, `Start`, `Stop`, `sportsHistorySyncStatus` |
+| Event synchronization, reads, and refresh | internal/sportshistory/sports_history.go（历史路径 `internal/sportshistory/sports_history.go`，基线 `264d0dc1`） | `runSportsHistorySync`, `refreshSportsHistory`, `syncSportsHistory`, `RefreshSportsHistory` |
+| Price-history synchronization | internal/sportshistory/price_history.go（历史路径 `internal/sportshistory/price_history.go`，基线 `264d0dc1`） | `syncSportsHistoryPriceHistory`, `syncSportsHistoryPriceHistoryBatch` |
+| gRPC lifecycle and health | internal/sportshistory/server.go（历史路径 `internal/sportshistory/server.go`，基线 `264d0dc1`） | `Server`, `NewServer`, `Start`, `Stop` |
+| Durable store and transactions | internal/sportshistory/store/sports_history_store.go（历史路径 `internal/sportshistory/store/sports_history_store.go`，基线 `264d0dc1`） | `SyncSportsHistory`, `BatchUpsertSportsHistoryPricePoints`, `GetSportsHistoryLastSuccessAt` |
+| PostgreSQL connection and schema | internal/sportshistory/store/sql_store.go（历史路径 `internal/sportshistory/store/sql_store.go`，基线 `264d0dc1`）, internal/sportshistory/store/migrations/000001_init.sql（历史路径 `internal/sportshistory/store/migrations/000001_init.sql`，基线 `264d0dc1`） | `NewSQLStoreSource`, `sports_history_event`, `sports_history_market`, `sports_history_price_point` |
+| Internal service contract | internal/sportshistory/sports_history.proto（历史路径 `internal/sportshistory/sports_history.proto`，基线 `264d0dc1`） | `SportsHistoryService` |
+| Public HTTP/gRPC contract and proxy | internal/server/sportshistory/sportshistory.proto（历史路径 `internal/server/sportshistory/sportshistory.proto`，基线 `264d0dc1`）, internal/server/sportshistory/sportshistory.go（历史路径 `internal/server/sportshistory/sportshistory.go`，基线 `264d0dc1`） | `SportsHistoryService`, `Server` |
+| Internal gRPC connection ownership | internal/sportshistory/apiclient/apiclient.go（历史路径 `internal/sportshistory/apiclient/apiclient.go`，基线 `264d0dc1`）, [util/grpc/client.go](../../../util/grpc/client.go) | `Clientset`, `NewSportsHistoryClientset`, `ClientConnection` |
 | Shared API model | [pkg/apis/application/v1alpha1/market_intelligence_types.go](../../../pkg/apis/application/v1alpha1/market_intelligence_types.go) | `SportsHistoryEventCardItem`, `SportsHistoryPriceHistorySeriesItem`, `SportsHistorySyncStatus` |
 | Provider adapters | [util/polymarket](../../../util/polymarket) | `GammaClient`, `CLOBClient` |
 

@@ -2,11 +2,11 @@
 
 > 最新边界（2026-09-16）：用户另行确认删除 Markets 及其专属数据，采用 [Trading 统一承接目录](2026-09-16-worm-trading-market-query-design.md)。本文件仍只执行 BSC／Sports 原删除范围，不自行扩大删库或通知来源；下文 Worm 双服务保留基线仅适用于内聚重构前。执行时按目标分支实际状态调整保留回归，不能为通过旧检查重建 Markets。两个任务的账户迁移、约束和共享生成产物必须协调。
 
-> 状态：2026-09-16 删除范围与历史数据策略已获用户确认，清理设计已完成本轮自查及缺口补充，尚未实施。Trading 保留，Markets 按独立重构退役；本文件删除两个 BSC 索引器、Sports Live／History 和 World Cup Corners 删除；其专属历史数据直接删除。自查补充与覆盖结论见第 8 节，不把设计完成记作实施完成。
+> 状态：2026-09-16 删除范围与历史数据策略已获用户确认，清理设计已完成自查；代码、本地验收及本轮适用环境退役已实施，逐环境状态见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。本轮保留 Worm Markets／Trading，Markets 后续按独立内聚设计退役；两个 BSC 索引器、Sports Live／History 和 World Cup Corners 删除；其专属历史数据直接删除。自查补充与覆盖结论见第 8 节，不把设计完成记作实施完成。
 >
-> 承接[两个 BSC 索引器删除需求](../../requirements/blockchain-data/bsc-indexer-removal.md)、[Sports 删除与 Worm 保留决定](../../requirements/development-runtime/sports-removal.md)、[访问开关设计](2026-09-15-business-access-control-design.md)与 [make run 配套设计](2026-09-15-local-full-stack-design.md)。原 D01–D03 仍暂停，Token 详细接入仍延期。
+> 承接[两个 BSC 索引器删除需求](../../requirements/blockchain-data/bsc-indexer-removal.md)、[Sports 删除与 Worm 边界](../../requirements/development-runtime/sports-removal.md)、[访问开关设计](2026-09-15-business-access-control-design.md)与 [make run 配套设计](2026-09-15-local-full-stack-design.md)。原 D01–D03 仍暂停，Token 详细接入仍延期。
 
-> 优先实施计划（2026-09-16）：用户要求先规划清理和删除，已形成[九项任务与逐环境退役顺序](../plans/2026-09-16-module-removal-cleanup.md)。本次仅完成计划，代码、部署和数据操作尚未执行；最新十一应用全栈与访问开关另行实施。
+> 优先实施计划（2026-09-16）：用户要求先规划清理和删除，已形成[九项任务与逐环境退役顺序](../plans/2026-09-16-module-removal-cleanup.md)。计划已执行并据证据更新；2026-09-16 用户追加要求跳过主生产机 47.245.181.189。十一应用全栈与访问开关仍另行实施。
 
 ## 1. 当前确认与处理方式
 
@@ -113,7 +113,7 @@ Sports Live 已入队消息不会随生产者退出自动消失。只处理以�
 3. 有界复查至旧来源没有可发送 `pending` 或在途 `sending`；超时或旧发送者归属不明时记录未完成项，按现有恢复规则处理，不伪造取消或成功。
 4. Notification 保留为核心服务，除既有 schema 发布维护外按原规则运行；Worm、Trader Sync 和其他来源、用户绑定、Bot 偏移、Topic 与已送达外部消息保留。恢复服务时遵守既有 sender 恢复屏障；清理完成前仍可能发生已经获许可的发送或重试，不能以一次 pending 更新宣称旧来源已完全收尾。
 
-依据：[Sports 比分](../../../internal/sportslive/score_alerts.go)、[Sports 价格](../../../internal/sportslive/price_alerts.go)、[发送许可事务](../../../internal/notification/store/attempts.go)和[发送 SQL](../../../internal/notification/store/queries/delivery_attempts.sql)。这不改变日常“关闭访问后通知照常运行”的规则，也不新增常驻控制服务。
+依据：Sports 比分（历史路径 `internal/sportslive/score_alerts.go`，基线 `264d0dc1`）、Sports 价格（历史路径 `internal/sportslive/price_alerts.go`，基线 `264d0dc1`）、[发送许可事务](../../../internal/notification/store/attempts.go)和[发送 SQL](../../../internal/notification/store/queries/delivery_attempts.sql)。这不改变日常“关闭访问后通知照常运行”的规则，也不新增常驻控制服务。
 
 ## 6. 旧部署退役与数据删除顺序
 
@@ -176,6 +176,6 @@ Sports Live 已入队消息不会随生产者退出自动消失。只处理以�
 
 **清理设计覆盖已补齐，没有需要用户再决定的删除范围或历史数据策略。**具体环境的容器 ID、数据库覆盖名称、连接占用和维护时间属于实施前现场核对；不能用本次静态自查替代现场验证。
 
-最新启动与访问接入由配套设计负责：十一程序目标、Trading 配置／鉴权／就绪／停止、其 `worm` 开关和完整用户入口；Markets 的目录承接与退役另见最新内聚设计。三份配套设计均尚未实施。清理实施的前提是保留 Worm 的现有能力通过回归，不要求先实现新增访问开关；若与新全栈／访问控制合并交付，则必须完成对应新增范围，不能沿用原五板块／十程序的完整性结论。
+最新启动与访问接入由配套设计负责：十一程序目标、Trading 配置／鉴权／就绪／停止、其 `worm` 开关和完整用户入口；Markets 的目录承接与退役另见最新内聚设计。全栈编排、访问开关和 Markets 内聚退役尚未实施；本清理设计已正式执行，实际结果见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。清理实施的前提是保留 Worm 的现有能力通过回归，不要求先实现新增访问开关；若与新全栈／访问控制合并交付，则必须完成对应新增范围，不能沿用原五板块／十程序的完整性结论。
 
-**当前实际状态：**仅完成设计自查、文档补充及静态检查；未删除源码、启动环境、连接远端、执行生成器或操作数据。清理设计、代码实施、现场退役与整套启动／访问设计的完成状态分别记录。
+**当前实际状态：**BSC／Sports 代码清理、本地验收及本轮适用环境退役已执行，主生产机 47.245.181.189 按用户要求跳过；详情见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。Markets 内聚退役、十一应用编排与访问开关仍属后续实施，完成状态分别记录。

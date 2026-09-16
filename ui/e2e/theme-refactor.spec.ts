@@ -271,9 +271,17 @@ test('theme:identity profile draft survives conflict and leave dialog compares s
     await expect(dialog.getByText('Latest saved name', {exact: true})).toBeVisible();
     await expect(dialog.getByText('My unsaved draft', {exact: true})).toBeVisible();
     await expect(dialog.getByRole('button', {name: 'Keep editing'})).toBeFocused();
-    const keepBox = await dialog.getByRole('button', {name: 'Keep editing'}).boundingBox();
-    const discardBox = await dialog.getByRole('button', {name: 'Discard and leave'}).boundingBox();
-    expect(keepBox!.y).toBeCloseTo(discardBox!.y, 0);
+    // Read both rectangles in the same frame while the dialog's opening animation settles.
+    await expect
+        .poll(() =>
+            dialog.evaluate(element => {
+                const buttons = [...element.querySelectorAll('button')];
+                const keep = buttons.find(button => button.textContent === 'Keep editing')!;
+                const discard = buttons.find(button => button.textContent === 'Discard and leave')!;
+                return Math.abs(keep.getBoundingClientRect().y - discard.getBoundingClientRect().y);
+            })
+        )
+        .toBeLessThan(0.5);
     await page.keyboard.press('Escape');
     await expect(input).toHaveValue('My unsaved draft');
     await page.getByRole('button', {name: 'Reset', exact: true}).click();
@@ -731,7 +739,7 @@ test('theme:admin account conflict preserves hidden Token aggregate and mobile c
     await expect(page.getByRole('switch', {name: 'API Key access for @mira.chen'})).toBeChecked();
     const writes = ledger.requests.filter(r => r.method === 'PUT');
     expect(writes).toHaveLength(1);
-    expect((writes[0].body as any).moduleAccess).toHaveLength(11);
+    expect((writes[0].body as any).moduleAccess).toHaveLength(8);
     expect((writes[0].body as any).moduleAccess.find((entry: any) => entry.module === 8)).toEqual({module: 8, dataAccess: 1});
     await page.getByRole('button', {name: 'Back to accounts', exact: true}).click();
     await expect(page.getByLabel('Search accounts')).toHaveValue('mira');

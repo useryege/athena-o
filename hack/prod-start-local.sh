@@ -36,3 +36,5 @@ if [[ "$ready" != true ]]; then echo 'PostgreSQL did not become ready within 120
 account_state_prepare
 other_schema_up
 ATHENA_SERVER_DISABLE_AUTH=false compose up -d
+
+account_state_restore

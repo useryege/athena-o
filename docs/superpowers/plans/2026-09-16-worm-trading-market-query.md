@@ -12,7 +12,7 @@
 
 ## 全局约束
 
-- 当前基线为 `c841579e`。执行前核对最新提交与工作区；若其他任务已落地，按真实代码调整文件位置和 migration 编号，不恢复已删除的 BSC／Sports 内容。
+- 规划基线为 `c841579e`。2026-09-16 整合 BSC／Sports 清理后，账户 `000004_remove_sports_access.sql` 已落地，现行模块集合为八项；Markets 退役应追加下一空号（当前预期 `000005`），完成后再收敛为七项。执行前仍核对最新提交与实际 migration 编号，不改写已应用迁移，不恢复已删除的 BSC／Sports 内容。
 - 方案 A、专属数据直接删除、账户权限 reader 均已确认，无须重复讨论。实施期间不保留 Markets 兼容服务、重定向、双实现或功能开关。
 - Trading 三组导航、七条路由、28 项业务 HTTP 及专属二次验证保留；新增目录只属于内部 gRPC。API Key 不获得交互式目录／组合权限。
 - 目录只调用 `GetEvent`／`GetMarket`；最多八个子市场并发，一次组合保存最多四个事件并发。供应商顺序、不可用原因、精确 YES／NO 补值与缺价行为保持。
@@ -285,9 +285,9 @@ response, err := s.catalogReader.GetOrderEventCatalog(catalogCtx, &apiclient.Get
 
 **文件：**修改 `internal/accountaccess/access.go`、`internal/server/account/{account.proto,account.go}`、`internal/accountstate/store/{sql_store.go,queries/account_access.sql,queries/account_directory.sql}`、`ui/src/app/shared/access-modules.ts`；扩展现有 `internal/accountstate/store/access_integration_test.go`、`ui/src/app/shared/access-modules.test.ts`；新建 `internal/accountstate/store/worm_markets_removal_integration_test.go`。生成 account sqlc／公共 account／schema contract。新迁移名规则见第一步。
 
-**接口：**`accountaccess.AllModules()` 不再包含 `worm_markets`；账户 API 枚举保留其余数字，移除编号5并 reserved；Trading 编号11不变。账户完整矩阵以当前 `AllModules` 为准，不写死与 Sports 合并有关的数量。
+**接口：**`accountaccess.AllModules()` 不再包含 `worm_markets`；账户 API 枚举保留其余数字，移除编号5并 reserved；Trading 编号11不变。以整合后的八项权限为基线，删除 Markets 后为七项；执行时核对最新正式模块集合。
 
-- [ ] 执行 `rg --files internal/accountstate/store/migrations | sort` 并读取相邻 [BSC／Sports 计划](2026-09-16-module-removal-cleanup.md)。基线最新为000003，本分支直接落地时创建 `000004_remove_worm_markets_access.sql`；若 Sports 已占000004则创建 `000005_remove_worm_markets_access.sql`。若更多迁移已落地，取最大实际版本+1，以六位编号写入实施记录。只改尚未发布的合并迁移，不改已应用文件。
+- [ ] 执行 `rg --files internal/accountstate/store/migrations | sort` 并读取相邻 [BSC／Sports 计划](2026-09-16-module-removal-cleanup.md)。整合基线已包含并应用 `000004_remove_sports_access.sql`，当前应新建 `000005_remove_worm_markets_access.sql`。若更多迁移已落地，取最大实际版本+1，以六位编号写入实施记录；不得改写任何已应用迁移。
 - [ ] 写全新库断言：
 
 ```go
@@ -307,7 +307,7 @@ func TestNewAccountHasNoWormMarketsGrant(t *testing.T) {
 ```
 
 - [ ] 运行 `go test -tags=integration ./internal/accountstate/store -run 'WormMarkets' -count=1`，预期当前默认矩阵含 Markets 而失败。
-- [ ] 写追加迁移：按权限发布既有机制锁定受影响账户、删除精确模块行、递增其 `account_access.revision`，收紧 module check。保存其他权限与账户；不得顺带删除 Sports。已应用的000001／000003保留。下面是同一事务内的核心数据变更；完整迁移同时更新 constraint。
+- [ ] 写追加迁移：按权限发布既有机制锁定受影响账户、删除精确模块行、递增其 `account_access.revision`，收紧 module check。保存其他权限与账户，不得恢复已删除的 Sports 模块。已应用的000001至000004全部保留。下面是同一事务内的核心数据变更；完整迁移同时更新 constraint。
 
 ```sql
 WITH affected AS (
@@ -326,7 +326,7 @@ reserved "ACCOUNT_DATA_MODULE_WORM_MARKETS";
 ```
 
 - [ ] 完成该批 SQL 后运行 `make sqlc-local`；再调整生成参数消费者。运行 `make protogen` 和 `make account-state-schema-contract`，审阅最终约束、所有账户初始化入口及数字映射。
-- [ ] 用 `pgtest.NewUnmigrated` 及 Goose `UpToContext` 在旧版本建 fixture，记录 Trading／其他 grant、账户 revision、通知及业务关联后升级；断言只删目标、revision 正确、原 proof 按旧规则失效而任务仍存。分别验证 Markets-only、Sports→Markets、Markets→Sports 的合并结果。Sports 尚未实施时，将相邻计划 T3 的三模块删除 SQL 放在本测试的 `fstest.MapFS` fixture，按两种合并顺序调整未发布末次迁移为相同最终模块集合；该 fixture 不作为产品迁移发布，也不要求先实施 Sports。Sports 已落地时使用其实际迁移。两种顺序的最终 schema catalog 一致，不能通过写死旧 module list 恢复删除项。
+- [ ] 用 `pgtest.NewUnmigrated` 及 Goose `UpToContext` 建立已应用000004的升级 fixture，记录 Trading／其他 grant、账户 revision、通知及业务关联后执行新的 Markets 迁移；断言只删 Markets、revision 正确、原 proof 按旧规则失效而任务仍存。另验证从000003依次执行实际 Sports 迁移及 Markets 迁移的完整升级链；两类升级结果与全新库的最终 schema catalog 一致，三类 Sports 权限仍被约束拒绝。所有 fixture 复用正式历史迁移，不再构造 Markets→Sports 的反序路径或改写已应用文件。
 - [ ] 运行 `go test ./internal/accountaccess ./internal/server/account -count=1`、`go test -tags=integration ./internal/accountstate/store ./internal/accountstate/schema -count=1`，以及 `cd ui && yarn test --runInBand src/app/shared/access-modules.test.ts`。预期无 Markets 授权、其他编号／授权保持。提交 `refactor: remove Worm Markets account grants`。
 
 ## 任务 6：删除 Markets 服务、公共契约和运行残留
@@ -518,7 +518,7 @@ func dropRetiredDatabase(ctx context.Context, conn *pgx.Conn, database string) e
 
 - [ ] 从目标实际进程、部署文件、DSN、容器标签与挂载建立唯一资源清单，填写验收报告；记录 Trading key 的引用位置与稳定性、在途 task／lock／attempt 状态，以及 API／Trading／Markets 的准确停止和启动命令。数据库默认名只是参考，不能凭 `worm_markets` 字样猜目标。不存在的环境记“不适用”，不创建旧 Markets 来完成删除指标。
 - [ ] 形成任务 1–9 的同一部署版本，在目标维护窗口关闭新交互入口；有界停止旧 API／Trading，停止 Markets 并移除 restart／systemd／Compose 拉起来源。遇到未完成外部请求按原 unknown／recover 语义记录，不能当成已撤销。
-- [ ] 账户 schema 同库旧消费者按现有发布流程退出后执行新追加迁移和 schema verify；启动一致版本，保留所有 Trading 凭据 key、签名 token 与数据库。发布后核对新目录、组合保存受控证据和历史读取，执行任务 9 的真实只读验收。相邻 Sports 未发布时不得要求先发布它。
+- [ ] 账户 schema 同库旧消费者按现有发布流程退出后执行完整迁移链和 schema verify；保留已整合的 Sports 000004，再追加 Markets 迁移，不能绕过历史版本。启动一致版本，保留所有 Trading 凭据 key、签名 token 与数据库。发布后核对新目录、组合保存受控证据和历史读取，执行任务 9 的真实只读验收。
 - [ ] 确认 Markets 生产者全部停止后运行通知工具报告，再执行 `go run ./tools/retire-worm-markets-notifications --apply --timeout=2m --batch-size=100`。等待既有 sending 的有界结果，重新检查五来源 pending=0、sending=0；超时停止退役并记录残留，保留其他系统通知服务及历史。
 - [ ] 对已核对目标执行数据工具报告并审阅具体库／owner，再用相同参数加 `--apply`。数据库名和 owner 用来自 inventory 的任务变量传参，使用 Shell 双引号防止分词；不使用通配或自动扫描后批量删除。直接删除专属库，无备份／归档／Trading迁移；如存在真正独立存储，只删除资源清单中明确独占的对象。共享 PostgreSQL 容器和卷保留。
 - [ ] 复查旧进程／地址／端口／DSN／schema注册／初始化脚本／部署入口都不再生效；再次正常运行准备流程，确认不会重建 Markets。比较前后 Trading 记录、连接解密读取、任务状态与通知 attempts，异常保留证据并修复向前，不恢复 Markets 兼容实现。

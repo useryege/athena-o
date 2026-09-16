@@ -114,16 +114,6 @@ test('theme:semantics active workflow number uses readable ink on mint', async (
     assertThemeLedger(ledger);
 });
 
-test('theme:semantics settlement rules link has a persistent non-color cue', async ({page}) => {
-    const ledger = await openThemeCase(page, 'markets-corners');
-    const link = page.getByRole('link', {name: 'market-specific rules', exact: true});
-    await expect(link).toHaveCSS('text-decoration-line', 'underline');
-    await link.focus();
-    await expect(link).toBeFocused();
-    await expect(link).toHaveCSS('text-decoration-line', 'underline');
-    assertThemeLedger(ledger);
-});
-
 test('theme:semantics workflow number doubles with root text and fits its icon', async ({page}, info) => {
     await page.setViewportSize({width: 720, height: 1000});
     await page.clock.setFixedTime(new Date('2026-09-14T08:00:30Z'));

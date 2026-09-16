@@ -55,24 +55,6 @@ sql:
         sql_package: "pgx/v5"
         emit_interface: true
   - engine: "postgresql"
-    schema: "internal/sportslive/store/migrations"
-    queries: "internal/sportslive/store/queries"
-    gen:
-      go:
-        package: "sqlc"
-        out: "internal/sportslive/store/sqlc"
-        sql_package: "pgx/v5"
-        emit_interface: true
-  - engine: "postgresql"
-    schema: "internal/sportshistory/store/migrations"
-    queries: "internal/sportshistory/store/queries"
-    gen:
-      go:
-        package: "sqlc"
-        out: "internal/sportshistory/store/sqlc"
-        sql_package: "pgx/v5"
-        emit_interface: true
-  - engine: "postgresql"
     schema: "internal/managedoo/store/migrations"
     queries: "internal/managedoo/store/queries"
     gen:
@@ -88,24 +70,6 @@ sql:
       go:
         package: "sqlc"
         out: "internal/token/adapters/postgres/sqlc"
-        sql_package: "pgx/v5"
-        emit_interface: true
-  - engine: "postgresql"
-    schema: "internal/bscinbound/store/migrations"
-    queries: "internal/bscinbound/store/queries"
-    gen:
-      go:
-        package: "sqlc"
-        out: "internal/bscinbound/store/sqlc"
-        sql_package: "pgx/v5"
-        emit_interface: true
-  - engine: "postgresql"
-    schema: "internal/bscswap/store/migrations"
-    queries: "internal/bscswap/store/queries"
-    gen:
-      go:
-        package: "sqlc"
-        out: "internal/bscswap/store/sqlc"
         sql_package: "pgx/v5"
         emit_interface: true
   - engine: "postgresql"

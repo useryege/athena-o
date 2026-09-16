@@ -17,9 +17,8 @@ cleanup_test() {
 }
 trap cleanup_test EXIT
 fixture="${tmp}/repo"
-mkdir -p "${fixture}/hack/lib" "${fixture}/hack/postgres/init" "${fixture}/dist" "${fixture}/deploy/bsc-transaction-indexer" "${fixture}/deploy/bsc-swap-indexer" "${tmp}/bin"
-cp "${source_root}/hack/prod-start-local.sh" "${source_root}/hack/prod-remote-deploy.sh" "${source_root}/hack/deploy-etherscan-gateway.sh" \
-  "${source_root}/hack/deploy-bsc-transaction-indexer.sh" "${source_root}/hack/deploy-bsc-swap-indexer.sh" "${fixture}/hack/"
+mkdir -p "${fixture}/hack/lib" "${fixture}/hack/postgres/init" "${fixture}/dist" "${tmp}/bin"
+cp "${source_root}/hack/prod-start-local.sh" "${source_root}/hack/prod-remote-deploy.sh" "${source_root}/hack/deploy-etherscan-gateway.sh" "${fixture}/hack/"
 cp "${source_root}/hack/lib/account-state-deploy.sh" "${source_root}/hack/lib/ssh-command.sh" "${fixture}/hack/lib/"
 sed -i \
   -e "s|/usr/local/bin/athena-etherscan-gateway|${tmp}/gateway-bin|g" \
@@ -28,13 +27,7 @@ sed -i \
   -e "s|/tmp/athena-etherscan-gateway|${tmp}/athena-etherscan-gateway|g" \
   -e "s|/tmp/etherscan-gateway.env|${tmp}/etherscan-gateway.env|g" \
   "${fixture}/hack/deploy-etherscan-gateway.sh"
-sed -i -e "s|/tmp/athena-bsc|${tmp}/athena-bsc|g" \
-  "${fixture}/hack/deploy-bsc-transaction-indexer.sh" "${fixture}/hack/deploy-bsc-swap-indexer.sh"
 printf 'services: {}\n' >"${fixture}/docker-compose.prod.yml"
-printf 'services: {}\n' >"${fixture}/deploy/bsc-transaction-indexer/docker-compose.yml"
-printf 'services: {}\n' >"${fixture}/deploy/bsc-swap-indexer/docker-compose.yml"
-: >"${fixture}/deploy/bsc-transaction-indexer/Dockerfile"
-: >"${fixture}/deploy/bsc-swap-indexer/Dockerfile"
 printf 'binary\n' >"${fixture}/dist/athena-etherscan-gateway"
 printf 'oidc-secret\n' >"${tmp}/oidc"
 
@@ -59,7 +52,7 @@ SCP
 cat >"${tmp}/bin/docker" <<'DOCKER'
 #!/usr/bin/env bash
 set -euo pipefail
-printf 'docker %s %s %s %s\n' "${TEST_REMOTE_SHELL:-local}" "${PWD}" "${BSC_INDEXER_IMAGE:-${BSC_SWAP_INDEXER_IMAGE:-${PROD_IMAGE:-}}}" "$*" >>"${TEST_LOG}"
+printf 'docker %s %s %s %s\n' "${TEST_REMOTE_SHELL:-local}" "${PWD}" "${PROD_IMAGE:-}" "$*" >>"${TEST_LOG}"
 if [[ "$1" == compose && "${2:-}" != version ]]; then
   [[ "${TRADER_SYNC_IMAGE:-}" == "${TEST_TRADER_SYNC_IMAGE}" ]] || exit 74
 fi
@@ -84,13 +77,18 @@ for ((index = 0; index < ${#argv[@]}; index++)); do
     exit $?
   fi
 done
+if [[ "$*" == *'config --format json'* ]]; then
+  printf '%s\n' '{"services":{"athena-server":{"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-notification":{"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-trader-sync":{"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-solana-discovery":{"profiles":["solana"],"labels":{"io.athena.account-state.consumer":"true"},"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-account-state-migrate":{"profiles":["tools"],"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}},"athena-wallet":{"environment":{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN":"fixture"}}}}'
+  exit 0
+fi
 if [[ "$*" == *'athena-account-state-migrate verify'* && "${TEST_FAIL_SCHEMA_VERIFY:-}" == yes && -f "${TEST_VOLUME_DIR}/../schema-up" ]]; then exit 47; fi
 if [[ "$*" == *'athena-account-state-migrate verify'* && "${TEST_SCHEMA_CHANGE:-}" == yes && ! -f "${TEST_VOLUME_DIR}/../schema-up" ]]; then exit 45; fi
 if [[ "$*" == *'athena-account-state-migrate up'* ]]; then
   [[ "${TEST_FAIL_SCHEMA_UP:-}" != yes ]] || exit 46
   : >"${TEST_VOLUME_DIR}/../schema-up"
 fi
-if [[ "$*" == *'ps --status running -q athena-server athena-notification athena-trader-sync'* && "${TEST_CONSUMER_RUNNING:-}" == yes ]]; then echo still-running; fi
+if [[ "$*" == *'ps --status running --services athena-server'* ]]; then printf '%s\n' athena-server athena-notification athena-trader-sync athena-solana-discovery; exit 0; fi
+if [[ "$*" == *'ps --status running -q athena-server athena-notification athena-trader-sync athena-solana-discovery'* && "${TEST_CONSUMER_RUNNING:-}" == yes ]]; then echo still-running; fi
 if [[ "${TEST_FAIL_UP:-}" == yes && "${TEST_REMOTE_SHELL:-}" == 1 && "$*" == *'--wait-timeout 180'* ]]; then exit 39; fi
 if [[ "${TEST_FAIL_MIGRATE:-}" == yes && "$*" == *'athena-migrate'* ]]; then exit 41; fi
 exit 0
@@ -269,16 +267,18 @@ cmp <(printf '%s\0' "${PROD_POSTGRES_VOLUME}" "${PROD_REDIS_VOLUME}" "${PROD_MIN
 : >"${TEST_LOG}"
 rm -f "${TEST_VOLUME_DIR}/../schema-up"
 TEST_SCHEMA_CHANGE=yes bash "${fixture}/hack/prod-remote-deploy.sh" hot-deploy >"${tmp}/schema-change.out" 2>&1
-assert_order 'stop -t 40 athena-server athena-notification athena-trader-sync' 'ps --status running -q athena-server athena-notification athena-trader-sync'
-assert_order 'ps --status running -q athena-server athena-notification athena-trader-sync' 'athena-account-state-migrate up'
+assert_order 'stop -t 30 athena-server athena-notification athena-trader-sync athena-solana-discovery' 'ps --status running -q athena-server athena-notification athena-trader-sync athena-solana-discovery'
+assert_order 'ps --status running -q athena-server athena-notification athena-trader-sync athena-solana-discovery' 'athena-account-state-migrate up'
 assert_order 'athena-account-state-migrate up' '--force-recreate athena-a'
+rg -q -F 'up -d --no-deps --force-recreate athena-server athena-notification athena-trader-sync athena-solana-discovery' "${TEST_LOG}"
+if rg 'stop -t 30' "${TEST_LOG}" | rg -q 'athena-wallet'; then exit 1; fi
 # Verify after up, not merely a version comparison.
 awk '/athena-account-state-migrate up/{up=1;next} up && /athena-account-state-migrate verify/{found=1} END{exit !found}' "${TEST_LOG}"
 # Schema-changing TS-only deployment must restore the other drained consumers.
 : >"${TEST_LOG}"
 rm -f "${TEST_VOLUME_DIR}/../schema-up"
 TEST_SCHEMA_CHANGE=yes bash "${fixture}/hack/prod-remote-deploy.sh" trader-sync-deploy >"${tmp}/trader-schema-change.out" 2>&1
-rg -q -F 'up -d --no-deps --force-recreate athena-server athena-notification athena-trader-sync' "${TEST_LOG}"
+rg -q -F 'up -d --no-deps --force-recreate athena-server athena-notification athena-trader-sync athena-solana-discovery' "${TEST_LOG}"
 for scenario in migration-fails verification-fails consumer-running external-unconfirmed maintenance-unconfirmed; do
   : >"${TEST_LOG}"
   rm -f "${TEST_VOLUME_DIR}/../schema-up"
@@ -310,32 +310,15 @@ if rg -q -F "$tmp/tls-key" "$special_dir/.env"; then exit 1; fi
 : >"${TEST_LOG}"
 rm -f "${TEST_VOLUME_DIR}/../schema-up"
 TEST_SCHEMA_CHANGE=yes bash "${fixture}/hack/prod-start-local.sh" >"${tmp}/prod-local.out" 2>&1
-assert_order 'stop -t 40 athena-server athena-notification athena-trader-sync' 'athena-account-state-migrate up'
+assert_order 'stop -t 30 athena-server athena-notification athena-trader-sync athena-solana-discovery' 'athena-account-state-migrate up'
 assert_order 'athena-account-state-migrate up' 'athena-migrate athena up'
+rg -q -F 'up -d --no-deps --force-recreate athena-server athena-notification athena-trader-sync athena-solana-discovery' "${TEST_LOG}"
 : >"${TEST_LOG}"
 rm -f "${TEST_VOLUME_DIR}/../schema-up"
 if TEST_SCHEMA_CHANGE=yes TEST_FAIL_SCHEMA_UP=yes bash "${fixture}/hack/prod-start-local.sh" >"${tmp}/prod-local-fail.out" 2>&1; then exit 1; fi
 if rg -q 'athena-migrate athena up' "${TEST_LOG}"; then exit 1; fi
 if [[ "${TEST_TRADER_SYNC_ONLY:-}" == yes ]]; then echo 'trader-sync deploy tests passed'; exit 0; fi
 
-for kind in transaction swap; do
-  if [[ "$kind" == transaction ]]; then prefix=BSC_INDEXER; script=deploy-bsc-transaction-indexer.sh; rpc=ATHENA_BSC_INBOUND_NODE_RPC_URL; else prefix=BSC_SWAP_INDEXER; script=deploy-bsc-swap-indexer.sh; rpc=ATHENA_BSC_SWAP_NODE_RPC_URL; fi
-  envfile="${tmp}/${kind}.env"
-  printf 'REMOTE_HOST=example\nPOSTGRES_PASSWORD=password\n%s=https://example.com\n' "$rpc" >"${envfile}"
-  app_dir="${tmp}/${kind} single'quote \$(touch ${tmp}/injected)"
-  image="${kind}'\$(touch ${tmp}/injected)"
-  mkdir -p "${app_dir}"
-  : >"${TEST_LOG}"
-  env "${prefix}_ENV_FILE=${envfile}" "${prefix}_REMOTE_APP_DIR=${app_dir}" "${prefix}_IMAGE=${image}" \
-    bash "${fixture}/hack/${script}" >"${tmp}/${kind}.out" 2>&1
-  rg -q -F "docker 1 ${app_dir} ${image} compose -f docker-compose.yml --env-file .env up -d --force-recreate" "${TEST_LOG}"
-  [[ ! -e "${tmp}/injected" ]]
-  : >"${TEST_LOG}"
-  if env TEST_FAIL_UP=yes "${prefix}_ENV_FILE=${envfile}" "${prefix}_REMOTE_APP_DIR=${app_dir}" "${prefix}_IMAGE=${image}" \
-    bash "${fixture}/hack/${script}" >"${tmp}/${kind}-fail.out" 2>&1; then exit 1; fi
-  rg -q -F 'compose -f docker-compose.yml --env-file .env ps' "${TEST_LOG}"
-  rg -q -F 'compose -f docker-compose.yml --env-file .env logs --tail=120' "${TEST_LOG}"
-done
 
 : >"${TEST_LOG}"
 ETHERSCAN_GATEWAY_IPS=example ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN=token \

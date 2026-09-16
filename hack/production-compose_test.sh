@@ -84,6 +84,15 @@ with tempfile.TemporaryDirectory(prefix='athena-production-compose-test-') as te
         result = subprocess.run(['docker', 'compose', '-f', 'docker-compose.prod.yml', '--env-file', str(envfile), '--profile', 'tools', 'config', '--format', 'json'], env=values, capture_output=True, text=True, check=True)
         return json.loads(result.stdout)['services']
     services = resolve(config_env)
+    retired = {'athena-sports-live', 'athena-sports-history'}
+    assert not retired.intersection(services), 'retired Sports services still deploy'
+    labelled = {name for name, s in services.items() if s.get('labels', {}).get('io.athena.account-state.consumer') == 'true'}
+    assert labelled == {'athena-server', 'athena-notification', 'athena-trader-sync'}, labelled
+    for name in ['athena-worm-markets', 'athena-worm-trading', 'athena-wallet', 'athena-notification']:
+        assert name in services, name + ' was removed'
+    for name, service in services.items():
+        assert not retired.intersection(service.get('depends_on', {})), name + ' still depends on Sports'
+        assert not any(key.startswith(('ATHENA_SPORTS_LIVE_', 'ATHENA_SPORTS_HISTORY_')) for key in service.get('environment', {})), name + ' still configures Sports'
     for service, values in [('athena-server', shared | api_only), ('athena-notification', shared | notification_only)]:
         for key, expected in values.items():
             assert services[service]['environment'].get(key) == expected, service + ' lost ' + key

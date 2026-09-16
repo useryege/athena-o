@@ -75,4 +75,4 @@
 
 当前只有文档和源码入口核对，没有实现、构建或运行验收。[接口、存储与页面接入设计](../../superpowers/specs/2026-09-15-business-access-control-design.md)已于 2026-09-16 获采用并补齐 Worm：一张配置表、三个接口、六个可控板块，以及 Service Status 的访问页签；Token 保留标识并显示接入延期。移除 Markets 后六板块目标覆盖 39 个公共 RPC，另包含 Worm 原始 HTTP 与二次验证入口。本次确认不恢复旧运行控制的复杂协议。
 
-启动配套已形成[make run 全栈设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md)，原十二应用版本已于 2026-09-16 获采用；最新 Markets 删除决定将目标调整为十一个应用，仅保留 Trading；其进程启动与停止不改写访问配置。[删除与清理配套设计](../../superpowers/specs/2026-09-16-module-removal-cleanup-design.md)也已完成自查及补充。这三份设计均尚未实施，Token 专属接入继续延期。
+启动配套已形成[make run 全栈设计](../../superpowers/specs/2026-09-15-local-full-stack-design.md)，原十二应用版本已于 2026-09-16 获采用；最新 Markets 删除决定将目标调整为十一个应用，仅保留 Trading；其进程启动与停止不改写访问配置。[删除与清理配套设计](../../superpowers/specs/2026-09-16-module-removal-cleanup-design.md)也已完成自查及补充。访问开关与十一应用编排尚未实施，Markets 内聚与退役也另行实施；BSC／Sports 删除清理已正式执行，逐环境结果见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。Token 专属接入继续延期。
