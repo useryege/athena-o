@@ -826,7 +826,17 @@ func sanitizeWormCombinationStoreError(err error) error {
 	switch status.Code(err) {
 	case codes.InvalidArgument, codes.NotFound, codes.AlreadyExists, codes.Aborted:
 		return err
-	case codes.Canceled, codes.DeadlineExceeded, codes.Unavailable, codes.FailedPrecondition, codes.Unauthenticated, codes.PermissionDenied:
+	case codes.FailedPrecondition:
+		return status.Error(codes.FailedPrecondition, "Worm market selection is no longer available")
+	case codes.Unauthenticated:
+		return status.Error(codes.Unauthenticated, "Worm Trading authentication is required")
+	case codes.PermissionDenied:
+		return status.Error(codes.PermissionDenied, "Worm Trading access denied")
+	case codes.Canceled:
+		return status.Error(codes.Canceled, "Worm Trading combination request was canceled")
+	case codes.DeadlineExceeded:
+		return status.Error(codes.DeadlineExceeded, "Worm Trading combination request timed out")
+	case codes.Unavailable:
 		return status.Error(codes.Unavailable, "Worm Trading is unavailable")
 	default:
 		return status.Error(codes.Internal, "Worm Trading request failed")

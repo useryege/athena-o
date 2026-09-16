@@ -38,6 +38,7 @@ type catalogHTTPClient struct {
 	createReq   *trading.CreateMarketCombinationRequest
 	updateCalls int
 	updateReq   *trading.UpdateMarketCombinationRequest
+	mutationErr error
 	err         error
 	t           *testing.T
 }
@@ -47,6 +48,9 @@ func (c *catalogHTTPClient) UpdateMarketCombination(ctx context.Context, req *tr
 	c.updateReq = req
 	md, _ := metadata.FromOutgoingContext(ctx)
 	require.Equal(c.t, []string{httpCatalogAccountID}, md.Get("x-athena-account-id"))
+	if c.mutationErr != nil {
+		return nil, c.mutationErr
+	}
 	item := req.GetItems()[0]
 	return &trading.UpdateMarketCombinationResponse{Combination: &trading.MarketCombination{
 		Id: req.GetId(), OwnerAccountId: req.GetOwnerAccountId(), Name: req.GetName(), Revision: req.GetExpectedRevision() + 1, CreatedAt: 1, UpdatedAt: 2,
@@ -59,6 +63,9 @@ func (c *catalogHTTPClient) CreateMarketCombination(ctx context.Context, req *tr
 	c.createReq = req
 	md, _ := metadata.FromOutgoingContext(ctx)
 	require.Equal(c.t, []string{httpCatalogAccountID}, md.Get("x-athena-account-id"))
+	if c.mutationErr != nil {
+		return nil, c.mutationErr
+	}
 	item := req.GetItems()[0]
 	return &trading.CreateMarketCombinationResponse{Combination: &trading.MarketCombination{
 		Id: "965f7c56-5e65-450d-8faf-8bd9b918aeeb", OwnerAccountId: req.GetOwnerAccountId(), Name: req.GetName(), Revision: 1, CreatedAt: 1, UpdatedAt: 1,
