@@ -3,6 +3,7 @@ package solanadiscovery
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -172,4 +173,38 @@ func TestParseBlockRejectsInnerInstructionsOutsideMessage(t *testing.T) {
 	fixture := strings.Replace(scannerBlock, `"meta":{"err":null}`, `"meta":{"err":null,"innerInstructions":[{"index":5,"instructions":[]}]}`, 1)
 	_, err := ParseBlock(42, []byte(fixture))
 	require.Error(t, err)
+}
+
+// A successful v1 transaction sampled from finalized mainnet slot 447757858.
+// Its complete message includes transactionConfig; no chain request is made here.
+func TestParseBlockRecordedV1AndRecognizedInitialization(t *testing.T) {
+	data, err := os.ReadFile("testdata/finalized-v1-447757858.json")
+	require.NoError(t, err)
+	var block map[string]any
+	require.NoError(t, json.Unmarshal(data, &block))
+	tx := block["transactions"].([]any)[0].(map[string]any)
+	require.Equal(t, float64(1), tx["version"])
+	message := tx["transaction"].(map[string]any)["message"].(map[string]any)
+	require.Contains(t, message, "transactionConfig")
+	projects, err := ParseBlock(447757858, data)
+	require.NoError(t, err)
+	require.Empty(t, projects)
+	// Controlled initialization on the recorded v1 message proves detection, not
+	// merely that unfamiliar transactions can be ignored. The original is untouched.
+	instruction := map[string]any{"programId": legacyTokenProgram, "parsed": map[string]any{
+		"type": "initializeMint2", "info": map[string]any{"mint": usdcMint, "decimals": 6, "mintAuthority": wrappedSolMint}}}
+	message["instructions"] = []any{instruction}
+	tx["meta"].(map[string]any)["innerInstructions"] = []any{}
+	data, err = json.Marshal(block)
+	require.NoError(t, err)
+	projects, err = ParseBlock(447757858, data)
+	require.NoError(t, err)
+	require.Len(t, projects, 1)
+	require.Equal(t, usdcMint, projects[0].Mint)
+	require.Equal(t, uint64(447757858), projects[0].Slot)
+	instruction["parsed"].(map[string]any)["info"].(map[string]any)["mint"] = "invalid"
+	data, err = json.Marshal(block)
+	require.NoError(t, err)
+	_, err = ParseBlock(447757858, data)
+	require.Error(t, err, "malformed v1 initialization must block checkpoint advancement")
 }

@@ -143,7 +143,7 @@ func (c *RPCClient) Blocks(ctx context.Context, from, to uint64) ([]uint64, erro
 func (c *RPCClient) Block(ctx context.Context, slot uint64) (json.RawMessage, error) {
 	return c.call(ctx, "getBlock", []any{slot, map[string]any{
 		"encoding": "jsonParsed", "transactionDetails": "full", "rewards": false,
-		"commitment": "finalized", "maxSupportedTransactionVersion": 0,
+		"commitment": "finalized", "maxSupportedTransactionVersion": 1,
 	}})
 }
 
@@ -213,5 +213,5 @@ func (c *RPCClient) Transaction(ctx context.Context, signature string) (json.Raw
 	if signature == "" {
 		return nil, errors.New("missing transaction signature")
 	}
-	return c.call(ctx, "getTransaction", []any{signature, map[string]any{"encoding": "jsonParsed", "commitment": "finalized", "maxSupportedTransactionVersion": 0}})
+	return c.call(ctx, "getTransaction", []any{signature, map[string]any{"encoding": "jsonParsed", "commitment": "finalized", "maxSupportedTransactionVersion": 1}})
 }

@@ -30,7 +30,7 @@ func TestRPCClientRequestsFinalizedParsedBlocks(t *testing.T) {
 			require.JSONEq(t, `{"commitment":"finalized"}`, string(call.Params[2]))
 			_, _ = w.Write([]byte(`{"jsonrpc":"2.0","result":[40,42],"id":1}`))
 		case "getBlock":
-			require.JSONEq(t, `{"encoding":"jsonParsed","transactionDetails":"full","rewards":false,"commitment":"finalized","maxSupportedTransactionVersion":0}`, string(call.Params[1]))
+			require.JSONEq(t, `{"encoding":"jsonParsed","transactionDetails":"full","rewards":false,"commitment":"finalized","maxSupportedTransactionVersion":1}`, string(call.Params[1]))
 			_, _ = w.Write([]byte(`{"jsonrpc":"2.0","result":{"blockTime":1720000000,"transactions":[]},"id":1}`))
 		default:
 			t.Errorf("unexpected RPC method %q", call.Method)
@@ -119,7 +119,7 @@ func TestRPCSourceTransactionContract(t *testing.T) {
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&call))
 		require.Equal(t, "getTransaction", call.Method)
 		require.Equal(t, `"signature"`, string(call.Params[0]))
-		require.JSONEq(t, `{"encoding":"jsonParsed","commitment":"finalized","maxSupportedTransactionVersion":0}`, string(call.Params[1]))
+		require.JSONEq(t, `{"encoding":"jsonParsed","commitment":"finalized","maxSupportedTransactionVersion":1}`, string(call.Params[1]))
 		_, _ = w.Write([]byte(`{"result":null}`))
 	}))
 	defer server.Close()
