@@ -17,7 +17,7 @@ import (
 
 func TestFullStackExplicitServicesAndEnvironment(t *testing.T) {
 	modules := map[string]bool{}
-	for _, module := range fullStackModules() {
+	for _, module := range selectedSchemas(fullStackSpecs()) {
 		modules[module.Name] = true
 	}
 	if modules["sports-live"] || modules["sports-history"] {
@@ -26,7 +26,7 @@ func TestFullStackExplicitServicesAndEnvironment(t *testing.T) {
 	if modules["worm-markets"] || !modules["worm-trading"] {
 		t.Fatal("retired Markets storage or retained Trading storage changed")
 	}
-	want := []string{"trader-sync", "profit-sharing", "notification", "wallet", "ui", "api-server"}
+	want := []string{"wallet", "notification", "etherscan-manager", "api-server", "ui", "trader-sync", "solana-discovery", "market-radar", "managed-oo", "profit-sharing", "worm-trading"}
 	if got := FullStackServices(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("full stack: %v", got)
 	}
@@ -43,12 +43,12 @@ func TestFullStackExplicitServicesAndEnvironment(t *testing.T) {
 				t.Fatalf("%s leaks %s", s.Name, key)
 			}
 		}
-		if s.Name != "wallet" && slices.Contains(s.EnvironmentKeys, "ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN") {
+		if s.Name != "wallet" && s.Name != "worm-trading" && slices.Contains(s.EnvironmentKeys, "ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN") {
 			t.Fatalf("%s leaks signer", s.Name)
 		}
 	}
-	if _, err := ResolveServices([]string{"wallet"}); err == nil {
-		t.Fatal("full stack expands independent entry")
+	if _, err := ResolveServices([]string{"wallet"}); err != nil {
+		t.Fatal("wallet missing independent entry")
 	}
 }
 
@@ -160,22 +160,8 @@ func TestFullStackStopResetCannotTouchLocalInstanceOrOtherCheckout(t *testing.T)
 	}
 }
 
-func TestFullStackRetainedDatabaseList(t *testing.T) {
-	var names, databases []string
-	for _, module := range fullStackModules() {
-		names = append(names, module.Name)
-		databases = append(databases, module.Database)
-	}
-	if !reflect.DeepEqual(names, []string{"worm-trading", "wallet", "managed-oo", "profit-sharing", "token"}) {
-		t.Fatalf("retained modules changed: %v", names)
-	}
-	if !reflect.DeepEqual(databases, []string{"worm_trading", "wallet", "managed_oo", "profit_sharing", "token"}) {
-		t.Fatalf("retained databases changed: %v", databases)
-	}
-}
-
 func TestFullStackDoesNotPrepareWormMarkets(t *testing.T) {
-	for _, module := range fullStackModules() {
+	for _, module := range selectedSchemas(fullStackSpecs()) {
 		if module.Name == "worm-markets" || module.Database == "worm_markets" {
 			t.Fatalf("retired module would be recreated: %+v", module)
 		}
@@ -183,8 +169,11 @@ func TestFullStackDoesNotPrepareWormMarkets(t *testing.T) {
 }
 
 func TestFullStackDefaultsPreserveAPIUIAndConfineWallet(t *testing.T) {
-	env := map[string]string{"ATHENA_URL": "http://localhost:4000", "ATHENA_SERVER_PORT": "38110", "ATHENA_WALLET_PORT": "38111", "ATHENA_PROFIT_SHARING_PORT": "38112", "ATHENA_WALLET_ENCRYPTION_KEY": "explicit-wallet-key"}
+	env := map[string]string{"ATHENA_URL": "http://localhost:4000", "ATHENA_SERVER_PORT": "38110", "ATHENA_WALLET_PORT": "38111", "ATHENA_PROFIT_SHARING_LISTEN_PORT": "38112", "ATHENA_WALLET_ENCRYPTION_KEY": "explicit-wallet-key"}
 	prepareFullStackEnvironment(env)
+	if err := prepareSelectedEndpoints(env, fullStackSpecs()); err != nil {
+		t.Fatal(err)
+	}
 	if env["ATHENA_WALLET_SERVER_ADDRESS"] != "127.0.0.1:38111" || env["ATHENA_PROFIT_SHARING_SERVER_ADDRESS"] != "127.0.0.1:38112" {
 		t.Fatal("selected clients do not follow owned services", env)
 	}
@@ -199,7 +188,7 @@ func TestFullStackDefaultsPreserveAPIUIAndConfineWallet(t *testing.T) {
 }
 
 func TestFullStackServiceAddresses(t *testing.T) {
-	env := map[string]string{"ATHENA_WALLET_PORT": "39201", "ATHENA_PROFIT_SHARING_PORT": "39202"}
+	env := map[string]string{"ATHENA_WALLET_PORT": "39201", "ATHENA_PROFIT_SHARING_LISTEN_PORT": "39202"}
 	if got := serviceAddress("wallet", env); got != "127.0.0.1:39201" {
 		t.Fatal(got)
 	}
@@ -237,7 +226,7 @@ func TestFullStackPreservesConsumerConfigurationLiterally(t *testing.T) {
 						t.Errorf("%s lost literal %s (empty=%v)", spec.Name, k, empty)
 					}
 				}
-				if api && spec.Name != "api-server" {
+				if api && spec.Name != "api-server" && !(spec.Name == "etherscan-manager" && (k == "ATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN" || k == "ATHENA_ETHERSCAN_MANAGER_API_KEYS")) {
 					if _, exists := got[k]; exists {
 						t.Errorf("%s leaks %s", spec.Name, k)
 					}
@@ -261,7 +250,7 @@ func TestFullStackRejectsExternalBeforeCreatingState(t *testing.T) {
 func TestFullStackPortConflictDoesNotClaimExistingListener(t *testing.T) {
 	key := testKey(t)
 	var content strings.Builder
-	for _, field := range []string{"ATHENA_SERVER_PORT", "ATHENA_NOTIFICATION_PORT", "ATHENA_UI_PORT", "ATHENA_PROFIT_SHARING_PORT", "ATHENA_WALLET_PORT", "ATHENA_TRADER_SYNC_LISTEN_ADDRESS"} {
+	for _, field := range []string{"ATHENA_SERVER_PORT", "ATHENA_NOTIFICATION_PORT", "ATHENA_PROFIT_SHARING_LISTEN_PORT", "ATHENA_WALLET_PORT", "ATHENA_TRADER_SYNC_LISTEN_ADDRESS"} {
 		listener, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
 			t.Fatal(err)

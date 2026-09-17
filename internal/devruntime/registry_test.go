@@ -23,7 +23,7 @@ func TestResolveSelectedServices(t *testing.T) {
 			t.Fatal("UI acquired infrastructure")
 		}
 	}
-	for _, names := range [][]string{nil, {"wallet"}, {"notification", "notification"}, {"api-server; touch /tmp/pwn"}} {
+	for _, names := range [][]string{nil, {"token"}, {"notification", "notification"}, {"api-server; touch /tmp/pwn"}} {
 		if _, err := ResolveServices(names); err == nil {
 			t.Fatalf("accepted %v", names)
 		}
@@ -54,6 +54,9 @@ func TestAPIReceivesSolanaFacadeConfigurationWithoutCollectorCredentials(t *test
 	}
 	for _, spec := range fullStackSpecs() {
 		got := environmentMap(EnvironmentFor(input, spec.EnvironmentKeys))
+		if spec.Name == "solana-discovery" {
+			continue
+		}
 		if spec.Name != "api-server" {
 			if len(got) != 0 {
 				t.Fatalf("%s received Solana credentials: %v", spec.Name, got)

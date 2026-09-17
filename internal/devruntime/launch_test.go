@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestImmutableExecutableSurvivesAnotherBuild(t *testing.T) {
@@ -24,14 +25,25 @@ func TestImmutableExecutableSurvivesAnotherBuild(t *testing.T) {
 		t.Fatal(e)
 	}
 	cmd := exec.Command(first, "10")
-	cmd.Env = []string{RunIDEnv + "=" + NewRunID()}
+	runID := NewRunID()
+	cmd.Env = []string{RunIDEnv + "=" + runID}
 	if e = cmd.Start(); e != nil {
 		t.Fatal(e)
 	}
 	defer func() { cmd.Process.Kill(); cmd.Wait() }()
-	p, e := ReadProcess(cmd.Process.Pid)
-	if e != nil {
-		t.Fatal(e)
+	// /proc/environ can briefly be empty while exec finishes. Establish
+	// the baseline only after the executable and run marker are observable.
+	var p ProcessIdentity
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		p, e = ReadProcess(cmd.Process.Pid)
+		if e == nil && p.Exe == first && p.RunID == runID && p.StartTicks > 0 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("child did not finish exec: %+v %v", p, e)
+		}
+		time.Sleep(time.Millisecond)
 	}
 	if e = os.WriteFile(source, []byte("replaced"), 0700); e != nil {
 		t.Fatal(e)
@@ -41,7 +53,7 @@ func TestImmutableExecutableSurvivesAnotherBuild(t *testing.T) {
 	}
 	now, e := ReadProcess(cmd.Process.Pid)
 	if e != nil || !SameProcess(p, now) {
-		t.Fatal("second build invalidated first process identity", e)
+		t.Fatalf("second build invalidated first process identity: before=%+v after=%+v error=%v", p, now, e)
 	}
 }
 func TestPortConflictLeavesListenerAlive(t *testing.T) {

@@ -65,7 +65,7 @@ func TestStartupToolSupervisorProcess(t *testing.T) {
 			_, err = buildServices(ctx, o.Key, specs)
 			return err
 		}
-		return runSchema(ctx, o.Key, "up", map[string]string{schema.DSNEnv: dsn})
+		return NewManager(o.Key).runSchemaOwner(ctx, schemaOwners()[0], []string{"up"}, map[string]string{schema.DSNEnv: dsn}, "")
 	}()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

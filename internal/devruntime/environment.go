@@ -2,8 +2,6 @@ package devruntime
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"github.com/useryege/athena/internal/tradersync/rpcconfig"
 	"github.com/useryege/athena/util/ethws"
@@ -27,91 +25,45 @@ func (m *Manager) PrepareEnvironment(input map[string]string, specs []ServiceSpe
 		env[k] = v
 	}
 	env["ATHENA_LOCAL_RUNTIME_INSTANCE"] = m.Key.Name
-	if selected(specs, "worm-trading") {
-		if _, ok := env["ATHENA_WORM_TRADING_LISTEN_ADDRESS"]; !ok {
-			env["ATHENA_WORM_TRADING_LISTEN_ADDRESS"] = "127.0.0.1"
-		}
-		env["ATHENA_WORM_TRADING_SERVER_ADDRESS"] = serviceAddress("worm-trading", env)
-		if mode == "external" && strings.TrimSpace(env["ATHENA_WORM_TRADING_POSTGRES_DSN"]) == "" {
-			return nil, errors.New("external database requires explicit ATHENA_WORM_TRADING_POSTGRES_DSN")
-		}
-	}
 
-	if selected(specs, "notification") {
-		env["ATHENA_NOTIFICATION_SERVER_ADDRESS"] = serviceAddress("notification", env)
-	}
-	if selected(specs, "ui") && selected(specs, "api-server") {
-		env["ATHENA_API_URL"] = "http://" + serviceAddress("api-server", env)
-	}
 	for _, spec := range specs {
 		for _, key := range spec.EnvironmentKeys {
 			if strings.HasSuffix(key, "_FILE") {
-				if value, ok := env[key]; ok && value != "" && !filepath.IsAbs(value) {
+				if value := env[key]; value != "" && !filepath.IsAbs(value) {
 					env[key] = filepath.Join(m.Key.Checkout, value)
 				}
 			}
 		}
 	}
-	for _, key := range []string{"ATHENA_SERVER_LISTEN_ADDRESS", "ATHENA_NOTIFICATION_LISTEN_ADDRESS"} {
-		if _, ok := env[key]; !ok {
-			env[key] = "127.0.0.1"
+	if err := prepareSelectedEndpoints(env, specs); err != nil {
+		return nil, err
+	}
+	if selected(specs, "api-server") || selected(specs, "etherscan-manager") {
+		if err := normalizeGatewayConfiguration(env); err != nil {
+			return nil, err
 		}
 	}
-	if selected(specs, "api-server") {
-		for key, value := range map[string]string{"ATHENA_WALLET_INTERNAL_AUTH_TOKEN": "athena-local-wallet-internal-auth-token-2026", "ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN": "athena-local-worm-trading-internal-auth-token-2026"} {
-			if _, ok := env[key]; !ok {
-				env[key] = value
+	if needsSchema(specs, "solana-discovery") && mode == "external" {
+		account, own := env["ATHENA_ACCOUNT_STATE_POSTGRES_DSN"], env["ATHENA_SOLANA_DISCOVERY_POSTGRES_DSN"]
+		if own != "" && own != account {
+			return nil, errors.New("Solana and account schemas require the same explicit DSN")
+		}
+		env["ATHENA_SOLANA_DISCOVERY_POSTGRES_DSN"] = account
+	}
+	if mode == "external" {
+		for _, owner := range selectedSchemas(specs) {
+			if strings.TrimSpace(env[owner.DSNEnv]) == "" {
+				return nil, errors.New("external database requires explicit " + owner.DSNEnv)
 			}
 		}
 	}
-	if selected(specs, "api-server") || selected(specs, "notification") {
-		if _, ok := env["ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN"]; !ok {
-			env["ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN"] = "athena-local-notification-internal-auth-token-2026"
-		}
-	}
-	if needsDatabase(specs) && mode == "external" && strings.TrimSpace(env["ATHENA_ACCOUNT_STATE_POSTGRES_DSN"]) == "" {
-		return nil, errors.New("external database requires explicit ATHENA_ACCOUNT_STATE_POSTGRES_DSN")
+	if err := m.prepareCredentials(env, specs, mode); err != nil {
+		return nil, err
 	}
 	if !selected(specs, "trader-sync") && !selected(specs, "api-server") {
 		return env, nil
 	}
 	lookup := func(k string) (string, bool) { v, ok := env[k]; return v, ok }
-	_, direct := env[tokenKey]
-	_, file := env[tokenKey+"_FILE"]
-	if !direct && !file {
-		if mode == "external" {
-			return nil, errors.New("external API/Trader Sync requires explicit internal token")
-		}
-		var value []byte
-		err := withLock(m.Key, func() error {
-			path := filepath.Join(m.Key.Dir(), "internal-token")
-			var err error
-			value, err = os.ReadFile(path)
-			if errors.Is(err, os.ErrNotExist) {
-				raw := make([]byte, 32)
-				if _, err = rand.Read(raw); err != nil {
-					return err
-				}
-				value = []byte(hex.EncodeToString(raw))
-				return atomicFile(path, value)
-			}
-			if err != nil {
-				return err
-			}
-			info, err := os.Lstat(path)
-			if err != nil {
-				return err
-			}
-			if !info.Mode().IsRegular() || info.Mode().Perm() != 0600 {
-				return errors.New("unsafe internal token file")
-			}
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
-		env[tokenKey] = string(value)
-	}
 	token, err := rpcconfig.ResolveSecret(lookup, tokenKey)
 	if err != nil {
 		return nil, err

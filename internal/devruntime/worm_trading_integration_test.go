@@ -22,7 +22,7 @@ func TestWormTradingExternalSchemaPreparationDoesNotMigrate(t *testing.T) {
 	defer m.Stop(context.Background())
 	db := pgtest.NewUnmigrated(t)
 	env := map[string]string{wormstore.DSNEnv: db.DSN}
-	require.Error(t, m.prepareWormTradingDatabase(context.Background(), env))
+	require.Error(t, m.prepareDatabaseSchemas(context.Background(), env, []ServiceSpec{{Schemas: []string{"worm-trading"}}}, nil, ""))
 	var exists bool
 	require.NoError(t, db.Pool.QueryRow(context.Background(), `SELECT to_regclass('public.goose_db_version') IS NOT NULL`).Scan(&exists))
 	require.False(t, exists)

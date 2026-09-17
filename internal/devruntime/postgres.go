@@ -84,7 +84,7 @@ func (m *Manager) preparePostgres(ctx context.Context) (string, error) {
 			return "", err
 		}
 	} else {
-		if err = m.SaveSecret("postgres.env", []byte("POSTGRES_USER=athena\nPOSTGRES_DB=athena\nPOSTGRES_PASSWORD="+string(password)+"\n")); err != nil {
+		if err = m.SaveSecret("postgres.env", []byte("POSTGRES_USER=athena\nPOSTGRES_DB=postgres\nPOSTGRES_PASSWORD="+string(password)+"\n")); err != nil {
 			return "", err
 		}
 		container, err = m.CreateResource(ctx, "container", containerName, []string{"--env-file", filepath.Join(m.Key.Dir(), "postgres.env"), "--publish", "127.0.0.1::5432", "--mount", "type=volume,source=" + volume.ID + ",target=/var/lib/postgresql/data", postgresImage})
@@ -99,7 +99,7 @@ func (m *Manager) preparePostgres(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	dsn := (&url.URL{Scheme: "postgres", User: url.UserPassword("athena", string(password)), Host: address, Path: "/athena", RawQuery: "sslmode=disable"}).String()
+	dsn := (&url.URL{Scheme: "postgres", User: url.UserPassword("athena", string(password)), Host: address, Path: "/postgres", RawQuery: "sslmode=disable"}).String()
 	ready, cancel := context.WithTimeout(ctx, 120*time.Second)
 	defer cancel()
 	if err = waitDatabase(ready, dsn); err != nil {

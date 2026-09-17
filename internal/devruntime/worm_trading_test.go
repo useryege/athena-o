@@ -20,7 +20,7 @@ func TestWormTradingIsAnIndependentService(t *testing.T) {
 func TestWormTradingEnvironmentUsesSelectedInstance(t *testing.T) {
 	specs, err := ResolveServices([]string{"worm-trading"})
 	require.NoError(t, err)
-	m := NewManager(InstanceKey{Checkout: t.TempDir(), Name: "worm-test"})
+	m := NewManager(testKey(t))
 	env, err := m.PrepareEnvironment(map[string]string{"ATHENA_WORM_TRADING_PORT": "28090"}, specs, "managed")
 	require.NoError(t, err)
 	require.Equal(t, "127.0.0.1:28090", serviceAddress("worm-trading", env))

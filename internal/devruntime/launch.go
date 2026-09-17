@@ -85,7 +85,10 @@ func buildServices(ctx context.Context, key InstanceKey, specs []ServiceSpec) (m
 		cmd := exec.Command("go", "build", "-o", path, s.BuildPackage)
 		cmd.Dir = key.Checkout
 		cmd.Env = EnvironmentFor(environmentMap(os.Environ()), []string{"PATH", "HOME", "TMPDIR", "GOCACHE", "GOMODCACHE", "GOPATH", "GOROOT", "GOTOOLCHAIN", "CGO_ENABLED", "CC", "CXX", "PKG_CONFIG_PATH"})
-		if err := NewManager(key).RunHelper(ctx, "build-"+s.Name, cmd, 30*time.Second); err != nil {
+		buildCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+		err := NewManager(key).RunHelper(buildCtx, "build-"+s.Name, cmd, 30*time.Second)
+		cancel()
+		if err != nil {
 			return nil, err
 		}
 		paths[s.Name] = path
@@ -146,23 +149,11 @@ func envDefault(env map[string]string, key, value string) string {
 	return value
 }
 func serviceAddress(name string, env map[string]string) string {
-	switch name {
-	case "trader-sync":
-		return envDefault(env, "ATHENA_TRADER_SYNC_LISTEN_ADDRESS", "127.0.0.1:8122")
-	case "api-server":
-		return net.JoinHostPort(envDefault(env, "ATHENA_SERVER_LISTEN_ADDRESS", "127.0.0.1"), envDefault(env, "ATHENA_SERVER_PORT", "8080"))
-	case "worm-trading":
-		return net.JoinHostPort(envDefault(env, "ATHENA_WORM_TRADING_LISTEN_ADDRESS", "127.0.0.1"), envDefault(env, "ATHENA_WORM_TRADING_PORT", "8090"))
-	case "wallet":
-		return net.JoinHostPort(envDefault(env, "ATHENA_WALLET_LISTEN_ADDRESS", "127.0.0.1"), envDefault(env, "ATHENA_WALLET_PORT", "8088"))
-	case "profit-sharing":
-		return net.JoinHostPort(envDefault(env, "ATHENA_PROFIT_SHARING_LISTEN_ADDRESS", "127.0.0.1"), envDefault(env, "ATHENA_PROFIT_SHARING_PORT", "8108"))
-	case "notification":
-		return net.JoinHostPort(envDefault(env, "ATHENA_NOTIFICATION_LISTEN_ADDRESS", "127.0.0.1"), envDefault(env, "ATHENA_NOTIFICATION_PORT", "8086"))
-	case "ui":
-		return net.JoinHostPort("127.0.0.1", envDefault(env, "ATHENA_UI_PORT", "4000"))
+	spec, ok := serviceRegistry()[name]
+	if !ok {
+		return ""
 	}
-	return ""
+	return spec.Address(env)
 }
 func preflightPorts(specs []ServiceSpec, env map[string]string) error {
 	seen := map[string]bool{}
@@ -258,50 +249,7 @@ func runResolved(ctx context.Context, o RunOptions, specs []ServiceSpec, fullSta
 		return err
 	}
 	if needsDatabase(specs) {
-		if o.DBMode == "external" {
-			address, database, e := externalDatabaseIdentity(env[schema.DSNEnv])
-			if e != nil {
-				return e
-			}
-			sum := sha256.Sum256([]byte(env[schema.DSNEnv]))
-			fingerprint := hex.EncodeToString(sum[:])
-			if err = m.Update(func(s *State) error {
-				if s.ConfigFingerprints == nil {
-					s.ConfigFingerprints = map[string]string{}
-				}
-				old := s.ConfigFingerprints["external-database"]
-				if old != "" && old != fingerprint {
-					return errors.New("external database cannot change in place; use a new instance")
-				}
-				s.ConfigFingerprints["external-database"] = fingerprint
-				s.Endpoints["postgres"] = address
-				s.Endpoints["database"] = database
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		if o.DBMode == "managed" {
-			dsn, e := m.preparePostgres(ctx)
-			if e != nil {
-				return e
-			}
-			env[schema.DSNEnv] = dsn
-			if e = runSchema(ctx, o.Key, "up", env); e != nil {
-				return e
-			}
-		}
-		if err = runSchema(ctx, o.Key, "verify", env); err != nil {
-			return err
-		}
-	}
-	if selected(specs, "worm-trading") {
-		if err = m.prepareWormTradingDatabase(ctx, env); err != nil {
-			return err
-		}
-	}
-	if fullStack {
-		if err = m.prepareFullStackDatabases(ctx, env); err != nil {
+		if err = m.prepareSelectedDatabases(ctx, env, specs, paths); err != nil {
 			return err
 		}
 	}
@@ -352,7 +300,7 @@ func runResolved(ctx context.Context, o RunOptions, specs []ServiceSpec, fullSta
 	for _, s := range ordered {
 		address := serviceAddress(s.Name, env)
 		args := append([]string{}, s.Args...)
-		if s.Name == "api-server" || s.Name == "notification" || s.Name == "wallet" || s.Name == "profit-sharing" {
+		if s.Name != "trader-sync" && s.Name != "ui" {
 			_, port, _ := net.SplitHostPort(address)
 			args = append(args, "--port", port)
 		}
@@ -427,27 +375,6 @@ func runResolved(ctx context.Context, o RunOptions, specs []ServiceSpec, fullSta
 	<-ctx.Done()
 	return nil
 }
-func runSchema(ctx context.Context, k InstanceKey, action string, env map[string]string) error {
-	deadline, cancel := context.WithTimeout(ctx, 120*time.Second)
-	defer cancel()
-	dir, err := os.MkdirTemp(k.Dir(), "migration-")
-	if err != nil {
-		return err
-	}
-	path := filepath.Join(dir, "athena-account-state-migrate")
-	build := exec.Command("go", "build", "-o", path, "./cmd/athena-account-state-migrate")
-	build.Dir = k.Checkout
-	build.Env = EnvironmentFor(environmentMap(os.Environ()), []string{"PATH", "HOME", "TMPDIR", "GOCACHE", "GOMODCACHE", "GOPATH", "GOROOT", "GOTOOLCHAIN"})
-	m := NewManager(k)
-	if err = m.RunHelper(deadline, "build-schema-"+action, build, 30*time.Second); err != nil {
-		return err
-	}
-	cmd := exec.Command(path, action, "--timeout=120s")
-	cmd.Dir = k.Checkout
-	cmd.Env = EnvironmentFor(env, keys(toolEnvironment, []string{schema.DSNEnv}))
-	return m.RunHelper(deadline, "schema-"+action, cmd, 30*time.Second)
-}
-
 func waitService(ctx context.Context, m *Manager, name, address string, env map[string]string) error {
 	for {
 		state, e := m.Status()
@@ -471,9 +398,9 @@ func waitService(ctx context.Context, m *Manager, name, address string, env map[
 	}
 }
 func probeService(ctx context.Context, name, address string, env map[string]string) error {
-	if name == "worm-trading" || name == "trader-sync" || name == "notification" || name == "wallet" || name == "profit-sharing" {
+	if serviceRegistry()[name].Readiness == "grpc" {
 		credentials := insecure.NewCredentials()
-		service := ""
+		service := serviceRegistry()[name].HealthService
 		if name == "trader-sync" {
 			service = "tradersync.internal.v1.TraderSyncService"
 			cfg := rpcconfig.Client{Address: address, Transport: env["ATHENA_TRADER_SYNC_GRPC_TRANSPORT"], CAFile: env["ATHENA_TRADER_SYNC_TLS_CA_FILE"], ServerName: env["ATHENA_TRADER_SYNC_TLS_SERVER_NAME"]}
@@ -497,7 +424,7 @@ func probeService(ctx context.Context, name, address string, env map[string]stri
 		}
 		return nil
 	}
-	path := "/"
+	path := envDefault(env, "ATHENA_SERVER_BASEHREF", "/")
 	if name == "api-server" {
 		path = "/healthz"
 	}

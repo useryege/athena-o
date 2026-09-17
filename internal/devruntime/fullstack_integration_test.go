@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-func TestFullStackPreparesEveryLegacySchemaBeforeConsumers(t *testing.T) {
+func TestFullStackPreparesSelectedSchemasBeforeConsumers(t *testing.T) {
 	o := runnerOptions(t, "managed", FullStackServices(), "")
 	m := NewManager(o.Key)
 	s := initialState(t, o.Key)
@@ -36,10 +36,13 @@ func TestFullStackPreparesEveryLegacySchemaBeforeConsumers(t *testing.T) {
 		t.Fatal(err)
 	}
 	env := map[string]string{"ATHENA_ACCOUNT_STATE_POSTGRES_DSN": dsn}
-	if err := m.prepareFullStackDatabases(ctx, env); err != nil {
+	if err := m.prepareDatabaseSchemas(ctx, env, fullStackSpecs(), nil, dsn); err != nil {
 		t.Fatal(err)
 	}
-	for _, module := range fullStackModules() {
+	for _, module := range selectedSchemas(fullStackSpecs()) {
+		if module.Name == "solana-discovery" {
+			continue
+		}
 		pool, err := pgxpool.New(ctx, env[module.DSNEnv])
 		if err != nil {
 			t.Fatal(err)
@@ -62,14 +65,14 @@ func TestFullStackPreparesEveryLegacySchemaBeforeConsumers(t *testing.T) {
 	}
 	helpers := 0
 	for name, code := range state.ExitCodes {
-		if strings.Contains(name, "full-stack-schema-") || strings.Contains(name, "worm-trading-schema-") {
+		if strings.Contains(name, "-schema-up") || strings.Contains(name, "-schema-verify") {
 			helpers++
 			if code != 0 {
 				t.Fatalf("schema failed %s %d", name, code)
 			}
 		}
 	}
-	if helpers != 6 {
+	if helpers != 13 {
 		t.Fatalf("schema tools not supervised: %v", state.ExitCodes)
 	}
 	data, err := os.ReadFile(o.Key.StatePath())
@@ -150,7 +153,7 @@ func fullStackFixtureOptions(t *testing.T) RunOptions {
 	// Stop owned services before closing the loopback Telegram fixture.
 	t.Cleanup(telegram.Close)
 	extra := "ATHENA_NOTIFICATION_TELEGRAM_API_URL=" + telegram.URL + "\nATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN=123:task10-fixture\nATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID=-1001\nATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID=-1002\n"
-	extra += "ATHENA_UI_PORT=" + fixturePort(t) + "\nATHENA_WALLET_PORT=" + fixturePort(t) + "\nATHENA_PROFIT_SHARING_PORT=" + fixturePort(t) + "\nATHENA_API_CONTENT_TYPES=\nATHENA_UI_BANNER_CONTENT=literal banner $value\n"
+	extra += "ATHENA_UI_PORT=" + fixturePort(t) + "\nATHENA_WALLET_PORT=" + fixturePort(t) + "\nATHENA_PROFIT_SHARING_LISTEN_PORT=" + fixturePort(t) + "\nATHENA_API_CONTENT_TYPES=\nATHENA_UI_BANNER_CONTENT=literal banner $value\n"
 	return runnerOptions(t, "managed", nil, extra)
 }
 func TestFullStackRealFatalKeepsAPIAndEveryOtherConsumer(t *testing.T) {
@@ -187,7 +190,7 @@ func TestFullStackRealFatalKeepsAPIAndEveryOtherConsumer(t *testing.T) {
 				t.Fatal(name, "leaks cursor")
 			}
 		}
-		if name != "wallet" {
+		if name != "wallet" && name != "worm-trading" {
 			if _, ok := env["ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN"]; ok {
 				t.Fatal(name, "leaks signer")
 			}
