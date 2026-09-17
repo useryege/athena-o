@@ -1,113 +1,72 @@
 # 本地与生产服务清单核对
 
-> 核对日期：2026-09-16，工作区 `rf4`。目标成员依据已确认需求与目标设计；现状依据当前源码、仓库部署配置及本地环境文件。原 main default 的 Task 10 现场健康、数据与通知退役另行记录，不能由静态清单替代。
+> 核对更新：2026-09-17。当前本地十一应用图、局部选择、schema owner 和访问控制已实现并按代码版本 `6b2db2ec8ca5d488a672e68785eea3272af4f50c` 真实验收，见[全栈验收记录](../../testing/full-stack-access-acceptance.md)。生产 Compose 与 Token 旧实现仍按其实际现状记录；本地目标不能反向改写远端部署事实。
 >
-> 当前范围：改为[板块访问开关简化方案](business-access-control.md)，原整组运行控制暂停。本文件继续提供进程与环境的静态核对，保留核心分类、六个可控板块与延期接入的 Token、BSC／Sports 删除及 Worm Markets 退役决定及本地独立进程／存储、使用五个远端 Gateway 的安排；业务默认停止和成员启停要求仅属原方案历史。
->
-> 实现状态：访问开关与清单扩展尚未实施，原整组运行控制未实现且已暂停。2026-09-15 静态核对没有操作环境；后续 2026-09-16 删除清理已执行，真实本地验收与逐环境结果见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。
+> 原整组运行控制继续暂停。六个访问开关只限制新用户业务请求，不启停下表应用或后台任务。Token 接入延期；BSC、Sports、Worm Markets 已退役。
 
-> [本期 make run 配套提案](../../superpowers/specs/2026-09-15-local-full-stack-design.md)已采用，尚未实施；最新 [Markets 删除、Trading 保留决定](worm-markets-removal.md)将目标由原十二应用收敛为五核心／六业务，共 11 个本地应用。Trading 已承接按需市场查询，`worm` 开关只对应 Trading。当前源码共有 15 个业务进程角色，生产 Compose 有 14 个（缺 Solana）；数字仍包含待重构的 Token 九角色，不能当作十一应用目标已经落地。BSC／Sports 清理与本次 Markets 退役分开记录。
+## 当前本地十一应用
+
+`FullStackServices()` 是唯一默认图，统一由 `ServiceSpec` 定义 build、配置白名单、schema、监听／消费地址、readiness、核心分类和停止层。局部 `run-service`／`run-services` 只选择请求的应用和最小依赖。
+
+| 分类 | 应用 | 当前本地职责与依赖 | schema owner |
+| --- | --- | --- | --- |
+| 核心 | `wallet` | Wallet gRPC、加密与 signer；本实例 PostgreSQL | `wallet` |
+| 核心 | `notification` | Telegram、poller、恢复与业务通知；账户库 | `account` |
+| 核心 | `etherscan-manager` | 调度 Etherscan 请求；连接五个远端 Gateway | 无本地业务库 |
+| 核心 | `api-server` | 双 realm、账户／权限、公共 HTTP/gRPC、六板块准入 | `account` |
+| 核心 | `ui` | member/admin 两个 HTML/React 入口及 API 代理 | 无数据库 |
+| 业务 | `trader-sync` | Polygon/Polymarket 观察、订阅和活动；账户库 | `account` |
+| 业务 | `solana-discovery` | finalized 扫描、补全与查询；同一账户库内业务 schema | `account`、`solana-discovery` |
+| 业务 | `market-radar` | Polymarket 市场读取与通知 | 无本地业务库 |
+| 业务 | `managed-oo` | OO 读取、扫描与通知；独立 PostgreSQL | `managed-oo` |
+| 业务 | `profit-sharing` | 轮次、提案、投票；独立 PostgreSQL | `profit-sharing` |
+| 业务 | `worm-trading` | 目录、组合、Preview、Run、Cash Out；Wallet、Worm、Solana RPC、账户只读与独立库 | `account`、`worm-trading` |
+
+完整 managed 实例只创建 `athena`、`wallet`、`managed_oo`、`profit_sharing`、`worm_trading` 五个数据库；Solana 与账户共享 `athena`。Market Radar 不新增数据库。当前图不创建 Markets、Token、Temporal、BSC 或 Sports 数据库，也不删除既有残留。
 
 ## Token 设计依据与延期范围
 
-**用户决定，2026-09-15**：Token 需要完整重构，目标以已完成的业务文档为依据；当前代码与文档脱离。用户进一步要求，Token 的详细接入设计等其重构完成后再进行。
+**用户决定，2026-09-15**：Token 完整重构后再设计目标服务、运行接入和访问开关。本轮只保留账户的隐藏 Token 模块权限；它不出现在六个 Module Access 设置、会员业务页面或十一应用图中。
 
-**后续执行顺序已确认，2026-09-16；尚未执行**：先固定旧版提交和 Git 标签，再用独立清理分支移除旧 Token 实现及专属接入、验证并合回目标开发分支，最后从清理后的基线新开分支开发新版。完整边界见[Token 三步编排](../token/token.md#旧版归档清理与新版开发)。下文旧九角色仍是清理前现状，不代表需要继续保留；实际清理时同步源码、构建、部署及健康查询清单，共享核心服务按既有边界保留。
+旧实现仍包含 Token API、Chain Processor、Ave、Chain State、Wallet Asset State、Simulation Result、Contract Code Source、Wallet Normal Transactions 六类 Collector，以及 Profile Builder，共九个角色；生产 Compose 仍按旧部署事实记录这些角色。本地运行器不创建 Token 服务或数据库，API health 中存在旧 Token 行也不构成十一应用 ready 条件。旧九角色是重构与清理依据，不是当前本地目标。后续顺序和边界见[Token 需求](../token/token.md#旧版归档清理与新版开发)。
 
-本轮保留 Token 板块标识及通用访问边界，暂不确定目标进程数量或专属接入与验收。内部任务启停与成员控制不属于本期访问开关。此前的目标职责表从本轮清单移出；下文九个旧角色仅用于记录现状与清理依据，不是未来控制成员。
+## 本地与生产边界
 
-后续根据[Token 需求与流程](../token/README.md)、[重构设计包](../../superpowers/specs/2026-09-10-token-first-block-design.md)及重构后的实际实现补齐接入清单。本期仅讨论用户访问开关，Token 详细适配继续延期；原设计依据见[历史记录](../../superpowers/specs/2026-09-15-business-group-control-design.md#token-target)。
-
-## 当前代码与部署核对
-
-下表只描述删除清理后保留的当前实现，供差距与清理核对使用。Token 重构和 Trader Sync 手动交易等目标能力不能冒充已存在的进程；现有进程清单也不能反向限定目标设计。
-
-| 业务组 | 当前业务进程 | 本轮核对到的共享或外部依赖 | 当前默认本地全栈 | 当前生产 Compose |
-| --- | --- | --- | --- | --- |
-| Trader Sync | `athena-trader-sync` | 同环境账户 PostgreSQL；Polygon HTTP／WSS 和 Polymarket Gamma；业务通知由共享 Notification 的对应工作承担 | 已纳入 | 已纳入 |
-| Token | Token API、Chain Processor、六类 Collector、Profile Builder，共 9 个 | Token PostgreSQL；按链配置的 EVM 节点与合约；Ave；源码与普通交易 Collector 经 Etherscan Manager 调用 Gateway | 未纳入业务进程，仅有数据库准备 | 9 个均已纳入 |
-| Solana | `athena-solana-discovery`，进程内含扫描、补全与查询 | Solana RPC；同一数据库内的 Solana 业务表和账户权限表，查询需要内部鉴权 | 未纳入；有单独 profile，现有采集仍保持暂停 | 未纳入 |
-| Market Radar | `athena-market-radar` | Polymarket Gamma；告警使用 Notification；当前业务读模型主要在内存中 | 未纳入 | 已纳入 |
-| Managed OO | `athena-managed-oo` | 自有 PostgreSQL；Polygon RPC、Polymarket Gamma；告警使用 Notification | 未纳入业务进程，仅有数据库准备 | 已纳入 |
-| Profit Sharing | `athena-profit-sharing` | 自有 PostgreSQL；公共入口通过核心 API 的身份、账户与权限能力 | 已纳入 | 已纳入 |
-| Worm Trading | `athena-worm-trading` | 自有 PostgreSQL、进程内 Worm 目录、Wallet、Worm API、Solana RPC 与账户状态只读连接 | 未纳入默认六进程；独立入口和按需 schema 已实现 | 已纳入 |
-
-原[统一运行控制架构](../../superpowers/specs/2026-09-15-business-group-control-design.md)建议的 `athena-runtime-control` 尚未实现且已暂停；新的用户访问开关不新增该进程。
-
-下表当前代码共对应 **15 个业务进程角色**；生产 Compose 包含其中 14 个，缺少 Solana。Markets 命令、Compose 服务和数据库准备已经从源码删除。数字包含待重构的 Token 旧九角色，不是目标部署数量，也不含核心进程、第三方服务、部署工具或副本数。本期访问开关不控制这些后台进程或任务的运行。
-
-### Token 旧实现的九个角色：差距与清理依据
-
-| 成员角色 | 当前命令或配置 |
-| --- | --- |
-| Token API | `athena-token-api` |
-| Chain Processor | `athena-token-chain-processor` |
-| Ave Collector | `athena-token-collector --data-type ave` |
-| Chain State Collector | `athena-token-collector --data-type chain_state` |
-| Wallet Asset State Collector | `athena-token-collector --data-type wallet_asset_state` |
-| Simulation Result Collector | `athena-token-collector --data-type simulation_result` |
-| Contract Code Source Collector | `athena-token-collector --data-type contract_code_source` |
-| Wallet Normal Transactions Collector | `athena-token-collector --data-type wallet_normal_transactions` |
-| Profile Builder | `athena-token-profile-builder` |
-
-旧六类 Collector 复用同一个命令入口，以不同参数运行。目标研究运行时已明确不沿用固定六类任务、整项目终态屏障或单个不可变画像，`simulation_result` 不进入新运行模型；这些旧入口需在重构中按目标替换或清理。Etherscan Manager／Gateway 属于共享核心服务。
-
-服务健康仍需按实际能力判断，不能只检查进程存在；健康信息与本期访问开关独立。本期六个可控板块包含 Worm，Token 接入延期。Worm Trading 已移除 Markets client，直接拥有目录并增加显式账户权限只读依赖；`worm` 只控制 Trading 用户访问，服务故障不自动改写该设置。Trading `SERVING` 不证明上游目录或真实交易可用。具体配置与失败边界见[新设计](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)。
-
-## 核心与基础设施范围
-
-| 核心能力 | 本地目标及现状依据 | 生产目标及现状依据 |
+| 项目 | 本地开发 | 生产现状／边界 |
 | --- | --- | --- |
-| UI、API Server | 本地 Vite 与 API，各自使用本实例配置 | API 提供已构建 UI 资源，不要求运行 Vite 开发服务器 |
-| 登录、账户、权限 | 核心 API 与同环境账户库中的能力，不因功能名称新增进程 | 同一核心能力边界，使用生产自身配置与存储 |
-| Wallet、Notification | 当前默认全栈已有本实例进程，持续提供核心能力 | Compose 已有两者的独立进程 |
-| Etherscan Manager | 目标由本地运行器启动本地 Manager；当前全栈尚未纳入 | Compose 已有独立 Manager |
-| Etherscan Gateway | 已确认使用现有五个远端 Gateway，本地不另起 Gateway；远端进程不属于本地运行器资源 | 继续使用现有五个独立远端 Gateway，保持常开核心能力 |
-| PostgreSQL、Redis、MinIO | 沿用按 checkout／INSTANCE 隔离的本地持久资源；业务库按实际成员补齐 | 使用生产自身资源；不把本地数据库或缓存接入生产业务 |
-| 账户／业务 schema 工具、MinIO 初始化 | 启动准备任务，完成后退出；不列为常驻业务组 | 保留部署准备职责，不伪装为持续运行的核心服务 |
+| 应用图 | 上述十一应用；Markets、BSC、Sports 不恢复，Token 延期 | Compose 按仓库当前配置；Token 旧九角色与缺少 Solana 的事实不由本地改造自动改变 |
+| PostgreSQL／Redis／MinIO | 按 canonical checkout 与 `INSTANCE` 隔离；只准备所选 owner | 使用生产自身资源；本地运行器不连接或清理生产存储 |
+| 五个 Etherscan Gateway | 作为外部依赖，只做标准 gRPC Health 读取 | 独立远端常开服务，Manager 不负责其部署和生命周期 |
+| 访问控制 | 六键按环境持久化，首次缺行 CLOSED，重启保持 | 使用各自环境存储；本地设置不复制到生产 |
+| 网络入口 | 开发服务默认 loopback；公开 UI 经 API 代理 | 已确认外部用户统一经 API、服务器规则隔离业务端口；本轮未远端实测规则 |
 
-第三方 Polygon／Solana／EVM RPC、Polymarket、Ave、Etherscan、Nansen、LLM、Telegram 和身份提供方是外部依赖。`make run` 准备本环境进程与必要连接，不启动这些供应商的程序。本地进程和数据隔离也不代表第三方 API 额度自动隔离，具体配置必须如实展示。
+第三方 Polygon、Solana、Polymarket、Worm、Etherscan、Telegram 和身份提供方都是外部依赖。实例隔离不表示第三方凭据或额度自动隔离。
 
-<a id="gateway-scope"></a>
-## Etherscan Gateway：运行范围已确认
+## Etherscan Gateway 运行范围
 
-### 已核对事实
+`.env`／环境配置的 Manager 和 API Gateway 集合必须规范化为同一组五个 `IP:6776` 地址。运行器只在选中 Manager 或 API 的相关阶段并行执行每地址 3 秒的 gRPC Health，保存各自结果；Gateway 失败与 Manager readiness 分开。
 
-- `.env` 与 `.env.prod` 中的 `ATHENA_ETHERSCAN_MANAGER_GATEWAY_ADDRS` 均列出同一组五个地址；`ETHERSCAN_GATEWAY_IPS` 对应相同主机。Manager 的业务转发与管理员 Gateway 检查使用不同配置入口，后续必须一致指向选定环境范围。
-- 五个 Gateway 的部署方式与位置见[服务器记录](../../etherscan-gateway-servers.md)：独立主机上的 systemd 服务，当前主生产 Compose 不启动这些进程。
-- Manager 只调度请求，不负责启停或部署 Gateway。Gateway 的常开要求不等于本地 `make run` 可以控制远端机器。
-- `47.254.154.128` 与 `47.245.183.140` 同时出现在 Gateway 和 BSC 索引器服务器记录中。索引器删除仅清理其所属资源，必须保留同机 Gateway，不能据此停用整台主机或清理共享资源。
-- 原静态核对仅检查文件；后续清理任务对两台索引器同机 Gateway 执行了只读健康核验，均为 SERVING，其余 Gateway 不由该结果代替。文件配置可能被运行时环境变量覆盖，不能当作已验证的实际连接状态。
+本地 run、stop、reset 不能创建、部署、停止、重启或清理远端 Gateway，也不执行额度或业务调用。当前真实验收仅证明配置的五项 Health SERVING；不证明所有 Etherscan 业务、远端部署或服务器规则已经验收。部署位置与共享主机边界见[服务器记录](../../etherscan-gateway-servers.md)。
 
-### 已确认安排
+## schema、配置与服务健康
 
-**用户决定，2026-09-15**：用户回复“採用”，确认本地启动自己的业务服务、核心服务、数据库和 Etherscan Manager，Gateway 继续使用配置中的五个远端实例；本地启停与清理不操作远端 Gateway，API 额度是否独立取决于密钥配置。
+- managed 模式只为所选 owner 建库并在任何消费者启动前执行独立 `up`／`verify`；业务 main 只验证结构。
+- external 模式只读 verify，不创建库、版本表、seed、容器或卷，也不停止借用数据库。
+- 运行器持久保存内部凭据并拒绝冲突；Trading 地址在所选 API 中自动注入，Profit Sharing 只消费 `ATHENA_PROFIT_SHARING_LISTEN_PORT`。
+- 进程 ready、板块 OPEN 和账户权限彼此独立。Trading `SERVING` 不证明供应商或真实交易可用；Solana gRPC ready 不证明扫描已追平。
+- Market Radar、Managed OO、Profit Sharing 本轮未新增内部 Bearer、Actor 协议或账户连接池；其外部用户访问依赖统一 API 和已确认的部署网络边界。Solana 与 Trading 既有内部鉴权保留。
 
-| 项目 | 已确认的运行边界 |
-| --- | --- |
-| 本地进程与存储 | UI、API、Wallet、Notification、Etherscan Manager 及保留业务（含 Worm Trading）的进程由本地实例管理；Markets 按独立计划退役，不纳入十一应用目标；PostgreSQL、Redis、MinIO 与生产隔离；访问首次默认关闭，后续保留管理员设置，重启不重置；后台不随访问开关停止 |
-| 生产进程与存储 | 使用生产自身的业务、核心进程与存储，访问配置与本地相互独立 |
-| 远端 Gateway | 本地和生产各自的 Manager 连接现有五个远端 Gateway；本地不新增 Gateway 进程 |
-| 管理员网关检查 | 本地状态查询和探测指向同一组已选择的远端 Gateway，不把远端进程显示成本地启动的进程 |
-| 启停与资源清理 | 远端 Gateway 常开，不提供业务启停按钮；本地 `make run`、停止、重启和清理不部署、停止、重启或清理这些远端实例 |
-| API key 与额度 | 由各环境的实际密钥配置决定，不因 Manager 或数据库独立就宣称第三方额度隔离 |
+## 历史运行控制与退役范围
 
-五个远端地址是当前配置池，部署位置见上文核对事实和服务器记录。本地编排扩展实施仍须检查连接、鉴权和配置一致性；该次设计确认没有执行远端检查或修改既有部署；后续删除任务的实际核验单独见验收记录。
+原 `athena-runtime-control`、组成员启停、运行代次、默认停任务和通知暂停从未实现，当前也不推进。Markets、BSC、Sports 的源码、权限及入口按各自退役记录处理；Worm Trading 保留，`worm` 只表示 Trading。普通 stop/reset 不执行历史永久删库。
 
-## 原整组运行控制的接入差距（历史，当前不推进）
+Temporal 在本轮目标源码中没有常驻消费者；旧数据库残留不是新增 Temporal 服务的依据。生产 Compose、旧 Token 和历史现场要单独核对，不能用本地十一应用成功替代。
 
-1. 当前 `FullStackServices()` 只选择 Trader Sync、Profit Sharing、Notification、Wallet、UI 和 API Server。补齐保留业务进程及 Manager，并为所有业务实现初始化前的默认停止和常驻管理通道；不能直接启动旧命令后再关闭采集。
-2. Solana 需接入统一实例编排与生产部署，明确同环境账户库、业务表、schema 与内部鉴权；现有 profile 的“启动即扫描”不能直接作为目标默认行为。本轮不恢复既有暂停采集。
-3. Token 详细接入设计按用户要求推迟到其重构完成后，再核对实际成员、依赖、配置与就绪／收尾证据。本轮保留组级范围与通用接入要求，不固定沿用旧九成员，也不要求先改造旧采集与画像入口。
-4. 原时点曾将 BSC、Worm、Sports 全部列为删除；2026-09-16 曾修订为仅删除 BSC／Sports、保留 Worm 两服务，该时点边界用于已完成的 BSC／Sports 清理。之后用户确认 Markets 独立退役、Trading 承接目录；源码、契约、权限和运行入口已实施；专属数据库与五来源队列的原 main 退役完成，九个保留库和正常重启不重建均已核实。BSC／Sports 实际代码、运行和数据处理分别记录在其验收记录。
-5. 本轮在 `cmd`、`internal`、主生产 Compose 和 Procfile 未发现 Temporal 运行消费者，仅本地全栈创建两个 Temporal 数据库。目标清单不据此新增 Temporal 常驻服务；初始化残留和旧数据分别处理。
-6. 服务清单、API 客户端地址、数据库准备、权限／业务准入、健康与控制展示必须同步。本地与生产共享分组语义，运行资源和控制状态按环境隔离。
+## 源码与验证依据
 
-## 源码与设计依据
+- [默认图](../../../internal/devruntime/fullstack.go)、[统一注册表](../../../internal/devruntime/registry.go)、[本地编排设计](../../design/development-runtime/local-runtime-orchestration.md)。
+- [访问控制需求](business-access-control.md)、[2026-09-17 修订技术方案](../../superpowers/specs/2026-09-17-full-stack-access-reassessment-design.md)。
+- [全栈真实验收](../../testing/full-stack-access-acceptance.md)：根路径／前缀十一 ready、局部选择、五库、五 Gateway Health、访问开关、重启和资源归属。
+- [Sports 退役](sports-removal.md)、[Worm Markets 退役](worm-markets-removal.md)及其各自验收记录。
 
-- [本地全栈](../../../internal/devruntime/fullstack.go)、[服务注册](../../../internal/devruntime/registry.go)、[基础设施准备](../../../internal/devruntime/infrastructure.go)、[现有运行设计](../../design/development-runtime/local-runtime-orchestration.md)。
-- [生产 Compose](../../../docker-compose.prod.yml)、[Token Collector 命令](../../../cmd/athena-token-collector/commands/athena-token-collector.go)、[采集与 Profile](../../design/token-intelligence/collection-profile.md)。
-- [Trader Sync runtime](../../../internal/tradersync/runtime.go)、[Solana 命令](../../../cmd/athena-solana-discovery/commands/command.go)、[Solana 当前运行说明](../../developer-guide/running-locally.md)。
-- [Market Radar](../../design/market-intelligence/market-radar.md)、[Managed OO](../../design/market-intelligence/managed-oo.md)、[Profit Sharing](../../design/governance/profit-sharing.md)、[Etherscan Manager](../../design/blockchain-data/etherscan-manager.md)。
-
-本文件原核对证据限于静态源码与配置；后续 BSC／Sports 真实验收与退役结果见[验收记录](../../testing/module-removal-cleanup-acceptance.md)。新访问开关的接入与验证范围以[简化方案](business-access-control.md)为准；原进程控制的默认停止与真实启停验证不纳入本期。
+本轮证据不包含远端生产部署、服务器规则实测、Gateway 生命周期操作、真实交易或 Token 新版接入。人工最终审查状态不由本清单推断。

@@ -1,5 +1,7 @@
 # 板块访问开关：接口、存储与页面接入设计
 
+> 历史方案说明（2026-09-17）：本文保留 2026-09-15／16 的批准时点与原始清单。最终实现以[重构后修订方案](2026-09-17-full-stack-access-reassessment-design.md)为准，已在 `6b2db2ec8ca5d488a672e68785eea3272af4f50c` 实施并完成[真实验收](../../testing/full-stack-access-acceptance.md)。本文内“尚未实施”、旧 RPC 数量及早期页面状态不可作为当前事实。
+
 > 状态：2026-09-16 方案已获用户采用，尚未实施。用户表示“先通过你这套方案”，本设计与 make run 配套一起记录通过；[访问控制范围和默认／重启规则](../../requirements/development-runtime/business-access-control.md)继续有效。
 >
 > 本轮覆盖统一入口、配置与页面接入。[`make run` 启动配套](2026-09-15-local-full-stack-design.md)已获采用并补齐 Worm；两个 BSC 索引器与 Sports 删除、Trading 保留的[删除与清理配套设计](2026-09-16-module-removal-cleanup-design.md)已完成自查及补充；Token 详细接入继续延期。原 D01–D03 运行控制设计保持暂停。

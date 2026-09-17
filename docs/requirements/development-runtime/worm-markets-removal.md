@@ -3,6 +3,8 @@
 > 需求状态：2026-09-16 已实施并完成原 main default 现场退役。源码、契约、权限迁移、Trading 目录内聚、本地与生产入口清理和精确退役工具均已落地；五类待发送通知已核对收尾，`worm_markets` 专属数据库已删除，九个保留库和正常重启不重建均已验证。完整范围与局限见[退役验收](../../testing/worm-markets-retirement-acceptance.md)。
 >
 > 关联设计：[Worm Markets 删除与 Trading 市场查询内聚](../../superpowers/specs/2026-09-16-worm-trading-market-query-design.md)；[逐项实施计划](../../superpowers/plans/2026-09-16-worm-trading-market-query.md)。本文覆盖此前“Worm Markets／Trading 都保留”的决定；Sports 与 BSC 的既有删除范围独立保持。
+>
+> 后续事实（2026-09-17）：十一应用本地全栈和六板块访问开关已经实现并完成[真实验收](../../testing/full-stack-access-acceptance.md)。`worm` 仍只对应 Trading，未恢复 Markets 进程、数据库、权限或通知生产；本说明不改写原退役范围和证据。
 
 ## 背景与目标
 
@@ -38,14 +40,14 @@ Markets 的历史数据和 Trading 保存的交易事实是不同数据。删除
 ## 权限、访问与通知边界
 
 - 移除 `worm_markets` 模块权限，保留 `worm_trading` 的 READ／READ_WRITE 及现有交互式登录边界。原 Markets 授权不自动转成 Trading 授权，其他模块授权不变。
-- 已采用的板块访问方案保留 `worm` 标识，此后只对应 Worm Trading。首次默认关闭、持久保存管理员设置、后台已受理工作继续、重新开放不自动补发等规则继续有效；访问开关本身仍待独立实施。
+- 已采用并实施的板块访问方案保留 `worm` 标识，只对应 Worm Trading。首次默认关闭、持久保存管理员设置、后台已受理工作继续、重新开放不自动补发等规则已经通过根路径和前缀真实验收。
 - Markets 通知生产停止后，精确处理其尚未发送消息；共享 Notification 中已发送、失败、未知及尝试记录保留真实事实。其他来源通知、绑定和共享资源不受影响。
 - 本任务不调整交易金额、杠杆、钱包数量、浏览器驱动方式、签名信任模型或平仓判定，不增加新的交易策略和市场浏览页。
 
 ## 可观察的完成条件
 
 - **源码与契约已完成**：Markets 命令、模块、公共 API、proto、权限、健康项、通知生产、构建和部署入口已删除；Trading 目录、组合保存、Preview 与执行校验已内聚并通过隔离测试、race、构建和真实只读故障恢复验收。
-- **运行入口已完成**：默认六进程图仍不含 Trading；Trading 独立入口已具备自身数据库、账户只读连接、目录配置、就绪和有界停止，不再准备或重建 `worm_markets` 数据库。正常 stop/reset 不执行一次性永久删除。
+- **运行入口已完成**：当前十一应用默认图已纳入 Trading；Trading 独立入口仍具备自身数据库、账户只读连接、目录配置、就绪和有界停止，不再准备或重建 `worm_markets` 数据库。正常 stop/reset 不执行一次性永久删除。
 - **数据与通知现场已完成**：controller 在已核实原 main default 现场对固定五来源执行 report/apply/report，待发、在途和取消均为 0；随后核对目标 OID、owner、server、活跃连接与全部保留库，精确删除 `worm_markets`，复查为 `already_absent`。原 1000 条 market 与 2969 条 price history 直接删除，没有归档或转存。
 - **保留项已复核**：九个非目标库保留，Trading 与 Wallet 全表 count/fingerprint 在删除后及正常重启后保持；原两个账户只删除两条 Markets grant，其他 14 条 grant 与 flags 保持；共享通知 Topic、sender、offset 与投递事实保持。正常重启没有重建 Markets，也没有执行真实交易。Trading 现场为空库，因此没有旧凭据可供解密实测。
 - 源码、运行实例、数据和通知队列证据分别记录；隔离副作用测试与真实只读验收分开，不把静态设计或模拟成交写成真实成交验证。

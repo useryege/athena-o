@@ -2,7 +2,7 @@
 
 > 设计状态：已实现
 
-> 关联目标改为[板块访问开关简化方案](../../requirements/development-runtime/business-access-control.md)，尚未实施。管理员配置板块“开放访问／关闭访问”，显示最后修改信息；业务页面同样受限，纯管理开关与健康信息保持可用。原整组进程协调和收尾展示已暂停，后台任务继续运行。BSC／Sports 与 Markets 已分别退役，Trading 和本地使用五个远端 Gateway 的环境归属继续保留。 [接口、存储与页面接入技术提案](../../superpowers/specs/2026-09-15-business-access-control-design.md)已于 2026-09-16 获采用，尚未实施；拟在 Service Status 增加访问页签，并以共用路由边界控制业务正文，当前代码尚未接入。`worm` 只对应 Trading：管理员只显示一行 Worm 设置，会员七条现有路由及其弹窗统一受控；关闭时停止浏览器交易驱动，重新开放不自动补发交易。
+> [板块访问开关](../../requirements/development-runtime/business-access-control.md)已实现。Service Status 在原 Services、Notifications、Trader Sync 三个只读来源之外增加独立 Module Access 第四页签，展示六项 OPEN／CLOSED、修改人和时间，并提供显式保存；开关管理和健康始终可用，业务页面同样受限。后台任务继续运行，Token 接入延期，`worm` 只对应 Trading。实际管理员 GUI、手机／桌面和审计持久化证据见[全栈验收](../../testing/full-stack-access-acceptance.md)。
 
 ## 范围
 
@@ -47,7 +47,7 @@
 
 `/admin/notifications` 和 `/:id` 管理系统 Telegram 投递；Service Status 展示共享 Notification runtime。Trader Sync 使用独立管理员 service/read scope，只提供安全订阅概要和 runtime，不导入会员 model、draft 或 cache。普通账户、API Key 和会员 service 都不能调用这些管理员 RPC。
 
-权限编辑器通过 `accountAccessDisplayModules` 隐藏 Token 控件，但 draft、reset、冲突 reload、比较和更新都保留完整十模块 aggregate；改变其他权限不得丢 Token level。管理员自己的 aggregate 仍是不可编辑的登录专用状态。
+权限编辑器通过 `accountAccessDisplayModules` 隐藏 Token 控件，但 draft、reset、冲突 reload、比较和更新都保留完整七模块 aggregate；改变其他权限不得丢 Token level。管理员自己的 aggregate 仍是不可编辑的登录专用状态。
 
 ## 路由与页面流程
 
@@ -58,7 +58,7 @@
 5. 系统通知页提供 keyword、delivery status、`test`/`prod` chat 筛选；详情显示 provider-facing 规范化结果。Test Notification 单飞提交，提交中不可关闭，成功后刷新列表，失败保留弹窗和错误。
 6. 管理员 Trader Sync 路由为 `/admin/trader-sync/subscriptions` 与 `/admin/trader-sync/subscriptions/:id`，并与 `/admin/service-status` 互链。列表 filter 先保留 draft，只有 Apply 才生效；accountId trim、wallet trim 并小写，includeCancelled=true 表示当前与已取消全部，默认 pageSize=50。
 7. Trader Sync 列表 Previous 使用本页真实输入 cursor，Next 使用响应 nextCursor，不推算 total。只显示用户安全身份、完整钱包、生命周期、观察、活动数和关联逻辑 delivery 数；不同订阅行的 Associated deliveries 不可求和。详情无备注、完整活动、消息正文、逐条 delivery 或 Pause/Resume/Cancel/Resend。
-8. Service Status 对 Services、Notification Runtime、Trader Sync 各维护独立 10 秒可见 single-flight；hidden 不发新请求，visible/focus 和手动 Refresh 使用同一 reload。某一来源 pending/失败不阻塞其余来源，失败保留该来源最后成功值、时间和 stale 提示。
+8. Service Status 对 Services、Notification Runtime、Trader Sync 各维护独立 10 秒可见 single-flight；Module Access 使用独立 5 秒可见 single-flight。hidden 不发新请求，visible/focus 和手动 Refresh 使用各自 reload。某一来源 pending/失败不阻塞其余来源，失败保留该来源最后成功值、时间和 stale 提示；访问设置无法确认时禁用修改，不伪造 CLOSED。
 9. Profile、Access、Help 只操作当前管理员 UUID；管理员应用不创建 API Key。Logout 只撤销/清除 `athena.token.admin`，会员会话不受影响。
 
 其他路由为 `/admin/profit-sharing`、`/admin/profit-sharing/:slug`、`/admin/etherscan-gateways`、`/admin/notifications`、`/admin/notifications/:id`、`/admin/account/profile`、`/admin/account/access` 与 `/admin/help`。管理路由都位于 `/admin` 应用根下，已移除的 Appearance 地址统一落入既有 404 兜底。
@@ -77,7 +77,7 @@
 
 Trader Sync Summary DTO 从源头白名单化：ID 与计数保持 string，不经 JavaScript number；缺值显示 `Unavailable`/`Unknown`，raw 不可观测不补 0。健康六态为 pending_baseline、healthy、interrupted、paused、permission_disabled、cancelled；healthy 显示 `Monitoring`，interrupted 显示 `Monitoring interrupted`。
 
-Service Status 三来源时间不能混用：Services 的 `Last checked` 来自 server `checkedAt`；Notification 的 `Last received` 是客户端最近成功读取时间；Trader Sync 的 `As of` 来自 server `asOf`。全部时间按 UTC+8 展示。
+Service Status 各来源时间不能混用：Services 的 `Last checked` 来自 server `checkedAt`；Notification 的 `Last received` 是客户端最近成功读取时间；Trader Sync 的 `As of` 来自 server `asOf`；Module Access 的修改时间是服务端 RFC3339Nano 审计值。全部时间按 UTC+8 展示。
 
 Notification 保留 System/Account pending、retry、failed、sending、unknown 等计数及 recovery。`remainingMillis`/`elapsedMillis` 是服务端精确 string，合法 `0` 显示 `0 ms`，缺失显示 `Unavailable`，浏览器不倒计时。initializing/waiting 显示 recovering；顶层 failed/stopped 优先但仍保留 recovery 的 reason、started 和 clock。
 
@@ -105,6 +105,6 @@ Trader Sync 显示 Collector Connected/Disconnected/Unavailable、collectorEpoch
 - [ ] 普通账户在管理 service 构造/请求前被拒绝；admin/member bundle 边界保持单向中立共享。
 - [ ] Accounts、Governance、Service Status、Etherscan、Notifications 与 Trader Sync 保留显式管理员规则。
 - [ ] Trader Sync 安全 DTO、两路由、filter/cursor 和 Associated deliveries 口径保持一致。
-- [ ] 三来源 10 秒可见 single-flight、错误隔离、单位/window/epoch 与 UTC+8 保持一致。
+- [ ] 三个状态来源的 10 秒及 Module Access 的 5 秒可见 single-flight、错误隔离、单位/window/epoch 与 UTC+8 保持一致。
 - [ ] 401、维护、`ACCOUNT_ADMIN_REQUIRED` 清屏、可见复查失败和 Retry access check 保持当前行为。
 - [ ] 源码链接和[设计索引](../README.md)保持正确。

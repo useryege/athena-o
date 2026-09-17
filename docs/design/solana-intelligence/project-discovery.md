@@ -2,7 +2,7 @@
 
 > 当前方案：第一步采用标准 HTTP RPC 的 finalized 区块扫描，独立服务持久发现候选并补齐名称、符号及可确认的发行来源，ATHENA 列表查看。更多平台解析、流式订阅和项目研究留待下一步。
 >
-> 实现与运行状态见[设计总览](README.md)：首版源分支已验收，现已按用户授权集成到 `rf4`，并通过[本次集成验证](../../testing/rf4-branch-integration.md)；采集和预览继续暂停。本文的运行行为不代表程序此刻在线。
+> 实现与运行状态见[设计总览](README.md)：首版源分支已验收并集成到 `rf4`。2026-09-17 新实例已纳入十一应用统一运行器，完成当前主网 v1 交易只读兼容和真实后台连续性验收；旧 profile 的暂停与数据保留仍是原现场事实，不限制新实例授权。证据见[全栈验收](../../testing/full-stack-access-acceptance.md)。本文不表示程序此刻在线。
 >
 > 关联需求：[Solana 项目研究](../../requirements/solana/README.md)。资料核对日期：2026-09-13。
 
@@ -55,7 +55,7 @@ Pump 官方仓库中的 SDK 使用文档提供 `createV2AndBuyInstructions`，�
 
 `internal/solanadiscovery` 是唯一业务 owner，拥有解析、RPC 适配、扫描生命周期、`solana_discovery` schema 和查询。独立入口 `cmd/athena-solana-discovery` 不导入 API/UI/其他业务实现；API 仅通过生成的 gRPC 契约代理查询。
 
-扫描 Mainnet Beta 并核对 genesis hash；读取 finalized 范围的 getBlocks，然后并发 getBlock（jsonParsed/full、legacy/v0、maxSupportedTransactionVersion=0）。首次从 head 向前32 slots开始，显式 start-slot 仅在无检查点时生效。范围按slot提交，每个范围内候选和检查点同一事务落库。Mint唯一，重复发现保留首次证据；失败块/损坏已识别初始化不推进范围。提供方返回的跳过slot依其getBlocks结果处理，不宣称自行证明账本完整性。
+扫描 Mainnet Beta 并核对 genesis hash；读取 finalized 范围的 getBlocks，然后并发 getBlock（jsonParsed/full、legacy/v0/v1、`maxSupportedTransactionVersion=1`）。补全读取 getTransaction 使用同一最大版本 1。2026-09-17 真实起点区块包含 v1 交易，旧上限 0 返回 RPC -32015 并按既有“失败不推进”规则阻断整个范围；修订后相同区块返回并由现有解析器处理。该调整只覆盖当前主网只读版本契约，不升级发送、签名或 SDK 交易协议，也不是历史兼容 shim。首次从 head 向前32 slots开始，显式 start-slot 仅在无检查点时生效。范围按slot提交，每个范围内候选和检查点同一事务落库。Mint唯一，重复发现保留首次证据；失败块/损坏已识别初始化不推进范围。提供方返回的跳过slot依其getBlocks结果处理，不宣称自行证明账本完整性。版本依据见[Solana 官方交易版本说明](https://solana.com/developers/cookbook/transactions/versions)。
 
 发现时保存 Mint、Token 程序、交易签名、手续费支付方、初始化权限、精度、slot、blockTime 和 discoveredAt；两个时间分别表示链上时间和首次保存时间。初始化交易同时解析 issuanceSource、issuanceProgram、sourceStatus。所有资产尚未分类，不主动抓取链外 metadata。
 
@@ -75,7 +75,7 @@ Pump 官方仓库中的 SDK 使用文档提供 `createV2AndBuyInstructions`，�
 
 ## 独立运行与配置（SDS-R3、R4、R5）
 
-当前入口：`make solana-discovery-build`、`make solana-discovery-run`、`make solana-discovery-stop`。最小依赖为已启动的 PostgreSQL 和可用主网 HTTP RPC；账户数据库结构由独立 `athena-account-state-migrate up` / `verify` 准备和核对，扫描本身不依赖 API 在线。局部 profile 只管理自己的进程组，借用基础设施，不创建/停止容器或删除数据卷。默认 managed 全栈为 Trader Sync、API Server、Notification、Wallet、Profit Sharing 和 UI 六服务，不包含 Solana；扫描及预览仅通过显式 Solana profile 运行。
+当前入口：`make solana-discovery-build`、`make solana-discovery-run INSTANCE=<name>`、`make solana-discovery-stop INSTANCE=<name>`。run/stop 别名委托统一实例 owner；managed 模式按选择创建 PostgreSQL 并先执行账户及 Solana `schema up`／`verify`，external 模式只读 verify，扫描不依赖 API 在线。Solana 已纳入十一应用默认图，也可单独正向选择。旧 `hack/solana-local.sh` 的 profile 仅由原 owner 停止，状态与数据不迁入新实例。
 
 专用 `solana-preview` 将 `ATHENA_SOLANA_PREVIEW_POSTGRES_DSN` 同时提供给 Solana 存储和 API 的 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN`；profile 的 API 启动链自动先完成账户 schema 的 `up` / `verify`，成功后直接启动 `cmd/athena-server`。API 启动只验证 schema，不拥有账户迁移，也不启动 Trader Sync runtime。预览依赖已运行的 PostgreSQL、Redis，并按功能需要使用其他独立服务和 MinIO。
 

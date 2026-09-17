@@ -1,6 +1,6 @@
 # Solana 设计总览
 
-更新日期：2026-09-13。本文汇总当前已确认设计，作为后续研发入口。
+更新日期：2026-09-17。本文汇总当前已确认设计，作为后续研发入口。
 
 ## 当前结论
 
@@ -47,13 +47,13 @@ flowchart LR
 
 ## 当前运行状态与恢复边界
 
-用户已要求暂停收集。2026-09-13 已停止源分支的 `solana-preview`，其发现、后台补全、API 与 UI 预览进程均已退出；该预览地址不提供服务。本次 `rf4` 集成保持暂停。默认 managed 全栈只有 Trader Sync、API Server、Notification、Wallet、Profit Sharing 和 UI 六服务，不启动 Solana 扫描或后台补全。
+2026-09-13 暂停的是源分支旧 `solana-preview` 现场：其发现、后台补全、API 与 UI 进程均已退出，地址不提供服务。该历史暂停不限制 2026-09-17 明确授权的新实例；Solana Discovery 已纳入十一应用默认图，也可通过统一 `INSTANCE` 正向选择。访问设置 CLOSED 只拦截新的用户查询，不停止扫描或补全。新实例和当前主网 v1 只读验证见[全栈验收](../../testing/full-stack-access-acceptance.md)。
 
 停机时数据库 `athena_solana_preview` 中保留 **2321** 条候选、起点 **446684678**、已处理游标 **446687144**。这些是停止时快照，不是实时计数。基础设施与数据未删除，尚未完成的补全队列一并保留。
 
 原 `athena_solana_preview` 的账户 schema 与 `rf4` 不兼容，不能指向原库直接运行 `rf4` 的 `up` / `verify` 或 reset。此次保留原库、游标、原分支及 `/home/yege/work/athena/.worktrees/solana-discovery`，不修改旧数据库，也不新增历史 schema 兼容路径。
 
-以后用户明确要求恢复原预览时，从该原 worktree 的保留版本使用 `make run ATHENA_RUN_PROFILE=solana-preview` 管理原库；先确认没有其他 checkout 正在扫描同一数据库。原版本续接原游标和待处理记录，不重新选取最新链头作为起点。历史区块或交易能否补查仍受节点保留范围限制。停止使用同一 checkout 的 `make stop ATHENA_RUN_PROFILE=solana-preview`。`rf4` 预览使用新的专用数据库；将旧数据转入 `rf4` 需单独明确数据迁移范围。本次新入口的 schema 准备、端口及资源归属见[Solana 局部运行说明](../../developer-guide/running-locally.md#solana-discovery-local)。
+以后用户明确要求恢复原预览时，只能从原 worktree 的保留版本和原 owner 管理原库；先确认没有其他 checkout 正在扫描同一数据库。当前 checkout 的旧 profile start 已封闭，新入口不会接管旧状态。旧现场如仍有记录进程，只用原脚本及原实例名停止。将旧数据转入当前 schema 需单独明确迁移范围。统一入口的 schema、端口与资源归属见[Solana 局部运行说明](../../developer-guide/running-locally.md#solana-discovery-local)。
 
 人工停机是运维动作，不会改变后续“项目不自动结束研究”的业务方向。首版没有项目研究执行器，也没有后台常驻授权要求。
 
@@ -73,6 +73,6 @@ flowchart LR
 
 源分支实现已有 100 项后端数据库/并发测试及子测试、7 项页面测试、API 契约测试、UI 静态检查、桌面/手机真实页面验收和会员/管理员两项 smoke 通过的记录。原始验收已随代码收录为[发现验收](../../testing/solana-discovery.md)及[基础信息补全验收](../../developer-guide/acceptance-records/2026-09-13-solana-metadata.md)。这些记录描述源分支当时结果。
 
-本次 `rf4` 集成验证已通过：Go 包测试及相关 PostgreSQL schema/事务集成测试、31 套共 361 项前端测试、前端静态检查与构建、Solana 独立可执行构建，以及 86 项隔离浏览器测试和真实新环境的 2 项 smoke 均通过。新 managed 全栈在 `http://localhost:34000` 保留运行，Solana 服务继续暂停；会员/管理员 bootstrap、Trader Sync 查询和 Solana 暂停时的 API 隔离行为已核对。命令、证据及验收边界见[本次集成验收](../../testing/rf4-branch-integration.md)。
+原 `rf4` 集成验证已通过 Go、PostgreSQL、UI、独立构建、隔离浏览器和真实 smoke；该时点的 Solana 暂停事实见[集成验收](../../testing/rf4-branch-integration.md)。2026-09-17 后续真实实例进一步覆盖 legacy/v0/v1 finalized 读取、失败不推进、修复后检查点前进、访问 CLOSED 时后台连续、第二次重启保持成功检查点，以及根路径／前缀 API 与 GUI，见[全栈验收](../../testing/full-stack-access-acceptance.md)。最终任务实例已经按归属停止并保留卷和证据；这不表示生产已部署或旧预览已迁移。
 
 公共 RPC 预览停止前仍有区块积压，历史元数据队列也未清空；不承诺固定发现延迟、全链全部平台覆盖或全部候选都有名称。未来是否购买高容量 RPC、使用 Yellowstone/Geyser 或扩展平台，在新需求明确后决定。

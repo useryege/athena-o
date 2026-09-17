@@ -3,6 +3,8 @@
 > 需求状态：2026-09-16 Sports 删除与专属历史数据直接删除已确认。最新决定另行删除 Worm Markets，仅保留 Trading，见[Worm 删除与保留需求](worm-markets-removal.md)；该决定覆盖本文早先双服务保留表述。本文件继续只负责 Sports 范围。
 >
 > 实现状态（2026-09-16）：代码、协议、八权限契约、页面与运行配置已删除；空库/升级、通知维护及真实本地保留能力验证已有证据。数据库与运行退役分别记录在[验收记录](../../testing/module-removal-cleanup-acceptance.md)；主生产机按用户后续指示跳过。
+>
+> 后续事实（2026-09-17）：十一应用本地全栈和六板块访问开关已经实现并完成[真实验收](../../testing/full-stack-access-acceptance.md)，清单没有恢复 Sports、World Cup Corners 或其权限。本说明只更新后续现状，不改变 2026-09-16 退役任务的范围和验收结论。
 
 ## 1. 删除范围
 
@@ -38,7 +40,7 @@
 - 保留 API、UI、登录、账户、Wallet、Notification、Etherscan Manager／Gateway 和其余业务；ATHENA 钱包、私钥、头像、资产及外部订单／持仓不因本次删除而处置。
 - Polymarket、BSC／EVM、Solana、市场模型和通用 UI 按实际消费者保留。Worm 自身使用的体育市场数据不属于 Sports 板块删除范围。
 - v21 的 Sports 页面转为退役记录；Market Radar／Managed OO、v22 Worm／共用界面和全部已确认视觉规则继续有效。
-- 运行目标只保留 Trading，`worm` 访问标识与交易处理规则继续适用；Markets 源码退役与 Trading 目录内聚已实施，原 main default 的数据库和五来源通知退役仍由独立 Task 10 留证。十一应用全栈与访问开关尚未实施，Token 详细接入仍延期。
+- 运行目标只保留 Trading，`worm` 访问标识与交易处理规则继续适用；Markets 源码退役与 Trading 目录内聚已实施，原 main default 的数据库和五来源通知退役由独立 Task 10 留证。十一应用全栈与访问开关已于 2026-09-17 实现并验收，Token 详细接入仍延期。
 
 ## 5. 完成标准与决定记录
 
@@ -50,4 +52,4 @@
 
 2026-09-16 已按用户优先顺序整理[删除清理实施计划](../../superpowers/plans/2026-09-16-module-removal-cleanup.md)，覆盖仓库清理、本地验收、现场退役与直接删库、最终核验。当前执行状态以验收记录为准。
 
-2026-09-16 最新决定：用户要求删除 Markets、选择专属数据直接删除并采用方案 A；按需市场查询归 Trading。此前两者保留的确认记录仅保留历史含义，以[最新需求](worm-markets-removal.md)为准。
+2026-09-16 最新决定：用户要求删除 Markets、选择专属数据直接删除并采用方案 A；按需市场查询归 Trading。此前两者保留的确认记录仅保留历史含义，以[最新需求](worm-markets-removal.md)为准。本文其他“十一应用／访问开关未实施”表述均为该退役任务当时的历史状态，当前状态见上方后续事实。

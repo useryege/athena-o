@@ -1,5 +1,7 @@
 # 管理员 Service Status 页面视觉基准（v16）
 
+> 后续实施说明（2026-09-17）：v16 的三来源样板与批准证据保持原样；正式页面已在其后增加独立 **Module Access** 第四页签，展示六个访问键、OPEN／CLOSED、修改人和 RFC3339Nano 时间，并提供显式保存。该页签使用独立 5 秒可见 single-flight，未知结果禁用修改且不把不可读冒充 CLOSED；原三个状态来源仍各自 10 秒、彼此隔离。真实桌面／手机与保存、重启证据见[全栈验收](../../testing/full-stack-access-acceptance.md)。这项后续事实不表示早期 v16 截图已展示第四页签。
+
 > 状态：所展示的 Services 桌面／手机、Notifications 桌面和 Trader Sync 手机视觉已确认；正式 `ui/` 未修改。具体范围见 [v16 确认记录](previews/theme-service-status-v16-approval.json)。
 >
 > 视觉基础：沿用已确认的 Nansen 单一深色世界、v1 配色、v2 字体与数字排版、v3 布局、v4 状态反馈，以及 v15 管理员导航与应用壳。本提案不改变 Service Status 的业务、授权、请求或缓存契约。

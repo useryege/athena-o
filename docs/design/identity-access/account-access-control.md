@@ -8,7 +8,7 @@
 
 > 交易目标：用户已确认[手动交易共用现有 Trader Sync 权限](../trading/polymarket-manual-trading.md#shared-trader-sync-access)，钱包操作权限和归属继续独立核验。该交易能力尚未实现；当前模块矩阵仍按下文所列源码运行。
 
-> 访问接入目标（2026-09-16 已确认，尚未实施）：普通 Wallet、登录与账户权限保持核心能力；Worm 用户钱包选择、连接、交易及其专属二次验证受同一 `worm` 开关约束。Google 共用回调按可信验证目的区分，关闭时不签发新的 Worm 凭据或交易授权；已有后台工作与内部目的绑定签名按原规则处理。详见[访问接入设计](../../superpowers/specs/2026-09-15-business-access-control-design.md#24-worm-原始-http-与二次验证入口)。
+> 访问接入（2026-09-17 已实现）：普通 Wallet、登录与账户权限保持核心能力；六个业务板块在原账户授权之后再检查环境访问设置。Worm 用户钱包选择、连接、交易及其专属二次验证统一受 `worm` 控制；关闭时不签发新的 Worm 凭据或交易授权，已受理后台工作与内部目的绑定签名按原规则处理。详见[现行需求](../../requirements/development-runtime/business-access-control.md)及[全栈验收](../../testing/full-stack-access-acceptance.md)。
 
 ## 范围
 
@@ -59,6 +59,8 @@
 | `trader_sync` | NONE / READ_WRITE |
 
 鉴权仍采用 `NONE < READ < READ_WRITE`；只读模块拒绝 RW grant。Trader Sync grant 的 READ 由 Go、API 与 SQL CHECK 拒绝，但 READ requirement 合法，RW 可以满足它。模块之间不传递权限，模块与 API Key / Profit Sharing 权益也彼此独立。protobuf 的 Trader Sync enum 使用 12，Solana 使用 13，保留 2、3、6、7、10 不复用；已删除的 2、3、7 及其原名称均声明 reserved。Solana 公开查询在 API 检查 READ 后代理到独立发现服务；API 从已认证凭据注入唯一账户 UUID，独立服务验证内部 Bearer 并从账户数据库重读 Solana READ 权限。管理员没有会员 Solana 查询权限。
+
+账户模块权限与环境访问设置是串行且独立的准入条件。账户聚合固定七项，开关固定六键，不包含 Wallet 或 Token；开关写入不递增账户 revision、授予权限或改变 Pending/Active。缺失设置按 CLOSED，读取失败按暂不可用关闭处理。板块关闭错误携带稳定 reason 与 `module_key`；HTTP 继续使用 snake_case 和数值状态，管理员设置审计时间为 RFC3339Nano。Service Status 的设置写入只允许管理员，普通状态读取仍须已认证，核心入口不受六键阻断。
 
 Worm Trading 的目录及组合 Create／Update 还在服务侧验证内部 Bearer、恰好一个规范 `x-athena-account-id`，组合写的 owner 必须匹配该身份，并读取当前 LoginEnabled 和 `worm_trading` READ／READ_WRITE。该只读账户连接独立于 API runtime；管理员、API Key 或历史 Markets-only grant 均无绕过。
 

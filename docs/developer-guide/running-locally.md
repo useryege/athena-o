@@ -83,7 +83,7 @@ two independent accounts even when both belong to the same person.
 
 ### Start the stack
 
-目标已收缩为[板块访问开关简化方案](../requirements/development-runtime/business-access-control.md)：本期只拦截用户业务请求，程序与后台任务继续运行；原整组运行停止方案已暂停。新开关及服务清单扩展尚未实现；已确认目标为首次默认关闭访问，之后保留管理员设置，再次执行 `make run` 或重启不改变开关；以下命令和启动清单描述当前实际行为。[全栈启动配套提案](../superpowers/specs/2026-09-15-local-full-stack-design.md)原十程序设计已通过，之后曾以两项 Worm 服务扩为十二程序；现行目标在 Markets 退役后为十一应用，`worm` 只对应 Trading。Trading 独立入口、账户状态只读依赖、进程内目录、鉴权、就绪与停止已实现，但仍未接入当前默认六进程图；访问开关与十一应用扩展尚未实施。
+当前 `make run` 已实现十一应用统一图和[板块访问开关](../requirements/development-runtime/business-access-control.md)。关闭访问只拦截新的用户业务请求，程序、后台任务和通知继续运行；首次缺行默认 CLOSED，之后保留管理员设置，重启不改变开关。Token 接入延期，BSC、Sports 和 Markets 不在当前图。实际根路径与 `/athena` 前缀验收见[全栈记录](../testing/full-stack-access-acceptance.md)。
 
 Start the explicitly selected full stack from this checkout:
 
@@ -100,14 +100,16 @@ accepts Node.js `>=24.14.1 <25`; do not change the global NVM default. On a new
 machine, complete the Node.js setup in [Development Environment](development-environment.md)
 before starting the stack.
 
-The full stack contains Trader Sync, API Server, Notification, Wallet, Profit Sharing,
-and UI. BSC indexers, Sports Live/History and World Cup Corners have been removed.
-The existing graph prepares only retained databases; it does not launch the standalone Worm Trading process.
-See the [removal acceptance record](../testing/module-removal-cleanup-acceptance.md) for the separately verified Worm Compose environment. It defaults to the `full-stack` instance (override `INSTANCE` consistently for run/stop/reset) and its own persistent PostgreSQL, Redis,
-and MinIO. Infrastructure binds dynamically assigned loopback ports; inspect them with
-`make runtime-status INSTANCE=full-stack`. Default business ports are API `8080`,
-UI `4000`, Trader Sync `8122`, Notification `8086`, Wallet `8088`, and Profit Sharing
-`8108`. Override the business ports when running several instances concurrently.
+The full stack contains Wallet, Notification, Etherscan Manager, API Server, UI,
+Trader Sync, Solana Discovery, Market Radar, Managed OO, Profit Sharing, and Worm
+Trading. It defaults to the `full-stack` instance; use the same explicit `INSTANCE`
+and, when applicable, `ENV_FILE` for run, status, and stop. Managed mode creates only
+the selected owners' databases. Infrastructure and all application listeners use
+loopback addresses; inspect the assigned addresses, readiness, failures, schema results,
+Gateway health, logs, and exact stop command with `make runtime-status INSTANCE=full-stack`.
+The current default ports are UI `4000`, API `8080`, Notification `8086`, Wallet `8088`,
+Manager `8100`, Trader Sync `8122`, Solana `8112`, Market Radar `8092`, Managed OO
+`8106`, Profit Sharing `8108`, and Worm Trading `8090`.
 
 For Trader Sync development, select only that service:
 
@@ -130,6 +132,14 @@ The runtime requires Linux/WSL and Bash 5.1+; the selected Go service does not r
 Wallet and API use the same development `ATHENA_WALLET_INTERNAL_AUTH_TOKEN` when
 selected in the full stack. If overridden, both must receive the same token of at
 least 32 bytes. Health remains available when business credentials are rejected.
+
+Selections are positive: `run-service` and `run-services` do not add unselected
+applications. Managed mode prepares only the selected schema owners. `DB_MODE=external`
+performs read-only verification of the selected databases and never creates, migrates,
+seeds, stops, or resets a borrowed database. Direct API routes follow
+`ATHENA_SERVER_ROOTPATH`; HTML, public assets, callbacks, and the Vite proxy follow
+`ATHENA_SERVER_BASEHREF`. A successful `runtime-status` command means state was read;
+check `SelectedReady` or `FullStackReady` rather than treating exit 0 as readiness.
 
 Use the CLI against the local API with:
 
@@ -460,35 +470,35 @@ Detailed validation and limits are recorded in the
 <a id="solana-discovery-local"></a>
 ## Solana 发现的局部运行
 
-Solana 采集与预览当前按用户要求暂停；合并代码和运行默认全栈不授权恢复扫描或后台补全。以下命令用于以后明确要求恢复时。默认 managed 全栈只选择 Trader Sync、API Server、Notification、Wallet、Profit Sharing 和 UI 六个服务，不包含 Solana。Solana 使用单独的显式 profile，未并入 managed 实例运行器。
+旧 Solana profile 的暂停是原现场事实，不限制本轮新实例：Solana Discovery 已纳入当前十一应用默认图，也可以由统一 managed 实例运行器单独选择。启动扫描会访问实际主网 RPC；请为任务使用独立 `INSTANCE`，并以同一 owner 的 status/stop 收尾。访问设置 CLOSED 只限制新的用户查询，不停止后台扫描。
 
 独立入口不构建 API 或启动其他业务：
 
 ```bash
 make solana-discovery-build
-make solana-discovery-run
+make solana-discovery-run INSTANCE=solana-discovery
 # 另一个终端，同一 checkout：
-make solana-discovery-stop
+make runtime-status INSTANCE=solana-discovery
+make solana-discovery-stop INSTANCE=solana-discovery
 ```
 
-依赖已运行的 PostgreSQL 和主网 RPC；使用 `.env` 中 `ATHENA_SOLANA_DISCOVERY_POSTGRES_DSN`（未配置时回退 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN`，两者均缺失则启动报错）、`ATHENA_SOLANA_DISCOVERY_RPC_URL`。内部查询要求同库已准备账户表与 READ 授权；账户 schema 由 `cmd/athena-account-state-migrate` 的 `up` / `verify` 准备和核对，业务 API 启动只验证 schema。局部命令只拥有 `.run/solana-discovery` 中记录的进程组，借用基础设施，不清理容器或数据。
+两个 Make 别名分别委托统一的 `run-service SERVICE=solana-discovery` 与 `stop-instance`，默认实例名为 `solana-discovery`。managed 模式创建本实例 PostgreSQL，先准备账户 schema，再在同一明确 DSN 中执行 Solana `schema up`／`verify`；业务 main 只验证。external 模式要求显式 DSN，只读 verify，不迁移、创建或停止借用数据库。配置使用 `ATHENA_SOLANA_DISCOVERY_POSTGRES_DSN`、`ATHENA_SOLANA_DISCOVERY_RPC_URL` 和持久内部 token。
 
-如另一 checkout 已在运行，可用独立数据库与端口预览 Solana + API + UI。为 `rf4` 准备新的专用开发数据库，并在当前 checkout `.env` 配置 `ATHENA_SOLANA_PREVIEW_POSTGRES_DSN` 指向它；不要指向另一 checkout 正在使用的账户库。preview 将该 DSN 同时用于 Solana 存储和 API 的 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN`；profile 的 API 启动链自动先执行独立账户迁移命令 `up` / `verify`，成功后直接启动 `cmd/athena-server`。API 不再通过 Trader Sync 的旧启动包装器运行，也不承担迁移。本地开发会员沿用既有权限机制。
+旧 `hack/solana-local.sh` 的 `solana-discovery`／`solana-preview` 状态、进程和数据不迁移到新 owner。只需停止旧现场时，仍从其原 checkout 使用 `bash hack/solana-local.sh stop solana-discovery` 或 `bash hack/solana-local.sh stop solana-preview`；不要用旧脚本停止新实例，也不要让新入口接管旧状态。
+
+如另一 checkout 已在运行，可用新的 managed 实例预览 Solana + API + UI；它会创建自己的账户数据库、Redis 和 MinIO，不要指向另一实例的账户库：
 
 保留的原 `athena_solana_preview` 来自 Solana 源分支，账户 schema 与 `rf4` 不兼容：两者的账户迁移版本 `000002` 分别代表 Solana 授权和 Trader Sync runtime control。该库、候选、游标及补全队列保持不动；不得用 `rf4` 的自动 `up` 或 reset 尝试恢复。以后明确要求恢复原预览时，使用保留的原 worktree 和原分支版本管理原库。若需要将旧数据转入 `rf4`，须单独明确数据迁移范围；本次集成不提供历史 schema 兼容路径。
 
-预览复用已运行的 Redis；需要头像时按现有配置使用 MinIO。Trader Sync、通知、钱包等其他独立业务由各自入口管理，预览不启动它们；相关远程服务未运行时，其业务调用按实际状态返回不可用。预览无需 Trader Sync 的链上提供方配置，内部客户端如需访问这些服务则须配置匹配的地址、传输和凭据。
-
 ```bash
 # 先按 ui/.nvmrc 选择 Node 24.14.1
-make run ATHENA_RUN_PROFILE=solana-preview
-# 默认 UI http://127.0.0.1:14000/solana；API 18080；Solana gRPC 18112；Redis DB 13
-make ui-acceptance UI_ACCEPTANCE_MODE=smoke UI_ACCEPTANCE_BASE_URL=http://127.0.0.1:14000
+make run-services SERVICES='solana-discovery api-server ui' INSTANCE=solana-preview
+make runtime-status INSTANCE=solana-preview
 # 另一个终端，同一 checkout：
-make stop ATHENA_RUN_PROFILE=solana-preview
+make stop-instance INSTANCE=solana-preview
 ```
 
-对应端口可通过 `ATHENA_SOLANA_PREVIEW_UI_PORT`、`ATHENA_SOLANA_PREVIEW_API_PORT`、`ATHENA_SOLANA_PREVIEW_DISCOVERY_PORT` 调整；UI 使用 strictPort，避免静默换到别处。profile 只停止自己记录并验证的进程，不回收基础设施。也可选择 `ATHENA_RUN_PROFILE=solana-discovery` 仅运行扫描和后台补全服务。标准全栈停止语义保持不变，停止预览须带上相同 profile；Solana profile 不提供数据 reset。
+局部选择不启动 Trader Sync、Notification、Wallet 或其他业务；未选服务的调用按真实状态返回不可用。地址和端口使用统一注册表变量，可从 runtime status 读取。原 `ATHENA_RUN_PROFILE=solana-preview`／`solana-discovery` 的 start 已封闭，避免生成第二套 owner；保留旧现场只使用上文原脚本 stop。
 
 Solana预览为公共节点采样设置每范围1 slot、并发1、每秒请求预算1；有积压时页面照实展示。服务常规默认每范围4 slots；更高容量节点可通过自身配置调整。
 
@@ -532,12 +542,11 @@ ATHENA_WORM_TRADING_POSTGRES_DSN='postgres://user:password@localhost/worm_tradin
 For `DB_MODE=external`, provide both `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` and
 `ATHENA_WORM_TRADING_POSTGRES_DSN`. Only verification runs; no borrowed schema or
 container is created, migrated or stopped. Use a distinct instance when switching
-DB mode or database identity. To inspect the UI against the current six-program
-`make run`, first configure its API's `ATHENA_WORM_TRADING_SERVER_ADDRESS` to the
-separate Trading listener, then start Trading in external mode with that same
-full-stack account database, Trading database and Wallet signer. This preserves
-account identity and grants across API and Trading. Record the full-stack owner
-and Trading borrower separately. The default six-program graph remains unchanged.
+DB mode or database identity. For isolated Trading work, external mode can borrow
+the full-stack account database while using its own Trading database and Wallet
+signer; record the owner and borrower separately. The current default graph already
+includes Worm Trading and injects its selected address into API automatically, so
+manual address wiring is only needed for a separate instance.
 
 The runtime forwards explicit Trading configuration keys only, including RPC
 attempt/balance/rate settings, `ATHENA_WORM_TRADING_WORM_API_ATTEMPT_TIMEOUT`

@@ -2,7 +2,7 @@
 
 > 设计状态：已实现
 
-> 关联目标改为[板块访问开关简化方案](../../requirements/development-runtime/business-access-control.md)，尚未实施。会员与管理员业务入口由后端开关限制，纯控制页面保持可用；前台页面在关闭后最多 5 秒隐藏正文，断线或无法确认时隐藏，恢复后先核对访问状态，旧响应不得重新填回正文。后台任务继续运行，原运行控制的启动中／停止中及收尾状态不纳入本期。 [接口、存储与页面接入技术提案](../../superpowers/specs/2026-09-15-business-access-control-design.md)已于 2026-09-16 获采用，尚未实施；拟在 Service Status 增加访问页签，并以共用路由边界控制业务正文，当前代码尚未接入。Markets 退役后 `worm` 只对应 Trading：管理员只显示一行 Worm 设置，会员七条现有路由及其弹窗统一受控；关闭时停止浏览器交易驱动，重新开放不自动补发交易。
+> [板块访问开关](../../requirements/development-runtime/business-access-control.md)已实现：会员和管理员业务入口由后端六键限制，管理员 Service Status 已有 Module Access 第四页签；前台可见时 5 秒单飞读取，关闭或无法确认时中止请求、卸载正文并阻止旧响应回填。后台任务继续运行。`worm` 只对应 Trading，关闭时停止浏览器交易驱动，重新开放后重新读取且不自动补发交易。实际双 realm、根路径与前缀证据见[全栈验收](../../testing/full-stack-access-acceptance.md)。
 
 ## Scope
 

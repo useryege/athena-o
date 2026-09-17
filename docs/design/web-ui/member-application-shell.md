@@ -4,7 +4,7 @@
 
 > 设计状态：已实现
 
-> 关联目标改为[板块访问开关简化方案](../../requirements/development-runtime/business-access-control.md)，尚未实施。页面展示“开放访问／关闭访问”，不暗示后台任务停止；前台页面关闭后最多 5 秒隐藏正文、断线隐藏及恢复前确认的既定体验继续沿用。原运行控制状态与后台收尾设计已暂停，登录和账户模块权限仍独立成立。 [接口、存储与页面接入技术提案](../../superpowers/specs/2026-09-15-business-access-control-design.md)已于 2026-09-16 获采用，尚未实施；拟在 Service Status 增加访问页签，并以共用路由边界控制业务正文，当前代码尚未接入。`worm` 只控制 Worm Trading：管理员只显示一行 Worm 设置，会员七条现有路由及其弹窗统一受控；关闭时停止浏览器交易驱动，重新开放不自动补发交易。
+> [板块访问开关](../../requirements/development-runtime/business-access-control.md)已实现。会员壳独立于账户七模块权限读取六项环境访问状态：关闭时最多 5 秒中止请求、卸载正文并保留菜单和 URL；无法确认时不开放，重新开放后重新读取，晚响应不能恢复正文。后台任务不随页面关闭停止。`worm` 统一控制 Worm Trading 路由、弹窗和浏览器交易驱动，不自动补发交易。实际 GUI 和双 realm 证据见[全栈验收](../../testing/full-stack-access-acceptance.md)。
 
 ## 范围
 
@@ -52,7 +52,7 @@
 
 Token 在 Trader Sync 加入前已经存在，仍没有路径、页面、service、return snapshot 或 landing。权限卡使用排除 Token 的 `accountAccessDisplayModules`，但完整七模块 aggregate 仍参与账户状态，因此 Token-only 账户仍为 Active。
 
-Solana 只接受 `NONE` 与 `READ`，列表、查询和链上详情由[Solana 列表设计](solana-discovery.md)定义。页面刷新只重读持久数据，不触发扫描；默认六服务全栈不启动 Solana 发现进程，服务未运行时按真实请求结果显示不可用，不用空列表掩盖故障。
+Solana 只接受 `NONE` 与 `READ`，列表、查询和链上详情由[Solana 列表设计](solana-discovery.md)定义。页面刷新只重读持久数据，不触发扫描；当前十一应用全栈会启动 Solana 发现进程，局部选择未启动该服务时仍按真实请求结果显示不可用，不用空列表掩盖故障。
 
 Trader Sync 只接受 `NONE` 与 `READ_WRITE`。非法持久/网关 `READ` 经 `normalizeModuleGrant` 归为 `NONE`，不存在合法只读回退；六条业务路由和导航都要求严格 `READ_WRITE`。后端的读 RPC 使用模块 READ requirement 是鉴权层复用规则，不代表产品支持 READ grant。
 
