@@ -400,11 +400,15 @@ test('theme:worm-assets five-minute credential lease requires explicit authoriza
     );
     writeReplies(data, '/auth/worm-trading/development', 'POST', {expiresAt: Math.floor(Date.now() / 1000) + 601});
     writeReplies(data, '/api/v1/session/userinfo', 'GET', bootstrap.session.userInfo);
-    await page.clock.install();
+    const wallClock = Date.now();
+    await page.clock.install({time: wallClock});
     const ledger = await go(page, data);
     await expect(page.getByText('Authorize Worm wallet connections', {exact: true})).toBeVisible();
     await expect(page.getByText(/permits Worm credential management for five minutes/)).toBeVisible();
-    await page.clock.fastForward(301000);
+    // Advance credential wall time without expiring the independent monotonic
+    // module-access lease. Its expiry/unmount contract has separate coverage.
+    await page.clock.setSystemTime(wallClock + 301000);
+    await page.clock.runFor(2000);
     expect(ledger.requests.filter(r => r.method === 'POST')).toHaveLength(1);
     const connection = data.replies.find(r => r.path.endsWith('/wallet-connections/101'))!;
     connection.status = 200;
@@ -412,7 +416,8 @@ test('theme:worm-assets five-minute credential lease requires explicit authoriza
     atlas.connection = {state: 'RECONNECT_REQUIRED', warningCode: 'CONNECT_OUTCOME_UNKNOWN', connectedAt: 0};
     await page.getByRole('button', {name: /Authorize and apply/}).click();
     await expect(page.getByText(/unknown connection outcome|did not confirm whether it created the credential/).first()).toBeVisible();
-    await page.clock.fastForward(301000);
+    await page.clock.setSystemTime(wallClock + 602000);
+    await page.clock.runFor(2000);
     expect(ledger.requests.filter(r => r.method === 'POST' && r.path.endsWith('/wallet-connections/101'))).toHaveLength(1);
     expect(ledger.requests.filter(r => r.path === '/auth/worm-trading/development')).toHaveLength(1);
     checkReads(ledger);

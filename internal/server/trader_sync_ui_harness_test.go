@@ -16,7 +16,7 @@ func TestTraderSyncUIHarnessAssets(t *testing.T) {
 		t.Fatal("ATHENA_UI_DIST is required")
 	}
 	for _, prefix := range []string{"", "/athena"} {
-		adapter, err := NewTraderSyncUIHarnessAdapter(nil, nil, nil, dist, prefix)
+		adapter, err := NewTraderSyncUIHarnessAdapter(nil, nil, nil, nil, dist, prefix)
 		if err != nil {
 			t.Fatalf("valid newly built assets must assemble: %v", err)
 		}
@@ -38,7 +38,7 @@ func TestTraderSyncUIHarnessAssets(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(bad, "index.html"), []byte("stale"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := NewTraderSyncUIHarnessAdapter(nil, nil, nil, bad, ""); err == nil {
+	if _, err := NewTraderSyncUIHarnessAdapter(nil, nil, nil, nil, bad, ""); err == nil {
 		t.Fatal("stale/incomplete assets accepted")
 	}
 }

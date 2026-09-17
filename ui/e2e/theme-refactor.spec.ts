@@ -739,7 +739,7 @@ test('theme:admin account conflict preserves hidden Token aggregate and mobile c
     await expect(page.getByRole('switch', {name: 'API Key access for @mira.chen'})).toBeChecked();
     const writes = ledger.requests.filter(r => r.method === 'PUT');
     expect(writes).toHaveLength(1);
-    expect((writes[0].body as any).moduleAccess).toHaveLength(8);
+    expect((writes[0].body as any).moduleAccess.map((entry: any) => entry.module).sort((a: number, b: number) => a - b)).toEqual([1, 4, 8, 9, 11, 12, 13]);
     expect((writes[0].body as any).moduleAccess.find((entry: any) => entry.module === 8)).toEqual({module: 8, dataAccess: 1});
     await page.getByRole('button', {name: 'Back to accounts', exact: true}).click();
     await expect(page.getByLabel('Search accounts')).toHaveValue('mira');

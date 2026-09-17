@@ -291,6 +291,19 @@ export const SubscriptionControls = ({
                 <Modal
                     open={confirm}
                     rootClassName='trader-sync-cancel-modal'
+                    focusable={{trap: true, focusTriggerAfterClose: true}}
+                    wrapProps={{
+                        onKeyDownCapture: (event: React.KeyboardEvent<HTMLDivElement>) => {
+                            if (event.key !== 'Tab') return;
+                            const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not([disabled])'));
+                            const first = buttons[0];
+                            const last = buttons[buttons.length - 1];
+                            if (first && last && ((!event.shiftKey && document.activeElement === last) || (event.shiftKey && document.activeElement === first))) {
+                                event.preventDefault();
+                                (event.shiftKey ? last : first).focus();
+                            }
+                        }
+                    }}
                     title='Cancel subscription?'
                     okText='Confirm cancellation'
                     okButtonProps={{danger: true}}

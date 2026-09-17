@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
@@ -61,8 +62,13 @@ func runnerOptions(t *testing.T, mode string, services []string, extra string) R
 	}
 	file := filepath.Join(t.TempDir(), "run.env")
 	content := "ATHENA_URL=http://localhost:4000\nATHENA_TRADER_SYNC_HTTP_URL=http://127.0.0.1:1\nATHENA_TRADER_SYNC_WSS_URL=ws://127.0.0.1:1\nATHENA_TRADER_SYNC_PROXY_URL=\nATHENA_TRADER_SYNC_CURSOR_HMAC_KEY=task9-fixture-cursor\nATHENA_TRADER_SYNC_INTERNAL_AUTH_TOKEN=" + strings.Repeat("t", 32) + "\nATHENA_TRADER_SYNC_LISTEN_ADDRESS=127.0.0.1:" + fixturePort(t) + "\nATHENA_SERVER_PORT=" + fixturePort(t) + "\nATHENA_NOTIFICATION_PORT=" + fixturePort(t) + "\nATHENA_SERVER_DISABLE_AUTH=true\nATHENA_JWT_SECRET=" + strings.Repeat("j", 32) + "\n" + extra
-	for _, key := range []string{"ATHENA_WALLET_SERVER_ADDRESS", "ATHENA_TOKEN_API_SERVER_ADDRESS", "ATHENA_MARKET_RADAR_SERVER_ADDRESS", "ATHENA_MANAGED_OO_SERVER_ADDRESS", "ATHENA_PROFIT_SHARING_SERVER_ADDRESS", "ATHENA_WORM_MARKETS_SERVER_ADDRESS", "ATHENA_WORM_TRADING_SERVER_ADDRESS", "ATHENA_SPORTS_HISTORY_SERVER_ADDRESS", "ATHENA_SPORTS_LIVE_SERVER_ADDRESS"} {
+	for _, key := range []string{"ATHENA_WALLET_SERVER_ADDRESS", "ATHENA_TOKEN_API_SERVER_ADDRESS", "ATHENA_MARKET_RADAR_SERVER_ADDRESS", "ATHENA_MANAGED_OO_SERVER_ADDRESS", "ATHENA_PROFIT_SHARING_SERVER_ADDRESS", "ATHENA_WORM_TRADING_SERVER_ADDRESS"} {
 		content += key + "=127.0.0.1:1\n"
+	}
+	for _, line := range strings.Split(extra, "\n") {
+		if strings.HasPrefix(line, "ATHENA_UI_PORT=") {
+			content += "ATHENA_URL=http://127.0.0.1:" + strings.TrimPrefix(line, "ATHENA_UI_PORT=") + "\n"
+		}
 	}
 	if e = os.WriteFile(file, []byte(content), 0600); e != nil {
 		t.Fatal(e)
@@ -75,9 +81,17 @@ func runnerOptions(t *testing.T, mode string, services []string, extra string) R
 			t.Error(e)
 			return
 		}
-		if mode == "managed" {
-			if e := m.Reset(ctx); e != nil {
-				t.Error(e)
+		// Preserve owned databases, volumes and runtime logs as acceptance evidence.
+		state, err := m.Status()
+		if err != nil {
+			if !os.IsNotExist(err) {
+				t.Error(err)
+			}
+			return
+		}
+		for name, process := range state.Processes {
+			if _, err := VerifyProcess(process); !os.IsNotExist(err) {
+				t.Errorf("owned process survived cleanup: %s: %v", name, err)
 			}
 		}
 	})
@@ -90,7 +104,11 @@ func startRunner(t *testing.T, o RunOptions) (*exec.Cmd, <-chan error) {
 	env := EnvironmentFor(environmentMap(os.Environ()), []string{"PATH", "HOME", "TMPDIR", "GOCACHE", "GOMODCACHE", "GOPATH", "GOROOT", "GOTOOLCHAIN"})
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Env = append(env, RunIDEnv+"="+NewRunID(), "ATHENA_TASK9_RUN_HELPER=1", "ATHENA_TASK9_OPTIONS="+string(data))
-	log, e := os.CreateTemp(t.TempDir(), "supervisor-log-")
+	logDir := filepath.Join(o.Key.Checkout, ".tmp", "runtime-integration-evidence")
+	if e := os.MkdirAll(logDir, 0700); e != nil {
+		t.Fatal(e)
+	}
+	log, e := os.CreateTemp(logDir, o.Key.Name+"-supervisor-")
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -224,14 +242,8 @@ func TestRealRunnerTraderSyncFatalKeepsAPIAndNotification(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	url := "http://" + state.Endpoints["api-server"] + "/api/v1/app/bootstrap"
-	response, e := http.Get(url)
-	if e != nil {
-		t.Fatal(e)
-	}
-	response.Body.Close()
-	if response.StatusCode != 200 {
-		t.Fatal("bootstrap", response.StatusCode)
+	if e = probeHTTP(ctx, "api-server", state.Endpoints["api-server"], map[string]string{"ATHENA_SERVER_DISABLE_AUTH": "true"}); e != nil {
+		t.Fatal("realm bootstrap readiness", e)
 	}
 	if e = SignalProcess(state.Processes["trader-sync"], syscall.SIGKILL); e != nil {
 		t.Fatal(e)
@@ -256,64 +268,58 @@ func TestRealRunnerTraderSyncFatalKeepsAPIAndNotification(t *testing.T) {
 	if e = Stop(ctx, o.Key); e != nil {
 		t.Fatal(e)
 	}
-	if e = <-done; e != nil {
-		t.Fatal(e)
+	if e = <-done; e == nil {
+		t.Fatal("unexpected exit must remain visible after explicit stop")
 	}
 }
 
-func TestInitialTraderSyncExitRollsBackBatchAndPreservesEvidence(t *testing.T) {
-	entered := make(chan struct{}, 1)
-	release := make(chan struct{})
-	telegram := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		select {
-		case entered <- struct{}{}:
-		default:
-		}
-		select {
-		case <-release:
-		case <-r.Context().Done():
-		}
-		fmt.Fprint(w, `{"ok":false,"description":"fixture stopped"}`)
-	}))
-	defer telegram.Close()
-	defer close(release)
-	o := runnerOptions(t, "managed", []string{"trader-sync", "notification"}, "ATHENA_NOTIFICATION_TELEGRAM_API_URL="+telegram.URL+"\nATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN=123:task9-fixture\nATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID=-1001\nATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID=-1002\n")
+func TestInitialTraderSyncFailureKeepsCoreAndPreservesEvidence(t *testing.T) {
+	o := runnerOptions(t, "managed", []string{"api-server", "trader-sync"}, "")
+	toolDir := t.TempDir()
+	realGo, err := exec.LookPath("go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The actual supervisor starts a bounded failing executable in the business
+	// slot; API, configuration, infrastructure and schema preparation remain real.
+	fixture := filepath.Join(toolDir, "failure.go")
+	if err = os.WriteFile(fixture, []byte("package main\nimport (\"os\";\"time\")\nfunc main(){time.Sleep(200*time.Millisecond);os.Exit(17)}\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	script := "#!/bin/bash\nset -eu\nif [[ $1 == build && ${@: -1} == ./cmd/athena-trader-sync ]]; then\n exec " + realGo + " build -o \"$3\" " + fixture + "\nfi\nexec " + realGo + " \"$@\"\n"
+	if err = os.WriteFile(filepath.Join(toolDir, "go"), []byte(script), 0700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", toolDir+":"+os.Getenv("PATH"))
 	_, done := startRunner(t, o)
-	select {
-	case <-entered:
-	case <-time.After(120 * time.Second):
-		t.Fatal("notification did not reach fixture")
+	awaitRunning(t, o, done)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	state, err := Status(ctx, o.Key)
+	if err != nil {
+		t.Fatal(err)
 	}
-	s, e := NewManager(o.Key).Status()
-	if e != nil {
-		t.Fatal(e)
+	if !state.CoreUsable || state.SelectedReady || state.FullStackReady || state.Health["api-server"] != "ready" || state.Startup["trader-sync"].Status != "failed" {
+		t.Fatalf("initial business failure lost core or claimed complete readiness: %+v", state)
 	}
-	if e = SignalProcess(s.Processes["trader-sync"], syscall.SIGKILL); e != nil {
-		t.Fatal(e)
+	if state.ExitCodes["trader-sync"] != 17 {
+		t.Fatalf("business failure not recorded: %v", state.ExitCodes)
 	}
-	select {
-	case e := <-done:
-		if e == nil {
-			t.Fatal("initial service failure reported success")
-		}
-	case <-time.After(90 * time.Second):
-		t.Fatal("initial rollback did not finish")
+	if len(state.Failures) == 0 || len(state.Resources) == 0 || len(state.Logs) == 0 {
+		t.Fatal("failure evidence lost")
 	}
-	s, e = NewManager(o.Key).Status()
-	if e != nil {
-		t.Fatal(e)
+	if _, err := VerifyProcess(state.Processes["api-server"]); err != nil {
+		t.Fatal("API exited after business failure", err)
 	}
-	if s.Phase != "stopped" || len(s.Failures) == 0 || len(s.Resources) != 2 {
-		t.Fatalf("rollback evidence %s %v %v", s.Phase, s.Failures, s.Resources)
+	if err := Stop(ctx, o.Key); err != nil {
+		t.Fatal(err)
 	}
-	for _, p := range s.Processes {
-		if _, e = VerifyProcess(p); !os.IsNotExist(e) {
-			t.Fatal("child survived rollback", e)
-		}
+	if err := <-done; err == nil {
+		t.Fatal("initial business failure must remain visible in supervisor exit status")
 	}
-	for _, path := range s.Logs {
-		if _, e = os.Stat(path); e != nil {
-			t.Fatal("logs lost", e)
+	for _, path := range state.Logs {
+		if _, err := os.Stat(path); err != nil {
+			t.Fatal("logs lost", err)
 		}
 	}
 }
@@ -367,8 +373,22 @@ func TestAPIOnlyRunsWithBrokenCollectorConfiguration(t *testing.T) {
 	<-done
 }
 
-func TestUIOnlyUsesNodeAndNoDatabase(t *testing.T) {
-	o := runnerOptions(t, "external", []string{"ui"}, "ATHENA_UI_PORT="+fixturePort(t)+"\n")
+func TestUIOnlyRequiresUsableBootstrapAndUsesNoDatabase(t *testing.T) {
+	var broken atomic.Bool
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path != "/api/v1/app/bootstrap" {
+			http.NotFound(w, r)
+			return
+		}
+		if broken.Load() {
+			fmt.Fprint(w, `{"session":{"status":"APP_BOOTSTRAP_SESSION_STATUS_UNSPECIFIED"}}`)
+			return
+		}
+		fmt.Fprintf(w, `{"session":{"status":"APP_BOOTSTRAP_SESSION_STATUS_AUTHENTICATED","user_info":{"loggedIn":true,"accountId":"fixture","administrator":%t}}}`, r.Header.Get("X-Athena-Application-Realm") == "admin")
+	}))
+	defer api.Close()
+	o := runnerOptions(t, "external", []string{"ui"}, "ATHENA_UI_PORT="+fixturePort(t)+"\nATHENA_API_URL="+api.URL+"\n")
 	_, done := startRunner(t, o)
 	awaitRunning(t, o, done)
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
@@ -379,6 +399,11 @@ func TestUIOnlyUsesNodeAndNoDatabase(t *testing.T) {
 	}
 	if !strings.Contains(s.Processes["ui"].Exe, "node") {
 		t.Fatal("UI did not exec explicit node")
+	}
+	broken.Store(true)
+	s, e = Status(ctx, o.Key)
+	if e != nil || s.Health["ui"] == "ready" || s.CoreUsable {
+		t.Fatal("HTML 200 hid unusable bootstrap", e, s.Health)
 	}
 	if e = Stop(ctx, o.Key); e != nil {
 		t.Fatal(e)

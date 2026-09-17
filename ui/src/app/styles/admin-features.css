@@ -165,7 +165,7 @@
 
 /* v15–v18 administrator operations; colors and type are shared roles. */
 .admin-source-tabs > .ant-tabs-nav .ant-tabs-nav-list { width: 100%; }
-.admin-source-tabs > .ant-tabs-nav .ant-tabs-tab { flex: 1; min-width: 0; margin: 0; padding: 1rem 0; }
+.admin-source-tabs > .ant-tabs-nav .ant-tabs-tab { flex: 1; min-width: min-content; margin: 0; padding: 1rem .25rem; }
 .admin-source-tabs > .ant-tabs-nav .ant-tabs-tab-btn { white-space: normal; }
 .admin-source-tabs > .ant-tabs-nav small { display: block; margin-top: .5rem; color: var(--athena-muted); font-size: var(--athena-type-aux); font-weight: 400; }
 .admin-source-note { color: var(--athena-muted); font-size: var(--athena-type-aux); line-height: 1.6; }

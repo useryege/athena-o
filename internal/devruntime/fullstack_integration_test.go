@@ -153,7 +153,16 @@ func fullStackFixtureOptions(t *testing.T) RunOptions {
 	// Stop owned services before closing the loopback Telegram fixture.
 	t.Cleanup(telegram.Close)
 	extra := "ATHENA_NOTIFICATION_TELEGRAM_API_URL=" + telegram.URL + "\nATHENA_NOTIFICATION_TELEGRAM_BOT_TOKEN=123:task10-fixture\nATHENA_NOTIFICATION_TEST_TELEGRAM_CHAT_ID=-1001\nATHENA_NOTIFICATION_PROD_TELEGRAM_CHAT_ID=-1002\n"
-	extra += "ATHENA_UI_PORT=" + fixturePort(t) + "\nATHENA_WALLET_PORT=" + fixturePort(t) + "\nATHENA_PROFIT_SHARING_LISTEN_PORT=" + fixturePort(t) + "\nATHENA_API_CONTENT_TYPES=\nATHENA_UI_BANNER_CONTENT=literal banner $value\n"
+	extra += "ATHENA_API_CONTENT_TYPES=\nATHENA_UI_BANNER_CONTENT=literal banner $value\n"
+	extra += "ATHENA_ETHERSCAN_MANAGER_API_KEYS=acceptance-fixture\nATHENA_ETHERSCAN_MANAGER_GATEWAY_ADDRS=127.0.0.2:6776,127.0.0.3:6776,127.0.0.4:6776,127.0.0.5:6776,127.0.0.6:6776\nATHENA_ETHERSCAN_GATEWAY_AUTH_TOKEN=acceptance-fixture-token\n"
+	// Every selected app gets a test-owned port, including newly retained services.
+	for _, spec := range fullStackSpecs() {
+		if spec.PortKey != "" {
+			extra += spec.PortKey + "=" + fixturePort(t) + "\n"
+		} else if spec.ListenKey != "" {
+			extra += spec.ListenKey + "=127.0.0.1:" + fixturePort(t) + "\n"
+		}
+	}
 	return runnerOptions(t, "managed", nil, extra)
 }
 func TestFullStackRealFatalKeepsAPIAndEveryOtherConsumer(t *testing.T) {
@@ -168,8 +177,11 @@ func TestFullStackRealFatalKeepsAPIAndEveryOtherConsumer(t *testing.T) {
 	}
 	for _, name := range FullStackServices() {
 		if state.Health[name] != "ready" {
-			t.Fatalf("%s not ready: %v", name, state.Health)
+			t.Fatalf("required consumer %s not ready: %v", name, state.Health)
 		}
+	}
+	if !state.CoreUsable || !state.SelectedReady || !state.FullStackReady {
+		t.Fatal("all-ready fixture missing readiness flags")
 	}
 	for _, name := range []string{"api-server", "notification", "wallet", "profit-sharing", "trader-sync"} {
 		data, err := os.ReadFile(fmt.Sprintf("/proc/%d/environ", state.Processes[name].PID))
@@ -227,8 +239,8 @@ func TestFullStackRealFatalKeepsAPIAndEveryOtherConsumer(t *testing.T) {
 	if err = Stop(ctx, o.Key); err != nil {
 		t.Fatal(err)
 	}
-	if err = <-done; err != nil {
-		t.Fatal(err)
+	if err = <-done; err == nil {
+		t.Fatal("business failures must remain visible after explicit stop")
 	}
 	t.Log("TS fatal recorded; API/Notification/Wallet/Profit Sharing/UI remained ready; explicit stop reaped full stack")
 }

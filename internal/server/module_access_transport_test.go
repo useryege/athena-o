@@ -10,8 +10,11 @@ import (
 	utilsession "github.com/useryege/athena/util/session"
 	"io"
 	"net"
+	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -137,4 +140,112 @@ func TestModuleAccessSettingsRealJSONContractAndAPIKeyWrite(t *testing.T) {
 	service.credential.Capability = accountcredentials.CapabilityAPIKey
 	w = request("PUT", "/api/v1/admin/module-access-settings/worm", `{"state":2}`)
 	require.Equal(t, 403, w.Code, w.Body.String())
+}
+
+// A real HTTP -> gateway -> gRPC call is held only after the production
+// interceptor admitted it. Closing admission rejects a later call without
+// cancelling work already inside the handler. No trade is submitted.
+type acceptedWorkStore struct {
+	moduleaccess.Store
+	open atomic.Bool
+}
+
+func (s *acceptedWorkStore) GetModuleAccessSetting(_ context.Context, key moduleaccess.Key) (moduleaccess.Setting, error) {
+	return moduleaccess.Setting{Key: key, Open: s.open.Load()}, nil
+}
+func (s *acceptedWorkStore) UpdateModuleAccessSetting(_ context.Context, key moduleaccess.Key, open bool, actor string) (moduleaccess.Setting, error) {
+	s.open.Store(open)
+	return moduleaccess.Setting{Key: key, Open: open, UpdatedByAccountID: actor}, nil
+}
+
+type acceptedWorkSolana struct {
+	solanapb.UnimplementedSolanaServiceServer
+	traderAuthIdentity
+	entered chan struct{}
+	release chan struct{}
+	calls   atomic.Int32
+}
+
+func (s *acceptedWorkSolana) ListProjects(ctx context.Context, _ *solanapb.ListProjectsRequest) (*solanapb.ListProjectsResponse, error) {
+	s.calls.Add(1)
+	close(s.entered)
+	select {
+	case <-s.release:
+		return &solanapb.ListProjectsResponse{}, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+func TestModuleAccessClosingPreservesWorkAlreadyAdmittedOverHTTP(t *testing.T) {
+	access := accountaccess.Access{Administrator: true, LoginEnabled: true, Modules: accountaccess.NoModuleAccess(), Revision: 1}
+	member := accountaccess.Access{LoginEnabled: true, Modules: accountaccess.NoModuleAccess(), Revision: 1}
+	member.Modules[accountaccess.ModuleSolana] = accountaccess.AccessLevelRead
+	controller, err := accountaccess.NewController(context.Background(), traderAuthStore{"admin": access, "member": member})
+	require.NoError(t, err)
+	store := &acceptedWorkStore{}
+	store.open.Store(true)
+	server := &AthenaServer{accessController: controller, moduleAccessStore: store}
+	server.StaticAssetsDir = t.TempDir()
+	business := &acceptedWorkSolana{traderAuthIdentity: "member", entered: make(chan struct{}), release: make(chan struct{})}
+	var once sync.Once
+	release := func() { once.Do(func() { close(business.release) }) }
+	defer release()
+	g := grpc.NewServer(grpc.UnaryInterceptor(server.unaryAuthInterceptor))
+	solanapb.RegisterSolanaServiceServer(g, business)
+	modulepb.RegisterModuleAccessServiceServer(g, &transportSettingsService{Server: modulehandler.NewServer(store), credential: accountcredentials.AuthenticatedCredential{AccountID: "admin", JTI: "session", Capability: accountcredentials.CapabilityDevelopment}})
+	listener := bufconn.Listen(1024 * 1024)
+	go g.Serve(listener)
+	t.Cleanup(g.Stop)
+	conn, err := grpc.NewClient("passthrough:///accepted", grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return listener.Dial() }), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+	defer conn.Close()
+	web := httptest.NewServer(server.newHTTPServer(context.Background(), 0, grpcweb.WrapServer(g), conn).Handler)
+	defer web.Close()
+	client := &http.Client{Timeout: 5 * time.Second}
+	type outcome struct {
+		status int
+		err    error
+	}
+	first := make(chan outcome, 1)
+	go func() {
+		response, err := client.Get(web.URL + "/api/v1/solana/projects")
+		if err != nil {
+			first <- outcome{err: err}
+			return
+		}
+		defer response.Body.Close()
+		_, err = io.Copy(io.Discard, response.Body)
+		first <- outcome{response.StatusCode, err}
+	}()
+	select {
+	case <-business.entered:
+	case <-time.After(3 * time.Second):
+		t.Fatal("first request never passed admission")
+	}
+	req, err := http.NewRequest("PUT", web.URL+"/api/v1/admin/module-access-settings/solana", strings.NewReader(`{"state":2}`))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	response, err := client.Do(req)
+	require.NoError(t, err)
+	response.Body.Close()
+	require.Equal(t, 200, response.StatusCode)
+	response, err = client.Get(web.URL + "/api/v1/solana/projects")
+	require.NoError(t, err)
+	response.Body.Close()
+	require.Equal(t, 503, response.StatusCode)
+	require.Equal(t, moduleaccess.ClosedReason, response.Header.Get("X-Athena-Error-Reason"))
+	require.Equal(t, int32(1), business.calls.Load())
+	select {
+	case got := <-first:
+		t.Fatalf("accepted work completed before release: %+v", got)
+	default:
+	}
+	release()
+	select {
+	case got := <-first:
+		require.NoError(t, got.err)
+		require.Equal(t, 200, got.status)
+	case <-time.After(3 * time.Second):
+		t.Fatal("accepted work did not finish")
+	}
 }

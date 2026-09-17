@@ -250,6 +250,12 @@ test('keyboard modal focus returns to cancellation trigger', async ({page}, info
         await expect.poll(() => dialog.evaluate(el => el.contains(document.activeElement))).toBe(true);
         focus.push(await page.evaluate(() => document.activeElement?.outerHTML));
     }
+    const buttons = dialog.getByRole('button');
+    await buttons.first().focus();
+    await page.keyboard.press('Shift+Tab');
+    await expect(buttons.last()).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(buttons.first()).toBeFocused();
     fs.writeFileSync(info.outputPath('keyboard-focus.json'), JSON.stringify(focus, null, 2));
     expect(await dialog.evaluate(el => el.contains(document.activeElement))).toBe(true);
     await page.keyboard.press('Escape');

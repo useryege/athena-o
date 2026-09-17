@@ -5,7 +5,7 @@ import {AdminAccountsService} from '../admin/accounts-service';
 import requests from './services/requests';
 
 afterEach(() => jest.restoreAllMocks());
-test('parse, edit, clone and submit retain eight retained grants', async () => {
+test('parse, edit, clone and submit retain seven retained grants including hidden Token', async () => {
     const original = parseAccountAccess({revision: 7, loginEnabled: true, moduleAccess: [
         {module: 'trader_sync', dataAccess: 'read_write'},
         {module: 'solana', dataAccess: 'read'},
@@ -21,8 +21,8 @@ test('parse, edit, clone and submit retain eight retained grants', async () => {
         return Promise.resolve({body: {id: 'owner', access: value}});
     }})) as any);
     const saved = await new AdminAccountsService().updateAccess('owner', edited);
-    expect(payload.moduleAccess).toHaveLength(8);
-    expect(payload.moduleAccess.map((item: {module: number}) => item.module).sort((a: number, b: number) => a - b)).toEqual([1, 4, 5, 8, 9, 11, 12, 13]);
+    expect(payload.moduleAccess).toHaveLength(7);
+    expect(payload.moduleAccess.map((item: {module: number}) => item.module).sort((a: number, b: number) => a - b)).toEqual([1, 4, 8, 9, 11, 12, 13]);
     expect(payload.moduleAccess.find((item: any) => item.module === 12)).toEqual({module: 12, dataAccess: 0});
     expect(payload.moduleAccess.find((item: any) => item.module === 13)).toEqual({module: 13, dataAccess: 1});
     expect(payload.moduleAccess.find((item: any) => item.module === 8)).toEqual({module: 8, dataAccess: 1});

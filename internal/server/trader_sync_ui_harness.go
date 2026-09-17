@@ -14,8 +14,8 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcredentials"
+	"github.com/useryege/athena/internal/moduleaccess"
 	"github.com/useryege/athena/ui"
-	grpcutil "github.com/useryege/athena/util/grpc"
 	"github.com/useryege/athena/util/session"
 	"google.golang.org/grpc"
 )
@@ -33,7 +33,7 @@ type TraderSyncUIHarnessAdapter struct {
 	HTMLHashes map[string]string
 }
 
-func NewTraderSyncUIHarnessAdapter(credentials *accountcredentials.CredentialManager, sessions *session.SessionManager, access *accountaccess.Controller, distDir, deploymentBase string) (*TraderSyncUIHarnessAdapter, error) {
+func NewTraderSyncUIHarnessAdapter(credentials *accountcredentials.CredentialManager, sessions *session.SessionManager, access *accountaccess.Controller, moduleStore moduleaccess.Store, distDir, deploymentBase string) (*TraderSyncUIHarnessAdapter, error) {
 	hashes := map[string]string{}
 	for _, name := range []string{"index.html", "admin/index.html"} {
 		input, err := os.ReadFile(filepath.Join(distDir, name))
@@ -50,7 +50,7 @@ func NewTraderSyncUIHarnessAdapter(credentials *accountcredentials.CredentialMan
 		hashes["input/"+name] = fmt.Sprintf("%x", sha256.Sum256(input))
 		hashes["embedded/"+name] = fmt.Sprintf("%x", sha256.Sum256(embedded))
 	}
-	server := &AthenaServer{AthenaServerOpts: AthenaServerOpts{BaseHRef: deploymentBase}, credentialMgr: credentials, sessionMgr: sessions, accessController: access, staticAssets: http.FS(os.DirFS(distDir))}
-	gateway := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, new(grpcutil.JSONMarshaler)), runtime.WithForwardResponseOption(server.translateGRPCResponseHeaders), runtime.WithIncomingHeaderMatcher(applicationRealmHeaderMatcher))
+	server := &AthenaServer{AthenaServerOpts: AthenaServerOpts{BaseHRef: deploymentBase}, credentialMgr: credentials, sessionMgr: sessions, accessController: access, moduleAccessStore: moduleStore, staticAssets: http.FS(os.DirFS(distDir))}
+	gateway := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard, new(moduleAccessJSONMarshaler)), runtime.WithForwardResponseOption(server.translateGRPCResponseHeaders), runtime.WithIncomingHeaderMatcher(applicationRealmHeaderMatcher), runtime.WithOutgoingHeaderMatcher(moduleAccessOutgoingHeader))
 	return &TraderSyncUIHarnessAdapter{Authenticator: server, Unary: server.unaryAuthInterceptor, Gateway: gateway, API: adaptApplicationRealmQuery(gateway), Static: http.HandlerFunc(server.newStaticAssetsHandler()), HTMLHashes: hashes}, nil
 }

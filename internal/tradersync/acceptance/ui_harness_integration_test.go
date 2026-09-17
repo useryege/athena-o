@@ -30,14 +30,17 @@ import (
 	"github.com/useryege/athena/internal/accountcenter"
 	"github.com/useryege/athena/internal/accountcredentials"
 	ac "github.com/useryege/athena/internal/accountstate/store"
+	"github.com/useryege/athena/internal/moduleaccess"
 	server "github.com/useryege/athena/internal/server"
 	accounts "github.com/useryege/athena/internal/server/account"
 	bootstrap "github.com/useryege/athena/internal/server/appbootstrap"
+	modulehandler "github.com/useryege/athena/internal/server/moduleaccess"
 	sessions "github.com/useryege/athena/internal/server/session"
 	settingsserver "github.com/useryege/athena/internal/server/settings"
 	trpc "github.com/useryege/athena/internal/tradersync/apiclient"
 	accountapi "github.com/useryege/athena/pkg/apiclient/account"
 	bootstrapapi "github.com/useryege/athena/pkg/apiclient/appbootstrap"
+	moduleapi "github.com/useryege/athena/pkg/apiclient/moduleaccess"
 	sessionapi "github.com/useryege/athena/pkg/apiclient/session"
 	api "github.com/useryege/athena/pkg/apiclient/tradersync"
 	httphelper "github.com/useryege/athena/util/http"
@@ -109,6 +112,11 @@ func (h *harness) StartUI(t *testing.T, distDir string) UIHarnessInfo {
 			h.ownerIDs = append(h.ownerIDs, identity.ID)
 		}
 	}
+	// Isolated acceptance explicitly opens Trader Sync with the real administrator.
+	// All other modules retain their production CLOSED defaults.
+	if _, err := store.UpdateModuleAccessSetting(h.ctx, moduleaccess.TraderSync, true, identities[2].ID); err != nil {
+		t.Fatal(err)
+	}
 	codec, err := accountcredentials.NewJWTCodec([]byte("task20-isolated-test-session-signing-key-2026"))
 	if err != nil {
 		t.Fatal(err)
@@ -126,7 +134,7 @@ func (h *harness) StartUI(t *testing.T, distDir string) UIHarnessInfo {
 		t.Fatal(err)
 	}
 	sm := sessionmgr.NewSessionManager(credentials, codec, &uiRevocations{values: map[string]bool{}}, access)
-	adapter, err := server.NewTraderSyncUIHarnessAdapter(credentials, sm, access, distDir, prefix)
+	adapter, err := server.NewTraderSyncUIHarnessAdapter(credentials, sm, access, store, distDir, prefix)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,6 +184,7 @@ func (h *harness) StartUI(t *testing.T, distDir string) UIHarnessInfo {
 		t.Fatal(err)
 	}
 	gs := grpc.NewServer(grpc.UnaryInterceptor(adapter.Unary))
+	moduleapi.RegisterModuleAccessServiceServer(gs, modulehandler.NewServer(store))
 	api.RegisterTraderSyncServiceServer(gs, newInternalFacade(t, h.service, func(ctx context.Context) (*trpc.Actor, error) {
 		id := session.AccountID(ctx)
 		account, e := credentials.Get(id)
@@ -199,6 +208,9 @@ func (h *harness) StartUI(t *testing.T, distDir string) UIHarnessInfo {
 		t.Fatal(err)
 	}
 	for _, register := range []func(context.Context, *grpc.ClientConn) error{
+		func(c context.Context, g *grpc.ClientConn) error {
+			return moduleapi.RegisterModuleAccessServiceHandler(c, adapter.Gateway, g)
+		},
 		func(c context.Context, g *grpc.ClientConn) error {
 			return napi.RegisterNotificationServiceHandler(c, adapter.Gateway, g)
 		},
