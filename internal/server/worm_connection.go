@@ -519,7 +519,23 @@ func (server *AthenaServer) authenticateWormConnectionHTTP(request *http.Request
 // Key. Callers still choose the least module access level required by the
 // resource; mutation handlers enforce Origin and any purpose-specific proof
 // independently.
-func (server *AthenaServer) authenticateInteractiveWormTradingHTTP(
+func (server *AthenaServer) authenticateInteractiveWormTradingHTTP(request *http.Request, level accountaccess.AccessLevel) (context.Context, accountcredentials.AuthenticatedCredential, error) {
+	ctx, credential, err := server.authenticateWormTradingIdentityHTTP(request, level)
+	if err != nil {
+		return ctx, credential, err
+	}
+	return ctx, credential, server.admitWormAccess(ctx)
+}
+
+// Verification flows bind their consumed state to this identity before admission.
+func (server *AthenaServer) authenticateWormVerificationHTTP(request *http.Request) (context.Context, accountcredentials.AuthenticatedCredential, error) {
+	return server.authenticateWormTradingIdentityHTTP(request, accountaccess.AccessLevelReadWrite)
+}
+func (server *AthenaServer) admitWormAccess(ctx context.Context) error {
+	return moduleaccess.Check(ctx, server.moduleAccessStore, moduleaccess.Worm)
+}
+
+func (server *AthenaServer) authenticateWormTradingIdentityHTTP(
 	request *http.Request,
 	level accountaccess.AccessLevel,
 ) (context.Context, accountcredentials.AuthenticatedCredential, error) {
@@ -545,7 +561,7 @@ func (server *AthenaServer) authenticateInteractiveWormTradingHTTP(
 		}
 		credential.AccessRevision = access.Revision
 		ctx = utilsession.WithAuthenticatedCredential(ctx, credential)
-		return ctx, credential, moduleaccess.Check(ctx, server.moduleAccessStore, moduleaccess.Worm)
+		return ctx, credential, nil
 	}
 
 	claims, credential, err := server.authenticateRealmLoginCookie(request, false)
@@ -557,7 +573,7 @@ func (server *AthenaServer) authenticateInteractiveWormTradingHTTP(
 	}
 	ctx := context.WithValue(request.Context(), "claims", claims) //nolint:staticcheck
 	ctx = utilsession.WithAuthenticatedCredential(ctx, credential)
-	return ctx, credential, moduleaccess.Check(ctx, server.moduleAccessStore, moduleaccess.Worm)
+	return ctx, credential, nil
 }
 
 func (server *AthenaServer) developmentWormCredentialLease(w http.ResponseWriter, request *http.Request) {

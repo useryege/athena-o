@@ -430,7 +430,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) (*AthenaServer, error
 		if initErr := googleOIDCHandler.EnableWalletSecretReauthentication(opts.RedisClient, a.authenticateWalletSecretHTTP, credentialMgr, walletSecretMgr); initErr != nil {
 			return nil, initErr
 		}
-		if initErr := googleOIDCHandler.EnableWormCredentialReauthentication(opts.RedisClient, a.authenticateWormConnectionHTTP, credentialMgr, wormCredentialMgr); initErr != nil {
+		if initErr := googleOIDCHandler.EnableWormCredentialReauthentication(opts.RedisClient, a.authenticateWormVerificationHTTP, a.admitWormAccess, credentialMgr, wormCredentialMgr); initErr != nil {
 			return nil, initErr
 		}
 	}
@@ -438,7 +438,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) (*AthenaServer, error
 		if initErr := phantomAuthHandler.EnableWalletSecretReauthentication(opts.RedisClient, a.authenticateWalletSecretHTTP, credentialMgr, walletSecretMgr); initErr != nil {
 			return nil, initErr
 		}
-		if initErr := phantomAuthHandler.EnableWormCredentialReauthentication(opts.RedisClient, a.authenticateWormConnectionHTTP, credentialMgr, wormCredentialMgr); initErr != nil {
+		if initErr := phantomAuthHandler.EnableWormCredentialReauthentication(opts.RedisClient, a.authenticateWormVerificationHTTP, a.admitWormAccess, credentialMgr, wormCredentialMgr); initErr != nil {
 			return nil, initErr
 		}
 	}

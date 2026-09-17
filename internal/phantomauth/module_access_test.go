@@ -16,12 +16,13 @@ func TestModuleAccessPhantomChallengesPreserveAdmissionReason(t *testing.T) {
 	for _, reason := range []string{moduleaccess.ClosedReason, moduleaccess.UnavailableReason} {
 		h := &Handler{publicOrigin: "http://localhost"}
 		auth := func(r *http.Request) (context.Context, accountcredentials.AuthenticatedCredential, error) {
-			return r.Context(), accountcredentials.AuthenticatedCredential{}, moduleaccess.Error(reason, moduleaccess.Worm)
+			return r.Context(), accountcredentials.AuthenticatedCredential{AccountID: id, Capability: accountcredentials.CapabilityLogin, JTI: "verified-session", AccessRevision: 1}, nil
 		}
-		h.wormCredentials = &wormCredentialReauthentication{phantom: h, authenticate: auth}
-		h.wormExecutions = &wormExecutionAuthorization{phantom: h, authenticate: auth}
-		h.wormPositionCashOuts = &wormPositionCashOutAuthorization{phantom: h, authenticate: auth}
-		h.wormPositionCashOutBatches = &wormPositionCashOutBatchAuthorization{phantom: h, authenticate: auth}
+		admit := func(context.Context) error { return moduleaccess.Error(reason, moduleaccess.Worm) }
+		h.wormCredentials = &wormCredentialReauthentication{phantom: h, authenticate: auth, admit: admit}
+		h.wormExecutions = &wormExecutionAuthorization{phantom: h, authenticate: auth, admit: admit}
+		h.wormPositionCashOuts = &wormPositionCashOutAuthorization{phantom: h, authenticate: auth, admit: admit}
+		h.wormPositionCashOutBatches = &wormPositionCashOutBatchAuthorization{phantom: h, authenticate: auth, admit: admit}
 		for _, tc := range []struct {
 			path string
 			call http.HandlerFunc

@@ -34,12 +34,13 @@ type wormPositionCashOutBatchVerifiedProof struct {
 
 func (server *AthenaServer) enableWormPositionCashOutBatchAuthorization() error {
 	authenticate := func(request *http.Request) (context.Context, accountcredentials.AuthenticatedCredential, error) {
-		return server.authenticateInteractiveWormTradingHTTP(request, accountaccess.AccessLevelReadWrite)
+		return server.authenticateWormTradingIdentityHTTP(request, accountaccess.AccessLevelReadWrite)
 	}
 	if server.googleOIDC != nil {
 		if err := server.googleOIDC.EnableWormPositionCashOutBatchAuthorization(
 			server.RedisClient,
 			authenticate,
+			server.admitWormAccess,
 			server.credentialMgr,
 			server.loadGoogleWormPositionCashOutBatchDescriptor,
 			server.authorizeGoogleWormPositionCashOutBatch,
@@ -52,6 +53,7 @@ func (server *AthenaServer) enableWormPositionCashOutBatchAuthorization() error 
 		if err := server.phantomAuth.EnableWormPositionCashOutBatchAuthorization(
 			server.RedisClient,
 			authenticate,
+			server.admitWormAccess,
 			server.credentialMgr,
 			server.loadPhantomWormPositionCashOutBatchDescriptor,
 			server.authorizePhantomWormPositionCashOutBatch,

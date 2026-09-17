@@ -103,6 +103,7 @@ type wormPositionCashOutBatchAuthorization struct {
 	phantom        *Handler
 	store          *wormPositionCashOutBatchChallengeStore
 	authenticate   WormPositionCashOutBatchAuthenticator
+	admit          func(context.Context) error
 	credentials    *accountcredentials.CredentialManager
 	loadDescriptor WormPositionCashOutBatchDescriptorLoader
 	authorize      WormPositionCashOutBatchAuthorizer
@@ -114,12 +115,13 @@ type wormPositionCashOutBatchAuthorization struct {
 func (h *Handler) EnableWormPositionCashOutBatchAuthorization(
 	redisClient *redis.Client,
 	authenticate WormPositionCashOutBatchAuthenticator,
+	admit func(context.Context) error,
 	credentials *accountcredentials.CredentialManager,
 	loadDescriptor WormPositionCashOutBatchDescriptorLoader,
 	authorize WormPositionCashOutBatchAuthorizer,
 	writeError WormPositionCashOutBatchErrorWriter,
 ) error {
-	if h == nil || authenticate == nil || credentials == nil || loadDescriptor == nil ||
+	if h == nil || authenticate == nil || admit == nil || credentials == nil || loadDescriptor == nil ||
 		authorize == nil || writeError == nil {
 		return fmt.Errorf("Solana Worm position Cash Out Batch authorization dependencies are required")
 	}
@@ -134,6 +136,7 @@ func (h *Handler) EnableWormPositionCashOutBatchAuthorization(
 		phantom:        h,
 		store:          store,
 		authenticate:   authenticate,
+		admit:          admit,
 		credentials:    credentials,
 		loadDescriptor: loadDescriptor,
 		authorize:      authorize,
@@ -199,14 +202,14 @@ func (h *wormPositionCashOutBatchAuthorization) challenge(w http.ResponseWriter,
 		return
 	}
 	returnTo := validateWormPositionCashOutBatchReturnTo(input.ReturnTo)
-	_, credential, err := h.authenticate(r)
-	if reason := walletsecret.Reason(err); reason == "MODULE_ACCESS_CLOSED" || reason == "MODULE_ACCESS_UNAVAILABLE" {
-		walletsecret.WriteError(w, err)
-		return
-	}
+	authCtx, credential, err := h.authenticate(r)
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin || credential.JTI == "" ||
 		credential.AccessRevision == 0 || credential.AccessRevision > math.MaxInt64 {
 		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchLoginSessionRequiredReason, "login_session", nil)
+		return
+	}
+	if err := h.admit(authCtx); err != nil {
+		walletsecret.WriteError(w, err)
 		return
 	}
 	accountID, err := accountcredentials.CanonicalAccountID(credential.AccountID)
@@ -321,11 +324,7 @@ func (h *wormPositionCashOutBatchAuthorization) verify(w http.ResponseWriter, r 
 		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "cash_out_binding", nil)
 		return
 	}
-	_, credential, err := h.authenticate(r)
-	if reason := walletsecret.Reason(err); reason == "MODULE_ACCESS_CLOSED" || reason == "MODULE_ACCESS_UNAVAILABLE" {
-		walletsecret.WriteError(w, err)
-		return
-	}
+	authCtx, credential, err := h.authenticate(r)
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin || credential.JTI == "" ||
 		credential.AccessRevision == 0 || credential.AccessRevision > math.MaxInt64 {
 		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchLoginSessionRequiredReason, "login_session", nil)
@@ -337,6 +336,10 @@ func (h *wormPositionCashOutBatchAuthorization) verify(w http.ResponseWriter, r 
 		subtle.ConstantTimeCompare(storedSessionDigest, currentSessionDigest[:]) != 1 ||
 		stored.AccessRevision != credential.AccessRevision {
 		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "session_binding", digestErr)
+		return
+	}
+	if err := h.admit(authCtx); err != nil {
+		walletsecret.WriteError(w, err)
 		return
 	}
 	account, err := h.credentials.Get(credential.AccountID)

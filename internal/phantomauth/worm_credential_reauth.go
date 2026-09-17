@@ -48,6 +48,7 @@ type wormCredentialReauthentication struct {
 	phantom      *Handler
 	store        *wormCredentialChallengeStore
 	authenticate WormCredentialAuthenticator
+	admit        func(context.Context) error
 	credentials  *accountcredentials.CredentialManager
 	leases       *walletsecret.Manager
 }
@@ -57,10 +58,11 @@ type wormCredentialReauthentication struct {
 func (h *Handler) EnableWormCredentialReauthentication(
 	redisClient *redis.Client,
 	authenticate WormCredentialAuthenticator,
+	admit func(context.Context) error,
 	credentials *accountcredentials.CredentialManager,
 	leases *walletsecret.Manager,
 ) error {
-	if h == nil || authenticate == nil || credentials == nil || leases == nil {
+	if h == nil || authenticate == nil || admit == nil || credentials == nil || leases == nil {
 		return fmt.Errorf("Solana Worm credential reauthentication dependencies are required")
 	}
 	store, err := newWormCredentialChallengeStore(redisClient)
@@ -71,6 +73,7 @@ func (h *Handler) EnableWormCredentialReauthentication(
 		phantom:      h,
 		store:        store,
 		authenticate: authenticate,
+		admit:        admit,
 		credentials:  credentials,
 		leases:       leases,
 	}
@@ -109,13 +112,13 @@ func (h *wormCredentialReauthentication) challenge(w http.ResponseWriter, r *htt
 		walletsecret.WriteError(w, walletsecret.ErrWormReauthenticationRequired)
 		return
 	}
-	_, credential, err := h.authenticate(r)
-	if reason := walletsecret.Reason(err); reason == "MODULE_ACCESS_CLOSED" || reason == "MODULE_ACCESS_UNAVAILABLE" {
-		walletsecret.WriteError(w, err)
-		return
-	}
+	authCtx, credential, err := h.authenticate(r)
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin {
 		walletsecret.WriteError(w, walletsecret.ErrWormLoginSessionRequired)
+		return
+	}
+	if err := h.admit(authCtx); err != nil {
+		walletsecret.WriteError(w, err)
 		return
 	}
 	account, err := h.credentials.Get(credential.AccountID)
@@ -179,11 +182,7 @@ func (h *wormCredentialReauthentication) verify(w http.ResponseWriter, r *http.R
 		walletsecret.WriteError(w, walletsecret.ErrWormReauthenticationRequired)
 		return
 	}
-	_, credential, err := h.authenticate(r)
-	if reason := walletsecret.Reason(err); reason == "MODULE_ACCESS_CLOSED" || reason == "MODULE_ACCESS_UNAVAILABLE" {
-		walletsecret.WriteError(w, err)
-		return
-	}
+	authCtx, credential, err := h.authenticate(r)
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin {
 		walletsecret.WriteError(w, walletsecret.ErrWormLoginSessionRequired)
 		return
@@ -192,6 +191,10 @@ func (h *wormCredentialReauthentication) verify(w http.ResponseWriter, r *http.R
 		!authregistration.ConstantTimeEqual(stored.SessionJTIDigest, walletsecret.SessionJTIDigest(credential.JTI)) ||
 		stored.AccessRevision != credential.AccessRevision {
 		walletsecret.WriteError(w, walletsecret.ErrWormReauthenticationRequired)
+		return
+	}
+	if err := h.admit(authCtx); err != nil {
+		walletsecret.WriteError(w, err)
 		return
 	}
 	account, err := h.credentials.Get(credential.AccountID)

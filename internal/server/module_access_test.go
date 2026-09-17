@@ -173,3 +173,18 @@ func TestModuleAccessStatesAdmitPendingButSettingsRequireAdministrator(t *testin
 		require.Equal(t, codes.PermissionDenied, status.Code(err))
 	}
 }
+
+func TestModuleAccessVerificationIdentityPrecedesSeparateAdmission(t *testing.T) {
+	s, _ := newCatalogHTTPServer(t)
+	store := &moduleAdmissionStore{}
+	s.moduleAccessStore = store
+	ctx, credential, err := s.authenticateWormVerificationHTTP(catalogHTTPRequest("GET", "/auth/verification", ""))
+	require.NoError(t, err)
+	require.Equal(t, httpCatalogAccountID, credential.AccountID)
+	require.Zero(t, store.reads)
+	require.Equal(t, moduleaccess.ClosedReason, status.Convert(s.admitWormAccess(ctx)).Message())
+	require.Equal(t, 1, store.reads)
+	_, _, err = s.authenticateInteractiveWormTradingHTTP(catalogHTTPRequest("GET", "/api/v1/worm-trading", ""), accountaccess.AccessLevelReadWrite)
+	require.Equal(t, moduleaccess.ClosedReason, status.Convert(err).Message())
+	require.Equal(t, 2, store.reads)
+}

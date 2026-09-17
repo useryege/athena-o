@@ -31,6 +31,7 @@ type wormCredentialReauthentication struct {
 	google       *Handler
 	store        *wormCredentialTransactionStore
 	authenticate WormCredentialAuthenticator
+	admit        func(context.Context) error
 	credentials  *accountcredentials.CredentialManager
 	leases       *walletsecret.Manager
 }
@@ -40,10 +41,11 @@ type wormCredentialReauthentication struct {
 func (h *Handler) EnableWormCredentialReauthentication(
 	redisClient *redis.Client,
 	authenticate WormCredentialAuthenticator,
+	admit func(context.Context) error,
 	credentials *accountcredentials.CredentialManager,
 	leases *walletsecret.Manager,
 ) error {
-	if h == nil || authenticate == nil || credentials == nil || leases == nil {
+	if h == nil || authenticate == nil || admit == nil || credentials == nil || leases == nil {
 		return fmt.Errorf("Google Worm credential reauthentication dependencies are required")
 	}
 	store, err := newWormCredentialTransactionStore(redisClient)
@@ -54,6 +56,7 @@ func (h *Handler) EnableWormCredentialReauthentication(
 		google:       h,
 		store:        store,
 		authenticate: authenticate,
+		admit:        admit,
 		credentials:  credentials,
 		leases:       leases,
 	}
@@ -82,13 +85,17 @@ func (h *wormCredentialReauthentication) begin(w http.ResponseWriter, r *http.Re
 		h.redirectFailure(w, r, returnTo, walletsecret.WormLoginSessionRequiredReason, "application_realm")
 		return
 	}
-	_, credential, err := h.authenticate(r)
-	if reason := walletsecret.Reason(err); reason == "MODULE_ACCESS_CLOSED" || reason == "MODULE_ACCESS_UNAVAILABLE" {
-		h.redirectFailure(w, r, returnTo, reason, "module_access")
-		return
-	}
+	authCtx, credential, err := h.authenticate(r)
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin {
 		h.redirectFailure(w, r, returnTo, walletsecret.WormLoginSessionRequiredReason, "login_session")
+		return
+	}
+	if err := h.admit(authCtx); err != nil {
+		reason := walletsecret.Reason(err)
+		if reason == "" {
+			reason = walletsecret.WormReauthenticationUnavailableReason
+		}
+		h.redirectFailure(w, r, returnTo, reason, "module_access")
 		return
 	}
 	account, err := h.credentials.Get(credential.AccountID)
@@ -164,11 +171,7 @@ func (h *wormCredentialReauthentication) callback(w http.ResponseWriter, r *http
 		h.redirectFailure(w, r, returnTo, walletsecret.WormReauthenticationRequiredReason, "state_binding")
 		return
 	}
-	_, credential, err := h.authenticate(r)
-	if reason := walletsecret.Reason(err); reason == "MODULE_ACCESS_CLOSED" || reason == "MODULE_ACCESS_UNAVAILABLE" {
-		h.redirectFailure(w, r, returnTo, reason, "module_access")
-		return
-	}
+	authCtx, credential, err := h.authenticate(r)
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin {
 		h.redirectFailure(w, r, returnTo, walletsecret.WormLoginSessionRequiredReason, "login_session")
 		return
@@ -177,6 +180,14 @@ func (h *wormCredentialReauthentication) callback(w http.ResponseWriter, r *http
 		!authregistration.ConstantTimeEqual(transaction.SessionJTIDigest, walletsecret.SessionJTIDigest(credential.JTI)) ||
 		transaction.AccessRevision != credential.AccessRevision {
 		h.redirectFailure(w, r, returnTo, walletsecret.WormReauthenticationRequiredReason, "session_binding")
+		return
+	}
+	if err := h.admit(authCtx); err != nil {
+		reason := walletsecret.Reason(err)
+		if reason == "" {
+			reason = walletsecret.WormReauthenticationUnavailableReason
+		}
+		h.redirectFailure(w, r, returnTo, reason, "module_access")
 		return
 	}
 	if r.URL.Query().Get("error") != "" || r.URL.Query().Get("code") == "" {

@@ -38,8 +38,9 @@ func (server *AthenaServer) enableWormExecutionAuthorization() error {
 		if err := server.googleOIDC.EnableWormExecutionAuthorization(
 			server.RedisClient,
 			func(request *http.Request) (context.Context, accountcredentials.AuthenticatedCredential, error) {
-				return server.authenticateInteractiveWormTradingHTTP(request, accountaccess.AccessLevelReadWrite)
+				return server.authenticateWormTradingIdentityHTTP(request, accountaccess.AccessLevelReadWrite)
 			},
+			server.admitWormAccess,
 			server.credentialMgr,
 			server.authorizeGoogleWormExecution,
 			writeWormExecutionAuthorizationError,
@@ -51,8 +52,9 @@ func (server *AthenaServer) enableWormExecutionAuthorization() error {
 		if err := server.phantomAuth.EnableWormExecutionAuthorization(
 			server.RedisClient,
 			func(request *http.Request) (context.Context, accountcredentials.AuthenticatedCredential, error) {
-				return server.authenticateInteractiveWormTradingHTTP(request, accountaccess.AccessLevelReadWrite)
+				return server.authenticateWormTradingIdentityHTTP(request, accountaccess.AccessLevelReadWrite)
 			},
+			server.admitWormAccess,
 			server.credentialMgr,
 			server.loadPhantomWormExecutionDescriptor,
 			server.authorizePhantomWormExecution,

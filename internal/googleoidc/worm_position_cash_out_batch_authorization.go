@@ -97,6 +97,7 @@ type wormPositionCashOutBatchAuthorization struct {
 	google         *Handler
 	store          *wormPositionCashOutBatchTransactionStore
 	authenticate   WormPositionCashOutBatchAuthenticator
+	admit          func(context.Context) error
 	credentials    *accountcredentials.CredentialManager
 	loadDescriptor WormPositionCashOutBatchDescriptorLoader
 	authorize      WormPositionCashOutBatchAuthorizer
@@ -108,12 +109,13 @@ type wormPositionCashOutBatchAuthorization struct {
 func (h *Handler) EnableWormPositionCashOutBatchAuthorization(
 	redisClient *redis.Client,
 	authenticate WormPositionCashOutBatchAuthenticator,
+	admit func(context.Context) error,
 	credentials *accountcredentials.CredentialManager,
 	loadDescriptor WormPositionCashOutBatchDescriptorLoader,
 	authorize WormPositionCashOutBatchAuthorizer,
 	writeError WormPositionCashOutBatchErrorWriter,
 ) error {
-	if h == nil || authenticate == nil || credentials == nil || loadDescriptor == nil ||
+	if h == nil || authenticate == nil || admit == nil || credentials == nil || loadDescriptor == nil ||
 		authorize == nil || writeError == nil {
 		return fmt.Errorf("Google Worm position Cash Out Batch authorization dependencies are required")
 	}
@@ -128,6 +130,7 @@ func (h *Handler) EnableWormPositionCashOutBatchAuthorization(
 		google:         h,
 		store:          store,
 		authenticate:   authenticate,
+		admit:          admit,
 		credentials:    credentials,
 		loadDescriptor: loadDescriptor,
 		authorize:      authorize,
@@ -185,14 +188,18 @@ func (h *wormPositionCashOutBatchAuthorization) begin(w http.ResponseWriter, r *
 		h.redirectFailure(w, r, returnTo, WormPositionCashOutBatchLoginSessionRequiredReason, "application_realm")
 		return
 	}
-	_, credential, err := h.authenticate(r)
-	if reason := walletsecret.Reason(err); reason == "MODULE_ACCESS_CLOSED" || reason == "MODULE_ACCESS_UNAVAILABLE" {
-		h.redirectFailure(w, r, returnTo, reason, "module_access")
-		return
-	}
+	authCtx, credential, err := h.authenticate(r)
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin || credential.JTI == "" ||
 		credential.AccessRevision == 0 || credential.AccessRevision > math.MaxInt64 {
 		h.redirectFailure(w, r, returnTo, WormPositionCashOutBatchLoginSessionRequiredReason, "login_session")
+		return
+	}
+	if err := h.admit(authCtx); err != nil {
+		reason := walletsecret.Reason(err)
+		if reason == "" {
+			reason = WormPositionCashOutBatchAuthorizationUnavailableReason
+		}
+		h.redirectFailure(w, r, returnTo, reason, "module_access")
 		return
 	}
 	accountID, err := accountcredentials.CanonicalAccountID(credential.AccountID)
@@ -297,11 +304,7 @@ func (h *wormPositionCashOutBatchAuthorization) callback(w http.ResponseWriter, 
 		h.redirectFailure(w, r, returnTo, WormPositionCashOutBatchAuthorizationRequiredReason, "state_binding")
 		return
 	}
-	_, credential, err := h.authenticate(r)
-	if reason := walletsecret.Reason(err); reason == "MODULE_ACCESS_CLOSED" || reason == "MODULE_ACCESS_UNAVAILABLE" {
-		h.redirectFailure(w, r, returnTo, reason, "module_access")
-		return
-	}
+	authCtx, credential, err := h.authenticate(r)
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin || credential.JTI == "" ||
 		credential.AccessRevision == 0 || credential.AccessRevision > math.MaxInt64 {
 		h.redirectFailure(w, r, returnTo, WormPositionCashOutBatchLoginSessionRequiredReason, "login_session")
@@ -313,6 +316,14 @@ func (h *wormPositionCashOutBatchAuthorization) callback(w http.ResponseWriter, 
 		subtle.ConstantTimeCompare(storedSessionDigest, currentSessionDigest[:]) != 1 ||
 		transaction.AccessRevision != credential.AccessRevision {
 		h.redirectFailure(w, r, returnTo, WormPositionCashOutBatchAuthorizationRequiredReason, "session_binding")
+		return
+	}
+	if err := h.admit(authCtx); err != nil {
+		reason := walletsecret.Reason(err)
+		if reason == "" {
+			reason = WormPositionCashOutBatchAuthorizationUnavailableReason
+		}
+		h.redirectFailure(w, r, returnTo, reason, "module_access")
 		return
 	}
 	if r.URL.Query().Get("error") != "" || r.URL.Query().Get("code") == "" {
