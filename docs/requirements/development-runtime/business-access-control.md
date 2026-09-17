@@ -13,7 +13,7 @@
 | 管理员后台 | Service Status 的 Module Access 第四页签显示六项设置、最后修改人和时间，并提交明确的 OPEN／CLOSED 值 |
 | API Server | 对登记的公共 gRPC、HTTP 和原始 Trading 路径执行统一准入；核心、健康和开关管理入口不受业务开关阻断 |
 | PostgreSQL | `athena_module_access_setting` 持久保存六个固定键；缺行等同 CLOSED，读取失败按暂不可用关闭处理 |
-| 会员壳 | 可见时 5 秒单飞刷新；关闭后中止请求、卸载业务正文并保留菜单与 URL；重新开放后重新读取 |
+| 会员壳 | 前台每 2 秒发起一次 single-flight 状态读取；成功快照从请求开始的单调时钟时间起最多保持 5 秒新鲜，慢响应不延长有效期；关闭、过期或无法确认时中止请求、卸载正文并保留菜单与 URL，重新开放后重新读取 |
 | 业务服务 | 不感知访问开关，不新增分布式启停、代次、成员确认或收尾协议 |
 
 固定键为 `trader_sync`、`solana`、`market_radar`、`managed_oo`、`profit_sharing`、`worm`。`worm` 只对应 Worm Trading；Worm Markets 已退役。Token 保留产品板块和账户权限，但不在六键、管理员设置或本轮十一应用中。

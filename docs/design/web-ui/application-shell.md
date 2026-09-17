@@ -2,7 +2,7 @@
 
 > 设计状态：已实现
 
-> [板块访问开关](../../requirements/development-runtime/business-access-control.md)已实现：会员和管理员业务入口由后端六键限制，管理员 Service Status 已有 Module Access 第四页签；前台可见时 5 秒单飞读取，关闭或无法确认时中止请求、卸载正文并阻止旧响应回填。后台任务继续运行。`worm` 只对应 Trading，关闭时停止浏览器交易驱动，重新开放后重新读取且不自动补发交易。实际双 realm、根路径与前缀证据见[全栈验收](../../testing/full-stack-access-acceptance.md)。
+> [板块访问开关](../../requirements/development-runtime/business-access-control.md)已实现：会员和管理员业务入口由后端六键限制，管理员 Service Status 已有 Module Access 第四页签。共享业务访问提供器在前台每 2 秒发起一次 single-flight 状态读取；成功快照从该次请求开始的单调时钟时间起最多保持 5 秒新鲜，慢响应不能延长有效期。关闭、过期或无法确认时中止请求、卸载正文并阻止旧响应回填。管理员设置列表另按[管理员应用壳](administrator-application-shell.md)的独立 5 秒读取契约运行。后台任务继续运行。`worm` 只对应 Trading，关闭时停止浏览器交易驱动，重新开放后重新读取且不自动补发交易。实际双 realm、根路径与前缀证据见[全栈验收](../../testing/full-stack-access-acceptance.md)。
 
 ## Scope
 

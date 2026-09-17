@@ -52,7 +52,7 @@
 | Identity and Access | [单客户端登录](identity-access/single-client-login.md) | `已确认`；同一账号只允许一个有效客户端，新登录成功后旧登录立即失效，代码未实现 | [目标设计](../design/identity-access/single-client-login.md)及[完整规格第 4 节](../superpowers/specs/2026-09-15-trader-sync-manual-trading-design.md#4-单客户端登录与权限)已整理当前会话、交换恢复与交易接收顺序，完整规格待整体审阅 |
 | Trader Sync | [产品需求](polymarket-copy-trading/README.md) | Activity Alerts 与[手动交易需求](polymarket-copy-trading/copy-trading.md)均 `已确认`；手动交易代码未实现 | Activity Alerts [后端](../design/trading/trader-sync-activity-alerts.md)与[UI](../design/web-ui/trader-sync-activity-alerts.md)已实现，见[验收记录](../testing/trader-sync-activity-alerts-acceptance.md)；手动交易三段详细设计及[桌面／手机页面方案](web-ui/trader-sync-manual-trading-proposal.md)已确认，[完整规格](../superpowers/specs/2026-09-15-trader-sync-manual-trading-design.md)已整理、待整体审阅；[平台校验](polymarket-copy-trading/manual-trading-contract-verification.md)已有官方契约与公开样本，账户入金一致性、私有执行与完整覆盖待实测 |
 | Token Intelligence | [Token 业务设计与研究资料](token/README.md) | `讨论中`（其中部分独立需求已确认） | [Token Intelligence 当前及目标技术设计](../design/README.md) |
-| Solana Intelligence | [Solana 项目发现与研究](solana/README.md) | 首版范围已确认、源分支已验收；已集成到 `rf4` 并通过本次集成验证，研究细节延后，采集继续暂停 | [设计总览](../design/solana-intelligence/README.md)、[基础信息补全](../design/solana-intelligence/candidate-metadata.md)、[列表页](../design/web-ui/solana-discovery.md)、[集成验收](../testing/rf4-branch-integration.md) |
+| Solana Intelligence | [Solana 项目发现与研究](solana/README.md) | 首版范围已确认、源分支已验收并集成到 `rf4`；旧 `solana-preview` profile 现场继续暂停并保留数据，2026-09-17 明确授权的新 managed 实例已纳入十一应用全栈并完成当前主网 v1 只读与后台连续性验证；研究细节延后 | [设计总览](../design/solana-intelligence/README.md)、[项目发现](../design/solana-intelligence/project-discovery.md)、[列表页](../design/web-ui/solana-discovery.md)、[全栈验收](../testing/full-stack-access-acceptance.md) |
 
 ## v16 索引补充
 

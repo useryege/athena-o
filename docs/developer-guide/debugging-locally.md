@@ -53,7 +53,7 @@ A VS Code launch example for API, with dependencies and credentials explicitly c
 
 For GoLand, select Go Build with Run kind Directory, the matching directory above, repository working directory, and the same explicit arguments/environment. No `ATHENA_BINARY_NAME` dispatch is needed for these independent mains. API additionally needs Redis and avatar storage; changing its port requires the UI proxy to target that address.
 
-Local plaintext TS gRPC requires explicit `ATHENA_TRADER_SYNC_GRPC_TRANSPORT=loopback-insecure`; direct binaries otherwise default to TLS. Configure matching TS/API internal tokens and server address. The API does not need TS provider or cursor configuration; the TS process does not need a Telegram Bot token. See the [runtime configuration table](../design/development-runtime/local-runtime-orchestration.md#配置边界).
+Local plaintext TS gRPC requires explicit `ATHENA_TRADER_SYNC_GRPC_TRANSPORT=loopback-insecure`; direct binaries otherwise default to TLS. Configure matching TS/API internal tokens and server address. The API does not need TS provider or cursor configuration; the TS process does not need a Telegram Bot token. See the [runtime configuration table](../design/development-runtime/local-runtime-orchestration.md#配置与网络边界).
 
 ## Authentication and shutdown
 

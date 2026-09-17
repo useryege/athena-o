@@ -71,19 +71,19 @@ Pump 官方仓库中的 SDK 使用文档提供 `createV2AndBuyInstructions`，�
 
 公共 API 验证 Solana READ，从认证上下文取账户ID。内部客户端设置10秒deadline、独立Bearer token和唯一 `x-athena-account-id`，不接收公共请求传入的身份字段。业务 RPC 再验证token和规范账户UUID，每次重读持久权限，要求登录有效且Solana READ；管理员无隐式业务访问。撤权后的后续请求不能靠API缓存继续读取。
 
-新 `solana` 授权最高READ，完整账户矩阵11项，新/现有普通成员默认NONE。账户初始化及必要升级SQL、生成客户端和UI一同更新。健康RPC只说明进程/查询入口可用，节点扫描健康以GetDiscoveryStatus为准；不把监听端口等同于扫描追平。
+新 `solana` 授权最高 READ；当前完整账户权限矩阵精确为七项（包含前端隐藏但仍参与聚合的 Token），新／现有普通成员默认 NONE。该七模块账户矩阵与六个环境访问键是两套独立条件：环境开关不包含 Wallet 或 Token，也不改变账户 revision 或授予 Solana READ。账户初始化及必要升级 SQL、生成客户端和 UI 一同更新。健康 RPC 只说明进程／查询入口可用，节点扫描健康以 `GetDiscoveryStatus` 为准；不把监听端口等同于扫描追平。
 
 ## 独立运行与配置（SDS-R3、R4、R5）
 
 当前入口：`make solana-discovery-build`、`make solana-discovery-run INSTANCE=<name>`、`make solana-discovery-stop INSTANCE=<name>`。run/stop 别名委托统一实例 owner；managed 模式按选择创建 PostgreSQL 并先执行账户及 Solana `schema up`／`verify`，external 模式只读 verify，扫描不依赖 API 在线。Solana 已纳入十一应用默认图，也可单独正向选择。旧 `hack/solana-local.sh` 的 profile 仅由原 owner 停止，状态与数据不迁入新实例。
 
-专用 `solana-preview` 将 `ATHENA_SOLANA_PREVIEW_POSTGRES_DSN` 同时提供给 Solana 存储和 API 的 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN`；profile 的 API 启动链自动先完成账户 schema 的 `up` / `verify`，成功后直接启动 `cmd/athena-server`。API 启动只验证 schema，不拥有账户迁移，也不启动 Trader Sync runtime。预览依赖已运行的 PostgreSQL、Redis，并按功能需要使用其他独立服务和 MinIO。
+历史旧 `solana-preview` profile 曾将 `ATHENA_SOLANA_PREVIEW_POSTGRES_DSN` 同时提供给 Solana 存储和 API 的 `ATHENA_ACCOUNT_STATE_POSTGRES_DSN`，并由旧启动链先准备账户 schema。该 profile 只用于解释保留现场，当前 checkout 已封闭其 start，不能作为现行启动入口；旧状态仅由原 owner 停止。当前预览应使用统一 `run-services` 和独立 `INSTANCE`，按所选服务准备 schema 与依赖。
 
 |配置|默认/行为|
 |---|---|
 |ATHENA_SOLANA_DISCOVERY_RPC_URL|https://api.mainnet-beta.solana.com；只接受HTTP(S)|
 |ATHENA_SOLANA_DISCOVERY_POSTGRES_DSN|未配置时回退 ATHENA_ACCOUNT_STATE_POSTGRES_DSN，两者均缺失则启动报错；须与 API 账户库一致|
-|ATHENA_SOLANA_DISCOVERY_INTERNAL_AUTH_TOKEN|生产环境必填；局部Procfile提供明确开发token|
+|ATHENA_SOLANA_DISCOVERY_INTERNAL_AUTH_TOKEN|独立生产部署显式提供；统一本地实例未配置时由当前 owner 生成、以 0600 文件持久保存并在重启中复用，显式值与已保存值冲突时拒绝启动|
 |ATHENA_SOLANA_DISCOVERY_LISTEN_ADDRESS / PORT|127.0.0.1 / 8112|
 |ATHENA_SOLANA_DISCOVERY_SERVER_ADDRESS|API客户端默认127.0.0.1:8112|
 |ATHENA_SOLANA_DISCOVERY_START_SLOT|0；首次取head向前32slots，重启沿用持久起点|
