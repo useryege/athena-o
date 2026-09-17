@@ -76,8 +76,8 @@ func NewCommand() *cobra.Command {
 			}
 			grpcServer := server.CreateGRPC()
 			cleanupOwned = false
-			return cmdutil.ServeGRPC(ctx, listener, grpcServer, func() error {
-				err := server.Stop()
+			return cmdutil.ServeGRPC(ctx, listener, grpcServer, server.Stop, func() error {
+				var err error
 				if notificationClientset != nil {
 					err = errors.Join(err, notificationClientset.Close())
 				}

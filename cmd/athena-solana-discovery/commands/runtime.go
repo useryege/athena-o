@@ -23,12 +23,11 @@ func serveWithCleanup(ctx context.Context, listener net.Listener, server *grpc.S
 	return cmdutil.ServeGRPC(ctx, listener, server, func() error {
 		cancel()
 		err := <-scanDone
-		cleanup()
 		if errors.Is(err, context.Canceled) {
 			return nil
 		}
 		return err
-	})
+	}, func() error { cleanup(); return nil })
 }
 
 // runDiscovery shares shutdown across the live scanner and persisted enrichment queue.

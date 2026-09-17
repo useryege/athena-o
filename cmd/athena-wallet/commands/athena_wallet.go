@@ -2,7 +2,6 @@ package commands
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -95,10 +94,7 @@ func NewCommand() *cobra.Command {
 			}
 
 			cleanupOwned = false
-			return cmdutil.ServeGRPC(ctx, listener, walletGRPC, func() error {
-				err := errors.Join(server.Stop(), store.Close())
-				return err
-			})
+			return cmdutil.ServeGRPC(ctx, listener, walletGRPC, server.Stop, store.Close)
 		},
 		Example: templates.Examples(`
 			# Start the Athena Wallet service

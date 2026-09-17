@@ -12,13 +12,13 @@ import (
 
 const ServiceShutdownTimeout = 30 * time.Second
 
-// ServeGRPC owns the listener and the supplied shutdown operation. Shutdown
-// must cancel workers, wait for them, and close resources owned by the command.
-// It runs concurrently with transport draining under one shared budget.
-func ServeGRPC(ctx context.Context, listener net.Listener, server *grpc.Server, shutdown func() error) error {
-	return serveGRPC(ctx, listener, server, shutdown, ServiceShutdownTimeout)
+// ServeGRPC owns the listener and the supplied shutdown operations. Background
+// cancellation/join runs concurrently with RPC draining. Shared resources are
+// released only after both finish, under the same total shutdown budget.
+func ServeGRPC(ctx context.Context, listener net.Listener, server *grpc.Server, stopBackground, releaseResources func() error) error {
+	return serveGRPC(ctx, listener, server, stopBackground, releaseResources, ServiceShutdownTimeout)
 }
-func serveGRPC(ctx context.Context, listener net.Listener, server *grpc.Server, shutdown func() error, budget time.Duration) error {
+func serveGRPC(ctx context.Context, listener net.Listener, server *grpc.Server, stopBackground, releaseResources func() error, budget time.Duration) error {
 	rpcDone := make(chan error, 1)
 	go func() { rpcDone <- server.Serve(listener) }()
 	var result error
@@ -32,7 +32,7 @@ func serveGRPC(ctx context.Context, listener net.Listener, server *grpc.Server, 
 	drained := make(chan struct{})
 	go func() { server.GracefulStop(); close(drained) }()
 	workDone := make(chan error, 1)
-	go func() { workDone <- shutdown() }()
+	go func() { workDone <- stopBackground() }()
 	timer := time.NewTimer(budget)
 	defer timer.Stop()
 	for drained != nil || workDone != nil {
@@ -47,7 +47,18 @@ func serveGRPC(ctx context.Context, listener net.Listener, server *grpc.Server, 
 			return errors.Join(result, fmt.Errorf("service shutdown exceeded %s", budget))
 		}
 	}
-	return result
+
+	// The timer is deliberately not reset: resource release consumes only the
+	// budget remaining after accepted RPCs and background work have completed.
+	releaseDone := make(chan error, 1)
+	go func() { releaseDone <- releaseResources() }()
+	select {
+	case err := <-releaseDone:
+		return errors.Join(result, err)
+	case <-timer.C:
+		server.Stop()
+		return errors.Join(result, fmt.Errorf("service shutdown exceeded %s while releasing resources", budget))
+	}
 }
 func cleanServeError(err error) error {
 	if errors.Is(err, grpc.ErrServerStopped) || errors.Is(err, net.ErrClosed) {

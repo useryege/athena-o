@@ -91,8 +91,8 @@ func NewCommand() *cobra.Command {
 			}
 			grpcServer := server.CreateGRPC()
 			cleanupOwned = false
-			return cmdutil.ServeGRPC(ctx, listener, grpcServer, func() error {
-				err := errors.Join(server.Stop(), store.Close())
+			return cmdutil.ServeGRPC(ctx, listener, grpcServer, server.Stop, func() error {
+				err := store.Close()
 				if notificationClientset != nil {
 					err = errors.Join(err, notificationClientset.Close())
 				}

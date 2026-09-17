@@ -2,7 +2,6 @@ package commands
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -66,10 +65,7 @@ func NewCommand() *cobra.Command {
 			}
 			grpcServer := server.CreateGRPC()
 			cleanupOwned = false
-			return cmdutil.ServeGRPC(ctx, listener, grpcServer, func() error {
-				err := errors.Join(server.Stop(), store.Close())
-				return err
-			})
+			return cmdutil.ServeGRPC(ctx, listener, grpcServer, server.Stop, store.Close)
 		},
 		Example: "Start the Athena Profit Sharing service:\n  athena-profit-sharing",
 	}

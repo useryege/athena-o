@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -85,9 +84,7 @@ func NewCommand() *cobra.Command {
 			}
 
 			cleanupOwned = false
-			return cmdutil.ServeGRPC(ctx, listener, managerGRPC, func() error {
-				return errors.Join(server.Stop(), manager.Close())
-			})
+			return cmdutil.ServeGRPC(ctx, listener, managerGRPC, server.Stop, manager.Close)
 		},
 		Example: templates.Examples(`
 			# Start the Athena Etherscan Manager service
