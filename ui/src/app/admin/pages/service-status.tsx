@@ -1,3 +1,5 @@
+import * as React from 'react';
+import {ModuleAccessSettings} from './module-access-settings';
 import {OperationFacts} from '../components/operation-facts';
 import './trader-sync/trader-sync.css';
 import {Alert, Button, Empty, Spin, Tabs, Tag} from 'antd';
@@ -53,10 +55,13 @@ const metricScope = (metric: RuntimeMetric) =>
           : `Current gauge${metric.serviceEpoch ? ` · Service epoch: ${metric.serviceEpoch}` : ''}`;
 
 export const ServiceStatusPage = () => {
+    const [activeTab, setActiveTab] = React.useState('services');
+    const [accessRefresh, setAccessRefresh] = React.useState(0);
     const data = useVisibleQuery(() => services.serviceStatus.list(), useAdminReadScope('service-status'), 10000);
     const notificationRuntime = useVisibleQuery(() => receivedAt(services.adminNotifications.getRuntimeStatus()), useAdminReadScope('notification-runtime'), 10000);
     const traderRuntime = useVisibleQuery(() => services.adminTraderSync.getRuntimeStatus(), useAdminReadScope('trader-sync-runtime'), 10000);
     const reloadAll = () => {
+        setAccessRefresh(value => value + 1);
         data.reload();
         notificationRuntime.reload();
         traderRuntime.reload();
@@ -81,6 +86,7 @@ export const ServiceStatusPage = () => {
             <Tabs
                 className='admin-source-tabs'
                 defaultActiveKey='services'
+                onChange={setActiveTab}
                 items={[
                     {
                         key: 'services',
@@ -347,7 +353,8 @@ export const ServiceStatusPage = () => {
                                 )}
                             </Section>
                         )
-                    }
+                    },
+                    {key: 'module-access', label: 'Module Access', children: <ModuleAccessSettings active={activeTab === 'module-access'} refreshRevision={accessRefresh} />}
                 ]}
             />
         </AppPage>

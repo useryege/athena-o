@@ -1,3 +1,4 @@
+import {ModuleAccessProvider, ModuleAccessBoundary} from '../shared/module-access';
 import '@fortawesome/fontawesome-free/css/all.css';
 import 'antd/dist/reset.css';
 import '../../assets/fonts.css';
@@ -156,10 +157,38 @@ const AdminRoutes = (props: {settings: AppBootstrap['settings']; loggingOut: boo
             <Routes>
                 <Route path='/' element={<Navigate replace={true} to='/accounts' />} />
                 <Route path='/accounts' element={<AdminAccountsPage />} />
-                <Route path='/profit-sharing' element={<ProfitSharingAdminRoundsPage />} />
-                <Route path='/profit-sharing/:slug' element={<ProfitSharingAdminRoundPage />} />
-                <Route path='/trader-sync/subscriptions' element={<TraderSyncAdminSubscriptionsPage />} />
-                <Route path='/trader-sync/subscriptions/:id' element={<TraderSyncAdminSubscriptionPage />} />
+                <Route
+                    path='/profit-sharing'
+                    element={
+                        <ModuleAccessBoundary moduleKey='profit_sharing'>
+                            <ProfitSharingAdminRoundsPage />
+                        </ModuleAccessBoundary>
+                    }
+                />
+                <Route
+                    path='/profit-sharing/:slug'
+                    element={
+                        <ModuleAccessBoundary moduleKey='profit_sharing'>
+                            <ProfitSharingAdminRoundPage />
+                        </ModuleAccessBoundary>
+                    }
+                />
+                <Route
+                    path='/trader-sync/subscriptions'
+                    element={
+                        <ModuleAccessBoundary moduleKey='trader_sync'>
+                            <TraderSyncAdminSubscriptionsPage />
+                        </ModuleAccessBoundary>
+                    }
+                />
+                <Route
+                    path='/trader-sync/subscriptions/:id'
+                    element={
+                        <ModuleAccessBoundary moduleKey='trader_sync'>
+                            <TraderSyncAdminSubscriptionPage />
+                        </ModuleAccessBoundary>
+                    }
+                />
                 <Route path='/service-status' element={<ServiceStatusPage />} />
                 <Route path='/etherscan-gateways' element={<EtherscanGatewaysPage />} />
                 <Route path='/notifications' element={<SystemNotificationsPage />} />
@@ -446,151 +475,162 @@ const AdminShell = (props: {initialUser: UserInfo; preferences: ViewPreferences;
     return (
         <Provider value={contextValue}>
             <AuthorizationCtx.Provider value={authorizationValue}>
-                <Layout className='athena-shell athena-admin-shell' style={{'--athena-sidebar-width': `${expandedSidebarWidth}px`} as React.CSSProperties}>
-                    <a className='athena-skip-link' href='#athena-main' aria-hidden={narrowShell && mobileSidebarOpen} tabIndex={narrowShell && mobileSidebarOpen ? -1 : undefined}>
-                        Skip to main content
-                    </a>
-                    <Layout.Sider
-                        className='athena-shell__sider'
-                        collapsible={true}
-                        collapsed={sidebarCollapsed}
-                        collapsedWidth={narrowShell ? 0 : 72}
-                        trigger={null}
-                        width={expandedSidebarWidth}
-                        ref={sidebarRef}
-                        role={narrowShell && mobileSidebarOpen ? 'dialog' : undefined}
-                        aria-modal={narrowShell && mobileSidebarOpen ? true : undefined}
-                        aria-label={narrowShell && mobileSidebarOpen ? 'Administration navigation' : undefined}
-                        aria-hidden={narrowShell && !mobileSidebarOpen}>
+                <ModuleAccessProvider realm='admin' identity={JSON.stringify([user.accountId, user.iss])} returnSearch={location.search}>
+                    <Layout className='athena-shell athena-admin-shell' style={{'--athena-sidebar-width': `${expandedSidebarWidth}px`} as React.CSSProperties}>
+                        <a
+                            className='athena-skip-link'
+                            href='#athena-main'
+                            aria-hidden={narrowShell && mobileSidebarOpen}
+                            tabIndex={narrowShell && mobileSidebarOpen ? -1 : undefined}>
+                            Skip to main content
+                        </a>
+                        <Layout.Sider
+                            className='athena-shell__sider'
+                            collapsible={true}
+                            collapsed={sidebarCollapsed}
+                            collapsedWidth={narrowShell ? 0 : 72}
+                            trigger={null}
+                            width={expandedSidebarWidth}
+                            ref={sidebarRef}
+                            role={narrowShell && mobileSidebarOpen ? 'dialog' : undefined}
+                            aria-modal={narrowShell && mobileSidebarOpen ? true : undefined}
+                            aria-label={narrowShell && mobileSidebarOpen ? 'Administration navigation' : undefined}
+                            aria-hidden={narrowShell && !mobileSidebarOpen}>
+                            {narrowShell && mobileSidebarOpen && (
+                                <Button
+                                    className='athena-shell__mobile-close'
+                                    type='text'
+                                    aria-label='Close navigation'
+                                    icon={<MenuFoldOutlined />}
+                                    onClick={() => setMobileSidebarOpen(false)}
+                                />
+                            )}
+                            {(!narrowShell || mobileSidebarOpen) && (
+                                <div className='athena-brand'>
+                                    <BrandMark size='small' />
+                                    {!sidebarCollapsed && (
+                                        <span className='athena-brand__copy'>
+                                            <strong>ATHENA</strong>
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                            <nav className='athena-sidebar-navigation' id='athena-admin-navigation' aria-label='Administration navigation'>
+                                {(!narrowShell || mobileSidebarOpen) && (
+                                    <Menu
+                                        mode='inline'
+                                        items={adminSections}
+                                        selectedKeys={selectedMenuKey(location.pathname) ? [selectedMenuKey(location.pathname)] : []}
+                                        onClick={item => {
+                                            setMobileSidebarOpen(false);
+                                            navigate(item.key);
+                                        }}
+                                    />
+                                )}
+                            </nav>
+                            {(!narrowShell || mobileSidebarOpen) && (
+                                <div className='athena-sidebar-bottom'>
+                                    <Button
+                                        type='text'
+                                        icon={<QuestionCircleOutlined />}
+                                        aria-label='Help'
+                                        aria-current={location.pathname === '/help' ? 'page' : undefined}
+                                        onClick={() => {
+                                            setMobileSidebarOpen(false);
+                                            navigate('/help');
+                                        }}>
+                                        <span className='athena-sidebar-bottom__label'>Help</span>
+                                    </Button>
+                                    {!sidebarCollapsed && <p>Administration console</p>}
+                                </div>
+                            )}
+                        </Layout.Sider>
                         {narrowShell && mobileSidebarOpen && (
-                            <Button
-                                className='athena-shell__mobile-close'
-                                type='text'
+                            <button
+                                className='athena-shell__backdrop'
+                                type='button'
                                 aria-label='Close navigation'
-                                icon={<MenuFoldOutlined />}
+                                aria-hidden='true'
+                                tabIndex={-1}
                                 onClick={() => setMobileSidebarOpen(false)}
                             />
                         )}
-                        {(!narrowShell || mobileSidebarOpen) && (
-                            <div className='athena-brand'>
-                                <BrandMark size='small' />
-                                {!sidebarCollapsed && (
-                                    <span className='athena-brand__copy'>
-                                        <strong>ATHENA</strong>
-                                    </span>
-                                )}
-                            </div>
-                        )}
-                        <nav className='athena-sidebar-navigation' id='athena-admin-navigation' aria-label='Administration navigation'>
-                            {(!narrowShell || mobileSidebarOpen) && (
-                                <Menu
-                                    mode='inline'
-                                    items={adminSections}
-                                    selectedKeys={selectedMenuKey(location.pathname) ? [selectedMenuKey(location.pathname)] : []}
-                                    onClick={item => {
-                                        setMobileSidebarOpen(false);
-                                        navigate(item.key);
-                                    }}
-                                />
-                            )}
-                        </nav>
-                        {(!narrowShell || mobileSidebarOpen) && (
-                            <div className='athena-sidebar-bottom'>
-                                <Button
-                                    type='text'
-                                    icon={<QuestionCircleOutlined />}
-                                    aria-label='Help'
-                                    aria-current={location.pathname === '/help' ? 'page' : undefined}
-                                    onClick={() => {
-                                        setMobileSidebarOpen(false);
-                                        navigate('/help');
-                                    }}>
-                                    <span className='athena-sidebar-bottom__label'>Help</span>
-                                </Button>
-                                {!sidebarCollapsed && <p>Administration console</p>}
-                            </div>
-                        )}
-                    </Layout.Sider>
-                    {narrowShell && mobileSidebarOpen && (
-                        <button
-                            className='athena-shell__backdrop'
-                            type='button'
-                            aria-label='Close navigation'
-                            aria-hidden='true'
-                            tabIndex={-1}
-                            onClick={() => setMobileSidebarOpen(false)}
-                        />
-                    )}
-                    <Layout ref={shellBackgroundRef}>
-                        <Layout.Header className='athena-shell__header'>
-                            <div className='athena-shell__header-left'>
-                                <Tooltip title={narrowShell ? undefined : sidebarCollapsed ? 'Open navigation' : 'Close navigation'}>
-                                    <Button
-                                        ref={mobileSidebarToggleRef}
-                                        className='athena-shell__sidebar-toggle'
-                                        type='text'
-                                        aria-label={sidebarCollapsed ? 'Open navigation' : 'Close navigation'}
-                                        aria-controls='athena-admin-navigation'
-                                        aria-expanded={!sidebarCollapsed}
-                                        icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-                                        onClick={() => {
-                                            if (narrowShell) {
-                                                setMobileSidebarOpen(current => !current);
-                                                return;
-                                            }
-                                            const next = !desktopSidebarCollapsed;
-                                            setDesktopSidebarCollapsed(next);
-                                            services.viewPreferences.updatePreferences({hideSidebar: next});
-                                        }}
-                                    />
-                                </Tooltip>
-                                <Breadcrumb className='athena-shell__breadcrumb' items={info ? [{title: info.section}, {title: info.label}] : []} />
-                            </div>
-                            <div className='athena-shell__header-actions'>
-                                <Dropdown
-                                    open={accountMenuOpen}
-                                    trigger={['click']}
-                                    placement='bottomRight'
-                                    classNames={{root: 'athena-account-menu'}}
-                                    destroyOnHidden={true}
-                                    menu={{items: accountMenuItems, onClick: onAccountMenuClick, selectable: false}}
-                                    onOpenChange={setAccountMenuOpen}>
-                                    <button className='athena-account-trigger' type='button' aria-label='Open account menu' aria-haspopup='menu' aria-expanded={accountMenuOpen}>
-                                        <AccountAvatar className='athena-account-avatar' profile={user.profile} username={user.username} size={28} />
-                                        <span className='athena-account-trigger__copy'>
-                                            <strong>{user.profile.displayName || user.username}</strong>
-                                            <small>@{user.username}</small>
-                                        </span>
-                                        <span className='athena-account-trigger__more' aria-hidden='true'>
-                                            •••
-                                        </span>
-                                    </button>
-                                </Dropdown>
-                            </div>
-                        </Layout.Header>
-                        <Layout.Content className='athena-shell__content' id='athena-main' tabIndex={-1}>
-                            {roleCheck ? (
-                                <section aria-label='Administrator access check' aria-busy={roleCheck.pending}>
-                                    <div role={roleCheck.pending ? 'status' : 'alert'}>
-                                        <Result
-                                            status='warning'
-                                            icon={roleCheck.pending ? <Spin /> : undefined}
-                                            title={roleCheck.pending ? 'Checking administrator access' : 'Could not verify administrator access'}
-                                            subTitle={roleCheck.pending ? 'Administrator data is unavailable while your access is checked.' : roleCheck.error}
-                                            extra={
-                                                <Button disabled={roleCheck.pending} loading={roleCheck.pending} onClick={recheckAdminAccess}>
-                                                    Retry access check
-                                                </Button>
-                                            }
+                        <Layout ref={shellBackgroundRef}>
+                            <Layout.Header className='athena-shell__header'>
+                                <div className='athena-shell__header-left'>
+                                    <Tooltip title={narrowShell ? undefined : sidebarCollapsed ? 'Open navigation' : 'Close navigation'}>
+                                        <Button
+                                            ref={mobileSidebarToggleRef}
+                                            className='athena-shell__sidebar-toggle'
+                                            type='text'
+                                            aria-label={sidebarCollapsed ? 'Open navigation' : 'Close navigation'}
+                                            aria-controls='athena-admin-navigation'
+                                            aria-expanded={!sidebarCollapsed}
+                                            icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                                            onClick={() => {
+                                                if (narrowShell) {
+                                                    setMobileSidebarOpen(current => !current);
+                                                    return;
+                                                }
+                                                const next = !desktopSidebarCollapsed;
+                                                setDesktopSidebarCollapsed(next);
+                                                services.viewPreferences.updatePreferences({hideSidebar: next});
+                                            }}
                                         />
-                                    </div>
-                                </section>
-                            ) : (
-                                <AdminRoutes settings={props.settings} loggingOut={loggingOut} onLogout={() => void logout()} />
-                            )}
-                        </Layout.Content>
+                                    </Tooltip>
+                                    <Breadcrumb className='athena-shell__breadcrumb' items={info ? [{title: info.section}, {title: info.label}] : []} />
+                                </div>
+                                <div className='athena-shell__header-actions'>
+                                    <Dropdown
+                                        open={accountMenuOpen}
+                                        trigger={['click']}
+                                        placement='bottomRight'
+                                        classNames={{root: 'athena-account-menu'}}
+                                        destroyOnHidden={true}
+                                        menu={{items: accountMenuItems, onClick: onAccountMenuClick, selectable: false}}
+                                        onOpenChange={setAccountMenuOpen}>
+                                        <button
+                                            className='athena-account-trigger'
+                                            type='button'
+                                            aria-label='Open account menu'
+                                            aria-haspopup='menu'
+                                            aria-expanded={accountMenuOpen}>
+                                            <AccountAvatar className='athena-account-avatar' profile={user.profile} username={user.username} size={28} />
+                                            <span className='athena-account-trigger__copy'>
+                                                <strong>{user.profile.displayName || user.username}</strong>
+                                                <small>@{user.username}</small>
+                                            </span>
+                                            <span className='athena-account-trigger__more' aria-hidden='true'>
+                                                •••
+                                            </span>
+                                        </button>
+                                    </Dropdown>
+                                </div>
+                            </Layout.Header>
+                            <Layout.Content className='athena-shell__content' id='athena-main' tabIndex={-1}>
+                                {roleCheck ? (
+                                    <section aria-label='Administrator access check' aria-busy={roleCheck.pending}>
+                                        <div role={roleCheck.pending ? 'status' : 'alert'}>
+                                            <Result
+                                                status='warning'
+                                                icon={roleCheck.pending ? <Spin /> : undefined}
+                                                title={roleCheck.pending ? 'Checking administrator access' : 'Could not verify administrator access'}
+                                                subTitle={roleCheck.pending ? 'Administrator data is unavailable while your access is checked.' : roleCheck.error}
+                                                extra={
+                                                    <Button disabled={roleCheck.pending} loading={roleCheck.pending} onClick={recheckAdminAccess}>
+                                                        Retry access check
+                                                    </Button>
+                                                }
+                                            />
+                                        </div>
+                                    </section>
+                                ) : (
+                                    <AdminRoutes settings={props.settings} loggingOut={loggingOut} onLogout={() => void logout()} />
+                                )}
+                            </Layout.Content>
+                        </Layout>
                     </Layout>
-                </Layout>
+                </ModuleAccessProvider>
             </AuthorizationCtx.Provider>
         </Provider>
     );

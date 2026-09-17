@@ -1,3 +1,4 @@
+import {moduleAccessService} from '../shared/module-access-service';
 import * as React from 'react';
 import renderer, {act} from 'react-test-renderer';
 import {Button, Input} from 'antd';
@@ -14,8 +15,7 @@ let mockAuth: AuthorizationState;
 let mockLoad: () => Promise<string>;
 const mockUser = () => parseUserInfo({accountId: 'admin-A', iss: 'issuer-one', loggedIn: true, administrator: true, username: 'admin'});
 jest.mock('../session/bootstrap', () => ({
-    SessionBootstrap: ({children}: any) =>
-        children({session: {status: AppBootstrapSessionStatus.Authenticated, userInfo: mockUser()}, settings: {}}, {hideSidebar: false})
+    SessionBootstrap: ({children}: any) => children({session: {status: AppBootstrapSessionStatus.Authenticated, userInfo: mockUser()}, settings: {}}, {hideSidebar: false})
 }));
 jest.mock('./routes', () => ({
     ...jest.requireActual('./routes'),
@@ -42,17 +42,18 @@ const late = () => {
     return {promise, resolve};
 };
 beforeEach(() => {
+    jest.spyOn(moduleAccessService, 'states').mockResolvedValue(
+        ['trader_sync', 'solana', 'market_radar', 'managed_oo', 'profit_sharing', 'worm'].map(module_key => ({module_key, state: 1})) as any
+    );
     mockRealProfile = false;
-    window.matchMedia = jest
-        .fn()
-        .mockImplementation(query => ({
-            matches: false,
-            media: query,
-            addListener: jest.fn(),
-            removeListener: jest.fn(),
-            addEventListener: jest.fn(),
-            removeEventListener: jest.fn()
-        }));
+    window.matchMedia = jest.fn().mockImplementation(query => ({
+        matches: false,
+        media: query,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn()
+    }));
     window.history.replaceState({}, '', '/account/profile');
     mockLoad = jest.fn().mockResolvedValue('cached administrator summary');
     jest.spyOn(services.users, 'get').mockResolvedValue(mockUser());
@@ -185,7 +186,6 @@ test('real Shell refresh discovering lost administrator role replaces summaries 
     expect(text()).not.toContain('cached administrator summary');
 });
 
-
 test('role recheck failure is visible and retry stays single flight before fresh authorized data returns', async () => {
     const oldRead = late();
     mockLoad = jest.fn().mockResolvedValueOnce('cached administrator summary').mockReturnValueOnce(oldRead.promise).mockResolvedValue('fresh authorized summary');
@@ -201,9 +201,12 @@ test('role recheck failure is visible and retry stays single flight before fresh
     await act(async () => oldRead.resolve('late invalidated summary'));
     expect(text()).not.toContain('late invalidated summary');
     let resolve!: (value: any) => void;
-    jest.mocked(services.users.get).mockReturnValue(new Promise<any>(done => resolve = done));
+    jest.mocked(services.users.get).mockReturnValue(new Promise<any>(done => (resolve = done)));
     const retry = tree.root.findAllByType(Button).find(button => button.props.children === 'Retry access check')!;
-    await act(async () => {retry.props.onClick(); retry.props.onClick();});
+    await act(async () => {
+        retry.props.onClick();
+        retry.props.onClick();
+    });
     expect(services.users.get).toHaveBeenCalledTimes(2);
     expect(text()).toContain('Checking administrator access');
     expect(tree.root.findAllByType(Button).find(button => button.props.children === 'Retry access check')!.props.disabled).toBe(true);
@@ -217,10 +220,17 @@ test('role recheck failure is visible and retry stays single flight before fresh
 test('retry after a role recheck failure cannot reopen an account that is no longer an administrator', async () => {
     await mount();
     jest.mocked(services.users.get).mockRejectedValue(new Error('role lookup offline'));
-    await act(async () => {(requests.get('/recheck-denied') as any).emit('error', {status: 403, response: {body: {reason: 'ACCOUNT_ADMIN_REQUIRED'}}});});
+    await act(async () => {
+        (requests.get('/recheck-denied') as any).emit('error', {status: 403, response: {body: {reason: 'ACCOUNT_ADMIN_REQUIRED'}}});
+    });
     expect(text()).toContain('role lookup offline');
     jest.mocked(services.users.get).mockResolvedValue({...mockUser(), administrator: false});
-    await act(async () => tree.root.findAllByType(Button).find(button => button.props.children === 'Retry access check')!.props.onClick());
+    await act(async () =>
+        tree.root
+            .findAllByType(Button)
+            .find(button => button.props.children === 'Retry access check')!
+            .props.onClick()
+    );
     expect(text()).toContain('Administrator access required');
     expect(text()).not.toContain('cached administrator summary');
 });
@@ -228,21 +238,36 @@ test('retry after a role recheck failure cannot reopen an account that is no lon
 test('a pending role recheck retry cannot reopen data after a newer known 401', async () => {
     await mount();
     jest.mocked(services.users.get).mockRejectedValue(new Error('role lookup offline'));
-    await act(async () => {(requests.get('/recheck-late') as any).emit('error', {status: 403, response: {body: {reason: 'ACCOUNT_ADMIN_REQUIRED'}}});});
+    await act(async () => {
+        (requests.get('/recheck-late') as any).emit('error', {status: 403, response: {body: {reason: 'ACCOUNT_ADMIN_REQUIRED'}}});
+    });
     expect(text()).toContain('role lookup offline');
     let resolve!: (value: any) => void;
-    jest.mocked(services.users.get).mockReturnValue(new Promise<any>(done => resolve = done));
-    await act(async () => tree.root.findAllByType(Button).find(button => button.props.children === 'Retry access check')!.props.onClick());
-    await act(async () => {(requests.get('/recheck-newer-401') as any).emit('error', {status: 401}); resolve(mockUser());});
+    jest.mocked(services.users.get).mockReturnValue(new Promise<any>(done => (resolve = done)));
+    await act(async () =>
+        tree.root
+            .findAllByType(Button)
+            .find(button => button.props.children === 'Retry access check')!
+            .props.onClick()
+    );
+    await act(async () => {
+        (requests.get('/recheck-newer-401') as any).emit('error', {status: 401});
+        resolve(mockUser());
+    });
     expect(text()).not.toContain('cached administrator summary');
 });
 
- test.each([['admin-B', 'issuer-one'], ['admin-A', 'issuer-two']])('real administrator Profile drops same-revision draft on %s/%s', async (accountId, iss) => {
+test.each([
+    ['admin-B', 'issuer-one'],
+    ['admin-A', 'issuer-two']
+])('real administrator Profile drops same-revision draft on %s/%s', async (accountId, iss) => {
     mockRealProfile = true;
     await mount();
     const input = () => tree.root.findAllByType(Input).find(item => item.props.id === 'profile-display-name')!;
     await act(async () => input().props.onChange({target: {value: 'Private admin draft'}}));
-    jest.mocked(services.users.get).mockResolvedValue(parseUserInfo({loggedIn: true, administrator: true, accountId, iss, username: 'replacement-admin', profile: {displayName: 'Replacement admin', revision: 0}}));
+    jest.mocked(services.users.get).mockResolvedValue(
+        parseUserInfo({loggedIn: true, administrator: true, accountId, iss, username: 'replacement-admin', profile: {displayName: 'Replacement admin', revision: 0}})
+    );
     await act(async () => mockAuth.refresh());
     expect(input().props.value).toBe('Replacement admin');
     expect(text()).not.toContain('Private admin draft');

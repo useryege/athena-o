@@ -1,3 +1,7 @@
+import {TextEncoder} from 'util';
+import {ModuleAccessProvider, ModuleAccessBoundary} from '../../shared/module-access';
+import {AccountIdentityProvider} from '../../shared/models';
+import {moduleAccessService} from '../../shared/module-access-service';
 import renderer, {act} from 'react-test-renderer';
 import {StyleProvider} from '@ant-design/cssinjs';
 import {Button} from 'antd';
@@ -26,20 +30,21 @@ const bootstrap = replies[0].json;
 let tree: renderer.ReactTestRenderer;
 const identity = (iss: string) => parseUserInfo({...bootstrap.session.userInfo, iss});
 beforeEach(() => {
+    jest.spyOn(moduleAccessService, 'states').mockResolvedValue(
+        ['trader_sync', 'solana', 'market_radar', 'managed_oo', 'profit_sharing', 'worm'].map(module_key => ({module_key, state: 1})) as any
+    );
     Object.defineProperty(window.crypto, 'randomUUID', {configurable: true, value: () => '22000000-0000-4000-8000-000000009999'});
     ensureMemberBusinessServices();
     localStorage.clear();
     sessionStorage.clear();
-    window.matchMedia = jest
-        .fn()
-        .mockImplementation(query => ({
-            matches: false,
-            media: query,
-            addListener: jest.fn(),
-            removeListener: jest.fn(),
-            addEventListener: jest.fn(),
-            removeEventListener: jest.fn()
-        }));
+    window.matchMedia = jest.fn().mockImplementation(query => ({
+        matches: false,
+        media: query,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn()
+    }));
     jest.spyOn(services.authService, 'bootstrap').mockResolvedValue({
         settings: bootstrap.settings,
         session: {status: AppBootstrapSessionStatus.Authenticated, userInfo: identity('old-issuer')}
@@ -103,41 +108,57 @@ const authorization = {
 };
 let confirmation: any;
 const notifications = {success: jest.fn(), error: jest.fn(), warning: jest.fn(), info: jest.fn()};
-const directMount = async (openAuthorization = true) => {
+const directMount = async (openAuthorization = true, guarded = false) => {
     Object.values(notifications).forEach(fn => fn.mockClear());
     await act(async () => {
         tree = renderer.create(
-            <StyleProvider mock='server'><MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}} initialEntries={[fixture.route]}>
-                <AuthorizationCtx.Provider value={authorization}>
-                    <Context.Provider
-                        value={{
-                            notifications,
-                            modal: {
-                                confirm: options => {
-                                    confirmation = options;
-                                    return {destroy: jest.fn()};
+            <StyleProvider mock='server'>
+                <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}} initialEntries={[fixture.route]}>
+                    <AuthorizationCtx.Provider value={authorization}>
+                        <Context.Provider
+                            value={{
+                                notifications,
+                                modal: {
+                                    confirm: options => {
+                                        confirmation = options;
+                                        return {destroy: jest.fn()};
+                                    },
+                                    info: jest.fn(),
+                                    error: jest.fn()
                                 },
-                                info: jest.fn(),
-                                error: jest.fn()
-                            },
-                            navigation: {goto: jest.fn(), replace: jest.fn()},
-                            baseHref: ''
-                        }}
-                    >
-                        <Routes>
-                            <Route path='/worm-trading/executions/:id' element={<WormTradingExecutionDetailPage />} />
-                        </Routes>
-                    </Context.Provider>
-                </AuthorizationCtx.Provider>
-            </MemoryRouter></StyleProvider>
+                                navigation: {goto: jest.fn(), replace: jest.fn()},
+                                baseHref: ''
+                            }}
+                        >
+                            <Routes>
+                                <Route
+                                    path='/worm-trading/executions/:id'
+                                    element={
+                                        guarded ? (
+                                            <ModuleAccessProvider realm='member' identity='execution-test'>
+                                                <ModuleAccessBoundary moduleKey='worm'>
+                                                    <WormTradingExecutionDetailPage />
+                                                </ModuleAccessBoundary>
+                                            </ModuleAccessProvider>
+                                        ) : (
+                                            <WormTradingExecutionDetailPage />
+                                        )
+                                    }
+                                />
+                            </Routes>
+                        </Context.Provider>
+                    </AuthorizationCtx.Provider>
+                </MemoryRouter>
+            </StyleProvider>
         );
     });
-    if (openAuthorization) act(() =>
-        tree.root
-            .findAllByType(Button)
-            .find(button => button.props.children === 'Authorize')!
-            .props.onClick()
-    );
+    if (openAuthorization)
+        act(() =>
+            tree.root
+                .findAllByType(Button)
+                .find(button => button.props.children === 'Authorize')!
+                .props.onClick()
+        );
 };
 test('late execution authorization after leaving cannot announce success', async () => {
     let resolve!: (value: any) => void;
@@ -191,18 +212,20 @@ const previewMount = async (combinationRevision = 7) => {
     jest.spyOn(services.wormTrading, 'listExecutionPlanSteps').mockResolvedValue(reply('/steps'));
     await act(async () => {
         tree = renderer.create(
-            <StyleProvider mock='server'><MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}} initialEntries={[previewFixture.route]}>
-                <AuthorizationCtx.Provider value={authorization}>
-                    <Context.Provider
-                        value={{notifications, modal: {confirm: jest.fn(), info: jest.fn(), error: jest.fn()}, navigation: {goto: jest.fn(), replace: jest.fn()}, baseHref: ''}}
-                    >
-                        <Routes>
-                            <Route path='/worm-trading/combinations/:id/execute' element={<WormTradingExecutionPreviewPage />} />
-                            <Route path='/worm-trading/executions/:id' element={<div>Prepared destination</div>} />
-                        </Routes>
-                    </Context.Provider>
-                </AuthorizationCtx.Provider>
-            </MemoryRouter></StyleProvider>
+            <StyleProvider mock='server'>
+                <MemoryRouter future={{v7_startTransition: true, v7_relativeSplatPath: true}} initialEntries={[previewFixture.route]}>
+                    <AuthorizationCtx.Provider value={authorization}>
+                        <Context.Provider
+                            value={{notifications, modal: {confirm: jest.fn(), info: jest.fn(), error: jest.fn()}, navigation: {goto: jest.fn(), replace: jest.fn()}, baseHref: ''}}
+                        >
+                            <Routes>
+                                <Route path='/worm-trading/combinations/:id/execute' element={<WormTradingExecutionPreviewPage />} />
+                                <Route path='/worm-trading/executions/:id' element={<div>Prepared destination</div>} />
+                            </Routes>
+                        </Context.Provider>
+                    </AuthorizationCtx.Provider>
+                </MemoryRouter>
+            </StyleProvider>
         );
     });
     return tree.root.findAllByType(Button).find(button => button.props.children === 'Prepare live execution')!;
@@ -235,7 +258,6 @@ test('Prepare blocks a changed combination before a plan usability refresh', asy
     expect(button.props.disabled).toBe(true);
 });
 
-
 test.each([
     {action: 'pause', state: 'COMPLETED', allowedActions: [], sends: false},
     {action: 'terminate', state: 'COMPLETED', allowedActions: [], sends: false},
@@ -250,7 +272,10 @@ test.each([
     await directMount(false);
     jest.mocked(services.wormTrading.getExecutionRun).mockResolvedValue(latest);
     await act(async () => {
-        tree.root.findAllByType(Button).find(button => typeof button.props.children === 'string' && (action === 'pause' ? button.props.children.startsWith('Pause') : button.props.children === 'Terminate'))!.props.onClick();
+        tree.root
+            .findAllByType(Button)
+            .find(button => typeof button.props.children === 'string' && (action === 'pause' ? button.props.children.startsWith('Pause') : button.props.children === 'Terminate'))!
+            .props.onClick();
         if (action === 'terminate') await confirmation.onOk();
     });
     expect(services.wormTrading.getExecutionRun).toHaveBeenCalledTimes(2);
@@ -274,4 +299,90 @@ test('retirement preserves frozen execution and step history without Markets nav
     expect(services.wormTrading.listExecutionRunSteps).toHaveBeenCalled();
     expect(JSON.stringify(tree.toJSON())).toContain('September market basket');
     expect(JSON.stringify(tree.toJSON())).not.toContain('Worm Markets');
+});
+
+test('closing and reopening while Phantom is pending cannot verify or start the old authorization', async () => {
+    jest.useFakeTimers();
+    const previousEncoder = globalThis.TextEncoder;
+    globalThis.TextEncoder = TextEncoder;
+    const previousIdentity = authorization.user.identity;
+    authorization.user.identity = {...previousIdentity, provider: AccountIdentityProvider.SolanaWallet, solanaAddress: 'login-address'};
+    let resolveSignature!: (value: {signature: Uint8Array}) => void;
+    const signMessage = jest.fn(
+        () =>
+            new Promise<{signature: Uint8Array}>(resolve => {
+                resolveSignature = resolve;
+            })
+    );
+    (window as any).phantom = {solana: {isPhantom: true, publicKey: {toString: () => 'login-address'}, signMessage}};
+    jest.spyOn(services.wormTrading, 'createSolanaExecutionAuthorizationChallenge').mockResolvedValue({message: 'approve'} as any);
+    const verify = jest.spyOn(services.wormTrading, 'verifySolanaExecutionAuthorization').mockResolvedValue(normalizedRun);
+    const start = jest.spyOn(services.wormTrading, 'startExecutionRun');
+    const resume = jest.spyOn(services.wormTrading, 'continueExecutionRun');
+    await directMount(true, true);
+    let pending!: Promise<void>;
+    await act(async () => {
+        pending = confirmation.onOk();
+    });
+    expect(signMessage).toHaveBeenCalledTimes(1);
+    jest.mocked(moduleAccessService.states).mockResolvedValue(
+        ['trader_sync', 'solana', 'market_radar', 'managed_oo', 'profit_sharing', 'worm'].map(module_key => ({module_key, state: 2})) as any
+    );
+    await act(async () => jest.advanceTimersByTimeAsync(2000));
+    expect(JSON.stringify(tree.toJSON())).toContain('This module is not open yet');
+    jest.mocked(moduleAccessService.states).mockResolvedValue(
+        ['trader_sync', 'solana', 'market_radar', 'managed_oo', 'profit_sharing', 'worm'].map(module_key => ({module_key, state: 1})) as any
+    );
+    await act(async () => jest.advanceTimersByTimeAsync(2000));
+    await act(async () => {
+        resolveSignature({signature: new Uint8Array([1])});
+        await pending;
+    });
+    expect(verify).not.toHaveBeenCalled();
+    expect(start).not.toHaveBeenCalled();
+    expect(resume).not.toHaveBeenCalled();
+    expect(notifications.success).not.toHaveBeenCalled();
+    authorization.user.identity = previousIdentity;
+    globalThis.TextEncoder = previousEncoder;
+    delete (window as any).phantom;
+    jest.useRealTimers();
+});
+
+test('closing cancels the execution driver timer; reopening only reads authoritative state', async () => {
+    jest.useFakeTimers();
+    const authorized = {...normalizedRun, state: 'AUTHORIZED', allowedActions: ['START', 'TERMINATE']};
+    const running = {...normalizedRun, state: 'RUNNING', allowedActions: ['EXECUTE_NEXT', 'PAUSE', 'TERMINATE'], nextStepOrdinal: 1};
+    jest.mocked(services.wormTrading.getExecutionRun).mockResolvedValue(authorized as any);
+    const start = jest.spyOn(services.wormTrading, 'startExecutionRun').mockResolvedValue({run: running, coordinatorToken: 'coordinator'} as any);
+    const execute = jest
+        .spyOn(services.wormTrading, 'executeNextExecutionStep')
+        .mockResolvedValue({run: {...running, allowedActions: ['PAUSE', 'TERMINATE']}, coordinatorToken: 'coordinator'} as any);
+    const heartbeat = jest.spyOn(services.wormTrading, 'heartbeatExecutionRun');
+    const pause = jest.spyOn(services.wormTrading, 'pauseExecutionRun');
+    const terminate = jest.spyOn(services.wormTrading, 'terminateExecutionRun');
+    await directMount(false, true);
+    await act(async () =>
+        tree.root
+            .findAllByType(Button)
+            .find(button => button.props.children === 'Start')!
+            .props.onClick()
+    );
+    expect(start).toHaveBeenCalledTimes(1);
+    expect(execute).toHaveBeenCalledTimes(1);
+    jest.mocked(moduleAccessService.states).mockResolvedValue(
+        ['trader_sync', 'solana', 'market_radar', 'managed_oo', 'profit_sharing', 'worm'].map(module_key => ({module_key, state: 2})) as any
+    );
+    await act(async () => jest.advanceTimersByTimeAsync(2000));
+    expect(JSON.stringify(tree.toJSON())).toContain('This module is not open yet');
+    jest.mocked(services.wormTrading.getExecutionRun).mockResolvedValue(running as any);
+    jest.mocked(moduleAccessService.states).mockResolvedValue(
+        ['trader_sync', 'solana', 'market_radar', 'managed_oo', 'profit_sharing', 'worm'].map(module_key => ({module_key, state: 1})) as any
+    );
+    await act(async () => jest.advanceTimersByTimeAsync(20000));
+    expect(JSON.stringify(tree.toJSON())).toContain('Running');
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(heartbeat).not.toHaveBeenCalled();
+    expect(pause).not.toHaveBeenCalled();
+    expect(terminate).not.toHaveBeenCalled();
+    jest.useRealTimers();
 });

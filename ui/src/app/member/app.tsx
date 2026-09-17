@@ -1,3 +1,6 @@
+import {ModuleAccessProvider, ModuleAccessBoundary} from '../shared/module-access';
+import {accountModuleForAccess} from '../shared/services/requests';
+import type {ModuleKey} from '../shared/module-access-service';
 import '@fortawesome/fontawesome-free/css/all.css';
 import 'antd/dist/reset.css';
 import '../../assets/fonts.css';
@@ -418,14 +421,30 @@ const useNarrowShell = () => {
     return narrow;
 };
 
+const invalidateModuleAccess = (key: ModuleKey) => {
+    if (key === 'trader_sync') clearTraderSyncState();
+};
+
 const AppRoutes = (props: {access: AccessState; settings: AuthSettings; loggingOut: boolean; onLogout: () => void}) => {
     const identityKey = JSON.stringify([props.access.user.accountId, props.access.user.iss]);
     const pending = isPendingAccess(props.access);
-    const moduleRoute = (module: AccountDataModule, element: React.ReactElement) =>
-        props.access.moduleAccess[module] >= AccountDataAccess.Read ? element : <Navigate replace={true} to='/account/access' />;
+    const moduleRoute = (module: AccountDataModule, element: React.ReactElement) => {
+        if (props.access.moduleAccess[module] < AccountDataAccess.Read) return <Navigate replace={true} to='/account/access' />;
+        const key = Object.entries(accountModuleForAccess).find(([, value]) => value === module)?.[0] as ModuleKey | undefined;
+        return key ? <ModuleAccessBoundary moduleKey={key}>{element}</ModuleAccessBoundary> : element;
+    };
     const traderSyncRoute = (element: React.ReactElement) =>
-        props.access.moduleAccess[AccountDataModule.TraderSync] === AccountDataAccess.ReadWrite ? element : <Navigate replace={true} to='/account/access' />;
-    const profitSharingRoute = (element: React.ReactElement) => (props.access.user.access.profitSharingEnabled ? element : <Navigate replace={true} to='/account/access' />);
+        props.access.moduleAccess[AccountDataModule.TraderSync] === AccountDataAccess.ReadWrite ? (
+            <ModuleAccessBoundary moduleKey='trader_sync'>{element}</ModuleAccessBoundary>
+        ) : (
+            <Navigate replace={true} to='/account/access' />
+        );
+    const profitSharingRoute = (element: React.ReactElement) =>
+        props.access.user.access.profitSharingEnabled ? (
+            <ModuleAccessBoundary moduleKey='profit_sharing'>{element}</ModuleAccessBoundary>
+        ) : (
+            <Navigate replace={true} to='/account/access' />
+        );
     const accountCenterProps = {
         showMemberSecurity: props.access.user.access.apiKeyEnabled,
         loggingOut: props.loggingOut,
@@ -1185,7 +1204,19 @@ const Shell = (props: {pref: ViewPreferences; initialSession: AppBootstrapSessio
 
     return (
         <Provider value={contextValue}>
-            <AuthorizationCtx.Provider value={authorizationValue}>{content}</AuthorizationCtx.Provider>
+            <AuthorizationCtx.Provider value={authorizationValue}>
+                {access ? (
+                    <ModuleAccessProvider
+                        realm='member'
+                        identity={JSON.stringify([access.user.accountId, access.user.iss])}
+                        returnSearch={location.search}
+                        onInvalidate={invalidateModuleAccess}>
+                        {content}
+                    </ModuleAccessProvider>
+                ) : (
+                    content
+                )}
+            </AuthorizationCtx.Provider>
         </Provider>
     );
 };

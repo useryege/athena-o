@@ -1,3 +1,4 @@
+import {moduleAccessService} from '../../shared/module-access-service';
 import renderer, {act} from 'react-test-renderer';
 import {Button, Input} from 'antd';
 import {MemberApp} from '../app';
@@ -13,19 +14,20 @@ const bootstrap = replies[0].json;
 let tree: renderer.ReactTestRenderer;
 const identity = (iss: string) => parseUserInfo({...bootstrap.session.userInfo, iss});
 beforeEach(() => {
+    jest.spyOn(moduleAccessService, 'states').mockResolvedValue(
+        ['trader_sync', 'solana', 'market_radar', 'managed_oo', 'profit_sharing', 'worm'].map(module_key => ({module_key, state: 1})) as any
+    );
     ensureMemberBusinessServices();
     localStorage.clear();
     sessionStorage.clear();
-    window.matchMedia = jest
-        .fn()
-        .mockImplementation(query => ({
-            matches: false,
-            media: query,
-            addListener: jest.fn(),
-            removeListener: jest.fn(),
-            addEventListener: jest.fn(),
-            removeEventListener: jest.fn()
-        }));
+    window.matchMedia = jest.fn().mockImplementation(query => ({
+        matches: false,
+        media: query,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn()
+    }));
     jest.spyOn(services.authService, 'bootstrap').mockResolvedValue({
         settings: bootstrap.settings,
         session: {status: AppBootstrapSessionStatus.Authenticated, userInfo: identity('old-issuer')}

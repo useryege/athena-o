@@ -1,3 +1,4 @@
+import {useModuleAccessLease} from '../../shared/module-access';
 import {
     ArrowLeftOutlined,
     CheckCircleOutlined,
@@ -327,7 +328,6 @@ const rawBase64URL = (bytes: Uint8Array) => {
     return window.btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 };
 const newCommandID = () => window.crypto.randomUUID();
-const wait = (milliseconds: number) => new Promise(resolve => window.setTimeout(resolve, milliseconds));
 
 const useExecutionAuthorizationReturn = (expectedRunID = '') => {
     const ctx = React.useContext(Context);
@@ -659,6 +659,8 @@ const driverRecoveryAlert = (run: WormExecutionRun, interruption?: ExecutionDriv
 };
 
 export const WormTradingExecutionDetailPage = () => {
+    const captureModuleAccess = useModuleAccessLease('worm');
+    const accessCurrent = React.useMemo(() => captureModuleAccess(), [captureModuleAccess]);
     const ctx = React.useContext(Context);
     const authorization = useAuthorization();
     const canWrite = authorization.canWrite(AccountDataModule.WormTrading);
@@ -684,12 +686,13 @@ export const WormTradingExecutionDetailPage = () => {
             dialogRef.current?.destroy();
         };
     }, [scope]);
-    const operationCurrent = () => mountedRef.current && scopeRef.current === scope;
+    const operationCurrent = () => mountedRef.current && scopeRef.current === scope && accessCurrent();
 
     const [driverActive, setDriverActive] = React.useState(false);
     const [driverInterruption, setDriverInterruption] = React.useState<ExecutionDriverInterruption>();
     const driverActiveRef = React.useRef(false);
     const driverPromiseRef = React.useRef<Promise<void> | undefined>(undefined);
+    const driverWaitRef = React.useRef<{timer: number; resolve(): void}>();
     const driverRequestRef = React.useRef<AbortableWormTradingPromise<unknown> | undefined>(undefined);
     const epochRef = React.useRef(0);
     const accountRef = React.useRef(authorization.user.accountId);
@@ -769,6 +772,11 @@ export const WormTradingExecutionDetailPage = () => {
             active = false;
             epochRef.current += 1;
             driverRequestRef.current?.abort?.();
+            if (driverWaitRef.current) {
+                window.clearTimeout(driverWaitRef.current.timer);
+                driverWaitRef.current.resolve();
+                driverWaitRef.current = undefined;
+            }
             request?.abort?.();
             if (timer !== undefined) window.clearTimeout(timer);
         };
@@ -842,7 +850,15 @@ export const WormTradingExecutionDetailPage = () => {
                         current = publishRun(advanced.run);
                         coordinatorToken = advanced.coordinatorToken || coordinatorToken;
                     }
-                    await wait(detailPollIntervalMS);
+                    await new Promise<void>(resolve => {
+                        driverWaitRef.current = {
+                            timer: window.setTimeout(() => {
+                                driverWaitRef.current = undefined;
+                                resolve();
+                            }, detailPollIntervalMS),
+                            resolve
+                        };
+                    });
                     if (epochRef.current !== epoch) break;
                     const next = await awaitDriverRequest(fetchRun());
                     if (epochRef.current !== epoch || accountRef.current !== authorization.user.accountId) break;

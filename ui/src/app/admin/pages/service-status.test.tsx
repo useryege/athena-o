@@ -168,7 +168,7 @@ test('source tabs declare independent source panels without additional reads', a
     await mount();
     const tabs = tree.root.findByType(require('antd').Tabs);
     expect(tabs.props.defaultActiveKey).toBe('services');
-    expect(tabs.props.items.map((item: any) => item.key)).toEqual(['services', 'notifications', 'trader']);
+    expect(tabs.props.items.map((item: any) => item.key)).toEqual(['services', 'notifications', 'trader', 'module-access']);
     const before = jest.mocked(services.adminNotifications.getRuntimeStatus).mock.calls.length;
     expect(tabs.props.items.find((item: any) => item.key === 'notifications').children).toBeDefined();
     expect(services.adminNotifications.getRuntimeStatus).toHaveBeenCalledTimes(before);

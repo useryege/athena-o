@@ -2,6 +2,7 @@ import * as agent from 'superagent';
 
 import {Observable, Observer, Subject} from 'rxjs';
 import {AccountDataModule} from '../access-modules';
+import type {ModuleKey} from '../module-access-service';
 
 type Callback = (data: any) => void;
 
@@ -13,6 +14,7 @@ export interface RequestErrorDetails {
     code?: number;
     message?: string;
     reason?: string;
+    moduleKey?: string;
 }
 
 declare class EventSource {
@@ -80,6 +82,15 @@ let authorizationRealm: AuthorizationRequestRealm | undefined;
 let authorizationViewerAccountId = '';
 let authorizationSessionGeneration = 0;
 const scopedRequests = new Map<AbortableRequest, ScopedAuthorizationRequest>();
+const moduleAccessGuards = new Map<AuthorizationRequestRealm, (key: ModuleKey) => boolean>();
+const moduleRequestEpochs = new Map<ModuleKey, number>();
+const accessKeyForScope = (scope?: AuthorizationRequestScope): ModuleKey | undefined => {
+    if (!scope) return undefined;
+    if ('module' in scope) return Object.entries(accountModuleForAccess).find(([, module]) => module === scope.module)?.[0] as ModuleKey | undefined;
+    if ('feature' in scope && scope.feature === 'profit-sharing') return 'profit_sharing';
+    if ('feature' in scope && scope.feature === 'admin-trader-sync') return 'trader_sync';
+    return undefined;
+};
 
 const isRecord = (value: unknown): value is Record<string, any> => Boolean(value) && typeof value === 'object';
 
@@ -133,12 +144,23 @@ const findErrorReason = (value: unknown, depth = 0): string | undefined => {
     return undefined;
 };
 
+const findModuleKey = (value: unknown, depth = 0): string | undefined => {
+    if (depth > 6 || !value || typeof value !== 'object') return undefined;
+    if (isRecord(value) && value.domain === 'athena.module_access' && typeof value.metadata?.module_key === 'string') return value.metadata.module_key;
+    for (const nested of Object.values(value)) {
+        const key = findModuleKey(nested, depth + 1);
+        if (key) return key;
+    }
+    return undefined;
+};
+
 export const requestErrorDetails = (error: unknown): RequestErrorDetails => {
     const source = isRecord(error) ? error : {};
     const response = isRecord(source.response) ? source.response : {};
     const status = asNumber(source.status ?? response.status);
     const bodyCandidates = [response.body, source.body, response.text, source.text];
     const headers = isRecord(response.headers) ? response.headers : isRecord(source.headers) ? source.headers : {};
+    let moduleKey: string | undefined;
     let code: number | undefined;
     let message: string | undefined;
     let reason =
@@ -155,9 +177,10 @@ export const requestErrorDetails = (error: unknown): RequestErrorDetails => {
         code ??= asNumber(gatewayError.code);
         message ??= typeof gatewayError.message === 'string' ? gatewayError.message : undefined;
         reason ??= findErrorReason(parsed);
+        moduleKey ??= findModuleKey(parsed);
     }
 
-    return {status, code, message, reason};
+    return {status, code, message, reason, moduleKey};
 };
 
 export const requestErrorMessage = (error: unknown, fallback = 'Request failed'): string => {
@@ -259,6 +282,8 @@ const trackScopedRequest = (request: AbortableRequest, scope?: AuthorizationRequ
     if (!sessionScope && (!authorizationRealm || !authorizationViewerAccountId)) {
         throw new Error('Authenticated request scope is unavailable before the application realm guard completes');
     }
+    const key = accessKeyForScope(scope);
+    if (key && authorizationRealm && moduleAccessGuards.get(authorizationRealm)?.(key) === false) throw new Error('Module access could not be confirmed');
     scopedRequests.set(request, {
         realm: sessionScope ? 'session' : authorizationRealm!,
         viewerAccountId: authorizationViewerAccountId,
@@ -269,6 +294,8 @@ const trackScopedRequest = (request: AbortableRequest, scope?: AuthorizationRequ
 
 function initHandlers(req: agent.Request, scope?: AuthorizationRequestScope) {
     const generation = requestErrorGeneration;
+    const moduleKey = accessKeyForScope(scope);
+    const moduleEpoch = moduleKey ? moduleRequestEpochs.get(moduleKey) : undefined;
     if (authorizationRealm) {
         req.set(APPLICATION_REALM_HEADER, authorizationRealm);
     }
@@ -276,7 +303,7 @@ function initHandlers(req: agent.Request, scope?: AuthorizationRequestScope) {
     const removeScope = () => scopedRequests.delete(req);
     req.on('error', err => {
         removeScope();
-        if (generation === requestErrorGeneration) {
+        if (generation === requestErrorGeneration && (!moduleKey || moduleEpoch === moduleRequestEpochs.get(moduleKey))) {
             onError.next(normalizeRequestError(err));
         }
     });
@@ -303,6 +330,14 @@ const abortAuthorizationFeatureRequests = (feature: AuthorizationRequestFeature,
             request.abort();
         }
     });
+};
+
+export const accountModuleForAccess: Partial<Record<ModuleKey, AccountDataModule>> = {
+    trader_sync: AccountDataModule.TraderSync,
+    solana: AccountDataModule.Solana,
+    market_radar: AccountDataModule.MarketRadar,
+    managed_oo: AccountDataModule.ManagedOO,
+    worm: AccountDataModule.WormTrading
 };
 
 export default {
@@ -338,6 +373,19 @@ export default {
         abortAuthorizationRequests();
         authorizationSessionGeneration++;
         authorizationViewerAccountId = '';
+    },
+    registerModuleAccessGuard(realm: AuthorizationRequestRealm, guard: (key: ModuleKey) => boolean) {
+        moduleAccessGuards.set(realm, guard);
+        return () => {
+            if (moduleAccessGuards.get(realm) === guard) moduleAccessGuards.delete(realm);
+        };
+    },
+    abortModuleAccessRequests(key: ModuleKey) {
+        moduleRequestEpochs.set(key, (moduleRequestEpochs.get(key) ?? 0) + 1);
+        const module = accountModuleForAccess[key];
+        if (module !== undefined) abortAuthorizationRequests(module);
+        if (key === 'trader_sync') abortAuthorizationFeatureRequests('admin-trader-sync');
+        if (key === 'profit_sharing') abortAuthorizationFeatureRequests('profit-sharing');
     },
     abortAuthorizationRequests,
     abortAuthorizationFeatureRequests,

@@ -1,3 +1,4 @@
+import {useModuleAccessReopened} from '../../shared/module-access';
 import {
     ApiOutlined,
     CloseCircleOutlined,
@@ -1578,18 +1579,23 @@ const ConnectionManagement = (props: {onReload: () => void; children: (manage: C
         ]
     );
 
+    const moduleReopened = useModuleAccessReopened('worm');
     React.useEffect(() => {
         if (resumedRef.current) {
             return;
         }
         resumedRef.current = true;
         const pending = readPendingConnectionIntent();
+        if (moduleReopened) {
+            void startDiscovery(true, false);
+            return;
+        }
         if (pending && pending.kind !== 'reconcile-selection') {
             void runManagedAction(pending.kind, pending.walletId, true);
             return;
         }
         void startDiscovery(true, true);
-    }, [runManagedAction, startDiscovery]);
+    }, [moduleReopened, runManagedAction, startDiscovery]);
 
     const confirm = React.useCallback(
         (action: ManagedConnectionAction, walletId: number, walletLabel: string) => {

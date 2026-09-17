@@ -1,3 +1,4 @@
+import {moduleAccessService} from './shared/module-access-service';
 import {
     captureTraderSyncScope,
     clearTraderSyncState,
@@ -72,6 +73,9 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
+    jest.spyOn(moduleAccessService, 'states').mockResolvedValue(
+        ['trader_sync', 'solana', 'market_radar', 'managed_oo', 'profit_sharing', 'worm'].map(module_key => ({module_key, state: 1})) as any
+    );
     localStorage.clear();
     window.history.replaceState(null, '', '/');
     window.matchMedia =
@@ -194,6 +198,23 @@ describe('Trader Sync real Shell cleanup', () => {
             await Promise.resolve();
         });
     };
+    test('module closure retains the authorized menu and URL but clears the form and persisted draft', async () => {
+        jest.useFakeTimers();
+        await mountMember();
+        const input = tree.root.findAllByType(Input).find(item => item.props.id === 'trader-sync-input')!;
+        await act(async () => input.props.onChange({target: {value: 'private-wallet'}}));
+        expect(readAddDraft('owner-A')?.input).toBe('private-wallet');
+        jest.mocked(moduleAccessService.states).mockResolvedValue(
+            ['trader_sync', 'solana', 'market_radar', 'managed_oo', 'profit_sharing', 'worm'].map(module_key => ({module_key, state: 2})) as any
+        );
+        await act(async () => jest.advanceTimersByTimeAsync(2000));
+        expect(JSON.stringify(tree.toJSON())).toContain('This module is not open yet');
+        expect(tree.root.findAllByType(Input).some(item => item.props.id === 'trader-sync-input')).toBe(false);
+        expect(readAddDraft('owner-A')).toBeUndefined();
+        expect(window.location.pathname).toBe('/trader-sync/add');
+        expect(tree.root.findAllByType(Menu).some(menu => JSON.stringify(menu.props.items).includes('"key":"/trader-sync"'))).toBe(true);
+        jest.useRealTimers();
+    });
     const seed = () => {
         const scope = captureTraderSyncScope('owner-A');
         saveAddDraft({ownerId: 'owner-A', input: 'private-wallet', note: 'private-note', noteEdited: true, returnPath: '/trader-sync', scrollY: 0});
@@ -466,22 +487,37 @@ describe('Trader Sync real Shell cleanup', () => {
 
 describe('T3 real member Shell identity boundaries', () => {
     let tree: renderer.ReactTestRenderer;
-    const identity = (accountId = 'profile-A', iss = 'issuer-one', displayName = 'Original profile') => parseUserInfo({
-        loggedIn: true, accountId, iss, username: accountId,
-        profile: {displayName, revision: 7},
-        access: {loginEnabled: true, apiKeyEnabled: true, revision: 1}
-    });
+    const identity = (accountId = 'profile-A', iss = 'issuer-one', displayName = 'Original profile') =>
+        parseUserInfo({
+            loggedIn: true,
+            accountId,
+            iss,
+            username: accountId,
+            profile: {displayName, revision: 7},
+            access: {loginEnabled: true, apiKeyEnabled: true, revision: 1}
+        });
     const mount = async (path: string) => {
         ensureMemberBusinessServices();
         jest.spyOn(services.authService, 'bootstrap').mockResolvedValue({settings: authSettings, session: {status: AppBootstrapSessionStatus.Authenticated, userInfo: identity()}});
         jest.spyOn(services.users, 'get').mockResolvedValue(identity());
-        jest.spyOn(services.memberNotifications, 'getTelegramSettings').mockResolvedValue({botAvailable: true, botUsername: 'bot', binding: {status: 'connected', boundAt: '', revision: 1, telegramDisplayName: 'Old Telegram', telegramUsername: 'old_user'}});
+        jest.spyOn(services.memberNotifications, 'getTelegramSettings').mockResolvedValue({
+            botAvailable: true,
+            botUsername: 'bot',
+            binding: {status: 'connected', boundAt: '', revision: 1, telegramDisplayName: 'Old Telegram', telegramUsername: 'old_user'}
+        });
         jest.spyOn(services.memberSecurity, 'listTokens').mockResolvedValue([{id: 'old-identity-key', issuedAt: 1, expiresAt: 0}] as any);
         window.history.replaceState(null, '', path);
-        await act(async () => { tree = renderer.create(<App />); });
+        await act(async () => {
+            tree = renderer.create(<App />);
+        });
     };
-    afterEach(() => { if (tree) act(() => tree.unmount()); });
-    test.each([['profile-B', 'issuer-one'], ['profile-A', 'issuer-two']])('same-revision Profile switches to %s/%s without carrying the old draft', async (accountId, iss) => {
+    afterEach(() => {
+        if (tree) act(() => tree.unmount());
+    });
+    test.each([
+        ['profile-B', 'issuer-one'],
+        ['profile-A', 'issuer-two']
+    ])('same-revision Profile switches to %s/%s without carrying the old draft', async (accountId, iss) => {
         await mount('/account/profile');
         const input = () => tree.root.findAllByType(Input).find(item => item.props.id === 'profile-display-name')!;
         await act(async () => input().props.onChange({target: {value: 'Private old draft'}}));
@@ -491,10 +527,13 @@ describe('T3 real member Shell identity boundaries', () => {
         expect(JSON.stringify(tree.toJSON())).not.toContain('Private old draft');
         expect(tree.root.findAllByType(Button).find(item => item.props.children === 'Save profile')!.props.disabled).toBe(true);
     });
-    test.each([['profile-B', 'issuer-one'], ['profile-A', 'issuer-two']])('late Profile save cannot refresh replacement %s/%s', async (accountId, iss) => {
+    test.each([
+        ['profile-B', 'issuer-one'],
+        ['profile-A', 'issuer-two']
+    ])('late Profile save cannot refresh replacement %s/%s', async (accountId, iss) => {
         await mount('/account/profile');
         let finish!: (value: any) => void;
-        const pending = new Promise<any>(resolve => finish = resolve);
+        const pending = new Promise<any>(resolve => (finish = resolve));
         const save = jest.spyOn(selfAccountServices.accounts, 'updateProfile').mockReturnValue(pending);
         const input = () => tree.root.findAllByType(Input).find(item => item.props.id === 'profile-display-name')!;
         await act(async () => input().props.onChange({target: {value: 'Pending old draft'}}));
@@ -507,16 +546,25 @@ describe('T3 real member Shell identity boundaries', () => {
         expect(services.users.get).not.toHaveBeenCalled();
         expect(input().props.value).toBe('Replacement profile');
     });
-    test.each([['profile-B', 'issuer-one'], ['profile-A', 'issuer-two']])('Notifications switches to %s/%s and clears the old binding', async (accountId, iss) => {
+    test.each([
+        ['profile-B', 'issuer-one'],
+        ['profile-A', 'issuer-two']
+    ])('Notifications switches to %s/%s and clears the old binding', async (accountId, iss) => {
         await mount('/notifications');
         expect(JSON.stringify(tree.toJSON())).toContain('Old Telegram');
         let finish!: (value: any) => void;
-        const pending = Object.assign(new Promise<any>(resolve => finish = resolve), {abort: jest.fn()});
+        const pending = Object.assign(new Promise<any>(resolve => (finish = resolve)), {abort: jest.fn()});
         jest.mocked(services.memberNotifications.getTelegramSettings).mockReturnValueOnce(pending).mockResolvedValue({botAvailable: true, botUsername: 'bot'});
         jest.mocked(services.users.get).mockResolvedValue(identity(accountId, iss));
         await act(async () => window.dispatchEvent(new Event('focus')));
         expect(JSON.stringify(tree.toJSON())).not.toContain('Old Telegram');
-        await act(async () => finish({botAvailable: true, botUsername: 'bot', binding: {status: 'connected', boundAt: '', revision: 1, telegramDisplayName: 'Late old Telegram', telegramUsername: 'old'}}));
+        await act(async () =>
+            finish({
+                botAvailable: true,
+                botUsername: 'bot',
+                binding: {status: 'connected', boundAt: '', revision: 1, telegramDisplayName: 'Late old Telegram', telegramUsername: 'old'}
+            })
+        );
         expect(JSON.stringify(tree.toJSON())).not.toContain('Late old Telegram');
     });
 });

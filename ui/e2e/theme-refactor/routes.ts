@@ -44,18 +44,16 @@ export async function installThemeCase(page: Page, scenario: ThemeCase): Promise
     const ledger: ThemeLedger = {requests: [], unexpected: []};
     const ticketValue = `theme-registration-${scenario.registrationTicket?.realm}`;
     if (scenario.registrationTicket) {
-        await page
-            .context()
-            .addCookies([
-                {
-                    name: 'athena.registration',
-                    value: ticketValue,
-                    domain: new URL(baseOrigin()).hostname,
-                    path: deploymentPath('/auth/registration'),
-                    httpOnly: true,
-                    sameSite: 'Lax'
-                }
-            ]);
+        await page.context().addCookies([
+            {
+                name: 'athena.registration',
+                value: ticketValue,
+                domain: new URL(baseOrigin()).hostname,
+                path: deploymentPath('/auth/registration'),
+                httpOnly: true,
+                sameSite: 'Lax'
+            }
+        ]);
     }
     const handler = async (route: Route) => {
         const request = route.request();
@@ -88,12 +86,18 @@ export async function installThemeCase(page: Page, scenario: ThemeCase): Promise
         const cookies = registration ? await page.context().cookies(request.url()) : [];
         const sentHeaders = await request.allHeaders();
         const realm = registration
-            ? scenario.registrationTicket && sentHeaders.cookie?.split(';').some(cookie => cookie.trim() === `athena.registration=${ticketValue}`) && cookies.some(cookie => cookie.name === 'athena.registration' && cookie.value === ticketValue && cookie.httpOnly)
+            ? scenario.registrationTicket &&
+              sentHeaders.cookie?.split(';').some(cookie => cookie.trim() === `athena.registration=${ticketValue}`) &&
+              cookies.some(cookie => cookie.name === 'athena.registration' && cookie.value === ticketValue && cookie.httpOnly)
                 ? scenario.registrationTicket.realm
                 : undefined
             : requestRealm(url, request.headers());
         const recorded = {method: request.method(), path: relative, query: url.search, realm, body: bodyOf(request)};
         ledger.requests.push(recorded);
+        if (recorded.method === 'GET' && recorded.path === '/api/v1/module-access-states' && (realm === 'member' || realm === 'admin')) {
+            await route.fulfill({json: {states: ['trader_sync', 'solana', 'market_radar', 'managed_oo', 'profit_sharing', 'worm'].map(module_key => ({module_key, state: 1}))}});
+            return;
+        }
         const reply = scenario.replies.find(item => item.method === recorded.method && item.path === recorded.path && item.realm === recorded.realm);
         if (!reply) {
             const message = `unexpected ${recorded.method} ${recorded.path}${recorded.query} realm=${recorded.realm || 'missing'}`;

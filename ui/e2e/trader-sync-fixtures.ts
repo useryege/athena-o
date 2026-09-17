@@ -117,6 +117,8 @@ export async function installTraderSyncRoutes(page: Page, scenario: string): Pro
             ledger.unexpected.push('realm ' + realm);
             return route.fulfill({status: 500, json: {error: 'wrong realm'}});
         }
+        if (api === '/module-access-states')
+            return route.fulfill({json: {states: ['trader_sync', 'solana', 'market_radar', 'managed_oo', 'profit_sharing', 'worm'].map(module_key => ({module_key, state: 1}))}});
         if (isAdmin && state.adminUnauthorized && api.startsWith('/admin/')) return route.fulfill({status: 401, json: {code: 16, message: 'Unauthenticated'}});
         if (api === '/session/userinfo' && state.holdUserInfo) {
             state.userInfoReady = true;
