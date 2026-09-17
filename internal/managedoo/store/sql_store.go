@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
 	"github.com/useryege/athena/internal/managedoo/store/sqlc"
-	"github.com/useryege/athena/util/db/postgres"
 )
 
 //go:embed migrations/*.sql
@@ -33,17 +32,11 @@ func NewSQLStore(pool *pgxpool.Pool) *SQLStore {
 
 func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {
 	return func(ctx context.Context) (*SQLStore, error) {
-		pool, err := postgres.ConnectAndMigrate(ctx, postgres.Options{
-			Module:       "managed-oo",
-			DSNEnv:       "ATHENA_MANAGED_OO_POSTGRES_DSN",
-			Database:     "managed_oo",
-			Migrations:   migrations,
-			MigrationDir: "migrations",
-		})
+		pool, err := Schema().ConnectVerified(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("connect managed oo postgres: %w", err)
 		}
-		log.Info("managed oo postgres migrations are up to date")
+		log.Info("managed oo postgres schema verified")
 		return NewSQLStore(pool), nil
 	}
 }

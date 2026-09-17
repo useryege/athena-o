@@ -17,7 +17,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	walletsqlc "github.com/useryege/athena/internal/wallet/store/sqlc"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
-	"github.com/useryege/athena/util/db/postgres"
 )
 
 //go:embed migrations/*.sql
@@ -109,17 +108,11 @@ func NewSQLStoreWithQuerier(querier walletsqlc.Querier) *SQLStore {
 
 func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {
 	return func(ctx context.Context) (*SQLStore, error) {
-		pool, err := postgres.ConnectAndMigrate(ctx, postgres.Options{
-			Module:       "wallet",
-			DSNEnv:       "ATHENA_WALLET_POSTGRES_DSN",
-			Database:     "wallet",
-			Migrations:   migrations,
-			MigrationDir: "migrations",
-		})
+		pool, err := Schema().ConnectVerified(ctx)
 		if err != nil {
 			return nil, err
 		}
-		log.Info("wallet postgres migrations are up to date")
+		log.Info("wallet postgres schema verified")
 		return NewSQLStore(pool), nil
 	}
 }

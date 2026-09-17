@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"github.com/useryege/athena/internal/managedoo"
 	managedoostore "github.com/useryege/athena/internal/managedoo/store"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
+	"github.com/useryege/athena/internal/serviceschema"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	utilio "github.com/useryege/athena/util/io"
@@ -37,6 +39,10 @@ func NewCommand() *cobra.Command {
 		Long:              "Managed OO owns Polymarket oracle log ingestion, market enrichment, queries, and alerts.",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			ctx, stopSignals := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+			defer stopSignals()
+			cmd.SetContext(ctx)
+			cleanupOwned := true
 			common.GetVersion().LogStartupInfo("Athena Managed OO", map[string]any{"port": listenPort, "polygonRPCURL": polygonRPCURL})
 			cli.SetLogFormat(cmdutil.LogFormat)
 			cli.SetLogLevel(cmdutil.LogLevel)
@@ -44,7 +50,11 @@ func NewCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			defer utilio.Close(store)
+			defer func() {
+				if cleanupOwned {
+					utilio.Close(store)
+				}
+			}()
 			var notificationClientset notificationapiclient.Clientset
 			if notificationEnabled {
 				notificationClientset, err = notificationapiclient.NewNotificationClientset(
@@ -54,7 +64,11 @@ func NewCommand() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("create notification clientset: %w", err)
 				}
-				defer utilio.Close(notificationClientset)
+				defer func() {
+					if cleanupOwned {
+						utilio.Close(notificationClientset)
+					}
+				}()
 			}
 			server, err := managedoo.NewServer(managedoo.ServerOpts{
 				Store:                  store,
@@ -71,21 +85,19 @@ func NewCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			defer listener.Close()
 			if err := server.Start(); err != nil {
 				return err
 			}
 			grpcServer := server.CreateGRPC()
-			signalContext, stopSignals := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
-			defer stopSignals()
-			go func() {
-				<-signalContext.Done()
-				grpcServer.GracefulStop()
-			}()
-			if err := grpcServer.Serve(listener); err != nil {
-				_ = server.Stop()
+			cleanupOwned = false
+			return cmdutil.ServeGRPC(ctx, listener, grpcServer, func() error {
+				err := errors.Join(server.Stop(), store.Close())
+				if notificationClientset != nil {
+					err = errors.Join(err, notificationClientset.Close())
+				}
 				return err
-			}
-			return server.Stop()
+			})
 		},
 		Example: "Start the Athena Managed OO service:\n  athena-managed-oo",
 	}
@@ -99,5 +111,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().StringVar(&polygonRPCURL, "polygon-rpc-url", env.StringFromEnv("ATHENA_MANAGED_OO_POLYGON_RPC_URL", "https://polygon-rpc.com"), "Polygon JSON-RPC URL")
 	storeSource = managedoostore.NewSQLStoreSource()
 	command.AddCommand(cli.NewVersionCmd(cliName))
+	command.AddCommand(serviceschema.NewCommand(managedoostore.Schema()))
 	return command
 }

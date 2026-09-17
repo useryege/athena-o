@@ -567,3 +567,58 @@ migration tool is under the `tools` profile. Production schema preparation calls
 its `up`/`verify`; account maintenance includes Trading as an account consumer.
 `make stop-instance` retains this instance's volumes and evidence and leaves the
 configured Wallet/Solana and external databases alone.
+
+## Standalone service schema preparation
+
+Wallet, Etherscan Manager, Market Radar, Managed OO and Profit Sharing each have
+an independent `cmd/athena-<service>` main. Build them without the aggregate
+`cmd/main.go` (SDS-R3):
+
+```bash
+go build ./cmd/athena-wallet ./cmd/athena-etherscan-manager ./cmd/athena-market-radar ./cmd/athena-managed-oo ./cmd/athena-profit-sharing ./cmd/athena-solana-discovery
+```
+
+Wallet, Managed OO, Profit Sharing and Solana expose `schema up` and `schema
+verify`, each accepting `--timeout=120s`. These commands use only the database
+configuration and exit without requiring business credentials, starting RPC or
+contacting upstream business services.
+
+| Binary | Explicit database configuration | Owned schema |
+| --- | --- | --- |
+| `athena-wallet` | `ATHENA_WALLET_POSTGRES_DSN` | Wallet database, `public` |
+| `athena-managed-oo` | `ATHENA_MANAGED_OO_POSTGRES_DSN` | Managed OO database, `public` |
+| `athena-profit-sharing` | `ATHENA_PROFIT_SHARING_POSTGRES_DSN` | Profit Sharing database, `public` |
+| `athena-solana-discovery` | `ATHENA_SOLANA_DISCOVERY_POSTGRES_DSN`, falling back to `ATHENA_ACCOUNT_STATE_POSTGRES_DSN` | `solana_discovery`, in the account database |
+
+The first three retain the existing PostgreSQL connection defaults when their
+explicit DSN is unset. Solana requires one of its two explicit DSNs. Prepare
+only the selected service's database, for example:
+
+```bash
+go run ./cmd/athena-wallet schema up --timeout=120s
+go run ./cmd/athena-wallet schema verify --timeout=120s
+go run ./cmd/athena-wallet --address=127.0.0.1 --port=8088
+```
+
+Run `up` only when this deployment owns schema preparation. Borrowed databases
+use `verify` only. Normal startup now always connects and verifies; it does not
+migrate, even with `ATHENA_POSTGRES_AUTO_MIGRATE=true`. Verification uses a
+read-only transaction and rejects missing relations/columns and mismatched
+effective Goose migration versions without creating a metadata table. Solana
+reuses its existing idempotent SQL migrations and verifies only its own required
+relations/columns; it does not introduce Goose metadata in `public`.
+
+For Solana's shared database, prepare account `up` → account `verify` → Solana
+`schema up` → Solana `schema verify` → account `verify`, with the existing account
+migration tool. Runtime verifies both the account contract and Solana schema on
+its one owned connection pool before starting the scanner or RPC listener.
+
+The five new entry points and Solana handle INT/TERM during database connection
+and serving. They stop accepting transport connections, cancel/join background
+work, drain RPC and close owned resources within one 30-second shutdown budget.
+A blocked drain or cleanup forces transport closure and exits with a shutdown
+error. This does not change the persisted business access setting or stop any
+external Gateway. Existing Wallet and Solana internal credentials remain
+required for service startup; Manager retains its API key, Gateway address and
+Gateway authentication configuration. Use each binary's `--help` for its own
+business configuration.

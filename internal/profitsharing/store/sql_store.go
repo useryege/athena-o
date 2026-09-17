@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
 	profitsharingsqlc "github.com/useryege/athena/internal/profitsharing/store/sqlc"
-	"github.com/useryege/athena/util/db/postgres"
 )
 
 //go:embed migrations/*.sql
@@ -36,17 +35,11 @@ func NewSQLStoreWithQuerier(querier profitsharingsqlc.Querier) *SQLStore {
 
 func NewSQLStoreSource() func(context.Context) (*SQLStore, error) {
 	return func(ctx context.Context) (*SQLStore, error) {
-		pool, err := postgres.ConnectAndMigrate(ctx, postgres.Options{
-			Module:       "profit-sharing",
-			DSNEnv:       "ATHENA_PROFIT_SHARING_POSTGRES_DSN",
-			Database:     "profit_sharing",
-			Migrations:   migrations,
-			MigrationDir: "migrations",
-		})
+		pool, err := Schema().ConnectVerified(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("connect profit sharing postgres: %w", err)
 		}
-		log.Info("profit sharing postgres migrations are up to date")
+		log.Info("profit sharing postgres schema verified")
 		return NewSQLStore(pool), nil
 	}
 }

@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/profitsharing"
 	profitsharingstore "github.com/useryege/athena/internal/profitsharing/store"
+	"github.com/useryege/athena/internal/serviceschema"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
 	utilio "github.com/useryege/athena/util/io"
@@ -32,6 +34,10 @@ func NewCommand() *cobra.Command {
 		Long:              "Profit Sharing manages reusable member proposal and anonymous ballot rounds.",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			ctx, stopSignals := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+			defer stopSignals()
+			cmd.SetContext(ctx)
+			cleanupOwned := true
 			common.GetVersion().LogStartupInfo("Athena Profit Sharing", map[string]any{"port": listenPort})
 			cli.SetLogFormat(cmdutil.LogFormat)
 			cli.SetLogLevel(cmdutil.LogLevel)
@@ -40,7 +46,11 @@ func NewCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			defer utilio.Close(store)
+			defer func() {
+				if cleanupOwned {
+					utilio.Close(store)
+				}
+			}()
 
 			server, err := profitsharing.NewServer(profitsharing.ServerOpts{Store: store})
 			if err != nil {
@@ -50,21 +60,16 @@ func NewCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			defer listener.Close()
 			if err := server.Start(); err != nil {
 				return err
 			}
 			grpcServer := server.CreateGRPC()
-			signalContext, stopSignals := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
-			defer stopSignals()
-			go func() {
-				<-signalContext.Done()
-				grpcServer.GracefulStop()
-			}()
-			if err := grpcServer.Serve(listener); err != nil {
-				_ = server.Stop()
+			cleanupOwned = false
+			return cmdutil.ServeGRPC(ctx, listener, grpcServer, func() error {
+				err := errors.Join(server.Stop(), store.Close())
 				return err
-			}
-			return server.Stop()
+			})
 		},
 		Example: "Start the Athena Profit Sharing service:\n  athena-profit-sharing",
 	}
@@ -75,5 +80,6 @@ func NewCommand() *cobra.Command {
 	command.Flags().IntVar(&listenPort, "port", env.ParseNumFromEnv("ATHENA_PROFIT_SHARING_LISTEN_PORT", common.DefaultPortProfitSharing, 1, 65535), "Listen port")
 	storeSource = profitsharingstore.NewSQLStoreSource()
 	command.AddCommand(cli.NewVersionCmd(cliName))
+	command.AddCommand(serviceschema.NewCommand(profitsharingstore.Schema()))
 	return command
 }

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -33,6 +34,10 @@ func NewCommand() *cobra.Command {
 		Long:              "Market Radar owns Polymarket hot-market discovery, realtime windows, movers, and mover alerts.",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			ctx, stopSignals := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+			defer stopSignals()
+			cmd.SetContext(ctx)
+			cleanupOwned := true
 			common.GetVersion().LogStartupInfo("Athena Market Radar", map[string]any{"port": listenPort})
 			cli.SetLogFormat(cmdutil.LogFormat)
 			cli.SetLogLevel(cmdutil.LogLevel)
@@ -47,7 +52,11 @@ func NewCommand() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("create notification clientset: %w", err)
 				}
-				defer utilio.Close(notificationClientset)
+				defer func() {
+					if cleanupOwned {
+						utilio.Close(notificationClientset)
+					}
+				}()
 			}
 			server, err := marketradar.NewServer(marketradar.ServerOpts{
 				NotificationClientset:  notificationClientset,
@@ -61,21 +70,19 @@ func NewCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			defer listener.Close()
 			if err := server.Start(); err != nil {
 				return err
 			}
 			grpcServer := server.CreateGRPC()
-			signalContext, stopSignals := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
-			defer stopSignals()
-			go func() {
-				<-signalContext.Done()
-				grpcServer.GracefulStop()
-			}()
-			if err := grpcServer.Serve(listener); err != nil {
-				_ = server.Stop()
+			cleanupOwned = false
+			return cmdutil.ServeGRPC(ctx, listener, grpcServer, func() error {
+				err := server.Stop()
+				if notificationClientset != nil {
+					err = errors.Join(err, notificationClientset.Close())
+				}
 				return err
-			}
-			return server.Stop()
+			})
 		},
 		Example: "Start the Athena Market Radar service:\n  athena-market-radar",
 	}

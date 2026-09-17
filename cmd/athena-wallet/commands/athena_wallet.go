@@ -2,26 +2,23 @@ package commands
 
 import (
 	"context"
-	stderrors "errors"
+	"errors"
 	"fmt"
 	"net"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
+	"github.com/useryege/athena/internal/serviceschema"
 	"github.com/useryege/athena/internal/wallet"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	walletstore "github.com/useryege/athena/internal/wallet/store"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
-	"github.com/useryege/athena/util/errors"
 	utilio "github.com/useryege/athena/util/io"
 	"github.com/useryege/athena/util/templates"
 )
@@ -45,6 +42,10 @@ func NewCommand() *cobra.Command {
 			"Every non-health RPC requires its exact capability Bearer, and the service refuses startup when either credential is absent, invalid, or equal.",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			ctx, stopSignals := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+			defer stopSignals()
+			cmd.SetContext(ctx)
+			cleanupOwned := true
 			vers := common.GetVersion()
 			vers.LogStartupInfo(
 				"Athena Wallet",
@@ -56,11 +57,15 @@ func NewCommand() *cobra.Command {
 			cli.SetLogFormat(cmdutil.LogFormat)
 			cli.SetLogLevel(cmdutil.LogLevel)
 
-			ctx := cmd.Context()
-
 			store, err := storeSrc(ctx)
-			errors.CheckError(err)
-			defer utilio.Close(store)
+			if err != nil {
+				return err
+			}
+			defer func() {
+				if cleanupOwned {
+					utilio.Close(store)
+				}
+			}()
 
 			encryptionKey, err := wallet.EncryptionKeyFromPassphrase(env.StringFromEnv("ATHENA_WALLET_ENCRYPTION_KEY", ""))
 			if err != nil {
@@ -80,35 +85,20 @@ func NewCommand() *cobra.Command {
 
 			lc := &net.ListenConfig{}
 			listener, err := lc.Listen(ctx, "tcp", fmt.Sprintf("%s:%d", listenHost, listenPort))
-			errors.CheckError(err)
+			if err != nil {
+				return err
+			}
 
+			defer listener.Close()
 			if err := server.Start(); err != nil {
 				return err
 			}
 
-			sigCh := make(chan os.Signal, 1)
-			signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-			wg := sync.WaitGroup{}
-			wg.Add(1)
-			go func() {
-				s := <-sigCh
-				log.Printf("got signal %v, attempting graceful shutdown", s)
-				walletGRPC.GracefulStop()
-				if err := server.Stop(); err != nil {
-					log.Printf("failed to stop wallet server cleanly: %v", err)
-				}
-				wg.Done()
-			}()
-
-			log.Println("starting wallet grpc server")
-			err = walletGRPC.Serve(listener)
-			if err != nil && !stderrors.Is(err, grpc.ErrServerStopped) {
-				errors.CheckError(err)
-			}
-
-			wg.Wait()
-			log.Println("clean shutdown")
-			return nil
+			cleanupOwned = false
+			return cmdutil.ServeGRPC(ctx, listener, walletGRPC, func() error {
+				err := errors.Join(server.Stop(), store.Close())
+				return err
+			})
 		},
 		Example: templates.Examples(`
 			# Start the Athena Wallet service
@@ -124,5 +114,6 @@ func NewCommand() *cobra.Command {
 	storeSrc = walletstore.NewSQLStoreSource()
 
 	command.AddCommand(cli.NewVersionCmd(cliName))
+	command.AddCommand(serviceschema.NewCommand(walletstore.Schema()))
 	return command
 }

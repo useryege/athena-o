@@ -1,25 +1,21 @@
 package commands
 
 import (
-	stderrors "errors"
+	"errors"
 	"fmt"
 	"net"
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
 	"syscall"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
 
 	cmdutil "github.com/useryege/athena/cmd/util"
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/etherscanmanager"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/env"
-	"github.com/useryege/athena/util/errors"
 	"github.com/useryege/athena/util/templates"
 )
 
@@ -40,6 +36,10 @@ func NewCommand() *cobra.Command {
 		Long:              "The Etherscan Manager service schedules Etherscan API keys and gateway clients. This command runs the service in the foreground.",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			ctx, stopSignals := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+			defer stopSignals()
+			cmd.SetContext(ctx)
+			cleanupOwned := true
 			vers := common.GetVersion()
 			vers.LogStartupInfo(
 				"Athena Etherscan Manager",
@@ -51,8 +51,6 @@ func NewCommand() *cobra.Command {
 			cli.SetLogFormat(cmdutil.LogFormat)
 			cli.SetLogLevel(cmdutil.LogLevel)
 
-			ctx := cmd.Context()
-
 			manager, err := etherscanmanager.NewManager(etherscanmanager.ManagerOpts{
 				APIKeys:      parseListEnv(etherscanAPIKeys),
 				GatewayAddrs: parseListEnv(etherscanGatewayAddrs),
@@ -62,8 +60,8 @@ func NewCommand() *cobra.Command {
 				return err
 			}
 			defer func() {
-				if err := manager.Close(); err != nil {
-					log.Printf("failed to close etherscan manager cleanly: %v", err)
+				if cleanupOwned {
+					_ = manager.Close()
 				}
 			}()
 
@@ -77,35 +75,19 @@ func NewCommand() *cobra.Command {
 
 			lc := &net.ListenConfig{}
 			listener, err := lc.Listen(ctx, "tcp", fmt.Sprintf("%s:%d", listenHost, listenPort))
-			errors.CheckError(err)
+			if err != nil {
+				return err
+			}
 
+			defer listener.Close()
 			if err := server.Start(ctx); err != nil {
 				return err
 			}
 
-			sigCh := make(chan os.Signal, 1)
-			signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-			wg := sync.WaitGroup{}
-			wg.Add(1)
-			go func() {
-				s := <-sigCh
-				log.Printf("got signal %v, attempting graceful shutdown", s)
-				managerGRPC.GracefulStop()
-				if err := server.Stop(); err != nil {
-					log.Printf("failed to stop etherscan-manager server cleanly: %v", err)
-				}
-				wg.Done()
-			}()
-
-			log.Println("starting etherscan-manager grpc server")
-			err = managerGRPC.Serve(listener)
-			if err != nil && !stderrors.Is(err, grpc.ErrServerStopped) {
-				errors.CheckError(err)
-			}
-
-			wg.Wait()
-			log.Println("clean shutdown")
-			return nil
+			cleanupOwned = false
+			return cmdutil.ServeGRPC(ctx, listener, managerGRPC, func() error {
+				return errors.Join(server.Stop(), manager.Close())
+			})
 		},
 		Example: templates.Examples(`
 			# Start the Athena Etherscan Manager service

@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/useryege/athena/internal/accountstate/schema"
 	accountstore "github.com/useryege/athena/internal/accountstate/store"
+	"github.com/useryege/athena/internal/serviceschema"
 	"github.com/useryege/athena/internal/solanadiscovery"
 	"github.com/useryege/athena/internal/solanadiscovery/rpcservice"
 	solanapb "github.com/useryege/athena/pkg/apiclient/solana"
@@ -36,10 +37,18 @@ func NewCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			defer pool.Close()
+			cleanupOwned := true
+			defer func() {
+				if cleanupOwned {
+					pool.Close()
+				}
+			}()
 			store := solanadiscovery.NewStore(pool)
-			if err := store.Migrate(ctx); err != nil {
-				return fmt.Errorf("migrate Solana discovery: %w", err)
+			if err := schema.Verify(ctx, pool); err != nil {
+				return fmt.Errorf("verify Solana account schema: %w", err)
+			}
+			if err := store.Verify(ctx); err != nil {
+				return fmt.Errorf("verify Solana discovery: %w", err)
 			}
 			service, err := rpcservice.NewServer(store, accountstore.NewSQLStore(pool), c.InternalToken)
 			if err != nil {
@@ -62,9 +71,10 @@ func NewCommand() *cobra.Command {
 			})
 			cmd.Printf("Solana discovery listening on %s; finalized scan progress is available via GetDiscoveryStatus\n", listener.Addr())
 			enricher := solanadiscovery.NewEnricher(scanner)
-			return serve(ctx, listener, server, func(ctx context.Context) error {
+			cleanupOwned = false
+			return serveWithCleanup(ctx, listener, server, func(ctx context.Context) error {
 				return runDiscovery(ctx, scanner.Run, enricher.Run)
-			})
+			}, pool.Close)
 		},
 	}
 	f := command.Flags()
@@ -89,5 +99,6 @@ func NewCommand() *cobra.Command {
 		}
 	}
 	command.PreRunE = func(*cobra.Command, []string) error { return environmentError }
+	command.AddCommand(serviceschema.NewCommand(solanadiscovery.Schema()))
 	return command
 }

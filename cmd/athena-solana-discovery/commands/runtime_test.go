@@ -54,3 +54,29 @@ func TestScannerFatalErrorStopsRPC(t *testing.T) {
 		t.Fatalf("got %v, want fatal scanner error", err)
 	}
 }
+
+// Resource release is part of shutdown and must run after the scanner exits.
+func TestServeClosesResourcesAfterCanceledScanner(t *testing.T) {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	stopped := make(chan struct{})
+	closed := false
+	cancel()
+	err = serveWithCleanup(ctx, l, grpc.NewServer(), func(ctx context.Context) error { <-ctx.Done(); close(stopped); return ctx.Err() }, func() {
+		select {
+		case <-stopped:
+			closed = true
+		default:
+			t.Error("resource closed before scanner stopped")
+		}
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !closed {
+		t.Fatal("resources not closed")
+	}
+}
