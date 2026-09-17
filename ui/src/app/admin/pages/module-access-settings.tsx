@@ -19,6 +19,9 @@ export const ModuleAccessSettings = ({active, refreshRevision = 0}: {active: boo
     React.useLayoutEffect(() => {
         let alive = true;
         setConfirmed(false);
+        // These flags belong to this effect's requests, not to the previously active tab lifecycle.
+        setSaving(new Set());
+        setLoading(false);
         let sequence = 0;
         let read: ReturnType<typeof moduleAccessService.settings> | undefined;
         const writes = new Map<ModuleKey, ReturnType<typeof moduleAccessService.save>>();

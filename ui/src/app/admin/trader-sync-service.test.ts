@@ -102,7 +102,7 @@ test('detail and runtime unwrap their distinct gateway envelopes and retain abor
     second.abort();
     expect(get.mock.calls).toEqual([
         ['/admin/trader-sync/subscriptions/a%2Fb', {feature: 'admin-trader-sync', mode: 'read'}],
-        ['/admin/trader-sync/status', {feature: 'admin-trader-sync', mode: 'read'}]
+        ['/admin/trader-sync/status', {feature: 'admin-service-status', mode: 'read'}]
     ]);
     expect(detail.abort).toHaveBeenCalledTimes(1);
     expect(runtime.abort).toHaveBeenCalledTimes(1);

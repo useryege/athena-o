@@ -33,7 +33,7 @@ export class AdminTraderSyncService {
         );
     }
     getRuntimeStatus(): AbortablePromise<RuntimeStatus> {
-        const request = requests.get('/admin/trader-sync/status', scope);
+        const request = requests.get('/admin/trader-sync/status', {feature: 'admin-service-status', mode: 'read'});
         return Object.assign(
             request.then(response => normalizeRuntimeStatus(response.body?.status)),
             {abort: () => request.abort()}

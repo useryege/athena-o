@@ -1,3 +1,4 @@
+import requests from '../../shared/services/requests';
 import * as React from 'react';
 import renderer, {act} from 'react-test-renderer';
 import {Button} from 'antd';
@@ -97,4 +98,77 @@ test('save discards an older list; an unknown write result rereads without repla
     await act(async () => latest.resolve(rows.map(row => ({...row, state: row.module_key === 'trader_sync' ? 1 : 2}))));
     expect(JSON.stringify(tree.toJSON())).toContain('Close access');
     expect(write).toHaveBeenCalledTimes(1);
+});
+
+const setActive = async (active: boolean) => {
+    await act(async () =>
+        tree.update(
+            <AuthorizationCtx.Provider value={{user, isAdmin: true} as any}>
+                <ModuleAccessSettings active={active} />
+            </AuthorizationCtx.Provider>
+        )
+    );
+};
+const action = (label: string) => tree.root.findAllByType(Button).find(button => button.props['aria-label'] === label)!;
+
+test.each([
+    {outcome: 'success', completion: 'before reread'},
+    {outcome: 'failure', completion: 'before reread'},
+    {outcome: 'success', completion: 'after reread'},
+    {outcome: 'failure', completion: 'after reread'}
+])('pending save recovers after leaving the tab: old $outcome $completion never replays PUT', async ({outcome, completion}) => {
+    await mount();
+    const oldWrite = deferred();
+    const transport = {then: oldWrite.promise.then.bind(oldWrite.promise), abort: oldWrite.promise.abort};
+    const send = jest.fn().mockReturnValue(transport);
+    const put = jest.spyOn(requests, 'put').mockReturnValue({send} as any);
+    await act(async () => action('Open Trader Sync access').props.onClick());
+    expect(action('Open Trader Sync access').props.loading).toBe(true);
+    await setActive(false);
+    expect(oldWrite.promise.abort).toHaveBeenCalledTimes(1);
+    const latest = deferred();
+    jest.mocked(moduleAccessService.settings).mockReturnValue(latest.promise);
+    await setActive(true);
+    expect(action('Open Trader Sync access').props.disabled).toBe(true);
+    const completeOld = async () =>
+        act(async () => {
+            if (outcome === 'success') oldWrite.resolve({body: {setting: {module_key: 'trader_sync', state: 1}}});
+            else oldWrite.reject(new Error('late response lost'));
+        });
+    if (completion === 'before reread') {
+        await completeOld();
+        expect(action('Open Trader Sync access').props.disabled).toBe(true);
+    }
+    await act(async () => latest.resolve(rows));
+    if (completion === 'after reread') await completeOld();
+    expect(action('Open Trader Sync access').props.loading).toBe(false);
+    expect(action('Open Trader Sync access').props.disabled).toBe(false);
+    expect(tree.root.findAllByType(Button).find(button => button.props.children === 'Refresh access settings')!.props.disabled).toBe(false);
+    expect(JSON.stringify(tree.toJSON())).not.toContain('late response lost');
+    expect(put).toHaveBeenCalledTimes(1);
+    expect(put).toHaveBeenCalledWith('/admin/module-access-settings/trader_sync', {feature: 'admin-service-status', mode: 'write'});
+    expect(send).toHaveBeenCalledWith({state: 1});
+});
+
+test('two pending rows keep independent saving state and reread only after both complete', async () => {
+    await mount();
+    const trader = deferred(),
+        worm = deferred();
+    const write = jest.spyOn(moduleAccessService, 'save').mockImplementation(key => (key === 'trader_sync' ? trader.promise : worm.promise));
+    await act(async () => {
+        action('Open Trader Sync access').props.onClick();
+        action('Open Worm access').props.onClick();
+    });
+    expect(action('Open Trader Sync access').props.loading).toBe(true);
+    expect(action('Open Worm access').props.loading).toBe(true);
+    await act(async () => trader.resolve({module_key: 'trader_sync', state: 1}));
+    expect(action('Close Trader Sync access').props.loading).toBe(false);
+    expect(action('Open Worm access').props.loading).toBe(true);
+    expect(moduleAccessService.settings).toHaveBeenCalledTimes(1);
+    jest.mocked(moduleAccessService.settings).mockResolvedValue(rows.map(row => ({...row, state: row.module_key === 'trader_sync' || row.module_key === 'worm' ? 1 : 2})) as any);
+    await act(async () => worm.resolve({module_key: 'worm', state: 1}));
+    expect(action('Close Trader Sync access').props.disabled).toBe(false);
+    expect(action('Close Worm access').props.disabled).toBe(false);
+    expect(moduleAccessService.settings).toHaveBeenCalledTimes(2);
+    expect(write).toHaveBeenCalledTimes(2);
 });
