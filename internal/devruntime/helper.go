@@ -120,6 +120,11 @@ func (m *Manager) RunHelper(ctx context.Context, name string, command *exec.Cmd,
 		cleanup, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 		defer cancel()
 		stopErr := m.Stop(cleanup)
+		if state, err := m.Status(); err == nil && !state.StopDeadline.IsZero() {
+			reapContext, reapCancel := context.WithDeadline(cleanup, state.StopDeadline)
+			defer reapCancel()
+			cleanup = reapContext
+		}
 		select {
 		case waitErr := <-done:
 			return errors.Join(ctx.Err(), stopErr, waitErr)
