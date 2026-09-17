@@ -16,11 +16,12 @@ cd "$repo_root"
 case "${ATHENA_RUN_PROFILE:-}" in
   '') ;;
   solana-discovery|solana-preview)
-    if [[ "${1:-start}" == reset ]]; then
-      printf 'Solana profiles borrow infrastructure and do not support reset\n' >&2
-      exit 2
+    if [[ "${1:-start}" == stop ]]; then
+      # A legacy profile can only be stopped by the owner that created it.
+      exec bash ./hack/solana-local.sh stop "$ATHENA_RUN_PROFILE"
     fi
-    exec bash ./hack/solana-local.sh "${1:-start}" "$ATHENA_RUN_PROFILE"
+    printf 'Solana profile startup is retired; use make run-service SERVICE=solana-discovery or make run. Stop existing profiles with their original profile owner.\n' >&2
+    exit 2
     ;;
   *) printf 'unknown run profile: %s\n' "$ATHENA_RUN_PROFILE" >&2; exit 2 ;;
 esac

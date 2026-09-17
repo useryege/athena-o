@@ -208,10 +208,10 @@ solana-discovery-build:
 	go build -o .tmp/bin/athena-solana-discovery ./cmd/athena-solana-discovery
 
 solana-discovery-run:
-	bash ./hack/solana-local.sh start solana-discovery
+	@exec env SERVICE=solana-discovery bash ./hack/run-local-runtime.sh make-run-service
 
 solana-discovery-stop:
-	bash ./hack/solana-local.sh stop solana-discovery
+	@exec env INSTANCE="$${INSTANCE:-solana-discovery}" bash ./hack/run-local-runtime.sh make-stop
 
 .PHONY: run-reset
 run-reset:

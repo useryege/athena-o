@@ -197,7 +197,7 @@ func run(args []string, out io.Writer) error {
 		encoder.SetIndent("", "  ")
 		return encoder.Encode(s)
 	case "stop":
-		bounded, c := context.WithTimeout(ctx, 2*time.Minute)
+		bounded, c := context.WithTimeout(ctx, 180*time.Second)
 		defer c()
 		return devruntime.Stop(bounded, key)
 	case "reset":

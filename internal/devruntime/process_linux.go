@@ -92,6 +92,13 @@ func ReadProcess(pid int) (ProcessIdentity, error) { p, e := readProc(pid); retu
 // A pidfd is opened BEFORE the second identity read. Even if the PID is recycled
 // afterwards, the signal and exit wait refer only to the pinned kernel task.
 func openVerified(ctx context.Context, record ProcessIdentity) (int, error) {
+	boot, err := os.ReadFile("/proc/sys/kernel/random/boot_id")
+	if err != nil {
+		return -1, err
+	}
+	if record.BootID != "" && record.BootID != strings.TrimSpace(string(boot)) {
+		return -1, os.ErrNotExist
+	}
 	fd, e := unix.PidfdOpen(record.PID, 0)
 	if e != nil {
 		if errors.Is(e, unix.ESRCH) {
@@ -217,20 +224,30 @@ func WaitProcess(ctx context.Context, p ProcessIdentity) error {
 // narrows the scan but never grants permission to signal an orphan by itself.
 // Supervisors are ancestry anchors only, not returned as business processes.
 func DiscoverMembers(records map[string]ProcessIdentity, supervisors ...ProcessIdentity) (map[string]ProcessIdentity, error) {
+	return discoverMembers(records, supervisors, false)
+}
+func discoverMembers(records map[string]ProcessIdentity, supervisors []ProcessIdentity, scoped bool) (map[string]ProcessIdentity, error) {
 	result := make(map[string]ProcessIdentity, len(records))
 	groups := map[int]string{}
 	runs := map[string]bool{}
 	roots := map[int]ProcessIdentity{}
 	excluded := map[int]bool{}
+	boot, err := os.ReadFile("/proc/sys/kernel/random/boot_id")
+	if err != nil {
+		return result, err
+	}
 	for name, p := range records {
 		result[name] = p
+		if p.BootID != "" && p.BootID != strings.TrimSpace(string(boot)) {
+			continue
+		}
 		groups[p.PGID] = p.RunID
 		if p.RunID != "" {
 			runs[p.RunID] = true
 		}
 	}
 	for _, p := range supervisors {
-		if p.PID <= 0 {
+		if p.PID <= 0 || (p.BootID != "" && p.BootID != strings.TrimSpace(string(boot))) {
 			continue
 		}
 		excluded[p.PID] = true
@@ -322,6 +339,9 @@ func DiscoverMembers(records map[string]ProcessIdentity, supervisors ...ProcessI
 			parent = up.parent
 		}
 		if !found {
+			if scoped && !inGroup {
+				continue
+			}
 			return result, fmt.Errorf("orphaned member %d has no verified recorded ancestor", pid)
 		}
 		result["descendant/"+strconv.Itoa(pid)] = p.identity

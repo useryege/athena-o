@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"syscall"
+	"time"
 )
 
 const StateVersion = 1
@@ -33,7 +34,44 @@ type DeletionIntent struct {
 	OperationID string
 	Resource    ResourceRef
 }
+type ServiceStartup struct {
+	Status, Error string
+	At            time.Time
+}
+type ProbeResult struct {
+	Ready bool
+	Error string
+	At    time.Time
+}
+type ExitEvent struct {
+	Service  string
+	Code     int
+	Expected bool
+	At       time.Time
+}
+type CleanupResult struct {
+	Service string
+	Error   string
+	At      time.Time
+}
+type PhaseEvent struct {
+	Stage string
+	At    time.Time
+}
 type State struct {
+	AccessSettings                            AccessSettingsRead
+	StopDeadline                              time.Time
+	Stage                                     string
+	StageHistory                              []PhaseEvent
+	Startup                                   map[string]ServiceStartup
+	Probes                                    map[string]ProbeResult
+	Exits                                     []ExitEvent
+	CleanupResults                            []CleanupResult
+	StopRequested                             map[string]bool
+	CoreUsable, FullStackReady, SelectedReady bool
+	Gateways                                  []GatewayResult
+	GatewayError                              string
+
 	Cleanup                               *CleanupOperation
 	Deletions                             []DeletionIntent
 	Version                               int

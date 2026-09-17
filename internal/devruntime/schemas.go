@@ -23,7 +23,9 @@ func (m *Manager) prepareSelectedDatabases(ctx context.Context, env map[string]s
 	}
 	admin := ""
 	if state.DBMode == "managed" {
-		admin, err = m.preparePostgres(ctx)
+		infra, cancel := context.WithTimeout(ctx, 5*time.Minute)
+		admin, err = m.preparePostgres(infra)
+		cancel()
 		if err != nil {
 			return err
 		}

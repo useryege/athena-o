@@ -45,7 +45,7 @@ func (m *Manager) prepareAPIInfrastructure(ctx context.Context, env map[string]s
 		return err
 	}
 	defer lease.close()
-	ctx, cancel := context.WithTimeout(ctx, 120*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 	password, err := m.infrastructureSecret("redis-password")
 	if err != nil {

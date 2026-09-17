@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Positive local profiles: borrow infrastructure and own one verified process session.
+# Legacy Solana profiles are stop-only. New runs use devruntime ownership.
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 action="${1:-start}"
@@ -69,14 +69,14 @@ stop() (
   signal_members TERM
   for ((i=0;i<100;i++)); do
     session_snapshot || return 1
-    if ((${#members[@]} == 0)); then rm -rf -- "$state"; return 0; fi
+    if ((${#members[@]} == 0)); then printf 'stopped\n' > "$state/status"; return 0; fi
     sleep 0.1
   done
   # Revalidate each remaining member before forcing shutdown; never signal a global port.
   signal_members KILL
   for ((i=0;i<20;i++)); do
     session_snapshot || return 1
-    if ((${#members[@]} == 0)); then rm -rf -- "$state"; return 0; fi
+    if ((${#members[@]} == 0)); then printf 'stopped\n' > "$state/status"; return 0; fi
     sleep 0.1
   done
   echo "Solana session did not stop; retaining $state/process" >&2
@@ -85,23 +85,8 @@ stop() (
 
 case "$action" in
 start)
-  command -v goreman >/dev/null
-  command -v flock >/dev/null
-  mkdir -p "$root/.run"
-  if ! mkdir "$state"; then echo "Profile state exists; stop it first: $state" >&2;exit 1;fi
-  cd "$root"
-  setsid goreman -rpc-server=false -set-ports=false -f "$procfile" start &
-  pid=$!
-  process_info "$pid"
-  launch_ticks="$process_ticks"
-  printf '%s %s\n' "$pid" "$launch_ticks" > "$state/process"
-  trap 'exit 130' INT
-  trap 'exit 143' TERM
-  trap 'result=$?; trap - EXIT; stop "$pid" "$launch_ticks" || result=1; exit "$result"' EXIT
-  result=0
-  wait "$pid" || result=$?
-  if [[ "$result" == 143 || "$result" == 130 ]]; then result=0;fi
-  exit "$result"
+  echo 'Legacy Solana profile startup is retired; use make run-service SERVICE=solana-discovery.' >&2
+  exit 2
   ;;
 stop) stop "" "" ;;
 *) echo 'usage: solana-local.sh {start|stop} {solana-discovery|solana-preview}' >&2;exit 2;;

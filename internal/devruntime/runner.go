@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -90,7 +91,7 @@ func (m *Manager) begin(services []string, mode string) (State, error) {
 				return errors.New("instance has unresolved resource creation intents")
 			}
 			for _, p := range old.Processes {
-				now, err := ReadProcess(p.PID)
+				now, err := VerifyProcess(p)
 				if err == nil {
 					if SameProcess(p, now) {
 						return errors.New("instance still has live processes")
@@ -184,24 +185,77 @@ func (m *Manager) RecordExit(name string, code int) error {
 			s.ExitCodes = map[string]int{}
 		}
 		s.ExitCodes[name] = code
+		expected := (strings.HasPrefix(name, "helper:") && code == 0) || s.Phase == "stopping" || s.Phase == "stopped" || s.StopRequested[name]
+		s.Exits = append(s.Exits, ExitEvent{Service: name, Code: code, Expected: expected, At: time.Now()})
+		for _, selected := range s.Services {
+			if selected == name {
+				if s.Health == nil {
+					s.Health = map[string]string{}
+				}
+				s.Health[name] = "exited"
+				if s.Probes == nil {
+					s.Probes = map[string]ProbeResult{}
+				}
+				s.Probes[name] = ProbeResult{Error: fmt.Sprintf("process exited with code %d", code), At: time.Now()}
+				s.FullStackReady = false
+				s.SelectedReady = false
+				if serviceRegistry()[name].Core {
+					s.CoreUsable = false
+				}
+				if !expected {
+					if s.Phase == "running" {
+						s.Stage = "runtime-degraded"
+						s.StageHistory = append(s.StageHistory, PhaseEvent{Stage: s.Stage, At: time.Now()})
+					}
+					s.Failures = append(s.Failures, fmt.Sprintf("%s exited unexpectedly with code %d", name, code))
+				}
+			}
+		}
 		return nil
 	})
 }
 func Stop(ctx context.Context, k InstanceKey) error  { return NewManager(k).Stop(ctx) }
 func Reset(ctx context.Context, k InstanceKey) error { return NewManager(k).Reset(ctx) }
 func (m *Manager) Stop(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 180*time.Second)
+	defer cancel()
 	lease, lockErr := acquireOperation(m.Key)
 	if lockErr != nil {
 		return lockErr
 	}
 	defer func() { lease.close() }()
+	// A helper and its supervisor share one cleanup deadline. A later recovery
+	// after the supervisor has gone may establish a new bounded stop operation.
+	reuseDeadline := false
+	if previous, err := m.Status(); err == nil {
+		if previous.Supervisor.PID == os.Getpid() {
+			reuseDeadline = true
+		} else if previous.Supervisor.PID > 0 {
+			_, err = VerifyProcess(previous.Supervisor)
+			reuseDeadline = err == nil
+		}
+	}
 	var snapshot State
 	if e := m.Update(func(s *State) error {
 		if s.Phase == "resetting" || s.Cleanup != nil || len(s.Deletions) > 0 {
 			return errors.New("instance reset is in progress")
 		}
+		if s.StopDeadline.IsZero() || !reuseDeadline {
+			s.StopDeadline, _ = ctx.Deadline()
+		}
 		s.Phase = "stopping"
-		s.Failures = nil
+		s.FullStackReady = false
+		s.CoreUsable = false
+		s.SelectedReady = false
+		for _, name := range s.Services {
+			if s.Health != nil {
+				s.Health[name] = "stopping"
+			}
+			if s.Probes != nil {
+				s.Probes[name] = ProbeResult{Error: "instance stopping", At: time.Now()}
+			}
+		}
+		s.StageHistory = append(s.StageHistory, PhaseEvent{Stage: "stopping", At: time.Now()})
 		snapshot = *s
 		return nil
 	}); e != nil {
@@ -210,6 +264,9 @@ func (m *Manager) Stop(ctx context.Context) error {
 		}
 		return e
 	}
+	budgetCtx, budgetCancel := context.WithDeadline(ctx, snapshot.StopDeadline)
+	defer budgetCancel()
+	ctx = budgetCtx
 	var failures []error
 	// A remote stop requests supervisor cancellation through its verified pidfd.
 	// Never wait on ourselves: the caller continues to reap and write exit codes.
@@ -227,13 +284,7 @@ func (m *Manager) Stop(ctx context.Context) error {
 				}
 			}
 			if err == nil {
-				budget := 30 * time.Second
-				for _, nanos := range snapshot.StopBudgets {
-					if time.Duration(nanos) > budget {
-						budget = time.Duration(nanos)
-					}
-				}
-				wait, cancel := context.WithTimeout(ctx, budget+42*time.Second)
+				wait, cancel := context.WithCancel(ctx)
 				err = WaitProcess(wait, snapshot.Supervisor)
 				cancel()
 				if err != nil {
@@ -276,56 +327,32 @@ func (m *Manager) Stop(ctx context.Context) error {
 	}); e != nil {
 		return e
 	}
-	type stopping struct {
-		identity ProcessIdentity
-		deadline time.Time
-	}
-	var pending []stopping
-	for name, p := range members {
-		current, e := VerifyProcess(p)
-		if errors.Is(e, os.ErrNotExist) {
-			continue
-		}
-		if e != nil {
-			failures = append(failures, e)
-			continue
-		}
-		if !SameProcess(p, current) {
-			failures = append(failures, fmt.Errorf("%s: %w", name, ErrIdentityMismatch))
-			continue
-		}
-		budget := time.Duration(snapshot.StopBudgets[name])
-		if budget <= 0 {
-			budget = 30 * time.Second
-			for rootName, root := range snapshot.Processes {
-				if root.PGID == p.PGID && snapshot.StopBudgets[rootName] > 0 {
-					budget = time.Duration(snapshot.StopBudgets[rootName])
-					break
+	for layer := 0; layer <= 2; layer++ {
+		group := map[string]ProcessIdentity{}
+		for name, p := range members {
+			stopLayer := 1
+			if spec, ok := serviceRegistry()[name]; ok {
+				stopLayer = spec.StopLayer
+			} else {
+				for rootName, root := range snapshot.Processes {
+					if root.PGID == p.PGID {
+						if spec, ok := serviceRegistry()[rootName]; ok {
+							stopLayer = spec.StopLayer
+							break
+						}
+					}
 				}
 			}
-		}
-		deadline := time.Now().Add(budget)
-		if e = m.Signal(p, syscall.SIGTERM); e != nil {
-			failures = append(failures, fmt.Errorf("signal %s: %w", name, e))
-			continue
-		}
-		pending = append(pending, stopping{p, deadline})
-	}
-	for _, p := range pending {
-		wait, cancel := context.WithDeadline(ctx, p.deadline)
-		e := WaitProcess(wait, p.identity)
-		cancel()
-		if errors.Is(e, context.DeadlineExceeded) {
-			if e = m.Signal(p.identity, syscall.SIGKILL); e == nil {
-				reap, cancel := context.WithTimeout(ctx, time.Second)
-				e = WaitProcess(reap, p.identity)
-				cancel()
+			if stopLayer == layer {
+				group[name] = p
 			}
 		}
-		if e != nil {
-			failures = append(failures, e)
+		if err := m.stopMembers(ctx, snapshot, group); err != nil {
+			failures = append(failures, err)
+			break
 		}
 	}
+
 	// Recheck groups after shutdown to detect forks that escaped the first snapshot.
 	if _, err := DiscoverMembers(members, snapshot.Supervisor); err != nil {
 		failures = append(failures, err)
@@ -360,12 +387,17 @@ func (m *Manager) Stop(ctx context.Context) error {
 		if s.RunID != snapshot.RunID {
 			return errors.New("run changed during stop")
 		}
-		s.Failures = nil
+		outcome := CleanupResult{Service: "instance", At: time.Now()}
 		for _, f := range failures {
 			s.Failures = append(s.Failures, f.Error())
 		}
+		if err := errors.Join(failures...); err != nil {
+			outcome.Error = err.Error()
+		}
+		s.CleanupResults = append(s.CleanupResults, outcome)
 		if len(failures) == 0 {
 			s.Phase = "stopped"
+			s.Stage = "stopped"
 		} else {
 			s.Phase = "cleanup-failed"
 		}
@@ -530,4 +562,113 @@ func (m *Manager) finishDeletion(snapshot State, intent DeletionIntent) error {
 		}
 		return nil
 	})
+}
+
+// stopMembers signals a layer together, preserving each service's own deadline.
+func (m *Manager) stopMembers(ctx context.Context, snapshot State, members map[string]ProcessIdentity) error {
+	type pendingStop struct {
+		name     string
+		identity ProcessIdentity
+		deadline time.Time
+	}
+	var pending []pendingStop
+	var failures []error
+	for name, p := range members {
+		if _, err := VerifyProcess(p); errors.Is(err, os.ErrNotExist) {
+			continue
+		} else if err != nil {
+			failures = append(failures, fmt.Errorf("%s: %w", name, err))
+			continue
+		}
+		budget := time.Duration(snapshot.StopBudgets[name])
+		if budget <= 0 {
+			budget = 30 * time.Second
+			for rootName, root := range snapshot.Processes {
+				if root.PGID == p.PGID && snapshot.StopBudgets[rootName] > 0 {
+					budget = time.Duration(snapshot.StopBudgets[rootName])
+					break
+				}
+			}
+		}
+		deadline := time.Now().Add(budget)
+		if end, ok := ctx.Deadline(); ok {
+			reserve := time.Until(end) / 10
+			if reserve > time.Second {
+				reserve = time.Second
+			}
+			if deadline.After(end.Add(-reserve)) {
+				deadline = end.Add(-reserve)
+			}
+		}
+		if err := m.Signal(p, syscall.SIGTERM); err != nil {
+			failures = append(failures, fmt.Errorf("signal %s: %w", name, err))
+			continue
+		}
+		pending = append(pending, pendingStop{name, p, deadline})
+	}
+	for _, p := range pending {
+		wait, cancel := context.WithDeadline(ctx, p.deadline)
+		err := WaitProcess(wait, p.identity)
+		cancel()
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+			if err = m.Signal(p.identity, syscall.SIGKILL); err == nil {
+				reap, cancel := context.WithTimeout(ctx, time.Second)
+				err = WaitProcess(reap, p.identity)
+				cancel()
+			}
+		}
+		if err != nil {
+			failures = append(failures, fmt.Errorf("wait %s: %w", p.name, err))
+		}
+		recordErr := m.Update(func(s *State) error {
+			result := CleanupResult{Service: p.name, At: time.Now()}
+			if err != nil {
+				result.Error = err.Error()
+			}
+			s.CleanupResults = append(s.CleanupResults, result)
+			return nil
+		})
+		if recordErr != nil {
+			failures = append(failures, recordErr)
+		}
+	}
+	return errors.Join(failures...)
+}
+
+func (m *Manager) stopService(ctx context.Context, name string) error {
+	var snapshot State
+	if err := m.Update(func(s *State) error {
+		if s.StopRequested == nil {
+			s.StopRequested = map[string]bool{}
+		}
+		s.StopRequested[name] = true
+		snapshot = *s
+		return nil
+	}); err != nil {
+		return err
+	}
+	root, ok := snapshot.Processes[name]
+	if !ok {
+		return nil
+	}
+	members, err := discoverMembers(map[string]ProcessIdentity{name: root}, nil, true)
+	if err != nil {
+		return err
+	}
+	if err = m.Update(func(s *State) error {
+		for label, p := range members {
+			s.Processes[label] = p
+			s.StopBudgets[label] = snapshot.StopBudgets[name]
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+	if err = m.stopMembers(ctx, snapshot, members); err != nil {
+		return err
+	}
+	// Preserve the same fail-closed rule as whole-instance cleanup when a
+	// process forks after discovery and its ancestry can no longer be proved.
+	_, err = discoverMembers(members, nil, true)
+	return err
 }
