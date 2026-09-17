@@ -24,6 +24,8 @@
 
 既有实现的差距不得新增耦合；无关的小修复不因此强制全系统重构。纯解析器或内部工具库无需为了该规范拆成服务。
 
+**已确认的部署网络边界（2026-09-17）**：用户通过服务器访问规则禁止外部访问业务服务端口，外部用户业务请求统一经过 API Server。后续服务调用、访问控制和部署设计必须以此为前提，遵循[部署网络边界](docs/developer-guide/service-development-standards.md#deployment-network-boundary)，不得默认外部用户可以直连内部业务端口并据此扩大任务范围。网络隔离与服务间鉴权分别按实际边界评估；该决定不表示服务器规则已经由 AI 实地核验，也不自动取消既有鉴权要求。
+
 ### Project Status
 
 The project is currently in development and has not been launched yet. Necessary breaking changes are allowed, and backward compatibility with historical behavior is not required.
