@@ -311,6 +311,26 @@
   },
   {
     "kind": "column",
+    "name": "athena_module_access_setting.is_open",
+    "definition": "boolean NOT NULL DEFAULT false identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "athena_module_access_setting.module_key",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "athena_module_access_setting.updated_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "athena_module_access_setting.updated_by_account_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
     "name": "goose_db_version.id",
     "definition": "integer NOT NULL DEFAULT  identity=d generated= collation="
   },
@@ -2096,6 +2116,21 @@
   },
   {
     "kind": "constraint",
+    "name": "athena_module_access_setting.athena_module_access_setting_module_key_check",
+    "definition": "CHECK ((module_key = ANY (ARRAY['trader_sync'::text, 'solana'::text, 'market_radar'::text, 'managed_oo'::text, 'profit_sharing'::text, 'worm'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "athena_module_access_setting.athena_module_access_setting_pkey",
+    "definition": "PRIMARY KEY (module_key) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "athena_module_access_setting.athena_module_access_setting_updated_by_account_id_fkey",
+    "definition": "FOREIGN KEY (updated_by_account_id) REFERENCES athena_account(account_id) validated=t"
+  },
+  {
+    "kind": "constraint",
     "name": "goose_db_version.goose_db_version_pkey",
     "definition": "PRIMARY KEY (id) validated=t"
   },
@@ -3156,6 +3191,11 @@
   },
   {
     "kind": "index",
+    "name": "athena_module_access_setting_pkey",
+    "definition": "CREATE UNIQUE INDEX athena_module_access_setting_pkey ON public.athena_module_access_setting USING btree (module_key) valid=t ready=t"
+  },
+  {
+    "kind": "index",
     "name": "goose_db_version_pkey",
     "definition": "CREATE UNIQUE INDEX goose_db_version_pkey ON public.goose_db_version USING btree (id) valid=t ready=t"
   },
@@ -3607,6 +3647,11 @@
   {
     "kind": "table",
     "name": "athena_account",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "athena_module_access_setting",
     "definition": "r persistence=p rls=f force_rls=f"
   },
   {

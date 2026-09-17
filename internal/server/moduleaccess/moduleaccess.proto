@@ -1,0 +1,41 @@
+syntax = "proto3";
+package moduleaccess;
+import "google/api/annotations.proto";
+option go_package = "github.com/useryege/athena/pkg/apiclient/moduleaccess";
+
+service ModuleAccessService {
+  rpc ListModuleAccessStates(ListModuleAccessStatesRequest) returns (ListModuleAccessStatesResponse) {
+    option (google.api.http) = {get: "/api/v1/module-access-states"};
+  }
+  rpc ListModuleAccessSettings(ListModuleAccessSettingsRequest) returns (ListModuleAccessSettingsResponse) {
+    option (google.api.http) = {get: "/api/v1/admin/module-access-settings"};
+  }
+  rpc UpdateModuleAccessSetting(UpdateModuleAccessSettingRequest) returns (UpdateModuleAccessSettingResponse) {
+    option (google.api.http) = {put: "/api/v1/admin/module-access-settings/{module_key}" body: "*"};
+  }
+}
+enum ModuleAccessState {
+  MODULE_ACCESS_STATE_UNSPECIFIED = 0;
+  MODULE_ACCESS_STATE_OPEN = 1;
+  MODULE_ACCESS_STATE_CLOSED = 2;
+}
+message ModuleAccessStatus {
+  string module_key = 1;
+  ModuleAccessState state = 2;
+}
+message ModuleAccessSetting {
+  string module_key = 1;
+  ModuleAccessState state = 2;
+  string updated_by_account_id = 3;
+  string updated_by_username = 4;
+  string updated_at = 5;
+}
+message ListModuleAccessStatesRequest {}
+message ListModuleAccessStatesResponse { repeated ModuleAccessStatus states = 1; }
+message ListModuleAccessSettingsRequest {}
+message ListModuleAccessSettingsResponse { repeated ModuleAccessSetting settings = 1; }
+message UpdateModuleAccessSettingRequest {
+  string module_key = 1;
+  ModuleAccessState state = 2;
+}
+message UpdateModuleAccessSettingResponse { ModuleAccessSetting setting = 1; }

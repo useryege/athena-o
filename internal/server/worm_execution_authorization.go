@@ -263,6 +263,9 @@ func stableWormExecutionAuthorizationError(err error) error {
 	if err == nil {
 		return nil
 	}
+	if reason := walletsecret.Reason(err); reason == "MODULE_ACCESS_CLOSED" || reason == "MODULE_ACCESS_UNAVAILABLE" {
+		return err
+	}
 	code := status.Code(err)
 	reason := googleoidc.WormExecutionAuthorizationUnavailableReason
 	stableCode := codes.Unavailable

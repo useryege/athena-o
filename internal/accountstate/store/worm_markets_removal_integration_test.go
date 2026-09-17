@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcredentials"
+	"github.com/useryege/athena/internal/accountstate/schema"
 	"github.com/useryege/athena/internal/accountstate/schema/catalog"
 	accountstore "github.com/useryege/athena/internal/accountstate/store"
 	"github.com/useryege/athena/internal/accountstate/store/migrations"
@@ -97,6 +98,7 @@ func TestWormMarketsRemovalUpgradesSportsSchema(t *testing.T) {
 	require.Equal(t, "pending", notificationStatus)
 	assertSportsModulesRejected(t, ctx, db, accountID)
 
+	require.NoError(t, schema.Up(ctx, db.DSN))
 	fresh := pgtest.New(t, migrations.FS, migrations.Dir)
 	require.True(t, bytes.Equal(schemaCatalog(t, ctx, fresh), schemaCatalog(t, ctx, db)), "000004 upgrade and fresh schemas differ")
 }
@@ -177,6 +179,7 @@ func TestWormMarketsRemovalFromSolanaSchemaMatchesFresh(t *testing.T) {
 	require.NoError(t, access.Validate())
 	assertSportsModulesRejected(t, ctx, upgrade, accountID)
 
+	require.NoError(t, schema.Up(ctx, upgrade.DSN))
 	fresh := pgtest.New(t, migrations.FS, migrations.Dir)
 	require.True(t, bytes.Equal(schemaCatalog(t, ctx, fresh), schemaCatalog(t, ctx, upgrade)), "fresh and upgraded schemas differ")
 }

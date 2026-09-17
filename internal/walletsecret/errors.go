@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/useryege/athena/internal/moduleaccess"
+
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -62,7 +64,7 @@ func Reason(err error) string {
 		return ""
 	}
 	for _, detail := range errStatus.Details() {
-		if info, ok := detail.(*errdetails.ErrorInfo); ok && (info.Domain == ErrorDomain || info.Domain == WormErrorDomain) {
+		if info, ok := detail.(*errdetails.ErrorInfo); ok && (info.Domain == ErrorDomain || info.Domain == WormErrorDomain || info.Domain == moduleaccess.Domain) {
 			return info.Reason
 		}
 	}
@@ -81,9 +83,11 @@ type errorEnvelope struct {
 }
 
 type errorBody struct {
-	Code    int32  `json:"code"`
-	Message string `json:"message"`
-	Reason  string `json:"reason,omitempty"`
+	ModuleKey string           `json:"module_key,omitempty"`
+	Details   []map[string]any `json:"details,omitempty"`
+	Code      int32            `json:"code"`
+	Message   string           `json:"message"`
+	Reason    string           `json:"reason,omitempty"`
 }
 
 // SetSecretResponseHeaders prevents private-key and reauthentication responses
@@ -105,15 +109,27 @@ func WriteError(w http.ResponseWriter, err error) {
 		errStatus = status.New(codes.Internal, "internal server error")
 	}
 	reason := Reason(err)
+	var details []map[string]any
+	var moduleKey string
+	for _, detail := range errStatus.Details() {
+		if info, ok := detail.(*errdetails.ErrorInfo); ok {
+			details = append(details, map[string]any{"@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": info.Reason, "domain": info.Domain, "metadata": info.Metadata})
+			if info.Domain == moduleaccess.Domain {
+				moduleKey = info.Metadata["module_key"]
+			}
+		}
+	}
 	if reason != "" {
 		w.Header().Set("X-Athena-Error-Reason", reason)
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(httpStatus(errStatus.Code()))
 	_ = json.NewEncoder(w).Encode(errorEnvelope{Error: errorBody{
-		Code:    int32(errStatus.Code()),
-		Message: errStatus.Message(),
-		Reason:  reason,
+		Code:      int32(errStatus.Code()),
+		Details:   details,
+		ModuleKey: moduleKey,
+		Message:   errStatus.Message(),
+		Reason:    reason,
 	}})
 }
 

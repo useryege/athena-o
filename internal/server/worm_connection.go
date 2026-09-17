@@ -17,6 +17,7 @@ import (
 
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcredentials"
+	"github.com/useryege/athena/internal/moduleaccess"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	"github.com/useryege/athena/internal/walletsecret"
 	wormtradingapiclient "github.com/useryege/athena/internal/wormtrading/apiclient"
@@ -544,7 +545,7 @@ func (server *AthenaServer) authenticateInteractiveWormTradingHTTP(
 		}
 		credential.AccessRevision = access.Revision
 		ctx = utilsession.WithAuthenticatedCredential(ctx, credential)
-		return ctx, credential, nil
+		return ctx, credential, moduleaccess.Check(ctx, server.moduleAccessStore, moduleaccess.Worm)
 	}
 
 	claims, credential, err := server.authenticateRealmLoginCookie(request, false)
@@ -556,7 +557,7 @@ func (server *AthenaServer) authenticateInteractiveWormTradingHTTP(
 	}
 	ctx := context.WithValue(request.Context(), "claims", claims) //nolint:staticcheck
 	ctx = utilsession.WithAuthenticatedCredential(ctx, credential)
-	return ctx, credential, nil
+	return ctx, credential, moduleaccess.Check(ctx, server.moduleAccessStore, moduleaccess.Worm)
 }
 
 func (server *AthenaServer) developmentWormCredentialLease(w http.ResponseWriter, request *http.Request) {

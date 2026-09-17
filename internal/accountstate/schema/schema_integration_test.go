@@ -25,6 +25,8 @@ func TestVerifyRejectsDamagedSchemaAndVersions(t *testing.T) {
 		name, sql string
 		versions  bool
 	}{
+		{"missing module access table", `DROP TABLE athena_module_access_setting`, false},
+		{"missing module access column", `ALTER TABLE athena_module_access_setting DROP COLUMN is_open`, false},
 		{"missing column", `ALTER TABLE trader_sync_runtime_control DROP COLUMN owner_id`, false},
 		{"wrong column type", `ALTER TABLE trader_sync_runtime_control ALTER COLUMN generation TYPE numeric`, false},
 		{"wrong nullability", `ALTER TABLE trader_sync_runtime_control ALTER COLUMN generation DROP NOT NULL`, false},

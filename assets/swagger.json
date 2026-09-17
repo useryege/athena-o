@@ -9,7 +9,7 @@
   "info": {
     "description": "Athena HTTP JSON APIs. API clients can authenticate protected operations with an Athena API Key by sending Authorization: Bearer <token>. The Athena server separately evaluates current account entitlements and any required module authorization for each protected request; this Swagger security declaration describes credential transport only and does not grant access.",
     "title": "Athena API",
-    "version": "v1.0.0-1305-g6245c8c3-dirty"
+    "version": "v1.0.0-1345-g2cba99d8-dirty"
   },
   "paths": {
     "/api/v1/account": {
@@ -294,6 +294,66 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/accountAccountProfile"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/module-access-settings": {
+      "get": {
+        "tags": [
+          "ModuleAccessService"
+        ],
+        "operationId": "ModuleAccessService_ListModuleAccessSettings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/moduleaccessListModuleAccessSettingsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/module-access-settings/{module_key}": {
+      "put": {
+        "tags": [
+          "ModuleAccessService"
+        ],
+        "operationId": "ModuleAccessService_UpdateModuleAccessSetting",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "module_key",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/moduleaccessUpdateModuleAccessSettingRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/moduleaccessUpdateModuleAccessSettingResponse"
             }
           },
           "default": {
@@ -939,6 +999,28 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/marketradarGetMarketRadarStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/module-access-states": {
+      "get": {
+        "tags": [
+          "ModuleAccessService"
+        ],
+        "operationId": "ModuleAccessService_ListModuleAccessStates",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/moduleaccessListModuleAccessStatesResponse"
             }
           },
           "default": {
@@ -3887,6 +3969,89 @@
         "subscribed_tokens": {
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    "moduleaccessListModuleAccessSettingsResponse": {
+      "type": "object",
+      "properties": {
+        "settings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/moduleaccessModuleAccessSetting"
+          }
+        }
+      }
+    },
+    "moduleaccessListModuleAccessStatesResponse": {
+      "type": "object",
+      "properties": {
+        "states": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/moduleaccessModuleAccessStatus"
+          }
+        }
+      }
+    },
+    "moduleaccessModuleAccessSetting": {
+      "type": "object",
+      "properties": {
+        "module_key": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/moduleaccessModuleAccessState"
+        },
+        "updated_at": {
+          "type": "string"
+        },
+        "updated_by_account_id": {
+          "type": "string"
+        },
+        "updated_by_username": {
+          "type": "string"
+        }
+      }
+    },
+    "moduleaccessModuleAccessState": {
+      "type": "integer",
+      "format": "int32",
+      "default": 0,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "description": "0: UNSPECIFIED (invalid for updates), 1: OPEN, 2: CLOSED"
+    },
+    "moduleaccessModuleAccessStatus": {
+      "type": "object",
+      "properties": {
+        "module_key": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/moduleaccessModuleAccessState"
+        }
+      }
+    },
+    "moduleaccessUpdateModuleAccessSettingRequest": {
+      "type": "object",
+      "properties": {
+        "module_key": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/moduleaccessModuleAccessState"
+        }
+      }
+    },
+    "moduleaccessUpdateModuleAccessSettingResponse": {
+      "type": "object",
+      "properties": {
+        "setting": {
+          "$ref": "#/definitions/moduleaccessModuleAccessSetting"
         }
       }
     },

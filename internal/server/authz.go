@@ -45,9 +45,11 @@ var publicGRPCMethods = map[string]bool{
 }
 
 var administratorGRPCMethods = map[string]bool{
-	"/tradersync.TraderSyncService/ListSubscriptionSummaries":  true,
-	"/tradersync.TraderSyncService/GetSubscriptionSummary":     true,
-	"/tradersync.TraderSyncService/GetTraderSyncRuntimeStatus": true,
+	"/moduleaccess.ModuleAccessService/ListModuleAccessSettings":  true,
+	"/moduleaccess.ModuleAccessService/UpdateModuleAccessSetting": true,
+	"/tradersync.TraderSyncService/ListSubscriptionSummaries":     true,
+	"/tradersync.TraderSyncService/GetSubscriptionSummary":        true,
+	"/tradersync.TraderSyncService/GetTraderSyncRuntimeStatus":    true,
 
 	"/account.AccountService/ListAccounts":        true,
 	"/account.AccountService/UpdateAccountAccess": true,
@@ -100,9 +102,10 @@ var profitSharingParticipantGRPCMethods = map[string]bool{
 }
 
 var accountAuthenticatedGRPCMethods = map[string]bool{
-	"/account.AccountService/ListTokens":  true,
-	"/account.AccountService/CreateToken": true,
-	"/account.AccountService/DeleteToken": true,
+	"/moduleaccess.ModuleAccessService/ListModuleAccessStates": true,
+	"/account.AccountService/ListTokens":                       true,
+	"/account.AccountService/CreateToken":                      true,
+	"/account.AccountService/DeleteToken":                      true,
 }
 
 var accountSelfOrAdministratorGRPCMethods = map[string]bool{
@@ -201,7 +204,13 @@ func (server *AthenaServer) unaryAuthInterceptor(ctx context.Context, req any, i
 	if err != nil {
 		return nil, err
 	}
-	return handler(authCtx, req)
+	if err := server.checkModuleAdmission(authCtx, info.FullMethod); err != nil {
+		moduleAdmissionHeaders(authCtx, err)
+		return nil, err
+	}
+	result, err := handler(authCtx, req)
+	moduleAdmissionHeaders(authCtx, err)
+	return result, err
 }
 
 func (server *AthenaServer) streamAuthInterceptor(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
@@ -209,7 +218,13 @@ func (server *AthenaServer) streamAuthInterceptor(srv any, stream grpc.ServerStr
 	if err != nil {
 		return err
 	}
-	return handler(srv, &authenticatedServerStream{ServerStream: stream, ctx: authCtx})
+	if err := server.checkModuleAdmission(authCtx, info.FullMethod); err != nil {
+		moduleAdmissionHeaders(authCtx, err)
+		return err
+	}
+	err = handler(srv, &authenticatedServerStream{ServerStream: stream, ctx: authCtx})
+	moduleAdmissionHeaders(authCtx, err)
+	return err
 }
 
 type authenticatedServerStream struct {

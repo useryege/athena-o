@@ -88,6 +88,13 @@ type AthenaAccount struct {
 	LastLoginAt      pgtype.Timestamptz
 }
 
+type AthenaModuleAccessSetting struct {
+	ModuleKey          string
+	IsOpen             bool
+	UpdatedByAccountID pgtype.UUID
+	UpdatedAt          pgtype.Timestamptz
+}
+
 type NotificationDeliveryAttempt struct {
 	ID                   pgtype.UUID
 	WorkKind             string

@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/useryege/athena/internal/walletsecret"
 	"math"
 	"net/http"
 	"strings"
@@ -212,6 +213,10 @@ func (h *wormExecutionAuthorization) challenge(w http.ResponseWriter, r *http.Re
 	}
 	returnTo := validateWormExecutionReturnTo(input.ReturnTo, runID)
 	_, credential, err := h.authenticate(r)
+	if reason := walletsecret.Reason(err); reason == "MODULE_ACCESS_CLOSED" || reason == "MODULE_ACCESS_UNAVAILABLE" {
+		walletsecret.WriteError(w, err)
+		return
+	}
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin || credential.JTI == "" ||
 		credential.AccessRevision == 0 || credential.AccessRevision > math.MaxInt64 {
 		h.fail(w, http.StatusUnauthorized, WormExecutionLoginSessionRequiredReason, "login_session", nil)
@@ -324,6 +329,10 @@ func (h *wormExecutionAuthorization) verify(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	_, credential, err := h.authenticate(r)
+	if reason := walletsecret.Reason(err); reason == "MODULE_ACCESS_CLOSED" || reason == "MODULE_ACCESS_UNAVAILABLE" {
+		walletsecret.WriteError(w, err)
+		return
+	}
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin || credential.JTI == "" ||
 		credential.AccessRevision == 0 || credential.AccessRevision > math.MaxInt64 {
 		h.fail(w, http.StatusUnauthorized, WormExecutionLoginSessionRequiredReason, "login_session", nil)

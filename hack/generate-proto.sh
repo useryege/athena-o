@@ -327,6 +327,12 @@ EOF
           rename_definition_property("wormtradingListWalletTradingActivityResponse"; "wallet_selection"; "walletSelection") |
           rename_query_parameter("/api/v1/worm-trading/wallet-balances"; "get"; "page_size"; "pageSize") |
           rename_query_parameter("/api/v1/worm-trading/wallet-activity"; "get"; "page_size"; "pageSize") |
+          # The module-access gateway uses encoding/json and numeric Go enums.
+          # Scope this correction to the new contract; existing APIs keep their wire formats.
+          .definitions.moduleaccessModuleAccessState = {
+            "type": "integer", "format": "int32", "default": 0, "enum": [0, 1, 2],
+            "description": "0: UNSPECIFIED (invalid for updates), 1: OPEN, 2: CLOSED"
+          } |
           mark_public_get("/api/version") |
           mark_public_get("/api/v1/session/userinfo") |
           mark_public_get("/api/v1/app/bootstrap")

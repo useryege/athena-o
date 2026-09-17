@@ -91,7 +91,7 @@ func newCatalogHTTPServer(t *testing.T) (*AthenaServer, *catalogHTTPClient) {
 	controller, err := accountaccess.NewController(context.Background(), traderAuthStore{httpCatalogAccountID: a})
 	require.NoError(t, err)
 	client := &catalogHTTPClient{t: t}
-	return &AthenaServer{AthenaServerOpts: AthenaServerOpts{DisableAuth: true, WormTradingClientset: catalogHTTPClientset{client: client}}, accessController: controller, developmentAccountIDs: map[accountcredentials.ApplicationRealm]string{accountcredentials.ApplicationRealmMember: httpCatalogAccountID}, walletSecretPublicOrigin: "http://localhost"}, client
+	return &AthenaServer{moduleAccessStore: &moduleAdmissionStore{open: true}, AthenaServerOpts: AthenaServerOpts{DisableAuth: true, WormTradingClientset: catalogHTTPClientset{client: client}}, accessController: controller, developmentAccountIDs: map[accountcredentials.ApplicationRealm]string{accountcredentials.ApplicationRealmMember: httpCatalogAccountID}, walletSecretPublicOrigin: "http://localhost"}, client
 }
 func catalogHTTPRequest(method, path, body string) *http.Request {
 	req := httptest.NewRequest(method, "http://localhost"+path, strings.NewReader(body))

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/useryege/athena/internal/walletsecret"
 	"math"
 	"net/http"
 	"net/url"
@@ -185,6 +186,10 @@ func (h *wormPositionCashOutAuthorization) begin(w http.ResponseWriter, r *http.
 		return
 	}
 	_, credential, err := h.authenticate(r)
+	if reason := walletsecret.Reason(err); reason == "MODULE_ACCESS_CLOSED" || reason == "MODULE_ACCESS_UNAVAILABLE" {
+		h.redirectFailure(w, r, returnTo, reason, "module_access")
+		return
+	}
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin || credential.JTI == "" ||
 		credential.AccessRevision == 0 || credential.AccessRevision > math.MaxInt64 {
 		h.redirectFailure(w, r, returnTo, WormPositionCashOutLoginSessionRequiredReason, "login_session")
@@ -293,6 +298,10 @@ func (h *wormPositionCashOutAuthorization) callback(w http.ResponseWriter, r *ht
 		return
 	}
 	_, credential, err := h.authenticate(r)
+	if reason := walletsecret.Reason(err); reason == "MODULE_ACCESS_CLOSED" || reason == "MODULE_ACCESS_UNAVAILABLE" {
+		h.redirectFailure(w, r, returnTo, reason, "module_access")
+		return
+	}
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin || credential.JTI == "" ||
 		credential.AccessRevision == 0 || credential.AccessRevision > math.MaxInt64 {
 		h.redirectFailure(w, r, returnTo, WormPositionCashOutLoginSessionRequiredReason, "login_session")

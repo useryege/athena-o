@@ -27,6 +27,7 @@ type Querier interface {
 	GetAccountRecord(ctx context.Context, accountID pgtype.UUID) (AthenaAccount, error)
 	GetDevelopmentAdministrator(ctx context.Context) (AthenaAccount, error)
 	GetDevelopmentMember(ctx context.Context) (AthenaAccount, error)
+	GetModuleAccessSetting(ctx context.Context, moduleKey string) (GetModuleAccessSettingRow, error)
 	GetUsableAccountAPIKeyByJTI(ctx context.Context, jti string) (AccountApiKey, error)
 	ListAccountAPIKeyRecords(ctx context.Context) ([]AccountApiKey, error)
 	ListAccountAPIKeys(ctx context.Context, accountID pgtype.UUID) ([]ListAccountAPIKeysRow, error)
@@ -36,10 +37,12 @@ type Querier interface {
 	ListAccountModuleAccessByAccount(ctx context.Context, accountID pgtype.UUID) ([]AccountModuleAccess, error)
 	ListAccountRecords(ctx context.Context) ([]AthenaAccount, error)
 	ListAvatarObjectKeys(ctx context.Context) ([]string, error)
+	ListModuleAccessSettings(ctx context.Context) ([]ListModuleAccessSettingsRow, error)
 	RecordAccountLogin(ctx context.Context, arg RecordAccountLoginParams) (AthenaAccount, error)
 	ReplaceAccountModuleAccess(ctx context.Context, arg ReplaceAccountModuleAccessParams) (int64, error)
 	UpdateAccountAccessHead(ctx context.Context, arg UpdateAccountAccessHeadParams) (UpdateAccountAccessHeadRow, error)
 	UpdateAccountProfile(ctx context.Context, arg UpdateAccountProfileParams) (UpdateAccountProfileRow, error)
+	UpsertModuleAccessSetting(ctx context.Context, arg UpsertModuleAccessSettingParams) error
 	UsernameExists(ctx context.Context, username string) (bool, error)
 }
 

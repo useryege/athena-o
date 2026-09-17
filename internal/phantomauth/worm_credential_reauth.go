@@ -110,6 +110,10 @@ func (h *wormCredentialReauthentication) challenge(w http.ResponseWriter, r *htt
 		return
 	}
 	_, credential, err := h.authenticate(r)
+	if reason := walletsecret.Reason(err); reason == "MODULE_ACCESS_CLOSED" || reason == "MODULE_ACCESS_UNAVAILABLE" {
+		walletsecret.WriteError(w, err)
+		return
+	}
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin {
 		walletsecret.WriteError(w, walletsecret.ErrWormLoginSessionRequired)
 		return
@@ -176,6 +180,10 @@ func (h *wormCredentialReauthentication) verify(w http.ResponseWriter, r *http.R
 		return
 	}
 	_, credential, err := h.authenticate(r)
+	if reason := walletsecret.Reason(err); reason == "MODULE_ACCESS_CLOSED" || reason == "MODULE_ACCESS_UNAVAILABLE" {
+		walletsecret.WriteError(w, err)
+		return
+	}
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin {
 		walletsecret.WriteError(w, walletsecret.ErrWormLoginSessionRequired)
 		return

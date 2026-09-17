@@ -41,6 +41,7 @@ import (
 	"github.com/useryege/athena/internal/googleoidc"
 	managedooapiclient "github.com/useryege/athena/internal/managedoo/apiclient"
 	marketradarapiclient "github.com/useryege/athena/internal/marketradar/apiclient"
+	"github.com/useryege/athena/internal/moduleaccess"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
 	"github.com/useryege/athena/internal/phantomauth"
 	profitsharingapiclient "github.com/useryege/athena/internal/profitsharing/apiclient"
@@ -51,6 +52,7 @@ import (
 	"github.com/useryege/athena/internal/server/logout"
 	servermanagedoo "github.com/useryege/athena/internal/server/managedoo"
 	servermarketradar "github.com/useryege/athena/internal/server/marketradar"
+	servermoduleaccess "github.com/useryege/athena/internal/server/moduleaccess"
 	servernotification "github.com/useryege/athena/internal/server/notification"
 	serverprofitsharing "github.com/useryege/athena/internal/server/profitsharing"
 	serverservicestatus "github.com/useryege/athena/internal/server/servicestatus"
@@ -73,6 +75,7 @@ import (
 	wormtradingapiclient "github.com/useryege/athena/internal/wormtrading/apiclient"
 	"github.com/useryege/athena/pkg/apiclient"
 	appbootstrappkg "github.com/useryege/athena/pkg/apiclient/appbootstrap"
+	moduleaccesspkg "github.com/useryege/athena/pkg/apiclient/moduleaccess"
 	servicestatuspkg "github.com/useryege/athena/pkg/apiclient/servicestatus"
 	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
 	solanapkg "github.com/useryege/athena/pkg/apiclient/solana"
@@ -160,6 +163,7 @@ type AthenaServer struct {
 	settingsMgr              *settings_util.SettingsManager
 	credentialMgr            *accountcredentials.CredentialManager
 	accountStateStore        *accountstatestore.SQLStore
+	moduleAccessStore        moduleaccess.Store
 	accountCenter            *accountcenter.Manager
 	accountAvatarHTTP        *accountavatarhttp.Handler
 	walletAvatarHTTP         *walletavatarhttp.Handler
@@ -407,6 +411,7 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) (*AthenaServer, error
 		settingsMgr:              settingsMgr,
 		credentialMgr:            credentialMgr,
 		accountStateStore:        accountStateStore,
+		moduleAccessStore:        accountStateStore,
 		accountCenter:            accountCenter,
 		accessController:         accessController,
 		authRegistration:         registrationHandler,
@@ -635,6 +640,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	sessionpkg.RegisterSessionServiceServer(grpcS, server.serviceSet.SessionService)
 	appbootstrappkg.RegisterAppBootstrapServiceServer(grpcS, server.serviceSet.AppBootstrapService)
 	accountpkg.RegisterAccountServiceServer(grpcS, server.serviceSet.AccountService)
+	moduleaccesspkg.RegisterModuleAccessServiceServer(grpcS, server.serviceSet.ModuleAccessService)
 	notificationpkg.RegisterNotificationServiceServer(grpcS, server.serviceSet.NotificationService)
 	tspkg.RegisterTraderSyncServiceServer(grpcS, server.serviceSet.TraderSyncService)
 	walletpkg.RegisterWalletServiceServer(grpcS, server.serviceSet.WalletService)
@@ -657,6 +663,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 }
 
 type AthenaServiceSet struct {
+	ModuleAccessService  *servermoduleaccess.Server
 	TraderSyncService    *servertradersync.Server
 	HealthService        *health.Server
 	SessionService       *session.Server
@@ -724,6 +731,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		SessionService:       sessionService,
 		AppBootstrapService:  appBootstrapService,
 		AccountService:       accountService,
+		ModuleAccessService:  servermoduleaccess.NewServer(server.moduleAccessStore),
 		VersionService:       versionService,
 		NotificationService:  notificationService,
 		WalletService:        walletService,
@@ -756,7 +764,7 @@ func (s *handlerSwitcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // translateGRPCResponseHeaders applies HTTP-only response headers at the gateway boundary.
 func (server *AthenaServer) translateGRPCResponseHeaders(_ context.Context, w http.ResponseWriter, resp golang_proto.Message) error {
 	switch resp.(type) {
-	case *appbootstrappkg.GetAppBootstrapResponse:
+	case *appbootstrappkg.GetAppBootstrapResponse, *moduleaccesspkg.ListModuleAccessStatesResponse, *moduleaccesspkg.ListModuleAccessSettingsResponse, *moduleaccesspkg.UpdateModuleAccessSettingResponse:
 		w.Header().Set("Cache-Control", "no-store, private")
 		w.Header().Set("Vary", "Cookie, Authorization, "+common.ApplicationRealmHeader)
 	case *walletpkg.BatchCreateWalletsResponse:
@@ -1041,10 +1049,10 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	// golang/protobuf. Which does not support types such as time.Time. gogo/protobuf does support
 	// time.Time, but does not support custom UnmarshalJSON() and MarshalJSON() methods. Therefore
 	// we use our own Marshaler
-	gwMuxOpts := runtime.WithMarshalerOption(runtime.MIMEWildcard, new(grpc_util.JSONMarshaler))
+	gwMuxOpts := runtime.WithMarshalerOption(runtime.MIMEWildcard, new(moduleAccessJSONMarshaler))
 	gwResponseHeaderOpts := runtime.WithForwardResponseOption(server.translateGRPCResponseHeaders)
 	gwApplicationRealmOpts := runtime.WithIncomingHeaderMatcher(applicationRealmHeaderMatcher)
-	gwmux := runtime.NewServeMux(gwMuxOpts, gwResponseHeaderOpts, gwApplicationRealmOpts)
+	gwmux := runtime.NewServeMux(gwMuxOpts, gwResponseHeaderOpts, gwApplicationRealmOpts, runtime.WithOutgoingHeaderMatcher(moduleAccessOutgoingHeader))
 
 	var handler http.Handler = adaptApplicationRealmQuery(gwmux)
 	if server.EnableGZip {
@@ -1113,6 +1121,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenPolicyServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, tokenapipkg.RegisterTokenOperationsServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, solanapkg.RegisterSolanaServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, moduleaccesspkg.RegisterModuleAccessServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, servicestatuspkg.RegisterServiceStatusServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, sessionpkg.RegisterSessionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, appbootstrappkg.RegisterAppBootstrapServiceHandler, gwmux, conn)
