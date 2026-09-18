@@ -64,6 +64,8 @@ const stringValue = (item: any, ...keys: string[]) => String(value(item, ...keys
 const boolValue = (item: any, ...keys: string[]) => Boolean(value(item, ...keys));
 const unwrap = (item: any) => (item && typeof item === 'object' && 'value' in item ? item.value : item);
 
+export const operationLogMetricValue = (item: any) => unwrap(item);
+
 const normalizeSummary = (item: any = {}): OperationLogSummary => ({
     operationId: stringValue(item, 'operationId', 'operation_id'),
     startedAt: String(unwrap(value(item, 'startedAt', 'started_at')) || ''),

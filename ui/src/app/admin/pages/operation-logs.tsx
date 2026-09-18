@@ -7,7 +7,7 @@ import {formatBeijingDateTime} from '../../shared/format';
 import {useVisibleQuery} from '../../shared/use-visible-query';
 import {useAdminReadScope} from '../read-scope';
 import {adminServices as services} from '../services';
-import type {OperationLogDetail, OperationLogSummary} from '../operation-log-service';
+import {operationLogMetricValue, type OperationLogDetail, type OperationLogSummary} from '../operation-log-service';
 
 const outcomeColor = (outcome: string) => {
     if (outcome === 'SUCCEEDED' || outcome === 'ACCEPTED') return 'success';
@@ -19,6 +19,10 @@ const outcomeColor = (outcome: string) => {
 const RuntimeStatus = () => {
     const runtime = useVisibleQuery(() => services.operationLogs.getRuntimeStatus(), useAdminReadScope('operation-log-runtime'), 10000);
     const capture = useVisibleQuery(() => services.operationLogs.getCaptureStatus(), useAdminReadScope('operation-log-capture'), 10000);
+    const persistenceReachable = operationLogMetricValue(capture.data?.persistenceReachable);
+    const confirmedEvents = operationLogMetricValue(capture.data?.confirmedEvents) || '0';
+    const inFlightEvents = operationLogMetricValue(capture.data?.inFlightEvents) || '0';
+    const lastFailureCode = operationLogMetricValue(capture.data?.lastFailureCode) || '—';
     return (
         <Section
             title='Capture status'
@@ -37,12 +41,10 @@ const RuntimeStatus = () => {
                 <Descriptions.Item label='Query ready'>{runtime.data?.queryReady === undefined ? 'Unavailable' : runtime.data.queryReady ? 'Yes' : 'No'}</Descriptions.Item>
                 <Descriptions.Item label='Pending'>{runtime.data?.pendingEvents || '0'}</Descriptions.Item>
                 <Descriptions.Item label='Observed'>{runtime.data?.totalObserved || '0'}</Descriptions.Item>
-                <Descriptions.Item label='Persistence'>
-                    {capture.data?.persistenceReachable?.value === undefined ? 'Unavailable' : capture.data.persistenceReachable.value ? 'Reachable' : 'Unavailable'}
-                </Descriptions.Item>
-                <Descriptions.Item label='Confirmed'>{capture.data?.confirmedEvents?.value || '0'}</Descriptions.Item>
-                <Descriptions.Item label='In flight'>{capture.data?.inFlightEvents?.value || '0'}</Descriptions.Item>
-                <Descriptions.Item label='Last failure'>{capture.data?.lastFailureCode?.value || '—'}</Descriptions.Item>
+                <Descriptions.Item label='Persistence'>{persistenceReachable === undefined ? 'Unavailable' : persistenceReachable ? 'Reachable' : 'Unavailable'}</Descriptions.Item>
+                <Descriptions.Item label='Confirmed'>{confirmedEvents}</Descriptions.Item>
+                <Descriptions.Item label='In flight'>{inFlightEvents}</Descriptions.Item>
+                <Descriptions.Item label='Last failure'>{lastFailureCode}</Descriptions.Item>
             </Descriptions>
         </Section>
     );
