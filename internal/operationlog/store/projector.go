@@ -1,0 +1,275 @@
+package store
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/useryege/athena/internal/operationlog/event"
+	"github.com/useryege/athena/internal/operationlog/store/sqlc"
+	"sort"
+	"time"
+)
+
+type rawEvent struct {
+	e        event.Event
+	received time.Time
+	ingestID int64
+	id       pgtype.UUID
+	pending  bool
+}
+
+func (s *Store) Project(ctx context.Context) (out Projection, err error) {
+	ctx, cancel := context.WithTimeout(ctx, ProjectTimeout)
+	defer cancel()
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return out, err
+	}
+	defer tx.Rollback(ctx)
+	q := sqlc.New(tx)
+	row, err := q.LockPublication(ctx)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Projection{Busy: true}, nil
+		}
+		return out, err
+	}
+	out.PublishedSeq = row
+	batch, err := q.PendingBatch(ctx)
+	if err != nil {
+		return out, err
+	}
+	if len(batch) == 0 {
+		return out, tx.Commit(ctx)
+	}
+	grouped := map[string][]rawEvent{}
+	for _, r := range batch {
+		e, decodeErr := event.Decode(r.Payload)
+		if decodeErr != nil {
+			if qerr := q.Quarantine(ctx, sqlc.QuarantineParams{EventID: r.EventID, ReasonCode: pgtype.Text{String: "invalid_event", Valid: true}}); qerr != nil {
+				return out, qerr
+			}
+			out.Quarantined++
+			continue
+		}
+		grouped[e.OperationID] = append(grouped[e.OperationID], rawEvent{e: e, received: r.ReceivedAt.Time, ingestID: r.IngestID.Int64, id: r.EventID, pending: true})
+	}
+	changed := false
+	for op, rs := range grouped {
+		// A later phase is allowed to arrive after its counterpart was already
+		// published. Fold against all previously processed source facts rather
+		// than treating each inbox batch as a standalone operation.
+		processed, qerr := q.ProcessedEvents(ctx, id(op))
+		if qerr != nil {
+			return out, qerr
+		}
+		for _, r := range processed {
+			e, derr := event.Decode(r.Payload)
+			if derr != nil {
+				// Processed rows originated from a validated envelope. Keep the
+				// transaction conservative if a database operator tampered with it.
+				return out, fmt.Errorf("processed event %s: %w", r.EventID, derr)
+			}
+			rs = append(rs, rawEvent{e: e, received: r.ReceivedAt.Time, ingestID: r.IngestID.Int64, id: r.EventID})
+		}
+		if c, perr := projectOperation(ctx, q, op, rs, &out); perr != nil {
+			return out, perr
+		} else if c {
+			changed = true
+		}
+	}
+	if !changed {
+		if err = tx.Commit(ctx); err != nil {
+			return out, err
+		}
+		return out, nil
+	}
+	if err = q.Publish(ctx, out.PublishedSeq+1); err != nil {
+		return out, err
+	}
+	out.PublishedSeq++
+	if err = tx.Commit(ctx); err != nil {
+		return out, err
+	}
+	return out, nil
+}
+func projectOperation(ctx context.Context, q *sqlc.Queries, op string, rs []rawEvent, out *Projection) (bool, error) {
+	// Keep arrival order (received_at, ingest id already supplied by SQL). A bad
+	// stage is quarantined by savepoint and never participates in later folds.
+	sort.SliceStable(rs, func(i, j int) bool {
+		if rs[i].received.Equal(rs[j].received) {
+			return rs[i].ingestID < rs[j].ingestID
+		}
+		return rs[i].received.Before(rs[j].received)
+	})
+	var start, finish *rawEvent
+	var rejected *rawEvent
+	changed := false
+	for i := range rs {
+		r := rs[i]
+		if r.e.OperationID != op {
+			continue
+		}
+		switch r.e.Phase {
+		case event.Start:
+			if start != nil {
+				if err := q.Quarantine(ctx, sqlc.QuarantineParams{EventID: r.id, ReasonCode: pgtype.Text{String: "event_conflict", Valid: true}}); err != nil {
+					return false, err
+				}
+				if r.pending {
+					out.Quarantined++
+				}
+				continue
+			}
+			start = &r
+		case event.Finish:
+			if finish != nil {
+				if err := q.Quarantine(ctx, sqlc.QuarantineParams{EventID: r.id, ReasonCode: pgtype.Text{String: "event_conflict", Valid: true}}); err != nil {
+					return false, err
+				}
+				if r.pending {
+					out.Quarantined++
+				}
+				continue
+			}
+			finish = &r
+		}
+	}
+	if start == nil && finish == nil {
+		return false, nil
+	}
+	base := start
+	if finish != nil {
+		base = finish
+	}
+	view := NormalizedView{Event: base.e, FirstReceivedAt: base.received, LastReceivedAt: base.received}
+	if start != nil && finish != nil {
+		if start.e.ActionCode != finish.e.ActionCode || start.e.ModuleCode != finish.e.ModuleCode || start.e.StartedAt.UTC() != finish.e.StartedAt.UTC() || !actorsCompatible(start.e.Actor, finish.e.Actor) || !sameOptional(start.e.RequestID, finish.e.RequestID) || !sameOptionalPtr(start.e.ParentOperationID, finish.e.ParentOperationID) || !sameOptionalPtr(start.e.TargetAccountID, finish.e.TargetAccountID) {
+			keep, reject := start, finish
+			if !start.pending && finish.pending {
+				keep, reject = finish, start
+			} else if start.pending && finish.pending && later(start, finish) {
+				keep, reject = finish, start
+			}
+			if err := q.Quarantine(ctx, sqlc.QuarantineParams{EventID: reject.id, ReasonCode: pgtype.Text{String: "event_conflict", Valid: true}}); err != nil {
+				return false, err
+			}
+			if reject.pending {
+				out.Quarantined++
+			}
+			rejected = reject
+			base = keep
+			view.Event = keep.e
+			if keep.e.Phase == event.Start {
+				view.Observation = event.StartOnly
+			} else {
+				view.Observation = event.FinishOnly
+			}
+		} else {
+			view.Event = finish.e
+			view.Observation = event.Complete
+		}
+	}
+	acceptedPending := (start != nil && start.pending && start != rejected) || (finish != nil && finish.pending && finish != rejected)
+	if !acceptedPending {
+		return false, nil
+	}
+	if rejected != nil {
+		view.FirstReceivedAt = base.received
+		view.LastReceivedAt = base.received
+	} else if start != nil && finish != nil {
+		view.FirstReceivedAt = start.received
+		view.LastReceivedAt = finish.received
+		if finish.received.Before(start.received) {
+			view.FirstReceivedAt = finish.received
+			view.LastReceivedAt = start.received
+		}
+	}
+	// Explicitly encode the normalized view so filter columns and detail agree.
+	detail, err := json.Marshal(view)
+	if err != nil {
+		return false, err
+	}
+	seq := out.PublishedSeq + 1
+	if err = q.CloseVersion(ctx, sqlc.CloseVersionParams{OperationID: id(op), VisibleToSeq: pgtype.Int8{Int64: seq, Valid: true}}); err != nil {
+		return false, err
+	}
+	actor := view.Actor
+	var primaryType, primaryID *string
+	for _, r := range view.Resources {
+		if r.Primary {
+			primaryType = &r.Type
+			primaryID = &r.ID
+			break
+		}
+	}
+	if err = q.InsertVersion(ctx, sqlc.InsertVersionParams{OperationID: id(op), VisibleFromSeq: seq, StartedAt: timestamp(view.StartedAt), FinishedAt: timestampOrNull(view.OccurredAt, view.Phase == event.Finish), ActorAccountID: optionalID(actor.AccountID), ActorUsername: textValue(actor.UsernameSnapshot), ActorRole: actor.Role, Realm: actor.Realm, CredentialKind: actor.CredentialKind, ModuleCode: view.ModuleCode, ActionCode: view.ActionCode, Outcome: string(view.Outcome), Observation: string(view.Observation), TargetAccountID: optionalID(view.TargetAccountID), PrimaryResourceType: textValue(primaryType), PrimaryResourceID: textValue(primaryID), RequestID: id(view.RequestID), ParentOperationID: optionalID(view.ParentOperationID), BusinessRequestID: textValue(view.BusinessRequestID), DurationMs: intValue(view.DurationMs), Detail: detail, SourceEventIds: sourceEventIDs(start, finish, rejected)}); err != nil {
+		return false, err
+	}
+	if start != nil && start != rejected {
+		if start.pending {
+			if err = q.MarkProcessed(ctx, start.id); err != nil {
+				return false, err
+			}
+			out.Processed++
+			changed = true
+		}
+	}
+	if finish != nil && finish != rejected {
+		if finish.pending {
+			if err = q.MarkProcessed(ctx, finish.id); err != nil {
+				return false, err
+			}
+			out.Processed++
+			changed = true
+		}
+	}
+	return changed, nil
+}
+
+func later(a, b *rawEvent) bool {
+	if a.received.Equal(b.received) {
+		return a.ingestID > b.ingestID
+	}
+	return a.received.After(b.received)
+}
+
+func sameOptional(a, b string) bool { return a == b }
+
+func sameOptionalPtr(a, b *string) bool {
+	return a == nil || b == nil || *a == *b
+}
+func timestampOrNull(t time.Time, ok bool) pgtype.Timestamptz {
+	if !ok {
+		return pgtype.Timestamptz{}
+	}
+	return timestamp(t)
+}
+func sourceEventIDs(a, b, rejected *rawEvent) []pgtype.UUID {
+	ids := make([]pgtype.UUID, 0, 2)
+	if a != nil && a != rejected {
+		ids = append(ids, a.id)
+	}
+	if b != nil && b != rejected {
+		ids = append(ids, b.id)
+	}
+	return ids
+}
+func actorsCompatible(a, b event.Actor) bool {
+	if a.AccountID != nil && b.AccountID != nil && *a.AccountID != *b.AccountID {
+		return false
+	}
+	if a.Role != "UNKNOWN" && b.Role != "UNKNOWN" && a.Role != b.Role {
+		return false
+	}
+	if a.Realm != "UNKNOWN" && b.Realm != "UNKNOWN" && a.Realm != b.Realm {
+		return false
+	}
+	if a.CredentialKind != "UNAUTHENTICATED" && b.CredentialKind != "UNAUTHENTICATED" && a.CredentialKind != b.CredentialKind {
+		return false
+	}
+	return true
+}

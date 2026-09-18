@@ -72,3 +72,12 @@ sql:
         out: "internal/tradersync/store/sqlc"
         sql_package: "pgx/v5"
         emit_interface: true
+  - engine: "postgresql"
+    schema: "internal/operationlog/store/migrations"
+    queries: "internal/operationlog/store/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/operationlog/store/sqlc"
+        sql_package: "pgx/v5"
+        emit_interface: true

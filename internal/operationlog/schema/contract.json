@@ -1,0 +1,617 @@
+[
+  {
+    "kind": "column",
+    "name": "delivery.event_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "delivery.failure_count",
+    "definition": "bigint NOT NULL DEFAULT 0 identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "delivery.next_attempt_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "delivery.processed_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "delivery.reason_code",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "delivery.state",
+    "definition": "text NOT NULL DEFAULT 'PENDING'::text identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.action_code",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.actor_account_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.actor_role",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.actor_username",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.business_request_id",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.credential_kind",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.detail",
+    "definition": "jsonb NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.duration_ms",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.finished_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.module_code",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.observation",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.operation_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.outcome",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.parent_operation_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.primary_resource_id",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.primary_resource_type",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.realm",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.request_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.source_event_ids",
+    "definition": "uuid[] NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.started_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.target_account_id",
+    "definition": "uuid NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.visible_from_seq",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "entry_version.visible_to_seq",
+    "definition": "bigint NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "event.event_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "event.ingest_id",
+    "definition": "bigint NOT NULL DEFAULT  identity=a generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "event.occurred_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "event.operation_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "event.payload",
+    "definition": "jsonb NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "event.payload_hash",
+    "definition": "bytea NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "event.phase",
+    "definition": "text NOT NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "event.producer_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "event.received_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT clock_timestamp() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "event.schema_version",
+    "definition": "integer NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "goose_db_version.id",
+    "definition": "integer NOT NULL DEFAULT  identity=d generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "goose_db_version.is_applied",
+    "definition": "boolean NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "goose_db_version.tstamp",
+    "definition": "timestamp without time zone NOT NULL DEFAULT now() identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "goose_db_version.version_id",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.attempted_events",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.capacity_rejected_events",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.confirmed_events",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.in_flight_events",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.invalid_events",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.last_confirmed_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.last_failure_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.last_failure_code",
+    "definition": "text NULL DEFAULT  identity= generated= collation=default"
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.last_recovered_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.last_seen_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.persistence_reachable",
+    "definition": "boolean NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.producer_id",
+    "definition": "uuid NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.snapshot_no",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.started_at",
+    "definition": "timestamp with time zone NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.stopped_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "producer_status.unconfirmed_events",
+    "definition": "bigint NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "publication.last_published_at",
+    "definition": "timestamp with time zone NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "publication.last_seq",
+    "definition": "bigint NOT NULL DEFAULT 0 identity= generated= collation="
+  },
+  {
+    "kind": "column",
+    "name": "publication.singleton_id",
+    "definition": "integer NOT NULL DEFAULT  identity= generated= collation="
+  },
+  {
+    "kind": "constraint",
+    "name": "delivery.delivery_event_id_fkey",
+    "definition": "FOREIGN KEY (event_id) REFERENCES event(event_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "delivery.delivery_failure_count_check",
+    "definition": "CHECK ((failure_count \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "delivery.delivery_pkey",
+    "definition": "PRIMARY KEY (event_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "delivery.delivery_state_check",
+    "definition": "CHECK ((state = ANY (ARRAY['PENDING'::text, 'PROCESSED'::text, 'QUARANTINED'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "entry_version.entry_version_actor_role_check",
+    "definition": "CHECK ((actor_role = ANY (ARRAY['MEMBER'::text, 'ADMINISTRATOR'::text, 'UNKNOWN'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "entry_version.entry_version_check",
+    "definition": "CHECK ((visible_to_seq \u003e visible_from_seq)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "entry_version.entry_version_credential_kind_check",
+    "definition": "CHECK ((credential_kind = ANY (ARRAY['LOGIN_SESSION'::text, 'API_KEY'::text, 'DEVELOPMENT'::text, 'UNAUTHENTICATED'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "entry_version.entry_version_duration_ms_check",
+    "definition": "CHECK ((duration_ms \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "entry_version.entry_version_observation_check",
+    "definition": "CHECK ((observation = ANY (ARRAY['START_ONLY'::text, 'FINISH_ONLY'::text, 'COMPLETE'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "entry_version.entry_version_outcome_check",
+    "definition": "CHECK ((outcome = ANY (ARRAY['UNKNOWN'::text, 'SUCCEEDED'::text, 'ACCEPTED'::text, 'FAILED'::text, 'DENIED'::text, 'PARTIAL'::text, 'ACTION_REQUIRED'::text, 'CANCELLED'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "entry_version.entry_version_pkey",
+    "definition": "PRIMARY KEY (operation_id, visible_from_seq) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "entry_version.entry_version_realm_check",
+    "definition": "CHECK ((realm = ANY (ARRAY['MEMBER'::text, 'ADMIN'::text, 'UNKNOWN'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "entry_version.entry_version_visible_from_seq_check",
+    "definition": "CHECK ((visible_from_seq \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "event.event_ingest_id_key",
+    "definition": "UNIQUE (ingest_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "event.event_operation_id_phase_key",
+    "definition": "UNIQUE (operation_id, phase) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "event.event_payload_check",
+    "definition": "CHECK ((octet_length((payload)::text) \u003c= 32768)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "event.event_payload_hash_check",
+    "definition": "CHECK ((octet_length(payload_hash) = 32)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "event.event_phase_check",
+    "definition": "CHECK ((phase = ANY (ARRAY['START'::text, 'FINISH'::text]))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "event.event_pkey",
+    "definition": "PRIMARY KEY (event_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "event.event_schema_version_check",
+    "definition": "CHECK ((schema_version \u003e 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "goose_db_version.goose_db_version_pkey",
+    "definition": "PRIMARY KEY (id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "producer_status.producer_status_attempted_events_check",
+    "definition": "CHECK ((attempted_events \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "producer_status.producer_status_capacity_rejected_events_check",
+    "definition": "CHECK ((capacity_rejected_events \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "producer_status.producer_status_check",
+    "definition": "CHECK (((attempted_events)::numeric = (((((confirmed_events)::numeric + (unconfirmed_events)::numeric) + (invalid_events)::numeric) + (capacity_rejected_events)::numeric) + (in_flight_events)::numeric))) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "producer_status.producer_status_confirmed_events_check",
+    "definition": "CHECK ((confirmed_events \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "producer_status.producer_status_in_flight_events_check",
+    "definition": "CHECK ((in_flight_events \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "producer_status.producer_status_invalid_events_check",
+    "definition": "CHECK ((invalid_events \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "producer_status.producer_status_pkey",
+    "definition": "PRIMARY KEY (producer_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "producer_status.producer_status_snapshot_no_check",
+    "definition": "CHECK ((snapshot_no \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "producer_status.producer_status_unconfirmed_events_check",
+    "definition": "CHECK ((unconfirmed_events \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "publication.publication_last_seq_check",
+    "definition": "CHECK ((last_seq \u003e= 0)) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "publication.publication_pkey",
+    "definition": "PRIMARY KEY (singleton_id) validated=t"
+  },
+  {
+    "kind": "constraint",
+    "name": "publication.publication_singleton_id_check",
+    "definition": "CHECK ((singleton_id = 1)) validated=t"
+  },
+  {
+    "kind": "index",
+    "name": "delivery_pending_idx",
+    "definition": "CREATE INDEX delivery_pending_idx ON operation_log.delivery USING btree (next_attempt_at, event_id) WHERE (state = 'PENDING'::text) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "delivery_pkey",
+    "definition": "CREATE UNIQUE INDEX delivery_pkey ON operation_log.delivery USING btree (event_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "delivery_quarantined_idx",
+    "definition": "CREATE INDEX delivery_quarantined_idx ON operation_log.delivery USING btree (event_id) WHERE (state = 'QUARANTINED'::text) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "entry_action_idx",
+    "definition": "CREATE INDEX entry_action_idx ON operation_log.entry_version USING btree (module_code, action_code, started_at DESC, operation_id DESC) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "entry_actor_idx",
+    "definition": "CREATE INDEX entry_actor_idx ON operation_log.entry_version USING btree (actor_account_id, started_at DESC, operation_id DESC) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "entry_current_idx",
+    "definition": "CREATE UNIQUE INDEX entry_current_idx ON operation_log.entry_version USING btree (operation_id) WHERE (visible_to_seq IS NULL) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "entry_history_idx",
+    "definition": "CREATE INDEX entry_history_idx ON operation_log.entry_version USING btree (operation_id, visible_from_seq DESC) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "entry_outcome_idx",
+    "definition": "CREATE INDEX entry_outcome_idx ON operation_log.entry_version USING btree (outcome, started_at DESC, operation_id DESC) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "entry_resource_idx",
+    "definition": "CREATE INDEX entry_resource_idx ON operation_log.entry_version USING btree (primary_resource_type, primary_resource_id, started_at DESC, operation_id DESC) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "entry_sort_idx",
+    "definition": "CREATE INDEX entry_sort_idx ON operation_log.entry_version USING btree (started_at DESC, operation_id DESC, visible_from_seq) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "entry_username_idx",
+    "definition": "CREATE INDEX entry_username_idx ON operation_log.entry_version USING btree (lower(actor_username), started_at DESC, operation_id DESC) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "entry_username_prefix_idx",
+    "definition": "CREATE INDEX entry_username_prefix_idx ON operation_log.entry_version USING btree (lower(actor_username) text_pattern_ops, started_at DESC, operation_id DESC) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "entry_version_pkey",
+    "definition": "CREATE UNIQUE INDEX entry_version_pkey ON operation_log.entry_version USING btree (operation_id, visible_from_seq) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "event_ingest_id_key",
+    "definition": "CREATE UNIQUE INDEX event_ingest_id_key ON operation_log.event USING btree (ingest_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "event_operation_id_phase_key",
+    "definition": "CREATE UNIQUE INDEX event_operation_id_phase_key ON operation_log.event USING btree (operation_id, phase) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "event_pkey",
+    "definition": "CREATE UNIQUE INDEX event_pkey ON operation_log.event USING btree (event_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "event_received_idx",
+    "definition": "CREATE INDEX event_received_idx ON operation_log.event USING btree (received_at, event_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "goose_db_version_pkey",
+    "definition": "CREATE UNIQUE INDEX goose_db_version_pkey ON operation_log.goose_db_version USING btree (id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "producer_status_pkey",
+    "definition": "CREATE UNIQUE INDEX producer_status_pkey ON operation_log.producer_status USING btree (producer_id) valid=t ready=t"
+  },
+  {
+    "kind": "index",
+    "name": "publication_pkey",
+    "definition": "CREATE UNIQUE INDEX publication_pkey ON operation_log.publication USING btree (singleton_id) valid=t ready=t"
+  },
+  {
+    "kind": "sequence",
+    "name": "event_ingest_id_seq",
+    "definition": "bigint start=1 increment=1 min=1 max=9223372036854775807 cache=1 cycle=f"
+  },
+  {
+    "kind": "sequence",
+    "name": "goose_db_version_id_seq",
+    "definition": "integer start=1 increment=1 min=1 max=2147483647 cache=1 cycle=f"
+  },
+  {
+    "kind": "table",
+    "name": "delivery",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "entry_version",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "event",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "goose_db_version",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "producer_status",
+    "definition": "r persistence=p rls=f force_rls=f"
+  },
+  {
+    "kind": "table",
+    "name": "publication",
+    "definition": "r persistence=p rls=f force_rls=f"
+  }
+]
