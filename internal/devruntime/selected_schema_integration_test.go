@@ -126,7 +126,7 @@ func TestSelectedPostgresStartsWithNoUnselectedApplicationDatabase(t *testing.T)
 		}
 	}
 	sort.Slice(order, func(i, j int) bool { return order[i].ticks < order[j].ticks })
-	wantOrder := []string{"account-schema-up", "account-schema-verify", "solana-discovery-schema-up", "solana-discovery-schema-verify", "account-schema-verify"}
+	wantOrder := []string{"account-schema-up", "account-schema-verify", "solana-discovery-schema-up", "solana-discovery-schema-verify", "account-schema-verify", "operation-log-schema-up", "operation-log-schema-verify", "account-schema-verify"}
 	if len(order) != len(wantOrder) {
 		t.Fatalf("shared schema helper sequence: %v", order)
 	}
@@ -190,7 +190,7 @@ func TestSelectedExternalSchemasDoNotCreateCatalogOrOwnedResources(t *testing.T)
 	if os.Getenv("ATHENA_TEST_PG_ADMIN_DSN") == "" {
 		t.Skip("requires dedicated test Postgres")
 	}
-	for _, name := range []string{"wallet", "managed-oo", "profit-sharing", "solana-discovery", "worm-trading"} {
+	for _, name := range []string{"wallet", "managed-oo", "profit-sharing", "solana-discovery", "worm-trading", "operation-log"} {
 		t.Run(name, func(t *testing.T) {
 			db := pgtest.NewUnmigrated(t)
 			m := schemaTestManager(t)

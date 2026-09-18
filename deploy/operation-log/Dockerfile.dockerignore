@@ -1,0 +1,22 @@
+# Positive selection: independent operation-log service and schema tool only.
+**
+!go.mod
+!go.sum
+!cmd/
+!cmd/athena-operation-log/**
+!cmd/athena-operation-log-migrate/**
+!common/**
+!internal/**
+!pkg/**
+!util/**
+**/*_test.go
+**/.env
+**/.env.*
+**/secrets
+**/.run
+**/.tmp
+**/.superpowers
+**/.worktrees
+**/.git
+**/node_modules
+**/dist

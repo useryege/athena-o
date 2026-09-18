@@ -113,3 +113,10 @@ Task 3 fix 验证证据：`task-3-fix-unit.log`、`task-3-fix-race.log`、`task-
 - Task 5 专项证据：`task-5-race.log`、`task-5-vet.log`、`task-5-build.log`、`task-5-integration.log`；受影响 Go 包、真实 PostgreSQL store/schema integration、diff check 均通过。
 - Task 6 管理员 operation-log 列表、详情和独立 capture status UI 已实现；`task-6-final-review.md` 复审为 Critical=0、Important=0，`yarn lint` 和 `task-6-build.log` 通过。真实浏览器验收仍留给 Task 8。
 - 当前未提交父任务文档、`athena-operation-log-migrate`、`docs/testing/key-operation-logs-acceptance.md` 保持不混入 Task 5/6 提交；当前产品提交待完成 staged boundary 核对。
+
+## 2026-09-18 Task 7 完成
+
+- Task 7 已实现独立 operation-log devruntime 服务、account/operation-log schema owner、专用 migration all 路由、独立 Dockerfile/Compose 服务、TLS health probe、secret 隔离和最小服务依赖；API 不接收 cursor key。
+- Task 7 独立复审 `task-7-final-review.md`：Critical=0、Important=0。复审期间修复 Compose DSN 分叉、account-state 维护归属、TLS CA healthcheck 和 devruntime TLS readiness；保留一个分离 instance 未共享 token 时的 Minor 使用边界。
+- 验证证据：`task-7-unit-final2.log`、`task-7-race-final2.log`、`task-7-vet-final2.log`、`task-7-compose-final.log`、`task-7-shellcheck-final.log`、`task-7-migration-up.log`、`task-7-migration-verify.log`、`task-7-service.log`、`task-7-devruntime-integration.log`；报告见 `task-7-report.md`。
+- Task 8 尚未开始：V01–V18 全量汇总、真实 ATHENA 环境验收、整分支审阅、环境收尾和人工审查材料均未完成。

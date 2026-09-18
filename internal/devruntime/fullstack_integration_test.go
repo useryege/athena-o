@@ -72,7 +72,7 @@ func TestFullStackPreparesSelectedSchemasBeforeConsumers(t *testing.T) {
 			}
 		}
 	}
-	if helpers != 13 {
+	if helpers != 16 {
 		t.Fatalf("schema tools not supervised: %v", state.ExitCodes)
 	}
 	data, err := os.ReadFile(o.Key.StatePath())
@@ -82,7 +82,7 @@ func TestFullStackPreparesSelectedSchemasBeforeConsumers(t *testing.T) {
 	if strings.Contains(string(data), dsn) {
 		t.Fatal("state leaked DSN")
 	}
-	t.Logf("full stack all 5 module schemas ready; namespace=%s; zero consumers", o.Key.Namespace)
+	t.Logf("full stack all selected module schemas ready; namespace=%s; zero consumers", o.Key.Namespace)
 }
 
 func TestFullStackRunnerProcess(t *testing.T) {

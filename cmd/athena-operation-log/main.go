@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	operationlogcommands "github.com/useryege/athena/cmd/athena-operation-log/commands"
 	accountstateSchema "github.com/useryege/athena/internal/accountstate/schema"
 	accountstateStore "github.com/useryege/athena/internal/accountstate/store"
 	"github.com/useryege/athena/internal/operationlog/access"
@@ -26,6 +27,13 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "health" {
+		if err := operationlogcommands.NewCommand().Execute(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	cfg, err := rpcconfig.LoadServer(os.LookupEnv)

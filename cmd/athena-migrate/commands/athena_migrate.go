@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/spf13/cobra"
 	"github.com/useryege/athena/internal/accountstate/schema"
 	"github.com/useryege/athena/internal/migration"
+	operationlogschema "github.com/useryege/athena/internal/operationlog/schema"
 	"github.com/useryege/athena/util/cli"
 	"github.com/useryege/athena/util/db/postgres"
 )
@@ -15,9 +17,11 @@ import (
 const cliName = "athena-migrate"
 
 var (
-	selectModules = migration.Select
-	runUp         = migrateUp
-	runStatus     = migrationStatus
+	selectModules      = migration.Select
+	runUp              = migrateUp
+	runStatus          = migrationStatus
+	operationLogUp     = operationlogschema.Up
+	operationLogStatus = verifyOperationLogSchema
 )
 
 func NewCommand() *cobra.Command {
@@ -92,6 +96,13 @@ func migrateUp(ctx context.Context, module migration.Module) error {
 		}
 		return schema.Up(ctx, dsn)
 	}
+	if module.Name == "operation-log" {
+		dsn, err := schema.LoadDSN(os.LookupEnv)
+		if err != nil {
+			return err
+		}
+		return operationLogUp(ctx, dsn)
+	}
 	return postgres.Migrate(ctx, postgres.DSN(module.DSNEnv, module.Database), module.Migrations, module.Dir)
 }
 
@@ -107,5 +118,24 @@ func migrationStatus(ctx context.Context, module migration.Module) error {
 		}
 		return err
 	}
+	if module.Name == "operation-log" {
+		dsn, err := schema.LoadDSN(os.LookupEnv)
+		if err != nil {
+			return err
+		}
+		return operationLogStatus(ctx, dsn)
+	}
 	return postgres.MigrationStatus(ctx, postgres.DSN(module.DSNEnv, module.Database), module.Migrations, module.Dir)
+}
+
+func verifyOperationLogSchema(ctx context.Context, dsn string) error {
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	if err := pool.Ping(ctx); err != nil {
+		return err
+	}
+	return operationlogschema.Verify(ctx, pool)
 }
