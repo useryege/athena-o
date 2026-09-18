@@ -176,6 +176,11 @@ func projectOperation(ctx context.Context, q *sqlc.Queries, op string, rs []rawE
 		base = finish
 	}
 	view := NormalizedView{Event: base.e, FirstReceivedAt: base.received, LastReceivedAt: base.received}
+	for _, r := range rs {
+		if r.e.OperationID == op && !containsString(view.PhasesReceived, string(r.e.Phase)) {
+			view.PhasesReceived = append(view.PhasesReceived, string(r.e.Phase))
+		}
+	}
 	if start != nil && finish != nil {
 		if start.e.ProducerID != finish.e.ProducerID || start.e.ActionCode != finish.e.ActionCode || start.e.ModuleCode != finish.e.ModuleCode || start.e.StartedAt.UTC() != finish.e.StartedAt.UTC() || !actorsCompatible(start.e.Actor, finish.e.Actor) || !sameOptional(start.e.RequestID, finish.e.RequestID) || !sameOptionalPtr(start.e.ParentOperationID, finish.e.ParentOperationID) || !sameOptionalPtr(start.e.TargetAccountID, finish.e.TargetAccountID) {
 			keep, reject := start, finish
@@ -412,4 +417,13 @@ func (p *Projector) Run(ctx context.Context) error {
 		backoff = interval
 		timer.Reset(interval)
 	}
+}
+
+func containsString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
 }

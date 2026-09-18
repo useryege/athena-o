@@ -123,6 +123,18 @@ func NormalizeFilter(in Filter, now time.Time) (NormalizedFilter, error) {
 			}
 		}
 	}
+	if out.ResourceType != "" {
+		known := false
+		for _, e := range event.Catalog() {
+			if e.ResourceType == out.ResourceType {
+				known = true
+				break
+			}
+		}
+		if !known {
+			return NormalizedFilter{}, fmt.Errorf("%w: resource_type", ErrInvalidFilter)
+		}
+	}
 	if (out.ResourceType == "") != (out.ResourceID == "") {
 		return NormalizedFilter{}, fmt.Errorf("%w: resource_type and resource_id are paired", ErrInvalidFilter)
 	}

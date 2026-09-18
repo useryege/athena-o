@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,7 +21,7 @@ type TxReader interface {
 type Summary struct {
 	OperationID                                                                                      string
 	StartedAt                                                                                        time.Time
-	ActorAccountID, ActorUsername, ActorRole, Realm, CredentialKind                                  string
+	ActorAccountID, ActorUsername, ActorRole, Realm, CredentialKind, TargetAccountID                 string
 	IdentityVerified, IdentitySnapshotComplete                                                       bool
 	ModuleCode, ActionCode, PrimaryResourceType, PrimaryResourceID, Outcome, Observation, ReasonCode string
 	DurationMS                                                                                       *int64
@@ -200,8 +201,8 @@ func (a *Adapter) List(ctx context.Context, f Filter, viewer Viewer) (Page, erro
 			if u, e := uuid.Parse(nf.ActorQuery); e == nil {
 				appendCond("actor_account_id =", u)
 			} else {
-				sql += fmt.Sprintf(" AND lower(actor_username) LIKE lower($%d)", n)
-				args = append(args, nf.ActorQuery+"%")
+				sql += fmt.Sprintf(" AND lower(actor_username) LIKE lower($%d) ESCAPE '\\'", n)
+				args = append(args, escapeLike(nf.ActorQuery)+"%")
 				n++
 			}
 		}
@@ -266,7 +267,7 @@ func (a *Adapter) List(ctx context.Context, f Filter, viewer Viewer) (Page, erro
 				x := dur.Int64
 				duration = &x
 			}
-			sm := Summary{OperationID: uid(op), StartedAt: started.Time, ActorAccountID: uid(aid), ActorUsername: text(uname), ActorRole: arole.String, Realm: realm.String, CredentialKind: cred.String, ModuleCode: mod.String, ActionCode: act.String, Outcome: outcome.String, Observation: obs.String, PrimaryResourceType: text(rt), PrimaryResourceID: text(rid), DurationMS: duration}
+			sm := Summary{OperationID: uid(op), StartedAt: started.Time, ActorAccountID: uid(aid), ActorUsername: text(uname), ActorRole: arole.String, Realm: realm.String, CredentialKind: cred.String, TargetAccountID: text(tid), ModuleCode: mod.String, ActionCode: act.String, Outcome: outcome.String, Observation: obs.String, PrimaryResourceType: text(rt), PrimaryResourceID: text(rid), DurationMS: duration}
 			enrichSummary(&sm, detail)
 			items = append(items, sm)
 		}
@@ -293,8 +294,12 @@ func (a *Adapter) List(ctx context.Context, f Filter, viewer Viewer) (Page, erro
 	return p, nil
 }
 func (a *Adapter) Get(ctx context.Context, id string, viewer Viewer, snapshot string) (Detail, error) {
-	if _, e := uuid.Parse(id); e != nil {
+	u, e := uuid.Parse(id)
+	if e != nil || u == uuid.Nil || u.String() != id {
 		return Detail{}, fmt.Errorf("invalid operation id")
+	}
+	if a.Reader == nil {
+		return Detail{}, fmt.Errorf("query reader unavailable")
 	}
 	now := a.now()
 	seq := int64(0)
@@ -350,7 +355,7 @@ func (a *Adapter) Get(ctx context.Context, id string, viewer Viewer, snapshot st
 			x := dur.Int64
 			duration = &x
 		}
-		d = Detail{Summary: Summary{OperationID: uid(op), StartedAt: started.Time, ActorAccountID: uid(aid), ActorUsername: text(uname), ActorRole: role.String, Realm: realm.String, CredentialKind: cred.String, ModuleCode: mod.String, ActionCode: act.String, Outcome: outcome.String, Observation: obs.String, PrimaryResourceType: text(rt), PrimaryResourceID: text(rid), DurationMS: duration}, Detail: detail, RequestID: uid(req), ParentOperationID: uid(parent), BusinessRequestID: text(biz)}
+		d = Detail{Summary: Summary{OperationID: uid(op), StartedAt: started.Time, ActorAccountID: uid(aid), ActorUsername: text(uname), ActorRole: role.String, Realm: realm.String, CredentialKind: cred.String, TargetAccountID: text(tid), ModuleCode: mod.String, ActionCode: text(act), Outcome: outcome.String, Observation: obs.String, PrimaryResourceType: text(rt), PrimaryResourceID: text(rid), DurationMS: duration}, Detail: detail, RequestID: uid(req), ParentOperationID: uid(parent), BusinessRequestID: text(biz)}
 		enrichDetail(&d, detail)
 		d.Source.SnapshotSequence = from
 		for _, u := range src {
@@ -365,6 +370,12 @@ func (a *Adapter) Get(ctx context.Context, id string, viewer Viewer, snapshot st
 		return nil
 	})
 	return d, err
+}
+
+func escapeLike(v string) string {
+	v = strings.ReplaceAll(v, "\\", "\\\\")
+	v = strings.ReplaceAll(v, "%", "\\%")
+	return strings.ReplaceAll(v, "_", "\\_")
 }
 
 func enrichSummary(s *Summary, b []byte) {
@@ -389,6 +400,7 @@ func enrichDetail(d *Detail, b []byte) {
 		event.Event
 		FirstReceivedAt time.Time `json:"firstReceivedAt"`
 		LastReceivedAt  time.Time `json:"lastReceivedAt"`
+		PhasesReceived  []string  `json:"phasesReceived"`
 	}
 	if json.Unmarshal(b, &v) != nil {
 		return
@@ -405,7 +417,9 @@ func enrichDetail(d *Detail, b []byte) {
 	d.Source.ProducerID = v.ProducerID
 	d.Source.FirstReceivedAt = v.FirstReceivedAt
 	d.Source.LastReceivedAt = v.LastReceivedAt
-	if v.Phase != "" {
+	if len(v.PhasesReceived) > 0 {
+		d.Source.PhasesReceived = append([]string(nil), v.PhasesReceived...)
+	} else if v.Phase != "" {
 		d.Source.PhasesReceived = []string{string(v.Phase)}
 	}
 	if v.GRPCCode != nil {

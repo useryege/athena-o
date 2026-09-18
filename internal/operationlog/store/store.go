@@ -20,6 +20,7 @@ const ProjectTimeout = 2 * time.Second
 
 type Store struct {
 	pool                *pgxpool.Pool
+	serviceEpoch        string
 	healthMu            sync.RWMutex
 	lastProcessingError error
 	queryReady          bool
@@ -40,6 +41,7 @@ type NormalizedView struct {
 	event.Event
 	FirstReceivedAt time.Time `json:"firstReceivedAt"`
 	LastReceivedAt  time.Time `json:"lastReceivedAt"`
+	PhasesReceived  []string  `json:"phasesReceived"`
 }
 
 // Open owns a service pool. Startup schema verification is explicit in schema.Verify.
@@ -71,7 +73,7 @@ func open(ctx context.Context, dsn string, max int32, ping bool) (*Store, error)
 			return nil, err
 		}
 	}
-	return &Store{pool: pool}, nil
+	return &Store{pool: pool, serviceEpoch: uuid.NewString()}, nil
 }
 func (s *Store) Close() { s.pool.Close() }
 

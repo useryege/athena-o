@@ -14,6 +14,7 @@ import (
 // read-only transaction. Missing nullable values remain absent in the result.
 func (s *Store) RuntimeStatus(ctx context.Context) (query.RuntimeStatus, error) {
 	var out query.RuntimeStatus
+	out.ServiceEpoch = s.serviceEpoch
 	err := s.Read(ctx, func(tx pgx.Tx) error {
 		if _, err := tx.Exec(ctx, "SET LOCAL statement_timeout = '750ms'"); err != nil {
 			return err
@@ -82,6 +83,9 @@ func (s *Store) RuntimeStatus(ctx context.Context) (query.RuntimeStatus, error) 
 			return rows.Err()
 		}
 		out.ProducersComplete = len(out.Producers) <= 100
+		if len(out.Producers) > 100 {
+			out.Producers = out.Producers[:100]
+		}
 		return nil
 	})
 	if err != nil {
