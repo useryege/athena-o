@@ -112,7 +112,6 @@ func (q *Queries) InsertEvent(ctx context.Context, arg InsertEventParams) (int64
 const insertVersion = `-- name: InsertVersion :exec
 INSERT INTO operation_log.entry_version(operation_id,visible_from_seq,started_at,finished_at,actor_account_id,actor_username,actor_role,realm,credential_kind,module_code,action_code,outcome,observation,target_account_id,primary_resource_type,primary_resource_id,request_id,parent_operation_id,business_request_id,duration_ms,detail,source_event_ids)
 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
-ON CONFLICT(operation_id,visible_from_seq) DO UPDATE SET started_at=excluded.started_at,finished_at=excluded.finished_at,actor_account_id=excluded.actor_account_id,actor_username=excluded.actor_username,actor_role=excluded.actor_role,realm=excluded.realm,credential_kind=excluded.credential_kind,module_code=excluded.module_code,action_code=excluded.action_code,outcome=excluded.outcome,observation=excluded.observation,target_account_id=excluded.target_account_id,primary_resource_type=excluded.primary_resource_type,primary_resource_id=excluded.primary_resource_id,request_id=excluded.request_id,parent_operation_id=excluded.parent_operation_id,business_request_id=excluded.business_request_id,duration_ms=excluded.duration_ms,detail=excluded.detail,source_event_ids=excluded.source_event_ids
 `
 
 type InsertVersionParams struct {

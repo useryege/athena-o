@@ -346,6 +346,11 @@
   },
   {
     "kind": "constraint",
+    "name": "entry_version.entry_version_detail_check",
+    "definition": "CHECK ((octet_length((detail)::text) \u003c= 16384)) validated=t"
+  },
+  {
+    "kind": "constraint",
     "name": "entry_version.entry_version_duration_ms_check",
     "definition": "CHECK ((duration_ms \u003e= 0)) validated=t"
   },

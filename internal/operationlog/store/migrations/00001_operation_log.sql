@@ -52,7 +52,7 @@ CREATE TABLE operation_log.entry_version (
  parent_operation_id uuid,
  business_request_id text,
  duration_ms bigint CHECK(duration_ms>=0),
- detail jsonb NOT NULL,
+ detail jsonb NOT NULL CHECK (octet_length(detail::text) <= 16384),
  source_event_ids uuid[] NOT NULL,
  PRIMARY KEY(operation_id,visible_from_seq)
 );

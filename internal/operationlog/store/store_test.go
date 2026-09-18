@@ -7,12 +7,14 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/useryege/athena/internal/operationlog/event"
 	"github.com/useryege/athena/internal/operationlog/ingest"
 	"github.com/useryege/athena/internal/operationlog/schema"
 	"github.com/useryege/athena/internal/testutil/pgtest"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -388,5 +390,177 @@ func TestProducerPoolRecoversMissingSchema(t *testing.T) {
 	appendOK(t, s, e)
 	if count(t, s, `SELECT count(*) FROM operation_log.event`) != 1 {
 		t.Fatal("producer failed to recover")
+	}
+}
+
+func TestSingleProjectionErrorQuarantinesOnlyItsOperation(t *testing.T) {
+	s, db := newStore(t)
+	bad, good := fixture(), fixture()
+	appendOK(t, s, bad)
+	appendOK(t, s, good)
+	if _, err := db.Pool.Exec(ctx, fmt.Sprintf(`CREATE FUNCTION operation_log.fail_one_projection() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.operation_id = '%s'::uuid THEN RAISE EXCEPTION 'single projection failure'; END IF; RETURN NEW; END $$; CREATE TRIGGER fail_one_projection BEFORE INSERT ON operation_log.entry_version FOR EACH ROW EXECUTE FUNCTION operation_log.fail_one_projection()`, bad.OperationID)); err != nil {
+		t.Fatal(err)
+	}
+	defer db.Pool.Exec(ctx, `DROP TRIGGER fail_one_projection ON operation_log.entry_version; DROP FUNCTION operation_log.fail_one_projection()`)
+	r, err := s.Project(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.PublishedSeq != 1 || r.Processed != 1 || r.Quarantined != 1 {
+		t.Fatalf("single row isolation %+v", r)
+	}
+	var badState, goodState string
+	if err := db.Pool.QueryRow(ctx, `SELECT state FROM operation_log.delivery WHERE event_id=$1`, bad.EventID).Scan(&badState); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Pool.QueryRow(ctx, `SELECT state FROM operation_log.delivery WHERE event_id=$1`, good.EventID).Scan(&goodState); err != nil {
+		t.Fatal(err)
+	}
+	if badState != "QUARANTINED" || goodState != "PROCESSED" {
+		t.Fatalf("delivery states bad=%s good=%s", badState, goodState)
+	}
+	if n := count(t, s, `SELECT count(*) FROM operation_log.entry_version`); n != 1 {
+		t.Fatalf("projection count %d", n)
+	}
+}
+
+func TestIdentityFoldingPreservesTrustedFacts(t *testing.T) {
+	t.Run("verified identity can be completed by finish", func(t *testing.T) {
+		s, _ := newStore(t)
+		start := fixture()
+		accountID := uuid.NewString()
+		provider := "GOOGLE"
+		start.Actor = event.Actor{AccountID: &accountID, Role: "MEMBER", Realm: "MEMBER", CredentialKind: "LOGIN_SESSION", IdentityVerified: true, Provider: &provider}
+		finishEvent := finish(start)
+		username := "Alice"
+		finishEvent.Actor.UsernameSnapshot = &username
+		finishEvent.Actor.IdentitySnapshotComplete = true
+		appendOK(t, s, start)
+		projectOK(t, s)
+		appendOK(t, s, finishEvent)
+		projectOK(t, s)
+		_, obs, view := view(t, s, start.OperationID, 2)
+		if obs != "COMPLETE" || view.Actor.AccountID == nil || *view.Actor.AccountID != accountID || view.Actor.UsernameSnapshot == nil || *view.Actor.UsernameSnapshot != username {
+			t.Fatalf("verified identity was not completed: %s %+v", obs, view.Actor)
+		}
+	})
+	t.Run("trusted finish fills weak start", func(t *testing.T) {
+		s, _ := newStore(t)
+		start := fixture()
+		finishEvent := finish(start)
+		finishEvent.Actor = trustedActor("Alice", "GOOGLE")
+		appendOK(t, s, start)
+		projectOK(t, s)
+		appendOK(t, s, finishEvent)
+		projectOK(t, s)
+		_, _, view := view(t, s, start.OperationID, 2)
+		if view.Actor.AccountID == nil || *view.Actor.AccountID != *finishEvent.Actor.AccountID || view.Actor.UsernameSnapshot == nil || *view.Actor.UsernameSnapshot != "Alice" {
+			t.Fatalf("trusted finish identity lost: %+v", view.Actor)
+		}
+	})
+	t.Run("trusted start survives weak finish", func(t *testing.T) {
+		s, _ := newStore(t)
+		start := fixture()
+		start.Actor = trustedActor("Alice", "GOOGLE")
+		finishEvent := finish(start)
+		finishEvent.Actor = event.Actor{Role: "UNKNOWN", Realm: "UNKNOWN", CredentialKind: "UNAUTHENTICATED"}
+		appendOK(t, s, start)
+		appendOK(t, s, finishEvent)
+		projectOK(t, s)
+		_, obs, view := view(t, s, start.OperationID, 1)
+		if obs != "COMPLETE" || view.Actor.AccountID == nil || *view.Actor.AccountID != *start.Actor.AccountID || view.Actor.UsernameSnapshot == nil || *view.Actor.UsernameSnapshot != "Alice" {
+			t.Fatalf("trusted start identity lost: %+v", view.Actor)
+		}
+	})
+	for _, field := range []string{"username", "provider"} {
+		t.Run(field+" conflict quarantines late fact", func(t *testing.T) {
+			s, _ := newStore(t)
+			start := fixture()
+			start.Actor = trustedActor("Alice", "GOOGLE")
+			finishEvent := finish(start)
+			if field == "username" {
+				finishEvent.Actor.UsernameSnapshot = ptr("Bob")
+			} else {
+				finishEvent.Actor.Provider = ptr("PHANTOM")
+			}
+			appendOK(t, s, start)
+			appendOK(t, s, finishEvent)
+			r := projectOK(t, s)
+			if r.Quarantined != 1 {
+				t.Fatalf("conflict not quarantined %+v", r)
+			}
+			o, obs, view := view(t, s, start.OperationID, 1)
+			if o != "UNKNOWN" || obs != "START_ONLY" || view.Actor.UsernameSnapshot == nil || *view.Actor.UsernameSnapshot != "Alice" {
+				t.Fatalf("trusted history contaminated %s %s %+v", o, obs, view.Actor)
+			}
+		})
+	}
+}
+
+func TestProducerMismatchQuarantinesConflictingPhase(t *testing.T) {
+	s, _ := newStore(t)
+	start := fixture()
+	finishEvent := finish(start)
+	finishEvent.ProducerID = uuid.NewString()
+	appendOK(t, s, start)
+	appendOK(t, s, finishEvent)
+	r := projectOK(t, s)
+	if r.Processed != 1 || r.Quarantined != 1 || r.PublishedSeq != 1 {
+		t.Fatalf("producer mismatch was not isolated: %+v", r)
+	}
+	if outcome, observation, _ := view(t, s, start.OperationID, 1); outcome != "UNKNOWN" || observation != "START_ONLY" {
+		t.Fatalf("conflicting producer changed the operation: %s %s", outcome, observation)
+	}
+}
+
+func trustedActor(username, provider string) event.Actor {
+	accountID := uuid.NewString()
+	return event.Actor{AccountID: &accountID, UsernameSnapshot: &username, Role: "MEMBER", Realm: "MEMBER", CredentialKind: "LOGIN_SESSION", IdentityVerified: true, IdentitySnapshotComplete: true, Provider: &provider}
+}
+
+func TestLateConflictDoesNotQuarantineProcessedFact(t *testing.T) {
+	s, db := newStore(t)
+	start := fixture()
+	start.Actor = trustedActor("Alice", "GOOGLE")
+	appendOK(t, s, start)
+	projectOK(t, s)
+	finishEvent := finish(start)
+	finishEvent.Actor.UsernameSnapshot = ptr("Bob")
+	appendOK(t, s, finishEvent)
+	r := projectOK(t, s)
+	if r.Quarantined != 1 || r.PublishedSeq != 1 {
+		t.Fatalf("late conflict changed publication %+v", r)
+	}
+	var state string
+	if err := db.Pool.QueryRow(ctx, `SELECT state FROM operation_log.delivery WHERE event_id=$1`, start.EventID).Scan(&state); err != nil {
+		t.Fatal(err)
+	}
+	if state != "PROCESSED" {
+		t.Fatalf("processed start changed to %s", state)
+	}
+	if _, obs, _ := view(t, s, start.OperationID, 1); obs != "START_ONLY" {
+		t.Fatal("late conflict replaced old view")
+	}
+}
+
+func TestDetailSizeConstraint(t *testing.T) {
+	_, db := newStore(t)
+	_, err := db.Pool.Exec(ctx, `INSERT INTO operation_log.entry_version(operation_id,visible_from_seq,started_at,actor_role,realm,credential_kind,module_code,action_code,outcome,observation,request_id,detail,source_event_ids) VALUES(gen_random_uuid(),1,clock_timestamp(),'UNKNOWN','UNKNOWN','UNAUTHENTICATED','account','account.access.update','UNKNOWN','START_ONLY',gen_random_uuid(),jsonb_build_object('detail',repeat('x',16385)),ARRAY[gen_random_uuid()])`)
+	if err == nil {
+		t.Fatal("oversized detail accepted")
+	}
+}
+
+func TestEntryVersionHistoryDoesNotUpsert(t *testing.T) {
+	s, _ := newStore(t)
+	e := fixture()
+	appendOK(t, s, e)
+	projectOK(t, s)
+	_, err := s.pool.Exec(ctx, `INSERT INTO operation_log.entry_version(operation_id,visible_from_seq,started_at,actor_role,realm,credential_kind,module_code,action_code,outcome,observation,request_id,detail,source_event_ids) SELECT operation_id,visible_from_seq,started_at,actor_role,realm,credential_kind,module_code,action_code,outcome,observation,request_id,detail,source_event_ids FROM operation_log.entry_version WHERE operation_id=$1`, e.OperationID)
+	if err == nil {
+		t.Fatal("historical version upserted")
+	}
+	if strings.Contains(err.Error(), "duplicate") == false {
+		t.Fatalf("unexpected duplicate error: %v", err)
 	}
 }
