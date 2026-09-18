@@ -120,3 +120,15 @@ Task 3 fix 验证证据：`task-3-fix-unit.log`、`task-3-fix-race.log`、`task-
 - Task 7 独立复审 `task-7-final-review.md`：Critical=0、Important=0。复审期间修复 Compose DSN 分叉、account-state 维护归属、TLS CA healthcheck 和 devruntime TLS readiness；保留一个分离 instance 未共享 token 时的 Minor 使用边界。
 - 验证证据：`task-7-unit-final2.log`、`task-7-race-final2.log`、`task-7-vet-final2.log`、`task-7-compose-final.log`、`task-7-shellcheck-final.log`、`task-7-migration-up.log`、`task-7-migration-verify.log`、`task-7-service.log`、`task-7-devruntime-integration.log`；报告见 `task-7-report.md`。
 - Task 8 尚未开始：V01–V18 全量汇总、真实 ATHENA 环境验收、整分支审阅、环境收尾和人工审查材料均未完成。
+
+## 2026-09-18 Task 8 真实验收与收尾
+
+- 真实实例由指定 worktree 启动：`INSTANCE=key-operation-logs-acceptance make run`；`task-8-runtime-status.log` 记录 full-stack-ready、会员／管理员 bootstrap 及 operation-log service/schema ready。Chrome smoke 2/2 通过，原始报告在 `.tmp/athena-ui-acceptance/2026-09-18T09-47-39-346Z-b2ba99f2/`。
+- 真实会员 `local-user` 执行 `account.profile.update`，管理员 `local-admin` 列表和 detail 读到 `SUCCEEDED`、MEMBER、DEVELOPMENT、可信 account/resource、changedFields 和 protocol result；管理员浏览器页面列表、Reachable capture status、History、详情 Resources/Protocol/Reason 均通过，无 page error。证据见 `task-8-member-profile-update-success.json`、`task-8-admin-operation-detail.json`、`task-8-operation-log-ui-final.log` 及两张截图。
+- Task 8 发现 JSON scalar 与 protobuf wrapper 混用导致 Persistence 状态显示 Unavailable；按 TDD 先保留 `task-8-operation-log-ui-red.log`，修复并通过 `task-8-operation-log-ui-green-final.log`，提交 `17405ec5 fix(admin): normalize operation log status metrics`，浏览器复验通过。
+- 相关 Go unit/race/vet、真实 PostgreSQL operationlog integration、UI Jest/lint/build 均通过：`task-8-go-unit.log`、`task-8-go-race.log`、`task-8-go-vet.log`、`task-8-pg-integration.log`、`task-8-ui-test.log`、`task-8-ui-lint-final2.log`、`task-8-ui-build-final2.log`。
+- V01–V15 有专项代码审阅／测试及真实 PostgreSQL 证据；V16 真实桌面管理员页面和 smoke 通过，但手机／200%／八结果全矩阵未逐项执行；V17 独立服务／迁移／TLS readiness 和全栈启动通过，命令 listener 数据库故障→恢复未注入；V18 会员→管理员列表/detail/UI 通过，日志停机入箱／恢复和完整外部认证边界未执行。详见 `docs/testing/key-operation-logs-acceptance.md`。
+- 整分支独立复审已派发，结果待写入 `task-8-branch-final-review.md`；Critical/Important 处理完成后再锁定 R1 材料。
+- 环境收尾：`INSTANCE=key-operation-logs-acceptance make stop` 后 state 为 stopped、监督进程为空、4000/8080/8124/50462/50468/50469 已释放；随后 `docker stop athena-key-operation-logs-tests`，容器 Exited (0)，数据卷和证据保留。证据 `task-8-environment-shutdown.log`。
+- R1 三份人工审查材料已写入 `docs/testing/human-review/key-operation-logs/R1/`，human-report 保持草稿并将 CHK-001–CHK-012 留给用户；AI delivery 明确为“AI 阶段未完成／存在阻塞”，没有代填人工通过。
+- 分支复审发现一个 Minor：管理员详情导航未携带列表 snapshot token；已按 TDD 新增 red/green，修复 URL 保留筛选与 snapshot_token，提交 `66e4b5f6c56782ee7df187bdc49f7ca4e4039ca0`。R2 临时实例 `key-operation-logs-acceptance-r2` 真实会员操作与浏览器详情验证通过，request URL 含 snapshot_token；实例停止、端口释放、日志保留于 `task-8-r2-*`。
