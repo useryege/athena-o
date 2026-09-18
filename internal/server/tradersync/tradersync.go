@@ -2,6 +2,7 @@ package tradersync
 
 import (
 	"context"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	trpc "github.com/useryege/athena/internal/tradersync/apiclient"
 	api "github.com/useryege/athena/pkg/apiclient/tradersync"
 	"google.golang.org/grpc/codes"
@@ -33,6 +34,39 @@ func (s *Server) actor(ctx context.Context) (*trpc.Actor, error) {
 		return nil, status.Error(codes.Unavailable, "Trader Sync actor contract invalid")
 	}
 	return a, nil
+}
+
+func captureTraderSubscription(ctx context.Context, subscription *trpc.Subscription, effect string, noteChanged bool, expectedRevision uint64) {
+	if subscription == nil || subscription.GetId() == "" {
+		return
+	}
+	operationlogrecord.CaptureResource(ctx, "subscription", subscription.GetId())
+	operationlogrecord.CaptureString(ctx, "subscriptionId", subscription.GetId())
+	if effect == "TRADER_SYNC_SUBSCRIPTION_CREATE" {
+		operationlogrecord.CaptureUint64(ctx, "revision", subscription.GetRevision())
+		operationlogrecord.CaptureBool(ctx, "noteChanged", noteChanged)
+	} else {
+		operationlogrecord.CaptureUint64(ctx, "expectedRevision", expectedRevision)
+		operationlogrecord.CaptureUint64(ctx, "confirmedRevision", subscription.GetRevision())
+	}
+	// The public projection replaces the durable enabled state with the
+	// observation state (for example pending_baseline or interrupted). Capture
+	// the requested durable transition explicitly instead.
+	operationlogrecord.CaptureString(ctx, "state", traderSubscriptionOperationState(effect))
+	operationlogrecord.Commit(ctx, effect)
+}
+
+func traderSubscriptionOperationState(effect string) string {
+	switch effect {
+	case "TRADER_SYNC_SUBSCRIPTION_CREATE", "TRADER_SYNC_SUBSCRIPTION_RESUME":
+		return "enabled"
+	case "TRADER_SYNC_SUBSCRIPTION_PAUSE":
+		return "paused"
+	case "TRADER_SYNC_SUBSCRIPTION_CANCEL":
+		return "cancelled"
+	default:
+		return ""
+	}
 }
 func internalPage(v *api.PageInput) *trpc.PageInput {
 	if v == nil {
@@ -71,6 +105,7 @@ func (s *Server) CreateSubscription(ctx context.Context, r *api.CreateSubscripti
 	if err != nil {
 		return nil, MapInternalError(err)
 	}
+	captureTraderSubscription(ctx, v.GetSubscription(), "TRADER_SYNC_SUBSCRIPTION_CREATE", r.GetNote() != nil, 0)
 	m := &responseMapper{}
 	out := m.mapCreateSubscriptionResponse(v)
 	if m.err != nil {
@@ -119,6 +154,7 @@ func (s *Server) PauseSubscription(ctx context.Context, r *api.PauseSubscription
 	if err != nil {
 		return nil, MapInternalError(err)
 	}
+	captureTraderSubscription(ctx, v.GetSubscription(), "TRADER_SYNC_SUBSCRIPTION_PAUSE", false, r.GetExpectedRevision())
 	m := &responseMapper{}
 	out := m.mapPauseSubscriptionResponse(v)
 	if m.err != nil {
@@ -135,6 +171,7 @@ func (s *Server) ResumeSubscription(ctx context.Context, r *api.ResumeSubscripti
 	if err != nil {
 		return nil, MapInternalError(err)
 	}
+	captureTraderSubscription(ctx, v.GetSubscription(), "TRADER_SYNC_SUBSCRIPTION_RESUME", false, r.GetExpectedRevision())
 	m := &responseMapper{}
 	out := m.mapResumeSubscriptionResponse(v)
 	if m.err != nil {
@@ -151,6 +188,7 @@ func (s *Server) CancelSubscription(ctx context.Context, r *api.CancelSubscripti
 	if err != nil {
 		return nil, MapInternalError(err)
 	}
+	captureTraderSubscription(ctx, v.GetSubscription(), "TRADER_SYNC_SUBSCRIPTION_CANCEL", false, r.GetExpectedRevision())
 	m := &responseMapper{}
 	out := m.mapCancelSubscriptionResponse(v)
 	if m.err != nil {
@@ -166,6 +204,14 @@ func (s *Server) UpdateTargetNote(ctx context.Context, r *api.UpdateTargetNoteRe
 	v, err := s.client.UpdateTargetNote(ctx, &trpc.UpdateTargetNoteRequest{Actor: actor, Wallet: r.GetWallet(), Note: r.GetNote(), ExpectedRevision: r.GetExpectedRevision(), RequestId: r.GetRequestId()})
 	if err != nil {
 		return nil, MapInternalError(err)
+	}
+	if v.GetNote() != nil {
+		operationlogrecord.CaptureResource(ctx, "wallet_address", v.GetNote().GetWallet())
+		operationlogrecord.CaptureString(ctx, "walletAddress", v.GetNote().GetWallet())
+		operationlogrecord.CaptureUint64(ctx, "expectedRevision", r.GetExpectedRevision())
+		operationlogrecord.CaptureUint64(ctx, "confirmedRevision", v.GetNote().GetRevision())
+		operationlogrecord.CaptureStrings(ctx, "changedFields", []string{"note"})
+		operationlogrecord.Commit(ctx, "TRADER_SYNC_TARGET_NOTE_UPDATE")
 	}
 	m := &responseMapper{}
 	out := m.mapUpdateTargetNoteResponse(v)

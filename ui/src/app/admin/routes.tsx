@@ -9,6 +9,7 @@ export const ServiceStatusPage = React.lazy(() => import('./pages/service-status
 export const EtherscanGatewaysPage = React.lazy(() => import('./pages/etherscan-gateways').then(module => ({default: module.EtherscanGatewaysPage})));
 export const SystemNotificationsPage = React.lazy(() => import('./pages/system-notifications').then(module => ({default: module.SystemNotificationsPage})));
 export const SystemNotificationDetailPage = React.lazy(() => import('./pages/system-notification-detail').then(module => ({default: module.SystemNotificationDetailPage})));
+export const OperationLogsPage = React.lazy(() => import('./pages/operation-logs').then(module => ({default: module.OperationLogsPage})));
 export const HelpPage = React.lazy(() => import('../shared/pages/help').then(module => ({default: module.HelpPage})));
 
 export const TraderSyncAdminSubscriptionsPage = React.lazy(() => import('./pages/trader-sync/subscriptions').then(module => ({default: module.TraderSyncAdminSubscriptionsPage})));

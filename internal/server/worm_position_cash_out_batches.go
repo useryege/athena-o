@@ -197,6 +197,13 @@ func (server *AthenaServer) createWormPositionCashOutBatch(w http.ResponseWriter
 		walletsecret.WriteError(w, err)
 		return
 	}
+	walletIDs := make([]string, 0, len(orderedWalletIDs))
+	for _, walletID := range orderedWalletIDs {
+		walletIDs = append(walletIDs, strconv.FormatInt(walletID, 10))
+	}
+	observeWormHTTPMutationStrings(request.Context(), "cash_out_batch", response.ID, "WORM_CASH_OUT_BATCH_CREATE", response.State, true,
+		map[string][]string{"walletIds": walletIDs},
+		map[string]string{"requestedCount": strconv.Itoa(len(walletIDs)), "batchId": response.ID, "state": response.State})
 	w.Header().Set("Location", wormPositionCashOutBatchCollectionPath+"/"+response.ID)
 	writeWormCombinationJSON(w, http.StatusAccepted, response)
 }
@@ -400,6 +407,12 @@ func (server *AthenaServer) mutateWormPositionCashOutBatch(w http.ResponseWriter
 		walletsecret.WriteError(w, err)
 		return
 	}
+	effect := "WORM_CASH_OUT_BATCH_" + strings.ToUpper(strings.ReplaceAll(action, "-", "_"))
+	observeWormHTTPMutation(request.Context(), "cash_out_batch", response.ID, effect, response.State, false, map[string]string{
+		"expectedRevision":  strconv.FormatInt(input.ExpectedRevision, 10),
+		"confirmedRevision": strconv.FormatInt(response.Revision, 10),
+		"state":             response.State,
+	})
 	writeWormCombinationJSON(w, http.StatusAccepted, response)
 }
 

@@ -213,6 +213,13 @@ func (server *AthenaServer) loadWormPositionCashOutDescriptor(
 }
 
 func (server *AthenaServer) developmentWormPositionCashOutAuthorization(w http.ResponseWriter, request *http.Request) {
+	observed := false
+	cashOutID := ""
+	defer func() {
+		if !observed {
+			observeWormAuthorization(request.Context(), "cash_out", cashOutID, "WORM_CASH_OUT_AUTHORIZE", "DEVELOPMENT", "authorization_failed", false, operationLogHTTPStatus(w))
+		}
+	}()
 	walletsecret.SetSecretResponseHeaders(w)
 	if request.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
@@ -232,7 +239,7 @@ func (server *AthenaServer) developmentWormPositionCashOutAuthorization(w http.R
 		writeWormPositionCashOutAuthorizationError(w, err)
 		return
 	}
-	cashOutID, err := canonicalWormExecutionID(request.PathValue("cashOutId"), "position Cash Out ID")
+	cashOutID, err = canonicalWormExecutionID(request.PathValue("cashOutId"), "position Cash Out ID")
 	if err != nil {
 		writeWormPositionCashOutAuthorizationError(w, err)
 		return
@@ -268,6 +275,8 @@ func (server *AthenaServer) developmentWormPositionCashOutAuthorization(w http.R
 		return
 	}
 	writeWormCombinationJSON(w, http.StatusOK, projection)
+	observeWormAuthorization(request.Context(), "cash_out", cashOutID, "WORM_CASH_OUT_AUTHORIZE", "DEVELOPMENT", "authorization_verified", true, operationLogHTTPStatus(w))
+	observed = true
 }
 
 func writeWormPositionCashOutAuthorizationError(w http.ResponseWriter, err error) {

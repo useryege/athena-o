@@ -44,6 +44,7 @@ import {
     ServiceStatusPage,
     SystemNotificationDetailPage,
     SystemNotificationsPage,
+    OperationLogsPage,
     TraderSyncAdminSubscriptionsPage,
     TraderSyncAdminSubscriptionPage
 } from './routes';
@@ -72,7 +73,8 @@ const adminSections: MenuProps['items'] = [
             adminMenuItem('/trader-sync/subscriptions', 'Trader Sync', <SwapOutlined />),
             adminMenuItem('/service-status', 'Service Status', <LineChartOutlined />),
             adminMenuItem('/etherscan-gateways', 'Etherscan Gateways', <ApiOutlined />),
-            adminMenuItem('/notifications', 'Notifications', <BellOutlined />)
+            adminMenuItem('/notifications', 'Notifications', <BellOutlined />),
+            adminMenuItem('/operation-logs', 'Operation Logs', <LineChartOutlined />)
         ]
     }
 ];
@@ -84,6 +86,7 @@ const routeMetadata = [
     {path: '/service-status', section: 'System', label: 'Service Status'},
     {path: '/etherscan-gateways', section: 'System', label: 'Etherscan Gateways'},
     {path: '/notifications', section: 'System', label: 'Notifications'},
+    {path: '/operation-logs', section: 'System', label: 'Operation Logs'},
     {path: '/account/profile', section: 'Account', label: 'Profile'},
     {path: '/account/access', section: 'Account', label: 'Access & session'},
     {path: '/help', section: 'Support', label: 'Help'}
@@ -193,6 +196,8 @@ const AdminRoutes = (props: {settings: AppBootstrap['settings']; loggingOut: boo
                 <Route path='/etherscan-gateways' element={<EtherscanGatewaysPage />} />
                 <Route path='/notifications' element={<SystemNotificationsPage />} />
                 <Route path='/notifications/:id' element={<SystemNotificationDetailPage />} />
+                <Route path='/operation-logs' element={<OperationLogsPage />} />
+                <Route path='/operation-logs/:id' element={<OperationLogsPage />} />
                 <Route path='/account/profile' element={<AccountCenterPage key={identityKey} section='profile' {...accountProps} />} />
                 <Route path='/account/access' element={<AccountCenterPage key={identityKey} section='access' {...accountProps} />} />
                 <Route path='/help' element={<HelpPage help={props.settings.help} />} />

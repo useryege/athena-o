@@ -106,6 +106,9 @@ func (m *Manager) prepareDatabaseSchemas(ctx context.Context, env map[string]str
 	} else {
 		return errors.New("unknown database mode")
 	}
+	if needsSchema(specs, "operation-log") {
+		env["ATHENA_OPERATION_LOG_POSTGRES_DSN"] = env["ATHENA_ACCOUNT_STATE_POSTGRES_DSN"]
+	}
 	if needsSchema(specs, "solana-discovery") && env["ATHENA_SOLANA_DISCOVERY_POSTGRES_DSN"] != env["ATHENA_ACCOUNT_STATE_POSTGRES_DSN"] {
 		return errors.New("Solana and account schemas require the same DSN")
 	}
@@ -129,7 +132,7 @@ func (m *Manager) prepareDatabaseSchemas(ctx context.Context, env map[string]str
 		if err = m.runSchemaOwner(ctx, owner, actions, env, binary); err != nil {
 			return err
 		}
-		if owner.Name == "solana-discovery" {
+		if owner.Name == "solana-discovery" || owner.Name == "operation-log" {
 			if err = m.runSchemaOwner(ctx, schemaOwners()[0], []string{"verify"}, env, binaries["account"]); err != nil {
 				return err
 			}

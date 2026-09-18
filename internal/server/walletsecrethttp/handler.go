@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/useryege/athena/internal/accountcredentials"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	"github.com/useryege/athena/internal/walletsecret"
 )
 
@@ -76,6 +77,8 @@ func (h *Handler) Reveal(w http.ResponseWriter, r *http.Request) {
 		walletsecret.WriteError(w, status.Error(codes.Internal, "wallet service returned empty private key"))
 		return
 	}
+	operationlogrecord.CaptureResource(ctx, "wallet", strconv.FormatInt(walletID, 10))
+	operationlogrecord.Commit(ctx, "WALLET_PRIVATE_KEY_REVEAL")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err := json.NewEncoder(w).Encode(struct {
 		PrivateKey string `json:"privateKey"`

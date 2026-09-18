@@ -56,6 +56,9 @@ func (m *Manager) PrepareEnvironment(input map[string]string, specs []ServiceSpe
 				return nil, errors.New("external database requires explicit " + owner.DSNEnv)
 			}
 		}
+		if needsSchema(specs, "operation-log") {
+			env["ATHENA_OPERATION_LOG_POSTGRES_DSN"] = env["ATHENA_ACCOUNT_STATE_POSTGRES_DSN"]
+		}
 	}
 	if err := m.prepareCredentials(env, specs, mode); err != nil {
 		return nil, err

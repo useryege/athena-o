@@ -8,6 +8,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
 	"github.com/useryege/athena/internal/etherscangatewayprobe"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	servicestatuspkg "github.com/useryege/athena/pkg/apiclient/servicestatus"
 	"google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
@@ -34,7 +35,7 @@ const (
 )
 
 func (s *Server) RunEtherscanGatewayProbe(
-	_ context.Context,
+	ctx context.Context,
 	req *servicestatuspkg.RunEtherscanGatewayProbeRequest,
 ) (*servicestatuspkg.EtherscanGatewayProbeRun, error) {
 	cfg, err := s.newEtherscanGatewayProbeConfig(req)
@@ -75,6 +76,12 @@ func (s *Server) RunEtherscanGatewayProbe(
 	s.probeMu.Unlock()
 
 	go s.executeEtherscanGatewayProbeRun(run.RunId, cfg)
+	operationlogrecord.CaptureResource(ctx, "probe_run", run.GetRunId())
+	operationlogrecord.CaptureString(ctx, "runId", run.GetRunId())
+	operationlogrecord.CaptureInt64(ctx, "requestsPerKey", int64(run.GetRequestsPerKey()))
+	operationlogrecord.CaptureInt64(ctx, "gatewayCount", int64(run.GetGatewayCount()))
+	operationlogrecord.CaptureString(ctx, "state", run.GetStatus())
+	operationlogrecord.Accept(ctx, "SYSTEM_GATEWAY_PROBE_CREATE")
 	return cloneEtherscanGatewayProbeRun(run), nil
 }
 

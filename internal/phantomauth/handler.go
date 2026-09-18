@@ -22,6 +22,7 @@ import (
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/internal/authregistration"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 )
 
 const (
@@ -104,35 +105,35 @@ func (h *Handler) Challenge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := requireMemberApplicationRealm(r); err != nil {
-		h.fail(w, http.StatusBadRequest, "phantom_state_invalid", "application_realm", err)
+		h.fail(w, r, http.StatusBadRequest, "phantom_state_invalid", "application_realm", err)
 		return
 	}
 	if !h.validOrigin(r) {
-		h.fail(w, http.StatusForbidden, "phantom_state_invalid", "origin_verify", nil)
+		h.fail(w, r, http.StatusForbidden, "phantom_state_invalid", "origin_verify", nil)
 		return
 	}
 	if !isJSONRequest(r) {
-		h.fail(w, http.StatusUnsupportedMediaType, "phantom_signature_invalid", "content_type", nil)
+		h.fail(w, r, http.StatusUnsupportedMediaType, "phantom_signature_invalid", "content_type", nil)
 		return
 	}
 	var input challengeRequest
 	if err := decodeJSON(w, r, &input); err != nil {
-		h.fail(w, http.StatusBadRequest, "phantom_signature_invalid", "challenge_decode", err)
+		h.fail(w, r, http.StatusBadRequest, "phantom_signature_invalid", "challenge_decode", err)
 		return
 	}
 	address, err := accountcredentials.NormalizeIdentitySubject(accountcredentials.IdentityProviderSolanaWallet, input.Address)
 	if err != nil {
-		h.fail(w, http.StatusBadRequest, "phantom_signature_invalid", "address_validate", err)
+		h.fail(w, r, http.StatusBadRequest, "phantom_signature_invalid", "address_validate", err)
 		return
 	}
 	id, err := authregistration.RandomOpaqueValue()
 	if err != nil {
-		h.fail(w, http.StatusServiceUnavailable, "phantom_unavailable", "challenge_id_generation", err)
+		h.fail(w, r, http.StatusServiceUnavailable, "phantom_unavailable", "challenge_id_generation", err)
 		return
 	}
 	nonce, err := randomNonce()
 	if err != nil {
-		h.fail(w, http.StatusServiceUnavailable, "phantom_unavailable", "nonce_generation", err)
+		h.fail(w, r, http.StatusServiceUnavailable, "phantom_unavailable", "nonce_generation", err)
 		return
 	}
 	issuedAt := time.Now().UTC().Truncate(time.Second)
@@ -152,10 +153,13 @@ func (h *Handler) Challenge(w http.ResponseWriter, r *http.Request) {
 			statusCode = http.StatusTooManyRequests
 			stage = "challenge_rate_limited"
 		}
-		h.fail(w, statusCode, "phantom_unavailable", stage, err)
+		h.fail(w, r, statusCode, "phantom_unavailable", stage, err)
 		return
 	}
 	h.setChallengeCookie(w, id)
+	operationlogrecord.CaptureString(r.Context(), "provider", "solana_wallet")
+	operationlogrecord.CaptureString(r.Context(), "stage", "challenge_issued")
+	operationlogrecord.Accept(r.Context(), "IDENTITY_LOGIN_CHALLENGE")
 	h.writeJSON(w, http.StatusOK, challengeResponse{Message: message, ExpiresAt: expiresAt.Unix()})
 }
 
@@ -169,17 +173,17 @@ func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := requireMemberApplicationRealm(r); err != nil {
-		h.fail(w, http.StatusBadRequest, "phantom_state_invalid", "application_realm", err)
+		h.fail(w, r, http.StatusBadRequest, "phantom_state_invalid", "application_realm", err)
 		return
 	}
 	if !h.validOrigin(r) {
-		h.fail(w, http.StatusForbidden, "phantom_state_invalid", "origin_verify", nil)
+		h.fail(w, r, http.StatusForbidden, "phantom_state_invalid", "origin_verify", nil)
 		return
 	}
 	cookie, err := r.Cookie(challengeCookieName)
 	h.clearChallengeCookie(w)
 	if err != nil || !authregistration.ValidOpaqueValue(cookie.Value) {
-		h.fail(w, http.StatusUnauthorized, "phantom_state_invalid", "challenge_cookie", err)
+		h.fail(w, r, http.StatusUnauthorized, "phantom_state_invalid", "challenge_cookie", err)
 		return
 	}
 	stored, err := h.store.Consume(r.Context(), cookie.Value)
@@ -190,32 +194,32 @@ func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
 			reason = "phantom_unavailable"
 			statusCode = http.StatusServiceUnavailable
 		}
-		h.fail(w, statusCode, reason, "challenge_consume", err)
+		h.fail(w, r, statusCode, reason, "challenge_consume", err)
 		return
 	}
 	if !isJSONRequest(r) {
-		h.fail(w, http.StatusUnsupportedMediaType, "phantom_signature_invalid", "content_type", nil)
+		h.fail(w, r, http.StatusUnsupportedMediaType, "phantom_signature_invalid", "content_type", nil)
 		return
 	}
 	canonicalAddress, canonicalErr := accountcredentials.NormalizeIdentitySubject(accountcredentials.IdentityProviderSolanaWallet, stored.Address)
 	expectedMessage := h.siwsMessage(canonicalAddress, stored.Nonce, stored.CreatedAt, stored.ExpiresAt)
 	if canonicalErr != nil || canonicalAddress != stored.Address || !authregistration.ConstantTimeEqual(expectedMessage, stored.Message) {
-		h.fail(w, http.StatusUnauthorized, "phantom_state_invalid", "challenge_binding", canonicalErr)
+		h.fail(w, r, http.StatusUnauthorized, "phantom_state_invalid", "challenge_binding", canonicalErr)
 		return
 	}
 	var input verifyRequest
 	if err := decodeJSON(w, r, &input); err != nil {
-		h.fail(w, http.StatusBadRequest, "phantom_signature_invalid", "signature_decode", err)
+		h.fail(w, r, http.StatusBadRequest, "phantom_signature_invalid", "signature_decode", err)
 		return
 	}
 	signature, err := base64.RawURLEncoding.DecodeString(input.Signature)
 	if err != nil || len(signature) != ed25519.SignatureSize || base64.RawURLEncoding.EncodeToString(signature) != input.Signature {
-		h.fail(w, http.StatusForbidden, "phantom_signature_invalid", "signature_encoding", err)
+		h.fail(w, r, http.StatusForbidden, "phantom_signature_invalid", "signature_encoding", err)
 		return
 	}
 	publicKey, err := base58.Decode(stored.Address)
 	if err != nil || len(publicKey) != ed25519.PublicKeySize || !ed25519.Verify(ed25519.PublicKey(publicKey), []byte(stored.Message), signature) {
-		h.fail(w, http.StatusForbidden, "phantom_signature_invalid", "signature_verify", err)
+		h.fail(w, r, http.StatusForbidden, "phantom_signature_invalid", "signature_verify", err)
 		return
 	}
 	identity := authregistration.Identity{
@@ -225,14 +229,17 @@ func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
 	}
 	account, found, err := h.backend.GetByIdentity(r.Context(), identity)
 	if err != nil {
-		h.fail(w, http.StatusServiceUnavailable, "phantom_unavailable", "identity_lookup", err)
+		h.fail(w, r, http.StatusServiceUnavailable, "phantom_unavailable", "identity_lookup", err)
 		return
 	}
 	if !found {
 		if err := h.registrations.Begin(r.Context(), w, identity, stored.ReturnTo); err != nil {
-			h.fail(w, http.StatusServiceUnavailable, "phantom_unavailable", "registration_ticket_create", err)
+			h.fail(w, r, http.StatusServiceUnavailable, "phantom_unavailable", "registration_ticket_create", err)
 			return
 		}
+		operationlogrecord.CaptureString(r.Context(), "provider", "solana_wallet")
+		operationlogrecord.CaptureString(r.Context(), "stage", "registration_required")
+		operationlogrecord.ActionRequired(r.Context(), "registration_required")
 		log.WithField("stage", "registration_required").Info("Verified Solana wallet requires Athena username registration")
 		registrationQuery := url.Values{common.ApplicationRealmQueryParameter: []string{string(accountcredentials.ApplicationRealmMember)}}
 		h.writeJSON(w, http.StatusOK, redirectResponse{RedirectTo: "/register?" + registrationQuery.Encode()})
@@ -241,7 +248,7 @@ func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
 	token, err := h.backend.CreateExternalLogin(r.Context(), account.ID, identity)
 	if err != nil {
 		if errors.Is(err, authregistration.ErrMaintenance) {
-			h.fail(w, http.StatusServiceUnavailable, "maintenance", "account_maintenance", err)
+			h.fail(w, r, http.StatusServiceUnavailable, "maintenance", "account_maintenance", err)
 			return
 		}
 		reason := "phantom_unavailable"
@@ -250,14 +257,19 @@ func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
 			reason = "phantom_signature_invalid"
 			statusCode = http.StatusForbidden
 		}
-		h.fail(w, statusCode, reason, "session_issue", err)
+		h.fail(w, r, statusCode, reason, "session_issue", err)
 		return
 	}
 	h.registrations.ClearCookie(w)
 	if err := h.registrations.SetAthenaSessionCookie(w, accountcredentials.ApplicationRealmMember, token); err != nil {
-		h.fail(w, http.StatusServiceUnavailable, "phantom_unavailable", "cookie_issue", err)
+		h.fail(w, r, http.StatusServiceUnavailable, "phantom_unavailable", "cookie_issue", err)
 		return
 	}
+	operationlogrecord.CaptureResource(r.Context(), "account", account.ID)
+	operationlogrecord.BindVerifiedAccount(r.Context(), account.ID, "solana_wallet")
+	operationlogrecord.CaptureString(r.Context(), "provider", "solana_wallet")
+	operationlogrecord.CaptureString(r.Context(), "stage", "session_issued")
+	operationlogrecord.Commit(r.Context(), "IDENTITY_LOGIN")
 	h.backend.RecordLoginResult(authregistration.LoginSuccess)
 	log.WithFields(log.Fields{"stage": "complete", "provider": accountcredentials.IdentityProviderSolanaWallet, "account_id": account.ID}).Info("Solana wallet login succeeded")
 	h.writeJSON(w, http.StatusOK, redirectResponse{RedirectTo: authregistration.ReturnToForRealm(stored.ReturnTo, accountcredentials.ApplicationRealmMember)})
@@ -324,7 +336,14 @@ func (h *Handler) clearChallengeCookie(w http.ResponseWriter) {
 	})
 }
 
-func (h *Handler) fail(w http.ResponseWriter, statusCode int, reason, stage string, err error) {
+func (h *Handler) fail(w http.ResponseWriter, r *http.Request, statusCode int, reason, stage string, err error) {
+	operationlogrecord.CaptureString(r.Context(), "provider", "solana_wallet")
+	operationlogrecord.CaptureString(r.Context(), "stage", stage)
+	if reason == "phantom_state_invalid" || reason == "phantom_signature_invalid" {
+		operationlogrecord.Deny(r.Context(), reason)
+	} else {
+		operationlogrecord.Fail(r.Context(), reason)
+	}
 	fields := log.Fields{"stage": stage, "reason": reason, "provider": accountcredentials.IdentityProviderSolanaWallet}
 	if err != nil {
 		fields["error_type"] = fmt.Sprintf("%T", err)

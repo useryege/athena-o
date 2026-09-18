@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	operationlogrpcconfig "github.com/useryege/athena/internal/operationlog/rpcconfig"
 	"github.com/useryege/athena/internal/tradersync/rpcconfig"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -599,6 +600,13 @@ func probeService(ctx context.Context, name, address string, env map[string]stri
 			cfg := rpcconfig.Client{Address: address, Transport: env["ATHENA_TRADER_SYNC_GRPC_TRANSPORT"], CAFile: env["ATHENA_TRADER_SYNC_TLS_CA_FILE"], ServerName: env["ATHENA_TRADER_SYNC_TLS_SERVER_NAME"]}
 			var err error
 			credentials, err = rpcconfig.ClientCredentials(cfg)
+			if err != nil {
+				return err
+			}
+		} else if name == "operation-log" {
+			cfg := operationlogrpcconfig.Client{Address: address, Transport: envDefault(env, "ATHENA_OPERATION_LOG_GRPC_TRANSPORT", "plaintext"), CAFile: env["ATHENA_OPERATION_LOG_TLS_CA_FILE"], ServerName: env["ATHENA_OPERATION_LOG_TLS_SERVER_NAME"]}
+			var err error
+			credentials, err = operationlogrpcconfig.ClientCredentials(cfg)
 			if err != nil {
 				return err
 			}

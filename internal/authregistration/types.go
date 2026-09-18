@@ -62,7 +62,8 @@ func (identity Identity) Validate() error {
 // Account is the minimum durable projection needed after realm-aware identity
 // resolution. Username never participates in login resolution.
 type Account struct {
-	ID string
+	ID      string
+	Created bool
 }
 
 // Backend is the provider-neutral durable identity and Athena session boundary.

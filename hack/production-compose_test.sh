@@ -87,9 +87,28 @@ with tempfile.TemporaryDirectory(prefix='athena-production-compose-test-') as te
     retired = {'athena-sports-live', 'athena-sports-history', 'athena-worm-markets'}
     assert not retired.intersection(services), 'retired services still deploy'
     labelled = {name for name, s in services.items() if s.get('labels', {}).get('io.athena.account-state.consumer') == 'true'}
-    assert labelled == {'athena-server', 'athena-notification', 'athena-trader-sync', 'athena-worm-trading'}, labelled
+    assert labelled == {'athena-server', 'athena-notification', 'athena-trader-sync', 'athena-worm-trading', 'athena-operation-log'}, labelled
     for name in ['athena-worm-trading', 'athena-wallet', 'athena-notification']:
         assert name in services, name + ' was removed'
+    assert 'athena-operation-log' in services, 'operation-log service is missing'
+    operation_log = services['athena-operation-log']
+    assert operation_log.get('expose') == ['8124'], operation_log.get('expose')
+    assert not operation_log.get('ports'), 'operation-log must not publish a host port'
+    assert operation_log.get('depends_on', {}).get('postgres', {}).get('condition') == 'service_healthy'
+    assert operation_log.get('labels', {}).get('io.athena.account-state.consumer') == 'true'
+    assert operation_log['environment'].get('ATHENA_OPERATION_LOG_POSTGRES_DSN') == operation_log['environment'].get('ATHENA_ACCOUNT_STATE_POSTGRES_DSN')
+    assert operation_log['environment'].get('ATHENA_OPERATION_LOG_GRPC_TRANSPORT') == 'tls'
+    assert 'ATHENA_OPERATION_LOG_CURSOR_HMAC_KEY_FILE' in operation_log['environment']
+    assert 'ATHENA_OPERATION_LOG_INTERNAL_AUTH_TOKEN_FILE' in operation_log['environment']
+    assert 'ATHENA_OPERATION_LOG_TLS_CERT_FILE' in operation_log['environment']
+    assert 'ATHENA_OPERATION_LOG_TLS_KEY_FILE' in operation_log['environment']
+    assert 'ATHENA_OPERATION_LOG_TLS_CA_FILE' in operation_log['environment']
+    assert 'athena-operation-log-migrate' in services
+    assert 'tools' in services['athena-operation-log-migrate'].get('profiles', [])
+    api_environment = services['athena-server']['environment']
+    assert 'ATHENA_OPERATION_LOG_INTERNAL_AUTH_TOKEN_FILE' in api_environment
+    assert 'ATHENA_OPERATION_LOG_TLS_CA_FILE' in api_environment
+    assert 'ATHENA_OPERATION_LOG_CURSOR_HMAC_KEY_FILE' not in api_environment
     for name, service in services.items():
         assert not retired.intersection(service.get('depends_on', {})), name + ' still depends on a retired service'
         assert not any(key.startswith(('ATHENA_SPORTS_LIVE_', 'ATHENA_SPORTS_HISTORY_')) for key in service.get('environment', {})), name + ' still configures Sports'

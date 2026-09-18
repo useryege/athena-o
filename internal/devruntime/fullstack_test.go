@@ -26,7 +26,7 @@ func TestFullStackExplicitServicesAndEnvironment(t *testing.T) {
 	if modules["worm-markets"] || !modules["worm-trading"] {
 		t.Fatal("retired Markets storage or retained Trading storage changed")
 	}
-	want := []string{"wallet", "notification", "etherscan-manager", "api-server", "ui", "trader-sync", "solana-discovery", "market-radar", "managed-oo", "profit-sharing", "worm-trading"}
+	want := []string{"wallet", "notification", "etherscan-manager", "api-server", "ui", "trader-sync", "solana-discovery", "market-radar", "managed-oo", "profit-sharing", "worm-trading", "operation-log"}
 	if got := FullStackServices(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("full stack: %v", got)
 	}

@@ -437,6 +437,54 @@ services:
       retries: 6
       start_period: 60s
 
+  athena-operation-log:
+    labels:
+      io.athena.account-state.consumer: "true"
+    image: ${OPERATION_LOG_IMAGE:-athena-operation-log:local}
+    restart: unless-stopped
+    stop_grace_period: 35s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ATHENA_LOGLEVEL: ${ATHENA_LOGLEVEL:-info}
+      ATHENA_GRPC_MAX_SIZE_MB: ${ATHENA_GRPC_MAX_SIZE_MB:-64}
+      ATHENA_ACCOUNT_STATE_POSTGRES_DSN: ${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:?ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required}
+      ATHENA_OPERATION_LOG_POSTGRES_DSN: ${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:?ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required}
+      ATHENA_OPERATION_LOG_LISTEN_ADDRESS: 0.0.0.0:8124
+      ATHENA_OPERATION_LOG_GRPC_TRANSPORT: tls
+      ATHENA_OPERATION_LOG_INTERNAL_AUTH_TOKEN_FILE: /run/secrets/operation-log-token
+      ATHENA_OPERATION_LOG_CURSOR_HMAC_KEY_FILE: /run/secrets/operation-log-cursor-key
+      ATHENA_OPERATION_LOG_TLS_CERT_FILE: /run/secrets/operation-log-cert
+      ATHENA_OPERATION_LOG_TLS_KEY_FILE: /run/secrets/operation-log-key
+      ATHENA_OPERATION_LOG_TLS_CA_FILE: /run/secrets/operation-log-ca
+      ATHENA_OPERATION_LOG_TLS_SERVER_NAME: ${ATHENA_OPERATION_LOG_TLS_SERVER_NAME:-athena-operation-log}
+    secrets:
+      - operation-log-token
+      - operation-log-cursor-key
+      - operation-log-cert
+      - operation-log-key
+      - operation-log-ca
+    expose:
+      - "8124"
+    healthcheck:
+      test: ["CMD", "athena-operation-log", "health", "--target", "127.0.0.1:8124"]
+      interval: 10s
+      timeout: 6s
+      retries: 6
+      start_period: 60s
+
+  athena-operation-log-migrate:
+    image: ${OPERATION_LOG_IMAGE:-athena-operation-log:local}
+    profiles: [tools]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ATHENA_ACCOUNT_STATE_POSTGRES_DSN: ${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:?ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required}
+    entrypoint: ["/usr/bin/tini", "--", "athena-operation-log-migrate"]
+    command: ["verify"]
+
   athena-account-state-migrate:
     image: ${TRADER_SYNC_IMAGE:-athena-trader-sync:local}
     profiles: [tools]
@@ -506,10 +554,14 @@ services:
         condition: service_started
       athena-token-api:
         condition: service_started
+      athena-operation-log:
+        condition: service_started
     secrets:
       - google-oidc-client-secret
       - trader-sync-token
       - trader-sync-ca
+      - operation-log-token
+      - operation-log-ca
     environment:
       # Preserve explicit empty values; each consumer owns its validation/defaults.
       ATHENA_LOGFORMAT: "${ATHENA_LOGFORMAT-json}"
@@ -573,6 +625,12 @@ services:
       ATHENA_TRADER_SYNC_INTERNAL_AUTH_TOKEN_FILE: /run/secrets/trader-sync-token
       ATHENA_TRADER_SYNC_TLS_CA_FILE: /run/secrets/trader-sync-ca
       ATHENA_TRADER_SYNC_TLS_SERVER_NAME: ${ATHENA_TRADER_SYNC_TLS_SERVER_NAME-athena-trader-sync}
+      ATHENA_OPERATION_LOG_SERVER_ADDRESS: athena-operation-log:8124
+      ATHENA_OPERATION_LOG_GRPC_TRANSPORT: tls
+      ATHENA_OPERATION_LOG_INTERNAL_AUTH_TOKEN_FILE: /run/secrets/operation-log-token
+      ATHENA_OPERATION_LOG_TLS_CA_FILE: /run/secrets/operation-log-ca
+      ATHENA_OPERATION_LOG_TLS_SERVER_NAME: ${ATHENA_OPERATION_LOG_TLS_SERVER_NAME-athena-operation-log}
+      ATHENA_OPERATION_LOG_POSTGRES_DSN: ${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:?ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required}
       ATHENA_BINARY_NAME: athena-server
       ATHENA_POSTGRES_AUTO_MIGRATE: "false"
       ATHENA_ACCOUNT_STATE_POSTGRES_DSN: ${ATHENA_ACCOUNT_STATE_POSTGRES_DSN:?ATHENA_ACCOUNT_STATE_POSTGRES_DSN is required}
@@ -632,6 +690,16 @@ secrets:
     file: ${ATHENA_TRADER_SYNC_TLS_CA_FILE:-/dev/null}
   google-oidc-client-secret:
     file: ${ATHENA_GOOGLE_OIDC_CLIENT_SECRET_FILE:-/dev/null}
+  operation-log-token:
+    file: ${ATHENA_OPERATION_LOG_INTERNAL_AUTH_TOKEN_FILE:-/dev/null}
+  operation-log-cursor-key:
+    file: ${ATHENA_OPERATION_LOG_CURSOR_HMAC_KEY_FILE:-/dev/null}
+  operation-log-cert:
+    file: ${ATHENA_OPERATION_LOG_TLS_CERT_FILE:-/dev/null}
+  operation-log-key:
+    file: ${ATHENA_OPERATION_LOG_TLS_KEY_FILE:-/dev/null}
+  operation-log-ca:
+    file: ${ATHENA_OPERATION_LOG_TLS_CA_FILE:-/dev/null}
 
 volumes:
   postgres-data:

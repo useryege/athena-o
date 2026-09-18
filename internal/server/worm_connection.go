@@ -426,6 +426,13 @@ func (server *AthenaServer) manageWormConnection(w http.ResponseWriter, request 
 		walletsecret.WriteError(w, status.Error(codes.Internal, "Worm Trading returned an invalid connection result"))
 		return
 	}
+	details := map[string]string{"state": connection.GetState()}
+	if warningCode := strings.TrimSpace(connection.GetWarningCode()); warningCode != "" {
+		details["warningCode"] = warningCode
+	}
+	state := strings.ToUpper(connection.GetState())
+	accepted := state != "CONNECTED" && state != "NOT_CONNECTED"
+	observeWormHTTPMutation(request.Context(), "wallet", strconv.FormatInt(walletID, 10), "WORM_CONNECTION_"+strings.ToUpper(string(action)), state, accepted, details)
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_ = json.NewEncoder(w).Encode(wormConnectionResponse{
@@ -577,6 +584,13 @@ func (server *AthenaServer) authenticateWormTradingIdentityHTTP(
 }
 
 func (server *AthenaServer) developmentWormCredentialLease(w http.ResponseWriter, request *http.Request) {
+	observed := false
+	accountID := ""
+	defer func() {
+		if !observed {
+			observeWormAuthorization(request.Context(), "account", accountID, "WORM_CONNECTION_AUTHORIZE", "DEVELOPMENT", "authorization_failed", false, operationLogHTTPStatus(w))
+		}
+	}()
 	walletsecret.SetSecretResponseHeaders(w)
 	if request.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
@@ -592,6 +606,7 @@ func (server *AthenaServer) developmentWormCredentialLease(w http.ResponseWriter
 		walletsecret.WriteError(w, err)
 		return
 	}
+	accountID = credential.AccountID
 	expiresAt, err := server.wormCredentialMgr.Issue(ctx, w, credential)
 	if err != nil {
 		walletsecret.WriteError(w, err)
@@ -601,6 +616,8 @@ func (server *AthenaServer) developmentWormCredentialLease(w http.ResponseWriter
 	_ = json.NewEncoder(w).Encode(struct {
 		ExpiresAt int64 `json:"expiresAt"`
 	}{ExpiresAt: expiresAt.Unix()})
+	observeWormAuthorization(request.Context(), "account", accountID, "WORM_CONNECTION_AUTHORIZE", "DEVELOPMENT", "authorization_verified", true, operationLogHTTPStatus(w))
+	observed = true
 }
 
 func (server *AthenaServer) validWormConnectionOrigin(request *http.Request) bool {

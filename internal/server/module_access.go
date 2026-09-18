@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+	"reflect"
 	"strings"
 )
 
@@ -51,6 +52,11 @@ var grpcAdmission = map[string]moduleaccess.Key{
 	"/moduleaccess.ModuleAccessService/ListModuleAccessSettings":            coreAdmission,
 	"/moduleaccess.ModuleAccessService/ListModuleAccessStates":              coreAdmission,
 	"/moduleaccess.ModuleAccessService/UpdateModuleAccessSetting":           coreAdmission,
+	"/operationlog.OperationLogService/ListOperationLogs":                   coreAdmission,
+	"/operationlog.OperationLogService/GetOperationLog":                     coreAdmission,
+	"/operationlog.OperationLogService/GetOperationLogRuntimeStatus":        coreAdmission,
+	"/operationlog.OperationLogService/GetOperationLogCaptureStatus":        coreAdmission,
+	"/operationlog.OperationLogService/ListOperationLogActions":             coreAdmission,
 	"/notification.NotificationService/CreateTelegramBindingAttempt":        coreAdmission,
 	"/notification.NotificationService/DeleteTelegramBinding":               coreAdmission,
 	"/notification.NotificationService/DeleteTelegramBindingAttempt":        coreAdmission,
@@ -169,6 +175,9 @@ func (m *moduleAccessJSONMarshaler) Marshal(value any) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	if isOperationLogMessage(value) {
+		raw = flattenOperationLogNullables(raw)
+	}
 	if _, ok := value.(interface{ GetDetails() []*anypb.Any }); !ok {
 		return raw, nil
 	}
@@ -205,4 +214,68 @@ func (m *moduleAccessJSONMarshaler) Marshal(value any) ([]byte, error) {
 		return json.Marshal(body)
 	}
 	return raw, nil
+}
+
+func isOperationLogMessage(value any) bool {
+	t := reflect.TypeOf(value)
+	for t != nil && t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t != nil && strings.Contains(t.PkgPath(), "/pkg/apiclient/operationlog")
+}
+
+var operationLogNullableFields = map[string]bool{
+	"startedAt": true, "identityVerified": true, "identitySnapshotComplete": true,
+	"durationMs": true, "resourceCount": true, "resourcesComplete": true, "responseWriteFailed": true,
+	"finishedAt": true, "beforeValue": true, "afterValue": true, "beforeAvailable": true,
+	"referenceVerified": true,
+	"actorAccountId":    true, "actorUsername": true, "primaryResourceType": true, "primaryResourceId": true,
+	"reasonCode": true, "businessState": true, "provider": true, "targetAccountId": true,
+	"requestId": true, "parentOperationId": true, "businessRequestId": true,
+	"grpcCode": true, "httpStatus": true, "producerId": true,
+	"firstReceivedAt": true, "lastReceivedAt": true, "snapshotSequence": true,
+	"checkedAt": true, "queryReady": true, "lastPublishedAt": true, "pendingEvents": true,
+	"oldestPendingReceivedAt": true, "totalObserved": true, "producersComplete": true,
+	"lastSeenAt": true, "stoppedAt": true, "attemptedEvents": true,
+	"confirmedEvents": true, "unconfirmedEvents": true, "invalidEvents": true,
+	"capacityRejectedEvents": true, "lastFailureAt": true, "lastFailureCode": true,
+	"lastRecoveredAt": true, "persistenceReachable": true, "lastConfirmedAt": true,
+	"observedAt": true, "inFlightEvents": true,
+	"requested": true, "confirmed": true, "failed": true, "unknown": true,
+}
+
+func flattenOperationLogNullables(raw []byte) []byte {
+	var value any
+	if json.Unmarshal(raw, &value) != nil {
+		return raw
+	}
+	var flatten func(any, string) any
+	flatten = func(node any, key string) any {
+		if operationLogNullableFields[key] {
+			if object, ok := node.(map[string]any); ok && len(object) == 1 {
+				if scalar, exists := object["value"]; exists {
+					return scalar
+				}
+			}
+		}
+		switch object := node.(type) {
+		case map[string]any:
+			for childKey, child := range object {
+				object[childKey] = flatten(child, childKey)
+			}
+		case []any:
+			for i, child := range object {
+				object[i] = flatten(child, key)
+			}
+		}
+		return node
+	}
+	return func() []byte {
+		flattened := flatten(value, "")
+		data, err := json.Marshal(flattened)
+		if err != nil {
+			return raw
+		}
+		return data
+	}()
 }

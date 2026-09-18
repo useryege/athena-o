@@ -8,7 +8,7 @@ import (
 // FullStackServices is the explicit development graph. Commented-out modules in
 // the former Procfile are intentionally absent; infrastructure is in each spec.
 func FullStackServices() []string {
-	return []string{"wallet", "notification", "etherscan-manager", "api-server", "ui", "trader-sync", "solana-discovery", "market-radar", "managed-oo", "profit-sharing", "worm-trading"}
+	return []string{"wallet", "notification", "etherscan-manager", "api-server", "ui", "trader-sync", "solana-discovery", "market-radar", "managed-oo", "profit-sharing", "worm-trading", "operation-log"}
 }
 func fullStackSpecs() []ServiceSpec { specs, _ := ResolveServices(FullStackServices()); return specs }
 
@@ -25,6 +25,7 @@ func schemaOwners() []schemaOwner {
 		{"managed-oo", "managed_oo", "ATHENA_MANAGED_OO_POSTGRES_DSN", "", []string{"schema"}},
 		{"profit-sharing", "profit_sharing", "ATHENA_PROFIT_SHARING_POSTGRES_DSN", "", []string{"schema"}},
 		{"worm-trading", "worm_trading", "ATHENA_WORM_TRADING_POSTGRES_DSN", "./cmd/athena-worm-trading-migrate", nil},
+		{"operation-log", "athena", "ATHENA_ACCOUNT_STATE_POSTGRES_DSN", "./cmd/athena-operation-log-migrate", nil},
 	}
 	registry := serviceRegistry()
 	for i := range owners {

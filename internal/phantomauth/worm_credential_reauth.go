@@ -15,6 +15,7 @@ import (
 
 	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/internal/authregistration"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	"github.com/useryege/athena/internal/walletsecret"
 )
 
@@ -97,6 +98,12 @@ func (h *Handler) WormCredentialVerify(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *wormCredentialReauthentication) challenge(w http.ResponseWriter, r *http.Request) {
+	observed := false
+	defer func() {
+		if !observed {
+			observeAuthorizationFailure(r.Context(), "challenge", responseStatusCode(w), "AUTHORIZATION_FAILED")
+		}
+	}()
 	walletsecret.SetSecretResponseHeaders(w)
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
@@ -153,10 +160,17 @@ func (h *wormCredentialReauthentication) challenge(w http.ResponseWriter, r *htt
 		return
 	}
 	h.setChallengeCookie(w, id, expiresAt)
+	observed = true
 	h.phantom.writeJSON(w, http.StatusOK, wormCredentialChallengeResponse{Message: message, ExpiresAt: expiresAt.Unix()})
 }
 
 func (h *wormCredentialReauthentication) verify(w http.ResponseWriter, r *http.Request) {
+	observed := false
+	defer func() {
+		if !observed {
+			observeAuthorizationFailure(r.Context(), "verify", responseStatusCode(w), "AUTHORIZATION_FAILED")
+		}
+	}()
 	walletsecret.SetSecretResponseHeaders(w)
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
@@ -229,6 +243,13 @@ func (h *wormCredentialReauthentication) verify(w http.ResponseWriter, r *http.R
 		return
 	}
 	log.WithFields(log.Fields{"stage": "complete", "provider": accountcredentials.IdentityProviderSolanaWallet}).Info("Worm credential Solana reauthentication succeeded")
+	operationlogrecord.CaptureResource(r.Context(), "account", credential.AccountID)
+	operationlogrecord.BindVerifiedAccount(r.Context(), credential.AccountID, "solana_wallet")
+	operationlogrecord.CaptureString(r.Context(), "provider", "solana_wallet")
+	operationlogrecord.CaptureString(r.Context(), "proofKind", "PHANTOM")
+	operationlogrecord.CaptureString(r.Context(), "stage", "authorization_verified")
+	observed = true
+	operationlogrecord.Commit(r.Context(), "WORM_CONNECTION_AUTHORIZE")
 	h.phantom.writeJSON(w, http.StatusOK, wormCredentialVerifyResponse{ExpiresAt: expiresAt.Unix()})
 }
 

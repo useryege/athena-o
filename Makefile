@@ -55,6 +55,7 @@ PATH:=$(PATH):$(PWD)/hack
 
 PROD_IMAGE?=athena:local
 TRADER_SYNC_IMAGE?=athena-trader-sync:local
+OPERATION_LOG_IMAGE?=athena-operation-log:local
 WORM_TRADING_IMAGE?=athena-worm-trading:local
 PROD_COMPOSE_FILE?=docker-compose.prod.yml
 PROD_ENV_FILE?=.env.prod
@@ -368,6 +369,7 @@ minio-images-local:
 prod-build-local: minio-images-local
 	$(MAKE) build-service-image SERVICE=trader-sync
 	$(MAKE) build-service-image SERVICE=worm-trading
+	$(MAKE) build-service-image SERVICE=operation-log
 	DOCKER_BUILDKIT=1 $(DOCKER) build --platform=$(TARGET_ARCH) -t $(PROD_IMAGE) .
 
 # use http://127.0.0.1:8080
@@ -442,7 +444,7 @@ account-state-migrate:
 	go run ./cmd/athena-account-state-migrate verify --timeout=120s
 
 # Export user input as data; do not splice image tags or service names into shell code.
-export TRADER_SYNC_IMAGE WORM_TRADING_IMAGE SERVICE TARGET_ARCH VERSION GIT_COMMIT GIT_TREE_STATE GIT_TAG BUILD_DATE
+export TRADER_SYNC_IMAGE WORM_TRADING_IMAGE OPERATION_LOG_IMAGE SERVICE TARGET_ARCH VERSION GIT_COMMIT GIT_TREE_STATE GIT_TAG BUILD_DATE
 export PROD_IMAGE PROD_COMPOSE_FILE PROD_ENV_FILE REMOTE_APP_DIR REMOTE_USER
 export PROD_POSTGRES_VOLUME PROD_REDIS_VOLUME PROD_MINIO_VOLUME PROD_MIGRATE_MODULE
 export MINIO_IMAGE MINIO_MC_IMAGE
@@ -452,7 +454,8 @@ build-service-image:
 	@case "$$SERVICE" in \
 	  trader-sync) service_image="$$TRADER_SYNC_IMAGE" ;; \
 	  worm-trading) service_image="$$WORM_TRADING_IMAGE" ;; \
-	  *) echo 'build-service-image requires SERVICE=trader-sync or worm-trading' >&2; exit 1 ;; \
+	  operation-log) service_image="$$OPERATION_LOG_IMAGE" ;; \
+	  *) echo 'build-service-image requires SERVICE=trader-sync, worm-trading, or operation-log' >&2; exit 1 ;; \
 	esac; \
 	DOCKER_BUILDKIT=1 docker build --platform="$$TARGET_ARCH" -f "deploy/$$SERVICE/Dockerfile" -t "$$service_image" \
 	  --build-arg "VERSION=$$VERSION" --build-arg "GIT_COMMIT=$$GIT_COMMIT" --build-arg "GIT_TREE_STATE=$$GIT_TREE_STATE" \

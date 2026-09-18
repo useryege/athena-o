@@ -202,6 +202,13 @@ func (server *AthenaServer) loadPhantomWormExecutionDescriptor(
 }
 
 func (server *AthenaServer) developmentWormExecutionAuthorization(w http.ResponseWriter, request *http.Request) {
+	observed := false
+	runID := ""
+	defer func() {
+		if !observed {
+			observeWormAuthorization(request.Context(), "execution", runID, "WORM_EXECUTION_AUTHORIZE", "DEVELOPMENT", "authorization_failed", false, operationLogHTTPStatus(w))
+		}
+	}()
 	walletsecret.SetSecretResponseHeaders(w)
 	if request.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
@@ -221,7 +228,7 @@ func (server *AthenaServer) developmentWormExecutionAuthorization(w http.Respons
 		writeWormExecutionAuthorizationError(w, err)
 		return
 	}
-	runID, err := canonicalWormExecutionID(request.PathValue("runId"), "execution run ID")
+	runID, err = canonicalWormExecutionID(request.PathValue("runId"), "execution run ID")
 	if err != nil {
 		writeWormExecutionAuthorizationError(w, err)
 		return
@@ -255,6 +262,8 @@ func (server *AthenaServer) developmentWormExecutionAuthorization(w http.Respons
 		return
 	}
 	writeWormCombinationJSON(w, http.StatusOK, projection)
+	observeWormAuthorization(request.Context(), "execution", runID, "WORM_EXECUTION_AUTHORIZE", "DEVELOPMENT", "authorization_verified", true, operationLogHTTPStatus(w))
+	observed = true
 }
 
 func writeWormExecutionAuthorizationError(w http.ResponseWriter, err error) {

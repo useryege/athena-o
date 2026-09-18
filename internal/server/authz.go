@@ -7,6 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcredentials"
+	"github.com/useryege/athena/internal/operationlog/record"
 	"github.com/useryege/athena/internal/walletsecret"
 	accountpkg "github.com/useryege/athena/pkg/apiclient/account"
 	util_session "github.com/useryege/athena/util/session"
@@ -17,6 +18,21 @@ import (
 
 type serviceAuthFuncOverride interface {
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
+}
+
+// authenticatedContextKey marks a context only after the authentication
+// boundary has returned success. A context may still carry stale credentials
+// when authentication fails; interceptors must never treat those credentials
+// as a trusted actor.
+type authenticatedContextKey struct{}
+
+func markAuthenticatedContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, authenticatedContextKey{}, true)
+}
+
+func isAuthenticatedContext(ctx context.Context) bool {
+	trusted, _ := ctx.Value(authenticatedContextKey{}).(bool)
+	return trusted
 }
 
 func withDisabledAuthClaims(ctx context.Context, accountID string) context.Context {
@@ -71,6 +87,20 @@ var administratorGRPCMethods = map[string]bool{
 	"/notification.NotificationService/ListSystemNotificationDeliveries": true,
 	"/notification.NotificationService/GetSystemNotificationDelivery":    true,
 	"/notification.NotificationService/SendSystemNotificationTest":       true,
+
+	"/operationlog.OperationLogService/ListOperationLogs":            true,
+	"/operationlog.OperationLogService/GetOperationLog":              true,
+	"/operationlog.OperationLogService/GetOperationLogRuntimeStatus": true,
+	"/operationlog.OperationLogService/GetOperationLogCaptureStatus": true,
+	"/operationlog.OperationLogService/ListOperationLogActions":      true,
+}
+
+var operationLogGRPCMethods = map[string]bool{
+	"/operationlog.OperationLogService/ListOperationLogs":            true,
+	"/operationlog.OperationLogService/GetOperationLog":              true,
+	"/operationlog.OperationLogService/GetOperationLogRuntimeStatus": true,
+	"/operationlog.OperationLogService/GetOperationLogCaptureStatus": true,
+	"/operationlog.OperationLogService/ListOperationLogActions":      true,
 }
 
 // ordinaryMemberInteractiveGRPCMethods expose account-owned browser
@@ -200,30 +230,78 @@ var interactiveLoginGRPCMethods = map[string]bool{
 }
 
 func (server *AthenaServer) unaryAuthInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-	authCtx, err := server.authorizeGRPC(ctx, info.FullMethod, info.Server, req)
+	opCtx, recorder := server.beginOperationLog(ctx, info.FullMethod)
+	authCtx, err := server.authorizeGRPC(opCtx, info.FullMethod, info.Server, req)
+	if recorder != nil && isAuthenticatedContext(authCtx) {
+		// Authorization may add the authenticated credential to a derived
+		// context. Always bind from that context, including denied requests.
+		server.bindOperationLogActor(authCtx, recorder)
+		authCtx = record.WithRecorder(authCtx, recorder)
+	}
 	if err != nil {
+		finishOperationLog(recorder, err)
 		return nil, err
+	}
+	if recorder != nil {
+		recorder.Start()
 	}
 	if err := server.checkModuleAdmission(authCtx, info.FullMethod); err != nil {
 		moduleAdmissionHeaders(authCtx, err)
+		finishOperationLog(recorder, err)
 		return nil, err
 	}
+	if recorder != nil {
+		recorder.Dispatched()
+	}
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			finishOperationLog(recorder, operationLogPanicError())
+			panic(recovered)
+		}
+	}()
 	result, err := handler(authCtx, req)
 	moduleAdmissionHeaders(authCtx, err)
+	if err == nil {
+		observeOperationLogResult(recorder, info.FullMethod, req, result)
+	}
+	finishOperationLog(recorder, err)
 	return result, err
 }
 
 func (server *AthenaServer) streamAuthInterceptor(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	authCtx, err := server.authorizeGRPC(stream.Context(), info.FullMethod, srv, nil)
+	opCtx, recorder := server.beginOperationLog(stream.Context(), info.FullMethod)
+	authCtx, err := server.authorizeGRPC(opCtx, info.FullMethod, srv, nil)
+	if recorder != nil && isAuthenticatedContext(authCtx) {
+		server.bindOperationLogActor(authCtx, recorder)
+		authCtx = record.WithRecorder(authCtx, recorder)
+	}
 	if err != nil {
+		finishOperationLog(recorder, err)
 		return err
+	}
+	if recorder != nil {
+		recorder.Start()
 	}
 	if err := server.checkModuleAdmission(authCtx, info.FullMethod); err != nil {
 		moduleAdmissionHeaders(authCtx, err)
+		finishOperationLog(recorder, err)
 		return err
 	}
+	if recorder != nil {
+		recorder.Dispatched()
+	}
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			finishOperationLog(recorder, operationLogPanicError())
+			panic(recovered)
+		}
+	}()
 	err = handler(srv, &authenticatedServerStream{ServerStream: stream, ctx: authCtx})
 	moduleAdmissionHeaders(authCtx, err)
+	if err == nil {
+		observeOperationLogResult(recorder, info.FullMethod, nil, nil)
+	}
+	finishOperationLog(recorder, err)
 	return err
 }
 
@@ -254,7 +332,16 @@ func (server *AthenaServer) authorizeGRPC(ctx context.Context, fullMethod string
 	}
 
 	if isReflectionMethod(fullMethod) || administratorGRPCMethods[fullMethod] {
-		return authCtx, server.authorizeAccount(accountID, accountaccess.RequirementAdministrator)
+		if err := server.authorizeAccount(accountID, accountaccess.RequirementAdministrator); err != nil {
+			return authCtx, err
+		}
+		if operationLogGRPCMethods[fullMethod] {
+			credential, ok := util_session.AuthenticatedCredentialFromContext(authCtx)
+			if !ok || !credential.IsInteractiveLogin() {
+				return authCtx, status.Error(codes.PermissionDenied, "interactive administrator login required")
+			}
+		}
+		return authCtx, nil
 	}
 	if ordinaryMemberInteractiveGRPCMethods[fullMethod] {
 		return authCtx, server.authorizeOrdinaryInteractiveAccount(authCtx, accountID)
@@ -351,10 +438,19 @@ func accountSelfServiceTarget(fullMethod string, req any) string {
 }
 
 func (server *AthenaServer) authenticateGRPC(ctx context.Context, fullMethod string, srv any) (context.Context, error) {
+	var (
+		authCtx context.Context
+		err     error
+	)
 	if overrideSrv, ok := srv.(serviceAuthFuncOverride); ok {
-		return overrideSrv.AuthFuncOverride(ctx, fullMethod)
+		authCtx, err = overrideSrv.AuthFuncOverride(ctx, fullMethod)
+	} else {
+		authCtx, err = server.Authenticate(ctx)
 	}
-	return server.Authenticate(ctx)
+	if err != nil {
+		return authCtx, err
+	}
+	return markAuthenticatedContext(authCtx), nil
 }
 
 func isReflectionMethod(fullMethod string) bool {

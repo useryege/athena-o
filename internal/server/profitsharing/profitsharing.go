@@ -2,11 +2,13 @@ package profitsharing
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcenter"
 	"github.com/useryege/athena/internal/accountcredentials"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	profitsharingapiclient "github.com/useryege/athena/internal/profitsharing/apiclient"
 	profitsharingpkg "github.com/useryege/athena/pkg/apiclient/profitsharing"
 	utilsession "github.com/useryege/athena/util/session"
@@ -93,6 +95,7 @@ func (s *Server) CreateRound(ctx context.Context, request *profitsharingpkg.Crea
 	if err != nil {
 		return nil, err
 	}
+	captureProfitSharingRound(ctx, response.GetRound(), "PROFIT_SHARING_ROUND_CREATE")
 	return &profitsharingpkg.CreateRoundResponse{Round: projectRound(response.GetRound())}, nil
 }
 
@@ -117,6 +120,9 @@ func (s *Server) UpdateRound(ctx context.Context, request *profitsharingpkg.Upda
 	if err != nil {
 		return nil, err
 	}
+	captureProfitSharingRound(ctx, response.GetRound(), "PROFIT_SHARING_ROUND_UPDATE")
+	operationlogrecord.CaptureString(ctx, "oldSlug", request.GetCurrentSlug())
+	operationlogrecord.CaptureStrings(ctx, "changedFields", profitSharingRoundChangedFields(request))
 	return &profitsharingpkg.UpdateRoundResponse{Round: projectRound(response.GetRound())}, nil
 }
 
@@ -148,6 +154,7 @@ func (s *Server) OpenRound(ctx context.Context, request *profitsharingpkg.OpenRo
 	if err != nil {
 		return nil, err
 	}
+	captureProfitSharingRound(ctx, response.GetRound(), "PROFIT_SHARING_ROUND_OPEN")
 	return &profitsharingpkg.OpenRoundResponse{Round: projectRound(response.GetRound())}, nil
 }
 
@@ -165,6 +172,7 @@ func (s *Server) PublishRound(ctx context.Context, request *profitsharingpkg.Pub
 	if err != nil {
 		return nil, err
 	}
+	captureProfitSharingRound(ctx, response.GetRound(), "PROFIT_SHARING_ROUND_PUBLISH")
 	return &profitsharingpkg.PublishRoundResponse{Round: projectRound(response.GetRound())}, nil
 }
 
@@ -182,6 +190,7 @@ func (s *Server) CloseBallot(ctx context.Context, request *profitsharingpkg.Clos
 	if err != nil {
 		return nil, err
 	}
+	captureProfitSharingRound(ctx, response.GetRound(), "PROFIT_SHARING_BALLOT_CLOSE")
 	return &profitsharingpkg.CloseBallotResponse{
 		Round:         projectRound(response.GetRound()),
 		RunoffCreated: response.GetRunoffCreated(),
@@ -203,6 +212,9 @@ func (s *Server) UpdateProposal(ctx context.Context, request *profitsharingpkg.U
 	if err != nil {
 		return nil, err
 	}
+	captureProfitSharingProposal(ctx, response.GetProposal(), "PROFIT_SHARING_PROPOSAL_UPDATE")
+	operationlogrecord.CaptureString(ctx, "slug", request.GetSlug())
+	operationlogrecord.CaptureStrings(ctx, "changedFields", []string{"items"})
 	return &profitsharingpkg.UpdateProposalResponse{Proposal: projectProposal(response.GetProposal())}, nil
 }
 
@@ -220,6 +232,8 @@ func (s *Server) SubmitProposal(ctx context.Context, request *profitsharingpkg.S
 	if err != nil {
 		return nil, err
 	}
+	captureProfitSharingProposal(ctx, response.GetProposal(), "PROFIT_SHARING_PROPOSAL_SUBMIT")
+	operationlogrecord.CaptureString(ctx, "slug", request.GetSlug())
 	return &profitsharingpkg.SubmitProposalResponse{Proposal: projectProposal(response.GetProposal())}, nil
 }
 
@@ -237,6 +251,8 @@ func (s *Server) ReopenProposal(ctx context.Context, request *profitsharingpkg.R
 	if err != nil {
 		return nil, err
 	}
+	captureProfitSharingProposal(ctx, response.GetProposal(), "PROFIT_SHARING_PROPOSAL_REOPEN")
+	operationlogrecord.CaptureString(ctx, "slug", request.GetSlug())
 	return &profitsharingpkg.ReopenProposalResponse{Proposal: projectProposal(response.GetProposal())}, nil
 }
 
@@ -268,6 +284,10 @@ func (s *Server) SubmitVote(ctx context.Context, request *profitsharingpkg.Submi
 	if err != nil {
 		return nil, err
 	}
+	operationlogrecord.CaptureString(ctx, "slug", request.GetSlug())
+	operationlogrecord.CaptureInt64(ctx, "ballotId", int64(response.GetBallotNumber()))
+	operationlogrecord.CaptureResource(ctx, "ballot", strconv.Itoa(int(response.GetBallotNumber())))
+	operationlogrecord.Commit(ctx, "PROFIT_SHARING_VOTE_SUBMIT")
 	return &profitsharingpkg.SubmitVoteResponse{
 		ProposalId:   response.GetProposalId(),
 		BallotNumber: response.GetBallotNumber(),
@@ -287,6 +307,82 @@ func (s *Server) requester(ctx context.Context) (string, bool, error) {
 		return "", false, status.Error(codes.Unauthenticated, "authenticated account is not registered")
 	}
 	return account.ID, account.Administrator, nil
+}
+
+func captureProfitSharingRound(ctx context.Context, round *profitsharingapiclient.Round, effect string) {
+	if round == nil || round.GetSummary() == nil {
+		return
+	}
+	summary := round.GetSummary()
+	operationlogrecord.CaptureResource(ctx, "round", summary.GetSlug())
+	switch effect {
+	case "PROFIT_SHARING_ROUND_CREATE", "PROFIT_SHARING_ROUND_OPEN", "PROFIT_SHARING_ROUND_PUBLISH":
+		operationlogrecord.CaptureString(ctx, "slug", summary.GetSlug())
+		operationlogrecord.CaptureInt64(ctx, "revision", summary.GetRevision())
+		operationlogrecord.CaptureString(ctx, "state", profitSharingRoundPhase(summary.GetPhase()))
+	case "PROFIT_SHARING_ROUND_UPDATE":
+		operationlogrecord.CaptureString(ctx, "newSlug", summary.GetSlug())
+		operationlogrecord.CaptureInt64(ctx, "revision", summary.GetRevision())
+	case "PROFIT_SHARING_BALLOT_CLOSE":
+		operationlogrecord.CaptureString(ctx, "slug", summary.GetSlug())
+		if summary.GetActiveBallotNumber() > 0 {
+			operationlogrecord.CaptureInt64(ctx, "ballotId", int64(summary.GetActiveBallotNumber()))
+		}
+		operationlogrecord.CaptureString(ctx, "state", profitSharingRoundPhase(summary.GetPhase()))
+	}
+	operationlogrecord.Commit(ctx, effect)
+}
+
+func captureProfitSharingProposal(ctx context.Context, proposal *profitsharingapiclient.Proposal, effect string) {
+	if proposal == nil {
+		return
+	}
+	operationlogrecord.CaptureResource(ctx, "proposal", proposal.GetId())
+	operationlogrecord.CaptureInt64(ctx, "revision", proposal.GetRevision())
+	if effect != "PROFIT_SHARING_PROPOSAL_UPDATE" {
+		operationlogrecord.CaptureString(ctx, "state", profitSharingProposalStatus(proposal.GetStatus()))
+	}
+	operationlogrecord.Commit(ctx, effect)
+}
+
+func profitSharingRoundChangedFields(request *profitsharingpkg.UpdateRoundRequest) []string {
+	fields := make([]string, 0, 3)
+	if request.GetCurrentSlug() != request.GetSlug() {
+		fields = append(fields, "slug")
+	}
+	if request.GetTitle() != "" {
+		fields = append(fields, "title")
+	}
+	if len(request.GetParticipants()) > 0 {
+		fields = append(fields, "participants")
+	}
+	return fields
+}
+
+func profitSharingRoundPhase(value profitsharingapiclient.RoundPhase) string {
+	switch value {
+	case profitsharingapiclient.RoundPhase_ROUND_PHASE_DRAFT:
+		return "draft"
+	case profitsharingapiclient.RoundPhase_ROUND_PHASE_COLLECTING:
+		return "collecting"
+	case profitsharingapiclient.RoundPhase_ROUND_PHASE_VOTING:
+		return "voting"
+	case profitsharingapiclient.RoundPhase_ROUND_PHASE_CLOSED:
+		return "closed"
+	default:
+		return ""
+	}
+}
+
+func profitSharingProposalStatus(value profitsharingapiclient.ProposalStatus) string {
+	switch value {
+	case profitsharingapiclient.ProposalStatus_PROPOSAL_STATUS_DRAFT:
+		return "draft"
+	case profitsharingapiclient.ProposalStatus_PROPOSAL_STATUS_SUBMITTED:
+		return "submitted"
+	default:
+		return ""
+	}
 }
 
 func (s *Server) validateParticipants(round *profitsharingapiclient.Round) ([]string, error) {

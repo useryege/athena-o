@@ -40,6 +40,16 @@ func TestSelectedGraphOverridesEveryConsumerAndScopesCredentials(t *testing.T) {
 	if env["ATHENA_GOOGLE_OIDC_REDIRECT_URI"] != "http://localhost:4000/athena/auth/google/callback" {
 		t.Fatal("callback mismatch")
 	}
+	if env["ATHENA_OPERATION_LOG_SERVER_ADDRESS"] != "127.0.0.1:8124" {
+		t.Fatalf("operation-log consumer was not wired: %+v", env)
+	}
+	if env["ATHENA_OPERATION_LOG_INTERNAL_AUTH_TOKEN"] == "" || env["ATHENA_OPERATION_LOG_CURSOR_HMAC_KEY"] == "" || env["ATHENA_OPERATION_LOG_INTERNAL_AUTH_TOKEN"] == env["ATHENA_OPERATION_LOG_CURSOR_HMAC_KEY"] {
+		t.Fatal("operation-log credentials missing or reused")
+	}
+	apiEnv := environmentMap(EnvironmentFor(env, serviceRegistry()["api-server"].EnvironmentKeys))
+	if _, ok := apiEnv["ATHENA_OPERATION_LOG_CURSOR_HMAC_KEY"]; ok {
+		t.Fatal("API received operation-log cursor key")
+	}
 	specs, _ := ResolveServices([]string{"wallet"})
 	env, err = NewManager(testKey(t)).PrepareEnvironment(map[string]string{"ATHENA_MANAGED_OO_SERVER_ADDRESS": "external:8106"}, specs, "managed")
 	if err != nil || env["ATHENA_MANAGED_OO_SERVER_ADDRESS"] != "external:8106" {

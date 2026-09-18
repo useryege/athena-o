@@ -11,6 +11,8 @@ import (
 
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountcredentials"
+	"github.com/useryege/athena/internal/operationlog/event"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	"github.com/useryege/athena/internal/walletsecret"
 	httputil "github.com/useryege/athena/util/http"
 	jwtutil "github.com/useryege/athena/util/jwt"
@@ -52,6 +54,28 @@ func NewHandler(settingsMrg *settings.SettingsManager, sessionMgr *session.Sessi
 
 // ServeHTTP clears the Athena auth cookie, revokes the local session token when possible, and redirects to Athena.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	logoutCompleted := false
+	cookieCleared, revocationConfirmed, noActiveSession := false, false, false
+	var accountID string
+	defer func() {
+		if !logoutCompleted {
+			return
+		}
+		if canonical, err := accountcredentials.CanonicalAccountID(accountID); err == nil {
+			operationlogrecord.CaptureResource(r.Context(), "account", canonical)
+		}
+		operationlogrecord.CaptureBool(r.Context(), "cookieCleared", cookieCleared)
+		operationlogrecord.CaptureBool(r.Context(), "revocationConfirmed", revocationConfirmed)
+		operationlogrecord.CaptureBool(r.Context(), "noActiveSession", noActiveSession)
+		if !noActiveSession && !revocationConfirmed {
+			if recorder := operationlogrecord.FromContext(r.Context()); recorder != nil {
+				recorder.Effect("IDENTITY_LOGOUT")
+				recorder.Result(event.Partial, "SESSION_REVOCATION_UNCONFIRMED")
+			}
+		} else {
+			operationlogrecord.Commit(r.Context(), "IDENTITY_LOGOUT")
+		}
+	}()
 	realmValues := r.Header.Values(common.ApplicationRealmHeader)
 	if len(realmValues) != 1 {
 		http.Error(w, "application realm is required exactly once", http.StatusBadRequest)
@@ -79,6 +103,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if cookie.Name != cookieName && !strings.HasPrefix(cookie.Name, cookieName+"-") {
 			continue
 		}
+		cookieCleared = true
 
 		athenaCookie := http.Cookie{
 			Name:     cookie.Name,
@@ -115,28 +140,40 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	tokenString, err := httputil.JoinCookies(cookieName, cookies)
 	if tokenString == "" || err != nil {
+		noActiveSession = true
+		logoutCompleted = true
 		http.Redirect(w, r, logoutRedirectURL, http.StatusSeeOther)
 		return
 	}
 
 	claims, tokenRealm, err := h.parseToken(tokenString)
 	if err != nil || tokenRealm != realm {
+		noActiveSession = true
+		logoutCompleted = true
 		http.Redirect(w, r, logoutRedirectURL, http.StatusSeeOther)
 		return
 	}
 
 	mapClaims, err := jwtutil.MapClaims(claims)
 	if err != nil {
+		noActiveSession = true
+		logoutCompleted = true
 		http.Redirect(w, r, logoutRedirectURL, http.StatusSeeOther)
 		return
 	}
 
 	id := jwtutil.StringField(mapClaims, "jti")
+	accountID = jwtutil.StringField(mapClaims, "sub")
 	if exp, err := jwtutil.ExpirationTime(mapClaims); err == nil && id != "" {
 		if err := h.revokeToken(context.Background(), id, time.Until(exp)); err != nil {
 			log.Warnf("failed to invalidate logout token: %v", err)
+		} else {
+			revocationConfirmed = true
 		}
+	} else {
+		noActiveSession = true
 	}
 
+	logoutCompleted = true
 	http.Redirect(w, r, logoutRedirectURL, http.StatusSeeOther)
 }

@@ -22,6 +22,7 @@ import (
 
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcredentials"
+	"github.com/useryege/athena/internal/operationlog/record"
 	"github.com/useryege/athena/internal/walletsecret"
 	wormtradingapiclient "github.com/useryege/athena/internal/wormtrading/apiclient"
 )
@@ -262,6 +263,8 @@ func (server *AthenaServer) createWormCombination(w http.ResponseWriter, request
 		walletsecret.WriteError(w, err)
 		return
 	}
+	observeWormHTTPMutation(request.Context(), "combination", response.ID, "WORM_COMBINATION_CREATE", "COMMITTED", false, map[string]string{"confirmedRevision": strconv.FormatInt(response.Revision, 10), "itemCount": strconv.Itoa(len(response.Items))})
+	record.CaptureStrings(request.Context(), "changedFields", []string{"name", "items"})
 	writeWormCombinationJSON(w, http.StatusCreated, response)
 }
 
@@ -319,6 +322,12 @@ func (server *AthenaServer) updateWormCombination(w http.ResponseWriter, request
 		walletsecret.WriteError(w, err)
 		return
 	}
+	observeWormHTTPMutation(request.Context(), "combination", response.ID, "WORM_COMBINATION_UPDATE", "COMMITTED", false, map[string]string{
+		"expectedRevision":  strconv.FormatInt(input.ExpectedRevision, 10),
+		"confirmedRevision": strconv.FormatInt(response.Revision, 10),
+		"itemCount":         strconv.Itoa(len(response.Items)),
+	})
+	record.CaptureStrings(request.Context(), "changedFields", []string{"name", "items"})
 	writeWormCombinationJSON(w, http.StatusOK, response)
 }
 
@@ -356,6 +365,10 @@ func (server *AthenaServer) deleteWormCombination(w http.ResponseWriter, request
 	if err != nil {
 		walletsecret.WriteError(w, sanitizeWormCombinationStoreError(err))
 		return
+	}
+	observeWormHTTPMutation(request.Context(), "combination", combinationID, "WORM_COMBINATION_DELETE", "deleted", false, map[string]string{"expectedRevision": strconv.FormatInt(expectedRevision, 10)})
+	if r := record.FromContext(request.Context()); r != nil {
+		record.CaptureStrings(request.Context(), "changedFields", []string{"name", "items"})
 	}
 	w.WriteHeader(http.StatusNoContent)
 }

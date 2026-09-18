@@ -13,6 +13,7 @@ import (
 	"github.com/useryege/athena/internal/walletsecret"
 	"math"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 
 	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/internal/authregistration"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 )
 
 const (
@@ -179,33 +181,33 @@ func (h *wormPositionCashOutBatchAuthorization) challenge(w http.ResponseWriter,
 		return
 	}
 	if !h.phantom.validOrigin(r) {
-		h.fail(w, http.StatusForbidden, WormPositionCashOutBatchAuthorizationRequiredReason, "origin_verify", nil)
+		h.fail(r.Context(), w, http.StatusForbidden, WormPositionCashOutBatchAuthorizationRequiredReason, "origin_verify", nil)
 		return
 	}
 	if !isJSONRequest(r) {
-		h.fail(w, http.StatusUnsupportedMediaType, WormPositionCashOutBatchAuthorizationRequiredReason, "content_type", nil)
+		h.fail(r.Context(), w, http.StatusUnsupportedMediaType, WormPositionCashOutBatchAuthorizationRequiredReason, "content_type", nil)
 		return
 	}
 	batchID, err := wormPositionCashOutBatchIDFromRequest(r, wormPositionCashOutBatchChallengeRouteSuffix)
 	if err != nil {
-		h.fail(w, http.StatusBadRequest, WormPositionCashOutBatchAuthorizationRequiredReason, "batch_id", err)
+		h.fail(r.Context(), w, http.StatusBadRequest, WormPositionCashOutBatchAuthorizationRequiredReason, "batch_id", err)
 		return
 	}
 	var input wormPositionCashOutBatchChallengeRequest
 	if err := decodeJSON(w, r, &input); err != nil {
-		h.fail(w, http.StatusBadRequest, WormPositionCashOutBatchAuthorizationRequiredReason, "challenge_decode", err)
+		h.fail(r.Context(), w, http.StatusBadRequest, WormPositionCashOutBatchAuthorizationRequiredReason, "challenge_decode", err)
 		return
 	}
 	commandID, err := canonicalWormPositionCashOutBatchID(input.CommandID, "commandId")
 	if err != nil || input.ExpectedRevision <= 0 {
-		h.fail(w, http.StatusBadRequest, WormPositionCashOutBatchAuthorizationRequiredReason, "command_binding", err)
+		h.fail(r.Context(), w, http.StatusBadRequest, WormPositionCashOutBatchAuthorizationRequiredReason, "command_binding", err)
 		return
 	}
 	returnTo := validateWormPositionCashOutBatchReturnTo(input.ReturnTo)
 	authCtx, credential, err := h.authenticate(r)
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin || credential.JTI == "" ||
 		credential.AccessRevision == 0 || credential.AccessRevision > math.MaxInt64 {
-		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchLoginSessionRequiredReason, "login_session", nil)
+		h.fail(r.Context(), w, http.StatusUnauthorized, WormPositionCashOutBatchLoginSessionRequiredReason, "login_session", nil)
 		return
 	}
 	if err := h.admit(authCtx); err != nil {
@@ -214,13 +216,13 @@ func (h *wormPositionCashOutBatchAuthorization) challenge(w http.ResponseWriter,
 	}
 	accountID, err := accountcredentials.CanonicalAccountID(credential.AccountID)
 	if err != nil || accountID != credential.AccountID {
-		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchLoginSessionRequiredReason, "account_binding", err)
+		h.fail(r.Context(), w, http.StatusUnauthorized, WormPositionCashOutBatchLoginSessionRequiredReason, "account_binding", err)
 		return
 	}
 	account, err := h.credentials.Get(accountID)
 	if err != nil || account.IdentityProvider != accountcredentials.IdentityProviderSolanaWallet ||
 		!account.HasExternalIdentity() {
-		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "identity_provider", err)
+		h.fail(r.Context(), w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "identity_provider", err)
 		return
 	}
 	address, err := accountcredentials.NormalizeIdentitySubject(
@@ -228,7 +230,7 @@ func (h *wormPositionCashOutBatchAuthorization) challenge(w http.ResponseWriter,
 		account.IdentitySubject,
 	)
 	if err != nil || address != account.IdentitySubject {
-		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "identity_address", err)
+		h.fail(r.Context(), w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "identity_address", err)
 		return
 	}
 	sessionDigest := sha256.Sum256([]byte(credential.JTI))
@@ -243,22 +245,22 @@ func (h *wormPositionCashOutBatchAuthorization) challenge(w http.ResponseWriter,
 	}
 	descriptor, err := h.loadDescriptor(r.Context(), descriptorRequest)
 	if err != nil {
-		h.failInjected(w, "descriptor_load", err)
+		h.failInjected(r.Context(), w, "descriptor_load", err)
 		return
 	}
 	intentDigest, err := validateWormPositionCashOutBatchDescriptor(descriptorRequest, descriptor)
 	if err != nil {
-		h.fail(w, http.StatusServiceUnavailable, WormPositionCashOutBatchAuthorizationUnavailableReason, "descriptor_validate", err)
+		h.fail(r.Context(), w, http.StatusServiceUnavailable, WormPositionCashOutBatchAuthorizationUnavailableReason, "descriptor_validate", err)
 		return
 	}
 	id, err := authregistration.RandomOpaqueValue()
 	if err != nil {
-		h.fail(w, http.StatusServiceUnavailable, WormPositionCashOutBatchAuthorizationUnavailableReason, "challenge_id_generation", err)
+		h.fail(r.Context(), w, http.StatusServiceUnavailable, WormPositionCashOutBatchAuthorizationUnavailableReason, "challenge_id_generation", err)
 		return
 	}
 	nonce, err := randomNonce()
 	if err != nil {
-		h.fail(w, http.StatusServiceUnavailable, WormPositionCashOutBatchAuthorizationUnavailableReason, "nonce_generation", err)
+		h.fail(r.Context(), w, http.StatusServiceUnavailable, WormPositionCashOutBatchAuthorizationUnavailableReason, "nonce_generation", err)
 		return
 	}
 	issuedAt := time.Now().UTC().Truncate(time.Second)
@@ -280,7 +282,7 @@ func (h *wormPositionCashOutBatchAuthorization) challenge(w http.ResponseWriter,
 		CreatedAt:              issuedAt,
 		ExpiresAt:              expiresAt,
 	}); err != nil {
-		h.fail(w, http.StatusServiceUnavailable, WormPositionCashOutBatchAuthorizationUnavailableReason, "challenge_create", err)
+		h.fail(r.Context(), w, http.StatusServiceUnavailable, WormPositionCashOutBatchAuthorizationUnavailableReason, "challenge_create", err)
 		return
 	}
 	h.setChallengeCookie(w, id, expiresAt)
@@ -297,37 +299,37 @@ func (h *wormPositionCashOutBatchAuthorization) verify(w http.ResponseWriter, r 
 		return
 	}
 	if !h.phantom.validOrigin(r) {
-		h.fail(w, http.StatusForbidden, WormPositionCashOutBatchAuthorizationRequiredReason, "origin_verify", nil)
+		h.fail(r.Context(), w, http.StatusForbidden, WormPositionCashOutBatchAuthorizationRequiredReason, "origin_verify", nil)
 		return
 	}
 	batchID, err := wormPositionCashOutBatchIDFromRequest(r, wormPositionCashOutBatchVerifyRouteSuffix)
 	if err != nil {
-		h.fail(w, http.StatusBadRequest, WormPositionCashOutBatchAuthorizationRequiredReason, "batch_id", err)
+		h.fail(r.Context(), w, http.StatusBadRequest, WormPositionCashOutBatchAuthorizationRequiredReason, "batch_id", err)
 		return
 	}
 	cookie, cookieErr := r.Cookie(wormPositionCashOutBatchChallengeCookieName)
 	h.clearChallengeCookie(w)
 	if cookieErr != nil || !authregistration.ValidOpaqueValue(cookie.Value) {
-		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "challenge_cookie", cookieErr)
+		h.fail(r.Context(), w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "challenge_cookie", cookieErr)
 		return
 	}
 	stored, err := h.store.consume(r.Context(), cookie.Value)
 	if err != nil {
 		if errors.Is(err, errWormPositionCashOutBatchChallengeUnavailable) {
-			h.fail(w, http.StatusServiceUnavailable, WormPositionCashOutBatchAuthorizationUnavailableReason, "challenge_consume", err)
+			h.fail(r.Context(), w, http.StatusServiceUnavailable, WormPositionCashOutBatchAuthorizationUnavailableReason, "challenge_consume", err)
 			return
 		}
-		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "challenge_consume", err)
+		h.fail(r.Context(), w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "challenge_consume", err)
 		return
 	}
 	if !authregistration.ConstantTimeEqual(stored.BatchID, batchID) {
-		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "cash_out_binding", nil)
+		h.fail(r.Context(), w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "cash_out_binding", nil)
 		return
 	}
 	authCtx, credential, err := h.authenticate(r)
 	if err != nil || credential.Capability != accountcredentials.CapabilityLogin || credential.JTI == "" ||
 		credential.AccessRevision == 0 || credential.AccessRevision > math.MaxInt64 {
-		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchLoginSessionRequiredReason, "login_session", nil)
+		h.fail(r.Context(), w, http.StatusUnauthorized, WormPositionCashOutBatchLoginSessionRequiredReason, "login_session", nil)
 		return
 	}
 	currentSessionDigest := sha256.Sum256([]byte(credential.JTI))
@@ -335,7 +337,7 @@ func (h *wormPositionCashOutBatchAuthorization) verify(w http.ResponseWriter, r 
 	if digestErr != nil || !authregistration.ConstantTimeEqual(stored.AccountID, credential.AccountID) ||
 		subtle.ConstantTimeCompare(storedSessionDigest, currentSessionDigest[:]) != 1 ||
 		stored.AccessRevision != credential.AccessRevision {
-		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "session_binding", digestErr)
+		h.fail(r.Context(), w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "session_binding", digestErr)
 		return
 	}
 	if err := h.admit(authCtx); err != nil {
@@ -345,12 +347,12 @@ func (h *wormPositionCashOutBatchAuthorization) verify(w http.ResponseWriter, r 
 	account, err := h.credentials.Get(credential.AccountID)
 	if err != nil || account.IdentityProvider != accountcredentials.IdentityProviderSolanaWallet ||
 		!authregistration.ConstantTimeEqual(account.IdentitySubject, stored.Address) {
-		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "identity_binding", err)
+		h.fail(r.Context(), w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "identity_binding", err)
 		return
 	}
 	intentDigest, err := canonicalWormPositionCashOutBatchDigest(stored.IntentDigestSHA256)
 	if err != nil {
-		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "intent_binding", err)
+		h.fail(r.Context(), w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "intent_binding", err)
 		return
 	}
 	descriptorRequest := WormPositionCashOutBatchDescriptorRequest{
@@ -364,12 +366,12 @@ func (h *wormPositionCashOutBatchAuthorization) verify(w http.ResponseWriter, r 
 	}
 	descriptor, err := h.loadDescriptor(r.Context(), descriptorRequest)
 	if err != nil {
-		h.failInjected(w, "descriptor_reload", err)
+		h.failInjected(r.Context(), w, "descriptor_reload", err)
 		return
 	}
 	currentIntentDigest, err := validateWormPositionCashOutBatchDescriptor(descriptorRequest, descriptor)
 	if err != nil || subtle.ConstantTimeCompare(intentDigest, currentIntentDigest) != 1 {
-		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "descriptor_binding", err)
+		h.fail(r.Context(), w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "descriptor_binding", err)
 		return
 	}
 	expectedStatement := wormPositionCashOutBatchSIWSStatement(stored.BatchID, intentDigest)
@@ -381,28 +383,28 @@ func (h *wormPositionCashOutBatchAuthorization) verify(w http.ResponseWriter, r 
 		stored.ExpiresAt,
 	)
 	if !authregistration.ConstantTimeEqual(expectedMessage, stored.Message) {
-		h.fail(w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "challenge_binding", nil)
+		h.fail(r.Context(), w, http.StatusUnauthorized, WormPositionCashOutBatchAuthorizationRequiredReason, "challenge_binding", nil)
 		return
 	}
 	if !isJSONRequest(r) {
-		h.fail(w, http.StatusUnsupportedMediaType, WormPositionCashOutBatchAuthorizationRequiredReason, "content_type", nil)
+		h.fail(r.Context(), w, http.StatusUnsupportedMediaType, WormPositionCashOutBatchAuthorizationRequiredReason, "content_type", nil)
 		return
 	}
 	var input wormPositionCashOutBatchVerifyRequest
 	if err := decodeJSON(w, r, &input); err != nil {
-		h.fail(w, http.StatusBadRequest, WormPositionCashOutBatchAuthorizationRequiredReason, "signature_decode", err)
+		h.fail(r.Context(), w, http.StatusBadRequest, WormPositionCashOutBatchAuthorizationRequiredReason, "signature_decode", err)
 		return
 	}
 	signature, err := base64.RawURLEncoding.DecodeString(input.Signature)
 	if err != nil || len(signature) != ed25519.SignatureSize ||
 		base64.RawURLEncoding.EncodeToString(signature) != input.Signature {
-		h.fail(w, http.StatusForbidden, WormPositionCashOutBatchAuthorizationRequiredReason, "signature_encoding", err)
+		h.fail(r.Context(), w, http.StatusForbidden, WormPositionCashOutBatchAuthorizationRequiredReason, "signature_encoding", err)
 		return
 	}
 	publicKey, err := base58.Decode(stored.Address)
 	if err != nil || len(publicKey) != ed25519.PublicKeySize ||
 		!ed25519.Verify(ed25519.PublicKey(publicKey), []byte(stored.Message), signature) {
-		h.fail(w, http.StatusForbidden, WormPositionCashOutBatchAuthorizationRequiredReason, "signature_verify", err)
+		h.fail(r.Context(), w, http.StatusForbidden, WormPositionCashOutBatchAuthorizationRequiredReason, "signature_verify", err)
 		return
 	}
 	projection, err := h.authorize(r.Context(), WormPositionCashOutBatchAuthorizationRequest{
@@ -417,12 +419,20 @@ func (h *wormPositionCashOutBatchAuthorization) verify(w http.ResponseWriter, r 
 		ProofKind:              WormPositionCashOutBatchProofKindPhantom,
 	})
 	if err != nil {
-		h.failInjected(w, "authorize", err)
+		h.failInjected(r.Context(), w, "authorize", err)
 		return
 	}
 	log.WithFields(log.Fields{
 		"stage": "complete", "provider": accountcredentials.IdentityProviderSolanaWallet,
 	}).Info("Worm position Cash Out Batch Solana authorization succeeded")
+	operationlogrecord.CaptureResource(r.Context(), "cash_out_batch", stored.BatchID)
+	operationlogrecord.BindVerifiedAccount(r.Context(), credential.AccountID, "solana_wallet")
+	operationlogrecord.CaptureString(r.Context(), "provider", "solana_wallet")
+	operationlogrecord.CaptureString(r.Context(), "proofKind", "PHANTOM")
+	operationlogrecord.CaptureString(r.Context(), "expectedRevision", strconv.FormatInt(stored.ExpectedRevision, 10))
+	operationlogrecord.CaptureString(r.Context(), "confirmedRevision", strconv.FormatInt(descriptor.Revision, 10))
+	operationlogrecord.CaptureString(r.Context(), "stage", "authorization_verified")
+	operationlogrecord.Commit(r.Context(), "WORM_CASH_OUT_BATCH_AUTHORIZE")
 	h.phantom.writeJSON(w, http.StatusOK, projection)
 }
 
@@ -477,6 +487,7 @@ func (h *wormPositionCashOutBatchAuthorization) clearChallengeCookie(w http.Resp
 }
 
 func (h *wormPositionCashOutBatchAuthorization) fail(
+	ctx context.Context,
 	w http.ResponseWriter,
 	statusCode int,
 	reason string,
@@ -490,10 +501,12 @@ func (h *wormPositionCashOutBatchAuthorization) fail(
 		fields["error_type"] = fmt.Sprintf("%T", err)
 	}
 	log.WithFields(fields).Warn("Worm position Cash Out Batch Solana authorization failed")
+	observeAuthorizationFailure(ctx, stage, statusCode, reason)
 	writeWormPositionCashOutBatchProofError(w, statusCode, reason)
 }
 
 func (h *wormPositionCashOutBatchAuthorization) failInjected(
+	ctx context.Context,
 	w http.ResponseWriter,
 	stage string,
 	err error,
@@ -503,6 +516,7 @@ func (h *wormPositionCashOutBatchAuthorization) failInjected(
 		"provider":   accountcredentials.IdentityProviderSolanaWallet,
 		"error_type": fmt.Sprintf("%T", err),
 	}).Warn("Worm position Cash Out Batch Solana authorization dependency failed")
+	observeAuthorizationFailure(ctx, stage, http.StatusInternalServerError, "AUTHORIZATION_UNAVAILABLE")
 	h.writeError(w, err)
 }
 

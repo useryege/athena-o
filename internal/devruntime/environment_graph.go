@@ -20,7 +20,7 @@ func prepareSelectedEndpoints(env map[string]string, specs []ServiceSpec) error 
 	for _, spec := range specs {
 		if _, ok := env[spec.ListenKey]; !ok {
 			env[spec.ListenKey] = "127.0.0.1"
-			if spec.Name == "trader-sync" {
+			if spec.Name == "trader-sync" || spec.Name == "operation-log" {
 				env[spec.ListenKey] += ":" + spec.DefaultPort
 			}
 		}
@@ -57,7 +57,7 @@ func prepareSelectedEndpoints(env map[string]string, specs []ServiceSpec) error 
 }
 
 func (m *Manager) prepareCredentials(env map[string]string, specs []ServiceSpec, mode string) error {
-	candidates := []string{tokenKey, "ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY", "ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN", "ATHENA_WALLET_INTERNAL_AUTH_TOKEN", "ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN", "ATHENA_WALLET_ENCRYPTION_KEY", "ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN", "ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY", "ATHENA_SOLANA_DISCOVERY_INTERNAL_AUTH_TOKEN"}
+	candidates := []string{tokenKey, "ATHENA_TRADER_SYNC_CURSOR_HMAC_KEY", "ATHENA_NOTIFICATION_INTERNAL_AUTH_TOKEN", "ATHENA_WALLET_INTERNAL_AUTH_TOKEN", "ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN", "ATHENA_WALLET_ENCRYPTION_KEY", "ATHENA_WORM_TRADING_INTERNAL_AUTH_TOKEN", "ATHENA_WORM_TRADING_CREDENTIAL_ENCRYPTION_KEY", "ATHENA_SOLANA_DISCOVERY_INTERNAL_AUTH_TOKEN", "ATHENA_OPERATION_LOG_INTERNAL_AUTH_TOKEN", "ATHENA_OPERATION_LOG_CURSOR_HMAC_KEY"}
 	for _, key := range candidates {
 		used := false
 		for _, spec := range specs {
@@ -150,6 +150,9 @@ func (m *Manager) prepareCredentials(env map[string]string, specs []ServiceSpec,
 	}
 	if env["ATHENA_WALLET_INTERNAL_AUTH_TOKEN"] != "" && env["ATHENA_WALLET_INTERNAL_AUTH_TOKEN"] == env["ATHENA_WALLET_WORM_EXECUTION_SIGNER_TOKEN"] {
 		return errors.New("wallet signer and internal credentials must differ")
+	}
+	if env["ATHENA_OPERATION_LOG_INTERNAL_AUTH_TOKEN"] != "" && env["ATHENA_OPERATION_LOG_INTERNAL_AUTH_TOKEN"] == env["ATHENA_OPERATION_LOG_CURSOR_HMAC_KEY"] {
+		return errors.New("operation-log internal token must differ from cursor key")
 	}
 	return nil
 }

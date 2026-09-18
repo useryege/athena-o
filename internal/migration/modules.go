@@ -28,6 +28,10 @@ type Module struct {
 
 var modules = []Module{
 	{Name: "account-state", DSNEnv: schema.DSNEnv, Database: "athena", Migrations: accountstatemigrations.FS, Dir: accountstatemigrations.Dir},
+	// operation-log shares the account database but owns its own schema and
+	// Goose version table. Its migration is dispatched by athena-migrate's
+	// operation-log schema owner rather than the generic public migrator.
+	{Name: "operation-log", DSNEnv: schema.DSNEnv, Database: "athena"},
 	{Name: "worm-trading", DSNEnv: "ATHENA_WORM_TRADING_POSTGRES_DSN", Database: "worm_trading", Migrations: wormtradingstore.Migrations(), Dir: MigrationDir},
 	{Name: "wallet", DSNEnv: "ATHENA_WALLET_POSTGRES_DSN", Database: "wallet", Migrations: walletstore.Migrations(), Dir: MigrationDir},
 	{Name: "managed-oo", DSNEnv: "ATHENA_MANAGED_OO_POSTGRES_DSN", Database: "managed_oo", Migrations: managedoostore.Migrations(), Dir: MigrationDir},

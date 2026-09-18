@@ -324,6 +324,7 @@ func (h *wormExecutionAuthorization) callback(w http.ResponseWriter, r *http.Req
 		return
 	}
 	log.WithFields(log.Fields{"stage": "complete", "provider": accountcredentials.IdentityProviderGoogle}).Info("Worm execution Google authorization succeeded")
+	observeGoogleAuthorization(r.Context(), "google", "authorization_verified", "GOOGLE", "execution", transaction.RunID, "WORM_EXECUTION_AUTHORIZE", transaction.ExpectedRevision, transaction.ExpectedRevision, false)
 	http.Redirect(w, r, h.google.deploymentPath(returnTo), http.StatusSeeOther)
 }
 
@@ -354,6 +355,7 @@ func (h *wormExecutionAuthorization) clearStateCookie(w http.ResponseWriter) {
 }
 
 func (h *wormExecutionAuthorization) redirectFailure(w http.ResponseWriter, r *http.Request, returnTo, reason, stage string) {
+	failGoogleAuthorization(r.Context(), reason, stage)
 	log.WithFields(log.Fields{"stage": stage, "reason": reason, "provider": accountcredentials.IdentityProviderGoogle}).Warn("Worm execution Google authorization failed")
 	http.Redirect(w, r, h.google.deploymentPath(wormExecutionFailureURL(returnTo, reason)), http.StatusSeeOther)
 }

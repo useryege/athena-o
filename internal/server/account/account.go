@@ -14,6 +14,7 @@ import (
 	accountaccesscore "github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcenter"
 	"github.com/useryege/athena/internal/accountcredentials"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	"github.com/useryege/athena/pkg/apiclient/account"
 	"github.com/useryege/athena/util/session"
 )
@@ -360,6 +361,13 @@ func (s *Server) UpdateAccountAccess(ctx context.Context, r *account.UpdateAccou
 	if err != nil {
 		return nil, err
 	}
+	operationlogrecord.CaptureResource(ctx, "account", accountID)
+	operationlogrecord.CaptureAccess(ctx, "requestedAccess", r.Access.LoginEnabled, r.Access.ApiKeyEnabled, r.Access.ProfitSharingEnabled, r.Access.Revision, operationLogAccessModules(modules))
+	operationlogrecord.CaptureUint64(ctx, "expectedRevision", r.Access.Revision)
+	operationlogrecord.CaptureAccess(ctx, "confirmedAccess", updatedAccess.LoginEnabled, updatedAccess.APIKeyEnabled, updatedAccess.ProfitSharingEnabled, updatedAccess.Revision, operationLogAccessModules(updatedAccess.Modules))
+	operationlogrecord.CaptureUint64(ctx, "confirmedRevision", updatedAccess.Revision)
+	operationlogrecord.CaptureBool(ctx, "beforeAvailable", false)
+	operationlogrecord.Commit(ctx, "ACCOUNT_ACCESS_UPDATE")
 	return toAPIAccount(configuredAccount, updatedAccess, profile), nil
 }
 
@@ -377,6 +385,11 @@ func (s *Server) UpdateAccountProfile(ctx context.Context, r *account.UpdateAcco
 	if err != nil {
 		return nil, err
 	}
+	operationlogrecord.CaptureResource(ctx, "account", accountID)
+	operationlogrecord.CaptureStrings(ctx, "changedFields", []string{"displayName"})
+	operationlogrecord.CaptureUint64(ctx, "expectedRevision", r.ExpectedRevision)
+	operationlogrecord.CaptureUint64(ctx, "confirmedRevision", profile.Revision)
+	operationlogrecord.Commit(ctx, "ACCOUNT_PROFILE_UPDATE")
 	return ToAPIAccountProfile(accountID, profile), nil
 }
 
@@ -401,6 +414,13 @@ func (s *Server) UpdateAccountTier(ctx context.Context, r *account.UpdateAccount
 	if err != nil {
 		return nil, err
 	}
+	operationlogrecord.CaptureResource(ctx, "account", accountID)
+	operationlogrecord.CaptureString(ctx, "requestedTier", string(tier))
+	operationlogrecord.CaptureString(ctx, "confirmedTier", string(tier))
+	operationlogrecord.CaptureUint64(ctx, "expectedRevision", r.ExpectedRevision)
+	operationlogrecord.CaptureUint64(ctx, "confirmedRevision", profile.Revision)
+	operationlogrecord.CaptureBool(ctx, "beforeAvailable", false)
+	operationlogrecord.Commit(ctx, "ACCOUNT_TIER_UPDATE")
 	return ToAPIAccountProfile(accountID, profile), nil
 }
 
@@ -449,6 +469,10 @@ func (s *Server) CreateToken(ctx context.Context, r *account.CreateTokenRequest)
 		}
 		return nil, fmt.Errorf("failed to update account with new token: %w", err)
 	}
+	operationlogrecord.CaptureResource(ctx, "api_key", id)
+	operationlogrecord.CaptureString(ctx, "displayId", id)
+	operationlogrecord.CaptureInt64(ctx, "expiresIn", r.ExpiresIn)
+	operationlogrecord.Commit(ctx, "ACCOUNT_API_KEY_CREATE")
 	return &account.CreateTokenResponse{Token: tokenString}, nil
 }
 
@@ -462,6 +486,9 @@ func (s *Server) DeleteToken(ctx context.Context, r *account.DeleteTokenRequest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete token from account %s: %w", accountID, err)
 	}
+	operationlogrecord.CaptureResource(ctx, "api_key", r.Id)
+	operationlogrecord.CaptureString(ctx, "displayId", r.Id)
+	operationlogrecord.Commit(ctx, "ACCOUNT_API_KEY_DELETE")
 	return &account.EmptyResponse{}, nil
 }
 
@@ -474,4 +501,12 @@ func (s *Server) requireAPIKeyAccess(accountID string) error {
 		return status.Error(codes.PermissionDenied, "API Key access is disabled")
 	}
 	return nil
+}
+
+func operationLogAccessModules(modules map[accountaccesscore.Module]accountaccesscore.AccessLevel) map[string]string {
+	result := make(map[string]string, len(modules))
+	for module, level := range modules {
+		result[string(module)] = string(level)
+	}
+	return result
 }
