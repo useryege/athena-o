@@ -48,7 +48,8 @@ export type AuthorizationRequestFeature =
     | 'admin-service-status'
     | 'admin-etherscan'
     | 'admin-notifications'
-    | 'admin-trader-sync';
+    | 'admin-trader-sync'
+    | 'admin-operation-logs';
 export type AuthorizationRequestRealm = 'member' | 'admin';
 
 export const APPLICATION_REALM_HEADER = 'X-Athena-Application-Realm';

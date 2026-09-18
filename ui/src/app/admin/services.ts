@@ -10,6 +10,7 @@ import {AdminTraderSyncService} from './trader-sync-service';
 import {AdminAccountsService} from './accounts-service';
 import {AdminNotificationService} from './notification-service';
 import {AdminProfitSharingService} from './profit-sharing-service';
+import {OperationLogService} from './operation-log-service';
 
 export interface AdminServices extends SelfAccountServices {
     adminTraderSync: AdminTraderSyncService;
@@ -17,6 +18,7 @@ export interface AdminServices extends SelfAccountServices {
     serviceStatus: ServiceStatusService;
     adminProfitSharing: AdminProfitSharingService;
     adminNotifications: AdminNotificationService;
+    operationLogs: OperationLogService;
 }
 
 let businessServicesConfigured = false;
@@ -42,6 +44,7 @@ export const ensureAdminBusinessServices = () => {
         adminTraderSync: new AdminTraderSyncService(),
         serviceStatus: new ServiceStatusService(),
         adminProfitSharing: new AdminProfitSharingService(),
-        adminNotifications: new AdminNotificationService()
+        adminNotifications: new AdminNotificationService(),
+        operationLogs: new OperationLogService()
     });
 };
