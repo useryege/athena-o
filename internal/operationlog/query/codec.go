@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"strings"
 	"time"
 )
 
@@ -174,8 +173,8 @@ func filtersEqual(a, b NormalizedFilter) bool {
 	return hmac.Equal(aj, bj)
 }
 func ValidateViewer(v Viewer) error {
-	u, err := uuid.Parse(strings.TrimSpace(v.AccountID))
-	if err != nil || u == uuid.Nil || u.String() != strings.TrimSpace(v.AccountID) || v.Realm != "ADMIN" || (v.CredentialKind != "LOGIN_SESSION" && v.CredentialKind != "DEVELOPMENT") || len(v.SessionBinding) != 32 || v.AccessRevision == 0 {
+	u, err := uuid.Parse(v.AccountID)
+	if err != nil || u == uuid.Nil || u.String() != v.AccountID || v.Realm != "ADMIN" || (v.CredentialKind != "LOGIN_SESSION" && v.CredentialKind != "DEVELOPMENT") || len(v.SessionBinding) != 32 || v.AccessRevision == 0 {
 		return ErrCursorInvalid
 	}
 	return nil

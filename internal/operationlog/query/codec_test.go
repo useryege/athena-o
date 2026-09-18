@@ -55,3 +55,19 @@ func TestCodecBindsViewerAndRejectsTamperExpiryAndParameters(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestCodecRejectsNonCanonicalViewerAccount(t *testing.T) {
+	c, err := NewCodec([]byte("01234567890123456789012345678901"), time.Now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	viewer := Viewer{AccountID: "00000000-0000-4000-8000-000000000001", Realm: "ADMIN", CredentialKind: "LOGIN_SESSION", SessionBinding: []byte("01234567890123456789012345678901"), AccessRevision: 1}
+	f, err := NormalizeFilter(Filter{}, time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	viewer.AccountID = "00000000-0000-4000-8000-000000000001 "
+	if _, err := c.EncodeSnapshot(f, viewer, time.Now()); err == nil {
+		t.Fatal("non-canonical viewer accepted")
+	}
+}

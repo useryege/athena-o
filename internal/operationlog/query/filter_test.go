@@ -40,3 +40,10 @@ func TestNormalizeFilterDirectoryAndResourcePair(t *testing.T) {
 	}
 }
 func ptrTime(v time.Time) *time.Time { return &v }
+
+func TestNormalizeFilterRejectsUnknownResourceDirectory(t *testing.T) {
+	now := time.Now().UTC()
+	if _, err := NormalizeFilter(Filter{ResourceType: "unknown", ResourceID: "id"}, now); err == nil {
+		t.Fatal("unknown resource type accepted")
+	}
+}
