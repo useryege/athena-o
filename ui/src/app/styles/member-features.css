@@ -3811,131 +3811,6 @@
     margin-bottom: 18px;
 }
 
-.account-ai-connect {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.account-ai-connect__icon {
-    display: grid;
-    width: 48px;
-    height: 48px;
-    flex: 0 0 auto;
-    place-items: center;
-    border: 1px solid color-mix(in srgb, var(--athena-primary) 24%, var(--athena-border));
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--athena-primary) 9%, var(--athena-panel));
-    color: var(--athena-primary);
-    font-size: 22px;
-}
-
-.account-ai-connect__copy {
-    display: grid;
-    gap: 5px;
-    min-width: 0;
-}
-
-.account-ai-connect__copy .ant-typography {
-    margin: 0;
-}
-
-.account-ai-connect-action.ant-btn {
-    min-height: 2.75rem;
-}
-
-.account-ai-authority-alert {
-    margin-bottom: 18px;
-}
-
-.account-ai-verification {
-    display: grid;
-    grid-template-columns: 28px minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 14px;
-    padding: 12px 14px;
-    border: 1px solid var(--athena-border);
-    border-radius: 8px;
-    background: var(--athena-panel-elevated);
-}
-
-.account-ai-verification--checking {
-    border-color: color-mix(in srgb, var(--athena-primary) 34%, var(--athena-border));
-    background: color-mix(in srgb, var(--athena-primary) 7%, var(--athena-panel));
-}
-
-.account-ai-verification--ready {
-    border-color: color-mix(in srgb, var(--athena-green) 38%, var(--athena-border));
-    background: color-mix(in srgb, var(--athena-green) 8%, var(--athena-panel));
-}
-
-.account-ai-verification--failed {
-    border-color: color-mix(in srgb, var(--athena-red) 34%, var(--athena-border));
-    background: color-mix(in srgb, var(--athena-red) 7%, var(--athena-panel));
-}
-
-.account-ai-verification__icon {
-    display: grid;
-    width: 28px;
-    height: 28px;
-    place-items: center;
-    border-radius: 50%;
-    color: var(--athena-primary);
-    font-size: 18px;
-}
-
-.account-ai-verification--ready .account-ai-verification__icon {
-    color: var(--athena-green);
-}
-
-.account-ai-verification--failed .account-ai-verification__icon {
-    color: var(--athena-red);
-}
-
-.account-ai-verification__copy {
-    display: grid;
-    gap: 2px;
-    min-width: 0;
-}
-
-.account-ai-verification__copy strong {
-    color: var(--athena-text);
-    font-size: 13px;
-}
-
-.account-ai-verification__copy small {
-    color: var(--athena-muted);
-    font-size: 12px;
-    line-height: 1.45;
-}
-
-.account-ai-result-alert {
-    margin-bottom: 12px;
-}
-
-.account-ai-instructions {
-    margin-top: 2px;
-    font-family: var(--athena-data-font);
-    font-size: 12px;
-    line-height: 1.55;
-}
-
-.account-ai-result-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 16px;
-    padding-top: 14px;
-    border-top: 1px solid var(--athena-border);
-}
-
-.account-ai-result-modal .ant-modal-body {
-    max-height: min(76vh, 760px);
-    overflow-y: auto;
-}
-
 .account-token-card {
     display: flex;
     align-items: center;
@@ -3976,25 +3851,13 @@
         width: 100%;
     }
 
-    .account-token-card,
-    .account-ai-connect,
-    .account-ai-result-actions {
+    .account-token-card {
         align-items: stretch;
         flex-direction: column;
     }
 
-    .account-ai-connect__icon {
-        width: 44px;
-        height: 44px;
-    }
-
     .account-modal-actions button,
-    .account-token-card button,
-    .account-ai-connect-action.ant-btn,
-    .account-ai-result-actions,
-    .account-ai-result-actions > .ant-space,
-    .account-ai-result-actions > .ant-space > .ant-space-item,
-    .account-ai-result-actions button {
+    .account-token-card button {
         width: 100%;
         min-height: 44px;
     }
@@ -4003,15 +3866,6 @@
         align-items: stretch;
     }
 
-    .account-ai-verification {
-        grid-template-columns: 28px minmax(0, 1fr);
-    }
-
-    .account-ai-verification > .ant-btn {
-        grid-column: 1 / -1;
-        width: 100%;
-        min-height: 44px;
-    }
 }
 
 .profit-sharing-editor {
@@ -4654,7 +4508,6 @@
 /* Identity settings consume the shared dark surfaces; metadata stays in rows. */
 .registration-identity__value.ant-typography { font-size: .875rem; font-weight: 600; }
 .registration-identity .ant-typography-secondary, .registration-form__permanence, .registration-username-status { font-size: .8125rem; }
-.account-ai-connect__copy { gap: 12px; max-width: 75ch; }
 .account-token-card { display: grid; justify-content: stretch; border: 0; border-radius: 0; padding: 20px 0; background: transparent; }
 .account-token-card > div { gap: 14px; }
 .account-token-card dl { display: grid; gap: 12px; margin: 0; }
@@ -4663,11 +4516,6 @@
 .account-token-card dd { margin: 0; font-variant-numeric: tabular-nums; }
 .account-token-card > button { justify-self: start; width: auto; }
 .account-center-content .resource-table-compact__item { border: 0; border-radius: 0; box-shadow: none; background: transparent; }
-.account-ai-verification__copy strong { font-size: .875rem; }
-.account-ai-verification__copy small, .account-ai-instructions { font-size: .8125rem; }
-.account-ai-result-modal .ant-modal-container { max-height: calc(100dvh - 48px); display: flex; flex-direction: column; }
-.account-ai-result-modal .ant-modal-body { min-height: 0; overflow-y: auto; }
-.account-ai-result-modal .ant-modal-footer { flex-shrink: 0; }
 .telegram-channel-card { grid-template-columns: minmax(0, 1fr) auto; padding: 24px; border-color: var(--athena-border); border-radius: 14px; background: var(--athena-panel); box-shadow: none; }
 .telegram-channel-card__heading { justify-content: space-between; }
 .telegram-channel-card__heading .ant-typography { font-size: 1.125rem; }
@@ -4702,7 +4550,6 @@
 .account-center-content .resource-table-compact { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .account-center-content .resource-table-compact__item { padding: 0; }
 .account-center-content .resource-table-compact__item + .resource-table-compact__item { border-top: 1px solid var(--athena-border); }
-.account-ai-connect__copy > .ant-typography { font-size: .875rem; line-height: 1.7; }
 .telegram-delivery > h2.ant-typography { font-size: 1.25rem; font-weight: 600; margin: 0 0 16px; }
 .telegram-setup-layout, .telegram-setup-steps { min-width: 0; }
 @media (max-width: 600px) { .registration-panel__header h1.ant-typography { font-size: 1.5rem; } }
@@ -4716,7 +4563,6 @@
 .app-page:has(.telegram-delivery) .app-page__heading > h1 { grid-column: 1; grid-row: 1; }
 .app-page:has(.telegram-delivery) .app-page__heading > .ant-typography-secondary { grid-column: 1 / -1; grid-row: 2; }
 .app-page:has(.telegram-delivery) .app-page__actions { grid-column: 2; grid-row: 1; max-width: none; }
-.account-ai-result-modal.ant-modal { top: 24px; padding-bottom: 0; }
 
 /* v20 Wallets and saved Solana candidates. */
 .wallet-filters { margin: 0; align-items: end; gap: 1.25rem; }

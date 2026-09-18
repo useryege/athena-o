@@ -85,7 +85,7 @@ Every HTML file carries two path values:
 - `<base href>` is the current application's root. It drives relative assets and
   the React Router basename.
 - `<meta name="athena-deployment-base-href">` is the Athena deployment root. It
-  drives `/api`, `/auth`, logout, provider callbacks, 
+  drives `/api`, `/auth`, logout, provider callbacks,
   and full-page navigation between application roots.
 
 At a root deployment the member base is `/`, the administrator base is

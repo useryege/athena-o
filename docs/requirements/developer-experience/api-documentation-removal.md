@@ -1,6 +1,6 @@
 # 移除 Swagger 与 AI 接入展示
 
-> 状态：需求与详细设计已审阅通过；代码尚未移除，实施转交新的 chat。
+> 状态：已实施，待人工复验；本轮实现与验证证据见[验收记录](../../testing/swagger-ai-discovery-removal-acceptance.md)。
 > 用户决定：2026-09-18，一并移除 Swagger、Connect AI 与配套 AI 接入文档，保留普通 API Key。
 
 ## 背景与目标
@@ -39,4 +39,4 @@ ATHENA 当前由用户独立开发，长期内没有其他开发者对接的需�
 - [当前 AI 接入与文档实现](../../design/developer-experience/ai-discovery-documentation.md)
 - [账户凭据](../../design/identity-access/account-credentials.md)
 
-本需求记录退役决定，不证明代码、构建产物或任何运行环境已经完成退役。
+本需求记录退役决定；验收记录区分隔离验证、真实本地环境和待人工复验，不把历史材料当作当前实现证据。

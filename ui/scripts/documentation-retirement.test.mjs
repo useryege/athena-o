@@ -90,6 +90,11 @@ if (process.argv[2] !== '--serve') {
                             const response = await fetch(`${server.url}${path}`, {method, headers: {accept}, redirect: 'manual'});
                             assert.equal(response.status, 404, `${method} ${prefix}${path} (${accept})`);
                             assert.equal(response.headers.get('location'), null);
+                            if (!prefix) {
+                                const aliased = await fetch(`${server.url}/athena${path}`, {method, headers: {accept}, redirect: 'manual'});
+                                assert.equal(aliased.status, 404, `${method} /athena${path} (${accept})`);
+                                assert.equal(aliased.headers.get('location'), null);
+                            }
                         }
                     }
                 }

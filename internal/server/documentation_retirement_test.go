@@ -85,3 +85,27 @@ func TestRetiredDocumentationPathsReturnNotFoundBeforeStaticFilesAndHistoryFallb
 		})
 	}
 }
+
+func TestRetiredDocumentationPathsReturnNotFoundForAthenaAliasAtRoot(t *testing.T) {
+	staticDir := t.TempDir()
+	path := filepath.Join(staticDir, "swagger-ui", "index.html")
+	require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755))
+	require.NoError(t, os.WriteFile(path, []byte("legacy swagger ui"), 0o644))
+
+	server := &AthenaServer{
+		AthenaServerOpts: AthenaServerOpts{RootPath: "/", BaseHRef: "/"},
+		staticAssets:     http.FS(os.DirFS(staticDir)),
+	}
+	handler := http.Handler(http.HandlerFunc(server.newStaticAssetsHandler()))
+	for _, method := range []string{http.MethodGet, http.MethodHead} {
+		for _, accept := range []string{"application/json", "text/html"} {
+			req := httptest.NewRequest(method, "/athena/swagger-ui/index.html", nil)
+			req.Header.Set("Accept", accept)
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, req)
+			require.Equal(t, http.StatusNotFound, response.Code)
+			require.Empty(t, response.Header().Get("Location"))
+			require.NotContains(t, response.Body.String(), "legacy")
+		}
+	}
+}

@@ -22,6 +22,12 @@ const proxyConf = {
 
 const pathWithinDeployment = (pathname: string) => {
     if (!deploymentPrefix) {
+        if (pathname === '/athena') {
+            return '/';
+        }
+        if (pathname.startsWith('/athena/')) {
+            return pathname.slice('/athena'.length);
+        }
         return pathname;
     }
     if (pathname === deploymentPrefix) {

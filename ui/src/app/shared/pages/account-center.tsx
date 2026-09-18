@@ -19,7 +19,7 @@ const accountSections: Array<{key: AccountCenterSection; label: string; descript
     {key: 'profile', label: 'Profile', description: 'Name and avatar', icon: <UserOutlined aria-hidden={true} />},
     {key: 'access', label: 'Access & session', description: 'Permissions and versions', icon: <KeyOutlined aria-hidden={true} />}
 ];
-const memberSecuritySection = {key: 'security' as const, label: 'Security', description: 'API keys and AI connections', icon: <SafetyCertificateOutlined aria-hidden={true} />};
+const memberSecuritySection = {key: 'security' as const, label: 'Security', description: 'API keys', icon: <SafetyCertificateOutlined aria-hidden={true} />};
 
 const useUnsavedChanges = (dirty: boolean, reset: () => void, savedName: string, draftName: string) => {
     const ctx = React.useContext(Context);

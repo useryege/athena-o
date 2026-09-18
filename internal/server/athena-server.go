@@ -947,10 +947,20 @@ func isRetiredDocumentationPath(requestPath string) bool {
 		requestPath == "/assets/scripts/README.md"
 }
 
+func isRetiredDocumentationRequestPath(requestPath string) bool {
+	if isRetiredDocumentationPath(requestPath) {
+		return true
+	}
+	if requestPath == "/athena" {
+		return false
+	}
+	return strings.HasPrefix(requestPath, "/athena/") && isRetiredDocumentationPath(strings.TrimPrefix(requestPath, "/athena"))
+}
+
 // newStaticAssetsHandler returns an HTTP handler to serve UI static assets
 func (server *AthenaServer) newStaticAssetsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if isRetiredDocumentationPath(r.URL.Path) {
+		if isRetiredDocumentationRequestPath(r.URL.Path) {
 			http.NotFound(w, r)
 			return
 		}

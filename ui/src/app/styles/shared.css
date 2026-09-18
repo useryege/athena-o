@@ -1471,9 +1471,6 @@ body,
 .account-access-pending__checked { font-size: .8125rem; }
 .account-identity-value.ant-typography { overflow-wrap: anywhere; user-select: text; }
 .athena-help-panel { max-width: 860px; }
-.athena-help-connect { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-bottom: 24px; }
-.athena-help-connect > .ant-typography { max-width: 30ch; }
-.athena-help-connect > .ant-btn { flex-shrink: 0; }
 .athena-help-resource { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-block: 24px; border-top: 1px solid var(--athena-border); color: var(--athena-text); }
 .athena-help-resource > span:first-child { display: grid; gap: 8px; }
 .athena-help-resource strong { font-size: .875rem; font-weight: 600; }
@@ -1574,16 +1571,6 @@ body,
         min-height: 44px;
     }
 
-    .help-resource-list,
-.help-resource-list > .ant-space-item,
-.help-connect-ai-action.ant-btn {
-        width: 100%;
-    }
-
-    .help-connect-ai-action.ant-btn {
-        min-height: 44px;
-    }
-
     .account-module-summary > div {
         align-items: flex-start;
         flex-direction: column;
@@ -1678,7 +1665,6 @@ input, textarea { caret-color: var(--athena-primary); }
     .account-form-footer > .ant-space { display: flex; flex-direction: column; gap: 12px !important; }
     .account-form-footer > .ant-space > .ant-space-item, .account-form-footer button { width: 100%; }
     .account-module-summary > div { flex-direction: column; align-items: flex-start; gap: 12px; }
-    .athena-help-connect { flex-direction: column; align-items: stretch; }
     .login-panel .ant-card-body, .registration-panel .ant-card-body { padding: 24px; }
     .identity-panel-heading h1, .registration-panel__header h1.ant-typography { font-size: 1.5rem; }
 }
