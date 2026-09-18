@@ -465,8 +465,8 @@ Then run exactly one scoped re-review of the fix wave
 Adjudicate any residual findings as in the task loop's breaker: park with
 rulings, or rule on the load-bearing ones and ledger what you decided. Only
 the four classes above stop you here. There is no second fix wave —
-residual load-bearing findings surface to your human partner when
-finishing-a-development-branch presents the options.
+residual load-bearing findings surface to your human partner before
+finishing-a-development-branch performs its authorized explicit `git merge --no-ff` integration.
 
 ## Finish
 
