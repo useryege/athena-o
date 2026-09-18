@@ -2,8 +2,10 @@ package managedoo
 
 import (
 	"context"
+	"strconv"
 
 	managedooapiclient "github.com/useryege/athena/internal/managedoo/apiclient"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	managedoopkg "github.com/useryege/athena/pkg/apiclient/managedoo"
 )
 
@@ -33,6 +35,11 @@ func (s *Server) ScanManagedOOBlock(ctx context.Context, req *managedoopkg.ScanM
 	if err != nil {
 		return nil, err
 	}
+	operationlogrecord.CaptureResource(ctx, "block", strconv.FormatUint(resp.GetBlockNumber(), 10))
+	operationlogrecord.CaptureUint64(ctx, "blockNumber", resp.GetBlockNumber())
+	operationlogrecord.CaptureInt64(ctx, "proposalCount", int64(resp.GetProposalCount()))
+	operationlogrecord.CaptureInt64(ctx, "disputeCount", int64(resp.GetDisputeCount()))
+	operationlogrecord.Commit(ctx, "MANAGED_OO_BLOCK_SCAN")
 
 	return &managedoopkg.ScanManagedOOBlockResponse{
 		BlockNumber:   resp.GetBlockNumber(),

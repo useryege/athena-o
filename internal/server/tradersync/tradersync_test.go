@@ -191,3 +191,21 @@ func TestMissingNestedRequiredObjectsRejectWholeResponse(t *testing.T) {
 		}
 	}
 }
+
+func TestTraderSubscriptionOperationStateUsesDurableTransition(t *testing.T) {
+	for _, tc := range []struct {
+		effect string
+		want   string
+	}{
+		{"TRADER_SYNC_SUBSCRIPTION_CREATE", "enabled"},
+		{"TRADER_SYNC_SUBSCRIPTION_PAUSE", "paused"},
+		{"TRADER_SYNC_SUBSCRIPTION_RESUME", "enabled"},
+		{"TRADER_SYNC_SUBSCRIPTION_CANCEL", "cancelled"},
+	} {
+		t.Run(tc.effect, func(t *testing.T) {
+			if got := traderSubscriptionOperationState(tc.effect); got != tc.want {
+				t.Fatalf("state=%q want %q", got, tc.want)
+			}
+		})
+	}
+}

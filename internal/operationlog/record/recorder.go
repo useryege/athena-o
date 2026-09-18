@@ -3,6 +3,8 @@ package record
 import (
 	"context"
 	"encoding/json"
+	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -176,6 +178,78 @@ func (r *Recorder) Effect(effect string) {
 		r.event.Effect = append(r.event.Effect, effect)
 	})
 }
+
+// CaptureString and its typed siblings are the small facade-facing API. They
+// intentionally resolve the recorder from context and are safe no-ops when a
+// request is not one of the approved capture positions.
+func CaptureString(ctx context.Context, key, value string) {
+	if r := FromContext(ctx); r != nil {
+		r.Detail(key, event.String(value))
+	}
+}
+
+func CaptureBool(ctx context.Context, key string, value bool) {
+	if r := FromContext(ctx); r != nil {
+		r.Detail(key, event.Bool(value))
+	}
+}
+
+func CaptureStrings(ctx context.Context, key string, value []string) {
+	if r := FromContext(ctx); r != nil {
+		r.Detail(key, event.Strings(value))
+	}
+}
+
+func CaptureInt64(ctx context.Context, key string, value int64) {
+	CaptureString(ctx, key, strconv.FormatInt(value, 10))
+}
+
+func CaptureUint64(ctx context.Context, key string, value uint64) {
+	CaptureString(ctx, key, strconv.FormatUint(value, 10))
+}
+
+func CaptureAccess(ctx context.Context, key string, loginEnabled, apiKeyEnabled, profitSharingEnabled bool, revision uint64, modules map[string]string) {
+	r := FromContext(ctx)
+	if r == nil {
+		return
+	}
+	keys := make([]string, 0, len(modules))
+	for module := range modules {
+		keys = append(keys, module)
+	}
+	sort.Strings(keys)
+	access := event.Access{LoginEnabled: loginEnabled, APIKeyEnabled: apiKeyEnabled, ProfitSharingEnabled: profitSharingEnabled, Revision: strconv.FormatUint(revision, 10)}
+	for _, module := range keys {
+		access.ModuleAccess = append(access.ModuleAccess, event.ModuleAccess{Module: module, Access: modules[module]})
+	}
+	r.Detail(key, event.AccessValue(access))
+}
+
+func CaptureResource(ctx context.Context, resourceType, id string) {
+	if r := FromContext(ctx); r != nil && id != "" {
+		r.Resources([]event.Resource{{Type: resourceType, ID: id, ReferenceVerified: true, Primary: true}}, nil, true)
+	}
+}
+
+func Commit(ctx context.Context, effect string) {
+	if r := FromContext(ctx); r != nil {
+		r.Result(event.Succeeded, "")
+		r.Effect(effect)
+	}
+}
+
+func Succeed(ctx context.Context) {
+	if r := FromContext(ctx); r != nil {
+		r.Result(event.Succeeded, "")
+	}
+}
+
+func Accept(ctx context.Context, effect string) {
+	if r := FromContext(ctx); r != nil {
+		r.Result(event.Accepted, "")
+		r.Effect(effect)
+	}
+}
 func (r *Recorder) BusinessState(state string) {
 	r.mutate(func() { r.event.BusinessState = pointer(state) })
 }
@@ -210,6 +284,9 @@ func (r *Recorder) ObserveError(err error) {
 			r.event.GRPCCode = pointer(c.String())
 		}
 		if r.resultObserved {
+			if r.dispatched && (r.event.Outcome == event.Succeeded || r.event.Outcome == event.Accepted) && len(r.event.Effect) > 0 {
+				r.event.Outcome = event.Partial
+			}
 			return
 		}
 		r.resultObserved = true

@@ -2,10 +2,12 @@ package notification
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	notificationpkg "github.com/useryege/athena/pkg/apiclient/notification"
 	utilsession "github.com/useryege/athena/util/session"
 	"google.golang.org/grpc/codes"
@@ -48,6 +50,11 @@ func (s *Server) CreateTelegramBindingAttempt(ctx context.Context, _ *notificati
 	if err != nil {
 		return nil, err
 	}
+	if attempt := response.GetAttempt(); attempt != nil {
+		operationlogrecord.CaptureResource(ctx, "binding_attempt", attempt.GetId())
+		operationlogrecord.CaptureString(ctx, "attemptStatus", telegramBindingAttemptStatusString(attempt.GetStatus()))
+		operationlogrecord.Commit(ctx, "NOTIFICATION_BINDING_ATTEMPT_CREATE")
+	}
 	return &notificationpkg.CreateTelegramBindingAttemptResponse{
 		Attempt:     publicTelegramBindingAttempt(response.GetAttempt()),
 		BotUsername: response.GetBotUsername(), DeepLink: response.GetDeepLink(),
@@ -64,6 +71,11 @@ func (s *Server) DeleteTelegramBindingAttempt(ctx context.Context, _ *notificati
 	if err != nil {
 		return nil, err
 	}
+	if response.GetDeleted() {
+		operationlogrecord.Commit(ctx, "NOTIFICATION_BINDING_ATTEMPT_CANCEL")
+	} else {
+		operationlogrecord.Succeed(ctx)
+	}
 	return &notificationpkg.DeleteTelegramBindingAttemptResponse{Deleted: response.GetDeleted()}, nil
 }
 
@@ -75,6 +87,12 @@ func (s *Server) DeleteTelegramBinding(ctx context.Context, _ *notificationpkg.D
 	response, err := s.notificationClientSet.Account().DeleteTelegramBinding(ctx, &notificationapiclient.DeleteTelegramBindingRequest{AccountId: accountID})
 	if err != nil {
 		return nil, err
+	}
+	if response.GetDeleted() {
+		operationlogrecord.CaptureResource(ctx, "account", accountID)
+		operationlogrecord.Commit(ctx, "NOTIFICATION_BINDING_DELETE")
+	} else {
+		operationlogrecord.Succeed(ctx)
 	}
 	return &notificationpkg.DeleteTelegramBindingResponse{Deleted: response.GetDeleted()}, nil
 }
@@ -135,6 +153,10 @@ func (s *Server) SendSystemNotificationTest(ctx context.Context, req *notificati
 	if err != nil {
 		return nil, err
 	}
+	operationlogrecord.CaptureResource(ctx, "notification_delivery", strconv.FormatInt(response.GetNotificationId(), 10))
+	operationlogrecord.CaptureInt64(ctx, "deliveryId", response.GetNotificationId())
+	operationlogrecord.CaptureString(ctx, "deliveryStatus", "pending")
+	operationlogrecord.Accept(ctx, "SYSTEM_NOTIFICATION_TEST")
 	return &notificationpkg.SendSystemNotificationTestResponse{
 		NotificationId: response.GetNotificationId(), Status: deliveryStatusString(response.GetStatus()),
 		ProviderMessageId: response.GetProviderMessageId(), ErrorMessage: response.GetErrorMessage(),

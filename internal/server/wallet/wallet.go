@@ -2,7 +2,10 @@ package wallet
 
 import (
 	"context"
+	"strconv"
+	"strings"
 
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	walletpkg "github.com/useryege/athena/pkg/apiclient/wallet"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
@@ -78,6 +81,17 @@ func (s *Server) BatchCreateWallets(ctx context.Context, req *walletpkg.BatchCre
 	if err != nil {
 		return nil, err
 	}
+	walletIDs := make([]string, 0, len(resp.GetResults()))
+	for _, result := range resp.GetResults() {
+		if result.GetItem() != nil {
+			walletIDs = append(walletIDs, strconv.FormatInt(result.GetItem().ID, 10))
+		}
+	}
+	operationlogrecord.CaptureString(ctx, "walletType", normalizedWalletTypeForLog(req.GetWalletType()))
+	operationlogrecord.CaptureInt64(ctx, "requestedCount", int64(req.GetCount()))
+	operationlogrecord.CaptureInt64(ctx, "confirmedCount", int64(len(walletIDs)))
+	operationlogrecord.CaptureStrings(ctx, "walletIds", walletIDs)
+	operationlogrecord.Commit(ctx, "WALLET_BATCH_CREATE")
 	results := make([]*walletpkg.BatchCreateWalletResult, 0, len(resp.GetResults()))
 	for _, result := range resp.GetResults() {
 		results = append(results, &walletpkg.BatchCreateWalletResult{
@@ -103,6 +117,17 @@ func (s *Server) BatchImportWallets(ctx context.Context, req *walletpkg.BatchImp
 	if err != nil {
 		return nil, err
 	}
+	walletIDs := make([]string, 0, len(resp.GetItems()))
+	for _, item := range resp.GetItems() {
+		if item != nil {
+			walletIDs = append(walletIDs, strconv.FormatInt(item.ID, 10))
+		}
+	}
+	operationlogrecord.CaptureString(ctx, "walletType", normalizedWalletTypeForLog(req.GetWalletType()))
+	operationlogrecord.CaptureInt64(ctx, "requestedCount", int64(len(req.GetPrivateKeys())))
+	operationlogrecord.CaptureInt64(ctx, "confirmedCount", int64(len(walletIDs)))
+	operationlogrecord.CaptureStrings(ctx, "walletIds", walletIDs)
+	operationlogrecord.Commit(ctx, "WALLET_BATCH_IMPORT")
 	return &walletpkg.BatchImportWalletsResponse{Items: resp.GetItems()}, nil
 }
 
@@ -119,6 +144,13 @@ func (s *Server) UpdateWalletRemark(ctx context.Context, req *walletpkg.UpdateWa
 	})
 	if err != nil {
 		return nil, err
+	}
+	if item := resp.GetItem(); item != nil {
+		operationlogrecord.CaptureResource(ctx, "wallet", strconv.FormatInt(item.ID, 10))
+		operationlogrecord.CaptureUint64(ctx, "expectedRevision", req.GetExpectedRevision())
+		operationlogrecord.CaptureUint64(ctx, "confirmedRevision", item.Revision)
+		operationlogrecord.CaptureStrings(ctx, "changedFields", []string{"remark"})
+		operationlogrecord.Commit(ctx, "WALLET_REMARK_UPDATE")
 	}
 	return &walletpkg.UpdateWalletRemarkResponse{Item: resp.GetItem()}, nil
 }
@@ -140,6 +172,13 @@ func (s *Server) UpdateWalletAvatarPreset(ctx context.Context, req *walletpkg.Up
 	if previousObjectKey := resp.GetPreviousAvatarObjectKey(); previousObjectKey != "" && s.avatarObjectCleanup != nil {
 		s.avatarObjectCleanup(previousObjectKey)
 	}
+	if item := resp.GetItem(); item != nil {
+		operationlogrecord.CaptureResource(ctx, "wallet", strconv.FormatInt(item.ID, 10))
+		operationlogrecord.CaptureString(ctx, "avatarPresetId", req.GetAvatarPresetId())
+		operationlogrecord.CaptureUint64(ctx, "expectedRevision", req.GetExpectedRevision())
+		operationlogrecord.CaptureUint64(ctx, "confirmedRevision", item.Revision)
+		operationlogrecord.Commit(ctx, "WALLET_AVATAR_PRESET_UPDATE")
+	}
 	return &walletpkg.UpdateWalletAvatarPresetResponse{Item: resp.GetItem()}, nil
 }
 
@@ -149,4 +188,8 @@ func requesterAccountID(ctx context.Context) (string, error) {
 		return "", status.Error(codes.Unauthenticated, "authenticated account ID is missing")
 	}
 	return accountID, nil
+}
+
+func normalizedWalletTypeForLog(value string) string {
+	return strings.ToUpper(strings.TrimSpace(value))
 }

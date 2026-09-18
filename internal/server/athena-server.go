@@ -43,6 +43,9 @@ import (
 	marketradarapiclient "github.com/useryege/athena/internal/marketradar/apiclient"
 	"github.com/useryege/athena/internal/moduleaccess"
 	notificationapiclient "github.com/useryege/athena/internal/notification/apiclient"
+	operationlogapiclient "github.com/useryege/athena/internal/operationlog/apiclient"
+	"github.com/useryege/athena/internal/operationlog/ingest"
+	operationlogstore "github.com/useryege/athena/internal/operationlog/store"
 	"github.com/useryege/athena/internal/phantomauth"
 	profitsharingapiclient "github.com/useryege/athena/internal/profitsharing/apiclient"
 	"github.com/useryege/athena/internal/server/account"
@@ -54,6 +57,7 @@ import (
 	servermarketradar "github.com/useryege/athena/internal/server/marketradar"
 	servermoduleaccess "github.com/useryege/athena/internal/server/moduleaccess"
 	servernotification "github.com/useryege/athena/internal/server/notification"
+	serveroperationlog "github.com/useryege/athena/internal/server/operationlog"
 	serverprofitsharing "github.com/useryege/athena/internal/server/profitsharing"
 	serverservicestatus "github.com/useryege/athena/internal/server/servicestatus"
 	"github.com/useryege/athena/internal/server/session"
@@ -76,6 +80,7 @@ import (
 	"github.com/useryege/athena/pkg/apiclient"
 	appbootstrappkg "github.com/useryege/athena/pkg/apiclient/appbootstrap"
 	moduleaccesspkg "github.com/useryege/athena/pkg/apiclient/moduleaccess"
+	operationlogpkg "github.com/useryege/athena/pkg/apiclient/operationlog"
 	servicestatuspkg "github.com/useryege/athena/pkg/apiclient/servicestatus"
 	sessionpkg "github.com/useryege/athena/pkg/apiclient/session"
 	solanapkg "github.com/useryege/athena/pkg/apiclient/solana"
@@ -188,10 +193,15 @@ type AthenaServer struct {
 	// apiFactory         api.Factory
 	// secretInformer    cache.SharedIndexInformer
 	// configMapInformer cache.SharedIndexInformer
-	serviceSet       *AthenaServiceSet
-	traderSyncCloser goio.Closer
-	processCancel    context.CancelFunc
-	processWorkers   gosync.WaitGroup
+	serviceSet               *AthenaServiceSet
+	operationLogProducer     *ingest.Producer
+	operationLogStore        *operationlogstore.Store
+	operationLogClient       operationlogapiclient.OperationLogInternalServiceClient
+	operationLogClientCloser goio.Closer
+	operationLogService      *serveroperationlog.ForwardingServer
+	traderSyncCloser         goio.Closer
+	processCancel            context.CancelFunc
+	processWorkers           gosync.WaitGroup
 	// extensionManager   *extension.Manager
 	Shutdown           func()
 	terminateRequested atomic.Bool
@@ -426,6 +436,12 @@ func NewServer(ctx context.Context, opts AthenaServerOpts) (*AthenaServer, error
 		Shutdown:                 noopShutdown,
 		stopCh:                   make(chan os.Signal, 1),
 	}
+	a.initializeOperationLog(ctx)
+	defer func() {
+		if !initialized {
+			_ = a.closeOperationLog()
+		}
+	}()
 	if googleOIDCHandler != nil {
 		if initErr := googleOIDCHandler.EnableWalletSecretReauthentication(opts.RedisClient, a.authenticateWalletSecretHTTP, credentialMgr, walletSecretMgr); initErr != nil {
 			return nil, initErr
@@ -506,6 +522,7 @@ func (server *AthenaServer) Close() error {
 		result = server.traderSyncCloser.Close()
 		server.traderSyncCloser = nil
 	}
+	result = errors.Join(result, server.closeOperationLog())
 	server.processWorkers.Wait()
 	if server.staticRoot != nil {
 		result = errors.Join(result, server.staticRoot.Close())
@@ -654,6 +671,7 @@ func (server *AthenaServer) newGRPCServer() *grpc.Server {
 	tokenapipkg.RegisterTokenOperationsServiceServer(grpcS, server.serviceSet.TokenServices)
 	solanapkg.RegisterSolanaServiceServer(grpcS, server.serviceSet.SolanaService)
 	servicestatuspkg.RegisterServiceStatusServiceServer(grpcS, server.serviceSet.ServiceStatusService)
+	operationlogpkg.RegisterOperationLogServiceServer(grpcS, server.serviceSet.OperationLogService)
 
 	// Register reflection service on gRPC server.
 	reflection.Register(grpcS)
@@ -679,6 +697,7 @@ type AthenaServiceSet struct {
 	TokenServices        *servertokenapi.Server
 	SolanaService        *serversolana.Server
 	ServiceStatusService *serverservicestatus.Server
+	OperationLogService  *serveroperationlog.ForwardingServer
 }
 
 func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
@@ -724,6 +743,12 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		return server.DisableAuth, nil
 	})
 	healthService := health.NewServer()
+	operationLogService := server.operationLogService
+	if operationLogService == nil {
+		operationLogService = serveroperationlog.NewForwardingServer(operationlogapiclient.NewUnavailableClient("client_configuration_invalid"), server.operationLogViewerProto)
+		operationLogService.Capture = server.operationLogCaptureStatus
+		operationLogService.Actions = operationLogActions
+	}
 
 	return &AthenaServiceSet{
 		TraderSyncService:    servertradersync.New(server.TraderSyncClient, server.resolveTraderSyncActor),
@@ -742,6 +767,7 @@ func newAthenaServiceSet(server *AthenaServer) *AthenaServiceSet {
 		TokenServices:        tokenAPIService,
 		SolanaService:        solanaService,
 		ServiceStatusService: serviceStatusService,
+		OperationLogService:  operationLogService,
 	}
 }
 
@@ -767,7 +793,7 @@ func (server *AthenaServer) translateGRPCResponseHeaders(_ context.Context, w ht
 	case *appbootstrappkg.GetAppBootstrapResponse, *moduleaccesspkg.ListModuleAccessStatesResponse, *moduleaccesspkg.ListModuleAccessSettingsResponse, *moduleaccesspkg.UpdateModuleAccessSettingResponse:
 		w.Header().Set("Cache-Control", "no-store, private")
 		w.Header().Set("Vary", "Cookie, Authorization, "+common.ApplicationRealmHeader)
-	case *walletpkg.BatchCreateWalletsResponse:
+	case *walletpkg.BatchCreateWalletsResponse, *operationlogpkg.ListOperationLogsResponse, *operationlogpkg.GetOperationLogResponse, *operationlogpkg.GetOperationLogRuntimeStatusResponse, *operationlogpkg.GetOperationLogCaptureStatusResponse, *operationlogpkg.ListOperationLogActionsResponse:
 		w.Header().Set("Cache-Control", "no-store, private")
 		w.Header().Set("Pragma", "no-cache")
 		w.Header().Set("Vary", "Cookie, Authorization, "+common.ApplicationRealmHeader)
@@ -1125,6 +1151,7 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	mustRegisterGWHandler(ctx, servicestatuspkg.RegisterServiceStatusServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, sessionpkg.RegisterSessionServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, appbootstrappkg.RegisterAppBootstrapServiceHandler, gwmux, conn)
+	mustRegisterGWHandler(ctx, operationlogpkg.RegisterOperationLogServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, projectpkg.RegisterProjectServiceHandler, gwmux, conn)
 	mustRegisterGWHandler(ctx, accountpkg.RegisterAccountServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, certificatepkg.RegisterCertificateServiceHandler, gwmux, conn)

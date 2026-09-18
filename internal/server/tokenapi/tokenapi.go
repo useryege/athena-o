@@ -2,7 +2,9 @@ package tokenapi
 
 import (
 	"context"
+	"strconv"
 
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	tokenapiapiclient "github.com/useryege/athena/internal/tokenapi/apiclient"
 	tokenapipkg "github.com/useryege/athena/pkg/apiclient/tokenapi"
 )
@@ -58,6 +60,7 @@ func (s *Server) CreateContractCodeBlocklistEntry(ctx context.Context, req *toke
 	if e != nil {
 		return nil, e
 	}
+	operationlogrecord.Commit(ctx, "TOKEN_CONTRACT_BLOCKLIST_CREATE")
 	return &tokenapipkg.CreateContractCodeBlocklistEntryResponse{}, nil
 }
 func (s *Server) UpdateContractCodeBlocklistEntry(ctx context.Context, req *tokenapipkg.UpdateContractCodeBlocklistEntryRequest) (*tokenapipkg.UpdateContractCodeBlocklistEntryResponse, error) {
@@ -66,6 +69,14 @@ func (s *Server) UpdateContractCodeBlocklistEntry(ctx context.Context, req *toke
 	if e != nil {
 		return nil, e
 	}
+	operationlogrecord.CaptureResource(ctx, "code_hash", req.GetCodeHash())
+	operationlogrecord.CaptureString(ctx, "codeHash", req.GetCodeHash())
+	operationlogrecord.CaptureStrings(ctx, "changedFields", []string{"note"})
+	if r.GetUpdatedCount() > 0 {
+		operationlogrecord.Commit(ctx, "TOKEN_CONTRACT_BLOCKLIST_UPDATE")
+	} else {
+		operationlogrecord.Succeed(ctx)
+	}
 	return &tokenapipkg.UpdateContractCodeBlocklistEntryResponse{UpdatedCount: r.GetUpdatedCount()}, nil
 }
 func (s *Server) DeleteContractCodeBlocklistEntry(ctx context.Context, req *tokenapipkg.DeleteContractCodeBlocklistEntryRequest) (*tokenapipkg.DeleteContractCodeBlocklistEntryResponse, error) {
@@ -73,6 +84,13 @@ func (s *Server) DeleteContractCodeBlocklistEntry(ctx context.Context, req *toke
 	r, e := client.DeleteContractCodeBlocklistEntry(ctx, &tokenapiapiclient.DeleteContractCodeBlocklistEntryRequest{CodeHash: req.GetCodeHash()})
 	if e != nil {
 		return nil, e
+	}
+	operationlogrecord.CaptureResource(ctx, "code_hash", req.GetCodeHash())
+	operationlogrecord.CaptureString(ctx, "codeHash", req.GetCodeHash())
+	if r.GetDeletedCount() > 0 {
+		operationlogrecord.Commit(ctx, "TOKEN_CONTRACT_BLOCKLIST_DELETE")
+	} else {
+		operationlogrecord.Succeed(ctx)
 	}
 	return &tokenapipkg.DeleteContractCodeBlocklistEntryResponse{DeletedCount: r.GetDeletedCount()}, nil
 }
@@ -99,6 +117,9 @@ func (s *Server) CreateWalletBlocklistEntry(ctx context.Context, req *tokenapipk
 	if e != nil {
 		return nil, e
 	}
+	operationlogrecord.CaptureResource(ctx, "wallet_address", req.GetWallet())
+	operationlogrecord.CaptureString(ctx, "walletAddress", req.GetWallet())
+	operationlogrecord.Commit(ctx, "TOKEN_WALLET_BLOCKLIST_CREATE")
 	return &tokenapipkg.CreateWalletBlocklistEntryResponse{}, nil
 }
 func (s *Server) UpdateWalletBlocklistEntry(ctx context.Context, req *tokenapipkg.UpdateWalletBlocklistEntryRequest) (*tokenapipkg.UpdateWalletBlocklistEntryResponse, error) {
@@ -107,6 +128,14 @@ func (s *Server) UpdateWalletBlocklistEntry(ctx context.Context, req *tokenapipk
 	if e != nil {
 		return nil, e
 	}
+	operationlogrecord.CaptureResource(ctx, "wallet_address", req.GetWallet())
+	operationlogrecord.CaptureString(ctx, "walletAddress", req.GetWallet())
+	operationlogrecord.CaptureStrings(ctx, "changedFields", []string{"note"})
+	if r.GetUpdatedCount() > 0 {
+		operationlogrecord.Commit(ctx, "TOKEN_WALLET_BLOCKLIST_UPDATE")
+	} else {
+		operationlogrecord.Succeed(ctx)
+	}
 	return &tokenapipkg.UpdateWalletBlocklistEntryResponse{UpdatedCount: r.GetUpdatedCount()}, nil
 }
 func (s *Server) DeleteWalletBlocklistEntry(ctx context.Context, req *tokenapipkg.DeleteWalletBlocklistEntryRequest) (*tokenapipkg.DeleteWalletBlocklistEntryResponse, error) {
@@ -114,6 +143,13 @@ func (s *Server) DeleteWalletBlocklistEntry(ctx context.Context, req *tokenapipk
 	r, e := client.DeleteWalletBlocklistEntry(ctx, &tokenapiapiclient.DeleteWalletBlocklistEntryRequest{Wallet: req.GetWallet()})
 	if e != nil {
 		return nil, e
+	}
+	operationlogrecord.CaptureResource(ctx, "wallet_address", req.GetWallet())
+	operationlogrecord.CaptureString(ctx, "walletAddress", req.GetWallet())
+	if r.GetDeletedCount() > 0 {
+		operationlogrecord.Commit(ctx, "TOKEN_WALLET_BLOCKLIST_DELETE")
+	} else {
+		operationlogrecord.Succeed(ctx)
 	}
 	return &tokenapipkg.DeleteWalletBlocklistEntryResponse{DeletedCount: r.GetDeletedCount()}, nil
 }
@@ -139,6 +175,14 @@ func (s *Server) UpdateChainCheckpoint(ctx context.Context, req *tokenapipkg.Upd
 	r, e := client.UpdateChainCheckpoint(ctx, &tokenapiapiclient.UpdateChainCheckpointRequest{ChainId: req.GetChainId(), Status: req.GetStatus()})
 	if e != nil {
 		return nil, e
+	}
+	if r.GetFound() && r.GetCheckpoint() != nil {
+		operationlogrecord.CaptureResource(ctx, "chain", strconv.FormatInt(req.GetChainId(), 10))
+		operationlogrecord.CaptureInt64(ctx, "chainId", req.GetChainId())
+		operationlogrecord.CaptureUint64(ctx, "blockNumber", r.GetCheckpoint().CursorBlockNumber)
+		operationlogrecord.Commit(ctx, "TOKEN_CHECKPOINT_UPDATE")
+	} else {
+		operationlogrecord.Succeed(ctx)
 	}
 	return &tokenapipkg.UpdateChainCheckpointResponse{Found: r.GetFound(), Checkpoint: r.GetCheckpoint()}, nil
 }

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/useryege/athena/internal/moduleaccess"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	pb "github.com/useryege/athena/pkg/apiclient/moduleaccess"
 	utilsession "github.com/useryege/athena/util/session"
 	"google.golang.org/grpc/codes"
@@ -72,6 +73,12 @@ func (s *Server) UpdateModuleAccessSetting(ctx context.Context, req *pb.UpdateMo
 	if err != nil {
 		return nil, moduleaccess.Error(moduleaccess.UnavailableReason, key)
 	}
+	operationlogrecord.CaptureString(ctx, "moduleKey", string(key))
+	operationlogrecord.CaptureBool(ctx, "requestedOpen", req.GetState() == pb.ModuleAccessState_MODULE_ACCESS_STATE_OPEN)
+	operationlogrecord.CaptureBool(ctx, "confirmedOpen", result.Open)
+	operationlogrecord.CaptureBool(ctx, "beforeAvailable", false)
+	operationlogrecord.CaptureResource(ctx, "module", string(key))
+	operationlogrecord.Commit(ctx, "SYSTEM_MODULE_ACCESS_UPDATE")
 	return &pb.UpdateModuleAccessSettingResponse{Setting: project(result)}, nil
 }
 func state(open bool) pb.ModuleAccessState {
