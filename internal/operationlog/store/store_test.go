@@ -545,9 +545,30 @@ func TestLateConflictDoesNotQuarantineProcessedFact(t *testing.T) {
 
 func TestDetailSizeConstraint(t *testing.T) {
 	_, db := newStore(t)
-	_, err := db.Pool.Exec(ctx, `INSERT INTO operation_log.entry_version(operation_id,visible_from_seq,started_at,actor_role,realm,credential_kind,module_code,action_code,outcome,observation,request_id,detail,source_event_ids) VALUES(gen_random_uuid(),1,clock_timestamp(),'UNKNOWN','UNKNOWN','UNAUTHENTICATED','account','account.access.update','UNKNOWN','START_ONLY',gen_random_uuid(),jsonb_build_object('detail',repeat('x',16385)),ARRAY[gen_random_uuid()])`)
+	_, err := db.Pool.Exec(ctx, `INSERT INTO operation_log.entry_version(operation_id,visible_from_seq,started_at,actor_role,realm,credential_kind,module_code,action_code,outcome,observation,request_id,detail,source_event_ids) VALUES(gen_random_uuid(),1,clock_timestamp(),'UNKNOWN','UNKNOWN','UNAUTHENTICATED','account','account.access.update','UNKNOWN','START_ONLY',gen_random_uuid(),jsonb_build_object('detail',repeat('x',65537)),ARRAY[gen_random_uuid()])`)
 	if err == nil {
 		t.Fatal("oversized detail accepted")
+	}
+}
+
+func TestLargeValidEventProjectsWithoutDetailConstraintQuarantine(t *testing.T) {
+	s, _ := newStore(t)
+	e := fixture()
+	e.ActionCode = "system.module_access.update"
+	e.ModuleCode = "system"
+	e.Resources = make([]event.Resource, 100)
+	for i := range e.Resources {
+		e.Resources[i] = event.Resource{Type: "module", ID: strings.Repeat("moduleid-", 14), ReferenceVerified: true, Primary: i == 0}
+	}
+	e.ResourceCount = ptr(uint64(len(e.Resources)))
+	e.ResourcesComplete = true
+	appendOK(t, s, e)
+	r := projectOK(t, s)
+	if r.Processed != 1 || r.Quarantined != 0 || r.PublishedSeq != 1 {
+		t.Fatalf("large valid event was not projected: %+v", r)
+	}
+	if _, _, v := view(t, s, e.OperationID, 1); len(v.Resources) != 100 {
+		t.Fatalf("large event resources lost: %d", len(v.Resources))
 	}
 }
 

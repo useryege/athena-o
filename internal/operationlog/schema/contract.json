@@ -347,7 +347,7 @@
   {
     "kind": "constraint",
     "name": "entry_version.entry_version_detail_check",
-    "definition": "CHECK ((octet_length((detail)::text) \u003c= 16384)) validated=t"
+    "definition": "CHECK ((octet_length((detail)::text) \u003c= 65536)) validated=t"
   },
   {
     "kind": "constraint",
