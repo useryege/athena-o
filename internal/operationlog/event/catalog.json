@@ -1,0 +1,1846 @@
+{
+  "status": "approved-implementation-paused-by-user",
+  "approvedOn": "2026-09-18",
+  "userInstruction": "审阅通过，然后先不进入实施",
+  "baseline": "6a091a03",
+  "events": [
+    {
+      "actionCode": "account.access.update",
+      "moduleCode": "account",
+      "transport": "grpc",
+      "entry": "/account.AccountService/UpdateAccountAccess",
+      "httpMethod": "PUT",
+      "route": "/api/v1/account/{id}/access",
+      "source": "internal/server/account/account.go",
+      "symbol": "UpdateAccountAccess",
+      "resourceType": "account",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "requestedAccess",
+        "expectedRevision",
+        "confirmedAccess",
+        "confirmedRevision",
+        "beforeAvailable"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "account.profile.update",
+      "moduleCode": "account",
+      "transport": "grpc",
+      "entry": "/account.AccountService/UpdateAccountProfile",
+      "httpMethod": "PUT",
+      "route": "/api/v1/account/{id}/profile",
+      "source": "internal/server/account/account.go",
+      "symbol": "UpdateAccountProfile",
+      "resourceType": "account",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "changedFields",
+        "expectedRevision",
+        "confirmedRevision"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "account.tier.update",
+      "moduleCode": "account",
+      "transport": "grpc",
+      "entry": "/account.AccountService/UpdateAccountTier",
+      "httpMethod": "PUT",
+      "route": "/api/v1/account/{id}/tier",
+      "source": "internal/server/account/account.go",
+      "symbol": "UpdateAccountTier",
+      "resourceType": "account",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "requestedTier",
+        "confirmedTier",
+        "expectedRevision",
+        "confirmedRevision",
+        "beforeAvailable"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "account.api_key.create",
+      "moduleCode": "account",
+      "transport": "grpc",
+      "entry": "/account.AccountService/CreateToken",
+      "httpMethod": "POST",
+      "route": "/api/v1/account/security/tokens",
+      "source": "internal/server/account/account.go",
+      "symbol": "CreateToken",
+      "resourceType": "api_key",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "displayId",
+        "expiresIn"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "account.api_key.delete",
+      "moduleCode": "account",
+      "transport": "grpc",
+      "entry": "/account.AccountService/DeleteToken",
+      "httpMethod": "DELETE",
+      "route": "/api/v1/account/security/tokens/{id}",
+      "source": "internal/server/account/account.go",
+      "symbol": "DeleteToken",
+      "resourceType": "api_key",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "displayId"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "managed_oo.block.scan",
+      "moduleCode": "managed_oo",
+      "transport": "grpc",
+      "entry": "/managedoo.ManagedOOService/ScanManagedOOBlock",
+      "httpMethod": "POST",
+      "route": "/api/v1/managed-oo/blocks/{block_number}:scan",
+      "source": "internal/server/managedoo/managedoo.go",
+      "symbol": "ScanManagedOOBlock",
+      "resourceType": "block",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "blockNumber",
+        "proposalCount",
+        "disputeCount"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "system.module_access.update",
+      "moduleCode": "system",
+      "transport": "grpc",
+      "entry": "/moduleaccess.ModuleAccessService/UpdateModuleAccessSetting",
+      "httpMethod": "PUT",
+      "route": "/api/v1/admin/module-access-settings/{module_key}",
+      "source": "internal/server/moduleaccess/server.go",
+      "symbol": "UpdateModuleAccessSetting",
+      "resourceType": "module",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "moduleKey",
+        "requestedOpen",
+        "confirmedOpen",
+        "beforeAvailable"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "notification.binding_attempt.create",
+      "moduleCode": "notification",
+      "transport": "grpc",
+      "entry": "/notification.NotificationService/CreateTelegramBindingAttempt",
+      "httpMethod": "POST",
+      "route": "/api/v1/notification-bindings/telegram/attempt",
+      "source": "internal/server/notification/notification.go",
+      "symbol": "CreateTelegramBindingAttempt",
+      "resourceType": "binding_attempt",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "attemptStatus",
+        "revision"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "notification.binding_attempt.cancel",
+      "moduleCode": "notification",
+      "transport": "grpc",
+      "entry": "/notification.NotificationService/DeleteTelegramBindingAttempt",
+      "httpMethod": "DELETE",
+      "route": "/api/v1/notification-bindings/telegram/attempt",
+      "source": "internal/server/notification/notification.go",
+      "symbol": "DeleteTelegramBindingAttempt",
+      "resourceType": "binding_attempt",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "attemptStatus"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "notification.binding.delete",
+      "moduleCode": "notification",
+      "transport": "grpc",
+      "entry": "/notification.NotificationService/DeleteTelegramBinding",
+      "httpMethod": "DELETE",
+      "route": "/api/v1/notification-bindings/telegram",
+      "source": "internal/server/notification/notification.go",
+      "symbol": "DeleteTelegramBinding",
+      "resourceType": "account",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "bindingStatus"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "system.notification.test",
+      "moduleCode": "system",
+      "transport": "grpc",
+      "entry": "/notification.NotificationService/SendSystemNotificationTest",
+      "httpMethod": "POST",
+      "route": "/api/v1/admin/system-notification-tests",
+      "source": "internal/server/notification/notification.go",
+      "symbol": "SendSystemNotificationTest",
+      "resourceType": "notification_delivery",
+      "successPolicy": "ACCEPTED",
+      "allowedDetails": [
+        "deliveryId",
+        "deliveryStatus"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "profit_sharing.round.create",
+      "moduleCode": "profit_sharing",
+      "transport": "grpc",
+      "entry": "/profitsharing.ProfitSharingService/CreateRound",
+      "httpMethod": "POST",
+      "route": "/api/v1/profit-sharing/rounds",
+      "source": "internal/server/profitsharing/profitsharing.go",
+      "symbol": "CreateRound",
+      "resourceType": "round",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "slug",
+        "revision",
+        "state"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "profit_sharing.round.update",
+      "moduleCode": "profit_sharing",
+      "transport": "grpc",
+      "entry": "/profitsharing.ProfitSharingService/UpdateRound",
+      "httpMethod": "PUT",
+      "route": "/api/v1/profit-sharing/rounds/{current_slug}",
+      "source": "internal/server/profitsharing/profitsharing.go",
+      "symbol": "UpdateRound",
+      "resourceType": "round",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "oldSlug",
+        "newSlug",
+        "revision",
+        "changedFields"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "profit_sharing.round.open",
+      "moduleCode": "profit_sharing",
+      "transport": "grpc",
+      "entry": "/profitsharing.ProfitSharingService/OpenRound",
+      "httpMethod": "POST",
+      "route": "/api/v1/profit-sharing/rounds/{slug}:open",
+      "source": "internal/server/profitsharing/profitsharing.go",
+      "symbol": "OpenRound",
+      "resourceType": "round",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "slug",
+        "revision",
+        "state"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "profit_sharing.round.publish",
+      "moduleCode": "profit_sharing",
+      "transport": "grpc",
+      "entry": "/profitsharing.ProfitSharingService/PublishRound",
+      "httpMethod": "POST",
+      "route": "/api/v1/profit-sharing/rounds/{slug}:publish",
+      "source": "internal/server/profitsharing/profitsharing.go",
+      "symbol": "PublishRound",
+      "resourceType": "round",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "slug",
+        "revision",
+        "state"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "profit_sharing.ballot.close",
+      "moduleCode": "profit_sharing",
+      "transport": "grpc",
+      "entry": "/profitsharing.ProfitSharingService/CloseBallot",
+      "httpMethod": "POST",
+      "route": "/api/v1/profit-sharing/rounds/{slug}/ballots/current:close",
+      "source": "internal/server/profitsharing/profitsharing.go",
+      "symbol": "CloseBallot",
+      "resourceType": "round",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "slug",
+        "ballotId",
+        "state"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "profit_sharing.proposal.update",
+      "moduleCode": "profit_sharing",
+      "transport": "grpc",
+      "entry": "/profitsharing.ProfitSharingService/UpdateProposal",
+      "httpMethod": "PUT",
+      "route": "/api/v1/profit-sharing/rounds/{slug}/proposal",
+      "source": "internal/server/profitsharing/profitsharing.go",
+      "symbol": "UpdateProposal",
+      "resourceType": "proposal",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "slug",
+        "revision",
+        "changedFields"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "profit_sharing.proposal.submit",
+      "moduleCode": "profit_sharing",
+      "transport": "grpc",
+      "entry": "/profitsharing.ProfitSharingService/SubmitProposal",
+      "httpMethod": "POST",
+      "route": "/api/v1/profit-sharing/rounds/{slug}/proposal:submit",
+      "source": "internal/server/profitsharing/profitsharing.go",
+      "symbol": "SubmitProposal",
+      "resourceType": "proposal",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "slug",
+        "revision",
+        "state"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "profit_sharing.proposal.reopen",
+      "moduleCode": "profit_sharing",
+      "transport": "grpc",
+      "entry": "/profitsharing.ProfitSharingService/ReopenProposal",
+      "httpMethod": "POST",
+      "route": "/api/v1/profit-sharing/rounds/{slug}/proposal:reopen",
+      "source": "internal/server/profitsharing/profitsharing.go",
+      "symbol": "ReopenProposal",
+      "resourceType": "proposal",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "slug",
+        "revision",
+        "state"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "profit_sharing.vote.submit",
+      "moduleCode": "profit_sharing",
+      "transport": "grpc",
+      "entry": "/profitsharing.ProfitSharingService/SubmitVote",
+      "httpMethod": "PUT",
+      "route": "/api/v1/profit-sharing/rounds/{slug}/ballots/current/vote",
+      "source": "internal/server/profitsharing/profitsharing.go",
+      "symbol": "SubmitVote",
+      "resourceType": "ballot",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "slug",
+        "ballotId"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "system.gateway_probe.create",
+      "moduleCode": "system",
+      "transport": "grpc",
+      "entry": "/servicestatus.ServiceStatusService/RunEtherscanGatewayProbe",
+      "httpMethod": "POST",
+      "route": "/api/v1/etherscan-gateway-probe-runs",
+      "source": "internal/server/servicestatus/etherscan_gateway_probe.go",
+      "symbol": "RunEtherscanGatewayProbe",
+      "resourceType": "probe_run",
+      "successPolicy": "ACCEPTED",
+      "allowedDetails": [
+        "runId",
+        "requestsPerKey",
+        "gatewayCount",
+        "state"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "token.checkpoint.update",
+      "moduleCode": "token",
+      "transport": "grpc",
+      "entry": "/tokenapi.TokenOperationsService/UpdateChainCheckpoint",
+      "httpMethod": "PATCH",
+      "route": "/api/v1/tokens/chain-checkpoints/{chain_id}",
+      "source": "internal/server/tokenapi/tokenapi.go",
+      "symbol": "UpdateChainCheckpoint",
+      "resourceType": "chain",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "chainId",
+        "blockNumber"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "token.contract_blocklist.create",
+      "moduleCode": "token",
+      "transport": "grpc",
+      "entry": "/tokenapi.TokenPolicyService/CreateContractCodeBlocklistEntry",
+      "httpMethod": "POST",
+      "route": "/api/v1/tokens/policies/contract-code-blocklist-entries",
+      "source": "internal/server/tokenapi/tokenapi.go",
+      "symbol": "CreateContractCodeBlocklistEntry",
+      "resourceType": "code_hash",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "codeHash"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "token.contract_blocklist.update",
+      "moduleCode": "token",
+      "transport": "grpc",
+      "entry": "/tokenapi.TokenPolicyService/UpdateContractCodeBlocklistEntry",
+      "httpMethod": "PATCH",
+      "route": "/api/v1/tokens/policies/contract-code-blocklist-entries/{code_hash}",
+      "source": "internal/server/tokenapi/tokenapi.go",
+      "symbol": "UpdateContractCodeBlocklistEntry",
+      "resourceType": "code_hash",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "codeHash",
+        "changedFields"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "token.contract_blocklist.delete",
+      "moduleCode": "token",
+      "transport": "grpc",
+      "entry": "/tokenapi.TokenPolicyService/DeleteContractCodeBlocklistEntry",
+      "httpMethod": "DELETE",
+      "route": "/api/v1/tokens/policies/contract-code-blocklist-entries/{code_hash}",
+      "source": "internal/server/tokenapi/tokenapi.go",
+      "symbol": "DeleteContractCodeBlocklistEntry",
+      "resourceType": "code_hash",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "codeHash"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "token.wallet_blocklist.create",
+      "moduleCode": "token",
+      "transport": "grpc",
+      "entry": "/tokenapi.TokenPolicyService/CreateWalletBlocklistEntry",
+      "httpMethod": "POST",
+      "route": "/api/v1/tokens/policies/wallet-blocklist-entries",
+      "source": "internal/server/tokenapi/tokenapi.go",
+      "symbol": "CreateWalletBlocklistEntry",
+      "resourceType": "wallet_address",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "walletAddress"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "token.wallet_blocklist.update",
+      "moduleCode": "token",
+      "transport": "grpc",
+      "entry": "/tokenapi.TokenPolicyService/UpdateWalletBlocklistEntry",
+      "httpMethod": "PATCH",
+      "route": "/api/v1/tokens/policies/wallet-blocklist-entries/{wallet}",
+      "source": "internal/server/tokenapi/tokenapi.go",
+      "symbol": "UpdateWalletBlocklistEntry",
+      "resourceType": "wallet_address",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "walletAddress",
+        "changedFields"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "token.wallet_blocklist.delete",
+      "moduleCode": "token",
+      "transport": "grpc",
+      "entry": "/tokenapi.TokenPolicyService/DeleteWalletBlocklistEntry",
+      "httpMethod": "DELETE",
+      "route": "/api/v1/tokens/policies/wallet-blocklist-entries/{wallet}",
+      "source": "internal/server/tokenapi/tokenapi.go",
+      "symbol": "DeleteWalletBlocklistEntry",
+      "resourceType": "wallet_address",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "walletAddress"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "trader_sync.subscription.create",
+      "moduleCode": "trader_sync",
+      "transport": "grpc",
+      "entry": "/tradersync.TraderSyncService/CreateSubscription",
+      "httpMethod": "POST",
+      "route": "/api/v1/trader-sync/subscriptions",
+      "source": "internal/server/tradersync/tradersync.go",
+      "symbol": "CreateSubscription",
+      "resourceType": "subscription",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "subscriptionId",
+        "revision",
+        "state",
+        "noteChanged"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "trader_sync.subscription.pause",
+      "moduleCode": "trader_sync",
+      "transport": "grpc",
+      "entry": "/tradersync.TraderSyncService/PauseSubscription",
+      "httpMethod": "POST",
+      "route": "/api/v1/trader-sync/subscriptions/{subscription_id}:pause",
+      "source": "internal/server/tradersync/tradersync.go",
+      "symbol": "PauseSubscription",
+      "resourceType": "subscription",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "subscriptionId",
+        "expectedRevision",
+        "confirmedRevision",
+        "state"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "trader_sync.subscription.resume",
+      "moduleCode": "trader_sync",
+      "transport": "grpc",
+      "entry": "/tradersync.TraderSyncService/ResumeSubscription",
+      "httpMethod": "POST",
+      "route": "/api/v1/trader-sync/subscriptions/{subscription_id}:resume",
+      "source": "internal/server/tradersync/tradersync.go",
+      "symbol": "ResumeSubscription",
+      "resourceType": "subscription",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "subscriptionId",
+        "expectedRevision",
+        "confirmedRevision",
+        "state"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "trader_sync.subscription.cancel",
+      "moduleCode": "trader_sync",
+      "transport": "grpc",
+      "entry": "/tradersync.TraderSyncService/CancelSubscription",
+      "httpMethod": "POST",
+      "route": "/api/v1/trader-sync/subscriptions/{subscription_id}:cancel",
+      "source": "internal/server/tradersync/tradersync.go",
+      "symbol": "CancelSubscription",
+      "resourceType": "subscription",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "subscriptionId",
+        "expectedRevision",
+        "confirmedRevision",
+        "state"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "trader_sync.target_note.update",
+      "moduleCode": "trader_sync",
+      "transport": "grpc",
+      "entry": "/tradersync.TraderSyncService/UpdateTargetNote",
+      "httpMethod": "PATCH",
+      "route": "/api/v1/trader-sync/targets/{wallet}/note",
+      "source": "internal/server/tradersync/tradersync.go",
+      "symbol": "UpdateTargetNote",
+      "resourceType": "wallet_address",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "walletAddress",
+        "expectedRevision",
+        "confirmedRevision",
+        "changedFields"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "wallet.batch.create",
+      "moduleCode": "wallet",
+      "transport": "grpc",
+      "entry": "/wallet.WalletService/BatchCreateWallets",
+      "httpMethod": "POST",
+      "route": "/api/v1/wallets:batchCreate",
+      "source": "internal/server/wallet/wallet.go",
+      "symbol": "BatchCreateWallets",
+      "resourceType": "wallet_batch",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "walletType",
+        "requestedCount",
+        "confirmedCount",
+        "walletIds"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "wallet.batch.import",
+      "moduleCode": "wallet",
+      "transport": "grpc",
+      "entry": "/wallet.WalletService/BatchImportWallets",
+      "httpMethod": "POST",
+      "route": "/api/v1/wallets:batchImport",
+      "source": "internal/server/wallet/wallet.go",
+      "symbol": "BatchImportWallets",
+      "resourceType": "wallet_batch",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "walletType",
+        "requestedCount",
+        "confirmedCount",
+        "walletIds"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "wallet.remark.update",
+      "moduleCode": "wallet",
+      "transport": "grpc",
+      "entry": "/wallet.WalletService/UpdateWalletRemark",
+      "httpMethod": "PATCH",
+      "route": "/api/v1/wallets/{id}/remark",
+      "source": "internal/server/wallet/wallet.go",
+      "symbol": "UpdateWalletRemark",
+      "resourceType": "wallet",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "changedFields"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "wallet.avatar_preset.update",
+      "moduleCode": "wallet",
+      "transport": "grpc",
+      "entry": "/wallet.WalletService/UpdateWalletAvatarPreset",
+      "httpMethod": "PATCH",
+      "route": "/api/v1/wallets/{id}/avatar-preset",
+      "source": "internal/server/wallet/wallet.go",
+      "symbol": "UpdateWalletAvatarPreset",
+      "resourceType": "wallet",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "avatarPresetId",
+        "expectedRevision",
+        "confirmedRevision"
+      ],
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "account.avatar.upload",
+      "moduleCode": "account",
+      "transport": "http",
+      "entry": "PUT /api/v1/account/{id}/avatar",
+      "httpMethod": "PUT",
+      "route": "/api/v1/account/{id}/avatar",
+      "source": "internal/server/accountavatarhttp/handler.go",
+      "symbol": "Upload",
+      "resourceType": "account",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "avatarKind"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "account.avatar.delete",
+      "moduleCode": "account",
+      "transport": "http",
+      "entry": "DELETE /api/v1/account/{id}/avatar",
+      "httpMethod": "DELETE",
+      "route": "/api/v1/account/{id}/avatar",
+      "source": "internal/server/accountavatarhttp/handler.go",
+      "symbol": "Delete",
+      "resourceType": "account",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "avatarKind"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "wallet.avatar.upload",
+      "moduleCode": "wallet",
+      "transport": "http",
+      "entry": "PUT /api/v1/wallets/{id}/avatar",
+      "httpMethod": "PUT",
+      "route": "/api/v1/wallets/{id}/avatar",
+      "source": "internal/server/walletavatarhttp/handler.go",
+      "symbol": "Upload",
+      "resourceType": "wallet",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "avatarKind"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "wallet.avatar.delete",
+      "moduleCode": "wallet",
+      "transport": "http",
+      "entry": "DELETE /api/v1/wallets/{id}/avatar",
+      "httpMethod": "DELETE",
+      "route": "/api/v1/wallets/{id}/avatar",
+      "source": "internal/server/walletavatarhttp/handler.go",
+      "symbol": "Delete",
+      "resourceType": "wallet",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "avatarKind"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "wallet.private_key.reveal",
+      "moduleCode": "wallet",
+      "transport": "http",
+      "entry": "POST /api/v1/wallets/{id}:revealPrivateKey",
+      "httpMethod": "POST",
+      "route": "/api/v1/wallets/{id}:revealPrivateKey",
+      "source": "internal/server/walletsecrethttp/handler.go",
+      "symbol": "Reveal",
+      "resourceType": "wallet",
+      "successPolicy": "REVEAL",
+      "allowedDetails": [],
+      "notes": "只记录动作；不读取或复制 privateKey 响应。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.wallet_selection.replace",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "PUT /api/v1/worm-trading/wallet-selection",
+      "httpMethod": "PUT",
+      "route": "/api/v1/worm-trading/wallet-selection",
+      "source": "internal/server/worm_wallet_selection.go",
+      "symbol": "replaceWormWalletSelection",
+      "resourceType": "wallet_selection",
+      "successPolicy": "MULTISTEP",
+      "allowedDetails": [
+        "walletIds",
+        "requestedCount",
+        "confirmedRevision",
+        "removedCount",
+        "addedCount"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.connection.connect",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/wallet-connections/{id}",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/wallet-connections/{id}",
+      "source": "internal/server/worm_connection.go",
+      "symbol": "manageWormConnection",
+      "resourceType": "wallet",
+      "successPolicy": "CONNECTION",
+      "allowedDetails": [
+        "state",
+        "warningCode"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.connection.reconnect",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/wallet-connections/{id}:reconnect",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/wallet-connections/{id}:reconnect",
+      "source": "internal/server/worm_connection.go",
+      "symbol": "manageWormConnection",
+      "resourceType": "wallet",
+      "successPolicy": "CONNECTION",
+      "allowedDetails": [
+        "state",
+        "warningCode"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.connection.regenerate",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/wallet-connections/{id}:regenerate",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/wallet-connections/{id}:regenerate",
+      "source": "internal/server/worm_connection.go",
+      "symbol": "manageWormConnection",
+      "resourceType": "wallet",
+      "successPolicy": "CONNECTION",
+      "allowedDetails": [
+        "state",
+        "warningCode"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.connection.disconnect",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "DELETE /api/v1/worm-trading/wallet-connections/{id}",
+      "httpMethod": "DELETE",
+      "route": "/api/v1/worm-trading/wallet-connections/{id}",
+      "source": "internal/server/worm_connection.go",
+      "symbol": "manageWormConnection",
+      "resourceType": "wallet",
+      "successPolicy": "CONNECTION",
+      "allowedDetails": [
+        "state",
+        "warningCode"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.combination.create",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/combinations",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/combinations",
+      "source": "internal/server/worm_combinations.go",
+      "symbol": "createWormCombination",
+      "resourceType": "combination",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "itemCount",
+        "changedFields"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.combination.update",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "PUT /api/v1/worm-trading/combinations/{id}",
+      "httpMethod": "PUT",
+      "route": "/api/v1/worm-trading/combinations/{id}",
+      "source": "internal/server/worm_combinations.go",
+      "symbol": "updateWormCombination",
+      "resourceType": "combination",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "itemCount",
+        "changedFields"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.combination.delete",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "DELETE /api/v1/worm-trading/combinations/{id}",
+      "httpMethod": "DELETE",
+      "route": "/api/v1/worm-trading/combinations/{id}",
+      "source": "internal/server/worm_combinations.go",
+      "symbol": "deleteWormCombination",
+      "resourceType": "combination",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "itemCount",
+        "changedFields"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.execution_plan.create",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/execution-plans",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/execution-plans",
+      "source": "internal/server/worm_execution_plans.go",
+      "symbol": "createWormExecutionPlan",
+      "resourceType": "execution_plan",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "combinationId",
+        "planId",
+        "state",
+        "stepCount"
+      ],
+      "notes": "仅表示计划记录建立，非交易执行。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.execution.create",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/executions",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/executions",
+      "source": "internal/server/worm_executions.go",
+      "symbol": "createWormExecution",
+      "resourceType": "execution",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "planId",
+        "runId",
+        "state"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.execution.start",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/executions/{runId}:start",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/executions/{runId}:start",
+      "source": "internal/server/worm_executions.go",
+      "symbol": "startWormExecution",
+      "resourceType": "execution",
+      "successPolicy": "COMMAND",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "state"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.execution.pause",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/executions/{runId}:pause",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/executions/{runId}:pause",
+      "source": "internal/server/worm_executions.go",
+      "symbol": "pauseWormExecution",
+      "resourceType": "execution",
+      "successPolicy": "COMMAND",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "state"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.execution.continue",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/executions/{runId}:continue",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/executions/{runId}:continue",
+      "source": "internal/server/worm_executions.go",
+      "symbol": "continueWormExecution",
+      "resourceType": "execution",
+      "successPolicy": "COMMAND",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "state"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.execution.terminate",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/executions/{runId}:terminate",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/executions/{runId}:terminate",
+      "source": "internal/server/worm_executions.go",
+      "symbol": "terminateWormExecution",
+      "resourceType": "execution",
+      "successPolicy": "COMMAND",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "state"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.execution_step.reconcile",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/executions/{runId}/steps/{stepId}:reconcile",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/executions/{runId}/steps/{stepId}:reconcile",
+      "source": "internal/server/worm_executions.go",
+      "symbol": "reconcileWormExecutionStep",
+      "resourceType": "execution_step",
+      "successPolicy": "COMMAND",
+      "allowedDetails": [
+        "runId",
+        "stepId",
+        "expectedRevision",
+        "confirmedRevision",
+        "state"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.cash_out.create",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/position-cash-outs",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/position-cash-outs",
+      "source": "internal/server/worm_position_cash_outs.go",
+      "symbol": "createWormPositionCashOut",
+      "resourceType": "cash_out",
+      "successPolicy": "ACCEPTED",
+      "allowedDetails": [
+        "walletId",
+        "cashOutId",
+        "state",
+        "stage"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.cash_out.reconcile",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/position-cash-outs/{cashOutId}:reconcile",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/position-cash-outs/{cashOutId}:reconcile",
+      "source": "internal/server/worm_position_cash_outs.go",
+      "symbol": "reconcileWormPositionCashOut",
+      "resourceType": "cash_out",
+      "successPolicy": "COMMAND",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "state",
+        "stage"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.cash_out_batch.create",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/position-cash-out-batches",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/position-cash-out-batches",
+      "source": "internal/server/worm_position_cash_out_batches.go",
+      "symbol": "createWormPositionCashOutBatch",
+      "resourceType": "cash_out_batch",
+      "successPolicy": "ACCEPTED",
+      "allowedDetails": [
+        "walletIds",
+        "requestedCount",
+        "batchId",
+        "state"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.cash_out_batch.cancel",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/position-cash-out-batches/{batchId}:cancel",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/position-cash-out-batches/{batchId}:cancel",
+      "source": "internal/server/worm_position_cash_out_batches.go",
+      "symbol": "mutateWormPositionCashOutBatch",
+      "resourceType": "cash_out_batch",
+      "successPolicy": "COMMAND",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "state"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.cash_out_batch.pause",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/position-cash-out-batches/{batchId}:pause",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/position-cash-out-batches/{batchId}:pause",
+      "source": "internal/server/worm_position_cash_out_batches.go",
+      "symbol": "mutateWormPositionCashOutBatch",
+      "resourceType": "cash_out_batch",
+      "successPolicy": "COMMAND",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "state"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.cash_out_batch.continue",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/position-cash-out-batches/{batchId}:continue",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/position-cash-out-batches/{batchId}:continue",
+      "source": "internal/server/worm_position_cash_out_batches.go",
+      "symbol": "mutateWormPositionCashOutBatch",
+      "resourceType": "cash_out_batch",
+      "successPolicy": "COMMAND",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "state"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.cash_out_batch.terminate",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/position-cash-out-batches/{batchId}:terminate",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/position-cash-out-batches/{batchId}:terminate",
+      "source": "internal/server/worm_position_cash_out_batches.go",
+      "symbol": "mutateWormPositionCashOutBatch",
+      "resourceType": "cash_out_batch",
+      "successPolicy": "COMMAND",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "state"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.cash_out_batch.check_status",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /api/v1/worm-trading/position-cash-out-batches/{batchId}:check-status",
+      "httpMethod": "POST",
+      "route": "/api/v1/worm-trading/position-cash-out-batches/{batchId}:check-status",
+      "source": "internal/server/worm_position_cash_out_batches.go",
+      "symbol": "mutateWormPositionCashOutBatch",
+      "resourceType": "cash_out_batch",
+      "successPolicy": "COMMAND",
+      "allowedDetails": [
+        "expectedRevision",
+        "confirmedRevision",
+        "state"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "identity.login",
+      "moduleCode": "identity",
+      "transport": "http",
+      "entry": "GET /auth/google/callback (login)",
+      "httpMethod": "GET",
+      "route": "/auth/google/callback (login)",
+      "source": "internal/googleoidc/handler.go",
+      "symbol": "Callback",
+      "resourceType": "account",
+      "successPolicy": "LOGIN",
+      "allowedDetails": [
+        "stage",
+        "provider"
+      ],
+      "notes": "Google 初始化仅失败记录；正常 callback 由目的分派后唯一记录。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "identity.login",
+      "moduleCode": "identity",
+      "transport": "http",
+      "entry": "POST /auth/phantom/verify",
+      "httpMethod": "POST",
+      "route": "/auth/phantom/verify",
+      "source": "internal/phantomauth/handler.go",
+      "symbol": "Verify",
+      "resourceType": "account",
+      "successPolicy": "LOGIN",
+      "allowedDetails": [
+        "stage",
+        "provider"
+      ],
+      "notes": "challenge 成功排除，初始化失败归本动作。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "identity.registration.submit",
+      "moduleCode": "identity",
+      "transport": "http",
+      "entry": "POST /auth/registration",
+      "httpMethod": "POST",
+      "route": "/auth/registration",
+      "source": "internal/authregistration/handler.go",
+      "symbol": "create",
+      "resourceType": "account",
+      "successPolicy": "REGISTRATION",
+      "allowedDetails": [
+        "stage",
+        "accountCreated",
+        "accountResolved"
+      ],
+      "notes": "还须在 CredentialManager 持久提交后标注 effect；随后登录是独立子动作。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "identity.registration.cancel",
+      "moduleCode": "identity",
+      "transport": "http",
+      "entry": "DELETE /auth/registration",
+      "httpMethod": "DELETE",
+      "route": "/auth/registration",
+      "source": "internal/authregistration/handler.go",
+      "symbol": "delete",
+      "resourceType": "registration",
+      "successPolicy": "COMMIT",
+      "allowedDetails": [
+        "stage"
+      ],
+      "notes": "不记录 ticket ID；不存在账户时不伪造账户。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "identity.logout",
+      "moduleCode": "identity",
+      "transport": "http",
+      "entry": "GET /auth/logout",
+      "httpMethod": "GET",
+      "route": "/auth/logout",
+      "source": "internal/server/logout/logout.go",
+      "symbol": "ServeHTTP",
+      "resourceType": "account",
+      "successPolicy": "LOGOUT",
+      "allowedDetails": [
+        "cookieCleared",
+        "revocationConfirmed",
+        "noActiveSession"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "wallet.reveal.authorize",
+      "moduleCode": "wallet",
+      "transport": "http",
+      "entry": "GET /auth/google/callback (wallet.reveal.authorize)",
+      "httpMethod": "GET",
+      "route": "/auth/google/callback (wallet.reveal.authorize)",
+      "source": "internal/googleoidc/wallet_secret_reauth.go",
+      "symbol": "callback",
+      "resourceType": "account",
+      "successPolicy": "AUTHORIZATION",
+      "allowedDetails": [
+        "stage",
+        "proofKind",
+        "expectedRevision",
+        "confirmedRevision"
+      ],
+      "notes": "进入已分派的 purpose handler 后记录；初始化只记失败。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "wallet.reveal.authorize",
+      "moduleCode": "wallet",
+      "transport": "http",
+      "entry": "POST /auth/wallet-secrets/solana/verify",
+      "httpMethod": "POST",
+      "route": "/auth/wallet-secrets/solana/verify",
+      "source": "internal/phantomauth/wallet_secret_reauth.go",
+      "symbol": "WalletSecretVerify",
+      "resourceType": "account",
+      "successPolicy": "AUTHORIZATION",
+      "allowedDetails": [
+        "stage",
+        "proofKind",
+        "expectedRevision",
+        "confirmedRevision"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "wallet.reveal.authorize",
+      "moduleCode": "wallet",
+      "transport": "http",
+      "entry": "POST /auth/wallet-secrets/development",
+      "httpMethod": "POST",
+      "route": "/auth/wallet-secrets/development",
+      "source": "internal/server/wallet_secret.go",
+      "symbol": "developmentWalletSecretLease",
+      "resourceType": "account",
+      "successPolicy": "AUTHORIZATION",
+      "allowedDetails": [
+        "stage",
+        "proofKind"
+      ],
+      "notes": "只在既有 loopback disabled-auth 环境存在。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.connection.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "GET /auth/google/callback (worm.connection.authorize)",
+      "httpMethod": "GET",
+      "route": "/auth/google/callback (worm.connection.authorize)",
+      "source": "internal/googleoidc/worm_credential_reauth.go",
+      "symbol": "callback",
+      "resourceType": "account",
+      "successPolicy": "AUTHORIZATION",
+      "allowedDetails": [
+        "stage",
+        "proofKind",
+        "expectedRevision",
+        "confirmedRevision"
+      ],
+      "notes": "进入已分派的 purpose handler 后记录；初始化只记失败。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.connection.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /auth/worm-trading/solana/verify",
+      "httpMethod": "POST",
+      "route": "/auth/worm-trading/solana/verify",
+      "source": "internal/phantomauth/worm_credential_reauth.go",
+      "symbol": "WormCredentialVerify",
+      "resourceType": "account",
+      "successPolicy": "AUTHORIZATION",
+      "allowedDetails": [
+        "stage",
+        "proofKind",
+        "expectedRevision",
+        "confirmedRevision"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.connection.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /auth/worm-trading/development",
+      "httpMethod": "POST",
+      "route": "/auth/worm-trading/development",
+      "source": "internal/server/worm_connection.go",
+      "symbol": "developmentWormCredentialLease",
+      "resourceType": "account",
+      "successPolicy": "AUTHORIZATION",
+      "allowedDetails": [
+        "stage",
+        "proofKind"
+      ],
+      "notes": "只在既有 loopback disabled-auth 环境存在。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.execution.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "GET /auth/google/callback (worm.execution.authorize)",
+      "httpMethod": "GET",
+      "route": "/auth/google/callback (worm.execution.authorize)",
+      "source": "internal/googleoidc/worm_execution_authorization.go",
+      "symbol": "callback",
+      "resourceType": "execution",
+      "successPolicy": "AUTHORIZATION",
+      "allowedDetails": [
+        "stage",
+        "proofKind",
+        "expectedRevision",
+        "confirmedRevision"
+      ],
+      "notes": "进入已分派的 purpose handler 后记录；初始化只记失败。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.execution.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /auth/worm-trading/executions/{runId}/solana/verify",
+      "httpMethod": "POST",
+      "route": "/auth/worm-trading/executions/{runId}/solana/verify",
+      "source": "internal/phantomauth/worm_execution_authorization.go",
+      "symbol": "WormExecutionVerify",
+      "resourceType": "execution",
+      "successPolicy": "AUTHORIZATION",
+      "allowedDetails": [
+        "stage",
+        "proofKind",
+        "expectedRevision",
+        "confirmedRevision"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.execution.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /auth/worm-trading/executions/{runId}/development",
+      "httpMethod": "POST",
+      "route": "/auth/worm-trading/executions/{runId}/development",
+      "source": "internal/server/worm_execution_authorization.go",
+      "symbol": "developmentWormExecutionAuthorization",
+      "resourceType": "execution",
+      "successPolicy": "AUTHORIZATION",
+      "allowedDetails": [
+        "stage",
+        "proofKind"
+      ],
+      "notes": "只在既有 loopback disabled-auth 环境存在。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.cash_out.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "GET /auth/google/callback (worm.cash_out.authorize)",
+      "httpMethod": "GET",
+      "route": "/auth/google/callback (worm.cash_out.authorize)",
+      "source": "internal/googleoidc/worm_position_cash_out_authorization.go",
+      "symbol": "callback",
+      "resourceType": "cash_out",
+      "successPolicy": "AUTHORIZATION",
+      "allowedDetails": [
+        "stage",
+        "proofKind",
+        "expectedRevision",
+        "confirmedRevision"
+      ],
+      "notes": "进入已分派的 purpose handler 后记录；初始化只记失败。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.cash_out.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /auth/worm-trading/position-cash-outs/{cashOutId}/solana/verify",
+      "httpMethod": "POST",
+      "route": "/auth/worm-trading/position-cash-outs/{cashOutId}/solana/verify",
+      "source": "internal/phantomauth/worm_position_cash_out_authorization.go",
+      "symbol": "WormPositionCashOutVerify",
+      "resourceType": "cash_out",
+      "successPolicy": "AUTHORIZATION",
+      "allowedDetails": [
+        "stage",
+        "proofKind",
+        "expectedRevision",
+        "confirmedRevision"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.cash_out.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /auth/worm-trading/position-cash-outs/{cashOutId}/development",
+      "httpMethod": "POST",
+      "route": "/auth/worm-trading/position-cash-outs/{cashOutId}/development",
+      "source": "internal/server/worm_position_cash_out_authorization.go",
+      "symbol": "developmentWormPositionCashOutAuthorization",
+      "resourceType": "cash_out",
+      "successPolicy": "AUTHORIZATION",
+      "allowedDetails": [
+        "stage",
+        "proofKind"
+      ],
+      "notes": "只在既有 loopback disabled-auth 环境存在。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.cash_out_batch.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "GET /auth/google/callback (worm.cash_out_batch.authorize)",
+      "httpMethod": "GET",
+      "route": "/auth/google/callback (worm.cash_out_batch.authorize)",
+      "source": "internal/googleoidc/worm_position_cash_out_batch_authorization.go",
+      "symbol": "callback",
+      "resourceType": "cash_out_batch",
+      "successPolicy": "AUTHORIZATION",
+      "allowedDetails": [
+        "stage",
+        "proofKind",
+        "expectedRevision",
+        "confirmedRevision"
+      ],
+      "notes": "进入已分派的 purpose handler 后记录；初始化只记失败。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.cash_out_batch.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /auth/worm-trading/position-cash-out-batches/{batchId}/solana/verify",
+      "httpMethod": "POST",
+      "route": "/auth/worm-trading/position-cash-out-batches/{batchId}/solana/verify",
+      "source": "internal/phantomauth/worm_position_cash_out_batch_authorization.go",
+      "symbol": "WormPositionCashOutBatchVerify",
+      "resourceType": "cash_out_batch",
+      "successPolicy": "AUTHORIZATION",
+      "allowedDetails": [
+        "stage",
+        "proofKind",
+        "expectedRevision",
+        "confirmedRevision"
+      ],
+      "notes": "",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "worm.cash_out_batch.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /auth/worm-trading/position-cash-out-batches/{batchId}/development",
+      "httpMethod": "POST",
+      "route": "/auth/worm-trading/position-cash-out-batches/{batchId}/development",
+      "source": "internal/server/worm_position_cash_out_batch_authorization.go",
+      "symbol": "developmentWormPositionCashOutBatchAuthorization",
+      "resourceType": "cash_out_batch",
+      "successPolicy": "AUTHORIZATION",
+      "allowedDetails": [
+        "stage",
+        "proofKind"
+      ],
+      "notes": "只在既有 loopback disabled-auth 环境存在。",
+      "captureWhen": "ALL_RESULTS"
+    },
+    {
+      "actionCode": "identity.login",
+      "moduleCode": "identity",
+      "transport": "http",
+      "entry": "GET /auth/google/login",
+      "httpMethod": "GET",
+      "route": "/auth/google/login",
+      "source": "internal/googleoidc/handler.go",
+      "symbol": "Login",
+      "resourceType": "account",
+      "successPolicy": "INITIALIZATION_FAILURE",
+      "allowedDetails": [
+        "stage",
+        "provider"
+      ],
+      "notes": "只记录初始化失败；成功初始化不产生记录。",
+      "captureWhen": "FAILURE_ONLY"
+    },
+    {
+      "actionCode": "identity.login",
+      "moduleCode": "identity",
+      "transport": "http",
+      "entry": "POST /auth/phantom/challenge",
+      "httpMethod": "POST",
+      "route": "/auth/phantom/challenge",
+      "source": "internal/phantomauth/handler.go",
+      "symbol": "Challenge",
+      "resourceType": "account",
+      "successPolicy": "INITIALIZATION_FAILURE",
+      "allowedDetails": [
+        "stage",
+        "provider"
+      ],
+      "notes": "只记录初始化失败；成功初始化不产生记录。",
+      "captureWhen": "FAILURE_ONLY"
+    },
+    {
+      "actionCode": "wallet.reveal.authorize",
+      "moduleCode": "wallet",
+      "transport": "http",
+      "entry": "GET /auth/wallet-secrets/google",
+      "httpMethod": "GET",
+      "route": "/auth/wallet-secrets/google",
+      "source": "internal/googleoidc/wallet_secret_reauth.go",
+      "symbol": "WalletSecretReauthentication",
+      "resourceType": "account",
+      "successPolicy": "INITIALIZATION_FAILURE",
+      "allowedDetails": [
+        "stage",
+        "provider"
+      ],
+      "notes": "只记录初始化失败；成功初始化不产生记录。",
+      "captureWhen": "FAILURE_ONLY"
+    },
+    {
+      "actionCode": "wallet.reveal.authorize",
+      "moduleCode": "wallet",
+      "transport": "http",
+      "entry": "POST /auth/wallet-secrets/solana/challenge",
+      "httpMethod": "POST",
+      "route": "/auth/wallet-secrets/solana/challenge",
+      "source": "internal/phantomauth/wallet_secret_reauth.go",
+      "symbol": "WalletSecretChallenge",
+      "resourceType": "account",
+      "successPolicy": "INITIALIZATION_FAILURE",
+      "allowedDetails": [
+        "stage",
+        "provider"
+      ],
+      "notes": "只记录初始化失败；成功初始化不产生记录。",
+      "captureWhen": "FAILURE_ONLY"
+    },
+    {
+      "actionCode": "worm.connection.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "GET /auth/worm-trading/google",
+      "httpMethod": "GET",
+      "route": "/auth/worm-trading/google",
+      "source": "internal/googleoidc/worm_credential_reauth.go",
+      "symbol": "WormCredentialReauthentication",
+      "resourceType": "account",
+      "successPolicy": "INITIALIZATION_FAILURE",
+      "allowedDetails": [
+        "stage",
+        "provider"
+      ],
+      "notes": "只记录初始化失败；成功初始化不产生记录。",
+      "captureWhen": "FAILURE_ONLY"
+    },
+    {
+      "actionCode": "worm.connection.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /auth/worm-trading/solana/challenge",
+      "httpMethod": "POST",
+      "route": "/auth/worm-trading/solana/challenge",
+      "source": "internal/phantomauth/worm_credential_reauth.go",
+      "symbol": "WormCredentialChallenge",
+      "resourceType": "account",
+      "successPolicy": "INITIALIZATION_FAILURE",
+      "allowedDetails": [
+        "stage",
+        "provider"
+      ],
+      "notes": "只记录初始化失败；成功初始化不产生记录。",
+      "captureWhen": "FAILURE_ONLY"
+    },
+    {
+      "actionCode": "worm.execution.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "GET /auth/worm-trading/executions/google",
+      "httpMethod": "GET",
+      "route": "/auth/worm-trading/executions/google",
+      "source": "internal/googleoidc/worm_execution_authorization.go",
+      "symbol": "WormExecutionAuthorization",
+      "resourceType": "account",
+      "successPolicy": "INITIALIZATION_FAILURE",
+      "allowedDetails": [
+        "stage",
+        "provider"
+      ],
+      "notes": "只记录初始化失败；成功初始化不产生记录。",
+      "captureWhen": "FAILURE_ONLY"
+    },
+    {
+      "actionCode": "worm.execution.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /auth/worm-trading/executions/{runId}/solana/challenge",
+      "httpMethod": "POST",
+      "route": "/auth/worm-trading/executions/{runId}/solana/challenge",
+      "source": "internal/phantomauth/worm_execution_authorization.go",
+      "symbol": "WormExecutionChallenge",
+      "resourceType": "account",
+      "successPolicy": "INITIALIZATION_FAILURE",
+      "allowedDetails": [
+        "stage",
+        "provider"
+      ],
+      "notes": "只记录初始化失败；成功初始化不产生记录。",
+      "captureWhen": "FAILURE_ONLY"
+    },
+    {
+      "actionCode": "worm.cash_out.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "GET /auth/worm-trading/position-cash-outs/google",
+      "httpMethod": "GET",
+      "route": "/auth/worm-trading/position-cash-outs/google",
+      "source": "internal/googleoidc/worm_position_cash_out_authorization.go",
+      "symbol": "WormPositionCashOutAuthorization",
+      "resourceType": "account",
+      "successPolicy": "INITIALIZATION_FAILURE",
+      "allowedDetails": [
+        "stage",
+        "provider"
+      ],
+      "notes": "只记录初始化失败；成功初始化不产生记录。",
+      "captureWhen": "FAILURE_ONLY"
+    },
+    {
+      "actionCode": "worm.cash_out.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /auth/worm-trading/position-cash-outs/{cashOutId}/solana/challenge",
+      "httpMethod": "POST",
+      "route": "/auth/worm-trading/position-cash-outs/{cashOutId}/solana/challenge",
+      "source": "internal/phantomauth/worm_position_cash_out_authorization.go",
+      "symbol": "WormPositionCashOutChallenge",
+      "resourceType": "account",
+      "successPolicy": "INITIALIZATION_FAILURE",
+      "allowedDetails": [
+        "stage",
+        "provider"
+      ],
+      "notes": "只记录初始化失败；成功初始化不产生记录。",
+      "captureWhen": "FAILURE_ONLY"
+    },
+    {
+      "actionCode": "worm.cash_out_batch.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "GET /auth/worm-trading/position-cash-out-batches/google",
+      "httpMethod": "GET",
+      "route": "/auth/worm-trading/position-cash-out-batches/google",
+      "source": "internal/googleoidc/worm_position_cash_out_batch_authorization.go",
+      "symbol": "WormPositionCashOutBatchAuthorization",
+      "resourceType": "account",
+      "successPolicy": "INITIALIZATION_FAILURE",
+      "allowedDetails": [
+        "stage",
+        "provider"
+      ],
+      "notes": "只记录初始化失败；成功初始化不产生记录。",
+      "captureWhen": "FAILURE_ONLY"
+    },
+    {
+      "actionCode": "worm.cash_out_batch.authorize",
+      "moduleCode": "worm",
+      "transport": "http",
+      "entry": "POST /auth/worm-trading/position-cash-out-batches/{batchId}/solana/challenge",
+      "httpMethod": "POST",
+      "route": "/auth/worm-trading/position-cash-out-batches/{batchId}/solana/challenge",
+      "source": "internal/phantomauth/worm_position_cash_out_batch_authorization.go",
+      "symbol": "WormPositionCashOutBatchChallenge",
+      "resourceType": "account",
+      "successPolicy": "INITIALIZATION_FAILURE",
+      "allowedDetails": [
+        "stage",
+        "provider"
+      ],
+      "notes": "只记录初始化失败；成功初始化不产生记录。",
+      "captureWhen": "FAILURE_ONLY"
+    },
+    {
+      "actionCode": "identity.login",
+      "moduleCode": "identity",
+      "transport": "http",
+      "entry": "POST /auth/registration (login child)",
+      "httpMethod": "POST",
+      "route": "/auth/registration (login child)",
+      "source": "internal/authregistration/handler.go",
+      "symbol": "create",
+      "resourceType": "account",
+      "successPolicy": "LOGIN",
+      "allowedDetails": [
+        "stage",
+        "provider"
+      ],
+      "notes": "注册之后签发会话的子动作；与注册动作使用不同 operationId，相同 requestId。",
+      "captureWhen": "ALL_RESULTS"
+    }
+  ],
+  "excludedEntries": [
+    {
+      "rpc": "/tradersync.TraderSyncService/ResolveTarget",
+      "reason": "显式目标查询；POST 不等于用户写操作",
+      "source": "internal/server/tradersync/tradersync.proto"
+    },
+    {
+      "entry": "POST /api/v1/worm-trading/executions/{runId}:heartbeat",
+      "source": "internal/server/worm_executions.go",
+      "reason": "执行协调心跳，不是用户主动动作"
+    },
+    {
+      "entry": "POST /api/v1/worm-trading/executions/{runId}:execute-next",
+      "source": "internal/server/worm_executions.go",
+      "reason": "已授权 Run 的自动推进；原业务执行记录继续保留"
+    },
+    {
+      "entry": "Get*/List*/Version、bootstrap、健康、reflection、日志查询",
+      "reason": "只读／运行协议，不是关键操作"
+    },
+    {
+      "entry": "登录跳转、challenge 生成、注册 GET／用户名可用性、成功的授权初始化",
+      "reason": "辅助步骤；初始化失败按目的动作单独记录"
+    },
+    {
+      "entry": "grpc-gateway proto 解码前拒绝、未匹配路由、资产下载",
+      "reason": "未形成可执行业务命令；不把运行／安全访问日志混入本功能"
+    }
+  ]
+}
