@@ -1,11 +1,11 @@
 # Task 3 report
 
-- Code commit: `af518556bf368a074762fd1cec07535c8bd3d503`
+- Code commits: `af518556bf368a074762fd1cec07535c8bd3d503`, `5a60f9c507e3357a9cefd7d5f66236d3f433724a`
 - Scope: operation-log query/runtime service only. Parent documentation changes and Task2 files remain unstaged.
 
 ## Changed files
 
-- Query adapter, stable HMAC cursor/snapshot codec, catalog-backed filters, complete DTO enrichment, and runtime status reader.
+- Query adapter, stable HMAC cursor/snapshot codec, catalog-backed filters (including escaped username prefixes and resource directory validation), complete DTO enrichment with target-account/presence/source phases, and runtime status reader.
 - Persistent account-state access checker, TLS/secret resolver, internal bearer interceptor, gRPC client credentials.
 - Projector polling loop with 500 ms interval, exponential retry/backoff capped at 30 s, schema re-verification, and health state recovery.
 - Independent `athena-operation-log` listener with gRPC health, TLS/plaintext configuration, durable account recheck, and generated internal/public operation-log protobuf clients.
@@ -20,4 +20,4 @@
 
 ## Completed and concerns
 
-Task 3 query, access, transport, runtime, listener, retry/recovery, TLS/secret configuration, and typed detail mapping are implemented. Capture/actions remain API-only callbacks as required. No known external blocker remains. The generated protobuf files are large because the repository generator rewrites complete descriptors; only operation-log generated files are included in the commit.
+Task 3 query, access, transport, runtime, listener, retry/recovery, TLS/secret configuration, and typed detail mapping are implemented. Capture/actions remain API-only callbacks as required. No known external blocker remains. Runtime health now carries a stable service epoch and reports producer truncation explicitly. The generated protobuf files are large because the repository generator rewrites complete descriptors; only operation-log generated files are included in the commit.
