@@ -29,7 +29,7 @@ func TestNormalizeFilterDefaultsAndBounds(t *testing.T) {
 }
 func TestNormalizeFilterDirectoryAndResourcePair(t *testing.T) {
 	now := time.Now().UTC()
-	if _, err := NormalizeFilter(Filter{ModuleCode: "wallet", ActionCode: "wallet.send"}, now); err != nil {
+	if _, err := NormalizeFilter(Filter{ModuleCode: "account", ActionCode: "account.access.update"}, now); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := NormalizeFilter(Filter{ResourceType: "wallet"}, now); err == nil {

@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/useryege/athena/internal/operationlog/event"
 )
 
 type TxReader interface {
@@ -24,11 +27,39 @@ type Summary struct {
 	BusinessState                                                                                    string
 	ResourceCount                                                                                    *int64
 	ResourcesComplete, ResponseWriteFailed                                                           bool
+	Provider                                                                                         string
+}
+type ResourceFact struct {
+	Type, ID, Relation string
+	ReferenceVerified  bool
+}
+type ChangeFact struct {
+	FieldCode               string
+	BeforeValue, AfterValue *string
+	BeforeAvailable         bool
+	ValueKind               string
+}
+type CountsFact struct{ Requested, Confirmed, Failed, Unknown *int64 }
+type ProtocolFact struct {
+	GRPCCode, HTTPStatus, ReasonCode string
+	ResponseWriteFailed              bool
+}
+type SourceFacts struct {
+	ProducerID                      string
+	FirstReceivedAt, LastReceivedAt time.Time
+	PhasesReceived                  []string
+	SnapshotSequence                int64
 }
 type Detail struct {
 	Summary
 	FinishedAt                                      *time.Time
 	RequestID, ParentOperationID, BusinessRequestID string
+	Effect                                          []string
+	Resources                                       []ResourceFact
+	Changes                                         []ChangeFact
+	Counts                                          CountsFact
+	Protocol                                        ProtocolFact
+	Source                                          SourceFacts
 	Detail                                          json.RawMessage
 	SourceEventIDs                                  []string
 }
@@ -40,6 +71,14 @@ type Page struct {
 	PageSize                  int
 	AppliedFilters            NormalizedFilter
 }
+type ProducerStatus struct {
+	ProducerID                                                                                 string
+	StartedAt, LastSeenAt, StoppedAt                                                           *time.Time
+	AttemptedEvents, ConfirmedEvents, UnconfirmedEvents, InvalidEvents, CapacityRejectedEvents int64
+	LastFailureAt, LastRecoveredAt                                                             *time.Time
+	LastFailureCode                                                                            *string
+	PersistenceReachable                                                                       *bool
+}
 type RuntimeStatus struct {
 	ServiceEpoch            string
 	CheckedAt               time.Time
@@ -48,13 +87,21 @@ type RuntimeStatus struct {
 	LastPublishedAt         *time.Time
 	PublicationSequence     int64
 	PendingEvents           int64
+	OldestPendingReceivedAt *time.Time
 	QuarantinedEvents       int64
-	LastProcessingErrorCode string
+	LastProcessingErrorCode *string
+	Producers               []ProducerStatus
+	TotalObserved           int64
+	ProducersComplete       bool
+}
+type RuntimeReader interface {
+	RuntimeStatus(context.Context) (RuntimeStatus, error)
 }
 type Adapter struct {
-	Reader TxReader
-	Codec  *Codec
-	Now    func() time.Time
+	Reader        TxReader
+	Codec         *Codec
+	Now           func() time.Time
+	RuntimeSource RuntimeReader
 }
 
 func (a *Adapter) now() time.Time {
@@ -65,16 +112,62 @@ func (a *Adapter) now() time.Time {
 }
 func (a *Adapter) List(ctx context.Context, f Filter, viewer Viewer) (Page, error) {
 	now := a.now()
-	nf, err := NormalizeFilter(f, now)
-	if err != nil {
-		return Page{}, err
-	}
 	var cd CursorData
 	if f.Cursor != "" {
+		if a.Codec == nil {
+			return Page{}, ErrCursorInvalid
+		}
+		var err error
 		cd, err = a.Codec.DecodeCursor(f.Cursor, viewer, now)
 		if err != nil {
 			return Page{}, err
 		}
+		// A follow-up page inherits the signed range and filters. Explicit
+		// values are normalized below and then compared to the token.
+		if f.From == nil {
+			v := cd.Filters.From
+			f.From = &v
+		}
+		if f.To == nil {
+			v := cd.Filters.To
+			f.To = &v
+		}
+		if f.PageSize == 0 {
+			f.PageSize = cd.Filters.PageSize
+		}
+		if f.ActorQuery == "" {
+			f.ActorQuery = cd.Filters.ActorQuery
+		}
+		if f.ActorRole == "" {
+			f.ActorRole = cd.Filters.ActorRole
+		}
+		if f.CredentialKind == "" {
+			f.CredentialKind = cd.Filters.CredentialKind
+		}
+		if f.ModuleCode == "" {
+			f.ModuleCode = cd.Filters.ModuleCode
+		}
+		if f.ActionCode == "" {
+			f.ActionCode = cd.Filters.ActionCode
+		}
+		if f.Outcome == "" {
+			f.Outcome = cd.Filters.Outcome
+		}
+		if f.TargetAccountID == "" {
+			f.TargetAccountID = cd.Filters.TargetAccountID
+		}
+		if f.ResourceType == "" {
+			f.ResourceType = cd.Filters.ResourceType
+		}
+		if f.ResourceID == "" {
+			f.ResourceID = cd.Filters.ResourceID
+		}
+	}
+	nf, err := NormalizeFilter(f, now)
+	if err != nil {
+		return Page{}, err
+	}
+	if f.Cursor != "" {
 		if err = a.Codec.ValidateCursorParameters(f.Cursor, nf, viewer, now); err != nil {
 			return Page{}, err
 		}
@@ -125,7 +218,7 @@ func (a *Adapter) List(ctx context.Context, f Filter, viewer Viewer) (Page, erro
 		if nf.ActionCode != "" {
 			appendCond("action_code =", nf.ActionCode)
 		}
-		if nf.Outcome != "" {
+		if nf.Outcome != "" && nf.Outcome != "ALL" {
 			appendCond("outcome =", nf.Outcome)
 		}
 		if nf.TargetAccountID != "" {
@@ -173,7 +266,9 @@ func (a *Adapter) List(ctx context.Context, f Filter, viewer Viewer) (Page, erro
 				x := dur.Int64
 				duration = &x
 			}
-			items = append(items, Summary{OperationID: uid(op), StartedAt: started.Time, ActorAccountID: uid(aid), ActorUsername: text(uname), ActorRole: arole.String, Realm: realm.String, CredentialKind: cred.String, ModuleCode: mod.String, ActionCode: act.String, Outcome: outcome.String, Observation: obs.String, PrimaryResourceType: text(rt), PrimaryResourceID: text(rid), DurationMS: duration})
+			sm := Summary{OperationID: uid(op), StartedAt: started.Time, ActorAccountID: uid(aid), ActorUsername: text(uname), ActorRole: arole.String, Realm: realm.String, CredentialKind: cred.String, ModuleCode: mod.String, ActionCode: act.String, Outcome: outcome.String, Observation: obs.String, PrimaryResourceType: text(rt), PrimaryResourceID: text(rid), DurationMS: duration}
+			enrichSummary(&sm, detail)
+			items = append(items, sm)
 		}
 		if e := rows.Err(); e != nil {
 			return e
@@ -189,10 +284,10 @@ func (a *Adapter) List(ctx context.Context, f Filter, viewer Viewer) (Page, erro
 	}
 	p := Page{Items: items, PageSize: nf.PageSize, AppliedFilters: nf, SnapshotSequence: seq, SnapshotAt: at}
 	if a.Codec != nil {
-		p.SnapshotToken, _ = a.Codec.EncodeSnapshotAt(nf, viewer, seq, at, now)
+		p.SnapshotToken, _ = a.Codec.EncodeSnapshotPreserving(nf, viewer, seq, at, now, now.Add(CursorTTL), now)
 		if next {
 			last := items[len(items)-1]
-			p.NextCursor, _ = a.Codec.EncodeCursorAt(nf, viewer, CursorPosition{StartedAt: last.StartedAt, OperationID: last.OperationID}, seq, at, now)
+			p.NextCursor, _ = a.Codec.EncodeCursorPreserving(nf, viewer, CursorPosition{StartedAt: last.StartedAt, OperationID: last.OperationID}, seq, at, cd.IssuedAt, cd.ExpiresAt, now)
 		}
 	}
 	return p, nil
@@ -256,6 +351,8 @@ func (a *Adapter) Get(ctx context.Context, id string, viewer Viewer, snapshot st
 			duration = &x
 		}
 		d = Detail{Summary: Summary{OperationID: uid(op), StartedAt: started.Time, ActorAccountID: uid(aid), ActorUsername: text(uname), ActorRole: role.String, Realm: realm.String, CredentialKind: cred.String, ModuleCode: mod.String, ActionCode: act.String, Outcome: outcome.String, Observation: obs.String, PrimaryResourceType: text(rt), PrimaryResourceID: text(rid), DurationMS: duration}, Detail: detail, RequestID: uid(req), ParentOperationID: uid(parent), BusinessRequestID: text(biz)}
+		enrichDetail(&d, detail)
+		d.Source.SnapshotSequence = from
 		for _, u := range src {
 			if u.Valid {
 				d.SourceEventIDs = append(d.SourceEventIDs, uuid.UUID(u.Bytes).String())
@@ -268,4 +365,105 @@ func (a *Adapter) Get(ctx context.Context, id string, viewer Viewer, snapshot st
 		return nil
 	})
 	return d, err
+}
+
+func enrichSummary(s *Summary, b []byte) {
+	var e event.Event
+	if json.Unmarshal(b, &e) != nil {
+		return
+	}
+	s.IdentityVerified = e.Actor.IdentityVerified
+	s.IdentitySnapshotComplete = e.Actor.IdentitySnapshotComplete
+	s.BusinessState = valueString(e.BusinessState)
+	s.ReasonCode = valueString(e.ReasonCode)
+	s.ResponseWriteFailed = e.ResponseWriteFailed
+	s.Provider = valueString(e.Actor.Provider)
+	if e.ResourceCount != nil && *e.ResourceCount <= math.MaxInt64 {
+		x := int64(*e.ResourceCount)
+		s.ResourceCount = &x
+	}
+	s.ResourcesComplete = e.ResourcesComplete
+}
+func enrichDetail(d *Detail, b []byte) {
+	var v struct {
+		event.Event
+		FirstReceivedAt time.Time `json:"firstReceivedAt"`
+		LastReceivedAt  time.Time `json:"lastReceivedAt"`
+	}
+	if json.Unmarshal(b, &v) != nil {
+		return
+	}
+	enrichSummary(&d.Summary, b)
+	d.Effect = append([]string(nil), v.Effect...)
+	for _, r := range v.Resources {
+		rel := "RELATED"
+		if r.Primary {
+			rel = "PRIMARY"
+		}
+		d.Resources = append(d.Resources, ResourceFact{Type: r.Type, ID: r.ID, Relation: rel, ReferenceVerified: r.ReferenceVerified})
+	}
+	d.Source.ProducerID = v.ProducerID
+	d.Source.FirstReceivedAt = v.FirstReceivedAt
+	d.Source.LastReceivedAt = v.LastReceivedAt
+	if v.Phase != "" {
+		d.Source.PhasesReceived = []string{string(v.Phase)}
+	}
+	if v.GRPCCode != nil {
+		d.Protocol.GRPCCode = *v.GRPCCode
+	}
+	if v.HTTPStatus != nil {
+		d.Protocol.HTTPStatus = fmt.Sprintf("%d", *v.HTTPStatus)
+	}
+	if v.ReasonCode != nil {
+		d.Protocol.ReasonCode = *v.ReasonCode
+	}
+	d.Protocol.ResponseWriteFailed = v.ResponseWriteFailed
+	keys := make([]string, 0, len(v.Details))
+	for k := range v.Details {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		raw, err := json.Marshal(v.Details[k])
+		if err != nil {
+			continue
+		}
+		value := string(raw)
+		d.Changes = append(d.Changes, ChangeFact{FieldCode: k, AfterValue: &value, BeforeAvailable: false, ValueKind: "JSON"})
+		switch k {
+		case "requested", "requestedCount":
+			d.Counts.Requested = jsonInt(raw)
+		case "confirmed", "confirmedCount":
+			d.Counts.Confirmed = jsonInt(raw)
+		case "failed", "failedCount":
+			d.Counts.Failed = jsonInt(raw)
+		case "unknown", "unknownCount":
+			d.Counts.Unknown = jsonInt(raw)
+		}
+	}
+}
+func jsonInt(raw []byte) *int64 {
+	var x int64
+	if json.Unmarshal(raw, &x) == nil {
+		return &x
+	}
+	var f float64
+	if json.Unmarshal(raw, &f) == nil && f >= math.MinInt64 && f <= math.MaxInt64 {
+		y := int64(f)
+		return &y
+	}
+	return nil
+}
+
+func valueString(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
+}
+func (a *Adapter) Runtime(ctx context.Context) (RuntimeStatus, error) {
+	if a.RuntimeSource == nil {
+		return RuntimeStatus{}, fmt.Errorf("runtime status unavailable")
+	}
+	return a.RuntimeSource.RuntimeStatus(ctx)
 }

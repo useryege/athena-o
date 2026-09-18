@@ -5,19 +5,22 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/useryege/athena/internal/operationlog/rpcconfig"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type Config struct {
-	Address         string
-	Token           string
-	MaxMessageBytes int
+	Address, Token, Transport, CAFile, ServerName string
+	MaxMessageBytes                               int
 }
-type serviceCredential struct{ token string }
+type serviceCredential struct {
+	token  string
+	secure bool
+}
 
-func (serviceCredential) RequireTransportSecurity() bool { return false }
+func (c serviceCredential) RequireTransportSecurity() bool { return c.secure }
 func (c serviceCredential) GetRequestMetadata(context.Context, ...string) (map[string]string, error) {
 	return map[string]string{"authorization": "Bearer " + c.token}, nil
 }
@@ -28,7 +31,18 @@ func NewClient(cfg Config) (OperationLogInternalServiceClient, func() error, err
 	if cfg.MaxMessageBytes <= 0 {
 		cfg.MaxMessageBytes = 64 << 10
 	}
-	conn, err := grpc.NewClient(cfg.Address, grpc.WithInsecure(), grpc.WithPerRPCCredentials(serviceCredential{cfg.Token}), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(cfg.MaxMessageBytes), grpc.MaxCallSendMsgSize(cfg.MaxMessageBytes)))
+	rc := rpcconfig.Client{Address: cfg.Address, Token: cfg.Token, Transport: cfg.Transport, CAFile: cfg.CAFile, ServerName: cfg.ServerName, MaxMessageBytes: cfg.MaxMessageBytes}
+	if rc.Transport == "" {
+		rc.Transport = "plaintext"
+	}
+	if err := rc.Validate(); err != nil {
+		return nil, nil, err
+	}
+	creds, err := rpcconfig.ClientCredentials(rc)
+	if err != nil {
+		return nil, nil, err
+	}
+	conn, err := grpc.NewClient(cfg.Address, grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(serviceCredential{token: cfg.Token, secure: rc.Transport == "tls"}), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(cfg.MaxMessageBytes), grpc.MaxCallSendMsgSize(cfg.MaxMessageBytes)))
 	if err != nil {
 		return nil, nil, err
 	}

@@ -11,13 +11,19 @@ import (
 	"github.com/useryege/athena/internal/operationlog/event"
 	"github.com/useryege/athena/internal/operationlog/ingest"
 	"strings"
+	"sync"
 	"time"
 )
 
 const ProjectInterval = 500 * time.Millisecond
 const ProjectTimeout = 2 * time.Second
 
-type Store struct{ pool *pgxpool.Pool }
+type Store struct {
+	pool                *pgxpool.Pool
+	healthMu            sync.RWMutex
+	lastProcessingError error
+	queryReady          bool
+}
 
 var _ ingest.Sink = (*Store)(nil)
 
@@ -68,6 +74,32 @@ func open(ctx context.Context, dsn string, max int32, ping bool) (*Store, error)
 	return &Store{pool: pool}, nil
 }
 func (s *Store) Close() { s.pool.Close() }
+
+func (s *Store) setProcessingError(err error) {
+	s.healthMu.Lock()
+	defer s.healthMu.Unlock()
+	s.lastProcessingError = err
+	if err != nil {
+		s.queryReady = false
+	} else if s.queryReady == false {
+		s.queryReady = true
+	}
+}
+func (s *Store) SetQueryReady(ready bool) {
+	s.healthMu.Lock()
+	s.queryReady = ready
+	s.healthMu.Unlock()
+}
+func (s *Store) QueryReady() bool {
+	s.healthMu.RLock()
+	defer s.healthMu.RUnlock()
+	return s.queryReady
+}
+func (s *Store) LastProcessingError() error {
+	s.healthMu.RLock()
+	defer s.healthMu.RUnlock()
+	return s.lastProcessingError
+}
 
 // Read gives query adapters one short repeatable-read, read-only snapshot. It
 // must not escape the callback; no connection is held between HTTP requests.

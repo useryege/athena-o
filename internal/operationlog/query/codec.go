@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/google/uuid"
 	"strings"
 	"time"
 )
@@ -67,23 +69,38 @@ func (c *Codec) EncodeCursor(f NormalizedFilter, viewer Viewer, pos CursorPositi
 	return c.EncodeCursorAt(f, viewer, pos, 0, time.Time{}, now)
 }
 func (c *Codec) EncodeCursorAt(f NormalizedFilter, viewer Viewer, pos CursorPosition, sequence int64, snapshotAt, now time.Time) (string, error) {
-	return c.encode("cursor", &f, &pos, viewer, sequence, snapshotAt, now)
+	return c.encode("cursor", &f, &pos, viewer, sequence, snapshotAt, now, time.Time{}, time.Time{})
+}
+func (c *Codec) EncodeCursorPreserving(f NormalizedFilter, viewer Viewer, pos CursorPosition, sequence int64, snapshotAt, issued, expires, now time.Time) (string, error) {
+	return c.encode("cursor", &f, &pos, viewer, sequence, snapshotAt, now, issued, expires)
 }
 func (c *Codec) EncodeSnapshot(f NormalizedFilter, viewer Viewer, now time.Time) (string, error) {
-	return c.encode("snapshot", &f, nil, viewer, 0, time.Time{}, now)
+	return c.encode("snapshot", &f, nil, viewer, 0, time.Time{}, now, time.Time{}, time.Time{})
 }
 func (c *Codec) EncodeSnapshotAt(f NormalizedFilter, viewer Viewer, sequence int64, at, now time.Time) (string, error) {
-	return c.encode("snapshot", &f, nil, viewer, sequence, at, now)
+	return c.encode("snapshot", &f, nil, viewer, sequence, at, now, time.Time{}, time.Time{})
 }
-func (c *Codec) encode(kind string, f *NormalizedFilter, p *CursorPosition, v Viewer, w int64, at, now time.Time) (string, error) {
-	if err := validateViewer(v); err != nil {
+func (c *Codec) EncodeSnapshotPreserving(f NormalizedFilter, viewer Viewer, sequence int64, at, issued, expires, now time.Time) (string, error) {
+	return c.encode("snapshot", &f, nil, viewer, sequence, at, now, issued, expires)
+}
+func (c *Codec) encode(kind string, f *NormalizedFilter, p *CursorPosition, v Viewer, w int64, at, now, issued, expires time.Time) (string, error) {
+	if err := ValidateViewer(v); err != nil {
 		return "", err
 	}
 	now = now.UTC()
+	if issued.IsZero() {
+		issued = now
+	}
+	issued = issued.UTC()
+	if expires.IsZero() {
+		expires = issued.Add(CursorTTL)
+	}
+	expires = expires.UTC()
 	if at.IsZero() {
 		at = now
 	}
-	x := wireToken{Version: 1, Kind: kind, Filters: f, Position: p, W: w, At: at.UTC(), Issued: now, Expires: now.Add(CursorTTL), Viewer: viewerBinding(v)}
+	at = at.UTC()
+	x := wireToken{Version: 1, Kind: kind, Filters: f, Position: p, W: w, At: at, Issued: issued, Expires: expires, Viewer: viewerBinding(v)}
 	raw, _ := json.Marshal(x)
 	x.Sig = sign(c.key, raw)
 	return base64.RawURLEncoding.EncodeToString(mustJSON(x)), nil
@@ -101,6 +118,9 @@ func (c *Codec) DecodeCursor(token string, viewer Viewer, now time.Time) (Cursor
 func (c *Codec) DecodeSnapshot(token string, viewer Viewer, now time.Time) (SnapshotData, error) {
 	x, err := c.decode(token, "snapshot", viewer, now)
 	if err != nil {
+		if errors.Is(err, ErrCursorExpired) {
+			return SnapshotData{}, ErrSnapshotExpired
+		}
 		return SnapshotData{}, err
 	}
 	if x.Filters == nil {
@@ -153,8 +173,9 @@ func filtersEqual(a, b NormalizedFilter) bool {
 	bj, _ := json.Marshal(b)
 	return hmac.Equal(aj, bj)
 }
-func validateViewer(v Viewer) error {
-	if strings.TrimSpace(v.AccountID) == "" || v.Realm != "ADMIN" || (v.CredentialKind != "LOGIN_SESSION" && v.CredentialKind != "DEVELOPMENT") || len(v.SessionBinding) != 32 || v.AccessRevision == 0 {
+func ValidateViewer(v Viewer) error {
+	u, err := uuid.Parse(strings.TrimSpace(v.AccountID))
+	if err != nil || u == uuid.Nil || u.String() != strings.TrimSpace(v.AccountID) || v.Realm != "ADMIN" || (v.CredentialKind != "LOGIN_SESSION" && v.CredentialKind != "DEVELOPMENT") || len(v.SessionBinding) != 32 || v.AccessRevision == 0 {
 		return ErrCursorInvalid
 	}
 	return nil

@@ -369,3 +369,47 @@ func actorTrust(a event.Actor) int {
 	}
 	return 0
 }
+
+// Projector runs the serialized projection loop. It keeps polling at the
+// contract interval and backs off temporary database/schema failures without
+// terminating the service, allowing recovery after dependencies return.
+type Projector struct {
+	Store  *Store
+	Verify func(context.Context) error
+	Now    func() time.Time
+}
+
+func (p *Projector) Run(ctx context.Context) error {
+	if p == nil || p.Store == nil {
+		return errors.New("operation-log projector store is required")
+	}
+	interval := ProjectInterval
+	backoff := interval
+	timer := time.NewTimer(0)
+	defer timer.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-timer.C:
+		}
+		_, err := p.Store.Project(ctx)
+		if err != nil {
+			p.Store.setProcessingError(err)
+			if p.Verify != nil {
+				_ = p.Verify(ctx)
+			}
+			timer.Reset(backoff)
+			if backoff < 30*time.Second {
+				backoff *= 2
+				if backoff > 30*time.Second {
+					backoff = 30 * time.Second
+				}
+			}
+			continue
+		}
+		p.Store.setProcessingError(nil)
+		backoff = interval
+		timer.Reset(interval)
+	}
+}

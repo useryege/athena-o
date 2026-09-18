@@ -8,6 +8,7 @@ import (
 
 	"github.com/useryege/athena/internal/operationlog/query"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -37,6 +38,9 @@ func (a Authenticator) Authorize(ctx context.Context, viewer Viewer) (Viewer, er
 	if len(values) == 0 || strings.TrimSpace(values[0]) != "Bearer "+a.Token || strings.TrimSpace(a.Token) == "" {
 		return Viewer{}, rpcError(codes.PermissionDenied, ReasonInternalAuthRequired)
 	}
+	if query.ValidateViewer(viewer) != nil {
+		return Viewer{}, rpcError(codes.PermissionDenied, ReasonViewerForbidden)
+	}
 	if a.CheckViewer == nil {
 		return Viewer{}, rpcError(codes.PermissionDenied, ReasonViewerForbidden)
 	}
@@ -58,4 +62,24 @@ func rpcError(code codes.Code, reason string) error {
 		return s.Err()
 	}
 	return with.Err()
+}
+
+// UnaryServerInterceptor enforces the service-to-service bearer at the RPC
+// boundary. Viewer identity and durable administrator state are checked by
+// the operation-log server after decoding each typed request.
+func UnaryServerInterceptor(token string) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		if strings.HasPrefix(info.FullMethod, "/grpc.health.v1.Health/") {
+			return handler(ctx, req)
+		}
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, rpcError(codes.Unauthenticated, ReasonInternalAuthRequired)
+		}
+		values := md.Get("authorization")
+		if strings.TrimSpace(token) == "" || len(values) == 0 || strings.TrimSpace(values[0]) != "Bearer "+token {
+			return nil, rpcError(codes.Unauthenticated, ReasonInternalAuthRequired)
+		}
+		return handler(ctx, req)
+	}
 }
