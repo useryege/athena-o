@@ -17,6 +17,7 @@ var (
 	ErrCursorInvalid      = errors.New("cursor invalid")
 	ErrCursorExpired      = errors.New("cursor expired")
 	ErrSnapshotExpired    = errors.New("snapshot expired")
+	ErrSnapshotInvalid    = errors.New("snapshot invalid")
 	ErrNotFound           = errors.New("operation log not found")
 	ErrInvalidOperationID = errors.New("invalid operation log id")
 )

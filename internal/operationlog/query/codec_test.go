@@ -54,6 +54,12 @@ func TestCodecBindsViewerAndRejectsTamperExpiryAndParameters(t *testing.T) {
 	if _, err := c.DecodeSnapshot(snap, viewer, now); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := c.DecodeSnapshot(token, viewer, now); err != ErrSnapshotInvalid {
+		t.Fatalf("cursor-shaped snapshot error=%v", err)
+	}
+	if _, err := c.DecodeSnapshot(token[:len(token)-1]+"A", viewer, now); err != ErrSnapshotInvalid {
+		t.Fatalf("tampered snapshot error=%v", err)
+	}
 }
 
 func TestCodecRejectsNonCanonicalViewerAccount(t *testing.T) {

@@ -433,10 +433,33 @@ func (p *Projector) Run(ctx context.Context) error {
 			backoff = nextProjectorBackoff(backoff)
 			continue
 		}
+		if err := p.refreshQueryReadiness(ctx); err != nil {
+			p.Store.setProcessingError(err)
+			timer.Reset(backoff)
+			backoff = nextProjectorBackoff(backoff)
+			continue
+		}
 		p.Store.setProcessingError(nil)
 		backoff = interval
 		timer.Reset(interval)
 	}
+}
+
+// refreshQueryReadiness closes the recovery gap after a transient schema or
+// account-store failure. A successful projection alone proves only that the
+// operation-log schema is writable; the independent verification must succeed
+// before health can return to SERVING.
+func (p *Projector) refreshQueryReadiness(ctx context.Context) error {
+	if p.Store.QueryReady() || p.Verify == nil {
+		return nil
+	}
+	verifyCtx, cancel := context.WithTimeout(ctx, ProjectTimeout)
+	err := p.Verify(verifyCtx)
+	cancel()
+	if err == nil {
+		p.Store.SetQueryReady(true)
+	}
+	return err
 }
 
 func containsString(values []string, want string) bool {

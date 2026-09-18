@@ -120,10 +120,10 @@ func (c *Codec) DecodeSnapshot(token string, viewer Viewer, now time.Time) (Snap
 		if errors.Is(err, ErrCursorExpired) {
 			return SnapshotData{}, ErrSnapshotExpired
 		}
-		return SnapshotData{}, err
+		return SnapshotData{}, ErrSnapshotInvalid
 	}
 	if x.Filters == nil {
-		return SnapshotData{}, ErrCursorInvalid
+		return SnapshotData{}, ErrSnapshotInvalid
 	}
 	return SnapshotData{Filters: *x.Filters, IssuedAt: x.Issued, ExpiresAt: x.Expires, SnapshotSequence: x.W, SnapshotAt: x.At}, nil
 }
