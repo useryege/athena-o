@@ -82,11 +82,6 @@ func (s *Store) setProcessingError(err error) {
 	s.healthMu.Lock()
 	defer s.healthMu.Unlock()
 	s.lastProcessingError = err
-	if err != nil {
-		s.queryReady = false
-	} else if s.queryReady == false {
-		s.queryReady = true
-	}
 }
 func (s *Store) SetQueryReady(ready bool) {
 	s.healthMu.Lock()

@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	accountstateSchema "github.com/useryege/athena/internal/accountstate/schema"
 	accountstateStore "github.com/useryege/athena/internal/accountstate/store"
 	"github.com/useryege/athena/internal/operationlog/access"
 	ipb "github.com/useryege/athena/internal/operationlog/apiclient"
@@ -43,7 +44,13 @@ func main() {
 		fatal(err)
 	}
 	defer s.Close()
-	if err := schema.Verify(ctx, s.Pool()); err != nil {
+	verifySchemas := func(c context.Context) error {
+		if err := schema.Verify(c, s.Pool()); err != nil {
+			return err
+		}
+		return accountstateSchema.Verify(c, s.Pool())
+	}
+	if err := verifySchemas(ctx); err != nil {
 		fatal(err)
 	}
 	s.SetQueryReady(true)
@@ -77,7 +84,7 @@ func main() {
 	healthServer := health.NewServer()
 	healthpb.RegisterHealthServer(grpcServer, healthServer)
 	healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
-	projector := &store.Projector{Store: s, Verify: func(c context.Context) error { return schema.Verify(c, s.Pool()) }}
+	projector := &store.Projector{Store: s, Verify: verifySchemas}
 	go func() { _ = projector.Run(ctx) }()
 	go func() {
 		ticker := time.NewTicker(500 * time.Millisecond)
@@ -88,7 +95,7 @@ func main() {
 				return
 			case <-ticker.C:
 				st, err := s.RuntimeStatus(ctx)
-				if err != nil || !st.QueryReady || st.ProjectionState == "ERROR" {
+				if err != nil || !st.QueryReady {
 					healthServer.SetServingStatus("", healthpb.HealthCheckResponse_NOT_SERVING)
 				} else {
 					healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)

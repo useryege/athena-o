@@ -36,6 +36,17 @@ func newStore(t *testing.T) (*Store, *pgtest.DB) {
 	t.Cleanup(s.Close)
 	return s, db
 }
+
+func TestProjectorBackoffSequence(t *testing.T) {
+	want := []time.Duration{time.Second, 2 * time.Second, 4 * time.Second, 8 * time.Second, 16 * time.Second, 30 * time.Second, 30 * time.Second}
+	got := time.Second
+	for _, expected := range want {
+		if got != expected {
+			t.Fatalf("backoff=%s want %s", got, expected)
+		}
+		got = nextProjectorBackoff(got)
+	}
+}
 func fixture() event.Event {
 	now := time.Date(2026, 9, 18, 1, 0, 0, 123456789, time.UTC)
 	return event.Event{SchemaVersion: 1, EventID: uuid.NewString(), OperationID: uuid.NewString(), RequestID: uuid.NewString(), ProducerID: uuid.NewString(), Phase: event.Start, StartedAt: now, OccurredAt: now, Actor: event.Actor{Role: "UNKNOWN", Realm: "UNKNOWN", CredentialKind: "UNAUTHENTICATED"}, ActionCode: "account.access.update", ModuleCode: "account", Outcome: event.Unknown, Observation: event.StartOnly, Resources: []event.Resource{}, Effect: []string{}, Details: event.Details{}, ResourcesComplete: true}

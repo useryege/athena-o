@@ -37,7 +37,7 @@ func (a Authenticator) Authorize(ctx context.Context, viewer Viewer) (Viewer, er
 	}
 	values := md.Get("authorization")
 	if len(values) == 0 || strings.TrimSpace(values[0]) != "Bearer "+a.Token || strings.TrimSpace(a.Token) == "" {
-		return Viewer{}, rpcError(codes.PermissionDenied, ReasonInternalAuthRequired)
+		return Viewer{}, rpcError(codes.Unauthenticated, ReasonInternalAuthRequired)
 	}
 	if query.ValidateViewer(viewer) != nil {
 		return Viewer{}, rpcError(codes.PermissionDenied, ReasonViewerForbidden)

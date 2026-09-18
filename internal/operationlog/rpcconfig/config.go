@@ -64,7 +64,7 @@ func value(l func(string) (string, bool), k, d string) string {
 	return d
 }
 func (c Server) Validate() error {
-	if err := address(c.ListenAddress, c.Transport, false); err != nil {
+	if err := address(c.ListenAddress, c.Transport); err != nil {
 		return err
 	}
 	if len(c.Token) < 32 || strings.ContainsAny(c.Token, " \t\r\n") {
@@ -81,7 +81,7 @@ func (c Server) Validate() error {
 	}
 	return nil
 }
-func address(a, t string, client bool) error {
+func address(a, t string) error {
 	if t != "plaintext" && t != "tls" {
 		return fmt.Errorf("operation-log transport must be plaintext or tls")
 	}
@@ -93,7 +93,7 @@ func address(a, t string, client bool) error {
 	if e != nil || n < 1 || n > 65535 {
 		return fmt.Errorf("operation-log port invalid")
 	}
-	if t == "plaintext" && !client {
+	if t == "plaintext" {
 		ip := net.ParseIP(h)
 		if h != "localhost" && (ip == nil || !ip.IsLoopback()) {
 			return fmt.Errorf("operation-log plaintext requires loopback address")
@@ -117,7 +117,7 @@ func LoadClient(lookup func(string) (string, bool)) (Client, error) {
 	return c, nil
 }
 func (c Client) Validate() error {
-	if err := address(c.Address, c.Transport, true); err != nil {
+	if err := address(c.Address, c.Transport); err != nil {
 		return err
 	}
 	if len(c.Token) < 32 || strings.ContainsAny(c.Token, " \t\r\n") {

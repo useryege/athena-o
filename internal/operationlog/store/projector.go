@@ -384,12 +384,31 @@ type Projector struct {
 	Now    func() time.Time
 }
 
+const (
+	initialProjectorBackoff = time.Second
+	maxProjectorBackoff     = 30 * time.Second
+)
+
+func nextProjectorBackoff(current time.Duration) time.Duration {
+	if current <= 0 {
+		return initialProjectorBackoff
+	}
+	if current >= maxProjectorBackoff {
+		return maxProjectorBackoff
+	}
+	next := current * 2
+	if next > maxProjectorBackoff {
+		return maxProjectorBackoff
+	}
+	return next
+}
+
 func (p *Projector) Run(ctx context.Context) error {
 	if p == nil || p.Store == nil {
 		return errors.New("operation-log projector store is required")
 	}
 	interval := ProjectInterval
-	backoff := interval
+	backoff := initialProjectorBackoff
 	timer := time.NewTimer(0)
 	defer timer.Stop()
 	for {
@@ -402,15 +421,16 @@ func (p *Projector) Run(ctx context.Context) error {
 		if err != nil {
 			p.Store.setProcessingError(err)
 			if p.Verify != nil {
-				_ = p.Verify(ctx)
+				// Reverification is bounded independently from the projector
+				// transaction. A failed database operation must not make shutdown
+				// wait for schema verification's longer migration budget.
+				verifyCtx, cancel := context.WithTimeout(ctx, ProjectTimeout)
+				verifyErr := p.Verify(verifyCtx)
+				cancel()
+				p.Store.SetQueryReady(verifyErr == nil)
 			}
 			timer.Reset(backoff)
-			if backoff < 30*time.Second {
-				backoff *= 2
-				if backoff > 30*time.Second {
-					backoff = 30 * time.Second
-				}
-			}
+			backoff = nextProjectorBackoff(backoff)
 			continue
 		}
 		p.Store.setProcessingError(nil)
