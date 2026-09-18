@@ -37,6 +37,7 @@
 
 | 子系统 | 能力 | 文档 | 状态 |
 | --- | --- | --- | --- |
+| Observability | 关键操作采集、独立日志处理及管理员查询 | [关键操作日志](observability/operation-logs.md) | `已确认待实现`；2026-09-18 整体审阅通过，按用户要求暂不进入实施，未编写实施计划；[业务需求](../requirements/observability/key-operation-logs.md) |
 | Trading | 删除 Markets 服务／专属数据，由 Trading 集中承接目录、组合保存验证与执行校验 | [Trading 市场查询内聚](../superpowers/specs/2026-09-16-worm-trading-market-query-design.md) | `已实施并完成原 main 退役`；Trading 已拥有目录及服务侧身份／权限复核，Markets 源码和运行入口、五来源待发通知及专属数据库已退役，正常重启未重建；[业务需求](../requirements/development-runtime/worm-markets-removal.md) |
 | Service Operations | 本地与生产按板块开放或关闭用户访问 | [板块访问开关](../requirements/development-runtime/business-access-control.md) | `已实现，真实环境证据已记录`；六键持久设置、API 准入、会员 5 秒访问代次和管理员 Service Status 第四页签已落地；进程、后台任务和通知继续运行，Token 延期及三服务内部鉴权排除保持；[修订方案](../superpowers/specs/2026-09-17-full-stack-access-reassessment-design.md)、[验收记录](../testing/full-stack-access-acceptance.md) |
 | Service Operations | 原整组运行控制架构、状态与命令规则 | [历史架构与状态模型](../superpowers/specs/2026-09-15-business-group-control-design.md) | `已暂停，尚未实施`；D01–D03 原确认事实保留，本期不新增 Runtime Control 或业务成员控制协议；[历史需求](../requirements/development-runtime/business-group-control.md)及[历史命令设计](../superpowers/specs/2026-09-15-business-group-control-commands.md)不再作为本期实施依据 |
