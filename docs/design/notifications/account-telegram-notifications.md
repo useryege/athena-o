@@ -169,4 +169,4 @@ HTTP Started 保留原 time.Now 的 monotonic 部分，只有持久/序列化时
 txgate 的可选观察仅赋本地变量，区分 Begin/pool 与 advisory，调用层锁外输出。普通 Authorize 与摘要初始及重新取得短 gate 都复用这一入口，不改变任何许可、撤权、锁序或首条握手协议。
 
 
-新 recovery 对象的 Swagger 通过既有逐定义规范化链生成，与真实 gateway 保持 startedAt/remainingMillis/elapsedMillis/clockSource；旧 Runtime 顶层字段命名不变。真实 gateway 测试同时核对 Swagger properties、未知剩余缺失和合法字符串零。直接 TelegramSender 调用不经过 worker，因此 Outcome.Timing 可为空；worker 路径才在 Send 返回旁路冻结 timing 并随原结果 CAS 保存。单条真实公网探针的时间/授权边界见[限定验收报告](../../testing/trader-sync-activity-alerts-acceptance.md#单条真实-telegram-发送)。
+新 recovery 对象的真实 gateway 使用 startedAt/remainingMillis/elapsedMillis/clockSource；旧 Runtime 顶层字段命名不变。真实双跳 gateway 测试使用显式 HTTP 字段集合，核对未知剩余缺失和合法字符串零；Swagger 文档已退役，不作为运行时契约来源。直接 TelegramSender 调用不经过 worker，因此 Outcome.Timing 可为空；worker 路径才在 Send 返回旁路冻结 timing 并随原结果 CAS 保存。单条真实公网探针的时间/授权边界见[限定验收报告](../../testing/trader-sync-activity-alerts-acceptance.md#单条真实-telegram-发送)。

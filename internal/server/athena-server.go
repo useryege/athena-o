@@ -81,7 +81,6 @@ import (
 	solanapkg "github.com/useryege/athena/pkg/apiclient/solana"
 	tspkg "github.com/useryege/athena/pkg/apiclient/tradersync"
 	"github.com/useryege/athena/ui"
-	"github.com/useryege/athena/util/assets"
 	grpc_util "github.com/useryege/athena/util/grpc"
 	"github.com/useryege/athena/util/healthz"
 	httputil "github.com/useryege/athena/util/http"
@@ -90,7 +89,6 @@ import (
 	jwtutil "github.com/useryege/athena/util/jwt"
 	util_session "github.com/useryege/athena/util/session"
 	settings_util "github.com/useryege/athena/util/settings"
-	"github.com/useryege/athena/util/swagger"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
@@ -930,22 +928,33 @@ func (server *AthenaServer) getIndexData(application uiApplication) ([]byte, err
 
 func isUIStaticPath(requestPath string) bool {
 	return requestPath == "/fonts.css" ||
-		requestPath == "/llms.txt" ||
 		strings.HasPrefix(requestPath, "/assets/") ||
-		strings.HasPrefix(requestPath, "/images/") ||
-		strings.HasPrefix(requestPath, "/docs/ai/")
+		strings.HasPrefix(requestPath, "/images/")
 }
 
 func isReservedHTTPNamespace(requestPath string) bool {
 	return requestPath == "/api" || strings.HasPrefix(requestPath, "/api/") ||
-		requestPath == "/auth" || strings.HasPrefix(requestPath, "/auth/") ||
-		requestPath == "/swagger-ui" || strings.HasPrefix(requestPath, "/swagger-ui/") ||
-		requestPath == "/swagger.json"
+		requestPath == "/auth" || strings.HasPrefix(requestPath, "/auth/")
+}
+
+func isRetiredDocumentationPath(requestPath string) bool {
+	return requestPath == "/swagger-ui" || strings.HasPrefix(requestPath, "/swagger-ui/") ||
+		requestPath == "/swagger.json" ||
+		requestPath == "/llms.txt" ||
+		requestPath == "/docs/ai" || strings.HasPrefix(requestPath, "/docs/ai/") ||
+		requestPath == "/assets/scripts/redoc.standalone.js" ||
+		requestPath == "/assets/scripts/redoc-LICENSE.txt" ||
+		requestPath == "/assets/scripts/README.md"
 }
 
 // newStaticAssetsHandler returns an HTTP handler to serve UI static assets
 func (server *AthenaServer) newStaticAssetsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if isRetiredDocumentationPath(r.URL.Path) {
+			http.NotFound(w, r)
+			return
+		}
+
 		acceptHTML := false
 		for _, acceptType := range strings.Split(r.Header.Get("Accept"), ",") {
 			mediaType := strings.TrimSpace(strings.SplitN(acceptType, ";", 2)[0])
@@ -1130,8 +1139,6 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 	// mustRegisterGWHandler(ctx, certificatepkg.RegisterCertificateServiceHandler, gwmux, conn)
 	// mustRegisterGWHandler(ctx, gpgkeypkg.RegisterGPGKeyServiceHandler, gwmux, conn)
 
-	// Swagger UI
-	swagger.ServeSwaggerUI(mux, assets.SwaggerJSON, "/swagger-ui", server.RootPath)
 	healthz.ServeHealthCheck(mux, server.healthCheck)
 
 	// mux.HandleFunc("/api/webhook", acdWebhookHandler.Handler)

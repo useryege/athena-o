@@ -90,7 +90,7 @@
 - 会员 API key 许可、Profit Sharing 资格与各模块 grant 保留独立判断；管理员自己的会员模块权限不自动变为可用。页面隐藏不替代服务端授权。
 - `/admin/service-status` 的 Trader Sync 页签属于 v16 已确认运维页，继续按 v16 改版；本轮暂缓的是八条 Trader Sync 专属业务路由的重新排版。
 - Token 导航在当前源码中为 disabled，没有已注册的 Wallet analytics 路由。[Nansen 钱包 v1](../token/wallet-analytics-page-proposal.md)已确认，并有[独立接入计划](../../superpowers/plans/2026-09-14-token-wallet-analytics.md)；沿用其页面、共享主题及组件契约，不能把静态样板当作已上线入口。本计划不开发供应商接入或启用该导航。
-- 会员／管理员 Help 的 `/llms.txt`、`/docs/ai/safety.md`、`/swagger-ui` 是已有资源入口，不属于额外 React 业务页；有配置时才出现下载／聊天，会员 Connect AI 仍依赖 API key 许可。
+- 会员／管理员 Help 当前只保留配置的支持与下载链接；无资源时显示 `No help resources configured`。Security 当前只保留普通 API keys。2026-09-18 的[退役设计](../../superpowers/specs/2026-09-18-swagger-ai-discovery-removal-design.md)取代原 Connect AI 和公开文档入口要求；v12／v22 原图、批准记录与旧验收结果保留当时事实，当前证据见[退役验收](../../testing/swagger-ai-discovery-removal-acceptance.md)。
 - 去除 Appearance 还涉及 HTML 首屏脚本、注册 Provider、两套账户菜单、本地 `ViewPreferences` 和服务端主题专用 preferences。清理范围及生成顺序见[技术方案](../../superpowers/specs/2026-09-14-web-ui-theme-refactor-design.md)，不改分页、排序和导航偏好。
 
 ## 继承状态矩阵
