@@ -66,6 +66,14 @@ const unwrap = (item: any) => (item && typeof item === 'object' && 'value' in it
 
 export const operationLogMetricValue = (item: any) => unwrap(item);
 
+export const operationLogSnapshotSearch = (search: string, snapshotToken: string) => {
+    const params = new URLSearchParams(search);
+    if (snapshotToken) params.set('snapshot_token', snapshotToken);
+    else params.delete('snapshot_token');
+    const encoded = params.toString();
+    return encoded ? `?${encoded}` : '';
+};
+
 const normalizeSummary = (item: any = {}): OperationLogSummary => ({
     operationId: stringValue(item, 'operationId', 'operation_id'),
     startedAt: String(unwrap(value(item, 'startedAt', 'started_at')) || ''),

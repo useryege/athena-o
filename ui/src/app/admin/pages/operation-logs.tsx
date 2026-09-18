@@ -7,7 +7,7 @@ import {formatBeijingDateTime} from '../../shared/format';
 import {useVisibleQuery} from '../../shared/use-visible-query';
 import {useAdminReadScope} from '../read-scope';
 import {adminServices as services} from '../services';
-import {operationLogMetricValue, type OperationLogDetail, type OperationLogSummary} from '../operation-log-service';
+import {operationLogMetricValue, operationLogSnapshotSearch, type OperationLogDetail, type OperationLogSummary} from '../operation-log-service';
 
 const outcomeColor = (outcome: string) => {
     if (outcome === 'SUCCEEDED' || outcome === 'ACCEPTED') return 'success';
@@ -125,9 +125,10 @@ const OperationLogsWorkspace = () => {
         useAdminReadScope(`operation-logs-${cursor}-${outcome}-${moduleCode}-${actorQuery}`),
         10000
     );
+    const snapshotToken = new URLSearchParams(location.search).get('snapshot_token') || data.data?.snapshotToken || '';
     const detail = useVisibleQuery(
-        () => (params.id ? services.operationLogs.get(params.id) : Promise.resolve(undefined)),
-        useAdminReadScope(`operation-log-detail-${params.id || 'none'}`),
+        () => (params.id ? services.operationLogs.get(params.id, snapshotToken) : Promise.resolve(undefined)),
+        useAdminReadScope(`operation-log-detail-${params.id || 'none'}-${snapshotToken}`),
         10000
     );
     const closeDetail = () => navigate(`/operation-logs${location.search}`);
@@ -136,7 +137,11 @@ const OperationLogsWorkspace = () => {
         {
             title: 'Action',
             render: item => (
-                <Button type='link' onClick={() => navigate(`/operation-logs/${encodeURIComponent(item.operationId)}${location.search}`)}>
+                <Button
+                    type='link'
+                    onClick={() =>
+                        navigate(`/operation-logs/${encodeURIComponent(item.operationId)}${operationLogSnapshotSearch(location.search, data.data?.snapshotToken || '')}`)
+                    }>
                     {item.actionCode}
                 </Button>
             )
