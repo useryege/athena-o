@@ -399,7 +399,7 @@ Bot token 仅由 Notification 进程使用；Trader Sync 不读取钱包密钥�
 | 关注点 | 源码位置 | 关键符号 | 当前实现 |
 | --- | --- | --- | --- |
 | 新业务域 | `internal/tradersync/` | Service、Collector、Projector、SubscriptionService | 已实现实时采集、确认、投影、订阅、恢复和状态读取。 |
-| 公共契约 | `internal/server/tradersync/`、`pkg/apis/application/v1alpha1/trader_sync_types.go` | member/admin RPC 与 DTO | 已注册 apiclient、gateway、Swagger 与安全 DTO。 |
+| 公共契约 | `internal/server/tradersync/`、`pkg/apis/application/v1alpha1/trader_sync_types.go` | member/admin RPC 与 DTO | 已注册 apiclient、gateway 与安全 DTO。 |
 | API 服务组合 | [athena-server.go](../../../internal/server/athena-server.go)、[authz.go](../../../internal/server/authz.go) | newServiceSet、Run/Stop、RPC authorization maps | 业务服务与同库 store 已组合；单实例生命周期由 server 所有。 |
 | 权限矩阵与原子撤权 | [access.go](../../../internal/accountaccess/access.go)、[controller.go](../../../internal/accountaccess/controller.go)、[account.go](../../../internal/server/account/account.go)、[accountstate store](../../../internal/accountstate/store/sql_store.go) | ModuleTraderSync、Validate、UpdateAccountAccess | 十模块矩阵、严格 READ_WRITE 与账户 gate 内撤权已经接入。 |
 | 账户数据库 | [accountstate migrations](../../../internal/accountstate/store/migrations)、[sqlc.yaml](../../../sqlc.yaml) | 权威 schema、分模块查询生成 | Trader Sync 与账户通知实体由同一迁移源生成。 |

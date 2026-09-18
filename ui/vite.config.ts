@@ -22,6 +22,12 @@ const proxyConf = {
 
 const pathWithinDeployment = (pathname: string) => {
     if (!deploymentPrefix) {
+        if (pathname === '/athena') {
+            return '/';
+        }
+        if (pathname.startsWith('/athena/')) {
+            return pathname.slice('/athena'.length);
+        }
         return pathname;
     }
     if (pathname === deploymentPrefix) {
@@ -37,30 +43,45 @@ const isProxiedPath = (pathname: string) =>
     pathname === '/api' ||
     pathname.startsWith('/api/') ||
     pathname === '/auth' ||
-    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/auth/');
+
+const isRetiredDocumentationPath = (pathname: string) =>
     pathname === '/swagger-ui' ||
     pathname.startsWith('/swagger-ui/') ||
-    pathname === '/swagger.json';
+    pathname === '/swagger.json' ||
+    pathname === '/llms.txt' ||
+    pathname === '/docs/ai' ||
+    pathname.startsWith('/docs/ai/') ||
+    pathname === '/assets/scripts/redoc.standalone.js' ||
+    pathname === '/assets/scripts/redoc-LICENSE.txt' ||
+    pathname === '/assets/scripts/README.md';
 
 const applicationIndexPath = (pathname: string) => (pathname === '/admin' || pathname.startsWith('/admin/') ? '/admin/index.html' : '/index.html');
 
 const isStaticAssetPath = (pathname: string) =>
     pathname === '/fonts.css' ||
-    pathname === '/llms.txt' ||
     pathname.startsWith('/images/') ||
     pathname.startsWith('/assets/') ||
-    pathname.startsWith('/docs/ai/') ||
     pathname.startsWith('/entry/');
 
 const dualApplicationHistoryFallback = (): Plugin => {
     const install = (middlewares: Connect.Server) => {
         middlewares.use((request, _response, next) => {
-            if (!request.url || !isHTMLNavigation(request)) {
+            if (!request.url) {
                 next();
                 return;
             }
             const url = new URL(request.url, 'http://athena.local');
             const logicalPath = pathWithinDeployment(url.pathname);
+            if (logicalPath && isRetiredDocumentationPath(logicalPath)) {
+                _response.statusCode = 404;
+                _response.end('Not Found');
+                return;
+            }
+            if (!isHTMLNavigation(request)) {
+                next();
+                return;
+            }
             if (!logicalPath || isProxiedPath(logicalPath)) {
                 next();
                 return;
@@ -118,9 +139,7 @@ export default defineConfig(({command}) => ({
         host: process.env.ATHENA_YARN_HOST || 'localhost',
         proxy: {
             [deploymentPath('/api')]: proxyConf,
-            [deploymentPath('/auth')]: proxyConf,
-            [deploymentPath('/swagger-ui')]: proxyConf,
-            [deploymentPath('/swagger.json')]: proxyConf
+            [deploymentPath('/auth')]: proxyConf
         }
     },
     define: {

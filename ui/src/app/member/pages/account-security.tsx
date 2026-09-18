@@ -1,20 +1,8 @@
-import {
-    CheckCircleOutlined,
-    CheckOutlined,
-    CopyOutlined,
-    DeleteOutlined,
-    KeyOutlined,
-    LoadingOutlined,
-    PlusOutlined,
-    ReloadOutlined,
-    RobotOutlined,
-    WarningOutlined
-} from '@ant-design/icons';
-import {Alert, Button, Form, Input, Modal, Select, Space, Tag, Typography} from 'antd';
+import {CheckOutlined, CopyOutlined, DeleteOutlined, PlusOutlined} from '@ant-design/icons';
+import {Alert, Button, Form, Input, Modal, Select, Space} from 'antd';
 import * as React from 'react';
 import {ResourceTable, Section, useAsyncData} from '../../components';
 import {memberServices as services} from '../services';
-import {AIConnectionDetails, AIConnectionVerification, buildAIConnectionDetails, createAIConnectionID, verifyAIConnectionCredential} from '../../shared/ai-connection';
 import {Context, useAuthorization} from '../../shared/context';
 import {Token} from '../../shared/models';
 import {requestErrorMessage} from '../../shared/services/requests';
@@ -22,10 +10,7 @@ import {AccountCenterLayout} from '../../shared/pages/account-center';
 
 const tokenTime = (value: number) => (value > 0 ? new Date(value * 1000).toLocaleString() : 'Never');
 
-type TokenCreationPurpose = 'apiKey' | 'ai';
-
 interface IssuedCredential {
-    purpose: TokenCreationPurpose;
     accountId: string;
     secret: string;
 }
@@ -35,26 +20,19 @@ interface TokenListSnapshot {
     items: Token[];
 }
 
-type AIConnectionVerificationState = AIConnectionVerification | {status: 'idle' | 'checking'; message: string};
-
-const idleAIConnectionVerification: AIConnectionVerificationState = {status: 'idle', message: ''};
-
 const SecurityPage = () => {
     const authorization = useAuthorization();
     const ctx = React.useContext(Context);
     const [tokenForm] = Form.useForm();
-    const [createPurpose, setCreatePurpose] = React.useState<TokenCreationPurpose | null>(null);
+    const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
     const [creatingToken, setCreatingToken] = React.useState(false);
     const [deletingToken, setDeletingToken] = React.useState('');
     const [issuedCredential, setIssuedCredential] = React.useState<IssuedCredential | null>(null);
-    const [verificationAttempt, setVerificationAttempt] = React.useState(0);
-    const [connectionVerification, setConnectionVerification] = React.useState<AIConnectionVerificationState>(idleAIConnectionVerification);
     const accountId = authorization.user.accountId;
     const activeAccountIdRef = React.useRef(accountId);
     const tokenCreationGenerationRef = React.useRef(0);
     const tokenCreationInFlightRef = React.useRef(false);
     const securityMountedRef = React.useRef(true);
-    const verificationControllerRef = React.useRef<AbortController | null>(null);
     const revokeModalRef = React.useRef<{destroy(): void} | null>(null);
     const mayUseAPIKeys = authorization.user.access.apiKeyEnabled && !authorization.isAdmin;
     const tokens = useAsyncData<TokenListSnapshot>(
@@ -66,14 +44,6 @@ const SecurityPage = () => {
     );
     const visibleTokens = tokens.data?.accountId === accountId ? tokens.data.items : [];
     const currentIssuedCredential = issuedCredential?.accountId === accountId ? issuedCredential : null;
-    const aiConnection = React.useMemo<AIConnectionDetails | null>(
-        () =>
-            currentIssuedCredential?.purpose === 'ai'
-                ? buildAIConnectionDetails({baseURI: document.baseURI, accountId: currentIssuedCredential.accountId, secret: currentIssuedCredential.secret})
-                : null,
-        [currentIssuedCredential]
-    );
-
     React.useLayoutEffect(() => {
         if (activeAccountIdRef.current === accountId) {
             return;
@@ -81,20 +51,16 @@ const SecurityPage = () => {
         activeAccountIdRef.current = accountId;
         tokenCreationGenerationRef.current += 1;
         tokenCreationInFlightRef.current = false;
-        verificationControllerRef.current?.abort();
-        verificationControllerRef.current = null;
         revokeModalRef.current?.destroy();
         revokeModalRef.current = null;
-        setCreatePurpose(null);
+        setCreateDialogOpen(false);
         setCreatingToken(false);
         setDeletingToken('');
         setIssuedCredential(null);
-        setVerificationAttempt(0);
-        setConnectionVerification(idleAIConnectionVerification);
-        if (createPurpose) {
+        if (createDialogOpen) {
             tokenForm.resetFields();
         }
-    }, [accountId, createPurpose, tokenForm]);
+    }, [accountId, createDialogOpen, tokenForm]);
 
     React.useLayoutEffect(() => {
         securityMountedRef.current = true;
@@ -102,72 +68,35 @@ const SecurityPage = () => {
             securityMountedRef.current = false;
             tokenCreationGenerationRef.current += 1;
             tokenCreationInFlightRef.current = false;
-            verificationControllerRef.current?.abort();
-            verificationControllerRef.current = null;
             revokeModalRef.current?.destroy();
             revokeModalRef.current = null;
         };
     }, []);
 
     React.useLayoutEffect(() => {
-        if (!createPurpose) {
+        if (!createDialogOpen) {
             return;
         }
         tokenForm.resetFields();
-        tokenForm.setFieldsValue({id: createPurpose === 'ai' ? createAIConnectionID() : '', expiresIn: 7_776_000});
-    }, [createPurpose, tokenForm]);
+        tokenForm.setFieldsValue({id: '', expiresIn: 7_776_000});
+    }, [createDialogOpen, tokenForm]);
 
-    React.useEffect(() => {
-        if (!aiConnection) {
-            setConnectionVerification(idleAIConnectionVerification);
-            return;
-        }
-        let current = true;
-        const controller = new AbortController();
-        const credential = {
-            verifyUrl: aiConnection.verifyUrl,
-            expectedAccountId: aiConnection.expectedAccountId,
-            authorizationHeader: aiConnection.authorizationHeader
-        };
-        setConnectionVerification({status: 'checking', message: 'Confirming that Athena accepts the newly issued credential.'});
-        verificationControllerRef.current = controller;
-        void verifyAIConnectionCredential(credential, controller.signal)
-            .then(result => {
-                if (current && !controller.signal.aborted) {
-                    setConnectionVerification(result);
-                }
-            })
-            .finally(() => {
-                if (verificationControllerRef.current === controller) {
-                    verificationControllerRef.current = null;
-                }
-            });
-        return () => {
-            current = false;
-            controller.abort();
-            if (verificationControllerRef.current === controller) {
-                verificationControllerRef.current = null;
-            }
-        };
-    }, [aiConnection, verificationAttempt]);
-
-    const openTokenCreation = (purpose: TokenCreationPurpose) => {
-        setCreatePurpose(purpose);
+    const openTokenCreation = () => {
+        setCreateDialogOpen(true);
     };
 
     const closeTokenCreation = () => {
         if (creatingToken) {
             return;
         }
-        setCreatePurpose(null);
+        setCreateDialogOpen(false);
         tokenForm.resetFields();
     };
 
     const createToken = async (values: {id: string; expiresIn: number}) => {
-        if (!createPurpose || tokenCreationInFlightRef.current) {
+        if (!createDialogOpen || tokenCreationInFlightRef.current) {
             return;
         }
-        const purpose = createPurpose;
         const id = values.id.trim();
         const requestedAccountId = accountId;
         const generation = tokenCreationGenerationRef.current + 1;
@@ -185,18 +114,14 @@ const SecurityPage = () => {
                 }
                 return;
             }
-            if (purpose === 'ai') {
-                setConnectionVerification({status: 'checking', message: 'Confirming that Athena accepts the newly issued credential.'});
-            }
-            setIssuedCredential({purpose, accountId: requestedAccountId, secret: nextSecret});
-            setVerificationAttempt(0);
-            setCreatePurpose(null);
+            setIssuedCredential({accountId: requestedAccountId, secret: nextSecret});
+            setCreateDialogOpen(false);
             tokenForm.resetFields();
             tokens.reload();
-            ctx.notifications.success(purpose === 'ai' ? 'Connection instructions ready' : 'API key created');
+            ctx.notifications.success('API key created');
         } catch (err) {
             if (generation === tokenCreationGenerationRef.current && requestedAccountId === activeAccountIdRef.current) {
-                ctx.notifications.error(purpose === 'ai' ? 'Could not create AI connection' : 'Could not create API key', requestErrorMessage(err));
+                ctx.notifications.error('Could not create API key', requestErrorMessage(err));
             }
         } finally {
             if (generation === tokenCreationGenerationRef.current) {
@@ -219,11 +144,7 @@ const SecurityPage = () => {
     };
 
     const clearIssuedCredential = () => {
-        verificationControllerRef.current?.abort();
-        verificationControllerRef.current = null;
         setIssuedCredential(null);
-        setVerificationAttempt(0);
-        setConnectionVerification(idleAIConnectionVerification);
     };
 
     const deleteToken = (item: Token) => {
@@ -271,30 +192,6 @@ const SecurityPage = () => {
 
     return (
         <>
-            {mayUseAPIKeys && (
-                <Section
-                    title='Connect AI'
-                    extra={
-                        <Button className='account-ai-connect-action' type='primary' icon={<RobotOutlined aria-hidden={true} />} onClick={() => openTokenCreation('ai')}>
-                            Connect AI
-                        </Button>
-                    }>
-                    <div className='account-ai-connect'>
-                        <div className='account-ai-connect__copy'>
-                            <Typography.Text strong={true}>Create one complete connection instruction for your AI.</Typography.Text>
-                            <Typography.Paragraph type='secondary'>
-                                Athena combines the service address, discovery documents, complete Bearer credential, and verification steps. Paste the result into an AI that
-                                supports HTTP or custom API tools.
-                            </Typography.Paragraph>
-                            <Space size={6} wrap={true}>
-                                <Tag>Full account authority</Tag>
-                                <Tag>One-time display</Tag>
-                                <Tag>One copy, one paste</Tag>
-                            </Space>
-                        </div>
-                    </div>
-                </Section>
-            )}
             <Section
                 title='API keys'
                 extra={
@@ -303,7 +200,7 @@ const SecurityPage = () => {
                             <Button aria-label='Refresh API keys' onClick={tokens.reload} loading={tokens.loading}>
                                 Refresh
                             </Button>
-                            <Button icon={<PlusOutlined aria-hidden={true} />} onClick={() => openTokenCreation('apiKey')}>
+                            <Button type='primary' icon={<PlusOutlined aria-hidden={true} />} onClick={openTokenCreation}>
                                 Create API key
                             </Button>
                         </Space>
@@ -375,26 +272,17 @@ const SecurityPage = () => {
                     </>
                 )}
             </Section>
-            <Modal title={createPurpose === 'ai' ? 'Connect AI' : 'Create API key'} open={Boolean(createPurpose)} footer={null} forceRender={true} onCancel={closeTokenCreation}>
-                {createPurpose === 'ai' && (
-                    <Alert
-                        className='account-ai-authority-alert'
-                        type='info'
-                        showIcon={true}
-                        title='Full account authority'
-                        description='The AI can perform every HTTP API operation currently allowed for your ordinary account.'
-                    />
-                )}
+            <Modal title='Create API key' open={createDialogOpen} footer={null} forceRender={true} onCancel={closeTokenCreation}>
                 <Form form={tokenForm} layout='vertical' initialValues={{expiresIn: 7_776_000}} onFinish={createToken}>
                     <Form.Item
                         name='id'
-                        label={createPurpose === 'ai' ? 'Connection name' : 'Key ID'}
+                        label='Key ID'
                         rules={[
                             {required: true},
                             {max: 64},
                             {pattern: /^[A-Za-z0-9][A-Za-z0-9._-]*$/, message: 'Start with a letter or digit; use only letters, digits, dots, underscores, or hyphens.'}
                         ]}>
-                        <Input autoComplete='off' placeholder={createPurpose === 'ai' ? 'ai-connection' : 'automation-client'} />
+                        <Input autoComplete='off' placeholder='automation-client' />
                     </Form.Item>
                     <Form.Item name='expiresIn' label='Expiration' rules={[{required: true}]}>
                         <Select
@@ -411,14 +299,14 @@ const SecurityPage = () => {
                             Cancel
                         </Button>
                         <Button type='primary' htmlType='submit' loading={creatingToken}>
-                            {createPurpose === 'ai' ? 'Create connection' : 'Create key'}
+                            Create key
                         </Button>
                     </div>
                 </Form>
             </Modal>
             <Modal
                 title='Copy your API key now'
-                open={currentIssuedCredential?.purpose === 'apiKey'}
+                open={Boolean(currentIssuedCredential)}
                 closable={false}
                 maskClosable={false}
                 keyboard={false}
@@ -434,77 +322,6 @@ const SecurityPage = () => {
                     onClick={() => void copyValue(currentIssuedCredential?.secret || '', 'API key copied', 'Could not copy API key')}>
                     Copy API key
                 </Button>
-            </Modal>
-            <Modal
-                className='account-ai-result-modal'
-                title='AI connection instructions ready'
-                width={760}
-                open={Boolean(aiConnection)}
-                closable={false}
-                maskClosable={false}
-                keyboard={false}
-                footer={
-                    <div className='account-ai-result-actions'>
-                        <Space wrap={true}>
-                            <Button
-                                type='primary'
-                                icon={<CopyOutlined aria-hidden={true} />}
-                                autoFocus={true}
-                                onClick={() => void copyValue(aiConnection?.instructions || '', 'AI connection instructions copied', 'Could not copy connection instructions')}>
-                                Copy connection instructions
-                            </Button>
-                            <Button
-                                icon={<KeyOutlined aria-hidden={true} />}
-                                onClick={() => void copyValue(currentIssuedCredential?.secret || '', 'API key copied', 'Could not copy API key')}>
-                                Copy API key only
-                            </Button>
-                        </Space>
-                        <Button icon={<CheckOutlined aria-hidden={true} />} onClick={clearIssuedCredential}>
-                            Done
-                        </Button>
-                    </div>
-                }>
-                <div className={`account-ai-verification account-ai-verification--${connectionVerification.status}`} role='status' aria-live='polite' aria-atomic='true'>
-                    <span className='account-ai-verification__icon' aria-hidden='true'>
-                        {connectionVerification.status === 'checking' && <LoadingOutlined aria-hidden={true} spin={true} />}
-                        {connectionVerification.status === 'ready' && <CheckCircleOutlined aria-hidden={true} />}
-                        {connectionVerification.status === 'failed' && <WarningOutlined aria-hidden={true} />}
-                    </span>
-                    <span className='account-ai-verification__copy'>
-                        <strong>
-                            {connectionVerification.status === 'checking' && 'Checking credential'}
-                            {connectionVerification.status === 'ready' && 'Credential ready'}
-                            {connectionVerification.status === 'failed' && 'Could not verify credential'}
-                        </strong>
-                        <small>{connectionVerification.message}</small>
-                    </span>
-                    {connectionVerification.status === 'failed' && (
-                        <Button size='small' icon={<ReloadOutlined aria-hidden={true} />} onClick={() => setVerificationAttempt(attempt => attempt + 1)}>
-                            Retry
-                        </Button>
-                    )}
-                </div>
-                <Alert
-                    className='account-ai-result-alert'
-                    type='warning'
-                    showIcon={true}
-                    title='This connection is shown only once'
-                    description='Copy the instructions before closing. Athena cannot rebuild them from the API key list.'
-                />
-                <Alert
-                    className='account-ai-result-alert'
-                    type='info'
-                    showIcon={true}
-                    title='This verifies the credential, not the external AI'
-                    description='The selected AI still needs to receive these instructions and support HTTP or custom API tools.'
-                />
-                <Input.TextArea
-                    className='account-ai-instructions'
-                    aria-label='AI connection instructions'
-                    value={aiConnection?.instructions || ''}
-                    readOnly={true}
-                    autoSize={{minRows: 12, maxRows: 18}}
-                />
             </Modal>
         </>
     );

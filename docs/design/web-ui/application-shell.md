@@ -85,7 +85,7 @@ Every HTML file carries two path values:
 - `<base href>` is the current application's root. It drives relative assets and
   the React Router basename.
 - `<meta name="athena-deployment-base-href">` is the Athena deployment root. It
-  drives `/api`, `/auth`, logout, provider callbacks, public Help/Swagger links,
+  drives `/api`, `/auth`, logout, provider callbacks,
   and full-page navigation between application roots.
 
 At a root deployment the member base is `/`, the administrator base is
@@ -96,8 +96,9 @@ and `/athena/`. The administrator application therefore never constructs an
 
 The API Server embeds both build results and caches the rewritten HTML documents
 independently. `applicationForPath` treats only the exact `admin` segment and its
-descendants as the administrator application. API, authentication, Swagger, and
-real asset routes are registered or resolved before history fallback.
+descendants as the administrator application. API, authentication, and real asset routes are registered or resolved before
+history fallback. Retired documentation paths return 404 before static-file lookup
+or fallback, including files left in an additional static directory.
 
 For Athena-owned styles, each React root imports only `styles/member.css` or
 `styles/admin.css`. Both entry layers import the neutral tokens, shell
@@ -120,8 +121,8 @@ background, and border roles. Theme colors come from `styles/tokens.css` and
 1. Vite development and preview middleware normalize
    `ATHENA_SERVER_BASEHREF`, classify paths relative to that deployment root,
    and inject both HTML base values. `{deploymentBase}/admin` and descendants
-   select `admin/index.html`; other UI paths select `index.html`. API, auth, and
-   Swagger paths are proxied after removing the external deployment prefix,
+   select `admin/index.html`; other UI paths select `index.html`. API and auth
+   paths are proxied after removing the external deployment prefix,
    while known Vite asset/public paths are never rewritten as HTML.
 2. A production UI navigation reaches `newStaticAssetsHandler`. It applies the
    same exact-segment classification, selects the corresponding cached HTML,

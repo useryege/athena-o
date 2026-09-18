@@ -21,6 +21,10 @@ current login, API Key, Profit Sharing, module, and administrator authorization.
 Username is identity presentation, not an authorization key or editable display
 name.
 
+## API Key 展示退役边界
+
+[Swagger 与 AI 接入展示移除](../developer-experience/ai-discovery-documentation.md)只删除文档及浏览器接入说明。已有 `ai-...` 名称密钥继续作为普通 API Key 显示、使用、到期和撤销，不执行数据迁移、名称筛选、批量撤销或轮换。Security 保留一次性密钥展示、复制失败后的手工选择、Done 清理及账户切换/卸载后丢弃迟到结果的保护；凭据与实时授权契约保持不变。
+
 ## Source Locations
 
 | Concern | Source | Key symbols |

@@ -53,6 +53,8 @@ Run generated-code updates when needed:
 make codegen-local
 ```
 
+`make protogen` 保留 Go/gogo protobuf 与 HTTP gateway 生成，不再安装或调用 Swagger、protoc-gen-swagger 或闲置的 openapi-gen，也不生成公开接口文档。跨 worktree 验证生成时使用目标工作区独立的 GOPATH 与工具目录，避免修改另一工作区源码；保留的 Kubernetes 工具仍可能传递依赖 OpenAPI 模块。
+
 ## AI 开发检查工具
 
 在当前 Ubuntu 24.04 / WSL 开发环境中，先在同一终端激活项目 Node，再从仓库根目录安装：

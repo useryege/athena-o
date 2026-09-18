@@ -336,20 +336,74 @@ test('theme:identity failed replacement preserves Connected and sends one empty 
 });
 
 for (const realm of ['member', 'admin']) {
-    test(`theme:identity ${realm} Help shows only configured resources and deployment links`, async ({page}) => {
+    test(`theme:identity ${realm} Help shows only configured resources`, async ({page}) => {
         for (const configured of [false, true]) {
             const ledger = await openThemeCase(page, `${realm}-help${configured ? '-configured' : ''}`);
-            const prefix = process.env.ATHENA_UI_E2E_PATH_PREFIX || '';
-            await expect(page.getByRole('link', {name: /LLM discovery/})).toHaveAttribute('href', `${prefix}/llms.txt`);
-            await expect(page.getByRole('link', {name: /Full-Account AI Access/})).toHaveAttribute('href', `${prefix}/docs/ai/safety.md`);
-            await expect(page.getByRole('link', {name: /Swagger UI/})).toHaveAttribute('href', `${prefix}/swagger-ui`);
             await expect(page.getByRole('link', {name: 'Team chat'})).toHaveCount(configured ? 1 : 0);
             await expect(page.getByRole('link', {name: 'Desktop download'})).toHaveCount(configured ? 1 : 0);
-            await expect(page.getByRole('button', {name: 'Connect an AI'})).toHaveCount(realm === 'member' ? 1 : 0);
+            await expect(page.getByRole('link', {name: /LLM discovery|Full-Account AI Access|Swagger UI/})).toHaveCount(0);
+            await expect(page.getByRole('button', {name: 'Connect an AI'})).toHaveCount(0);
+            await expect(page.getByText('No help resources configured', {exact: true})).toHaveCount(configured ? 0 : 1);
             assertThemeLedger(ledger);
         }
     });
 }
+
+test('theme:identity Security treats an existing ai-prefixed key as an ordinary API key', async ({page}) => {
+    const scenario = structuredClone(themeCases.find(item => item.id === 'member-security')!);
+    const list = scenario.replies.find(item => item.method === 'GET' && item.path === '/api/v1/account/security/tokens')!;
+    (list.json as any).items[0].id = 'ai-existing-key';
+    const ledger = await installThemeCase(page, scenario);
+    await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}${scenario.route}`);
+    await expect(page.getByText('ai-existing-key', {exact: true}).filter({visible: true})).toBeVisible();
+    await expect(page.getByRole('button', {name: 'Connect AI', exact: true})).toHaveCount(0);
+    await expect(page.getByText(/Full account authority|AI connection|discovery document|Swagger/)).toHaveCount(0);
+    await page.getByRole('button', {name: 'Create API key', exact: true}).click();
+    const creation = page.getByRole('dialog', {name: 'Create API key', exact: true});
+    await expect(creation.getByLabel('Key ID', {exact: true})).toBeVisible();
+    await expect(creation.getByLabel('Connection name', {exact: true})).toHaveCount(0);
+    await expect(creation.getByRole('button', {name: 'Create key', exact: true})).toBeVisible();
+    assertThemeLedger(ledger);
+});
+
+test('theme:identity Security confirms and revokes an ai-prefixed ordinary API key', async ({page}) => {
+    const scenario = structuredClone(themeCases.find(item => item.id === 'member-security')!);
+    const list = scenario.replies.find(item => item.method === 'GET' && item.path === '/api/v1/account/security/tokens')!;
+    (list.json as any).items[0].id = 'ai-existing-key';
+    scenario.replies.push({method: 'DELETE', path: '/api/v1/account/security/tokens/ai-existing-key', realm: 'member', status: 200, json: {}});
+    const ledger = await installThemeCase(page, scenario);
+    await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}${scenario.route}`);
+    const row = page.getByRole('row', {name: /ai-existing-key/});
+    await row.getByRole('button', {name: 'Revoke', exact: true}).click();
+    const confirmation = page.getByRole('dialog', {name: 'Revoke ai-existing-key?'});
+    await expect(confirmation.getByText('Requests using this API key will fail immediately.', {exact: true})).toBeVisible();
+    await confirmation.getByRole('button', {name: 'Keep key', exact: true}).click();
+    expect(ledger.requests.filter(item => item.method === 'DELETE')).toEqual([]);
+    await row.getByRole('button', {name: 'Revoke', exact: true}).click();
+    await confirmation.getByRole('button', {name: 'Revoke key', exact: true}).click();
+    await expect.poll(() => ledger.requests.filter(item => item.method === 'DELETE')).toEqual([
+        {method: 'DELETE', path: '/api/v1/account/security/tokens/ai-existing-key', query: '', realm: 'member', body: undefined}
+    ]);
+    assertThemeLedger(ledger);
+});
+
+test('theme:identity Security discards a late API key result after leaving the page', async ({page}) => {
+    const scenario = structuredClone(themeCases.find(item => item.id === 'member-security')!);
+    const ledger = await installThemeCase(page, scenario);
+    await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}${scenario.route}`);
+    await page.getByRole('button', {name: 'Create API key', exact: true}).click();
+    const creation = page.getByRole('dialog', {name: 'Create API key', exact: true});
+    await creation.getByLabel('Key ID', {exact: true}).fill('late-unmounted-key');
+    await creation.getByRole('button', {name: 'Create key', exact: true}).click();
+    await expect.poll(() => ledger.requests.filter(item => item.method === 'POST').length).toBe(1);
+    await page.goto(`${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/account/profile`);
+    await expect(page).toHaveURL(/\/account\/profile$/);
+    await page.waitForTimeout(1_300);
+    await expect(page.getByRole('dialog', {name: 'Copy your API key now'})).toHaveCount(0);
+    await expect(page.locator('.account-secret-value')).toHaveCount(0);
+    expect(ledger.requests.filter(item => item.method === 'POST').map(item => item.body)).toEqual([{expiresIn: 7776000, id: 'late-unmounted-key'}]);
+    assertThemeLedger(ledger);
+});
 
 test('theme:identity missing Phantom and expired Google ticket retain recovery', async ({page}) => {
     const ledger = await openThemeCase(page, 'member-login');
@@ -414,55 +468,6 @@ test('theme:identity Access uses semantic success and neutral disabled capabilit
         await expect(tag).not.toHaveClass(/ant-tag-error|ant-tag-red/);
     }
     assertThemeLedger(adminLedger);
-});
-
-test('theme:identity mobile AI instructions retain a visible action footer while the body scrolls', async ({page}, info) => {
-    await page.setViewportSize({width: 390, height: 844});
-    const errors: string[] = [];
-    page.on('pageerror', error => errors.push(error.message));
-    const ledger = await openThemeCase(page, 'member-security');
-    let credentialChecks = 0;
-    // Credential verification intentionally omits the session realm and cookie; verify this bearer boundary explicitly.
-    await page.route('**/api/v1/session/userinfo', async route => {
-        const request = route.request();
-        expect(request.url()).toBe(`${process.env.ATHENA_UI_E2E_BASE_URL}${process.env.ATHENA_UI_E2E_PATH_PREFIX || ''}/api/v1/session/userinfo`);
-        expect(request.method()).toBe('GET');
-        expect(request.headers().authorization).toBe('Bearer fixture-once-only-secret-full-value');
-        expect(request.headers()['x-athena-application-realm']).toBeUndefined();
-        credentialChecks++;
-        await route.fulfill({status: 200, json: {loggedIn: true, accountId: '11111111-1111-4111-8111-111111111111'}});
-    });
-    await page.getByRole('button', {name: 'Connect AI', exact: true}).click();
-    const creation = page.getByRole('dialog', {name: 'Connect AI', exact: true});
-    await creation.getByLabel('Connection name', {exact: true}).fill('identity-ai');
-    await creation.getByRole('button', {name: 'Create connection', exact: true}).click();
-    const result = page.getByRole('dialog', {name: 'AI connection instructions ready'});
-    await expect(result.getByText('Credential ready', {exact: true})).toBeVisible();
-    await page.getByRole('alert').filter({hasText: 'Connection instructions ready'}).getByRole('button', {name: 'Close', exact: true}).click();
-    await page.evaluate(() =>
-        Promise.all(
-            document
-                .getAnimations()
-                .filter(animation => animation.effect?.getTiming().iterations !== Infinity)
-                .map(animation => animation.finished.catch(() => undefined))
-        )
-    );
-    const body = result.locator('.ant-modal-body');
-    const footer = result.locator('.ant-modal-footer');
-    const before = await footer.boundingBox();
-    expect(before!.y + before!.height).toBeLessThanOrEqual(844);
-    expect(await body.evaluate(node => node.scrollHeight > node.clientHeight)).toBe(true);
-    await body.evaluate(node => (node.scrollTop = node.scrollHeight));
-    expect((await footer.boundingBox())!.y).toBeCloseTo(before!.y, 0);
-    await expect(result.getByRole('textbox')).toHaveValue(/fixture-once-only-secret-full-value/);
-    expect(ledger.requests.filter(item => item.method === 'POST').map(item => item.body)).toEqual([{expiresIn: 7776000, id: 'identity-ai'}]);
-    await page.mouse.move(0, 0);
-    await page.screenshot({path: info.outputPath('member-ai-instructions-mobile.png'), animations: 'disabled'});
-    await result.getByRole('button', {name: 'Done', exact: true}).click();
-    await expect(result).toBeHidden();
-    expect(errors).toEqual([]);
-    expect(credentialChecks).toBe(1);
-    assertThemeLedger(ledger);
 });
 
 test('theme:identity review mobile Profile leave confirmation stacks safe actions and restores focus', async ({page}, info) => {

@@ -111,7 +111,7 @@ Combo YES 为所有腿条件满足，NO 为整体合取的补集，不逐腿取�
 | [ResourceTable](../../../ui/src/app/components/resource-table.tsx) | 复用表格与 compactRender，省略 total/数字分页，外置游标控制器。 |
 | [format](../../../ui/src/app/shared/format.ts)、[login-navigation](../../../ui/src/app/shared/login-navigation.ts) | UTC+8 明示、站内返回与部署前缀。 |
 | Notifications、Service Status | 返回草稿及边界文案 / 运行概要区域。 |
-| 后端 application types 与生成消费链 | 新增读取和 DTO 同步到 proto/gateway/apiclient/Swagger/UI；不手改生成代码。 |
+| 后端 application types 与生成消费链 | 新增读取和 DTO 同步到 proto/gateway/apiclient/UI；不手改生成代码。 |
 
 复用 AppPage、Section、KeyValueGrid 与确认弹窗。Profile 的 P/L、Positions Value 和 Biggest Win 沿用供应商 `$` 展示符号，并说明未提供币种代码；不推定 USD/pUSD/USDC，Biggest Win 同符号是共用 formatter 的推断，已知零值保留（见[展示符号核验](../../requirements/polymarket-copy-trading/profile-pnl-contract-verification.md#2026-09-11-补充金额展示符号与币种边界)）。P/L 为创建前快照，使用独立 SVG/文字摘要组件，不为单图引入大型框架；绘图有限归一化与精确业务字符串分开。界面沿用英文、Heebo/系统字体、橙色主题及深浅模式。
 

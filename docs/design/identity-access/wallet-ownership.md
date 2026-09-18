@@ -56,7 +56,7 @@ deletion, and blockchain RPC calls remain outside this capability.
 | Trusted internal API and custody service | [internal/wallet/wallet.proto](../../../internal/wallet/wallet.proto), [internal/wallet/server.go](../../../internal/wallet/server.go), [internal/wallet/service.go](../../../internal/wallet/service.go), [internal/wallet/keys.go](../../../internal/wallet/keys.go), [internal/wallet/worm_execution_signer.go](../../../internal/wallet/worm_execution_signer.go) | service Bearer dispatch, `RevealWalletPrivateKey`, `SignWormAuthChallenge`, `WormExecutionSignerService`, execution sign-in/transaction signing, key normalization, owner-scoped avatar metadata methods |
 | Durable state | [internal/wallet/store/migrations/000001_init.sql](../../../internal/wallet/store/migrations/000001_init.sql), [internal/wallet/store/queries/wallets.sql](../../../internal/wallet/store/queries/wallets.sql), [internal/wallet/store/sql_store.go](../../../internal/wallet/store/sql_store.go) | `wallets`, `SQLStore.CreateWallets`, owner predicates, optimistic revision updates |
 | Shared safe model | [pkg/apis/application/v1alpha1/wallet_types.go](../../../pkg/apis/application/v1alpha1/wallet_types.go) | `WalletItem`, `WalletStatus` |
-| Public JSON and Swagger generation | [internal/server/wallet/wallet.proto](../../../internal/server/wallet/wallet.proto), [hack/generate-proto.sh](../../../hack/generate-proto.sh), [assets/swagger.json](../../../assets/swagger.json) | Wallet camelCase JSON tags, Wallet-only Swagger normalization |
+| Public JSON and gateway generation | [internal/server/wallet/wallet.proto](../../../internal/server/wallet/wallet.proto), [hack/generate-proto.sh](../../../hack/generate-proto.sh) | Wallet camelCase JSON tags and Go/gateway generation |
 | Private avatar HTTP boundary | [internal/server/wallet_avatar.go](../../../internal/server/wallet_avatar.go), [internal/server/walletavatarhttp/handler.go](../../../internal/server/walletavatarhttp/handler.go) | upload, authenticated delivery, reset, compensation, garbage collection |
 | Owner-scoped Worm Trading selection, projection, preview/Cash-Out resolution, and management | [internal/server/wormtrading/wormtrading.proto](../../../internal/server/wormtrading/wormtrading.proto), [internal/server/wormtrading](../../../internal/server/wormtrading), [internal/server/worm_wallet_selection.go](../../../internal/server/worm_wallet_selection.go), [internal/server/worm_connection.go](../../../internal/server/worm_connection.go), [internal/wormtrading/wallet_selections.go](../../../internal/wormtrading/wallet_selections.go), [internal/server/worm_execution_plans.go](../../../internal/server/worm_execution_plans.go), [internal/server/worm_position_cash_outs.go](../../../internal/server/worm_position_cash_outs.go), [internal/server/worm_position_cash_out_batches.go](../../../internal/server/worm_position_cash_out_batches.go) | `WormWalletSelectionSummary`, `GetWalletSelection`, `ReplaceWalletSelection`, `InspectWalletSelectionCandidates`, `ListWalletBalances`, `ListWalletTradingActivity`, `TradingWalletSummary`, `listWormWalletConnections`, `resolveWormExecutionPlanWallets`, `resolveOwnedPositionCashOutWallet`, `resolveOwnedPositionCashOutBatchWallets`, `completeWormConnection` |
 | Browser management surface | [ui/src/app/member/pages/wallets.tsx](../../../ui/src/app/member/pages/wallets.tsx), [ui/src/app/shared/services/wallet-service.ts](../../../ui/src/app/shared/services/wallet-service.ts) | desktop records / compact mobile rows, detail modal, create/import, remark/avatar updates, secret backup/reveal |
@@ -173,10 +173,10 @@ does not add program, account, instruction, or spending-policy inspection.
 Wallet HTTP JSON uses the reviewed camelCase field names, including
 `walletType`, `privateKeys`, `privateKey`, `avatarPresetId`,
 `expectedRevision`, and `pageSize`. Gogo JSON tags make the standard Gateway
-decoder authoritative for request and response bodies. Swagger generation
-applies the same Wallet-only naming projection, documents revisions as JSON
-integers, and removes the path `id` from PATCH body schemas; protobuf field
-names remain snake_case on the wire.
+decoder authoritative for request and response bodies. Revisions remain JSON
+integers, and PATCH identity comes from the path `id`; protobuf field names
+remain snake_case on the wire. Swagger generation has been retired without
+changing these runtime JSON rules.
 
 The member create form supplies a count from one through ten. The import form
 uses a visible, non-persistent monospace text area, trims each physical line,

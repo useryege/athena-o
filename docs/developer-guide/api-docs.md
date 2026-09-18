@@ -1,11 +1,6 @@
-# API Docs
+# API Development
 
-You can find the Swagger docs by setting the path to `/swagger-ui` in your Athena UI. E.g. [http://localhost:8080/swagger-ui](http://localhost:8080/swagger-ui) or [http://localhost:4000/swagger-ui](http://localhost:4000/swagger-ui).
-
-On a deployed Athena server, machine-oriented discovery starts at
-[`/llms.txt`](/llms.txt). The curated API overview is available at
-[`/docs/ai/overview.md`](/docs/ai/overview.md), and the complete machine-readable
-Swagger 2.0 contract is available at [`/swagger.json`](/swagger.json).
+ATHENA 的接口开发以 Proto、HTTP 映射、类型和真实传输测试为依据。Swagger、ReDoc、Connect AI 和公开 AI 接入文档已退役；旧地址返回 404，详见[退役设计](../superpowers/specs/2026-09-18-swagger-ai-discovery-removal-design.md)与[验收记录](../testing/swagger-ai-discovery-removal-acceptance.md)。业务 API 与普通 API Key 继续使用下述授权规则。
 
 ## Public Version Endpoint
 
@@ -42,11 +37,10 @@ accepts `{address, returnTo}` and returns `{message, expiresAt}`; verification a
 raw-base64url `{signature}` and returns `{redirectTo}`. The server performs Ed25519
 verification without Solana RPC and never asks for a transaction, private key, or fee.
 
-CLI, automation, and AI clients use an ordinary account's Athena API Key from
+CLI and automation clients use an ordinary account's Athena API Key from
 **Account Center → Security** after an administrator enables the account's
 independent API Key access. The fixed administrator account cannot issue API
-Keys. Copy the key when it is issued, then export it locally or give it directly
-to the AI selected by the account holder:
+Keys. Copy the key when it is issued, then export it locally:
 
 ```bash
 export ATHENA_TOKEN='<newly-issued-athena-api-key>'
