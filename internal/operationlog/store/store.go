@@ -115,3 +115,7 @@ func intValue(v *int64) pgtype.Int8 {
 	}
 	return pgtype.Int8{Int64: *v, Valid: true}
 }
+
+// Pool exposes the owned pool to the service startup schema verifier. Callers
+// must not close or reconfigure it; Store.Close owns its lifecycle.
+func (s *Store) Pool() *pgxpool.Pool { return s.pool }

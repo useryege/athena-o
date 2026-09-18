@@ -1,0 +1,21 @@
+syntax = "proto3";
+package operationlog.internal.v1;
+option go_package = "github.com/useryege/athena/internal/operationlog/apiclient;apiclient";
+import "google/api/annotations.proto";
+message Viewer { string account_id=1; string realm=2; string credential_kind=3; bytes session_binding=4; uint64 access_revision=5; }
+message ListOperationLogsRequest { string from=1; string to=2; string actor_query=3; string actor_role=4; string credential_kind=5; string module_code=6; string action_code=7; string outcome=8; string target_account_id=9; string resource_type=10; string resource_id=11; int32 page_size=12; string cursor=13; Viewer viewer=14; }
+message GetOperationLogRequest { string operation_id=1; string snapshot_token=2; Viewer viewer=3; }
+message OperationLogSummary { string operation_id=1; string started_at=2; string actor_account_id=3; string actor_username=4; string actor_role=5; string realm=6; string credential_kind=7; bool identity_verified=8; bool identity_snapshot_complete=9; string module_code=10; string action_code=11; string primary_resource_type=12; string primary_resource_id=13; string outcome=14; string observation=15; string reason_code=16; string duration_ms=17; string business_state=18; string resource_count=19; bool resources_complete=20; bool response_write_failed=21; }
+message Page { string next_cursor=1; string snapshot_token=2; string snapshot_sequence=3; string snapshot_at=4; int32 page_size=5; }
+message AppliedFilters { string from=1; string to=2; string actor_query=3; string actor_role=4; string credential_kind=5; string module_code=6; string action_code=7; string outcome=8; string target_account_id=9; string resource_type=10; string resource_id=11; }
+message ListOperationLogsResponse { repeated OperationLogSummary items=1; Page page=2; AppliedFilters applied_filters=3; }
+message OperationLogDetail { OperationLogSummary summary=1; string finished_at=2; string request_id=3; string parent_operation_id=4; string business_request_id=5; string provider=6; string effect=7; repeated string resources=8; repeated string changes=9; repeated string counts=10; string protocol_result=11; string source_facts=12; }
+message GetOperationLogResponse { OperationLogDetail item=1; }
+message RuntimeStatus { string service_epoch=1; string checked_at=2; bool query_ready=3; string projection_state=4; string last_published_at=5; string publication_sequence=6; string pending_events=7; string oldest_pending_received_at=8; string quarantined_events=9; string last_processing_error_code=10; repeated string observed_producers=11; }
+message GetOperationLogRuntimeStatusRequest { Viewer viewer=1; }
+message GetOperationLogRuntimeStatusResponse { RuntimeStatus status=1; }
+service OperationLogInternalService {
+ rpc ListOperationLogs(ListOperationLogsRequest) returns (ListOperationLogsResponse) { option (google.api.http) = { get: "/internal/v1/operation-logs" }; }
+ rpc GetOperationLog(GetOperationLogRequest) returns (GetOperationLogResponse) { option (google.api.http) = { get: "/internal/v1/operation-logs/{operation_id}" }; }
+ rpc GetOperationLogRuntimeStatus(GetOperationLogRuntimeStatusRequest) returns (GetOperationLogRuntimeStatusResponse) { option (google.api.http) = { get: "/internal/v1/operation-log-runtime" }; }
+}
