@@ -124,6 +124,10 @@ func TestCapacityAndNonCooperativeSinkRemainBounded(t *testing.T) {
 		if time.Since(before) != 0 {
 			t.Fatal("capacity queued")
 		}
+		if p.Snapshot().PersistenceReachable != nil {
+			t.Fatal("capacity rejection invented persistence failure")
+		}
+
 		time.Sleep(200 * time.Millisecond)
 		wg.Wait()
 		if calls.Load() != 16 {
@@ -203,6 +207,259 @@ func TestStatusPublishesCumulativeSnapshotsAndStops(t *testing.T) {
 		time.Sleep(10 * time.Second)
 		if len(snapshots) != n {
 			t.Fatal("status continued after close")
+		}
+	})
+}
+
+func TestProducerLifecycleObservesFailureRecoveryWithoutRewritingHistory(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		offline := true
+		p := New(testSink{append: func(context.Context, event.Event) error {
+			if offline {
+				return errors.New("private database detail")
+			}
+			return nil
+		}})
+		defer p.Close(context.Background())
+		initial := p.Snapshot()
+		if initial.StartedAt.IsZero() || initial.PersistenceReachable != nil || initial.LastConfirmedAt != nil || initial.LastRecoveredAt != nil || initial.StoppedAt != nil {
+			t.Fatalf("invented initial facts %+v", initial)
+		}
+		started := initial.StartedAt
+		if err := p.Record(context.Background(), testEvent(p), nil); err == nil {
+			t.Fatal("offline accepted")
+		}
+		failed := p.Snapshot()
+		if failed.PersistenceReachable == nil || *failed.PersistenceReachable || failed.LastFailureAt == nil || failed.LastFailureCode == nil || *failed.LastFailureCode != "event_unconfirmed" || failed.LastRecoveredAt != nil || failed.UnconfirmedEvents != 1 {
+			t.Fatalf("missing failure facts %+v", failed)
+		}
+		time.Sleep(time.Second)
+		offline = false
+		if err := p.Record(context.Background(), testEvent(p), nil); err != nil {
+			t.Fatal(err)
+		}
+		recovered := p.Snapshot()
+		balanced(t, recovered)
+		if recovered.StartedAt != started || recovered.PersistenceReachable == nil || !*recovered.PersistenceReachable || recovered.LastRecoveredAt == nil || !recovered.LastRecoveredAt.After(*failed.LastFailureAt) || recovered.LastConfirmedAt == nil || recovered.UnconfirmedEvents != 1 || recovered.ConfirmedEvents != 1 {
+			t.Fatalf("missing recovery or erased history %+v", recovered)
+		}
+		// Snapshots may be mutated by a caller without changing producer state.
+		*recovered.LastRecoveredAt = time.Time{}
+		*recovered.PersistenceReachable = false
+		next := p.Snapshot()
+		if next.LastRecoveredAt.IsZero() || !*next.PersistenceReachable {
+			t.Fatal("snapshot pointers alias producer")
+		}
+	})
+}
+func TestProducerInitialSuccessIsNotRecoveryAndInvalidDoesNotClaimUnreachable(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		p := New(testSink{})
+		defer p.Close(context.Background())
+		bad := testEvent(p)
+		bad.SchemaVersion = 2
+		_ = p.Record(context.Background(), bad, nil)
+		s := p.Snapshot()
+		if s.PersistenceReachable != nil || s.LastFailureCode == nil || *s.LastFailureCode != "invalid_event" {
+			t.Fatalf("invalid was treated as connectivity %+v", s)
+		}
+		_ = p.Record(context.Background(), testEvent(p), nil)
+		s = p.Snapshot()
+		if s.PersistenceReachable == nil || !*s.PersistenceReachable || s.LastRecoveredAt != nil || s.LastConfirmedAt == nil {
+			t.Fatalf("initial success fabricated recovery %+v", s)
+		}
+	})
+}
+func TestClosePublishesFinalStoppedSnapshotAfterDrain(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		var reports []Status
+		p := New(testSink{append: func(ctx context.Context, _ event.Event) error { time.Sleep(50 * time.Millisecond); return nil }, publish: func(ctx context.Context, s Status) error {
+			deadline, ok := ctx.Deadline()
+			if !ok || time.Until(deadline) > 100*time.Millisecond {
+				t.Error("unbounded final report")
+			}
+			reports = append(reports, s)
+			return nil
+		}})
+		done := make(chan struct{})
+		go func() { _ = p.Record(context.Background(), testEvent(p), nil); close(done) }()
+		synctest.Wait()
+		before := time.Now()
+		if err := p.Close(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		<-done
+		if time.Since(before) > 200*time.Millisecond || len(reports) != 1 || reports[0].StoppedAt == nil || reports[0].ConfirmedEvents != 1 || reports[0].InFlightEvents != 0 {
+			t.Fatalf("missing final stopped report %+v", reports)
+		}
+		s := p.Snapshot()
+		if s.StoppedAt == nil || s.PersistenceReachable == nil || !*s.PersistenceReachable {
+			t.Fatalf("missing local stop %+v", s)
+		}
+		n := len(reports)
+		_ = p.Close(context.Background())
+		time.Sleep(10 * time.Second)
+		if len(reports) != n {
+			t.Fatal("close repeated final report")
+		}
+	})
+}
+func TestStatusFailureAndRecoveryAreObservedWithoutConfirmingEvents(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		calls := 0
+		p := New(testSink{publish: func(context.Context, Status) error {
+			calls++
+			if calls == 1 {
+				return errors.New("offline")
+			}
+			return nil
+		}})
+		defer p.Close(context.Background())
+		time.Sleep(5 * time.Second)
+		synctest.Wait()
+		s := p.Snapshot()
+		if s.PersistenceReachable == nil || *s.PersistenceReachable || s.LastFailureCode == nil || *s.LastFailureCode != "status_unconfirmed" {
+			t.Fatalf("missing status failure %+v", s)
+		}
+		time.Sleep(5 * time.Second)
+		synctest.Wait()
+		s = p.Snapshot()
+		if s.PersistenceReachable == nil || !*s.PersistenceReachable || s.LastRecoveredAt == nil || s.LastConfirmedAt != nil || s.ConfirmedEvents != 0 {
+			t.Fatalf("status ack fabricated event ack %+v", s)
+		}
+	})
+}
+func TestNonCooperativeStatusIsSingleFlightAndCloseBounded(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		block := make(chan struct{})
+		var calls atomic.Int64
+		p := New(testSink{publish: func(context.Context, Status) error { calls.Add(1); <-block; return nil }})
+		defer func() {
+			select {
+			case <-block:
+			default:
+				close(block)
+			}
+			_ = p.Close(context.Background())
+		}()
+		time.Sleep(5200 * time.Millisecond)
+		synctest.Wait()
+		s := p.Snapshot()
+		if s.PersistenceReachable == nil || *s.PersistenceReachable {
+			t.Fatalf("status timeout not observed %+v", s)
+		}
+		time.Sleep(10 * time.Second)
+		synctest.Wait()
+		if calls.Load() != 1 {
+			t.Fatal("spawned concurrent status publishers")
+		}
+		before := time.Now()
+		if p.Close(context.Background()) == nil || time.Since(before) > 200*time.Millisecond {
+			t.Fatal("close of stuck status not bounded")
+		}
+		if p.Snapshot().StoppedAt != nil {
+			t.Fatal("claimed stopped while status worker still running")
+		}
+		if calls.Load() != 1 {
+			t.Fatal("final report overlaps stuck report")
+		}
+		close(block)
+		synctest.Wait()
+		if err := p.Close(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		if p.Snapshot().StoppedAt == nil {
+			t.Fatal("missing actual eventual stop")
+		}
+	})
+}
+func TestFinalReportFailureIsNotPersistenceOrRecoverySuccess(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		p := New(testSink{publish: func(context.Context, Status) error { return errors.New("offline") }})
+		if err := p.Close(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		s := p.Snapshot()
+		if s.StoppedAt == nil || s.PersistenceReachable == nil || *s.PersistenceReachable || s.LastRecoveredAt != nil || s.LastFailureCode == nil || *s.LastFailureCode != "status_unconfirmed" {
+			t.Fatalf("fabricated successful stop reporting %+v", s)
+		}
+	})
+}
+
+func TestFinalNonCooperativeReportCannotClaimStopped(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		block := make(chan struct{})
+		calls := atomic.Int64{}
+		p := New(testSink{publish: func(_ context.Context, s Status) error {
+			calls.Add(1)
+			if s.StoppedAt == nil {
+				t.Error("final payload omitted stop fact")
+			}
+			<-block
+			return nil
+		}})
+		defer func() {
+			select {
+			case <-block:
+			default:
+				close(block)
+			}
+			_ = p.Close(context.Background())
+		}()
+		start := time.Now()
+		if p.Close(context.Background()) == nil || time.Since(start) > 200*time.Millisecond {
+			t.Fatal("final publish escaped close budget")
+		}
+		s := p.Snapshot()
+		if calls.Load() != 1 || s.StoppedAt != nil || s.PersistenceReachable == nil || *s.PersistenceReachable || s.LastRecoveredAt != nil {
+			t.Fatalf("false final success %+v calls=%d", s, calls.Load())
+		}
+		close(block)
+		synctest.Wait()
+		if err := p.Close(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		s = p.Snapshot()
+		if s.StoppedAt == nil || *s.PersistenceReachable || s.LastRecoveredAt != nil {
+			t.Fatalf("late out-of-budget acknowledgement invented recovery %+v", s)
+		}
+	})
+}
+
+func TestBudgetAndClosedRejectionsDoNotClaimPersistenceFailure(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		offline := true
+		p := New(testSink{append: func(ctx context.Context, _ event.Event) error {
+			if offline {
+				<-ctx.Done()
+				return ctx.Err()
+			}
+			return nil
+		}})
+		defer p.Close(context.Background())
+		budget := NewBudget()
+		_ = p.Record(context.Background(), testEvent(p), budget)
+		_ = p.Record(context.Background(), testEvent(p), budget)
+		offline = false
+		_ = p.Record(context.Background(), testEvent(p), nil)
+		before := p.Snapshot()
+		if err := p.Record(context.Background(), testEvent(p), budget); !errors.Is(err, ErrBudget) {
+			t.Fatalf("budget err=%v", err)
+		}
+		after := p.Snapshot()
+		if after.PersistenceReachable == nil || !*after.PersistenceReachable || after.LastConfirmedAt == nil || !after.LastConfirmedAt.Equal(*before.LastConfirmedAt) || *after.LastFailureCode != "request_budget_exhausted" || after.UnconfirmedEvents != before.UnconfirmedEvents+1 {
+			t.Fatalf("budget changed persistence facts %+v", after)
+		}
+		if err := p.Close(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		stopped := p.Snapshot()
+		if err := p.Record(context.Background(), testEvent(p), nil); !errors.Is(err, ErrClosed) {
+			t.Fatalf("closed err=%v", err)
+		}
+		final := p.Snapshot()
+		if final.PersistenceReachable == nil || !*final.PersistenceReachable || final.AttemptedEvents != stopped.AttemptedEvents || final.LastFailureCode == nil || *final.LastFailureCode != *stopped.LastFailureCode {
+			t.Fatal("closed producer accepted accounting or invented persistence failure")
 		}
 	})
 }

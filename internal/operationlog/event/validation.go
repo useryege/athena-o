@@ -329,7 +329,7 @@ func validateValue(k string, v Value) error {
 }
 func validateAccess(raw []byte, parsed any) error {
 	obj, ok := parsed.(map[string]any)
-	if !ok || len(obj) != 5 {
+	if !ok || !exactFields(parsed, reflect.TypeOf(Access{})) {
 		return invalid("access shape")
 	}
 	for _, k := range []string{"loginEnabled", "apiKeyEnabled", "profitSharingEnabled"} {
@@ -521,12 +521,65 @@ func exactFields(v any, t reflect.Type) bool {
 		return false
 	}
 	for i := 0; i < t.NumField(); i++ {
-		name := strings.Split(t.Field(i).Tag.Get("json"), ",")[0]
-		if _, ok := obj[name]; !ok {
+		field := t.Field(i)
+		tag := strings.Split(field.Tag.Get("json"), ",")
+		value, present := obj[tag[0]]
+		if !present || !jsonFieldType(value, field.Type, contains(tag[1:], "string")) {
 			return false
 		}
 	}
 	return true
+}
+
+// jsonFieldType rejects null before encoding/json can turn it into a scalar's
+// zero value. Only pointer fields have nullable semantics in the envelope.
+func jsonFieldType(v any, t reflect.Type, encodedString bool) bool {
+	if t.Kind() == reflect.Pointer {
+		if v == nil {
+			return true
+		}
+		return jsonFieldType(v, t.Elem(), encodedString)
+	}
+	if v == nil {
+		return false
+	}
+	if t == reflect.TypeOf(time.Time{}) {
+		_, ok := v.(string)
+		return ok
+	}
+	if encodedString {
+		_, ok := v.(string)
+		return ok
+	}
+	switch t.Kind() {
+	case reflect.Bool:
+		_, ok := v.(bool)
+		return ok
+	case reflect.String:
+		_, ok := v.(string)
+		return ok
+	case reflect.Int, reflect.Int64, reflect.Uint64:
+		_, ok := v.(json.Number)
+		return ok
+	case reflect.Struct:
+		return exactFields(v, t)
+	case reflect.Slice:
+		items, ok := v.([]any)
+		if !ok {
+			return false
+		}
+		for _, item := range items {
+			if !jsonFieldType(item, t.Elem(), false) {
+				return false
+			}
+		}
+		return true
+	case reflect.Map:
+		_, ok := v.(map[string]any)
+		return ok // Details has its action-specific validation.
+	default:
+		return false
+	}
 }
 
 // BoundedDetail applies display-only truncation. Identifiers and semantic codes

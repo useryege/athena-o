@@ -52,25 +52,47 @@ func (b *Budget) reserve() (time.Duration, func(time.Duration)) {
 }
 
 type Producer struct {
-	id      string
-	sink    Sink
-	mu      sync.Mutex
-	status  Status
-	closed  bool
-	slots   chan struct{}
-	stop    chan struct{}
-	done    chan struct{}
-	workers sync.WaitGroup
-	lastLog map[string]time.Time
+	id             string
+	sink           Sink
+	mu             sync.Mutex
+	status         Status
+	closed         bool
+	slots          chan struct{}
+	stop           chan struct{}
+	done           chan struct{}
+	workers        sync.WaitGroup
+	records        sync.WaitGroup
+	statusWorkers  sync.WaitGroup
+	statusSlot     chan struct{}
+	drained        chan struct{}
+	reporterDone   chan struct{}
+	shutdown       context.Context
+	shutdownCancel context.CancelFunc
+	lastLog        map[string]time.Time
 }
 
 func New(s Sink) *Producer {
-	p := &Producer{id: uuid.NewString(), sink: s, slots: make(chan struct{}, Capacity), stop: make(chan struct{}), done: make(chan struct{}), lastLog: map[string]time.Time{}}
+	p := &Producer{id: uuid.NewString(), sink: s, slots: make(chan struct{}, Capacity), stop: make(chan struct{}), done: make(chan struct{}), lastLog: map[string]time.Time{}, statusSlot: make(chan struct{}, 1), drained: make(chan struct{}), reporterDone: make(chan struct{})}
 	p.status.ProducerID = p.id
-	p.workers.Go(p.reportLoop)
-	go func() { <-p.stop; p.workers.Wait(); close(p.done) }()
+	p.status.StartedAt = time.Now().UTC()
+	go p.reportLoop()
+	go func() {
+		<-p.stop
+		p.records.Wait()
+		p.workers.Wait()
+		close(p.drained)
+		<-p.reporterDone
+		p.statusWorkers.Wait()
+		p.mu.Lock()
+		stopped := time.Now().UTC()
+		p.status.StoppedAt = &stopped
+		p.mu.Unlock()
+		p.shutdownCancel()
+		close(p.done)
+	}()
 	return p
 }
+
 func (p *Producer) ID() string {
 	if p == nil {
 		return ""
@@ -85,6 +107,12 @@ func (p *Producer) Record(ctx context.Context, e event.Event, b *Budget) (result
 		return ErrClosed
 	}
 	p.mu.Lock()
+	if p.closed {
+		p.mu.Unlock()
+		return ErrClosed
+	}
+	p.records.Add(1)
+	defer p.records.Done()
 	p.status.AttemptedEvents++
 	p.status.InFlightEvents++
 	p.mu.Unlock()
@@ -103,6 +131,16 @@ func (p *Producer) Record(ctx context.Context, e event.Event, b *Budget) (result
 			p.status.CapacityRejectedEvents++
 		default:
 			p.status.UnconfirmedEvents++
+		}
+		now := time.Now().UTC()
+		if result == nil {
+			p.status.LastConfirmedAt = &now
+			p.persistenceLocked(true, now)
+		} else {
+			p.failureLocked(failureCode(result), now)
+			if errors.Is(result, ErrUnconfirmed) {
+				p.persistenceLocked(false, now)
+			}
 		}
 		p.mu.Unlock()
 		if result != nil {
@@ -188,7 +226,35 @@ func (p *Producer) Snapshot() Status {
 	defer p.mu.Unlock()
 	p.status.SnapshotNo++
 	p.status.ObservedAt = time.Now().UTC()
-	return p.status
+	out := p.status
+	out.StoppedAt = copyStatusPointer(out.StoppedAt)
+	out.LastFailureAt = copyStatusPointer(out.LastFailureAt)
+	out.LastFailureCode = copyStatusPointer(out.LastFailureCode)
+	out.LastRecoveredAt = copyStatusPointer(out.LastRecoveredAt)
+	out.LastConfirmedAt = copyStatusPointer(out.LastConfirmedAt)
+	out.PersistenceReachable = copyStatusPointer(out.PersistenceReachable)
+	return out
+}
+func copyStatusPointer[T any](v *T) *T {
+	if v == nil {
+		return nil
+	}
+	out := *v
+	return &out
+}
+
+// These observations share the counter mutex. Recovery requires a prior
+// observed persistence failure; initial success and invalid local input cannot
+// manufacture a recovery event. Old unconfirmed event counters never change.
+func (p *Producer) persistenceLocked(reachable bool, now time.Time) {
+	if reachable && p.status.PersistenceReachable != nil && !*p.status.PersistenceReachable {
+		p.status.LastRecoveredAt = &now
+	}
+	p.status.PersistenceReachable = &reachable
+}
+func (p *Producer) failureLocked(code string, now time.Time) {
+	p.status.LastFailureAt = &now
+	p.status.LastFailureCode = &code
 }
 func (p *Producer) publish(ctx context.Context, s Status) (err error) {
 	defer func() {
@@ -201,22 +267,81 @@ func (p *Producer) publish(ctx context.Context, s Status) (err error) {
 	}
 	return p.sink.PublishStatus(ctx, s)
 }
+
+// publishSnapshot permits only one actual Sink call. A timed-out call retains
+// its slot until it returns, so neither a later tick nor shutdown starts a
+// replacement publisher alongside a non-cooperative sink.
+func (p *Producer) publishSnapshot(ctx context.Context, s Status) {
+	if ctx.Err() != nil {
+		return
+	}
+	select {
+	case p.statusSlot <- struct{}{}:
+	default:
+		return
+	}
+	result := make(chan error, 1)
+	p.statusWorkers.Go(func() { err := p.publish(ctx, s); <-p.statusSlot; result <- err })
+	var err error
+	select {
+	case err = <-result:
+	case <-ctx.Done():
+		err = ctx.Err()
+	}
+	p.mu.Lock()
+	now := time.Now().UTC()
+	p.persistenceLocked(err == nil, now)
+	if err != nil {
+		p.failureLocked("status_unconfirmed", now)
+	}
+	p.mu.Unlock()
+	if err != nil {
+		p.logFailure("status_unconfirmed")
+	}
+}
 func (p *Producer) reportLoop() {
+	defer close(p.reporterDone)
 	ticker := time.NewTicker(StatusInterval)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-p.stop:
+			p.reportStopped()
+			return
+		default:
+		}
+		select {
+		case <-p.stop:
+			p.reportStopped()
 			return
 		case <-ticker.C:
 			ctx, cancel := context.WithTimeout(context.Background(), AttemptTimeout)
-			err := p.publish(ctx, p.Snapshot())
+			p.publishSnapshot(ctx, p.Snapshot())
 			cancel()
-			if err != nil {
-				p.logFailure("status_unconfirmed")
-			}
 		}
 	}
+}
+func (p *Producer) reportStopped() {
+	p.mu.Lock()
+	shutdown := p.shutdown
+	p.mu.Unlock()
+	select {
+	case <-p.drained:
+	case <-shutdown.Done():
+		return
+	}
+	if shutdown.Err() != nil {
+		return
+	}
+	// All admitted records and their actual workers have stopped. This final
+	// payload announces that fact; its acknowledgement must not be pre-assumed
+	// in the payload's reachability or recovery observations.
+	s := p.Snapshot()
+	stopped := time.Now().UTC()
+	s.StoppedAt = &stopped
+	ctx, cancel := context.WithTimeout(shutdown, AttemptTimeout)
+	defer cancel()
+	p.publishSnapshot(ctx, s)
 }
 
 // Close stops acceptance and periodic publication. Even a misbehaving sink
@@ -232,6 +357,7 @@ func (p *Producer) Close(ctx context.Context) error {
 	p.mu.Lock()
 	if !p.closed {
 		p.closed = true
+		p.shutdown, p.shutdownCancel = context.WithTimeout(ctx, PhaseBudget)
 		close(p.stop)
 	}
 	p.mu.Unlock()

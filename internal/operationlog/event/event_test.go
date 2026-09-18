@@ -264,3 +264,66 @@ func TestPermissionPairRejectsAliasAndMissingFields(t *testing.T) {
 		}
 	}
 }
+
+func TestDecodeRejectsNullForEveryNonNullableField(t *testing.T) {
+	e := validEvent()
+	e.Resources = []Resource{{Type: "account", ID: e.OperationID, Primary: true, ReferenceVerified: true}}
+	b, err := Canonical(e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var base map[string]json.RawMessage
+	if err = json.Unmarshal(b, &base); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"schemaVersion", "eventId", "operationId", "requestId", "phase", "producerId", "startedAt", "occurredAt", "actor", "actionCode", "moduleCode", "resources", "outcome", "observation", "effect", "responseWriteFailed", "details", "resourcesComplete"} {
+		t.Run(key, func(t *testing.T) {
+			obj := map[string]json.RawMessage{}
+			for k, v := range base {
+				obj[k] = v
+			}
+			obj[key] = json.RawMessage("null")
+			raw, _ := json.Marshal(obj)
+			if _, err := Decode(raw); err == nil {
+				t.Fatal("accepted null non-nullable field")
+			}
+		})
+	}
+	for _, key := range []string{"role", "realm", "credentialKind", "identityVerified", "identitySnapshotComplete"} {
+		t.Run("actor/"+key, func(t *testing.T) {
+			var obj map[string]json.RawMessage
+			_ = json.Unmarshal(base["actor"], &obj)
+			obj[key] = json.RawMessage("null")
+			actor, _ := json.Marshal(obj)
+			raw := bytes.Replace(b, base["actor"], actor, 1)
+			if _, err := Decode(raw); err == nil {
+				t.Fatal("accepted null non-nullable actor field")
+			}
+		})
+	}
+	for _, key := range []string{"type", "id", "referenceVerified", "primary"} {
+		t.Run("resource/"+key, func(t *testing.T) {
+			var refs []map[string]json.RawMessage
+			_ = json.Unmarshal(base["resources"], &refs)
+			refs[0][key] = json.RawMessage("null")
+			encoded, _ := json.Marshal(refs)
+			raw := bytes.Replace(b, base["resources"], encoded, 1)
+			if _, err := Decode(raw); err == nil {
+				t.Fatal("accepted null non-nullable resource field")
+			}
+		})
+	}
+	// Actual optional fields still accept null and explicit false remains valid.
+	if _, err := Decode(b); err != nil {
+		t.Fatalf("valid nullable envelope: %v", err)
+	}
+}
+func TestAccessRevisionRejectsCaseAlias(t *testing.T) {
+	e := validEvent()
+	var v Value
+	_ = json.Unmarshal([]byte(`{"loginEnabled":false,"apiKeyEnabled":false,"profitSharingEnabled":false,"Revision":"1","moduleAccess":[]}`), &v)
+	e.Details = Details{"confirmedAccess": v}
+	if Validate(e) == nil {
+		t.Fatal("accepted Revision alias")
+	}
+}
