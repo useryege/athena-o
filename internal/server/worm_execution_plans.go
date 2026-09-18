@@ -217,6 +217,12 @@ func (server *AthenaServer) createWormExecutionPlan(w http.ResponseWriter, reque
 		walletsecret.WriteError(w, err)
 		return
 	}
+	observeWormHTTPMutation(request.Context(), "execution_plan", response.ID, "WORM_EXECUTION_PLAN_CREATE", response.State, false, map[string]string{
+		"combinationId": response.Combination.ID,
+		"planId":        response.ID,
+		"state":         response.State,
+		"stepCount":     strconv.FormatInt(response.TotalStepCount, 10),
+	})
 	w.Header().Set("Location", wormExecutionPlanCollectionPath+"/"+response.ID)
 	writeWormCombinationJSON(w, http.StatusAccepted, response)
 }

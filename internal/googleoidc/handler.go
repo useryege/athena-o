@@ -17,6 +17,7 @@ import (
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/internal/authregistration"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 )
 
 const (
@@ -149,6 +150,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		oauth2.SetAuthURLParam("prompt", "select_account"),
 	)
 	http.Redirect(w, r, authorizationURL, http.StatusSeeOther)
+	operationlogrecord.CaptureString(r.Context(), "provider", "google")
+	operationlogrecord.CaptureString(r.Context(), "stage", "authorization_started")
+	operationlogrecord.Accept(r.Context(), "IDENTITY_LOGIN_START")
 }
 
 // Callback consumes the transaction, verifies Google identity, and either
@@ -207,6 +211,9 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.URL.Query().Get("error") == "access_denied" {
+		operationlogrecord.CaptureString(r.Context(), "provider", "google")
+		operationlogrecord.CaptureString(r.Context(), "stage", "authorization_cancelled")
+		operationlogrecord.Cancel(r.Context(), "google_cancelled")
 		h.fail(w, r, "google_cancelled", realm, returnTo, "authorization_cancelled", nil)
 		return
 	}
@@ -236,6 +243,9 @@ func (h *Handler) Callback(w http.ResponseWriter, r *http.Request) {
 			h.fail(w, r, "google_unavailable", realm, returnTo, "registration_ticket_create", err)
 			return
 		}
+		operationlogrecord.CaptureString(r.Context(), "provider", "google")
+		operationlogrecord.CaptureString(r.Context(), "stage", "registration_required")
+		operationlogrecord.ActionRequired(r.Context(), "registration_required")
 		log.WithField("stage", "registration_required").Info("Verified Google identity requires Athena username registration")
 		registrationQuery := url.Values{common.ApplicationRealmQueryParameter: []string{string(realm)}}
 		http.Redirect(w, r, h.deploymentPath("/register?"+registrationQuery.Encode()), http.StatusSeeOther)
@@ -314,6 +324,11 @@ func (h *Handler) completeLogin(w http.ResponseWriter, r *http.Request, account 
 		h.fail(w, r, "google_unavailable", identity.Realm, returnTo, "cookie_issue", err)
 		return
 	}
+	operationlogrecord.CaptureResource(r.Context(), "account", account.ID)
+	operationlogrecord.BindVerifiedAccount(r.Context(), account.ID, "google")
+	operationlogrecord.CaptureString(r.Context(), "provider", "google")
+	operationlogrecord.CaptureString(r.Context(), "stage", "session_issued")
+	operationlogrecord.Commit(r.Context(), "IDENTITY_LOGIN")
 	h.backend.RecordLoginResult(authregistration.LoginSuccess)
 	log.WithFields(log.Fields{"stage": "complete", "provider": accountcredentials.IdentityProviderGoogle, "realm": identity.Realm, "account_id": account.ID}).Info("Google OIDC login succeeded")
 	http.Redirect(w, r, h.deploymentPath(authregistration.ReturnToForRealm(returnTo, identity.Realm)), http.StatusSeeOther)
@@ -449,6 +464,16 @@ func (h *Handler) clearEntryCookie(w http.ResponseWriter) {
 }
 
 func (h *Handler) fail(w http.ResponseWriter, r *http.Request, reason string, realm accountcredentials.ApplicationRealm, returnTo, stage string, err error) {
+	operationlogrecord.CaptureString(r.Context(), "provider", "google")
+	operationlogrecord.CaptureString(r.Context(), "stage", stage)
+	switch reason {
+	case "google_cancelled":
+		operationlogrecord.Cancel(r.Context(), reason)
+	case "google_not_allowed":
+		operationlogrecord.Deny(r.Context(), reason)
+	default:
+		operationlogrecord.Fail(r.Context(), reason)
+	}
 	fields := log.Fields{"stage": stage, "reason": reason, "provider": accountcredentials.IdentityProviderGoogle, "realm": realm}
 	if err != nil {
 		fields["error_type"] = fmt.Sprintf("%T", err)

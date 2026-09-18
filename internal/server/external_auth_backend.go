@@ -53,7 +53,7 @@ func (backend *externalAuthBackend) UsernameAvailable(ctx context.Context, usern
 }
 
 func (backend *externalAuthBackend) RegisterExternalAccount(ctx context.Context, identity authregistration.Identity, username string) (authregistration.Account, error) {
-	account, _, err := backend.credentials.RegisterExternalAccount(
+	account, created, err := backend.credentials.RegisterExternalAccount(
 		ctx,
 		identity.Provider,
 		identity.Subject,
@@ -73,7 +73,7 @@ func (backend *externalAuthBackend) RegisterExternalAccount(ctx context.Context,
 			return authregistration.Account{}, err
 		}
 	}
-	return authregistration.Account{ID: account.ID}, nil
+	return authregistration.Account{ID: account.ID, Created: created}, nil
 }
 
 func (backend *externalAuthBackend) RegisterCommittedAccess(ctx context.Context, accountID string) error {

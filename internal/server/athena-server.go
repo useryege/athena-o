@@ -775,16 +775,24 @@ type handlerSwitcher struct {
 	handler              http.Handler
 	urlToHandler         map[string]http.Handler
 	contentTypeToHandler map[string]http.Handler
+	middleware           func(http.Handler) http.Handler
 }
 
 func (s *handlerSwitcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if urlHandler, ok := s.urlToHandler[r.URL.Path]; ok {
-		urlHandler.ServeHTTP(w, r)
-	} else if contentHandler, ok := s.contentTypeToHandler[r.Header.Get("content-type")]; ok {
-		contentHandler.ServeHTTP(w, r)
-	} else {
-		s.handler.ServeHTTP(w, r)
+	dispatch := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if urlHandler, ok := s.urlToHandler[r.URL.Path]; ok {
+			urlHandler.ServeHTTP(w, r)
+		} else if contentHandler, ok := s.contentTypeToHandler[r.Header.Get("content-type")]; ok {
+			contentHandler.ServeHTTP(w, r)
+		} else {
+			s.handler.ServeHTTP(w, r)
+		}
+	})
+	if s.middleware != nil {
+		s.middleware(dispatch).ServeHTTP(w, r)
+		return
 	}
+	dispatch.ServeHTTP(w, r)
 }
 
 // translateGRPCResponseHeaders applies HTTP-only response headers at the gateway boundary.
@@ -1058,15 +1066,17 @@ func (server *AthenaServer) newHTTPServer(ctx context.Context, port int, grpcWeb
 		publicHandlers["/auth/wallet-secrets/development"] = http.HandlerFunc(server.developmentWalletSecretLease)
 		publicHandlers["/auth/worm-trading/development"] = http.HandlerFunc(server.developmentWormCredentialLease)
 	}
-	httpS := http.Server{
-		Addr: endpoint,
-		Handler: &handlerSwitcher{
-			handler:      mux,
-			urlToHandler: publicHandlers,
-			contentTypeToHandler: map[string]http.Handler{
-				"application/grpc-web+proto": grpcWebHandler,
-			},
+	rootHTTPHandler := &handlerSwitcher{
+		handler:      mux,
+		urlToHandler: publicHandlers,
+		contentTypeToHandler: map[string]http.Handler{
+			"application/grpc-web+proto": grpcWebHandler,
 		},
+		middleware: server.operationLogHTTPMiddleware,
+	}
+	httpS := http.Server{
+		Addr:    endpoint,
+		Handler: rootHTTPHandler,
 	}
 
 	// HTTP 1.1+JSON Server

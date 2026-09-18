@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -122,6 +123,12 @@ func (server *AthenaServer) createWormPositionCashOut(w http.ResponseWriter, req
 		walletsecret.WriteError(w, err)
 		return
 	}
+	observeWormHTTPMutation(request.Context(), "cash_out", response.ID, "WORM_CASH_OUT_CREATE", response.State, true, map[string]string{
+		"walletId":  strconv.FormatInt(response.WalletID, 10),
+		"cashOutId": response.ID,
+		"state":     response.State,
+		"stage":     response.Stage,
+	})
 	w.Header().Set("Location", wormPositionCashOutCollectionPath+"/"+response.ID)
 	writeWormCombinationJSON(w, http.StatusAccepted, response)
 }
@@ -218,6 +225,12 @@ func (server *AthenaServer) reconcileWormPositionCashOut(w http.ResponseWriter, 
 		walletsecret.WriteError(w, err)
 		return
 	}
+	observeWormHTTPMutation(request.Context(), "cash_out", response.ID, "WORM_CASH_OUT_RECONCILE", response.State, false, map[string]string{
+		"expectedRevision":  strconv.FormatInt(input.ExpectedRevision, 10),
+		"confirmedRevision": strconv.FormatInt(response.Revision, 10),
+		"state":             response.State,
+		"stage":             response.Stage,
+	})
 	writeWormCombinationJSON(w, http.StatusAccepted, response)
 }
 

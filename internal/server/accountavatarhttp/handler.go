@@ -22,6 +22,7 @@ import (
 
 	"github.com/useryege/athena/internal/accountavatar"
 	"github.com/useryege/athena/internal/accountcenter"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	accountserver "github.com/useryege/athena/internal/server/account"
 )
 
@@ -185,6 +186,11 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 	if !current.Avatar.Empty() && current.Avatar.ObjectKey != object.Key {
 		h.deleteBestEffort(current.Avatar.ObjectKey, "delete replaced avatar")
 	}
+	operationlogrecord.CaptureResource(ctx, "account", accountID)
+	operationlogrecord.CaptureUint64(ctx, "expectedRevision", expectedRevision)
+	operationlogrecord.CaptureUint64(ctx, "confirmedRevision", updated.Revision)
+	operationlogrecord.CaptureString(ctx, "avatarKind", "upload")
+	operationlogrecord.Commit(ctx, "ACCOUNT_AVATAR_UPLOAD")
 
 	writeProfile(w, accountID, updated)
 }
@@ -272,6 +278,11 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if current.Avatar.Empty() {
+		operationlogrecord.CaptureResource(ctx, "account", accountID)
+		operationlogrecord.CaptureUint64(ctx, "expectedRevision", expectedRevision)
+		operationlogrecord.CaptureUint64(ctx, "confirmedRevision", current.Revision)
+		operationlogrecord.CaptureString(ctx, "avatarKind", "default")
+		operationlogrecord.Succeed(ctx)
 		writeProfile(w, accountID, current)
 		return
 	}
@@ -282,6 +293,11 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.deleteBestEffort(current.Avatar.ObjectKey, "delete account avatar")
+	operationlogrecord.CaptureResource(ctx, "account", accountID)
+	operationlogrecord.CaptureUint64(ctx, "expectedRevision", expectedRevision)
+	operationlogrecord.CaptureUint64(ctx, "confirmedRevision", updated.Revision)
+	operationlogrecord.CaptureString(ctx, "avatarKind", "default")
+	operationlogrecord.Commit(ctx, "ACCOUNT_AVATAR_DELETE")
 	writeProfile(w, accountID, updated)
 }
 

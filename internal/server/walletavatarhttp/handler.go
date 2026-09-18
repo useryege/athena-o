@@ -22,6 +22,7 @@ import (
 
 	"github.com/useryege/athena/internal/accountavatar"
 	"github.com/useryege/athena/internal/avatarimage"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	"github.com/useryege/athena/pkg/apis/application/v1alpha1"
 )
 
@@ -186,6 +187,11 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 	if !current.Avatar.Empty() && current.Avatar.ObjectKey != object.Key {
 		h.deleteBestEffort(current.Avatar.ObjectKey, "delete replaced wallet avatar")
 	}
+	operationlogrecord.CaptureResource(ctx, "wallet", strconv.FormatInt(walletID, 10))
+	operationlogrecord.CaptureUint64(ctx, "expectedRevision", expectedRevision)
+	operationlogrecord.CaptureUint64(ctx, "confirmedRevision", updated.Item.Revision)
+	operationlogrecord.CaptureString(ctx, "avatarKind", updated.Item.AvatarKind)
+	operationlogrecord.Commit(ctx, "WALLET_AVATAR_UPLOAD")
 	writeWallet(w, updated.Item)
 }
 
@@ -267,6 +273,11 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if current.Avatar.Empty() && current.Item.AvatarKind == "default" {
+		operationlogrecord.CaptureResource(ctx, "wallet", strconv.FormatInt(walletID, 10))
+		operationlogrecord.CaptureUint64(ctx, "expectedRevision", expectedRevision)
+		operationlogrecord.CaptureUint64(ctx, "confirmedRevision", current.Item.Revision)
+		operationlogrecord.CaptureString(ctx, "avatarKind", "default")
+		operationlogrecord.Succeed(ctx)
 		writeWallet(w, current.Item)
 		return
 	}
@@ -278,6 +289,11 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	if !current.Avatar.Empty() {
 		h.deleteBestEffort(current.Avatar.ObjectKey, "delete wallet avatar")
 	}
+	operationlogrecord.CaptureResource(ctx, "wallet", strconv.FormatInt(walletID, 10))
+	operationlogrecord.CaptureUint64(ctx, "expectedRevision", expectedRevision)
+	operationlogrecord.CaptureUint64(ctx, "confirmedRevision", updated.Item.Revision)
+	operationlogrecord.CaptureString(ctx, "avatarKind", updated.Item.AvatarKind)
+	operationlogrecord.Commit(ctx, "WALLET_AVATAR_DELETE")
 	writeWallet(w, updated.Item)
 }
 

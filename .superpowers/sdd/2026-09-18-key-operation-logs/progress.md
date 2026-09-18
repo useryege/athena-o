@@ -106,3 +106,10 @@ Task 3 fix 验证证据：`task-3-fix-unit.log`、`task-3-fix-race.log`、`task-
 - 复审保留的事实缺口：Telegram 删除 attempt 的 response 无 ID/status；contract blocklist create response 无下游 code hash；gateway probe 接受点仅进程内调度；wallet batch 无持久 batch ID。详见 `task-4-report.md`。
 - 验证证据：`task-4-unit.log`、`task-4-race.log`、`task-4-vet.log`、`task-4-build.log`、`task-4-integration.log`、`task-4-diff-check.log`，均退出 0；真实 PostgreSQL 为 `athena-key-operation-logs-tests` / `127.0.0.1:56669`。
 - Task 5–8、V01–V18、真实 ATHENA 环境验收和人工审查尚未完成。
+
+## 2026-09-18 Task 5/6 继续执行
+
+- Task 5 HTTP、认证、账户和 Worm 采集已实现，覆盖 catalog 的 61 个 HTTP/auth positions；development／Phantom 失败结果复审后按 DENIED／FAILED／UNKNOWN 修正。独立复审记录在 `task-5-final-review.md`，Critical=0、Important=0。
+- Task 5 专项证据：`task-5-race.log`、`task-5-vet.log`、`task-5-build.log`、`task-5-integration.log`；受影响 Go 包、真实 PostgreSQL store/schema integration、diff check 均通过。
+- Task 6 管理员 operation-log 列表、详情和独立 capture status UI 已实现；`task-6-final-review.md` 复审为 Critical=0、Important=0，`yarn lint` 和 `task-6-build.log` 通过。真实浏览器验收仍留给 Task 8。
+- 当前未提交父任务文档、`athena-operation-log-migrate`、`docs/testing/key-operation-logs-acceptance.md` 保持不混入 Task 5/6 提交；当前产品提交待完成 staged boundary 核对。

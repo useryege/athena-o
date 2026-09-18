@@ -393,6 +393,7 @@ func (h *wormPositionCashOutAuthorization) callback(w http.ResponseWriter, r *ht
 	log.WithFields(log.Fields{
 		"stage": "complete", "provider": accountcredentials.IdentityProviderGoogle,
 	}).Info("Worm position Cash Out Google authorization succeeded")
+	observeGoogleAuthorization(r.Context(), "google", "authorization_verified", "GOOGLE", "cash_out", transaction.CashOutID, "WORM_CASH_OUT_AUTHORIZE", transaction.ExpectedRevision, descriptor.Revision, false)
 	http.Redirect(w, r, h.google.deploymentPath(returnTo), http.StatusSeeOther)
 }
 
@@ -441,6 +442,7 @@ func (h *wormPositionCashOutAuthorization) redirectFailure(
 	reason string,
 	stage string,
 ) {
+	failGoogleAuthorization(r.Context(), reason, stage)
 	log.WithFields(log.Fields{
 		"stage": stage, "reason": reason, "provider": accountcredentials.IdentityProviderGoogle,
 	}).Warn("Worm position Cash Out Google authorization failed")

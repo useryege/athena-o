@@ -100,6 +100,19 @@ func TestEffectsSurviveBusinessAndResponseFailures(t *testing.T) {
 		})
 	}
 }
+
+func TestPartialAndVerifiedAccountHelpers(t *testing.T) {
+	ctx, sink, _ := setup(t)
+	r := Begin(ctx, "identity.registration.submit")
+	BindVerifiedAccount(r.Context(), "00000000-0000-4000-8000-000000000001", "google")
+	r.Effect("IDENTITY_ACCOUNT_CREATED")
+	Partial(r.Context(), "access_publish")
+	r.Finish()
+	events := sink.all()
+	if len(events) != 1 || events[0].Outcome != event.Partial || events[0].Actor.AccountID == nil || events[0].Actor.Provider == nil {
+		t.Fatalf("events=%+v", events)
+	}
+}
 func TestIdentityUpgradeAndNoVerifiedAccountSwitch(t *testing.T) {
 	ctx, s, _ := setup(t)
 	r := Begin(ctx, "identity.login")

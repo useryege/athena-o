@@ -308,6 +308,11 @@ func (server *AthenaServer) createWormExecution(w http.ResponseWriter, request *
 		walletsecret.WriteError(w, err)
 		return
 	}
+	observeWormHTTPMutation(request.Context(), "execution", response.ID, "WORM_EXECUTION_CREATE", response.State, false, map[string]string{
+		"planId": response.PlanID,
+		"runId":  response.ID,
+		"state":  response.State,
+	})
 	w.Header().Set("Location", wormExecutionCollectionPath+"/"+response.ID)
 	writeWormCombinationJSON(w, http.StatusCreated, response)
 }
@@ -432,6 +437,11 @@ func (server *AthenaServer) startWormExecution(w http.ResponseWriter, request *h
 		walletsecret.WriteError(w, err)
 		return
 	}
+	observeWormHTTPMutation(request.Context(), "execution", response.Run.ID, "WORM_EXECUTION_START", response.Run.State, false, map[string]string{
+		"expectedRevision":  strconv.FormatInt(input.ExpectedRevision, 10),
+		"confirmedRevision": strconv.FormatInt(response.Run.Revision, 10),
+		"state":             response.Run.State,
+	})
 	writeWormCombinationJSON(w, http.StatusOK, response)
 }
 
@@ -461,6 +471,11 @@ func (server *AthenaServer) pauseWormExecution(w http.ResponseWriter, request *h
 		walletsecret.WriteError(w, err)
 		return
 	}
+	observeWormHTTPMutation(request.Context(), "execution", response.ID, "WORM_EXECUTION_PAUSE", response.State, false, map[string]string{
+		"expectedRevision":  strconv.FormatInt(input.ExpectedRevision, 10),
+		"confirmedRevision": strconv.FormatInt(response.Revision, 10),
+		"state":             response.State,
+	})
 	writeWormCombinationJSON(w, http.StatusOK, response)
 }
 
@@ -500,6 +515,11 @@ func (server *AthenaServer) continueWormExecution(w http.ResponseWriter, request
 		walletsecret.WriteError(w, err)
 		return
 	}
+	observeWormHTTPMutation(request.Context(), "execution", response.Run.ID, "WORM_EXECUTION_CONTINUE", response.Run.State, false, map[string]string{
+		"expectedRevision":  strconv.FormatInt(input.ExpectedRevision, 10),
+		"confirmedRevision": strconv.FormatInt(response.Run.Revision, 10),
+		"state":             response.Run.State,
+	})
 	writeWormCombinationJSON(w, http.StatusOK, response)
 }
 
@@ -529,6 +549,11 @@ func (server *AthenaServer) terminateWormExecution(w http.ResponseWriter, reques
 		walletsecret.WriteError(w, err)
 		return
 	}
+	observeWormHTTPMutation(request.Context(), "execution", response.ID, "WORM_EXECUTION_TERMINATE", response.State, false, map[string]string{
+		"expectedRevision":  strconv.FormatInt(input.ExpectedRevision, 10),
+		"confirmedRevision": strconv.FormatInt(response.Revision, 10),
+		"state":             response.State,
+	})
 	writeWormCombinationJSON(w, http.StatusOK, response)
 }
 
@@ -663,6 +688,13 @@ func (server *AthenaServer) reconcileWormExecutionStep(w http.ResponseWriter, re
 		walletsecret.WriteError(w, err)
 		return
 	}
+	observeWormHTTPMutation(request.Context(), "execution_step", response.Step.ID, "WORM_EXECUTION_STEP_RECONCILE", response.Step.State, false, map[string]string{
+		"runId":             response.Run.ID,
+		"stepId":            response.Step.ID,
+		"expectedRevision":  strconv.FormatInt(input.ExpectedRevision, 10),
+		"confirmedRevision": strconv.FormatInt(response.Run.Revision, 10),
+		"state":             response.Step.State,
+	})
 	writeWormCombinationJSON(w, http.StatusOK, response)
 }
 

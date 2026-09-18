@@ -8,6 +8,7 @@ import (
 	"mime"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/useryege/athena/internal/accountaccess"
 	"github.com/useryege/athena/internal/accountcredentials"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	walletapiclient "github.com/useryege/athena/internal/wallet/apiclient"
 	"github.com/useryege/athena/internal/walletsecret"
 	wormtradingapiclient "github.com/useryege/athena/internal/wormtrading/apiclient"
@@ -148,6 +150,34 @@ func (server *AthenaServer) replaceWormWalletSelection(w http.ResponseWriter, re
 		walletsecret.WriteError(w, err)
 		return
 	}
+	currentIDs := make(map[int64]struct{}, len(current.SelectedItems))
+	for _, item := range current.SelectedItems {
+		currentIDs[item.WalletID] = struct{}{}
+	}
+	selectedIDs := make([]string, 0, len(selection.SelectedItems))
+	addedCount, removedCount := 0, 0
+	for _, item := range selection.SelectedItems {
+		selectedIDs = append(selectedIDs, strconv.FormatInt(item.WalletID, 10))
+		if _, exists := currentIDs[item.WalletID]; !exists {
+			addedCount++
+		}
+	}
+	newSelectedSet := make(map[int64]struct{}, len(selection.SelectedItems))
+	for _, item := range selection.SelectedItems {
+		newSelectedSet[item.WalletID] = struct{}{}
+	}
+	for walletID := range currentIDs {
+		if _, exists := newSelectedSet[walletID]; !exists {
+			removedCount++
+		}
+	}
+	operationlogrecord.CaptureResource(ctx, "wallet_selection", credential.AccountID)
+	operationlogrecord.CaptureStrings(ctx, "walletIds", selectedIDs)
+	operationlogrecord.CaptureInt64(ctx, "requestedCount", int64(len(*input.WalletIDs)))
+	operationlogrecord.CaptureInt64(ctx, "confirmedRevision", selection.Revision)
+	operationlogrecord.CaptureInt64(ctx, "removedCount", int64(removedCount))
+	operationlogrecord.CaptureInt64(ctx, "addedCount", int64(addedCount))
+	operationlogrecord.Commit(ctx, "WORM_WALLET_SELECTION_REPLACE")
 	writeWormWalletSelection(w, selection)
 }
 

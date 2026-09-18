@@ -231,6 +231,25 @@ func CaptureResource(ctx context.Context, resourceType, id string) {
 	}
 }
 
+// BindVerifiedAccount records a credential-bound account when the surrounding
+// transport does not expose the newly issued cookie back to the request. The
+// account ID comes from the trusted backend result; role and username remain
+// unknown until the server can obtain its normal snapshot.
+func BindVerifiedAccount(ctx context.Context, accountID, provider string, credentialKinds ...string) {
+	if r := FromContext(ctx); r != nil {
+		id := accountID
+		credentialKind := "LOGIN_SESSION"
+		if len(credentialKinds) > 0 && credentialKinds[0] != "" {
+			credentialKind = credentialKinds[0]
+		}
+		actor := event.Actor{AccountID: &id, Role: "UNKNOWN", Realm: "MEMBER", CredentialKind: credentialKind, IdentityVerified: true}
+		if provider != "" {
+			actor.Provider = &provider
+		}
+		r.BindActor(actor)
+	}
+}
+
 func Commit(ctx context.Context, effect string) {
 	if r := FromContext(ctx); r != nil {
 		r.Result(event.Succeeded, "")
@@ -250,6 +269,37 @@ func Accept(ctx context.Context, effect string) {
 		r.Effect(effect)
 	}
 }
+
+func Cancel(ctx context.Context, reason string) {
+	if r := FromContext(ctx); r != nil {
+		r.Result(event.Cancelled, reason)
+	}
+}
+
+func ActionRequired(ctx context.Context, reason string) {
+	if r := FromContext(ctx); r != nil {
+		r.Result(event.ActionRequired, reason)
+	}
+}
+
+func Fail(ctx context.Context, reason string) {
+	if r := FromContext(ctx); r != nil {
+		r.Result(event.Failed, reason)
+	}
+}
+
+func Deny(ctx context.Context, reason string) {
+	if r := FromContext(ctx); r != nil {
+		r.Result(event.Denied, reason)
+	}
+}
+
+func Partial(ctx context.Context, reason string) {
+	if r := FromContext(ctx); r != nil {
+		r.Result(event.Partial, reason)
+	}
+}
+
 func (r *Recorder) BusinessState(state string) {
 	r.mutate(func() { r.event.BusinessState = pointer(state) })
 }

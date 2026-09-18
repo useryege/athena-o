@@ -22,6 +22,7 @@ import (
 
 	"github.com/useryege/athena/common"
 	"github.com/useryege/athena/internal/accountcredentials"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	httputil "github.com/useryege/athena/util/http"
 )
 
@@ -245,18 +246,49 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	operationlogrecord.CaptureResource(r.Context(), "account", registered.ID)
+	operationlogrecord.BindVerifiedAccount(r.Context(), registered.ID, string(ticket.Identity.Provider), "UNAUTHENTICATED")
+	operationlogrecord.CaptureBool(r.Context(), "accountCreated", registered.Created)
+	operationlogrecord.CaptureBool(r.Context(), "accountResolved", !registered.Created)
+	if registered.Created {
+		operationlogrecord.CaptureString(r.Context(), "stage", "account_created")
+		if recorder := operationlogrecord.FromContext(r.Context()); recorder != nil {
+			recorder.Effect("IDENTITY_ACCOUNT_CREATED")
+		}
+	} else {
+		operationlogrecord.CaptureString(r.Context(), "stage", "account_resolved")
+		if recorder := operationlogrecord.FromContext(r.Context()); recorder != nil {
+			recorder.Effect("IDENTITY_ACCOUNT_RESOLVED")
+		}
+	}
 	if err := h.backend.RegisterCommittedAccess(r.Context(), registered.ID); err != nil {
+		operationlogrecord.Partial(r.Context(), "access_publish")
 		h.failed(w, http.StatusServiceUnavailable, "registration_unavailable", "access_publish", ticket.Identity.Provider, err)
 		return
 	}
 	if err := h.store.Complete(r.Context(), ticketID, claimID); err != nil {
+		operationlogrecord.Partial(r.Context(), "registration_consume")
 		h.claimFailed(w, err, "registration_consume", ticket.Identity.Provider)
 		return
 	}
 	claimComplete = true
 	h.clearCookie(w)
-	token, err := h.backend.CreateExternalLogin(r.Context(), registered.ID, ticket.Identity)
+	loginRecorder := operationlogrecord.Begin(r.Context(), "identity.login")
+	loginCtx := r.Context()
+	if loginRecorder != nil {
+		loginRecorder.Start()
+		loginRecorder.Dispatched()
+		loginCtx = loginRecorder.Context()
+		operationlogrecord.CaptureString(loginCtx, "provider", string(ticket.Identity.Provider))
+		operationlogrecord.CaptureString(loginCtx, "stage", "session_issue")
+	}
+	token, err := h.backend.CreateExternalLogin(loginCtx, registered.ID, ticket.Identity)
 	if err != nil {
+		operationlogrecord.Partial(r.Context(), "session_issue")
+		if loginRecorder != nil {
+			loginRecorder.ObserveError(err)
+			loginRecorder.Finish()
+		}
 		if errors.Is(err, ErrMaintenance) {
 			h.failed(w, http.StatusServiceUnavailable, "maintenance", "account_maintenance", ticket.Identity.Provider, err)
 			return
@@ -271,9 +303,21 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.SetAthenaSessionCookie(w, ticket.Identity.Realm, token); err != nil {
+		operationlogrecord.Partial(r.Context(), "cookie_issue")
+		if loginRecorder != nil {
+			loginRecorder.ObserveError(err)
+			loginRecorder.Finish()
+		}
 		h.failed(w, http.StatusServiceUnavailable, "registration_unavailable", "cookie_issue", ticket.Identity.Provider, err)
 		return
 	}
+	if loginRecorder != nil {
+		operationlogrecord.CaptureString(loginCtx, "stage", "session_issued")
+		operationlogrecord.Commit(loginCtx, "IDENTITY_LOGIN")
+		loginRecorder.Finish()
+	}
+	operationlogrecord.CaptureString(r.Context(), "stage", "session_issued")
+	operationlogrecord.Commit(r.Context(), "IDENTITY_REGISTRATION_SUBMIT")
 	h.backend.RecordLoginResult(LoginSuccess)
 	log.WithFields(log.Fields{
 		"stage":      "registration_complete",
@@ -307,6 +351,8 @@ func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 		h.writeError(w, statusCode, reason)
 		return
 	}
+	operationlogrecord.CaptureString(r.Context(), "stage", "cancelled")
+	operationlogrecord.Commit(r.Context(), "IDENTITY_REGISTRATION_CANCEL")
 	h.clearCookie(w)
 	query := url.Values{
 		"returnTo":                            []string{ReturnToForRealm(ticket.ReturnTo, ticket.Identity.Realm)},

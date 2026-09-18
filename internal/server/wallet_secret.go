@@ -91,6 +91,13 @@ func (server *AthenaServer) authenticateWalletSecretHTTP(request *http.Request) 
 }
 
 func (server *AthenaServer) developmentWalletSecretLease(w http.ResponseWriter, r *http.Request) {
+	observed := false
+	accountID := ""
+	defer func() {
+		if !observed {
+			observeWormAuthorization(r.Context(), "account", accountID, "WALLET_REVEAL_AUTHORIZE", "DEVELOPMENT", "authorization_failed", false, operationLogHTTPStatus(w))
+		}
+	}()
 	walletsecret.SetSecretResponseHeaders(w)
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
@@ -106,6 +113,7 @@ func (server *AthenaServer) developmentWalletSecretLease(w http.ResponseWriter, 
 		walletsecret.WriteError(w, err)
 		return
 	}
+	accountID = credential.AccountID
 	expiresAt, err := server.walletSecretMgr.Issue(ctx, w, credential)
 	if err != nil {
 		walletsecret.WriteError(w, err)
@@ -115,6 +123,8 @@ func (server *AthenaServer) developmentWalletSecretLease(w http.ResponseWriter, 
 	_ = json.NewEncoder(w).Encode(struct {
 		ExpiresAt int64 `json:"expiresAt"`
 	}{ExpiresAt: expiresAt.Unix()})
+	observeWormAuthorization(r.Context(), "account", accountID, "WALLET_REVEAL_AUTHORIZE", "DEVELOPMENT", "authorization_verified", true, operationLogHTTPStatus(w))
+	observed = true
 }
 
 func requestIsLoopback(request *http.Request) bool {

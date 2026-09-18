@@ -15,6 +15,7 @@ import (
 
 	"github.com/useryege/athena/internal/accountcredentials"
 	"github.com/useryege/athena/internal/authregistration"
+	operationlogrecord "github.com/useryege/athena/internal/operationlog/record"
 	"github.com/useryege/athena/internal/walletsecret"
 )
 
@@ -93,6 +94,12 @@ func (h *Handler) WalletSecretVerify(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *walletSecretReauthentication) challenge(w http.ResponseWriter, r *http.Request) {
+	observed := false
+	defer func() {
+		if !observed {
+			observeAuthorizationFailure(r.Context(), "challenge", responseStatusCode(w), "AUTHORIZATION_FAILED")
+		}
+	}()
 	walletsecret.SetSecretResponseHeaders(w)
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
@@ -149,10 +156,17 @@ func (h *walletSecretReauthentication) challenge(w http.ResponseWriter, r *http.
 		return
 	}
 	h.setChallengeCookie(w, id, expiresAt)
+	observed = true
 	h.phantom.writeJSON(w, http.StatusOK, walletSecretChallengeResponse{Message: message, ExpiresAt: expiresAt.Unix()})
 }
 
 func (h *walletSecretReauthentication) verify(w http.ResponseWriter, r *http.Request) {
+	observed := false
+	defer func() {
+		if !observed {
+			observeAuthorizationFailure(r.Context(), "verify", responseStatusCode(w), "AUTHORIZATION_FAILED")
+		}
+	}()
 	walletsecret.SetSecretResponseHeaders(w)
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
@@ -221,6 +235,13 @@ func (h *walletSecretReauthentication) verify(w http.ResponseWriter, r *http.Req
 		return
 	}
 	log.WithFields(log.Fields{"stage": "complete", "provider": accountcredentials.IdentityProviderSolanaWallet, "account_id": credential.AccountID}).Info("Wallet-secret Solana reauthentication succeeded")
+	operationlogrecord.CaptureResource(r.Context(), "account", credential.AccountID)
+	operationlogrecord.BindVerifiedAccount(r.Context(), credential.AccountID, "solana_wallet")
+	operationlogrecord.CaptureString(r.Context(), "provider", "solana_wallet")
+	operationlogrecord.CaptureString(r.Context(), "proofKind", "PHANTOM")
+	operationlogrecord.CaptureString(r.Context(), "stage", "authorization_verified")
+	observed = true
+	operationlogrecord.Commit(r.Context(), "WALLET_REVEAL_AUTHORIZE")
 	h.phantom.writeJSON(w, http.StatusOK, walletSecretVerifyResponse{ExpiresAt: expiresAt.Unix()})
 }
 
