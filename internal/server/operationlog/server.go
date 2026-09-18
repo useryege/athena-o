@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/useryege/athena/internal/operationlog/access"
 	ipb "github.com/useryege/athena/internal/operationlog/apiclient"
 	"github.com/useryege/athena/internal/operationlog/query"
@@ -67,7 +69,36 @@ func requestFilter(r *pb.ListOperationLogsRequest) (query.Filter, error) {
 	}
 	return f, e
 }
+func parseRange(from, to string) (*time.Time, *time.Time, error) {
+	if (from == "") != (to == "") {
+		return nil, nil, fmt.Errorf("from and to must be supplied together")
+	}
+	if from == "" {
+		return nil, nil, nil
+	}
+	f, err := time.Parse(time.RFC3339Nano, from)
+	if err != nil {
+		return nil, nil, err
+	}
+	t, err := time.Parse(time.RFC3339Nano, to)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &f, &t, nil
+}
+func internalFilter(r *ipb.ListOperationLogsRequest) (query.Filter, error) {
+	f := query.Filter{ActorQuery: r.GetActorQuery(), ActorRole: r.GetActorRole(), CredentialKind: r.GetCredentialKind(), ModuleCode: r.GetModuleCode(), ActionCode: r.GetActionCode(), Outcome: r.GetOutcome(), TargetAccountID: r.GetTargetAccountId(), ResourceType: r.GetResourceType(), ResourceID: r.GetResourceId(), PageSize: int(r.GetPageSize()), Cursor: r.GetCursor()}
+	from, to, err := parseRange(r.GetFrom(), r.GetTo())
+	if err != nil {
+		return f, err
+	}
+	f.From, f.To = from, to
+	return f, nil
+}
 func (s *Server) ListOperationLogs(ctx context.Context, r *pb.ListOperationLogsRequest) (*pb.ListOperationLogsResponse, error) {
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
 	v, e := s.resolve(ctx)
 	if e != nil {
 		return nil, e
@@ -85,11 +116,14 @@ func (s *Server) ListOperationLogs(ctx context.Context, r *pb.ListOperationLogsR
 	}
 	out := &pb.ListOperationLogsResponse{Page: &pb.Page{NextCursor: p.NextCursor, SnapshotToken: p.SnapshotToken, SnapshotSequence: itoa(p.SnapshotSequence), SnapshotAt: p.SnapshotAt.Format(time.RFC3339Nano), PageSize: int32(p.PageSize)}, AppliedFilters: &pb.AppliedFilters{From: p.AppliedFilters.From.Format(time.RFC3339Nano), To: p.AppliedFilters.To.Format(time.RFC3339Nano), ActorQuery: p.AppliedFilters.ActorQuery, ActorRole: p.AppliedFilters.ActorRole, CredentialKind: p.AppliedFilters.CredentialKind, ModuleCode: p.AppliedFilters.ModuleCode, ActionCode: p.AppliedFilters.ActionCode, Outcome: p.AppliedFilters.Outcome, TargetAccountId: p.AppliedFilters.TargetAccountID, ResourceType: p.AppliedFilters.ResourceType, ResourceId: p.AppliedFilters.ResourceID}}
 	for _, x := range p.Items {
-		out.Items = append(out.Items, &pb.OperationLogSummary{OperationId: x.OperationID, StartedAt: x.StartedAt.Format(time.RFC3339Nano), ActorAccountId: x.ActorAccountID, ActorUsername: x.ActorUsername, ActorRole: x.ActorRole, Realm: x.Realm, CredentialKind: x.CredentialKind, IdentityVerified: x.IdentityVerified, IdentitySnapshotComplete: x.IdentitySnapshotComplete, ModuleCode: x.ModuleCode, ActionCode: x.ActionCode, PrimaryResourceType: x.PrimaryResourceType, PrimaryResourceId: x.PrimaryResourceID, TargetAccountId: x.TargetAccountID, Outcome: x.Outcome, Observation: x.Observation, DurationMs: formatPtr(x.DurationMS), BusinessState: x.BusinessState, ResourceCount: formatPtr(x.ResourceCount), ResourcesComplete: x.ResourcesComplete, ResponseWriteFailed: x.ResponseWriteFailed})
+		out.Items = append(out.Items, summaryPublic(x))
 	}
 	return out, nil
 }
 func (s *Server) GetOperationLog(ctx context.Context, r *pb.GetOperationLogRequest) (*pb.GetOperationLogResponse, error) {
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
 	v, e := s.resolve(ctx)
 	if e != nil {
 		return nil, e
@@ -104,19 +138,22 @@ func (s *Server) GetOperationLog(ctx context.Context, r *pb.GetOperationLogReque
 	if e != nil {
 		return nil, mapError(e)
 	}
-	sm := &pb.OperationLogSummary{OperationId: d.OperationID, StartedAt: d.StartedAt.Format(time.RFC3339Nano), ActorAccountId: d.ActorAccountID, ActorUsername: d.ActorUsername, ActorRole: d.ActorRole, Realm: d.Realm, CredentialKind: d.CredentialKind, IdentityVerified: d.IdentityVerified, IdentitySnapshotComplete: d.IdentitySnapshotComplete, ModuleCode: d.ModuleCode, ActionCode: d.ActionCode, Outcome: d.Outcome, Observation: d.Observation, ReasonCode: d.ReasonCode, PrimaryResourceType: d.PrimaryResourceType, PrimaryResourceId: d.PrimaryResourceID, TargetAccountId: d.TargetAccountID, DurationMs: formatPtr(d.DurationMS), BusinessState: d.BusinessState, ResourceCount: formatPtr(d.ResourceCount), ResourcesComplete: d.ResourcesComplete, ResponseWriteFailed: d.ResponseWriteFailed, Provider: d.Provider}
-	det := &pb.OperationLogDetail{Summary: sm, FinishedAt: formatTime(d.FinishedAt), RequestId: d.RequestID, ParentOperationId: d.ParentOperationID, BusinessRequestId: d.BusinessRequestID, Effect: strings.Join(d.Effect, ",")}
+	sm := summaryPublic(d.Summary)
+	det := &pb.OperationLogDetail{Summary: sm, FinishedAt: optionalTimePB(d.FinishedAt), RequestId: d.RequestID, ParentOperationId: d.ParentOperationID, BusinessRequestId: d.BusinessRequestID, Provider: d.Provider, Effect: strings.Join(d.Effect, ","), CountFacts: countsPublic(d.Counts)}
 	for _, r := range d.Resources {
-		det.ResourceFacts = append(det.ResourceFacts, &pb.OperationLogResource{Type: r.Type, Id: r.ID, Relation: r.Relation, ReferenceVerified: r.ReferenceVerified})
+		det.ResourceFacts = append(det.ResourceFacts, &pb.OperationLogResource{Type: r.Type, Id: r.ID, Relation: r.Relation, ReferenceVerified: nullableBoolPB(r.ReferenceVerified)})
 	}
 	for _, c := range d.Changes {
-		det.ChangeFacts = append(det.ChangeFacts, &pb.OperationLogChange{FieldCode: c.FieldCode, BeforeValue: stringOrEmpty(c.BeforeValue), AfterValue: stringOrEmpty(c.AfterValue), BeforeAvailable: c.BeforeAvailable, ValueKind: c.ValueKind})
+		det.ChangeFacts = append(det.ChangeFacts, changePublic(c))
 	}
-	det.Protocol = &pb.OperationLogProtocolResult{GrpcCode: d.Protocol.GRPCCode, HttpStatus: d.Protocol.HTTPStatus, ReasonCode: d.Protocol.ReasonCode, ResponseWriteFailed: d.Protocol.ResponseWriteFailed}
-	det.Source = &pb.OperationLogSourceFacts{ProducerId: d.Source.ProducerID, FirstReceivedAt: d.Source.FirstReceivedAt.Format(time.RFC3339Nano), LastReceivedAt: d.Source.LastReceivedAt.Format(time.RFC3339Nano), PhasesReceived: d.Source.PhasesReceived, SnapshotSequence: itoa(d.Source.SnapshotSequence)}
+	det.Protocol = &pb.OperationLogProtocolResult{GrpcCode: d.Protocol.GRPCCode, HttpStatus: d.Protocol.HTTPStatus, ReasonCode: d.Protocol.ReasonCode, ResponseWriteFailed: nullableBoolPB(d.Protocol.ResponseWriteFailed)}
+	det.Source = sourcePublic(d.Source)
 	return &pb.GetOperationLogResponse{Item: det}, nil
 }
 func (s *Server) GetOperationLogRuntimeStatus(ctx context.Context, _ *pb.GetOperationLogRuntimeStatusRequest) (*pb.GetOperationLogRuntimeStatusResponse, error) {
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, time.Second)
+	defer cancel()
 	if _, err := s.resolve(ctx); err != nil {
 		return nil, err
 	}
@@ -130,6 +167,12 @@ func (s *Server) GetOperationLogRuntimeStatus(ctx context.Context, _ *pb.GetOper
 	return &pb.GetOperationLogRuntimeStatusResponse{Status: runtimePublic(st)}, nil
 }
 func (s *Server) GetOperationLogCaptureStatus(ctx context.Context, _ *pb.GetOperationLogCaptureStatusRequest) (*pb.GetOperationLogCaptureStatusResponse, error) {
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, 100*time.Millisecond)
+	defer cancel()
+	if _, err := s.resolve(ctx); err != nil {
+		return nil, err
+	}
 	if s.Capture == nil {
 		return nil, rpcError(codes.Unavailable, "OPERATION_LOG_CAPTURE_UNAVAILABLE")
 	}
@@ -140,6 +183,12 @@ func (s *Server) GetOperationLogCaptureStatus(ctx context.Context, _ *pb.GetOper
 	return &pb.GetOperationLogCaptureStatusResponse{Status: v}, nil
 }
 func (s *Server) ListOperationLogActions(ctx context.Context, _ *pb.ListOperationLogActionsRequest) (*pb.ListOperationLogActionsResponse, error) {
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, 100*time.Millisecond)
+	defer cancel()
+	if _, err := s.resolve(ctx); err != nil {
+		return nil, err
+	}
 	if s.Actions == nil {
 		return &pb.ListOperationLogActionsResponse{}, nil
 	}
@@ -148,27 +197,115 @@ func (s *Server) ListOperationLogActions(ctx context.Context, _ *pb.ListOperatio
 func appliedInternal(f query.NormalizedFilter) *ipb.AppliedFilters {
 	return &ipb.AppliedFilters{From: f.From.Format(time.RFC3339Nano), To: f.To.Format(time.RFC3339Nano), ActorQuery: f.ActorQuery, ActorRole: f.ActorRole, CredentialKind: f.CredentialKind, ModuleCode: f.ModuleCode, ActionCode: f.ActionCode, Outcome: f.Outcome, TargetAccountId: f.TargetAccountID, ResourceType: f.ResourceType, ResourceId: f.ResourceID}
 }
+func summaryPublic(x query.Summary) *pb.OperationLogSummary {
+	return &pb.OperationLogSummary{OperationId: x.OperationID, StartedAt: nullableStringPB(x.StartedAt.Format(time.RFC3339Nano)), ActorAccountId: x.ActorAccountID, ActorUsername: x.ActorUsername, ActorRole: x.ActorRole, Realm: x.Realm, CredentialKind: x.CredentialKind, IdentityVerified: nullableBoolPB(x.IdentityVerified), IdentitySnapshotComplete: nullableBoolPB(x.IdentitySnapshotComplete), ModuleCode: x.ModuleCode, ActionCode: x.ActionCode, PrimaryResourceType: x.PrimaryResourceType, PrimaryResourceId: x.PrimaryResourceID, TargetAccountId: x.TargetAccountID, Outcome: x.Outcome, Observation: x.Observation, ReasonCode: x.ReasonCode, DurationMs: optionalIntPB(x.DurationMS), BusinessState: x.BusinessState, ResourceCount: optionalIntPB(x.ResourceCount), ResourcesComplete: nullableBoolPB(x.ResourcesComplete), ResponseWriteFailed: nullableBoolPB(x.ResponseWriteFailed), Provider: x.Provider}
+}
+func countsPublic(c query.CountsFact) *pb.OperationLogCounts {
+	return &pb.OperationLogCounts{Requested: optionalIntStringPB(c.Requested), Confirmed: optionalIntStringPB(c.Confirmed), Failed: optionalIntStringPB(c.Failed), Unknown: optionalIntStringPB(c.Unknown)}
+}
+func changePublic(c query.ChangeFact) *pb.OperationLogChange {
+	return &pb.OperationLogChange{FieldCode: c.FieldCode, BeforeValue: optionalStringPB(c.BeforeValue), AfterValue: optionalStringPB(c.AfterValue), BeforeAvailable: nullableBoolPB(c.BeforeAvailable), ValueKind: c.ValueKind}
+}
+func changeInternal(c query.ChangeFact) *ipb.OperationLogChange {
+	return &ipb.OperationLogChange{FieldCode: c.FieldCode, BeforeValue: optionalStringInternal(c.BeforeValue), AfterValue: optionalStringInternal(c.AfterValue), BeforeAvailable: nullableBoolInternal(c.BeforeAvailable), ValueKind: c.ValueKind}
+}
+func sourcePublic(s query.SourceFacts) *pb.OperationLogSourceFacts {
+	out := &pb.OperationLogSourceFacts{ProducerId: s.ProducerID, PhasesReceived: s.PhasesReceived, SnapshotSequence: nullableStringPB(itoa(s.SnapshotSequence))}
+	if !s.FirstReceivedAt.IsZero() {
+		out.FirstReceivedAt = nullableStringPB(s.FirstReceivedAt.Format(time.RFC3339Nano))
+	}
+	if !s.LastReceivedAt.IsZero() {
+		out.LastReceivedAt = nullableStringPB(s.LastReceivedAt.Format(time.RFC3339Nano))
+	}
+	return out
+}
+func nullableStringPB(v string) *pb.NullableString { return &pb.NullableString{Value: v} }
+func nullableBoolPB(v bool) *pb.NullableBool       { return &pb.NullableBool{Value: v} }
+func optionalStringPB(v *string) *pb.NullableString {
+	if v == nil {
+		return nil
+	}
+	return nullableStringPB(*v)
+}
+func optionalTimePB(v *time.Time) *pb.NullableString {
+	if v == nil || v.IsZero() {
+		return nil
+	}
+	return nullableStringPB(v.Format(time.RFC3339Nano))
+}
+func optionalIntPB(v *int64) *pb.NullableString {
+	if v == nil {
+		return nil
+	}
+	return nullableStringPB(fmt.Sprintf("%d", *v))
+}
+func optionalIntStringPB(v *int64) *pb.NullableString { return optionalIntPB(v) }
+func optionalBoolPB(v *bool) *pb.NullableBool {
+	if v == nil {
+		return nil
+	}
+	return nullableBoolPB(*v)
+}
+func nullableStringInternal(v string) *ipb.NullableString { return &ipb.NullableString{Value: v} }
+func nullableBoolInternal(v bool) *ipb.NullableBool       { return &ipb.NullableBool{Value: v} }
+func optionalStringInternal(v *string) *ipb.NullableString {
+	if v == nil {
+		return nil
+	}
+	return nullableStringInternal(*v)
+}
+func optionalTimeInternal(v *time.Time) *ipb.NullableString {
+	if v == nil || v.IsZero() {
+		return nil
+	}
+	return nullableStringInternal(v.Format(time.RFC3339Nano))
+}
+func optionalIntInternal(v *int64) *ipb.NullableString {
+	if v == nil {
+		return nil
+	}
+	return nullableStringInternal(fmt.Sprintf("%d", *v))
+}
+func optionalBoolInternal(v *bool) *ipb.NullableBool {
+	if v == nil {
+		return nil
+	}
+	return nullableBoolInternal(*v)
+}
+func sourceInternal(s query.SourceFacts) *ipb.OperationLogSourceFacts {
+	out := &ipb.OperationLogSourceFacts{ProducerId: s.ProducerID, PhasesReceived: s.PhasesReceived, SnapshotSequence: nullableStringInternal(itoa(s.SnapshotSequence))}
+	if !s.FirstReceivedAt.IsZero() {
+		out.FirstReceivedAt = nullableStringInternal(s.FirstReceivedAt.Format(time.RFC3339Nano))
+	}
+	if !s.LastReceivedAt.IsZero() {
+		out.LastReceivedAt = nullableStringInternal(s.LastReceivedAt.Format(time.RFC3339Nano))
+	}
+	return out
+}
 func summaryInternal(x query.Summary) *ipb.OperationLogSummary {
-	return &ipb.OperationLogSummary{OperationId: x.OperationID, StartedAt: x.StartedAt.Format(time.RFC3339Nano), ActorAccountId: x.ActorAccountID, ActorUsername: x.ActorUsername, ActorRole: x.ActorRole, Realm: x.Realm, CredentialKind: x.CredentialKind, IdentityVerified: x.IdentityVerified, IdentitySnapshotComplete: x.IdentitySnapshotComplete, ModuleCode: x.ModuleCode, ActionCode: x.ActionCode, PrimaryResourceType: x.PrimaryResourceType, PrimaryResourceId: x.PrimaryResourceID, TargetAccountId: x.TargetAccountID, Outcome: x.Outcome, Observation: x.Observation, ReasonCode: x.ReasonCode, DurationMs: formatPtr(x.DurationMS), BusinessState: x.BusinessState, ResourceCount: formatPtr(x.ResourceCount), ResourcesComplete: x.ResourcesComplete, ResponseWriteFailed: x.ResponseWriteFailed, Provider: x.Provider}
+	return &ipb.OperationLogSummary{OperationId: x.OperationID, StartedAt: nullableStringInternal(x.StartedAt.Format(time.RFC3339Nano)), ActorAccountId: x.ActorAccountID, ActorUsername: x.ActorUsername, ActorRole: x.ActorRole, Realm: x.Realm, CredentialKind: x.CredentialKind, IdentityVerified: nullableBoolInternal(x.IdentityVerified), IdentitySnapshotComplete: nullableBoolInternal(x.IdentitySnapshotComplete), ModuleCode: x.ModuleCode, ActionCode: x.ActionCode, PrimaryResourceType: x.PrimaryResourceType, PrimaryResourceId: x.PrimaryResourceID, TargetAccountId: x.TargetAccountID, Outcome: x.Outcome, Observation: x.Observation, ReasonCode: x.ReasonCode, DurationMs: optionalIntInternal(x.DurationMS), BusinessState: x.BusinessState, ResourceCount: optionalIntInternal(x.ResourceCount), ResourcesComplete: nullableBoolInternal(x.ResourcesComplete), ResponseWriteFailed: nullableBoolInternal(x.ResponseWriteFailed), Provider: x.Provider}
 }
 func detailInternal(d query.Detail) *ipb.OperationLogDetail {
-	out := &ipb.OperationLogDetail{Summary: summaryInternal(d.Summary), FinishedAt: formatTime(d.FinishedAt), RequestId: d.RequestID, ParentOperationId: d.ParentOperationID, BusinessRequestId: d.BusinessRequestID, Provider: d.Provider, Effect: strings.Join(d.Effect, ","), Protocol: &ipb.OperationLogProtocolResult{GrpcCode: d.Protocol.GRPCCode, HttpStatus: d.Protocol.HTTPStatus, ReasonCode: d.Protocol.ReasonCode, ResponseWriteFailed: d.Protocol.ResponseWriteFailed}, Source: &ipb.OperationLogSourceFacts{ProducerId: d.Source.ProducerID, FirstReceivedAt: timeString(&d.Source.FirstReceivedAt), LastReceivedAt: timeString(&d.Source.LastReceivedAt), PhasesReceived: d.Source.PhasesReceived, SnapshotSequence: itoa(d.Source.SnapshotSequence)}, CountFacts: &ipb.OperationLogCounts{Requested: formatPtr(d.Counts.Requested), Confirmed: formatPtr(d.Counts.Confirmed), Failed: formatPtr(d.Counts.Failed), Unknown: formatPtr(d.Counts.Unknown)}}
+	out := &ipb.OperationLogDetail{Summary: summaryInternal(d.Summary), FinishedAt: optionalTimeInternal(d.FinishedAt), RequestId: d.RequestID, ParentOperationId: d.ParentOperationID, BusinessRequestId: d.BusinessRequestID, Provider: d.Provider, Effect: strings.Join(d.Effect, ","), Protocol: &ipb.OperationLogProtocolResult{GrpcCode: d.Protocol.GRPCCode, HttpStatus: d.Protocol.HTTPStatus, ReasonCode: d.Protocol.ReasonCode, ResponseWriteFailed: nullableBoolInternal(d.Protocol.ResponseWriteFailed)}, Source: sourceInternal(d.Source), CountFacts: &ipb.OperationLogCounts{Requested: optionalIntInternal(d.Counts.Requested), Confirmed: optionalIntInternal(d.Counts.Confirmed), Failed: optionalIntInternal(d.Counts.Failed), Unknown: optionalIntInternal(d.Counts.Unknown)}}
 	for _, r := range d.Resources {
-		out.ResourceFacts = append(out.ResourceFacts, &ipb.OperationLogResource{Type: r.Type, Id: r.ID, Relation: r.Relation, ReferenceVerified: r.ReferenceVerified})
+		out.ResourceFacts = append(out.ResourceFacts, &ipb.OperationLogResource{Type: r.Type, Id: r.ID, Relation: r.Relation, ReferenceVerified: nullableBoolInternal(r.ReferenceVerified)})
 	}
 	for _, c := range d.Changes {
-		out.ChangeFacts = append(out.ChangeFacts, &ipb.OperationLogChange{FieldCode: c.FieldCode, BeforeValue: stringOrEmpty(c.BeforeValue), AfterValue: stringOrEmpty(c.AfterValue), BeforeAvailable: c.BeforeAvailable, ValueKind: c.ValueKind})
+		out.ChangeFacts = append(out.ChangeFacts, changeInternal(c))
 	}
 	return out
 }
 
 func runtimePublic(st query.RuntimeStatus) *pb.RuntimeStatus {
-	r := &pb.RuntimeStatus{ServiceEpoch: st.ServiceEpoch, CheckedAt: st.CheckedAt.Format(time.RFC3339Nano), QueryReady: st.QueryReady, ProjectionState: st.ProjectionState, PublicationSequence: itoa(st.PublicationSequence), PendingEvents: itoa(st.PendingEvents), QuarantinedEvents: itoa(st.QuarantinedEvents), TotalObserved: itoa(st.TotalObserved), ProducersComplete: st.ProducersComplete}
+	r := &pb.RuntimeStatus{ServiceEpoch: st.ServiceEpoch, CheckedAt: nullableStringPB(st.CheckedAt.Format(time.RFC3339Nano)), QueryReady: nullableBoolPB(st.QueryReady), ProjectionState: st.ProjectionState, PublicationSequence: itoa(st.PublicationSequence), QuarantinedEvents: itoa(st.QuarantinedEvents), TotalObserved: optionalIntPB(&st.TotalObserved), ProducersComplete: nullableBoolPB(st.ProducersComplete)}
+	if st.PendingEvents >= 0 {
+		r.PendingEvents = optionalIntPB(&st.PendingEvents)
+	}
 	if st.LastPublishedAt != nil {
-		r.LastPublishedAt = st.LastPublishedAt.Format(time.RFC3339Nano)
+		r.LastPublishedAt = nullableStringPB(st.LastPublishedAt.Format(time.RFC3339Nano))
 	}
 	if st.OldestPendingReceivedAt != nil {
-		r.OldestPendingReceivedAt = st.OldestPendingReceivedAt.Format(time.RFC3339Nano)
+		r.OldestPendingReceivedAt = nullableStringPB(st.OldestPendingReceivedAt.Format(time.RFC3339Nano))
 	}
 	if st.LastProcessingErrorCode != nil {
 		r.LastProcessingErrorCode = *st.LastProcessingErrorCode
@@ -179,15 +316,18 @@ func runtimePublic(st query.RuntimeStatus) *pb.RuntimeStatus {
 	return r
 }
 func producerPublic(p query.ProducerStatus) *pb.OperationLogProducerStatus {
-	return &pb.OperationLogProducerStatus{ProducerId: p.ProducerID, StartedAt: timeString(p.StartedAt), LastSeenAt: timeString(p.LastSeenAt), StoppedAt: timeString(p.StoppedAt), AttemptedEvents: itoa(p.AttemptedEvents), ConfirmedEvents: itoa(p.ConfirmedEvents), UnconfirmedEvents: itoa(p.UnconfirmedEvents), InvalidEvents: itoa(p.InvalidEvents), CapacityRejectedEvents: itoa(p.CapacityRejectedEvents), LastFailureAt: timeString(p.LastFailureAt), LastFailureCode: stringPtr(p.LastFailureCode), LastRecoveredAt: timeString(p.LastRecoveredAt), PersistenceReachable: boolPtr(p.PersistenceReachable)}
+	return &pb.OperationLogProducerStatus{ProducerId: p.ProducerID, StartedAt: optionalTimePB(p.StartedAt), LastSeenAt: optionalTimePB(p.LastSeenAt), StoppedAt: optionalTimePB(p.StoppedAt), AttemptedEvents: optionalIntPB(&p.AttemptedEvents), ConfirmedEvents: optionalIntPB(&p.ConfirmedEvents), UnconfirmedEvents: optionalIntPB(&p.UnconfirmedEvents), InvalidEvents: optionalIntPB(&p.InvalidEvents), CapacityRejectedEvents: optionalIntPB(&p.CapacityRejectedEvents), LastFailureAt: optionalTimePB(p.LastFailureAt), LastFailureCode: optionalStringPB(p.LastFailureCode), LastRecoveredAt: optionalTimePB(p.LastRecoveredAt), PersistenceReachable: optionalBoolPB(p.PersistenceReachable)}
 }
 func runtimeInternal(st query.RuntimeStatus) *ipb.RuntimeStatus {
-	r := &ipb.RuntimeStatus{ServiceEpoch: st.ServiceEpoch, CheckedAt: st.CheckedAt.Format(time.RFC3339Nano), QueryReady: st.QueryReady, ProjectionState: st.ProjectionState, PublicationSequence: itoa(st.PublicationSequence), PendingEvents: itoa(st.PendingEvents), QuarantinedEvents: itoa(st.QuarantinedEvents), TotalObserved: itoa(st.TotalObserved), ProducersComplete: st.ProducersComplete}
+	r := &ipb.RuntimeStatus{ServiceEpoch: st.ServiceEpoch, CheckedAt: nullableStringInternal(st.CheckedAt.Format(time.RFC3339Nano)), QueryReady: nullableBoolInternal(st.QueryReady), ProjectionState: st.ProjectionState, PublicationSequence: itoa(st.PublicationSequence), QuarantinedEvents: itoa(st.QuarantinedEvents), TotalObserved: optionalIntInternal(&st.TotalObserved), ProducersComplete: nullableBoolInternal(st.ProducersComplete)}
+	if st.PendingEvents >= 0 {
+		r.PendingEvents = optionalIntInternal(&st.PendingEvents)
+	}
 	if st.LastPublishedAt != nil {
-		r.LastPublishedAt = st.LastPublishedAt.Format(time.RFC3339Nano)
+		r.LastPublishedAt = nullableStringInternal(st.LastPublishedAt.Format(time.RFC3339Nano))
 	}
 	if st.OldestPendingReceivedAt != nil {
-		r.OldestPendingReceivedAt = st.OldestPendingReceivedAt.Format(time.RFC3339Nano)
+		r.OldestPendingReceivedAt = nullableStringInternal(st.OldestPendingReceivedAt.Format(time.RFC3339Nano))
 	}
 	if st.LastProcessingErrorCode != nil {
 		r.LastProcessingErrorCode = *st.LastProcessingErrorCode
@@ -198,7 +338,7 @@ func runtimeInternal(st query.RuntimeStatus) *ipb.RuntimeStatus {
 	return r
 }
 func producerInternal(p query.ProducerStatus) *ipb.OperationLogProducerStatus {
-	return &ipb.OperationLogProducerStatus{ProducerId: p.ProducerID, StartedAt: timeString(p.StartedAt), LastSeenAt: timeString(p.LastSeenAt), StoppedAt: timeString(p.StoppedAt), AttemptedEvents: itoa(p.AttemptedEvents), ConfirmedEvents: itoa(p.ConfirmedEvents), UnconfirmedEvents: itoa(p.UnconfirmedEvents), InvalidEvents: itoa(p.InvalidEvents), CapacityRejectedEvents: itoa(p.CapacityRejectedEvents), LastFailureAt: timeString(p.LastFailureAt), LastFailureCode: stringPtr(p.LastFailureCode), LastRecoveredAt: timeString(p.LastRecoveredAt), PersistenceReachable: boolPtr(p.PersistenceReachable)}
+	return &ipb.OperationLogProducerStatus{ProducerId: p.ProducerID, StartedAt: optionalTimeInternal(p.StartedAt), LastSeenAt: optionalTimeInternal(p.LastSeenAt), StoppedAt: optionalTimeInternal(p.StoppedAt), AttemptedEvents: optionalIntInternal(&p.AttemptedEvents), ConfirmedEvents: optionalIntInternal(&p.ConfirmedEvents), UnconfirmedEvents: optionalIntInternal(&p.UnconfirmedEvents), InvalidEvents: optionalIntInternal(&p.InvalidEvents), CapacityRejectedEvents: optionalIntInternal(&p.CapacityRejectedEvents), LastFailureAt: optionalTimeInternal(p.LastFailureAt), LastFailureCode: optionalStringInternal(p.LastFailureCode), LastRecoveredAt: optionalTimeInternal(p.LastRecoveredAt), PersistenceReachable: optionalBoolInternal(p.PersistenceReachable)}
 }
 func timeString(v *time.Time) string {
 	if v == nil {
@@ -232,6 +372,19 @@ func fromInternalViewer(v *ipb.Viewer) query.Viewer {
 	return query.Viewer{AccountID: v.AccountId, Realm: v.Realm, CredentialKind: v.CredentialKind, SessionBinding: v.SessionBinding, AccessRevision: v.AccessRevision}
 }
 func mapError(e error) error {
+	if errors.Is(e, query.ErrInvalidOperationID) {
+		return rpcError(codes.InvalidArgument, "OPERATION_LOG_INVALID_OPERATION_ID")
+	}
+	if errors.Is(e, context.DeadlineExceeded) {
+		return rpcError(codes.DeadlineExceeded, "OPERATION_LOG_QUERY_TIMEOUT")
+	}
+	var pgErr *pgconn.PgError
+	if errors.As(e, &pgErr) && pgErr.Code == "57014" {
+		return rpcError(codes.DeadlineExceeded, "OPERATION_LOG_QUERY_TIMEOUT")
+	}
+	if errors.Is(e, pgx.ErrNoRows) {
+		return rpcError(codes.NotFound, "OPERATION_LOG_NOT_FOUND")
+	}
 	if errors.Is(e, query.ErrCursorExpired) {
 		return rpcError(codes.FailedPrecondition, "CURSOR_EXPIRED")
 	}
@@ -285,6 +438,9 @@ func NewInternalServer(adapter *query.Adapter) *InternalServer {
 	return &InternalServer{Adapter: adapter}
 }
 func (s *InternalServer) ListOperationLogs(ctx context.Context, r *ipb.ListOperationLogsRequest) (*ipb.ListOperationLogsResponse, error) {
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
 	v := fromInternalViewer(r.GetViewer())
 	if query.ValidateViewer(v) != nil {
 		return nil, rpcError(codes.PermissionDenied, "OPERATION_LOG_VIEWER_FORBIDDEN")
@@ -300,7 +456,10 @@ func (s *InternalServer) ListOperationLogs(ctx context.Context, r *ipb.ListOpera
 	if s.Adapter == nil {
 		return nil, rpcError(codes.Unavailable, "OPERATION_LOG_UNAVAILABLE")
 	}
-	f := query.Filter{ActorQuery: r.GetActorQuery(), ActorRole: r.GetActorRole(), CredentialKind: r.GetCredentialKind(), ModuleCode: r.GetModuleCode(), ActionCode: r.GetActionCode(), Outcome: r.GetOutcome(), TargetAccountID: r.GetTargetAccountId(), ResourceType: r.GetResourceType(), ResourceID: r.GetResourceId(), PageSize: int(r.GetPageSize()), Cursor: r.GetCursor()}
+	f, e := internalFilter(r)
+	if e != nil {
+		return nil, rpcError(codes.InvalidArgument, "OPERATION_LOG_INVALID_FILTER")
+	}
 	p, e := s.Adapter.List(ctx, f, v)
 	if e != nil {
 		return nil, mapError(e)
@@ -312,6 +471,9 @@ func (s *InternalServer) ListOperationLogs(ctx context.Context, r *ipb.ListOpera
 	return out, nil
 }
 func (s *InternalServer) GetOperationLog(ctx context.Context, r *ipb.GetOperationLogRequest) (*ipb.GetOperationLogResponse, error) {
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
 	v := fromInternalViewer(r.GetViewer())
 	if query.ValidateViewer(v) != nil {
 		return nil, rpcError(codes.PermissionDenied, "OPERATION_LOG_VIEWER_FORBIDDEN")
@@ -334,12 +496,18 @@ func (s *InternalServer) GetOperationLog(ctx context.Context, r *ipb.GetOperatio
 	return &ipb.GetOperationLogResponse{Item: detailInternal(d)}, nil
 }
 func (s *InternalServer) GetOperationLogRuntimeStatus(ctx context.Context, r *ipb.GetOperationLogRuntimeStatusRequest) (*ipb.GetOperationLogRuntimeStatusResponse, error) {
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, time.Second)
+	defer cancel()
 	v := fromInternalViewer(r.GetViewer())
 	if query.ValidateViewer(v) != nil {
 		return nil, rpcError(codes.PermissionDenied, "OPERATION_LOG_VIEWER_FORBIDDEN")
 	}
 	if s.Access != nil {
 		if err := s.Access.Check(ctx, v.AccountID); err != nil {
+			if errors.Is(err, access.ErrUnavailable) {
+				return nil, rpcError(codes.Unavailable, "OPERATION_LOG_ACCOUNT_UNAVAILABLE")
+			}
 			return nil, rpcError(codes.PermissionDenied, "ACCOUNT_ADMIN_REQUIRED")
 		}
 	}

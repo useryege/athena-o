@@ -2,6 +2,10 @@ package transport
 
 import (
 	"context"
+	"strings"
+
+	ipb "github.com/useryege/athena/internal/operationlog/apiclient"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"testing"
@@ -17,6 +21,19 @@ func TestAuthorizeRequiresBearerAndViewer(t *testing.T) {
 	bad := metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer wrong"))
 	if _, err := a.Authorize(bad, viewer); status.Code(err).String() != "PermissionDenied" {
 		t.Fatalf("got %v", err)
+	}
+}
+
+func TestUnaryInterceptorReturnsStableOversizeReason(t *testing.T) {
+	interceptor := UnaryServerInterceptor("secret")
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer secret"))
+	req := &ipb.ListOperationLogsRequest{ActorQuery: strings.Repeat("x", 70<<10)}
+	_, err := interceptor(ctx, req, &grpc.UnaryServerInfo{FullMethod: "/operationlog.internal.v1.OperationLogInternalService/ListOperationLogs"}, func(context.Context, interface{}) (interface{}, error) {
+		t.Fatal("oversize request reached handler")
+		return nil, nil
+	})
+	if status.Code(err).String() != "InvalidArgument" || !strings.Contains(err.Error(), ReasonMessageTooLarge) {
+		t.Fatalf("err=%v", err)
 	}
 }
 func TestMessageCapacity(t *testing.T) {

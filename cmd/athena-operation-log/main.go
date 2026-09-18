@@ -69,13 +69,33 @@ func main() {
 		fatal(err)
 	}
 	defer lis.Close()
-	grpcServer := grpc.NewServer(grpc.Creds(creds), grpc.MaxRecvMsgSize(cfg.MaxMessageBytes), grpc.MaxSendMsgSize(cfg.MaxMessageBytes), grpc.UnaryInterceptor(transport.UnaryServerInterceptor(cfg.Token)))
+	// Leave a little wire headroom so the interceptor can return the stable
+	// operation-log size reason instead of gRPC rejecting the frame first.
+	wireMaxMessageBytes := cfg.MaxMessageBytes * 2
+	grpcServer := grpc.NewServer(grpc.Creds(creds), grpc.MaxRecvMsgSize(wireMaxMessageBytes), grpc.MaxSendMsgSize(wireMaxMessageBytes), grpc.UnaryInterceptor(transport.UnaryServerInterceptor(cfg.Token)))
 	ipb.RegisterOperationLogInternalServiceServer(grpcServer, impl)
 	healthServer := health.NewServer()
 	healthpb.RegisterHealthServer(grpcServer, healthServer)
 	healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 	projector := &store.Projector{Store: s, Verify: func(c context.Context) error { return schema.Verify(c, s.Pool()) }}
 	go func() { _ = projector.Run(ctx) }()
+	go func() {
+		ticker := time.NewTicker(500 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				st, err := s.RuntimeStatus(ctx)
+				if err != nil || !st.QueryReady || st.ProjectionState == "ERROR" {
+					healthServer.SetServingStatus("", healthpb.HealthCheckResponse_NOT_SERVING)
+				} else {
+					healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+				}
+			}
+		}
+	}()
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil && ctx.Err() == nil {
 			fatal(err)

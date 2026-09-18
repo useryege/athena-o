@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"sort"
@@ -189,9 +190,12 @@ func (a *Adapter) List(ctx context.Context, f Filter, viewer Viewer) (Page, erro
 			return e
 		}
 		if f.Cursor == "" {
-			if e := tx.QueryRow(ctx, "SELECT last_seq, COALESCE(last_published_at,clock_timestamp()) FROM operation_log.publication WHERE singleton_id=1").Scan(&seq, &at); e != nil {
+			if e := tx.QueryRow(ctx, "SELECT last_seq FROM operation_log.publication WHERE singleton_id=1").Scan(&seq); e != nil {
 				return e
 			}
+			// snapshotAt identifies when this query snapshot was created, not
+			// when the last publication happened.
+			at = now
 		}
 		args := []any{seq, nf.From, nf.To}
 		sql := "SELECT operation_id,started_at,actor_account_id,actor_username,actor_role,realm,credential_kind,module_code,action_code,outcome,observation,target_account_id,primary_resource_type,primary_resource_id,duration_ms,detail FROM operation_log.entry_version WHERE visible_from_seq <= $1 AND (visible_to_seq IS NULL OR visible_to_seq > $1) AND started_at >= $2 AND started_at < $3"
@@ -296,7 +300,7 @@ func (a *Adapter) List(ctx context.Context, f Filter, viewer Viewer) (Page, erro
 func (a *Adapter) Get(ctx context.Context, id string, viewer Viewer, snapshot string) (Detail, error) {
 	u, e := uuid.Parse(id)
 	if e != nil || u == uuid.Nil || u.String() != id {
-		return Detail{}, fmt.Errorf("invalid operation id")
+		return Detail{}, fmt.Errorf("%w: %s", ErrInvalidOperationID, id)
 	}
 	if a.Reader == nil {
 		return Detail{}, fmt.Errorf("query reader unavailable")
@@ -336,6 +340,9 @@ func (a *Adapter) Get(ctx context.Context, id string, viewer Viewer, snapshot st
 		var src []pgtype.UUID
 		var from int64
 		if e := tx.QueryRow(ctx, q, args...).Scan(&op, &started, &finished, &aid, &uname, &role, &realm, &cred, &mod, &act, &outcome, &obs, &tid, &rt, &rid, &dur, &detail, &req, &parent, &biz, &src, &from); e != nil {
+			if errors.Is(e, pgx.ErrNoRows) {
+				return ErrNotFound
+			}
 			return e
 		}
 		text := func(v pgtype.Text) string {

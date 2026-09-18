@@ -13,11 +13,12 @@ import (
 )
 
 var (
-	ErrInvalidFilter   = errors.New("invalid operation log filter")
-	ErrCursorInvalid   = errors.New("cursor invalid")
-	ErrCursorExpired   = errors.New("cursor expired")
-	ErrSnapshotExpired = errors.New("snapshot expired")
-	ErrNotFound        = errors.New("operation log not found")
+	ErrInvalidFilter      = errors.New("invalid operation log filter")
+	ErrCursorInvalid      = errors.New("cursor invalid")
+	ErrCursorExpired      = errors.New("cursor expired")
+	ErrSnapshotExpired    = errors.New("snapshot expired")
+	ErrNotFound           = errors.New("operation log not found")
+	ErrInvalidOperationID = errors.New("invalid operation log id")
 )
 
 const (

@@ -17,6 +17,7 @@ import (
 
 const ProjectInterval = 500 * time.Millisecond
 const ProjectTimeout = 2 * time.Second
+const QueryReadTimeout = 3 * time.Second
 
 type Store struct {
 	pool                *pgxpool.Pool
@@ -106,7 +107,7 @@ func (s *Store) LastProcessingError() error {
 // Read gives query adapters one short repeatable-read, read-only snapshot. It
 // must not escape the callback; no connection is held between HTTP requests.
 func (s *Store) Read(ctx context.Context, f func(pgx.Tx) error) error {
-	ctx, cancel := context.WithTimeout(ctx, ProjectTimeout)
+	ctx, cancel := context.WithTimeout(ctx, QueryReadTimeout)
 	defer cancel()
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly})
 	if err != nil {

@@ -96,7 +96,7 @@ func (s *Store) RuntimeStatus(ctx context.Context) (query.RuntimeStatus, error) 
 	if last := s.LastProcessingError(); last != nil {
 		code := "PROJECTION_UNAVAILABLE"
 		out.LastProcessingErrorCode = &code
-		out.ProjectionState = "UNAVAILABLE"
+		out.ProjectionState = "ERROR"
 	} else if out.PendingEvents > 0 {
 		out.ProjectionState = "BACKLOG"
 	} else {

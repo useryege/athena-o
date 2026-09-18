@@ -28,21 +28,162 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type OperationLogResource struct {
-	Type                 string   `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
-	Id                   string   `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	Relation             string   `protobuf:"bytes,3,opt,name=relation,proto3" json:"relation,omitempty"`
-	ReferenceVerified    bool     `protobuf:"varint,4,opt,name=reference_verified,json=referenceVerified,proto3" json:"referenceVerified,omitempty"`
+type NullableString struct {
+	Value                string   `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NullableString) Reset()         { *m = NullableString{} }
+func (m *NullableString) String() string { return proto.CompactTextString(m) }
+func (*NullableString) ProtoMessage()    {}
+func (*NullableString) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5de0fa59f6af69dc, []int{0}
+}
+func (m *NullableString) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NullableString) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NullableString.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NullableString) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NullableString.Merge(m, src)
+}
+func (m *NullableString) XXX_Size() int {
+	return m.Size()
+}
+func (m *NullableString) XXX_DiscardUnknown() {
+	xxx_messageInfo_NullableString.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NullableString proto.InternalMessageInfo
+
+func (m *NullableString) GetValue() string {
+	if m != nil {
+		return m.Value
+	}
+	return ""
+}
+
+type NullableBool struct {
+	Value                bool     `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NullableBool) Reset()         { *m = NullableBool{} }
+func (m *NullableBool) String() string { return proto.CompactTextString(m) }
+func (*NullableBool) ProtoMessage()    {}
+func (*NullableBool) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5de0fa59f6af69dc, []int{1}
+}
+func (m *NullableBool) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NullableBool) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NullableBool.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NullableBool) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NullableBool.Merge(m, src)
+}
+func (m *NullableBool) XXX_Size() int {
+	return m.Size()
+}
+func (m *NullableBool) XXX_DiscardUnknown() {
+	xxx_messageInfo_NullableBool.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NullableBool proto.InternalMessageInfo
+
+func (m *NullableBool) GetValue() bool {
+	if m != nil {
+		return m.Value
+	}
+	return false
+}
+
+type NullableInt64 struct {
+	Value                int64    `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NullableInt64) Reset()         { *m = NullableInt64{} }
+func (m *NullableInt64) String() string { return proto.CompactTextString(m) }
+func (*NullableInt64) ProtoMessage()    {}
+func (*NullableInt64) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5de0fa59f6af69dc, []int{2}
+}
+func (m *NullableInt64) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NullableInt64) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NullableInt64.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NullableInt64) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NullableInt64.Merge(m, src)
+}
+func (m *NullableInt64) XXX_Size() int {
+	return m.Size()
+}
+func (m *NullableInt64) XXX_DiscardUnknown() {
+	xxx_messageInfo_NullableInt64.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NullableInt64 proto.InternalMessageInfo
+
+func (m *NullableInt64) GetValue() int64 {
+	if m != nil {
+		return m.Value
+	}
+	return 0
+}
+
+type OperationLogResource struct {
+	Type                 string        `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	Id                   string        `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	Relation             string        `protobuf:"bytes,3,opt,name=relation,proto3" json:"relation,omitempty"`
+	ReferenceVerified    *NullableBool `protobuf:"bytes,4,opt,name=reference_verified,json=referenceVerified,proto3" json:"referenceVerified,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
 func (m *OperationLogResource) Reset()         { *m = OperationLogResource{} }
 func (m *OperationLogResource) String() string { return proto.CompactTextString(m) }
 func (*OperationLogResource) ProtoMessage()    {}
 func (*OperationLogResource) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{0}
+	return fileDescriptor_5de0fa59f6af69dc, []int{3}
 }
 func (m *OperationLogResource) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -92,29 +233,29 @@ func (m *OperationLogResource) GetRelation() string {
 	return ""
 }
 
-func (m *OperationLogResource) GetReferenceVerified() bool {
+func (m *OperationLogResource) GetReferenceVerified() *NullableBool {
 	if m != nil {
 		return m.ReferenceVerified
 	}
-	return false
+	return nil
 }
 
 type OperationLogChange struct {
-	FieldCode            string   `protobuf:"bytes,1,opt,name=field_code,json=fieldCode,proto3" json:"fieldCode,omitempty"`
-	BeforeValue          string   `protobuf:"bytes,2,opt,name=before_value,json=beforeValue,proto3" json:"beforeValue,omitempty"`
-	AfterValue           string   `protobuf:"bytes,3,opt,name=after_value,json=afterValue,proto3" json:"afterValue,omitempty"`
-	BeforeAvailable      bool     `protobuf:"varint,4,opt,name=before_available,json=beforeAvailable,proto3" json:"beforeAvailable,omitempty"`
-	ValueKind            string   `protobuf:"bytes,5,opt,name=value_kind,json=valueKind,proto3" json:"valueKind,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	FieldCode            string          `protobuf:"bytes,1,opt,name=field_code,json=fieldCode,proto3" json:"fieldCode,omitempty"`
+	BeforeValue          *NullableString `protobuf:"bytes,2,opt,name=before_value,json=beforeValue,proto3" json:"beforeValue,omitempty"`
+	AfterValue           *NullableString `protobuf:"bytes,3,opt,name=after_value,json=afterValue,proto3" json:"afterValue,omitempty"`
+	BeforeAvailable      *NullableBool   `protobuf:"bytes,4,opt,name=before_available,json=beforeAvailable,proto3" json:"beforeAvailable,omitempty"`
+	ValueKind            string          `protobuf:"bytes,5,opt,name=value_kind,json=valueKind,proto3" json:"valueKind,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
 func (m *OperationLogChange) Reset()         { *m = OperationLogChange{} }
 func (m *OperationLogChange) String() string { return proto.CompactTextString(m) }
 func (*OperationLogChange) ProtoMessage()    {}
 func (*OperationLogChange) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{1}
+	return fileDescriptor_5de0fa59f6af69dc, []int{4}
 }
 func (m *OperationLogChange) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -150,25 +291,25 @@ func (m *OperationLogChange) GetFieldCode() string {
 	return ""
 }
 
-func (m *OperationLogChange) GetBeforeValue() string {
+func (m *OperationLogChange) GetBeforeValue() *NullableString {
 	if m != nil {
 		return m.BeforeValue
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogChange) GetAfterValue() string {
+func (m *OperationLogChange) GetAfterValue() *NullableString {
 	if m != nil {
 		return m.AfterValue
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogChange) GetBeforeAvailable() bool {
+func (m *OperationLogChange) GetBeforeAvailable() *NullableBool {
 	if m != nil {
 		return m.BeforeAvailable
 	}
-	return false
+	return nil
 }
 
 func (m *OperationLogChange) GetValueKind() string {
@@ -179,20 +320,20 @@ func (m *OperationLogChange) GetValueKind() string {
 }
 
 type OperationLogCounts struct {
-	Requested            string   `protobuf:"bytes,1,opt,name=requested,proto3" json:"requested,omitempty"`
-	Confirmed            string   `protobuf:"bytes,2,opt,name=confirmed,proto3" json:"confirmed,omitempty"`
-	Failed               string   `protobuf:"bytes,3,opt,name=failed,proto3" json:"failed,omitempty"`
-	Unknown              string   `protobuf:"bytes,4,opt,name=unknown,proto3" json:"unknown,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Requested            *NullableString `protobuf:"bytes,1,opt,name=requested,proto3" json:"requested,omitempty"`
+	Confirmed            *NullableString `protobuf:"bytes,2,opt,name=confirmed,proto3" json:"confirmed,omitempty"`
+	Failed               *NullableString `protobuf:"bytes,3,opt,name=failed,proto3" json:"failed,omitempty"`
+	Unknown              *NullableString `protobuf:"bytes,4,opt,name=unknown,proto3" json:"unknown,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
 func (m *OperationLogCounts) Reset()         { *m = OperationLogCounts{} }
 func (m *OperationLogCounts) String() string { return proto.CompactTextString(m) }
 func (*OperationLogCounts) ProtoMessage()    {}
 func (*OperationLogCounts) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{2}
+	return fileDescriptor_5de0fa59f6af69dc, []int{5}
 }
 func (m *OperationLogCounts) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -221,49 +362,49 @@ func (m *OperationLogCounts) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_OperationLogCounts proto.InternalMessageInfo
 
-func (m *OperationLogCounts) GetRequested() string {
+func (m *OperationLogCounts) GetRequested() *NullableString {
 	if m != nil {
 		return m.Requested
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogCounts) GetConfirmed() string {
+func (m *OperationLogCounts) GetConfirmed() *NullableString {
 	if m != nil {
 		return m.Confirmed
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogCounts) GetFailed() string {
+func (m *OperationLogCounts) GetFailed() *NullableString {
 	if m != nil {
 		return m.Failed
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogCounts) GetUnknown() string {
+func (m *OperationLogCounts) GetUnknown() *NullableString {
 	if m != nil {
 		return m.Unknown
 	}
-	return ""
+	return nil
 }
 
 type OperationLogProtocolResult struct {
-	GrpcCode             string   `protobuf:"bytes,1,opt,name=grpc_code,json=grpcCode,proto3" json:"grpcCode,omitempty"`
-	HttpStatus           string   `protobuf:"bytes,2,opt,name=http_status,json=httpStatus,proto3" json:"httpStatus,omitempty"`
-	ReasonCode           string   `protobuf:"bytes,3,opt,name=reason_code,json=reasonCode,proto3" json:"reasonCode,omitempty"`
-	ResponseWriteFailed  bool     `protobuf:"varint,4,opt,name=response_write_failed,json=responseWriteFailed,proto3" json:"responseWriteFailed,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	GrpcCode             string        `protobuf:"bytes,1,opt,name=grpc_code,json=grpcCode,proto3" json:"grpcCode,omitempty"`
+	HttpStatus           string        `protobuf:"bytes,2,opt,name=http_status,json=httpStatus,proto3" json:"httpStatus,omitempty"`
+	ReasonCode           string        `protobuf:"bytes,3,opt,name=reason_code,json=reasonCode,proto3" json:"reasonCode,omitempty"`
+	ResponseWriteFailed  *NullableBool `protobuf:"bytes,4,opt,name=response_write_failed,json=responseWriteFailed,proto3" json:"responseWriteFailed,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
 func (m *OperationLogProtocolResult) Reset()         { *m = OperationLogProtocolResult{} }
 func (m *OperationLogProtocolResult) String() string { return proto.CompactTextString(m) }
 func (*OperationLogProtocolResult) ProtoMessage()    {}
 func (*OperationLogProtocolResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{3}
+	return fileDescriptor_5de0fa59f6af69dc, []int{6}
 }
 func (m *OperationLogProtocolResult) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -313,29 +454,29 @@ func (m *OperationLogProtocolResult) GetReasonCode() string {
 	return ""
 }
 
-func (m *OperationLogProtocolResult) GetResponseWriteFailed() bool {
+func (m *OperationLogProtocolResult) GetResponseWriteFailed() *NullableBool {
 	if m != nil {
 		return m.ResponseWriteFailed
 	}
-	return false
+	return nil
 }
 
 type OperationLogSourceFacts struct {
-	ProducerId           string   `protobuf:"bytes,1,opt,name=producer_id,json=producerId,proto3" json:"producerId,omitempty"`
-	FirstReceivedAt      string   `protobuf:"bytes,2,opt,name=first_received_at,json=firstReceivedAt,proto3" json:"firstReceivedAt,omitempty"`
-	LastReceivedAt       string   `protobuf:"bytes,3,opt,name=last_received_at,json=lastReceivedAt,proto3" json:"lastReceivedAt,omitempty"`
-	PhasesReceived       []string `protobuf:"bytes,4,rep,name=phases_received,json=phasesReceived,proto3" json:"phasesReceived,omitempty"`
-	SnapshotSequence     string   `protobuf:"bytes,5,opt,name=snapshot_sequence,json=snapshotSequence,proto3" json:"snapshotSequence,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	ProducerId           string          `protobuf:"bytes,1,opt,name=producer_id,json=producerId,proto3" json:"producerId,omitempty"`
+	FirstReceivedAt      *NullableString `protobuf:"bytes,2,opt,name=first_received_at,json=firstReceivedAt,proto3" json:"firstReceivedAt,omitempty"`
+	LastReceivedAt       *NullableString `protobuf:"bytes,3,opt,name=last_received_at,json=lastReceivedAt,proto3" json:"lastReceivedAt,omitempty"`
+	PhasesReceived       []string        `protobuf:"bytes,4,rep,name=phases_received,json=phasesReceived,proto3" json:"phasesReceived,omitempty"`
+	SnapshotSequence     *NullableString `protobuf:"bytes,5,opt,name=snapshot_sequence,json=snapshotSequence,proto3" json:"snapshotSequence,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
 func (m *OperationLogSourceFacts) Reset()         { *m = OperationLogSourceFacts{} }
 func (m *OperationLogSourceFacts) String() string { return proto.CompactTextString(m) }
 func (*OperationLogSourceFacts) ProtoMessage()    {}
 func (*OperationLogSourceFacts) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{4}
+	return fileDescriptor_5de0fa59f6af69dc, []int{7}
 }
 func (m *OperationLogSourceFacts) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -371,18 +512,18 @@ func (m *OperationLogSourceFacts) GetProducerId() string {
 	return ""
 }
 
-func (m *OperationLogSourceFacts) GetFirstReceivedAt() string {
+func (m *OperationLogSourceFacts) GetFirstReceivedAt() *NullableString {
 	if m != nil {
 		return m.FirstReceivedAt
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogSourceFacts) GetLastReceivedAt() string {
+func (m *OperationLogSourceFacts) GetLastReceivedAt() *NullableString {
 	if m != nil {
 		return m.LastReceivedAt
 	}
-	return ""
+	return nil
 }
 
 func (m *OperationLogSourceFacts) GetPhasesReceived() []string {
@@ -392,37 +533,37 @@ func (m *OperationLogSourceFacts) GetPhasesReceived() []string {
 	return nil
 }
 
-func (m *OperationLogSourceFacts) GetSnapshotSequence() string {
+func (m *OperationLogSourceFacts) GetSnapshotSequence() *NullableString {
 	if m != nil {
 		return m.SnapshotSequence
 	}
-	return ""
+	return nil
 }
 
 type OperationLogProducerStatus struct {
-	ProducerId             string   `protobuf:"bytes,1,opt,name=producer_id,json=producerId,proto3" json:"producerId,omitempty"`
-	StartedAt              string   `protobuf:"bytes,2,opt,name=started_at,json=startedAt,proto3" json:"startedAt,omitempty"`
-	LastSeenAt             string   `protobuf:"bytes,3,opt,name=last_seen_at,json=lastSeenAt,proto3" json:"lastSeenAt,omitempty"`
-	StoppedAt              string   `protobuf:"bytes,4,opt,name=stopped_at,json=stoppedAt,proto3" json:"stoppedAt,omitempty"`
-	AttemptedEvents        string   `protobuf:"bytes,5,opt,name=attempted_events,json=attemptedEvents,proto3" json:"attemptedEvents,omitempty"`
-	ConfirmedEvents        string   `protobuf:"bytes,6,opt,name=confirmed_events,json=confirmedEvents,proto3" json:"confirmedEvents,omitempty"`
-	UnconfirmedEvents      string   `protobuf:"bytes,7,opt,name=unconfirmed_events,json=unconfirmedEvents,proto3" json:"unconfirmedEvents,omitempty"`
-	InvalidEvents          string   `protobuf:"bytes,8,opt,name=invalid_events,json=invalidEvents,proto3" json:"invalidEvents,omitempty"`
-	CapacityRejectedEvents string   `protobuf:"bytes,9,opt,name=capacity_rejected_events,json=capacityRejectedEvents,proto3" json:"capacityRejectedEvents,omitempty"`
-	LastFailureAt          string   `protobuf:"bytes,10,opt,name=last_failure_at,json=lastFailureAt,proto3" json:"lastFailureAt,omitempty"`
-	LastFailureCode        string   `protobuf:"bytes,11,opt,name=last_failure_code,json=lastFailureCode,proto3" json:"lastFailureCode,omitempty"`
-	LastRecoveredAt        string   `protobuf:"bytes,12,opt,name=last_recovered_at,json=lastRecoveredAt,proto3" json:"lastRecoveredAt,omitempty"`
-	PersistenceReachable   bool     `protobuf:"varint,13,opt,name=persistence_reachable,json=persistenceReachable,proto3" json:"persistenceReachable,omitempty"`
-	XXX_NoUnkeyedLiteral   struct{} `json:"-"`
-	XXX_unrecognized       []byte   `json:"-"`
-	XXX_sizecache          int32    `json:"-"`
+	ProducerId             string          `protobuf:"bytes,1,opt,name=producer_id,json=producerId,proto3" json:"producerId,omitempty"`
+	StartedAt              *NullableString `protobuf:"bytes,2,opt,name=started_at,json=startedAt,proto3" json:"startedAt,omitempty"`
+	LastSeenAt             *NullableString `protobuf:"bytes,3,opt,name=last_seen_at,json=lastSeenAt,proto3" json:"lastSeenAt,omitempty"`
+	StoppedAt              *NullableString `protobuf:"bytes,4,opt,name=stopped_at,json=stoppedAt,proto3" json:"stoppedAt,omitempty"`
+	AttemptedEvents        *NullableString `protobuf:"bytes,5,opt,name=attempted_events,json=attemptedEvents,proto3" json:"attemptedEvents,omitempty"`
+	ConfirmedEvents        *NullableString `protobuf:"bytes,6,opt,name=confirmed_events,json=confirmedEvents,proto3" json:"confirmedEvents,omitempty"`
+	UnconfirmedEvents      *NullableString `protobuf:"bytes,7,opt,name=unconfirmed_events,json=unconfirmedEvents,proto3" json:"unconfirmedEvents,omitempty"`
+	InvalidEvents          *NullableString `protobuf:"bytes,8,opt,name=invalid_events,json=invalidEvents,proto3" json:"invalidEvents,omitempty"`
+	CapacityRejectedEvents *NullableString `protobuf:"bytes,9,opt,name=capacity_rejected_events,json=capacityRejectedEvents,proto3" json:"capacityRejectedEvents,omitempty"`
+	LastFailureAt          *NullableString `protobuf:"bytes,10,opt,name=last_failure_at,json=lastFailureAt,proto3" json:"lastFailureAt,omitempty"`
+	LastFailureCode        *NullableString `protobuf:"bytes,11,opt,name=last_failure_code,json=lastFailureCode,proto3" json:"lastFailureCode,omitempty"`
+	LastRecoveredAt        *NullableString `protobuf:"bytes,12,opt,name=last_recovered_at,json=lastRecoveredAt,proto3" json:"lastRecoveredAt,omitempty"`
+	PersistenceReachable   *NullableBool   `protobuf:"bytes,13,opt,name=persistence_reachable,json=persistenceReachable,proto3" json:"persistenceReachable,omitempty"`
+	XXX_NoUnkeyedLiteral   struct{}        `json:"-"`
+	XXX_unrecognized       []byte          `json:"-"`
+	XXX_sizecache          int32           `json:"-"`
 }
 
 func (m *OperationLogProducerStatus) Reset()         { *m = OperationLogProducerStatus{} }
 func (m *OperationLogProducerStatus) String() string { return proto.CompactTextString(m) }
 func (*OperationLogProducerStatus) ProtoMessage()    {}
 func (*OperationLogProducerStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{5}
+	return fileDescriptor_5de0fa59f6af69dc, []int{8}
 }
 func (m *OperationLogProducerStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -458,88 +599,88 @@ func (m *OperationLogProducerStatus) GetProducerId() string {
 	return ""
 }
 
-func (m *OperationLogProducerStatus) GetStartedAt() string {
+func (m *OperationLogProducerStatus) GetStartedAt() *NullableString {
 	if m != nil {
 		return m.StartedAt
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogProducerStatus) GetLastSeenAt() string {
+func (m *OperationLogProducerStatus) GetLastSeenAt() *NullableString {
 	if m != nil {
 		return m.LastSeenAt
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogProducerStatus) GetStoppedAt() string {
+func (m *OperationLogProducerStatus) GetStoppedAt() *NullableString {
 	if m != nil {
 		return m.StoppedAt
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogProducerStatus) GetAttemptedEvents() string {
+func (m *OperationLogProducerStatus) GetAttemptedEvents() *NullableString {
 	if m != nil {
 		return m.AttemptedEvents
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogProducerStatus) GetConfirmedEvents() string {
+func (m *OperationLogProducerStatus) GetConfirmedEvents() *NullableString {
 	if m != nil {
 		return m.ConfirmedEvents
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogProducerStatus) GetUnconfirmedEvents() string {
+func (m *OperationLogProducerStatus) GetUnconfirmedEvents() *NullableString {
 	if m != nil {
 		return m.UnconfirmedEvents
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogProducerStatus) GetInvalidEvents() string {
+func (m *OperationLogProducerStatus) GetInvalidEvents() *NullableString {
 	if m != nil {
 		return m.InvalidEvents
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogProducerStatus) GetCapacityRejectedEvents() string {
+func (m *OperationLogProducerStatus) GetCapacityRejectedEvents() *NullableString {
 	if m != nil {
 		return m.CapacityRejectedEvents
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogProducerStatus) GetLastFailureAt() string {
+func (m *OperationLogProducerStatus) GetLastFailureAt() *NullableString {
 	if m != nil {
 		return m.LastFailureAt
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogProducerStatus) GetLastFailureCode() string {
+func (m *OperationLogProducerStatus) GetLastFailureCode() *NullableString {
 	if m != nil {
 		return m.LastFailureCode
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogProducerStatus) GetLastRecoveredAt() string {
+func (m *OperationLogProducerStatus) GetLastRecoveredAt() *NullableString {
 	if m != nil {
 		return m.LastRecoveredAt
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogProducerStatus) GetPersistenceReachable() bool {
+func (m *OperationLogProducerStatus) GetPersistenceReachable() *NullableBool {
 	if m != nil {
 		return m.PersistenceReachable
 	}
-	return false
+	return nil
 }
 
 type ListOperationLogsRequest struct {
@@ -565,7 +706,7 @@ func (m *ListOperationLogsRequest) Reset()         { *m = ListOperationLogsReque
 func (m *ListOperationLogsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListOperationLogsRequest) ProtoMessage()    {}
 func (*ListOperationLogsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{6}
+	return fileDescriptor_5de0fa59f6af69dc, []int{9}
 }
 func (m *ListOperationLogsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -697,7 +838,7 @@ func (m *GetOperationLogRequest) Reset()         { *m = GetOperationLogRequest{}
 func (m *GetOperationLogRequest) String() string { return proto.CompactTextString(m) }
 func (*GetOperationLogRequest) ProtoMessage()    {}
 func (*GetOperationLogRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{7}
+	return fileDescriptor_5de0fa59f6af69dc, []int{10}
 }
 func (m *GetOperationLogRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -741,39 +882,39 @@ func (m *GetOperationLogRequest) GetSnapshotToken() string {
 }
 
 type OperationLogSummary struct {
-	OperationId              string   `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operationId,omitempty"`
-	StartedAt                string   `protobuf:"bytes,2,opt,name=started_at,json=startedAt,proto3" json:"startedAt,omitempty"`
-	ActorAccountId           string   `protobuf:"bytes,3,opt,name=actor_account_id,json=actorAccountId,proto3" json:"actorAccountId,omitempty"`
-	ActorUsername            string   `protobuf:"bytes,4,opt,name=actor_username,json=actorUsername,proto3" json:"actorUsername,omitempty"`
-	ActorRole                string   `protobuf:"bytes,5,opt,name=actor_role,json=actorRole,proto3" json:"actorRole,omitempty"`
-	Realm                    string   `protobuf:"bytes,6,opt,name=realm,proto3" json:"realm,omitempty"`
-	CredentialKind           string   `protobuf:"bytes,7,opt,name=credential_kind,json=credentialKind,proto3" json:"credentialKind,omitempty"`
-	IdentityVerified         bool     `protobuf:"varint,8,opt,name=identity_verified,json=identityVerified,proto3" json:"identityVerified,omitempty"`
-	IdentitySnapshotComplete bool     `protobuf:"varint,9,opt,name=identity_snapshot_complete,json=identitySnapshotComplete,proto3" json:"identitySnapshotComplete,omitempty"`
-	ModuleCode               string   `protobuf:"bytes,10,opt,name=module_code,json=moduleCode,proto3" json:"moduleCode,omitempty"`
-	ActionCode               string   `protobuf:"bytes,11,opt,name=action_code,json=actionCode,proto3" json:"actionCode,omitempty"`
-	PrimaryResourceType      string   `protobuf:"bytes,12,opt,name=primary_resource_type,json=primaryResourceType,proto3" json:"primaryResourceType,omitempty"`
-	PrimaryResourceId        string   `protobuf:"bytes,13,opt,name=primary_resource_id,json=primaryResourceId,proto3" json:"primaryResourceId,omitempty"`
-	Outcome                  string   `protobuf:"bytes,14,opt,name=outcome,proto3" json:"outcome,omitempty"`
-	Observation              string   `protobuf:"bytes,15,opt,name=observation,proto3" json:"observation,omitempty"`
-	ReasonCode               string   `protobuf:"bytes,16,opt,name=reason_code,json=reasonCode,proto3" json:"reasonCode,omitempty"`
-	DurationMs               string   `protobuf:"bytes,17,opt,name=duration_ms,json=durationMs,proto3" json:"durationMs,omitempty"`
-	BusinessState            string   `protobuf:"bytes,18,opt,name=business_state,json=businessState,proto3" json:"businessState,omitempty"`
-	ResourceCount            string   `protobuf:"bytes,19,opt,name=resource_count,json=resourceCount,proto3" json:"resourceCount,omitempty"`
-	ResourcesComplete        bool     `protobuf:"varint,20,opt,name=resources_complete,json=resourcesComplete,proto3" json:"resourcesComplete,omitempty"`
-	ResponseWriteFailed      bool     `protobuf:"varint,21,opt,name=response_write_failed,json=responseWriteFailed,proto3" json:"responseWriteFailed,omitempty"`
-	Provider                 string   `protobuf:"bytes,22,opt,name=provider,proto3" json:"provider,omitempty"`
-	TargetAccountId          string   `protobuf:"bytes,23,opt,name=target_account_id,json=targetAccountId,proto3" json:"targetAccountId,omitempty"`
-	XXX_NoUnkeyedLiteral     struct{} `json:"-"`
-	XXX_unrecognized         []byte   `json:"-"`
-	XXX_sizecache            int32    `json:"-"`
+	OperationId              string          `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operationId,omitempty"`
+	StartedAt                *NullableString `protobuf:"bytes,2,opt,name=started_at,json=startedAt,proto3" json:"startedAt,omitempty"`
+	ActorAccountId           string          `protobuf:"bytes,3,opt,name=actor_account_id,json=actorAccountId,proto3" json:"actorAccountId,omitempty"`
+	ActorUsername            string          `protobuf:"bytes,4,opt,name=actor_username,json=actorUsername,proto3" json:"actorUsername,omitempty"`
+	ActorRole                string          `protobuf:"bytes,5,opt,name=actor_role,json=actorRole,proto3" json:"actorRole,omitempty"`
+	Realm                    string          `protobuf:"bytes,6,opt,name=realm,proto3" json:"realm,omitempty"`
+	CredentialKind           string          `protobuf:"bytes,7,opt,name=credential_kind,json=credentialKind,proto3" json:"credentialKind,omitempty"`
+	IdentityVerified         *NullableBool   `protobuf:"bytes,8,opt,name=identity_verified,json=identityVerified,proto3" json:"identityVerified,omitempty"`
+	IdentitySnapshotComplete *NullableBool   `protobuf:"bytes,9,opt,name=identity_snapshot_complete,json=identitySnapshotComplete,proto3" json:"identitySnapshotComplete,omitempty"`
+	ModuleCode               string          `protobuf:"bytes,10,opt,name=module_code,json=moduleCode,proto3" json:"moduleCode,omitempty"`
+	ActionCode               string          `protobuf:"bytes,11,opt,name=action_code,json=actionCode,proto3" json:"actionCode,omitempty"`
+	PrimaryResourceType      string          `protobuf:"bytes,12,opt,name=primary_resource_type,json=primaryResourceType,proto3" json:"primaryResourceType,omitempty"`
+	PrimaryResourceId        string          `protobuf:"bytes,13,opt,name=primary_resource_id,json=primaryResourceId,proto3" json:"primaryResourceId,omitempty"`
+	Outcome                  string          `protobuf:"bytes,14,opt,name=outcome,proto3" json:"outcome,omitempty"`
+	Observation              string          `protobuf:"bytes,15,opt,name=observation,proto3" json:"observation,omitempty"`
+	ReasonCode               string          `protobuf:"bytes,16,opt,name=reason_code,json=reasonCode,proto3" json:"reasonCode,omitempty"`
+	DurationMs               *NullableString `protobuf:"bytes,17,opt,name=duration_ms,json=durationMs,proto3" json:"durationMs,omitempty"`
+	BusinessState            string          `protobuf:"bytes,18,opt,name=business_state,json=businessState,proto3" json:"businessState,omitempty"`
+	ResourceCount            *NullableString `protobuf:"bytes,19,opt,name=resource_count,json=resourceCount,proto3" json:"resourceCount,omitempty"`
+	ResourcesComplete        *NullableBool   `protobuf:"bytes,20,opt,name=resources_complete,json=resourcesComplete,proto3" json:"resourcesComplete,omitempty"`
+	ResponseWriteFailed      *NullableBool   `protobuf:"bytes,21,opt,name=response_write_failed,json=responseWriteFailed,proto3" json:"responseWriteFailed,omitempty"`
+	Provider                 string          `protobuf:"bytes,22,opt,name=provider,proto3" json:"provider,omitempty"`
+	TargetAccountId          string          `protobuf:"bytes,23,opt,name=target_account_id,json=targetAccountId,proto3" json:"targetAccountId,omitempty"`
+	XXX_NoUnkeyedLiteral     struct{}        `json:"-"`
+	XXX_unrecognized         []byte          `json:"-"`
+	XXX_sizecache            int32           `json:"-"`
 }
 
 func (m *OperationLogSummary) Reset()         { *m = OperationLogSummary{} }
 func (m *OperationLogSummary) String() string { return proto.CompactTextString(m) }
 func (*OperationLogSummary) ProtoMessage()    {}
 func (*OperationLogSummary) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{8}
+	return fileDescriptor_5de0fa59f6af69dc, []int{11}
 }
 func (m *OperationLogSummary) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -809,11 +950,11 @@ func (m *OperationLogSummary) GetOperationId() string {
 	return ""
 }
 
-func (m *OperationLogSummary) GetStartedAt() string {
+func (m *OperationLogSummary) GetStartedAt() *NullableString {
 	if m != nil {
 		return m.StartedAt
 	}
-	return ""
+	return nil
 }
 
 func (m *OperationLogSummary) GetActorAccountId() string {
@@ -851,18 +992,18 @@ func (m *OperationLogSummary) GetCredentialKind() string {
 	return ""
 }
 
-func (m *OperationLogSummary) GetIdentityVerified() bool {
+func (m *OperationLogSummary) GetIdentityVerified() *NullableBool {
 	if m != nil {
 		return m.IdentityVerified
 	}
-	return false
+	return nil
 }
 
-func (m *OperationLogSummary) GetIdentitySnapshotComplete() bool {
+func (m *OperationLogSummary) GetIdentitySnapshotComplete() *NullableBool {
 	if m != nil {
 		return m.IdentitySnapshotComplete
 	}
-	return false
+	return nil
 }
 
 func (m *OperationLogSummary) GetModuleCode() string {
@@ -914,11 +1055,11 @@ func (m *OperationLogSummary) GetReasonCode() string {
 	return ""
 }
 
-func (m *OperationLogSummary) GetDurationMs() string {
+func (m *OperationLogSummary) GetDurationMs() *NullableString {
 	if m != nil {
 		return m.DurationMs
 	}
-	return ""
+	return nil
 }
 
 func (m *OperationLogSummary) GetBusinessState() string {
@@ -928,25 +1069,25 @@ func (m *OperationLogSummary) GetBusinessState() string {
 	return ""
 }
 
-func (m *OperationLogSummary) GetResourceCount() string {
+func (m *OperationLogSummary) GetResourceCount() *NullableString {
 	if m != nil {
 		return m.ResourceCount
 	}
-	return ""
+	return nil
 }
 
-func (m *OperationLogSummary) GetResourcesComplete() bool {
+func (m *OperationLogSummary) GetResourcesComplete() *NullableBool {
 	if m != nil {
 		return m.ResourcesComplete
 	}
-	return false
+	return nil
 }
 
-func (m *OperationLogSummary) GetResponseWriteFailed() bool {
+func (m *OperationLogSummary) GetResponseWriteFailed() *NullableBool {
 	if m != nil {
 		return m.ResponseWriteFailed
 	}
-	return false
+	return nil
 }
 
 func (m *OperationLogSummary) GetProvider() string {
@@ -978,7 +1119,7 @@ func (m *Page) Reset()         { *m = Page{} }
 func (m *Page) String() string { return proto.CompactTextString(m) }
 func (*Page) ProtoMessage()    {}
 func (*Page) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{9}
+	return fileDescriptor_5de0fa59f6af69dc, []int{12}
 }
 func (m *Page) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1063,7 +1204,7 @@ func (m *AppliedFilters) Reset()         { *m = AppliedFilters{} }
 func (m *AppliedFilters) String() string { return proto.CompactTextString(m) }
 func (*AppliedFilters) ProtoMessage()    {}
 func (*AppliedFilters) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{10}
+	return fileDescriptor_5de0fa59f6af69dc, []int{13}
 }
 func (m *AppliedFilters) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1182,7 +1323,7 @@ func (m *ListOperationLogsResponse) Reset()         { *m = ListOperationLogsResp
 func (m *ListOperationLogsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListOperationLogsResponse) ProtoMessage()    {}
 func (*ListOperationLogsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{11}
+	return fileDescriptor_5de0fa59f6af69dc, []int{14}
 }
 func (m *ListOperationLogsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1234,7 +1375,7 @@ func (m *ListOperationLogsResponse) GetAppliedFilters() *AppliedFilters {
 
 type OperationLogDetail struct {
 	Summary              *OperationLogSummary        `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`
-	FinishedAt           string                      `protobuf:"bytes,2,opt,name=finished_at,json=finishedAt,proto3" json:"finishedAt,omitempty"`
+	FinishedAt           *NullableString             `protobuf:"bytes,2,opt,name=finished_at,json=finishedAt,proto3" json:"finishedAt,omitempty"`
 	RequestId            string                      `protobuf:"bytes,3,opt,name=request_id,json=requestId,proto3" json:"requestId,omitempty"`
 	ParentOperationId    string                      `protobuf:"bytes,4,opt,name=parent_operation_id,json=parentOperationId,proto3" json:"parentOperationId,omitempty"`
 	BusinessRequestId    string                      `protobuf:"bytes,5,opt,name=business_request_id,json=businessRequestId,proto3" json:"businessRequestId,omitempty"`
@@ -1259,7 +1400,7 @@ func (m *OperationLogDetail) Reset()         { *m = OperationLogDetail{} }
 func (m *OperationLogDetail) String() string { return proto.CompactTextString(m) }
 func (*OperationLogDetail) ProtoMessage()    {}
 func (*OperationLogDetail) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{12}
+	return fileDescriptor_5de0fa59f6af69dc, []int{15}
 }
 func (m *OperationLogDetail) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1295,11 +1436,11 @@ func (m *OperationLogDetail) GetSummary() *OperationLogSummary {
 	return nil
 }
 
-func (m *OperationLogDetail) GetFinishedAt() string {
+func (m *OperationLogDetail) GetFinishedAt() *NullableString {
 	if m != nil {
 		return m.FinishedAt
 	}
-	return ""
+	return nil
 }
 
 func (m *OperationLogDetail) GetRequestId() string {
@@ -1418,7 +1559,7 @@ func (m *GetOperationLogResponse) Reset()         { *m = GetOperationLogResponse
 func (m *GetOperationLogResponse) String() string { return proto.CompactTextString(m) }
 func (*GetOperationLogResponse) ProtoMessage()    {}
 func (*GetOperationLogResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{13}
+	return fileDescriptor_5de0fa59f6af69dc, []int{16}
 }
 func (m *GetOperationLogResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1456,18 +1597,18 @@ func (m *GetOperationLogResponse) GetItem() *OperationLogDetail {
 
 type RuntimeStatus struct {
 	ServiceEpoch            string                        `protobuf:"bytes,1,opt,name=service_epoch,json=serviceEpoch,proto3" json:"serviceEpoch,omitempty"`
-	CheckedAt               string                        `protobuf:"bytes,2,opt,name=checked_at,json=checkedAt,proto3" json:"checkedAt,omitempty"`
-	QueryReady              bool                          `protobuf:"varint,3,opt,name=query_ready,json=queryReady,proto3" json:"queryReady,omitempty"`
+	CheckedAt               *NullableString               `protobuf:"bytes,2,opt,name=checked_at,json=checkedAt,proto3" json:"checkedAt,omitempty"`
+	QueryReady              *NullableBool                 `protobuf:"bytes,3,opt,name=query_ready,json=queryReady,proto3" json:"queryReady,omitempty"`
 	ProjectionState         string                        `protobuf:"bytes,4,opt,name=projection_state,json=projectionState,proto3" json:"projectionState,omitempty"`
-	LastPublishedAt         string                        `protobuf:"bytes,5,opt,name=last_published_at,json=lastPublishedAt,proto3" json:"lastPublishedAt,omitempty"`
+	LastPublishedAt         *NullableString               `protobuf:"bytes,5,opt,name=last_published_at,json=lastPublishedAt,proto3" json:"lastPublishedAt,omitempty"`
 	PublicationSequence     string                        `protobuf:"bytes,6,opt,name=publication_sequence,json=publicationSequence,proto3" json:"publicationSequence,omitempty"`
-	PendingEvents           string                        `protobuf:"bytes,7,opt,name=pending_events,json=pendingEvents,proto3" json:"pendingEvents,omitempty"`
-	OldestPendingReceivedAt string                        `protobuf:"bytes,8,opt,name=oldest_pending_received_at,json=oldestPendingReceivedAt,proto3" json:"oldestPendingReceivedAt,omitempty"`
+	PendingEvents           *NullableString               `protobuf:"bytes,7,opt,name=pending_events,json=pendingEvents,proto3" json:"pendingEvents,omitempty"`
+	OldestPendingReceivedAt *NullableString               `protobuf:"bytes,8,opt,name=oldest_pending_received_at,json=oldestPendingReceivedAt,proto3" json:"oldestPendingReceivedAt,omitempty"`
 	QuarantinedEvents       string                        `protobuf:"bytes,9,opt,name=quarantined_events,json=quarantinedEvents,proto3" json:"quarantinedEvents,omitempty"`
 	LastProcessingErrorCode string                        `protobuf:"bytes,10,opt,name=last_processing_error_code,json=lastProcessingErrorCode,proto3" json:"lastProcessingErrorCode,omitempty"`
 	ObservedProducers       []*OperationLogProducerStatus `protobuf:"bytes,11,rep,name=observed_producers,json=observedProducers,proto3" json:"observedProducers,omitempty"`
-	TotalObserved           string                        `protobuf:"bytes,12,opt,name=total_observed,json=totalObserved,proto3" json:"totalObserved,omitempty"`
-	ProducersComplete       bool                          `protobuf:"varint,13,opt,name=producers_complete,json=producersComplete,proto3" json:"producersComplete,omitempty"`
+	TotalObserved           *NullableString               `protobuf:"bytes,12,opt,name=total_observed,json=totalObserved,proto3" json:"totalObserved,omitempty"`
+	ProducersComplete       *NullableBool                 `protobuf:"bytes,13,opt,name=producers_complete,json=producersComplete,proto3" json:"producersComplete,omitempty"`
 	XXX_NoUnkeyedLiteral    struct{}                      `json:"-"`
 	XXX_unrecognized        []byte                        `json:"-"`
 	XXX_sizecache           int32                         `json:"-"`
@@ -1477,7 +1618,7 @@ func (m *RuntimeStatus) Reset()         { *m = RuntimeStatus{} }
 func (m *RuntimeStatus) String() string { return proto.CompactTextString(m) }
 func (*RuntimeStatus) ProtoMessage()    {}
 func (*RuntimeStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{14}
+	return fileDescriptor_5de0fa59f6af69dc, []int{17}
 }
 func (m *RuntimeStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1513,18 +1654,18 @@ func (m *RuntimeStatus) GetServiceEpoch() string {
 	return ""
 }
 
-func (m *RuntimeStatus) GetCheckedAt() string {
+func (m *RuntimeStatus) GetCheckedAt() *NullableString {
 	if m != nil {
 		return m.CheckedAt
 	}
-	return ""
+	return nil
 }
 
-func (m *RuntimeStatus) GetQueryReady() bool {
+func (m *RuntimeStatus) GetQueryReady() *NullableBool {
 	if m != nil {
 		return m.QueryReady
 	}
-	return false
+	return nil
 }
 
 func (m *RuntimeStatus) GetProjectionState() string {
@@ -1534,11 +1675,11 @@ func (m *RuntimeStatus) GetProjectionState() string {
 	return ""
 }
 
-func (m *RuntimeStatus) GetLastPublishedAt() string {
+func (m *RuntimeStatus) GetLastPublishedAt() *NullableString {
 	if m != nil {
 		return m.LastPublishedAt
 	}
-	return ""
+	return nil
 }
 
 func (m *RuntimeStatus) GetPublicationSequence() string {
@@ -1548,18 +1689,18 @@ func (m *RuntimeStatus) GetPublicationSequence() string {
 	return ""
 }
 
-func (m *RuntimeStatus) GetPendingEvents() string {
+func (m *RuntimeStatus) GetPendingEvents() *NullableString {
 	if m != nil {
 		return m.PendingEvents
 	}
-	return ""
+	return nil
 }
 
-func (m *RuntimeStatus) GetOldestPendingReceivedAt() string {
+func (m *RuntimeStatus) GetOldestPendingReceivedAt() *NullableString {
 	if m != nil {
 		return m.OldestPendingReceivedAt
 	}
-	return ""
+	return nil
 }
 
 func (m *RuntimeStatus) GetQuarantinedEvents() string {
@@ -1583,18 +1724,18 @@ func (m *RuntimeStatus) GetObservedProducers() []*OperationLogProducerStatus {
 	return nil
 }
 
-func (m *RuntimeStatus) GetTotalObserved() string {
+func (m *RuntimeStatus) GetTotalObserved() *NullableString {
 	if m != nil {
 		return m.TotalObserved
 	}
-	return ""
+	return nil
 }
 
-func (m *RuntimeStatus) GetProducersComplete() bool {
+func (m *RuntimeStatus) GetProducersComplete() *NullableBool {
 	if m != nil {
 		return m.ProducersComplete
 	}
-	return false
+	return nil
 }
 
 type GetOperationLogRuntimeStatusRequest struct {
@@ -1607,7 +1748,7 @@ func (m *GetOperationLogRuntimeStatusRequest) Reset()         { *m = GetOperatio
 func (m *GetOperationLogRuntimeStatusRequest) String() string { return proto.CompactTextString(m) }
 func (*GetOperationLogRuntimeStatusRequest) ProtoMessage()    {}
 func (*GetOperationLogRuntimeStatusRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{15}
+	return fileDescriptor_5de0fa59f6af69dc, []int{18}
 }
 func (m *GetOperationLogRuntimeStatusRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1647,7 +1788,7 @@ func (m *GetOperationLogRuntimeStatusResponse) Reset()         { *m = GetOperati
 func (m *GetOperationLogRuntimeStatusResponse) String() string { return proto.CompactTextString(m) }
 func (*GetOperationLogRuntimeStatusResponse) ProtoMessage()    {}
 func (*GetOperationLogRuntimeStatusResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{16}
+	return fileDescriptor_5de0fa59f6af69dc, []int{19}
 }
 func (m *GetOperationLogRuntimeStatusResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1693,7 +1834,7 @@ func (m *GetOperationLogCaptureStatusRequest) Reset()         { *m = GetOperatio
 func (m *GetOperationLogCaptureStatusRequest) String() string { return proto.CompactTextString(m) }
 func (*GetOperationLogCaptureStatusRequest) ProtoMessage()    {}
 func (*GetOperationLogCaptureStatusRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{17}
+	return fileDescriptor_5de0fa59f6af69dc, []int{20}
 }
 func (m *GetOperationLogCaptureStatusRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1723,28 +1864,28 @@ func (m *GetOperationLogCaptureStatusRequest) XXX_DiscardUnknown() {
 var xxx_messageInfo_GetOperationLogCaptureStatusRequest proto.InternalMessageInfo
 
 type CaptureStatus struct {
-	InstanceId             string   `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instanceId,omitempty"`
-	StartedAt              string   `protobuf:"bytes,2,opt,name=started_at,json=startedAt,proto3" json:"startedAt,omitempty"`
-	ObservedAt             string   `protobuf:"bytes,3,opt,name=observed_at,json=observedAt,proto3" json:"observedAt,omitempty"`
-	AttemptedEvents        string   `protobuf:"bytes,4,opt,name=attempted_events,json=attemptedEvents,proto3" json:"attemptedEvents,omitempty"`
-	ConfirmedEvents        string   `protobuf:"bytes,5,opt,name=confirmed_events,json=confirmedEvents,proto3" json:"confirmedEvents,omitempty"`
-	UnconfirmedEvents      string   `protobuf:"bytes,6,opt,name=unconfirmed_events,json=unconfirmedEvents,proto3" json:"unconfirmedEvents,omitempty"`
-	InvalidEvents          string   `protobuf:"bytes,7,opt,name=invalid_events,json=invalidEvents,proto3" json:"invalidEvents,omitempty"`
-	CapacityRejectedEvents string   `protobuf:"bytes,8,opt,name=capacity_rejected_events,json=capacityRejectedEvents,proto3" json:"capacityRejectedEvents,omitempty"`
-	InFlightEvents         string   `protobuf:"bytes,9,opt,name=in_flight_events,json=inFlightEvents,proto3" json:"inFlightEvents,omitempty"`
-	LastFailureCode        string   `protobuf:"bytes,10,opt,name=last_failure_code,json=lastFailureCode,proto3" json:"lastFailureCode,omitempty"`
-	PersistenceReachable   bool     `protobuf:"varint,11,opt,name=persistence_reachable,json=persistenceReachable,proto3" json:"persistenceReachable,omitempty"`
-	LastConfirmedAt        string   `protobuf:"bytes,12,opt,name=last_confirmed_at,json=lastConfirmedAt,proto3" json:"lastConfirmedAt,omitempty"`
-	XXX_NoUnkeyedLiteral   struct{} `json:"-"`
-	XXX_unrecognized       []byte   `json:"-"`
-	XXX_sizecache          int32    `json:"-"`
+	InstanceId             string          `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instanceId,omitempty"`
+	StartedAt              *NullableString `protobuf:"bytes,2,opt,name=started_at,json=startedAt,proto3" json:"startedAt,omitempty"`
+	ObservedAt             *NullableString `protobuf:"bytes,3,opt,name=observed_at,json=observedAt,proto3" json:"observedAt,omitempty"`
+	AttemptedEvents        *NullableString `protobuf:"bytes,4,opt,name=attempted_events,json=attemptedEvents,proto3" json:"attemptedEvents,omitempty"`
+	ConfirmedEvents        *NullableString `protobuf:"bytes,5,opt,name=confirmed_events,json=confirmedEvents,proto3" json:"confirmedEvents,omitempty"`
+	UnconfirmedEvents      *NullableString `protobuf:"bytes,6,opt,name=unconfirmed_events,json=unconfirmedEvents,proto3" json:"unconfirmedEvents,omitempty"`
+	InvalidEvents          *NullableString `protobuf:"bytes,7,opt,name=invalid_events,json=invalidEvents,proto3" json:"invalidEvents,omitempty"`
+	CapacityRejectedEvents *NullableString `protobuf:"bytes,8,opt,name=capacity_rejected_events,json=capacityRejectedEvents,proto3" json:"capacityRejectedEvents,omitempty"`
+	InFlightEvents         *NullableString `protobuf:"bytes,9,opt,name=in_flight_events,json=inFlightEvents,proto3" json:"inFlightEvents,omitempty"`
+	LastFailureCode        *NullableString `protobuf:"bytes,10,opt,name=last_failure_code,json=lastFailureCode,proto3" json:"lastFailureCode,omitempty"`
+	PersistenceReachable   *NullableBool   `protobuf:"bytes,11,opt,name=persistence_reachable,json=persistenceReachable,proto3" json:"persistenceReachable,omitempty"`
+	LastConfirmedAt        *NullableString `protobuf:"bytes,12,opt,name=last_confirmed_at,json=lastConfirmedAt,proto3" json:"lastConfirmedAt,omitempty"`
+	XXX_NoUnkeyedLiteral   struct{}        `json:"-"`
+	XXX_unrecognized       []byte          `json:"-"`
+	XXX_sizecache          int32           `json:"-"`
 }
 
 func (m *CaptureStatus) Reset()         { *m = CaptureStatus{} }
 func (m *CaptureStatus) String() string { return proto.CompactTextString(m) }
 func (*CaptureStatus) ProtoMessage()    {}
 func (*CaptureStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{18}
+	return fileDescriptor_5de0fa59f6af69dc, []int{21}
 }
 func (m *CaptureStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1780,81 +1921,81 @@ func (m *CaptureStatus) GetInstanceId() string {
 	return ""
 }
 
-func (m *CaptureStatus) GetStartedAt() string {
+func (m *CaptureStatus) GetStartedAt() *NullableString {
 	if m != nil {
 		return m.StartedAt
 	}
-	return ""
+	return nil
 }
 
-func (m *CaptureStatus) GetObservedAt() string {
+func (m *CaptureStatus) GetObservedAt() *NullableString {
 	if m != nil {
 		return m.ObservedAt
 	}
-	return ""
+	return nil
 }
 
-func (m *CaptureStatus) GetAttemptedEvents() string {
+func (m *CaptureStatus) GetAttemptedEvents() *NullableString {
 	if m != nil {
 		return m.AttemptedEvents
 	}
-	return ""
+	return nil
 }
 
-func (m *CaptureStatus) GetConfirmedEvents() string {
+func (m *CaptureStatus) GetConfirmedEvents() *NullableString {
 	if m != nil {
 		return m.ConfirmedEvents
 	}
-	return ""
+	return nil
 }
 
-func (m *CaptureStatus) GetUnconfirmedEvents() string {
+func (m *CaptureStatus) GetUnconfirmedEvents() *NullableString {
 	if m != nil {
 		return m.UnconfirmedEvents
 	}
-	return ""
+	return nil
 }
 
-func (m *CaptureStatus) GetInvalidEvents() string {
+func (m *CaptureStatus) GetInvalidEvents() *NullableString {
 	if m != nil {
 		return m.InvalidEvents
 	}
-	return ""
+	return nil
 }
 
-func (m *CaptureStatus) GetCapacityRejectedEvents() string {
+func (m *CaptureStatus) GetCapacityRejectedEvents() *NullableString {
 	if m != nil {
 		return m.CapacityRejectedEvents
 	}
-	return ""
+	return nil
 }
 
-func (m *CaptureStatus) GetInFlightEvents() string {
+func (m *CaptureStatus) GetInFlightEvents() *NullableString {
 	if m != nil {
 		return m.InFlightEvents
 	}
-	return ""
+	return nil
 }
 
-func (m *CaptureStatus) GetLastFailureCode() string {
+func (m *CaptureStatus) GetLastFailureCode() *NullableString {
 	if m != nil {
 		return m.LastFailureCode
 	}
-	return ""
+	return nil
 }
 
-func (m *CaptureStatus) GetPersistenceReachable() bool {
+func (m *CaptureStatus) GetPersistenceReachable() *NullableBool {
 	if m != nil {
 		return m.PersistenceReachable
 	}
-	return false
+	return nil
 }
 
-func (m *CaptureStatus) GetLastConfirmedAt() string {
+func (m *CaptureStatus) GetLastConfirmedAt() *NullableString {
 	if m != nil {
 		return m.LastConfirmedAt
 	}
-	return ""
+	return nil
 }
 
 type GetOperationLogCaptureStatusResponse struct {
@@ -1868,7 +2009,7 @@ func (m *GetOperationLogCaptureStatusResponse) Reset()         { *m = GetOperati
 func (m *GetOperationLogCaptureStatusResponse) String() string { return proto.CompactTextString(m) }
 func (*GetOperationLogCaptureStatusResponse) ProtoMessage()    {}
 func (*GetOperationLogCaptureStatusResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{19}
+	return fileDescriptor_5de0fa59f6af69dc, []int{22}
 }
 func (m *GetOperationLogCaptureStatusResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1914,7 +2055,7 @@ func (m *ListOperationLogActionsRequest) Reset()         { *m = ListOperationLog
 func (m *ListOperationLogActionsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListOperationLogActionsRequest) ProtoMessage()    {}
 func (*ListOperationLogActionsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{20}
+	return fileDescriptor_5de0fa59f6af69dc, []int{23}
 }
 func (m *ListOperationLogActionsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1957,7 +2098,7 @@ func (m *OperationLogAction) Reset()         { *m = OperationLogAction{} }
 func (m *OperationLogAction) String() string { return proto.CompactTextString(m) }
 func (*OperationLogAction) ProtoMessage()    {}
 func (*OperationLogAction) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{21}
+	return fileDescriptor_5de0fa59f6af69dc, []int{24}
 }
 func (m *OperationLogAction) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2026,7 +2167,7 @@ func (m *ListOperationLogActionsResponse) Reset()         { *m = ListOperationLo
 func (m *ListOperationLogActionsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListOperationLogActionsResponse) ProtoMessage()    {}
 func (*ListOperationLogActionsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5de0fa59f6af69dc, []int{22}
+	return fileDescriptor_5de0fa59f6af69dc, []int{25}
 }
 func (m *ListOperationLogActionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2070,6 +2211,9 @@ func (m *ListOperationLogActionsResponse) GetActions() []*OperationLogAction {
 }
 
 func init() {
+	proto.RegisterType((*NullableString)(nil), "operationlog.NullableString")
+	proto.RegisterType((*NullableBool)(nil), "operationlog.NullableBool")
+	proto.RegisterType((*NullableInt64)(nil), "operationlog.NullableInt64")
 	proto.RegisterType((*OperationLogResource)(nil), "operationlog.OperationLogResource")
 	proto.RegisterType((*OperationLogChange)(nil), "operationlog.OperationLogChange")
 	proto.RegisterType((*OperationLogCounts)(nil), "operationlog.OperationLogCounts")
@@ -2100,196 +2244,205 @@ func init() {
 }
 
 var fileDescriptor_5de0fa59f6af69dc = []byte{
-	// 3021 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x5a, 0xcf, 0x6f, 0x1c, 0xb7,
-	0xf5, 0xc7, 0x4a, 0xda, 0x95, 0xc4, 0xd5, 0x4f, 0x4a, 0xb6, 0x26, 0x8a, 0xa3, 0x55, 0x36, 0x76,
-	0xbe, 0xce, 0x37, 0x76, 0xd4, 0xc8, 0x48, 0x8a, 0xa4, 0x01, 0x52, 0x5b, 0xb5, 0x1a, 0x23, 0x69,
-	0xed, 0xac, 0x9d, 0xa4, 0xc8, 0xa1, 0x83, 0xd1, 0x0c, 0x77, 0xc5, 0x7a, 0x76, 0x66, 0xcc, 0xe1,
-	0x28, 0x51, 0x8a, 0x5e, 0x72, 0xcc, 0x35, 0x97, 0xa2, 0x87, 0x5e, 0xda, 0xbf, 0xa0, 0xb7, 0xa2,
-	0x87, 0x02, 0xbd, 0xb4, 0xb7, 0x16, 0xe8, 0x7d, 0xd1, 0x26, 0x39, 0xed, 0xa5, 0x7f, 0x40, 0x7b,
-	0x28, 0xf8, 0xc8, 0x19, 0x92, 0x33, 0xa3, 0x9f, 0x16, 0x7a, 0xca, 0x4d, 0xfb, 0xf9, 0x3c, 0x3e,
-	0x72, 0x1e, 0x1f, 0x1f, 0xdf, 0x7b, 0x14, 0xda, 0xa2, 0x11, 0x27, 0x2c, 0xf2, 0xc2, 0xad, 0x94,
-	0xb0, 0x03, 0xc2, 0xb6, 0xe2, 0x84, 0x30, 0x8f, 0xd3, 0x38, 0x0a, 0xe3, 0x81, 0xf5, 0xe3, 0x95,
-	0x84, 0xc5, 0x3c, 0xc6, 0x73, 0x26, 0xb6, 0x7e, 0x65, 0x10, 0xc7, 0x83, 0x90, 0x6c, 0x79, 0x09,
-	0xdd, 0xf2, 0xa2, 0x28, 0xe6, 0xc0, 0xa4, 0x52, 0x76, 0x7d, 0x75, 0x10, 0x0f, 0x62, 0xf8, 0x73,
-	0x4b, 0xfc, 0x25, 0xd1, 0xee, 0x37, 0x0d, 0xb4, 0x7a, 0x3f, 0x57, 0xf2, 0x5e, 0x3c, 0xe8, 0x91,
-	0x34, 0xce, 0x98, 0x4f, 0xf0, 0x8b, 0x68, 0x8a, 0x1f, 0x26, 0xc4, 0x69, 0x6c, 0x36, 0xae, 0xcf,
-	0xde, 0xc1, 0xe3, 0x51, 0x67, 0x41, 0xfc, 0xbe, 0x11, 0x0f, 0x29, 0x27, 0xc3, 0x84, 0x1f, 0xf6,
-	0x80, 0xc7, 0x9b, 0x68, 0x82, 0x06, 0xce, 0x04, 0x48, 0x2d, 0x8d, 0x47, 0x9d, 0x39, 0x1a, 0x18,
-	0x32, 0x13, 0x34, 0xc0, 0xdb, 0x68, 0x86, 0x91, 0x10, 0x26, 0x70, 0x26, 0x41, 0xee, 0xf2, 0x78,
-	0xd4, 0xc1, 0x39, 0x66, 0x48, 0x17, 0x72, 0xf8, 0xc7, 0x08, 0x33, 0xd2, 0x27, 0x8c, 0x44, 0x3e,
-	0x71, 0x0f, 0x08, 0xa3, 0x7d, 0x4a, 0x02, 0x67, 0x6a, 0xb3, 0x71, 0x7d, 0xe6, 0x4e, 0x67, 0x3c,
-	0xea, 0x3c, 0x5b, 0xb0, 0x1f, 0x2a, 0xd2, 0x50, 0xb3, 0x5c, 0x21, 0xbb, 0x7f, 0x9e, 0x40, 0xd8,
-	0xfc, 0xcc, 0x9d, 0x7d, 0x2f, 0x1a, 0x10, 0xfc, 0x3a, 0x42, 0x7d, 0x4a, 0xc2, 0xc0, 0xf5, 0xe3,
-	0x20, 0xff, 0xd4, 0xb5, 0xf1, 0xa8, 0xb3, 0x02, 0xe8, 0x4e, 0x1c, 0x98, 0xdf, 0x3b, 0x5b, 0x80,
-	0xf8, 0x2d, 0x34, 0xb7, 0x47, 0xfa, 0x31, 0x23, 0xee, 0x81, 0x17, 0x66, 0x44, 0x7d, 0xfe, 0x33,
-	0xe3, 0x51, 0xe7, 0x92, 0xc4, 0x3f, 0x14, 0xb0, 0x31, 0xb6, 0x6d, 0xc0, 0xf8, 0x0d, 0xd4, 0xf6,
-	0xfa, 0x9c, 0x30, 0x35, 0x58, 0xda, 0xc4, 0x19, 0x8f, 0x3a, 0xab, 0x00, 0x97, 0xc7, 0x22, 0x8d,
-	0xe2, 0x77, 0xd0, 0x92, 0x9a, 0xd8, 0x3b, 0xf0, 0x68, 0xe8, 0xed, 0x85, 0x44, 0x59, 0xe5, 0xb9,
-	0xf1, 0xa8, 0xf3, 0x8c, 0xe4, 0x6e, 0xe7, 0x94, 0xa1, 0x64, 0xb1, 0x44, 0x89, 0x4f, 0x87, 0xe9,
-	0xdd, 0xc7, 0x34, 0x0a, 0x9c, 0xa6, 0xfe, 0x74, 0x40, 0xdf, 0xa5, 0x91, 0x69, 0xd1, 0xd9, 0x02,
-	0xec, 0xfe, 0xb3, 0x51, 0xb2, 0x64, 0x9c, 0x45, 0x3c, 0xc5, 0xaf, 0xa1, 0x59, 0x46, 0x9e, 0x64,
-	0x24, 0xe5, 0x24, 0x30, 0x0d, 0x59, 0x80, 0xa6, 0xb6, 0x02, 0x14, 0xc3, 0xfc, 0x38, 0xea, 0x53,
-	0x36, 0x24, 0xb9, 0x13, 0xc1, 0xb0, 0x02, 0x34, 0x87, 0x15, 0x20, 0xbe, 0x81, 0x5a, 0x7d, 0x8f,
-	0x86, 0x24, 0x50, 0xc6, 0x5b, 0x1d, 0x8f, 0x3a, 0x4b, 0x12, 0x31, 0x06, 0x28, 0x19, 0xbc, 0x85,
-	0xa6, 0xb3, 0xe8, 0x71, 0x14, 0x7f, 0x12, 0x81, 0xad, 0x66, 0xef, 0x5c, 0x1a, 0x8f, 0x3a, 0xcb,
-	0x0a, 0x32, 0xe4, 0x73, 0xa9, 0xee, 0xaf, 0x27, 0xd0, 0xba, 0xf9, 0x8d, 0x0f, 0xc4, 0x51, 0xf1,
-	0xe3, 0xb0, 0x47, 0xd2, 0x2c, 0xe4, 0xf8, 0x16, 0x9a, 0x1d, 0xb0, 0xc4, 0x37, 0x9d, 0x06, 0x3c,
-	0x5a, 0x80, 0x25, 0x9f, 0x99, 0xc9, 0x31, 0xb1, 0xe9, 0xfb, 0x9c, 0x27, 0x6e, 0xca, 0x3d, 0x9e,
-	0xa5, 0xce, 0x84, 0xde, 0x74, 0x01, 0x3f, 0x04, 0xd4, 0xdc, 0x74, 0x8d, 0x8a, 0xa1, 0x8c, 0x78,
-	0x69, 0x1c, 0xc9, 0x19, 0x0d, 0x7f, 0x91, 0x70, 0x69, 0x4e, 0xa4, 0x51, 0xfc, 0x01, 0xba, 0xc4,
-	0x48, 0x9a, 0xc4, 0x51, 0x4a, 0xdc, 0x4f, 0x18, 0xe5, 0xc4, 0x55, 0x76, 0x93, 0x4e, 0xf3, 0xfc,
-	0x78, 0xd4, 0x79, 0x2e, 0x17, 0xf8, 0x48, 0xf0, 0xbb, 0x65, 0x23, 0xae, 0xd4, 0xd0, 0xdd, 0x7f,
-	0x4f, 0xa0, 0x35, 0xd3, 0x40, 0x0f, 0x21, 0x66, 0xec, 0x7a, 0x3e, 0x87, 0xd5, 0x26, 0x2c, 0x0e,
-	0x32, 0x9f, 0x30, 0x97, 0xe6, 0xbe, 0x00, 0xab, 0xcd, 0xe1, 0x7b, 0xa6, 0x7e, 0xa4, 0x51, 0x7c,
-	0x0f, 0x2d, 0xf7, 0x29, 0x4b, 0xb9, 0xcb, 0x88, 0x4f, 0xe8, 0x01, 0x09, 0x5c, 0x8f, 0x2b, 0x4b,
-	0x81, 0x7b, 0x03, 0xd9, 0x53, 0xdc, 0x6d, 0x6e, 0xba, 0x77, 0x89, 0xc2, 0xbb, 0x68, 0x29, 0xf4,
-	0x4a, 0x9a, 0xa4, 0xe1, 0xae, 0x8c, 0x47, 0x1d, 0x27, 0xf4, 0x4c, 0x69, 0x43, 0xd1, 0x82, 0xcd,
-	0xe0, 0xbb, 0x68, 0x31, 0xd9, 0xf7, 0x52, 0x92, 0x16, 0x9a, 0x9c, 0xa9, 0xcd, 0xc9, 0x5c, 0x8d,
-	0xa4, 0x72, 0x71, 0x53, 0x8d, 0xcd, 0xe0, 0x77, 0xd1, 0x72, 0x1a, 0x79, 0x49, 0xba, 0x1f, 0x73,
-	0x37, 0x15, 0xde, 0x1f, 0xf9, 0x44, 0x1d, 0xba, 0x8d, 0xf1, 0xa8, 0xb3, 0x9e, 0x93, 0x0f, 0x15,
-	0x67, 0xa8, 0x5a, 0x2a, 0x73, 0xdd, 0x3f, 0x4e, 0x57, 0xdc, 0x13, 0x2c, 0xa8, 0xdd, 0xe5, 0xbc,
-	0x1b, 0xf0, 0x3a, 0x42, 0x29, 0xf7, 0x18, 0x37, 0x2d, 0x0f, 0xe7, 0x51, 0xa1, 0x96, 0xa9, 0x66,
-	0x0b, 0x10, 0xbf, 0x89, 0xe6, 0xc0, 0xda, 0x29, 0x21, 0x91, 0xb6, 0x34, 0xcc, 0x29, 0xf0, 0x87,
-	0x84, 0x44, 0xd6, 0x50, 0xa4, 0x51, 0x39, 0x67, 0x9c, 0x24, 0x72, 0xce, 0x29, 0x73, 0x4e, 0x40,
-	0xcb, 0x73, 0x2a, 0x50, 0x84, 0x42, 0x8f, 0x03, 0x4c, 0x02, 0x97, 0x1c, 0x90, 0x88, 0xa7, 0x4e,
-	0x53, 0xfb, 0x4a, 0xc1, 0xdd, 0x05, 0xca, 0xf4, 0x95, 0x12, 0x25, 0x34, 0x15, 0xa1, 0x25, 0xd7,
-	0xd4, 0xd2, 0x9a, 0x0a, 0xae, 0xaa, 0xa9, 0x44, 0x89, 0x6b, 0x2b, 0x8b, 0x2a, 0xba, 0xa6, 0x41,
-	0x17, 0x5c, 0x5b, 0x59, 0x54, 0x1a, 0x62, 0x5e, 0x5b, 0x15, 0x12, 0xdf, 0x41, 0x0b, 0x34, 0x3a,
-	0xf0, 0x42, 0x5a, 0xe8, 0x9a, 0x01, 0x5d, 0xcf, 0x8e, 0x47, 0x9d, 0x35, 0xc5, 0x54, 0xf4, 0xcc,
-	0x5b, 0x04, 0xfe, 0x29, 0x72, 0x7c, 0x2f, 0xf1, 0x7c, 0xca, 0x0f, 0x5d, 0x46, 0x7e, 0x46, 0x7c,
-	0xc3, 0x5e, 0xb3, 0xa0, 0xed, 0xea, 0x78, 0xd4, 0xd9, 0xcc, 0x65, 0x7a, 0x4a, 0xa4, 0xa2, 0xf6,
-	0x72, 0xbd, 0x04, 0xde, 0x41, 0x8b, 0xb0, 0xf7, 0x22, 0xb0, 0x64, 0xe2, 0x62, 0xe2, 0x0e, 0xd2,
-	0x8b, 0x14, 0xd4, 0xae, 0x64, 0xac, 0x8d, 0x9c, 0xb7, 0x08, 0x71, 0xf2, 0x2d, 0x25, 0x10, 0xe8,
-	0xda, 0x7a, 0x0f, 0x0c, 0xe9, 0x52, 0xb4, 0x5b, 0x2c, 0x51, 0x85, 0x2a, 0x46, 0xfc, 0xf8, 0x80,
-	0x30, 0xe9, 0x56, 0x73, 0xb6, 0xaa, 0x5e, 0xce, 0xd9, 0x41, 0xa4, 0x44, 0xe1, 0x8f, 0xd0, 0xa5,
-	0x84, 0xb0, 0x94, 0xa6, 0x1c, 0xf2, 0x10, 0x46, 0x3c, 0x7f, 0x1f, 0xae, 0xdc, 0x79, 0x88, 0x9e,
-	0xdd, 0xf1, 0xa8, 0xb3, 0x61, 0x08, 0xf4, 0x72, 0xde, 0xd0, 0xb9, 0x5a, 0xc7, 0x77, 0xff, 0xd5,
-	0x44, 0xce, 0x7b, 0x34, 0xe5, 0xe6, 0x29, 0x4e, 0x7b, 0xf2, 0x56, 0x14, 0x99, 0x57, 0x9f, 0xc5,
-	0x43, 0x33, 0xf3, 0x12, 0xbf, 0xcd, 0xcc, 0x4b, 0xfc, 0x16, 0x99, 0x17, 0x8f, 0xcd, 0xcc, 0x8b,
-	0xc7, 0x66, 0xe6, 0xc5, 0x63, 0x48, 0x34, 0x7c, 0x1e, 0x33, 0xf7, 0x49, 0x46, 0xd8, 0xa1, 0x95,
-	0x68, 0x08, 0xf8, 0x7d, 0x81, 0x5a, 0x89, 0x46, 0x81, 0x8a, 0x53, 0x29, 0x87, 0xb2, 0x38, 0x24,
-	0xe6, 0xa9, 0x04, 0xb4, 0x17, 0x5b, 0x1f, 0x39, 0x5b, 0x80, 0x22, 0x5e, 0xfa, 0x8c, 0x04, 0x24,
-	0xe2, 0xd4, 0x0b, 0xcd, 0xdc, 0x02, 0xe2, 0xa5, 0xa6, 0x4a, 0x09, 0xc6, 0x82, 0xcd, 0x88, 0x95,
-	0x0f, 0xe3, 0x20, 0x0b, 0x95, 0x27, 0xb4, 0xf4, 0xca, 0x25, 0x5c, 0xbe, 0xf2, 0x34, 0xaa, 0x3e,
-	0x9a, 0xe6, 0xb7, 0xe5, 0xb4, 0xf5, 0xd1, 0xb4, 0x7a, 0x5b, 0x6a, 0x54, 0x24, 0x0a, 0x71, 0xc6,
-	0xfd, 0x78, 0x48, 0x9c, 0x19, 0x9d, 0x28, 0x28, 0xc8, 0x4c, 0x14, 0x14, 0x24, 0x7c, 0x8d, 0x7b,
-	0x6c, 0x40, 0xb8, 0xeb, 0xf9, 0xbe, 0x48, 0x84, 0x44, 0xc0, 0x9d, 0xd5, 0xbe, 0x26, 0xc9, 0xdb,
-	0x92, 0xb3, 0xa2, 0xee, 0x62, 0x89, 0xc2, 0x6f, 0xa3, 0x79, 0xa6, 0x72, 0x6f, 0x17, 0x12, 0x6f,
-	0x79, 0x88, 0xd6, 0xc7, 0xa3, 0xce, 0xe5, 0x9c, 0x78, 0x64, 0x27, 0xe0, 0x73, 0x26, 0x2e, 0xb3,
-	0x04, 0xa5, 0x80, 0x06, 0x4e, 0x5b, 0x7f, 0x77, 0x0e, 0xdb, 0x61, 0x5f, 0xa3, 0x22, 0xa1, 0x49,
-	0xbc, 0x01, 0x71, 0x53, 0xfa, 0x19, 0x81, 0xa3, 0xd2, 0x94, 0x09, 0x8d, 0x00, 0x1f, 0xd2, 0xcf,
-	0xac, 0x84, 0x26, 0xc7, 0x44, 0x0e, 0xe6, 0x67, 0x2c, 0x8d, 0x99, 0x33, 0xaf, 0x73, 0x30, 0x89,
-	0x98, 0x39, 0x98, 0x44, 0xba, 0xbf, 0x6a, 0xa0, 0xcb, 0x3f, 0x24, 0xdc, 0x2e, 0x35, 0xa4, 0xbf,
-	0xbf, 0x85, 0x74, 0x19, 0xa3, 0x2f, 0x2c, 0x48, 0xa6, 0x0b, 0xdc, 0x5a, 0x7a, 0xdb, 0x80, 0x45,
-	0x88, 0x2c, 0x6e, 0x56, 0x1e, 0x3f, 0x26, 0x91, 0x33, 0xa1, 0xa3, 0x4f, 0xce, 0x3c, 0x12, 0x84,
-	0x19, 0x7d, 0x2c, 0xa2, 0xfb, 0xdb, 0x39, 0xb4, 0x62, 0xa5, 0x33, 0xd9, 0x70, 0xe8, 0xb1, 0xc3,
-	0xa7, 0x5c, 0xd9, 0x79, 0x2f, 0xd3, 0x5d, 0xb4, 0x24, 0x8f, 0x9e, 0xe1, 0x53, 0x46, 0xea, 0x02,
-	0x5c, 0x9d, 0x4b, 0x2d, 0xd8, 0x8c, 0xb0, 0x8c, 0xd4, 0x93, 0xa5, 0xa2, 0xa8, 0x1c, 0xe6, 0xc7,
-	0x18, 0x2c, 0x03, 0xcc, 0x07, 0x8a, 0x30, 0x2d, 0x63, 0x11, 0xa5, 0x30, 0xd0, 0x3c, 0x75, 0x18,
-	0x78, 0x09, 0x35, 0x19, 0xf1, 0xc2, 0xa1, 0x3a, 0xb9, 0x2b, 0xe3, 0x51, 0x67, 0x11, 0x00, 0x43,
-	0x5c, 0x4a, 0xd4, 0x45, 0x8c, 0xe9, 0x73, 0x44, 0x8c, 0x77, 0xd1, 0x32, 0x85, 0xdf, 0xfc, 0x50,
-	0x17, 0x8c, 0x33, 0x10, 0xa7, 0x21, 0xc3, 0xca, 0xc9, 0x9a, 0x7a, 0x71, 0xa9, 0xcc, 0xe1, 0x00,
-	0x15, 0xf2, 0x6e, 0xe1, 0x5d, 0x7e, 0x3c, 0x4c, 0x42, 0xc2, 0x09, 0x1c, 0xf0, 0x99, 0x3b, 0x2f,
-	0x8e, 0x47, 0x9d, 0x6e, 0x2e, 0xf5, 0x50, 0x09, 0xed, 0x28, 0x19, 0x43, 0xbb, 0x73, 0x94, 0x4c,
-	0x39, 0xc8, 0xa1, 0xf3, 0x07, 0xb9, 0xf6, 0x19, 0x82, 0xdc, 0x07, 0xe8, 0x52, 0xc2, 0xa8, 0xf0,
-	0x6f, 0xd7, 0x0e, 0x38, 0xf2, 0x8e, 0x84, 0x92, 0x40, 0x09, 0xf4, 0xea, 0xe3, 0xce, 0x4a, 0x0d,
-	0x8d, 0xef, 0xa3, 0x95, 0x8a, 0x5a, 0x1a, 0x38, 0xf3, 0x3a, 0xf7, 0x29, 0x8d, 0xb2, 0x7c, 0x77,
-	0xb9, 0x42, 0x9a, 0xc1, 0x78, 0xe1, 0x54, 0xc1, 0xf8, 0x7b, 0xa8, 0x1d, 0xef, 0x89, 0xc6, 0x89,
-	0x6c, 0x35, 0x2c, 0x1a, 0x87, 0x55, 0xc3, 0xd6, 0x61, 0xd5, 0x70, 0xb9, 0xc6, 0x5a, 0x3a, 0x43,
-	0x8d, 0xf5, 0x06, 0x6a, 0x07, 0x99, 0x0a, 0x12, 0xc3, 0xd4, 0x59, 0xd6, 0x43, 0x73, 0xf8, 0x47,
-	0x56, 0x65, 0xa7, 0x51, 0x71, 0x44, 0xf7, 0xb2, 0x94, 0x46, 0x24, 0x4d, 0xa1, 0x30, 0x24, 0x0e,
-	0xd6, 0x47, 0x34, 0x67, 0x44, 0x5a, 0x6f, 0x1d, 0x51, 0x8b, 0x10, 0x3a, 0x0a, 0x83, 0xc3, 0xd1,
-	0x77, 0x56, 0xb4, 0x8e, 0x9c, 0x81, 0x2a, 0xdd, 0xd4, 0x61, 0x11, 0xb2, 0xdd, 0x22, 0x81, 0x54,
-	0xfb, 0xf9, 0xaa, 0xd9, 0x6e, 0x51, 0x6c, 0x8d, 0x83, 0x2f, 0x57, 0xc8, 0xa3, 0xcb, 0xce, 0x4b,
-	0x4f, 0x53, 0x76, 0x8a, 0x4e, 0x52, 0xc2, 0xe2, 0x03, 0x1a, 0x10, 0xe6, 0x5c, 0xd6, 0x75, 0x77,
-	0x8e, 0x59, 0xd7, 0x94, 0xc2, 0xea, 0xaf, 0xe8, 0xb5, 0xf3, 0x5c, 0xd1, 0xdd, 0x3f, 0x4d, 0xa0,
-	0xa9, 0x07, 0xde, 0x00, 0x76, 0x3c, 0x22, 0x9f, 0x72, 0x57, 0xdd, 0x7f, 0x46, 0x85, 0x25, 0xe0,
-	0x9d, 0xf2, 0x1d, 0x88, 0x34, 0x7a, 0x11, 0xd7, 0x55, 0x7d, 0x31, 0x39, 0x79, 0xbe, 0x62, 0x52,
-	0x7c, 0x4b, 0xa1, 0xac, 0xa8, 0xbf, 0xe0, 0x5b, 0x72, 0xd8, 0xae, 0xdc, 0x34, 0x6a, 0xa7, 0x0d,
-	0xcd, 0xd3, 0xa5, 0x0d, 0xdd, 0xcf, 0x9b, 0x68, 0xe1, 0x76, 0x92, 0x84, 0x94, 0x04, 0xbb, 0x34,
-	0xe4, 0x84, 0xa5, 0xdf, 0x26, 0xbc, 0xdf, 0x26, 0xbc, 0xff, 0xdb, 0x84, 0xb7, 0xfb, 0xc5, 0x04,
-	0x7a, 0xa6, 0xa6, 0xfe, 0x92, 0x11, 0x07, 0xbf, 0x87, 0x9a, 0x62, 0x50, 0xea, 0x34, 0x36, 0x27,
-	0xaf, 0xb7, 0xb7, 0x9f, 0x7f, 0xc5, 0xea, 0xbc, 0xd7, 0x24, 0x8a, 0x32, 0xbf, 0x81, 0x31, 0x66,
-	0x7e, 0x03, 0x00, 0x7e, 0x13, 0x4d, 0x09, 0xe7, 0x07, 0xbf, 0x6d, 0x6f, 0x63, 0x5b, 0x99, 0x08,
-	0x27, 0xd2, 0xe3, 0x85, 0x8c, 0xe9, 0xf1, 0xe2, 0x37, 0xf6, 0xd1, 0xa2, 0x27, 0xcf, 0x8a, 0xdb,
-	0x97, 0x87, 0x05, 0x7c, 0xba, 0xbd, 0x7d, 0xc5, 0x56, 0x63, 0x1f, 0x28, 0x95, 0x27, 0x5a, 0x98,
-	0x95, 0x27, 0x5a, 0x4c, 0xf7, 0xeb, 0x59, 0xbb, 0xa3, 0xfb, 0x03, 0xc2, 0x3d, 0x1a, 0xe2, 0x1e,
-	0x9a, 0x4e, 0xe5, 0xe7, 0xc1, 0xc1, 0x3c, 0x95, 0x1d, 0xc0, 0x7d, 0xd4, 0x28, 0xd3, 0x7d, 0x14,
-	0x24, 0xb6, 0xac, 0x4f, 0x23, 0x9a, 0xee, 0x9b, 0x39, 0x31, 0x6c, 0x59, 0x0e, 0xdb, 0xc1, 0x46,
-	0xa3, 0xe2, 0x7c, 0xaa, 0xb6, 0xb1, 0xce, 0x87, 0xcd, 0x0e, 0xf3, 0xbd, 0xba, 0x0e, 0xf3, 0xbd,
-	0x00, 0xf2, 0x12, 0x8f, 0x91, 0x88, 0xbb, 0x56, 0x2a, 0x3f, 0x65, 0xe4, 0x25, 0x40, 0xdf, 0xaf,
-	0x4d, 0xe8, 0x97, 0x2b, 0xa4, 0x50, 0x58, 0xdc, 0xd9, 0xc6, 0x8a, 0x9a, 0x5a, 0x61, 0x4e, 0xf7,
-	0x6a, 0x56, 0xb6, 0x5c, 0x21, 0xad, 0x5b, 0xad, 0x75, 0xca, 0x5b, 0xed, 0x06, 0x6a, 0x91, 0x7e,
-	0x9f, 0xf8, 0xdc, 0x99, 0xd6, 0xc5, 0x97, 0x44, 0xcc, 0xe2, 0x4b, 0x22, 0xf8, 0xbb, 0x68, 0x36,
-	0x77, 0x7e, 0xd1, 0x41, 0x9a, 0xcc, 0xf3, 0x22, 0x7d, 0x22, 0x52, 0xdb, 0x78, 0x4a, 0x16, 0xdf,
-	0x42, 0xd3, 0x3e, 0xbc, 0x94, 0x88, 0x56, 0x51, 0x31, 0x4c, 0x42, 0x22, 0x80, 0x98, 0xc3, 0x72,
-	0x49, 0xfc, 0x1d, 0xd4, 0x82, 0x33, 0x9e, 0x3a, 0x68, 0x73, 0x32, 0xdf, 0x5f, 0x40, 0xa0, 0x41,
-	0x6c, 0x15, 0x87, 0x20, 0x87, 0xef, 0xa1, 0xc5, 0x44, 0xb5, 0xd8, 0x45, 0xf2, 0x98, 0x85, 0x5c,
-	0x9d, 0xe6, 0xcd, 0xf1, 0xa8, 0x73, 0x25, 0xb1, 0xba, 0xef, 0x8f, 0xc8, 0xa7, 0x56, 0xbf, 0xd6,
-	0x66, 0xf1, 0xf7, 0xd1, 0x9c, 0x0a, 0x09, 0x7d, 0x31, 0x99, 0xd9, 0xf8, 0x49, 0x75, 0x93, 0xba,
-	0xa4, 0xa4, 0x6d, 0x50, 0x78, 0xcf, 0xc8, 0xa7, 0xa4, 0x8e, 0x79, 0x08, 0x03, 0xdd, 0xa3, 0xdd,
-	0x3f, 0xcf, 0x5a, 0x73, 0x87, 0x94, 0xbf, 0xd2, 0xba, 0x7c, 0x4b, 0xce, 0xf1, 0x31, 0x9a, 0x93,
-	0xd6, 0x52, 0x33, 0x2c, 0xc0, 0x0c, 0x9b, 0x47, 0xcf, 0x20, 0xdf, 0xab, 0xe4, 0xf9, 0x52, 0x76,
-	0x36, 0xd7, 0x2f, 0x21, 0xa9, 0xfb, 0x23, 0xd4, 0x96, 0x91, 0x59, 0xaa, 0x5e, 0xdc, 0x6c, 0x9c,
-	0xa0, 0x1a, 0xf6, 0x40, 0x95, 0xef, 0xf0, 0xb7, 0x79, 0x02, 0xf5, 0xbe, 0xe1, 0x3d, 0x34, 0x93,
-	0x1b, 0x1b, 0xf2, 0xe3, 0xf6, 0xf6, 0xf5, 0xa3, 0xb5, 0xda, 0x4f, 0x26, 0xaa, 0x5b, 0x6e, 0x61,
-	0x25, 0xbf, 0x06, 0x06, 0xff, 0x04, 0xb5, 0xa4, 0x9d, 0x20, 0x8d, 0x6e, 0x6f, 0x5f, 0x3b, 0x26,
-	0xe6, 0x68, 0x7b, 0x4a, 0xb7, 0x34, 0x0c, 0x6c, 0xfa, 0x98, 0x84, 0xbb, 0x3e, 0x5a, 0xab, 0xf4,
-	0x1f, 0x54, 0xbc, 0x7f, 0x07, 0x4d, 0x09, 0x69, 0xa7, 0x71, 0x92, 0xa9, 0x64, 0x64, 0x94, 0xf1,
-	0x5a, 0x8c, 0x30, 0xe3, 0xb5, 0xf8, 0xa3, 0xfb, 0xcb, 0x19, 0x34, 0xdf, 0xcb, 0x22, 0x4e, 0x87,
-	0x44, 0x35, 0xe3, 0xdf, 0x46, 0xf3, 0xa2, 0xc8, 0xa0, 0x3e, 0x71, 0x49, 0x12, 0xfb, 0xfb, 0x4e,
-	0x43, 0xdf, 0x72, 0x8a, 0xb8, 0x2b, 0x70, 0xf3, 0x96, 0x33, 0x71, 0x11, 0xf7, 0xfc, 0x7d, 0xe2,
-	0x3f, 0xae, 0x74, 0x11, 0x14, 0x6a, 0x77, 0x11, 0x0a, 0x50, 0x84, 0x5a, 0x48, 0x82, 0x44, 0xd7,
-	0x32, 0x90, 0xa9, 0xd0, 0x8c, 0x3c, 0x8a, 0x00, 0xf7, 0x04, 0x6a, 0x6e, 0xb4, 0x46, 0x45, 0x3f,
-	0x3c, 0x61, 0xb1, 0x68, 0xf2, 0x8a, 0x60, 0x29, 0xeb, 0x92, 0x29, 0x7d, 0x8e, 0x34, 0x57, 0xae,
-	0x4c, 0x16, 0x4b, 0x54, 0xd1, 0x8b, 0x4d, 0xb2, 0xbd, 0xb0, 0x88, 0xfa, 0x4d, 0xbb, 0x17, 0xfb,
-	0x20, 0xe7, 0xaa, 0xbd, 0x58, 0x83, 0xc2, 0x8f, 0xd0, 0x2a, 0x68, 0xf1, 0x65, 0x08, 0x2f, 0xf2,
-	0xde, 0x96, 0x51, 0xb5, 0x6a, 0xbe, 0x26, 0xf5, 0x5d, 0xa9, 0xa1, 0x45, 0x3a, 0x9e, 0x90, 0x28,
-	0xa0, 0xd1, 0xc0, 0x6e, 0xd6, 0x43, 0x3a, 0xae, 0x98, 0x6a, 0x83, 0xdd, 0x22, 0xf0, 0x1e, 0x5a,
-	0x8f, 0xc3, 0x40, 0x5c, 0x03, 0xb9, 0x2a, 0xf3, 0xd1, 0x49, 0xe6, 0x55, 0xd7, 0xc6, 0xa3, 0xce,
-	0xf3, 0x52, 0xea, 0x81, 0x14, 0xaa, 0x7d, 0x7d, 0x5a, 0x3b, 0x42, 0x44, 0x14, 0x68, 0x4f, 0x32,
-	0x8f, 0x79, 0x11, 0xa7, 0x51, 0xb9, 0x7d, 0x0f, 0x77, 0x8e, 0xc1, 0x56, 0x1f, 0x16, 0x2a, 0xa4,
-	0x58, 0xb3, 0xdc, 0x18, 0x16, 0xfb, 0x24, 0x4d, 0xe1, 0xfb, 0x19, 0x8b, 0x99, 0xd9, 0x89, 0x80,
-	0x35, 0xc3, 0x36, 0x14, 0x42, 0x77, 0x85, 0x4c, 0x29, 0x9f, 0x5c, 0x3b, 0x42, 0x04, 0x7f, 0x8a,
-	0xb0, 0xac, 0xb0, 0x49, 0xe0, 0xe6, 0x6f, 0x4c, 0xa9, 0xd3, 0xde, 0x9c, 0x3c, 0x31, 0x72, 0x18,
-	0xaf, 0x59, 0xf2, 0xeb, 0x72, 0x3d, 0x39, 0x67, 0x7d, 0x5d, 0x85, 0x14, 0xbb, 0xca, 0x63, 0xee,
-	0x85, 0x6e, 0x4e, 0x39, 0x73, 0x7a, 0x57, 0x81, 0xb9, 0xaf, 0x08, 0x73, 0x57, 0x2d, 0x42, 0x58,
-	0xbc, 0x58, 0xb4, 0x2e, 0x89, 0xe7, 0x75, 0x49, 0x5c, 0xb0, 0x75, 0x25, 0x71, 0x85, 0xec, 0x5e,
-	0x43, 0x2f, 0x94, 0xe3, 0x8f, 0x19, 0x28, 0x54, 0x3a, 0xd0, 0x7d, 0x82, 0xae, 0x1e, 0x2f, 0xa6,
-	0x62, 0xd6, 0x3d, 0xd4, 0x52, 0x2f, 0xc9, 0x32, 0x6a, 0x3d, 0x6b, 0x1b, 0xd4, 0x1a, 0x24, 0x63,
-	0x7b, 0x5a, 0x7e, 0x62, 0x56, 0x0a, 0x6a, 0x56, 0xb6, 0xe3, 0x25, 0x3c, 0x63, 0xa5, 0x95, 0xfd,
-	0xa7, 0x85, 0xe6, 0x2d, 0x42, 0x84, 0x18, 0x1a, 0xa5, 0xdc, 0x8b, 0x64, 0x02, 0x6e, 0x94, 0xc1,
-	0x39, 0x6c, 0x27, 0xe0, 0x1a, 0x3d, 0x77, 0x6f, 0xf4, 0x8d, 0xbc, 0xc7, 0x63, 0xbe, 0xe8, 0xc2,
-	0x94, 0x39, 0x6c, 0x8d, 0x44, 0x1a, 0xad, 0x7d, 0x2f, 0x9c, 0xba, 0xb0, 0xf7, 0xc2, 0xe6, 0x05,
-	0xbe, 0x17, 0xb6, 0x2e, 0xf0, 0xbd, 0x70, 0xfa, 0x42, 0xdf, 0x0b, 0x67, 0x2e, 0xe0, 0xbd, 0x70,
-	0x17, 0x2d, 0xd1, 0xc8, 0xed, 0x87, 0x74, 0xb0, 0xcf, 0xed, 0x40, 0x06, 0x49, 0x02, 0x8d, 0x76,
-	0x81, 0xaa, 0xe8, 0x5b, 0xb0, 0x99, 0xfa, 0x27, 0x43, 0x74, 0xae, 0x27, 0xc3, 0x23, 0xdf, 0xf9,
-	0xda, 0x4f, 0xf7, 0xce, 0x57, 0xac, 0x51, 0x6f, 0x71, 0xf5, 0x2d, 0x72, 0x27, 0xe7, 0xaa, 0xf7,
-	0x9f, 0x41, 0xd5, 0x04, 0x86, 0xd2, 0x29, 0x3d, 0x5d, 0x60, 0xb0, 0x06, 0x9d, 0x10, 0x18, 0x36,
-	0xd1, 0x46, 0xb9, 0x48, 0xbe, 0x0d, 0x97, 0x7b, 0x11, 0x13, 0xbe, 0x2e, 0xfd, 0x33, 0x90, 0xa4,
-	0x45, 0x43, 0xc7, 0xf8, 0xdf, 0x18, 0x48, 0x97, 0x7c, 0x7b, 0x0b, 0x80, 0x2f, 0x37, 0x3d, 0x26,
-	0xce, 0xd0, 0xf4, 0x78, 0x09, 0x35, 0x43, 0x6f, 0x8f, 0x84, 0x2a, 0x04, 0x40, 0x01, 0x0e, 0x80,
-	0x59, 0x80, 0x03, 0x50, 0x6d, 0x34, 0x4c, 0x9d, 0xad, 0xd1, 0xd0, 0xfd, 0x43, 0x03, 0x75, 0x8e,
-	0x34, 0x84, 0x32, 0xbb, 0x68, 0x03, 0x79, 0xdc, 0x0b, 0xe3, 0x81, 0x78, 0x7d, 0x48, 0x45, 0x03,
-	0xba, 0x61, 0xb4, 0x81, 0x24, 0xf5, 0xa1, 0x64, 0xac, 0x36, 0x90, 0xc5, 0xe0, 0xf7, 0xd1, 0xb4,
-	0x6c, 0xcf, 0x88, 0xff, 0x10, 0x3a, 0xa1, 0x26, 0x90, 0x4b, 0x90, 0x35, 0x81, 0x1a, 0x64, 0x96,
-	0x63, 0x0a, 0xda, 0xfe, 0x6b, 0xab, 0xf4, 0xb8, 0x25, 0xb3, 0x4b, 0xfc, 0x45, 0x03, 0x2d, 0x97,
-	0xbf, 0x2a, 0xc5, 0x2f, 0xda, 0xf3, 0x1d, 0xf5, 0x48, 0xbd, 0xfe, 0x7f, 0x27, 0xca, 0x49, 0xc3,
-	0x74, 0xaf, 0x7e, 0xfe, 0xf7, 0x6f, 0xbe, 0x9c, 0xd8, 0xc0, 0x57, 0xe0, 0xdf, 0x12, 0x0f, 0x5e,
-	0xdd, 0xf2, 0x82, 0x21, 0x8d, 0xf4, 0x3f, 0x33, 0xde, 0x0c, 0xc5, 0xb4, 0x5f, 0x36, 0xd0, 0x62,
-	0xc9, 0xbd, 0xf1, 0x55, 0x7b, 0x8a, 0xfa, 0xd7, 0xc3, 0xf5, 0x6b, 0x27, 0x48, 0xa9, 0x65, 0xdc,
-	0x82, 0x65, 0xdc, 0xc4, 0x2f, 0x1f, 0xb7, 0x8c, 0xad, 0x9f, 0x9b, 0x3d, 0x82, 0x5f, 0xe0, 0xdf,
-	0x35, 0xd0, 0x95, 0xe3, 0x6e, 0x63, 0xfc, 0xea, 0xf1, 0x93, 0xd7, 0x5c, 0xf0, 0xeb, 0xdb, 0x67,
-	0x19, 0xa2, 0x16, 0xff, 0x32, 0x2c, 0xfe, 0x1a, 0x7e, 0xe1, 0x98, 0xc5, 0xdf, 0x64, 0x72, 0x28,
-	0xfe, 0x7d, 0x75, 0xd1, 0xf6, 0xb5, 0x7d, 0xfc, 0xa2, 0xeb, 0xee, 0xfe, 0xf5, 0xed, 0xb3, 0x0c,
-	0x51, 0x8b, 0xde, 0x86, 0x45, 0xdf, 0xc0, 0xff, 0x7f, 0xdc, 0xa2, 0x7d, 0x39, 0xf4, 0xa6, 0x8c,
-	0x38, 0xf8, 0x37, 0x0d, 0xb4, 0x76, 0xc4, 0x49, 0xc3, 0x37, 0x8e, 0xf7, 0x38, 0x3b, 0x32, 0xad,
-	0xdf, 0x3c, 0xa5, 0xf4, 0x59, 0x2c, 0xac, 0x4e, 0xd4, 0x9d, 0x9d, 0xbf, 0x7c, 0xb5, 0xd1, 0xf8,
-	0xdb, 0x57, 0x1b, 0x8d, 0x7f, 0x7c, 0xb5, 0xd1, 0xf8, 0xf8, 0xb5, 0x01, 0xe5, 0xfb, 0xd9, 0xde,
-	0x2b, 0x7e, 0x3c, 0xdc, 0x12, 0x2f, 0xad, 0x87, 0x64, 0x40, 0xb6, 0x3c, 0xbe, 0x4f, 0x22, 0x6f,
-	0x2b, 0x79, 0x3c, 0x10, 0x0a, 0xfd, 0x90, 0x92, 0x88, 0x5b, 0xff, 0xc0, 0xbb, 0xd7, 0x82, 0x9a,
-	0xf7, 0xd6, 0x7f, 0x07, 0x00, 0xf5, 0x53, 0x0f, 0x60, 0xf4, 0x2b, 0x00, 0x00,
+	// 3164 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x5b, 0x4b, 0x6f, 0x1c, 0xc7,
+	0xf1, 0xc7, 0x92, 0xdc, 0x25, 0xb7, 0x96, 0xcf, 0x26, 0x25, 0x8e, 0x69, 0x99, 0x4b, 0xaf, 0x25,
+	0xff, 0xe5, 0xbf, 0x25, 0x33, 0xa6, 0x12, 0x07, 0xb6, 0x03, 0x38, 0x12, 0x23, 0xc5, 0x8c, 0x1f,
+	0x92, 0x97, 0xb2, 0x65, 0xf8, 0x32, 0x19, 0xce, 0xf4, 0x2e, 0xdb, 0x9a, 0x9d, 0x19, 0xf5, 0xf4,
+	0xd0, 0xa6, 0x93, 0x00, 0x8e, 0x8f, 0xbe, 0xfa, 0x96, 0x4b, 0x0e, 0x41, 0xbe, 0x40, 0x6e, 0x49,
+	0x6e, 0x41, 0x0e, 0xb9, 0x25, 0x40, 0x90, 0x43, 0x2e, 0x8b, 0x40, 0x09, 0x10, 0x60, 0x2f, 0xfe,
+	0x0a, 0x41, 0x3f, 0x66, 0xa6, 0x7b, 0x76, 0x48, 0xce, 0x2a, 0x91, 0x4e, 0xbe, 0x89, 0xbf, 0xea,
+	0xaa, 0xea, 0xe9, 0x47, 0xf5, 0xaf, 0xaa, 0x56, 0xb0, 0x4d, 0x02, 0x86, 0x69, 0xe0, 0xf8, 0xdb,
+	0x31, 0xa6, 0x47, 0x98, 0x6e, 0x87, 0x11, 0xa6, 0x0e, 0x23, 0x61, 0xe0, 0x87, 0x7d, 0xe3, 0x8f,
+	0x97, 0x22, 0x1a, 0xb2, 0x10, 0xcd, 0xeb, 0xd8, 0xc6, 0x85, 0x7e, 0x18, 0xf6, 0x7d, 0xbc, 0xed,
+	0x44, 0x64, 0xdb, 0x09, 0x82, 0x90, 0x09, 0x49, 0x2c, 0xc7, 0x6e, 0xac, 0xf5, 0xc3, 0x7e, 0x28,
+	0xfe, 0xb9, 0xcd, 0xff, 0x25, 0xd1, 0xce, 0xeb, 0xb0, 0xf8, 0x6e, 0xe2, 0xfb, 0xce, 0x81, 0x8f,
+	0xf7, 0x19, 0x25, 0x41, 0x1f, 0xbd, 0x00, 0xf5, 0x23, 0xc7, 0x4f, 0xb0, 0x55, 0xdb, 0xaa, 0x5d,
+	0x6e, 0xde, 0x58, 0x1d, 0x0d, 0xdb, 0x4b, 0x02, 0xb8, 0x12, 0x0e, 0x08, 0xc3, 0x83, 0x88, 0x1d,
+	0x77, 0xe5, 0x88, 0xce, 0xab, 0x30, 0x9f, 0x2a, 0xdf, 0x08, 0x43, 0xdf, 0x54, 0x9d, 0x3b, 0x55,
+	0xf5, 0x35, 0x58, 0x48, 0x55, 0xf7, 0x02, 0xf6, 0xca, 0xb7, 0x4d, 0xdd, 0xe9, 0x53, 0x75, 0x3f,
+	0x9f, 0x82, 0xb5, 0xdb, 0xe9, 0x87, 0xbf, 0x1d, 0xf6, 0xbb, 0x38, 0x0e, 0x13, 0xea, 0x62, 0xf4,
+	0x3c, 0xcc, 0xb0, 0xe3, 0x28, 0x9d, 0x39, 0x1a, 0x0d, 0xdb, 0x8b, 0xfc, 0x6f, 0xcd, 0x82, 0x90,
+	0xa3, 0x2d, 0x98, 0x22, 0x9e, 0x35, 0x25, 0x46, 0x2d, 0x8f, 0x86, 0xed, 0x79, 0xe2, 0x69, 0x63,
+	0xa6, 0x88, 0x87, 0x76, 0x60, 0x8e, 0x62, 0x5f, 0x38, 0xb0, 0xa6, 0xc5, 0xb8, 0xf3, 0xa3, 0x61,
+	0x1b, 0xa5, 0x98, 0x36, 0x3a, 0x1b, 0x87, 0x3e, 0x06, 0x44, 0x71, 0x0f, 0x53, 0x1c, 0xb8, 0xd8,
+	0x3e, 0xc2, 0x94, 0xf4, 0x08, 0xf6, 0xac, 0x99, 0xad, 0xda, 0xe5, 0xd6, 0xce, 0xc6, 0x4b, 0xc6,
+	0xee, 0xe9, 0xab, 0x76, 0xa3, 0x3d, 0x1a, 0xb6, 0x9f, 0xce, 0x34, 0x3f, 0x50, 0x8a, 0x9a, 0x8b,
+	0x95, 0x31, 0x61, 0xe7, 0x97, 0xd3, 0x80, 0xf4, 0x25, 0xd8, 0x3d, 0x74, 0x82, 0x3e, 0x46, 0xaf,
+	0x00, 0xf4, 0x08, 0xf6, 0x3d, 0xdb, 0x0d, 0xbd, 0x74, 0x19, 0xd6, 0x47, 0xc3, 0xf6, 0xaa, 0x40,
+	0x77, 0x43, 0x4f, 0x5f, 0x8b, 0x66, 0x06, 0xa2, 0x8f, 0x60, 0xfe, 0x00, 0xf7, 0x42, 0x8a, 0x6d,
+	0xb9, 0x07, 0x53, 0x62, 0xd2, 0x17, 0xca, 0x27, 0x2d, 0xcf, 0xc9, 0x8d, 0xa7, 0x46, 0xc3, 0xf6,
+	0x39, 0xa9, 0xf5, 0x41, 0x61, 0x9f, 0x5a, 0x1a, 0x8c, 0xee, 0x41, 0xcb, 0xe9, 0x31, 0x4c, 0x95,
+	0xe9, 0xe9, 0x0a, 0xa6, 0xad, 0xd1, 0xb0, 0xbd, 0x26, 0x94, 0x8a, 0x96, 0x21, 0x47, 0x91, 0x07,
+	0xcb, 0x6a, 0xd2, 0xce, 0x91, 0x43, 0x84, 0x7e, 0x85, 0xd5, 0x7e, 0x66, 0x34, 0x6c, 0x3f, 0x25,
+	0xf5, 0xae, 0xa7, 0x6a, 0x9a, 0x83, 0xa5, 0x82, 0x88, 0x2f, 0xa9, 0x98, 0xb8, 0x7d, 0x9f, 0x04,
+	0x9e, 0x55, 0xcf, 0x97, 0x54, 0xa0, 0x6f, 0x91, 0x40, 0xdf, 0xa9, 0x66, 0x06, 0x76, 0xfe, 0x3e,
+	0x55, 0xd8, 0xa1, 0x30, 0x09, 0x58, 0x8c, 0xf6, 0xa1, 0x49, 0xf1, 0x83, 0x04, 0xc7, 0x0c, 0x7b,
+	0x56, 0xad, 0xc2, 0x5a, 0x08, 0x5f, 0x99, 0x8a, 0xee, 0x2b, 0x03, 0xb9, 0x51, 0x37, 0x0c, 0x7a,
+	0x84, 0x0e, 0xb0, 0x67, 0x4d, 0x55, 0x35, 0x9a, 0xa9, 0xe8, 0x46, 0x33, 0x10, 0xfd, 0x08, 0x1a,
+	0x3d, 0x87, 0xf8, 0xd8, 0xab, 0xb4, 0x65, 0x6b, 0xa3, 0x61, 0x7b, 0x59, 0x8e, 0xd7, 0xcc, 0x29,
+	0x0b, 0xe8, 0x1d, 0x98, 0x4d, 0x82, 0xfb, 0x41, 0xf8, 0x49, 0x60, 0xcd, 0x54, 0x30, 0x76, 0x6e,
+	0x34, 0x6c, 0xaf, 0x28, 0x05, 0xcd, 0x5a, 0x6a, 0xa3, 0xf3, 0xbb, 0x29, 0xd8, 0xd0, 0xd7, 0xf6,
+	0x0e, 0x0f, 0x65, 0x6e, 0xe8, 0x77, 0x71, 0x9c, 0xf8, 0x0c, 0x5d, 0x83, 0x66, 0x9f, 0x46, 0xae,
+	0x7e, 0x09, 0xc4, 0xed, 0xe5, 0x60, 0xe1, 0x0e, 0xcc, 0xa5, 0x18, 0x7a, 0x15, 0x5a, 0x87, 0x8c,
+	0x45, 0x76, 0xcc, 0x1c, 0x96, 0xc4, 0x2a, 0x38, 0x88, 0x83, 0xc8, 0xe1, 0x7d, 0x81, 0xea, 0x07,
+	0x31, 0x47, 0xb9, 0x2a, 0xc5, 0x4e, 0x1c, 0x06, 0xd2, 0xe3, 0x74, 0xae, 0x2a, 0xe1, 0x82, 0x4f,
+	0xc8, 0x51, 0xf4, 0x00, 0xce, 0x51, 0x1c, 0x47, 0x61, 0x10, 0x63, 0xfb, 0x13, 0x4a, 0x18, 0xb6,
+	0xd5, 0x9a, 0x9f, 0x7d, 0x90, 0x9f, 0x1d, 0x0d, 0xdb, 0xcf, 0xa4, 0xca, 0xf7, 0xb8, 0xee, 0xad,
+	0xe2, 0xf2, 0xaf, 0x96, 0x88, 0x3b, 0x7f, 0x9b, 0x86, 0x75, 0x7d, 0xf1, 0xf6, 0x45, 0xec, 0xbc,
+	0xe5, 0xb8, 0x4c, 0x7c, 0x49, 0x44, 0x43, 0x2f, 0x71, 0x31, 0xb5, 0x89, 0x67, 0xd5, 0xf2, 0x2f,
+	0x49, 0xe1, 0x3d, 0xdd, 0x3e, 0xe4, 0x28, 0xea, 0xc3, 0x4a, 0x8f, 0xd0, 0x98, 0xd9, 0x14, 0xbb,
+	0x98, 0x1c, 0x61, 0xcf, 0x76, 0x58, 0xa5, 0xb3, 0x28, 0x2e, 0xa4, 0x50, 0xed, 0x2a, 0xcd, 0xeb,
+	0x4c, 0xbf, 0x90, 0x05, 0x11, 0xbf, 0xf6, 0xbe, 0x53, 0xf0, 0x53, 0xe5, 0x84, 0x5e, 0x18, 0x0d,
+	0xdb, 0x96, 0xef, 0xe8, 0xb6, 0x34, 0x37, 0x8b, 0xa6, 0x04, 0xdd, 0x84, 0xa5, 0xe8, 0xd0, 0x89,
+	0x71, 0x9c, 0xf9, 0xb1, 0x66, 0xb6, 0xa6, 0x2f, 0x37, 0xa5, 0x19, 0x29, 0x4a, 0x87, 0xeb, 0x66,
+	0x4c, 0x09, 0x22, 0xb0, 0x12, 0x07, 0x4e, 0x14, 0x1f, 0x86, 0xcc, 0x8e, 0xf9, 0x7d, 0x0d, 0x5c,
+	0x6c, 0xd5, 0x2b, 0xcc, 0x76, 0x73, 0x34, 0x6c, 0x6f, 0xa4, 0xaa, 0xfb, 0x4a, 0x53, 0x73, 0xb4,
+	0x5c, 0x94, 0x75, 0x7e, 0x0d, 0x63, 0x97, 0x42, 0xec, 0x4d, 0x7e, 0x48, 0x1f, 0x75, 0x6b, 0xef,
+	0x02, 0xc4, 0xcc, 0xa1, 0xac, 0xfa, 0x9e, 0x8a, 0xf8, 0xa2, 0x74, 0x8c, 0x65, 0x6e, 0x66, 0x20,
+	0xfa, 0x10, 0xe6, 0xc5, 0x3e, 0xc6, 0x18, 0x07, 0x55, 0xf7, 0x50, 0xcc, 0x97, 0x6b, 0xed, 0x63,
+	0x1c, 0x18, 0x86, 0x21, 0x47, 0xe5, 0x7c, 0xc3, 0x28, 0x92, 0xf3, 0x9d, 0xa9, 0x3e, 0x5f, 0xa1,
+	0x53, 0x9c, 0xaf, 0x02, 0x51, 0x0f, 0x96, 0x1d, 0x26, 0x60, 0xec, 0xd9, 0xf8, 0x08, 0x07, 0x2c,
+	0xb6, 0xea, 0x55, 0xcf, 0x77, 0xa6, 0x79, 0x53, 0x28, 0xea, 0xe7, 0xbb, 0x20, 0xe2, 0x7e, 0xb2,
+	0x20, 0x9c, 0xfa, 0x69, 0x54, 0xf5, 0x93, 0x69, 0x8e, 0xfb, 0x29, 0x88, 0x90, 0x0f, 0x28, 0x09,
+	0xc6, 0x3c, 0xcd, 0x56, 0xf0, 0x24, 0x08, 0x4b, 0x12, 0x14, 0x0c, 0xea, 0x84, 0x65, 0x4c, 0x88,
+	0x7e, 0x0c, 0x8b, 0x24, 0x38, 0x72, 0x7c, 0x92, 0x79, 0x9a, 0xab, 0xe0, 0xe9, 0xe9, 0xd1, 0xb0,
+	0xbd, 0xae, 0xf4, 0xc6, 0xbc, 0x2c, 0x18, 0x02, 0xf4, 0x53, 0xb0, 0x5c, 0x27, 0x72, 0x5c, 0xc2,
+	0x8e, 0x6d, 0x8a, 0x3f, 0xc6, 0xae, 0xb6, 0x4f, 0xcd, 0x0a, 0xbe, 0x2e, 0x8e, 0x86, 0xed, 0xad,
+	0xd4, 0x42, 0x57, 0x19, 0x18, 0x73, 0x7a, 0xbe, 0x7c, 0x04, 0x72, 0x60, 0x49, 0x9c, 0x66, 0x1e,
+	0xbe, 0x13, 0x4e, 0x49, 0x98, 0x05, 0x55, 0x3f, 0x90, 0x2b, 0xde, 0x92, 0x7a, 0xc6, 0xe1, 0x5b,
+	0x30, 0x04, 0x3c, 0xc2, 0x1a, 0x2e, 0xc4, 0x63, 0xd3, 0xaa, 0x7a, 0x32, 0x34, 0x5b, 0x85, 0xf7,
+	0x68, 0xa9, 0x20, 0xca, 0x1c, 0x51, 0xec, 0x86, 0x47, 0x98, 0xca, 0x6b, 0x34, 0x3f, 0x89, 0xa3,
+	0x6e, 0xaa, 0x69, 0x86, 0xf2, 0x82, 0x08, 0xc5, 0x70, 0x2e, 0xc2, 0x34, 0x26, 0x31, 0x13, 0x9c,
+	0x99, 0x62, 0xc7, 0x3d, 0x14, 0x34, 0x6e, 0xe1, 0xcc, 0xd7, 0xaf, 0x33, 0x1a, 0xb6, 0x37, 0x35,
+	0xe5, 0x6e, 0xaa, 0xab, 0xf9, 0x5b, 0x2b, 0x93, 0x77, 0xbe, 0xae, 0x83, 0xf5, 0x36, 0x89, 0x99,
+	0x1e, 0x2b, 0xe3, 0xae, 0xe4, 0x52, 0x3c, 0x83, 0xe8, 0xd1, 0x70, 0xa0, 0x67, 0x10, 0xfc, 0x6f,
+	0x3d, 0x83, 0xe0, 0x7f, 0xf3, 0x0c, 0x82, 0x85, 0x7a, 0x06, 0xc1, 0x42, 0x3d, 0x83, 0x60, 0x21,
+	0x8f, 0xb7, 0x8e, 0xcb, 0x42, 0x6a, 0x3f, 0x48, 0x30, 0x3d, 0xd6, 0x49, 0x81, 0x80, 0xdf, 0xe3,
+	0xa8, 0x41, 0x6c, 0x33, 0x94, 0x53, 0x4e, 0xa9, 0x4a, 0x43, 0x45, 0x69, 0x15, 0xe5, 0x14, 0x68,
+	0x37, 0x34, 0x3e, 0xb2, 0x99, 0x81, 0xfc, 0xcd, 0x72, 0x29, 0xf6, 0x70, 0xc0, 0x88, 0xe3, 0xeb,
+	0x7c, 0x55, 0xbc, 0x59, 0xb9, 0xa8, 0x40, 0x5a, 0x17, 0x4d, 0x09, 0x9f, 0xf9, 0x20, 0xf4, 0x12,
+	0x5f, 0x9d, 0xb0, 0x46, 0x3e, 0x73, 0x09, 0x17, 0xe9, 0x4c, 0x8e, 0xaa, 0x8f, 0x26, 0x29, 0x13,
+	0x9a, 0x35, 0x3e, 0x9a, 0x8c, 0x33, 0xa1, 0x1c, 0x45, 0xdb, 0x30, 0x1b, 0x26, 0xcc, 0x0d, 0x07,
+	0x58, 0x44, 0x86, 0xa6, 0x24, 0x81, 0x0a, 0xd2, 0x49, 0xa0, 0x82, 0xd0, 0x1e, 0xac, 0x30, 0x87,
+	0xf6, 0x31, 0xb3, 0x1d, 0xd7, 0xe5, 0xe4, 0x9a, 0x3f, 0x6b, 0x4d, 0xa1, 0x2a, 0xce, 0xa1, 0x14,
+	0x5e, 0x97, 0x32, 0xe3, 0x6d, 0x5b, 0x2a, 0x88, 0xd0, 0x1b, 0xb0, 0x40, 0x55, 0x0e, 0x69, 0x8b,
+	0x04, 0x12, 0x84, 0x99, 0x8d, 0xd1, 0xb0, 0x7d, 0x3e, 0x15, 0xdc, 0x35, 0x13, 0xc9, 0x79, 0x1d,
+	0x97, 0x0c, 0x50, 0x19, 0x20, 0x9e, 0xd5, 0xca, 0xbf, 0x3b, 0x85, 0xcd, 0xc7, 0x35, 0x47, 0x39,
+	0x59, 0x8d, 0x9c, 0x3e, 0xb6, 0x63, 0xf2, 0x19, 0x16, 0x97, 0xac, 0x2e, 0xc9, 0x2a, 0x07, 0xf7,
+	0xc9, 0x67, 0x06, 0x59, 0x4d, 0x31, 0x74, 0x05, 0x1a, 0x6e, 0x42, 0xe3, 0x90, 0x8a, 0x9b, 0xd2,
+	0x94, 0xec, 0x5b, 0x22, 0x3a, 0xfb, 0x96, 0x48, 0xe7, 0x17, 0x35, 0x38, 0xff, 0x43, 0xcc, 0xcc,
+	0x94, 0x59, 0x9e, 0xf7, 0xef, 0x41, 0x5e, 0x42, 0xc8, 0x69, 0x81, 0x48, 0xed, 0x32, 0xdc, 0x98,
+	0x7a, 0x4b, 0x83, 0xd1, 0x0d, 0x58, 0xcc, 0xd8, 0x0d, 0x0b, 0xef, 0xe3, 0x40, 0xdd, 0x08, 0x11,
+	0xd5, 0x52, 0xc9, 0x5d, 0x2e, 0xd0, 0xa3, 0x9a, 0x21, 0xe8, 0x7c, 0xbd, 0x00, 0xab, 0x06, 0x1d,
+	0x4d, 0x06, 0x03, 0x87, 0x1e, 0xff, 0x97, 0x33, 0x7b, 0x3c, 0x94, 0xe5, 0x16, 0x2c, 0xcb, 0x8b,
+	0xa9, 0x9d, 0xb8, 0xe9, 0xfc, 0x86, 0x09, 0x59, 0xd9, 0x81, 0x5b, 0x34, 0x25, 0x7c, 0xdd, 0xa4,
+	0x9d, 0x24, 0xc6, 0x34, 0x70, 0x06, 0xe9, 0x25, 0x17, 0xeb, 0x26, 0x24, 0xef, 0x2b, 0x81, 0xbe,
+	0x6e, 0x86, 0xa0, 0x10, 0x24, 0xea, 0x95, 0x83, 0xc4, 0x0b, 0x50, 0xa7, 0xd8, 0xf1, 0x07, 0xea,
+	0x5e, 0x8b, 0x3a, 0x8b, 0x00, 0xf4, 0x3a, 0x8b, 0x00, 0xca, 0xe2, 0xc9, 0xec, 0x23, 0xc4, 0x93,
+	0x3e, 0xac, 0x10, 0xf1, 0x37, 0x3b, 0xce, 0xcb, 0x22, 0x73, 0x67, 0x46, 0x78, 0xc1, 0x80, 0x53,
+	0xc5, 0x92, 0xaa, 0xc8, 0x72, 0x51, 0x86, 0x3e, 0xaf, 0x41, 0xa6, 0x60, 0x67, 0x07, 0xd3, 0x0d,
+	0x07, 0x91, 0x8f, 0x19, 0xb6, 0x9a, 0x67, 0xba, 0x7c, 0x7e, 0x34, 0x6c, 0x77, 0x52, 0x0b, 0xfb,
+	0xca, 0xc0, 0xae, 0xd2, 0xd7, 0x5c, 0x5b, 0x27, 0x8d, 0x29, 0xc6, 0x4e, 0x78, 0xf4, 0xd8, 0xd9,
+	0x9a, 0x20, 0x76, 0xbe, 0x0f, 0xe7, 0x22, 0x4a, 0xf8, 0xb5, 0xb1, 0xcd, 0x38, 0x36, 0x2f, 0x8c,
+	0x88, 0x4c, 0x51, 0x0d, 0xe8, 0x96, 0x87, 0xb3, 0xd5, 0x12, 0x31, 0xba, 0x0d, 0xab, 0x63, 0x66,
+	0x89, 0xa7, 0x42, 0x8e, 0x20, 0x81, 0x05, 0x2d, 0xe3, 0xd0, 0xaf, 0x8c, 0x09, 0xf5, 0x18, 0xbf,
+	0x58, 0x29, 0xc6, 0xbf, 0x0e, 0xad, 0xf0, 0x80, 0xd7, 0x42, 0x65, 0x25, 0x6e, 0x49, 0x8b, 0x01,
+	0x39, 0x6c, 0xc4, 0x80, 0x1c, 0x2e, 0xa6, 0xe5, 0xcb, 0x13, 0xa4, 0xe5, 0xf7, 0xa0, 0xe5, 0x25,
+	0x2a, 0xf6, 0x0c, 0x62, 0x6b, 0xa5, 0x6a, 0x6a, 0x92, 0x2a, 0xbd, 0x63, 0x94, 0x0a, 0x72, 0x94,
+	0xdf, 0xfc, 0x83, 0x24, 0x26, 0x01, 0x8e, 0x63, 0x51, 0x69, 0xc0, 0x16, 0xca, 0x6f, 0x7e, 0x2a,
+	0xe1, 0x19, 0x9b, 0x71, 0xf3, 0x0d, 0x01, 0xa7, 0xd2, 0xd9, 0x76, 0x88, 0x88, 0x62, 0xad, 0x56,
+	0x65, 0x9a, 0xa9, 0x9e, 0x28, 0x46, 0xe9, 0x1e, 0x0c, 0x81, 0xac, 0x64, 0x4a, 0x20, 0xce, 0xef,
+	0xcf, 0x5a, 0xd5, 0x4a, 0xa6, 0xd2, 0x2c, 0xb9, 0x38, 0x2b, 0x63, 0xc2, 0x93, 0x2b, 0x20, 0xe7,
+	0x1e, 0x57, 0x05, 0x84, 0x17, 0x77, 0x23, 0x1a, 0x1e, 0x11, 0x0f, 0x53, 0xeb, 0x7c, 0x5e, 0x1e,
+	0x4a, 0x31, 0xe3, 0xc5, 0x55, 0x58, 0x39, 0xdb, 0x58, 0x7f, 0x14, 0xb6, 0xd1, 0xf9, 0xc3, 0x14,
+	0xcc, 0xdc, 0x71, 0xfa, 0xe2, 0xc6, 0x07, 0xf8, 0x53, 0x66, 0xab, 0xa7, 0x5c, 0x4b, 0xc9, 0x39,
+	0xbc, 0x5b, 0x7c, 0xce, 0x21, 0x47, 0xff, 0x17, 0x2f, 0x2f, 0x7a, 0xab, 0xac, 0x36, 0x21, 0x9f,
+	0xb3, 0x89, 0xab, 0x0f, 0xfc, 0x5b, 0x32, 0x63, 0x2a, 0xe9, 0x56, 0xdf, 0x92, 0xc2, 0x66, 0xba,
+	0x9e, 0xa3, 0x26, 0x03, 0xaa, 0x57, 0x63, 0x40, 0x9d, 0x2f, 0xea, 0xb0, 0x78, 0x3d, 0x8a, 0x7c,
+	0x82, 0xbd, 0x5b, 0xc4, 0x67, 0x98, 0xc6, 0xdf, 0x70, 0xf7, 0x6f, 0xb8, 0xfb, 0x93, 0xe5, 0xee,
+	0x9d, 0x2f, 0xa7, 0xe0, 0xa9, 0x92, 0x54, 0x52, 0x46, 0x1c, 0xf4, 0x36, 0xd4, 0xb9, 0x52, 0x6c,
+	0xd5, 0xb6, 0xa6, 0x2f, 0xb7, 0x76, 0x9e, 0x35, 0x23, 0x59, 0x09, 0xe7, 0x95, 0x64, 0x4c, 0xe8,
+	0xe8, 0x64, 0x4c, 0x00, 0xe8, 0x35, 0x98, 0xe1, 0x87, 0x5f, 0x71, 0x59, 0x64, 0x1a, 0xe3, 0xe1,
+	0x44, 0x9e, 0x78, 0x3e, 0x46, 0x3f, 0xf1, 0xfc, 0x6f, 0xe4, 0xc2, 0x92, 0x23, 0xef, 0x8a, 0xdd,
+	0x93, 0x97, 0xa5, 0xbc, 0xda, 0x66, 0x5e, 0x28, 0x45, 0x6a, 0x0d, 0xcc, 0x20, 0xb5, 0x86, 0xa4,
+	0xf3, 0x73, 0x30, 0x1b, 0x1e, 0x3f, 0xc0, 0xcc, 0x21, 0x3e, 0xea, 0xc2, 0x6c, 0x2c, 0x3f, 0x4f,
+	0xb5, 0x3b, 0x2a, 0xac, 0x83, 0x38, 0x3e, 0x4a, 0x4b, 0x3f, 0x3e, 0x0a, 0xe2, 0xcf, 0x73, 0x8f,
+	0x04, 0x24, 0x3e, 0xac, 0x4e, 0xef, 0xc5, 0x86, 0xa6, 0x4a, 0x66, 0x28, 0xca, 0x51, 0x7e, 0x7b,
+	0x55, 0x57, 0x25, 0xa7, 0xf6, 0x7a, 0x03, 0x66, 0xaf, 0xac, 0x01, 0xb3, 0xe7, 0x09, 0xa6, 0xe4,
+	0x50, 0x1c, 0x30, 0xdb, 0xc8, 0x59, 0x66, 0x34, 0xa6, 0x24, 0xc4, 0xb7, 0x4b, 0x33, 0x97, 0x95,
+	0x31, 0x21, 0x37, 0x98, 0xf1, 0x04, 0x6d, 0x46, 0xf5, 0xdc, 0x60, 0x2a, 0xee, 0x96, 0xcc, 0x6c,
+	0x65, 0x4c, 0x68, 0xbc, 0x79, 0x8d, 0x8a, 0x6f, 0xde, 0x15, 0x68, 0xe0, 0x5e, 0x0f, 0xbb, 0xcc,
+	0x9a, 0xcd, 0xb3, 0x4c, 0x89, 0xe8, 0x59, 0xa6, 0x44, 0xd0, 0x77, 0xa1, 0x99, 0x5e, 0x0d, 0x5e,
+	0xdc, 0x9b, 0x4e, 0x99, 0x5a, 0x7e, 0x5f, 0x62, 0x73, 0xf1, 0xd4, 0x58, 0x74, 0x0d, 0x66, 0x5d,
+	0xd1, 0xbe, 0xe4, 0x75, 0xba, 0x4c, 0x4d, 0x42, 0x3c, 0xbc, 0xe8, 0x6a, 0xe9, 0x48, 0xf4, 0x2d,
+	0x68, 0x88, 0x08, 0x10, 0x5b, 0x20, 0x74, 0xc4, 0xfe, 0x0a, 0x44, 0x74, 0x32, 0x8c, 0x2c, 0x58,
+	0x8c, 0x43, 0x7b, 0xb0, 0x14, 0xa9, 0x3e, 0x11, 0xa7, 0xb3, 0x89, 0xcf, 0xd4, 0x5d, 0xdf, 0x1a,
+	0x0d, 0xdb, 0x17, 0x22, 0xa3, 0x85, 0x74, 0x17, 0x7f, 0x6a, 0x34, 0x07, 0x4c, 0x29, 0xfa, 0x3e,
+	0xcc, 0xab, 0x80, 0xd1, 0xe3, 0xce, 0xac, 0xf9, 0x3c, 0x72, 0xc5, 0x79, 0x37, 0xa5, 0x60, 0xa4,
+	0xa5, 0x89, 0xd0, 0x81, 0xc6, 0xe1, 0xa4, 0x8d, 0x05, 0x11, 0x24, 0x3a, 0x27, 0x5f, 0x8e, 0x94,
+	0x47, 0xa7, 0x07, 0x52, 0xfe, 0x15, 0x97, 0xb1, 0x38, 0xe9, 0xe3, 0x23, 0x98, 0x97, 0xab, 0xa5,
+	0x3c, 0x2c, 0x0a, 0x0f, 0x5b, 0x27, 0x7b, 0x90, 0x4d, 0x64, 0x79, 0xfb, 0xd4, 0x3a, 0xeb, 0xf3,
+	0x97, 0x90, 0xb4, 0x7d, 0x0f, 0x5a, 0x32, 0x6e, 0x4b, 0xd3, 0x4b, 0x5b, 0xb5, 0x33, 0x4c, 0x8b,
+	0x3d, 0x50, 0x75, 0x0a, 0xf1, 0x6f, 0xfd, 0x06, 0xe6, 0xfb, 0x86, 0x0e, 0x60, 0x2e, 0x5d, 0x6c,
+	0xc1, 0xd8, 0x5b, 0x3b, 0x97, 0x4f, 0xb6, 0x6a, 0xf6, 0xfd, 0x54, 0x6b, 0xc6, 0xc0, 0x0a, 0xe7,
+	0x5a, 0x48, 0xd0, 0x87, 0xd0, 0x90, 0xeb, 0xa4, 0x88, 0xfd, 0xa5, 0x53, 0x22, 0x52, 0xbe, 0x9e,
+	0xf2, 0x58, 0x6a, 0x0b, 0xac, 0x9f, 0x31, 0x09, 0x77, 0x5c, 0x58, 0x1f, 0x2b, 0xb4, 0xa8, 0xd7,
+	0xe0, 0x4d, 0x98, 0xe1, 0xa3, 0xad, 0xda, 0x59, 0x4b, 0x25, 0xe3, 0xa6, 0x8c, 0xe6, 0x5c, 0x43,
+	0x8f, 0xe6, 0xfc, 0x1f, 0x9d, 0x7f, 0x37, 0x61, 0xa1, 0x9b, 0x04, 0x8c, 0x0c, 0xb0, 0xea, 0xed,
+	0xbc, 0x01, 0x0b, 0x3c, 0xed, 0x21, 0x2e, 0xb6, 0x71, 0x14, 0xba, 0x87, 0x56, 0x2d, 0x7f, 0x03,
+	0x95, 0xe0, 0x26, 0xc7, 0xf5, 0x37, 0x50, 0xc7, 0x79, 0xb9, 0xc4, 0x3d, 0xc4, 0xee, 0xfd, 0x09,
+	0xcb, 0x25, 0x4a, 0xc7, 0x2c, 0x97, 0x64, 0x20, 0x7a, 0x1f, 0x5a, 0x82, 0x40, 0xf1, 0xc2, 0xae,
+	0x77, 0x6c, 0x4d, 0x9f, 0x49, 0xe8, 0xc5, 0x25, 0x16, 0x2a, 0x5d, 0xae, 0xa1, 0x1f, 0x91, 0x1c,
+	0x45, 0x6f, 0xc2, 0x72, 0x44, 0x43, 0x5e, 0x7d, 0xe7, 0x61, 0x56, 0x66, 0x51, 0x33, 0xf9, 0x0d,
+	0xcc, 0x65, 0xc5, 0x3c, 0x6a, 0xa9, 0x20, 0xca, 0x0a, 0xdd, 0x51, 0x72, 0xe0, 0x67, 0xaf, 0x49,
+	0x7d, 0x92, 0x42, 0xf7, 0x9d, 0x54, 0x73, 0xbc, 0xd0, 0xad, 0x89, 0xd0, 0x5d, 0x58, 0x13, 0x3e,
+	0x5c, 0xf9, 0x34, 0x64, 0x6c, 0xbb, 0xa1, 0xe5, 0xe7, 0xb9, 0xbc, 0x84, 0x70, 0xaf, 0x96, 0x88,
+	0x79, 0x22, 0x18, 0xe1, 0xc0, 0x23, 0x41, 0x7f, 0x92, 0xee, 0x8d, 0x48, 0x11, 0x94, 0xde, 0x78,
+	0x4f, 0xc5, 0x10, 0x88, 0x8a, 0x4a, 0xe8, 0x7b, 0xfc, 0xf5, 0x49, 0x3d, 0xe9, 0x6d, 0xd7, 0x2a,
+	0x2d, 0x9c, 0x4b, 0xa3, 0x61, 0xfb, 0x59, 0x69, 0xe3, 0x8e, 0x34, 0x51, 0xda, 0x7f, 0x5d, 0x3f,
+	0x61, 0x08, 0x7a, 0x17, 0xd0, 0x83, 0xc4, 0xa1, 0x4e, 0xc0, 0x48, 0x60, 0x36, 0x74, 0xd4, 0x43,
+	0xa8, 0x49, 0xc7, 0x1b, 0x51, 0x63, 0x42, 0x74, 0x00, 0x1b, 0x72, 0xcf, 0x69, 0xe8, 0xe2, 0x38,
+	0x16, 0x8b, 0x47, 0x69, 0x48, 0xf5, 0x82, 0x8d, 0x98, 0xb3, 0xd8, 0xc3, 0x6c, 0xd0, 0x4d, 0x3e,
+	0xa6, 0x40, 0x81, 0xd7, 0x4f, 0x18, 0x82, 0x3e, 0x05, 0x24, 0x0b, 0x11, 0xd8, 0xb3, 0xd3, 0x3e,
+	0x6a, 0x6c, 0xb5, 0xb6, 0xa6, 0xcf, 0x0c, 0x67, 0x5a, 0xc7, 0x56, 0x7e, 0x5d, 0x6a, 0x27, 0x95,
+	0x19, 0x5f, 0x37, 0x26, 0xe4, 0x47, 0x82, 0x85, 0xcc, 0xf1, 0xed, 0x54, 0x64, 0xcd, 0x57, 0x3d,
+	0x12, 0x42, 0xef, 0xb6, 0x52, 0xd3, 0x8f, 0x84, 0x21, 0xe0, 0xb5, 0x81, 0xec, 0x93, 0xf2, 0xda,
+	0xc0, 0x42, 0xb5, 0xda, 0x40, 0xa6, 0x59, 0x56, 0x1b, 0x18, 0x13, 0x76, 0x2e, 0xc1, 0x73, 0xc5,
+	0x70, 0xaa, 0xc7, 0x3d, 0xc5, 0x6e, 0x3a, 0x0f, 0xe0, 0xe2, 0xe9, 0xc3, 0x54, 0x08, 0xde, 0x83,
+	0x86, 0xfa, 0x75, 0x87, 0x0c, 0xc2, 0x4f, 0x9b, 0xd3, 0x35, 0x94, 0xe4, 0x53, 0x15, 0x17, 0x7f,
+	0xf6, 0xa1, 0x0c, 0x94, 0xcc, 0x6c, 0xd7, 0x89, 0x58, 0x42, 0x0b, 0x33, 0xfb, 0x63, 0x13, 0x16,
+	0x0c, 0x01, 0xcf, 0x36, 0x48, 0x10, 0x33, 0x27, 0x90, 0xd9, 0x86, 0x96, 0xf3, 0xa7, 0xb0, 0x99,
+	0x6d, 0xe4, 0xe8, 0x63, 0xaa, 0x69, 0xdf, 0x4b, 0x4b, 0x6c, 0xd5, 0x7f, 0x49, 0x21, 0xa6, 0x9b,
+	0x2a, 0x99, 0x5c, 0x3a, 0x47, 0x4b, 0xfb, 0xe5, 0x33, 0x4f, 0xa8, 0x5f, 0x5e, 0x7f, 0x62, 0xfd,
+	0xf2, 0xc6, 0x13, 0xeb, 0x97, 0xcf, 0x3e, 0xc1, 0x7e, 0xf9, 0xdc, 0x63, 0xef, 0x97, 0x7b, 0xb0,
+	0x4c, 0x02, 0xbb, 0xe7, 0x93, 0xfe, 0x21, 0x9b, 0xa4, 0x4b, 0x2f, 0x38, 0x1e, 0x09, 0x6e, 0x09,
+	0xc5, 0x31, 0x6f, 0x8b, 0xa6, 0xa4, 0xbc, 0x65, 0x0e, 0x8f, 0xa1, 0x65, 0x7e, 0x62, 0x27, 0xbb,
+	0xf5, 0xf8, 0x3a, 0xd9, 0xd9, 0xd7, 0xe5, 0x87, 0x72, 0xd2, 0x3e, 0xfd, 0x6e, 0xaa, 0x39, 0x4e,
+	0x5f, 0x34, 0x51, 0x49, 0x80, 0x2d, 0x44, 0xbb, 0x6a, 0x01, 0xd6, 0x50, 0x3a, 0x23, 0xc0, 0x6e,
+	0xc1, 0x66, 0xb1, 0xb2, 0x72, 0x5d, 0x30, 0xb7, 0x2c, 0xb6, 0xfe, 0xb3, 0x06, 0x68, 0x5c, 0xcc,
+	0xab, 0x80, 0xda, 0xef, 0xfe, 0x04, 0x8b, 0x76, 0xcd, 0xcd, 0x13, 0xf2, 0x62, 0xa5, 0x6c, 0x6a,
+	0x82, 0x4a, 0xd9, 0x0b, 0x50, 0xf7, 0x9d, 0x03, 0xec, 0xab, 0x02, 0x81, 0xa8, 0xda, 0x08, 0x40,
+	0xaf, 0xda, 0x08, 0x60, 0xbc, 0x3a, 0x35, 0x33, 0x59, 0x75, 0xaa, 0xf3, 0xfb, 0x1a, 0xb4, 0x4f,
+	0x5c, 0x08, 0xb5, 0xec, 0xbc, 0x76, 0xe8, 0x30, 0xc7, 0x0f, 0xfb, 0xbc, 0xbf, 0x16, 0xf3, 0x4e,
+	0x49, 0x4d, 0xab, 0x1d, 0x4a, 0xd1, 0x07, 0x52, 0x62, 0xd4, 0x0e, 0x0d, 0x09, 0x7a, 0x0f, 0x66,
+	0x65, 0x4d, 0x8f, 0xff, 0xfa, 0xf1, 0x8c, 0x54, 0x51, 0x4e, 0x41, 0xa6, 0x8a, 0x4a, 0x49, 0xcf,
+	0xd2, 0x15, 0xb4, 0xf3, 0xe7, 0x46, 0xa1, 0xb9, 0x2b, 0x93, 0x0e, 0xf4, 0x65, 0x0d, 0x56, 0x8a,
+	0x5f, 0x15, 0xa3, 0xe7, 0x4d, 0x7f, 0x27, 0xfd, 0x48, 0x63, 0xe3, 0xff, 0xce, 0x1c, 0x27, 0x17,
+	0xa6, 0x73, 0xf1, 0x8b, 0xbf, 0xfe, 0xeb, 0xab, 0xa9, 0x4d, 0x74, 0x41, 0xfc, 0x24, 0xfe, 0xe8,
+	0xe5, 0x6d, 0xc7, 0x1b, 0x90, 0x20, 0xff, 0x21, 0xfd, 0x55, 0x9f, 0xbb, 0xfd, 0xaa, 0x06, 0x4b,
+	0x85, 0xe3, 0x8d, 0x2e, 0x9a, 0x2e, 0xca, 0xbb, 0xe7, 0x1b, 0x97, 0xce, 0x18, 0xa5, 0xa6, 0x71,
+	0x4d, 0x4c, 0xe3, 0x2a, 0x7a, 0xf1, 0xb4, 0x69, 0x6c, 0xff, 0x44, 0x2f, 0x1d, 0xfd, 0x0c, 0xfd,
+	0xa6, 0x06, 0x17, 0x4e, 0x63, 0x35, 0xe8, 0xe5, 0xd3, 0x9d, 0x97, 0x10, 0xa5, 0x8d, 0x9d, 0x49,
+	0x54, 0xd4, 0xe4, 0x5f, 0x14, 0x93, 0xbf, 0x84, 0x9e, 0x3b, 0x65, 0xf2, 0x57, 0xa9, 0x54, 0x45,
+	0xbf, 0x1d, 0x9f, 0xb4, 0x49, 0x7f, 0x4e, 0x9f, 0x74, 0x19, 0x87, 0xda, 0xd8, 0x99, 0x44, 0x45,
+	0x4d, 0x7a, 0x47, 0x4c, 0xfa, 0x0a, 0xfa, 0xff, 0xd3, 0x26, 0xed, 0x4a, 0xd5, 0xab, 0x32, 0xe2,
+	0xa0, 0x5f, 0xd5, 0x60, 0xfd, 0x84, 0x9b, 0x86, 0xae, 0x9c, 0x7e, 0xe2, 0xcc, 0xc8, 0xb4, 0x71,
+	0xb5, 0xe2, 0xe8, 0x49, 0x56, 0x58, 0xdd, 0xa8, 0x1b, 0xbb, 0x7f, 0x7a, 0xb8, 0x59, 0xfb, 0xcb,
+	0xc3, 0xcd, 0xda, 0x3f, 0x1e, 0x6e, 0xd6, 0x3e, 0xfa, 0x4e, 0x9f, 0xb0, 0xc3, 0xe4, 0xe0, 0x25,
+	0x37, 0x1c, 0x6c, 0x27, 0x31, 0xa6, 0xc7, 0xb8, 0x8f, 0xb7, 0x1d, 0x76, 0x88, 0x03, 0x67, 0x3b,
+	0xba, 0xdf, 0xe7, 0x06, 0x5d, 0x9f, 0xe0, 0x80, 0x19, 0xff, 0x79, 0xe4, 0xa0, 0x21, 0x4a, 0x21,
+	0xd7, 0xfe, 0x33, 0x00, 0xc3, 0x86, 0x55, 0x33, 0x70, 0x32, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -2516,6 +2669,109 @@ var _OperationLogService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "internal/server/operationlog/operationlog.proto",
 }
 
+func (m *NullableString) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NullableString) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NullableString) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Value) > 0 {
+		i -= len(m.Value)
+		copy(dAtA[i:], m.Value)
+		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.Value)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NullableBool) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NullableBool) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NullableBool) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Value {
+		i--
+		if m.Value {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NullableInt64) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NullableInt64) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NullableInt64) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Value != 0 {
+		i = encodeVarintOperationlog(dAtA, i, uint64(m.Value))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *OperationLogResource) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -2540,15 +2796,17 @@ func (m *OperationLogResource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.ReferenceVerified {
-		i--
-		if m.ReferenceVerified {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
+	if m.ReferenceVerified != nil {
+		{
+			size, err := m.ReferenceVerified.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x20
+		dAtA[i] = 0x22
 	}
 	if len(m.Relation) > 0 {
 		i -= len(m.Relation)
@@ -2605,27 +2863,39 @@ func (m *OperationLogChange) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x2a
 	}
-	if m.BeforeAvailable {
-		i--
-		if m.BeforeAvailable {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
+	if m.BeforeAvailable != nil {
+		{
+			size, err := m.BeforeAvailable.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x20
+		dAtA[i] = 0x22
 	}
-	if len(m.AfterValue) > 0 {
-		i -= len(m.AfterValue)
-		copy(dAtA[i:], m.AfterValue)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.AfterValue)))
+	if m.AfterValue != nil {
+		{
+			size, err := m.AfterValue.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.BeforeValue) > 0 {
-		i -= len(m.BeforeValue)
-		copy(dAtA[i:], m.BeforeValue)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.BeforeValue)))
+	if m.BeforeValue != nil {
+		{
+			size, err := m.BeforeValue.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x12
 	}
@@ -2663,31 +2933,51 @@ func (m *OperationLogCounts) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.Unknown) > 0 {
-		i -= len(m.Unknown)
-		copy(dAtA[i:], m.Unknown)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.Unknown)))
+	if m.Unknown != nil {
+		{
+			size, err := m.Unknown.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x22
 	}
-	if len(m.Failed) > 0 {
-		i -= len(m.Failed)
-		copy(dAtA[i:], m.Failed)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.Failed)))
+	if m.Failed != nil {
+		{
+			size, err := m.Failed.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.Confirmed) > 0 {
-		i -= len(m.Confirmed)
-		copy(dAtA[i:], m.Confirmed)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.Confirmed)))
+	if m.Confirmed != nil {
+		{
+			size, err := m.Confirmed.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.Requested) > 0 {
-		i -= len(m.Requested)
-		copy(dAtA[i:], m.Requested)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.Requested)))
+	if m.Requested != nil {
+		{
+			size, err := m.Requested.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0xa
 	}
@@ -2718,15 +3008,17 @@ func (m *OperationLogProtocolResult) MarshalToSizedBuffer(dAtA []byte) (int, err
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.ResponseWriteFailed {
-		i--
-		if m.ResponseWriteFailed {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
+	if m.ResponseWriteFailed != nil {
+		{
+			size, err := m.ResponseWriteFailed.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x20
+		dAtA[i] = 0x22
 	}
 	if len(m.ReasonCode) > 0 {
 		i -= len(m.ReasonCode)
@@ -2776,10 +3068,15 @@ func (m *OperationLogSourceFacts) MarshalToSizedBuffer(dAtA []byte) (int, error)
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.SnapshotSequence) > 0 {
-		i -= len(m.SnapshotSequence)
-		copy(dAtA[i:], m.SnapshotSequence)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.SnapshotSequence)))
+	if m.SnapshotSequence != nil {
+		{
+			size, err := m.SnapshotSequence.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x2a
 	}
@@ -2792,17 +3089,27 @@ func (m *OperationLogSourceFacts) MarshalToSizedBuffer(dAtA []byte) (int, error)
 			dAtA[i] = 0x22
 		}
 	}
-	if len(m.LastReceivedAt) > 0 {
-		i -= len(m.LastReceivedAt)
-		copy(dAtA[i:], m.LastReceivedAt)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.LastReceivedAt)))
+	if m.LastReceivedAt != nil {
+		{
+			size, err := m.LastReceivedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.FirstReceivedAt) > 0 {
-		i -= len(m.FirstReceivedAt)
-		copy(dAtA[i:], m.FirstReceivedAt)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.FirstReceivedAt)))
+	if m.FirstReceivedAt != nil {
+		{
+			size, err := m.FirstReceivedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x12
 	}
@@ -2840,90 +3147,147 @@ func (m *OperationLogProducerStatus) MarshalToSizedBuffer(dAtA []byte) (int, err
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.PersistenceReachable {
-		i--
-		if m.PersistenceReachable {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
+	if m.PersistenceReachable != nil {
+		{
+			size, err := m.PersistenceReachable.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x68
+		dAtA[i] = 0x6a
 	}
-	if len(m.LastRecoveredAt) > 0 {
-		i -= len(m.LastRecoveredAt)
-		copy(dAtA[i:], m.LastRecoveredAt)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.LastRecoveredAt)))
+	if m.LastRecoveredAt != nil {
+		{
+			size, err := m.LastRecoveredAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x62
 	}
-	if len(m.LastFailureCode) > 0 {
-		i -= len(m.LastFailureCode)
-		copy(dAtA[i:], m.LastFailureCode)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.LastFailureCode)))
+	if m.LastFailureCode != nil {
+		{
+			size, err := m.LastFailureCode.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x5a
 	}
-	if len(m.LastFailureAt) > 0 {
-		i -= len(m.LastFailureAt)
-		copy(dAtA[i:], m.LastFailureAt)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.LastFailureAt)))
+	if m.LastFailureAt != nil {
+		{
+			size, err := m.LastFailureAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x52
 	}
-	if len(m.CapacityRejectedEvents) > 0 {
-		i -= len(m.CapacityRejectedEvents)
-		copy(dAtA[i:], m.CapacityRejectedEvents)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.CapacityRejectedEvents)))
+	if m.CapacityRejectedEvents != nil {
+		{
+			size, err := m.CapacityRejectedEvents.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x4a
 	}
-	if len(m.InvalidEvents) > 0 {
-		i -= len(m.InvalidEvents)
-		copy(dAtA[i:], m.InvalidEvents)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.InvalidEvents)))
+	if m.InvalidEvents != nil {
+		{
+			size, err := m.InvalidEvents.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x42
 	}
-	if len(m.UnconfirmedEvents) > 0 {
-		i -= len(m.UnconfirmedEvents)
-		copy(dAtA[i:], m.UnconfirmedEvents)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.UnconfirmedEvents)))
+	if m.UnconfirmedEvents != nil {
+		{
+			size, err := m.UnconfirmedEvents.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x3a
 	}
-	if len(m.ConfirmedEvents) > 0 {
-		i -= len(m.ConfirmedEvents)
-		copy(dAtA[i:], m.ConfirmedEvents)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.ConfirmedEvents)))
+	if m.ConfirmedEvents != nil {
+		{
+			size, err := m.ConfirmedEvents.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x32
 	}
-	if len(m.AttemptedEvents) > 0 {
-		i -= len(m.AttemptedEvents)
-		copy(dAtA[i:], m.AttemptedEvents)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.AttemptedEvents)))
+	if m.AttemptedEvents != nil {
+		{
+			size, err := m.AttemptedEvents.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x2a
 	}
-	if len(m.StoppedAt) > 0 {
-		i -= len(m.StoppedAt)
-		copy(dAtA[i:], m.StoppedAt)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.StoppedAt)))
+	if m.StoppedAt != nil {
+		{
+			size, err := m.StoppedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x22
 	}
-	if len(m.LastSeenAt) > 0 {
-		i -= len(m.LastSeenAt)
-		copy(dAtA[i:], m.LastSeenAt)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.LastSeenAt)))
+	if m.LastSeenAt != nil {
+		{
+			size, err := m.LastSeenAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.StartedAt) > 0 {
-		i -= len(m.StartedAt)
-		copy(dAtA[i:], m.StartedAt)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.StartedAt)))
+	if m.StartedAt != nil {
+		{
+			size, err := m.StartedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x12
 	}
@@ -3136,34 +3500,43 @@ func (m *OperationLogSummary) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0xb2
 	}
-	if m.ResponseWriteFailed {
-		i--
-		if m.ResponseWriteFailed {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
+	if m.ResponseWriteFailed != nil {
+		{
+			size, err := m.ResponseWriteFailed.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
 		}
 		i--
 		dAtA[i] = 0x1
 		i--
-		dAtA[i] = 0xa8
+		dAtA[i] = 0xaa
 	}
-	if m.ResourcesComplete {
-		i--
-		if m.ResourcesComplete {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
+	if m.ResourcesComplete != nil {
+		{
+			size, err := m.ResourcesComplete.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
 		}
 		i--
 		dAtA[i] = 0x1
 		i--
-		dAtA[i] = 0xa0
+		dAtA[i] = 0xa2
 	}
-	if len(m.ResourceCount) > 0 {
-		i -= len(m.ResourceCount)
-		copy(dAtA[i:], m.ResourceCount)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.ResourceCount)))
+	if m.ResourceCount != nil {
+		{
+			size, err := m.ResourceCount.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x1
 		i--
@@ -3178,10 +3551,15 @@ func (m *OperationLogSummary) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x92
 	}
-	if len(m.DurationMs) > 0 {
-		i -= len(m.DurationMs)
-		copy(dAtA[i:], m.DurationMs)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.DurationMs)))
+	if m.DurationMs != nil {
+		{
+			size, err := m.DurationMs.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x1
 		i--
@@ -3238,25 +3616,29 @@ func (m *OperationLogSummary) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x52
 	}
-	if m.IdentitySnapshotComplete {
-		i--
-		if m.IdentitySnapshotComplete {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
+	if m.IdentitySnapshotComplete != nil {
+		{
+			size, err := m.IdentitySnapshotComplete.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x48
+		dAtA[i] = 0x4a
 	}
-	if m.IdentityVerified {
-		i--
-		if m.IdentityVerified {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
+	if m.IdentityVerified != nil {
+		{
+			size, err := m.IdentityVerified.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x40
+		dAtA[i] = 0x42
 	}
 	if len(m.CredentialKind) > 0 {
 		i -= len(m.CredentialKind)
@@ -3293,10 +3675,15 @@ func (m *OperationLogSummary) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.StartedAt) > 0 {
-		i -= len(m.StartedAt)
-		copy(dAtA[i:], m.StartedAt)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.StartedAt)))
+	if m.StartedAt != nil {
+		{
+			size, err := m.StartedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x12
 	}
@@ -3707,10 +4094,15 @@ func (m *OperationLogDetail) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.FinishedAt) > 0 {
-		i -= len(m.FinishedAt)
-		copy(dAtA[i:], m.FinishedAt)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.FinishedAt)))
+	if m.FinishedAt != nil {
+		{
+			size, err := m.FinishedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x12
 	}
@@ -3792,20 +4184,27 @@ func (m *RuntimeStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.ProducersComplete {
-		i--
-		if m.ProducersComplete {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
+	if m.ProducersComplete != nil {
+		{
+			size, err := m.ProducersComplete.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x68
+		dAtA[i] = 0x6a
 	}
-	if len(m.TotalObserved) > 0 {
-		i -= len(m.TotalObserved)
-		copy(dAtA[i:], m.TotalObserved)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.TotalObserved)))
+	if m.TotalObserved != nil {
+		{
+			size, err := m.TotalObserved.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x62
 	}
@@ -3837,17 +4236,27 @@ func (m *RuntimeStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x4a
 	}
-	if len(m.OldestPendingReceivedAt) > 0 {
-		i -= len(m.OldestPendingReceivedAt)
-		copy(dAtA[i:], m.OldestPendingReceivedAt)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.OldestPendingReceivedAt)))
+	if m.OldestPendingReceivedAt != nil {
+		{
+			size, err := m.OldestPendingReceivedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x42
 	}
-	if len(m.PendingEvents) > 0 {
-		i -= len(m.PendingEvents)
-		copy(dAtA[i:], m.PendingEvents)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.PendingEvents)))
+	if m.PendingEvents != nil {
+		{
+			size, err := m.PendingEvents.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x3a
 	}
@@ -3858,10 +4267,15 @@ func (m *RuntimeStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x32
 	}
-	if len(m.LastPublishedAt) > 0 {
-		i -= len(m.LastPublishedAt)
-		copy(dAtA[i:], m.LastPublishedAt)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.LastPublishedAt)))
+	if m.LastPublishedAt != nil {
+		{
+			size, err := m.LastPublishedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x2a
 	}
@@ -3872,20 +4286,27 @@ func (m *RuntimeStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x22
 	}
-	if m.QueryReady {
-		i--
-		if m.QueryReady {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
+	if m.QueryReady != nil {
+		{
+			size, err := m.QueryReady.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x18
+		dAtA[i] = 0x1a
 	}
-	if len(m.CheckedAt) > 0 {
-		i -= len(m.CheckedAt)
-		copy(dAtA[i:], m.CheckedAt)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.CheckedAt)))
+	if m.CheckedAt != nil {
+		{
+			size, err := m.CheckedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x12
 	}
@@ -4016,83 +4437,135 @@ func (m *CaptureStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.LastConfirmedAt) > 0 {
-		i -= len(m.LastConfirmedAt)
-		copy(dAtA[i:], m.LastConfirmedAt)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.LastConfirmedAt)))
+	if m.LastConfirmedAt != nil {
+		{
+			size, err := m.LastConfirmedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x62
 	}
-	if m.PersistenceReachable {
-		i--
-		if m.PersistenceReachable {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
+	if m.PersistenceReachable != nil {
+		{
+			size, err := m.PersistenceReachable.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x58
+		dAtA[i] = 0x5a
 	}
-	if len(m.LastFailureCode) > 0 {
-		i -= len(m.LastFailureCode)
-		copy(dAtA[i:], m.LastFailureCode)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.LastFailureCode)))
+	if m.LastFailureCode != nil {
+		{
+			size, err := m.LastFailureCode.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x52
 	}
-	if len(m.InFlightEvents) > 0 {
-		i -= len(m.InFlightEvents)
-		copy(dAtA[i:], m.InFlightEvents)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.InFlightEvents)))
+	if m.InFlightEvents != nil {
+		{
+			size, err := m.InFlightEvents.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x4a
 	}
-	if len(m.CapacityRejectedEvents) > 0 {
-		i -= len(m.CapacityRejectedEvents)
-		copy(dAtA[i:], m.CapacityRejectedEvents)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.CapacityRejectedEvents)))
+	if m.CapacityRejectedEvents != nil {
+		{
+			size, err := m.CapacityRejectedEvents.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x42
 	}
-	if len(m.InvalidEvents) > 0 {
-		i -= len(m.InvalidEvents)
-		copy(dAtA[i:], m.InvalidEvents)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.InvalidEvents)))
+	if m.InvalidEvents != nil {
+		{
+			size, err := m.InvalidEvents.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x3a
 	}
-	if len(m.UnconfirmedEvents) > 0 {
-		i -= len(m.UnconfirmedEvents)
-		copy(dAtA[i:], m.UnconfirmedEvents)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.UnconfirmedEvents)))
+	if m.UnconfirmedEvents != nil {
+		{
+			size, err := m.UnconfirmedEvents.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x32
 	}
-	if len(m.ConfirmedEvents) > 0 {
-		i -= len(m.ConfirmedEvents)
-		copy(dAtA[i:], m.ConfirmedEvents)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.ConfirmedEvents)))
+	if m.ConfirmedEvents != nil {
+		{
+			size, err := m.ConfirmedEvents.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x2a
 	}
-	if len(m.AttemptedEvents) > 0 {
-		i -= len(m.AttemptedEvents)
-		copy(dAtA[i:], m.AttemptedEvents)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.AttemptedEvents)))
+	if m.AttemptedEvents != nil {
+		{
+			size, err := m.AttemptedEvents.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x22
 	}
-	if len(m.ObservedAt) > 0 {
-		i -= len(m.ObservedAt)
-		copy(dAtA[i:], m.ObservedAt)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.ObservedAt)))
+	if m.ObservedAt != nil {
+		{
+			size, err := m.ObservedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(m.StartedAt) > 0 {
-		i -= len(m.StartedAt)
-		copy(dAtA[i:], m.StartedAt)
-		i = encodeVarintOperationlog(dAtA, i, uint64(len(m.StartedAt)))
+	if m.StartedAt != nil {
+		{
+			size, err := m.StartedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintOperationlog(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x12
 	}
@@ -4286,6 +4759,52 @@ func encodeVarintOperationlog(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *NullableString) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Value)
+	if l > 0 {
+		n += 1 + l + sovOperationlog(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NullableBool) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Value {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NullableInt64) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Value != 0 {
+		n += 1 + sovOperationlog(uint64(m.Value))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *OperationLogResource) Size() (n int) {
 	if m == nil {
 		return 0
@@ -4304,8 +4823,9 @@ func (m *OperationLogResource) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	if m.ReferenceVerified {
-		n += 2
+	if m.ReferenceVerified != nil {
+		l = m.ReferenceVerified.Size()
+		n += 1 + l + sovOperationlog(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -4323,16 +4843,17 @@ func (m *OperationLogChange) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.BeforeValue)
-	if l > 0 {
+	if m.BeforeValue != nil {
+		l = m.BeforeValue.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.AfterValue)
-	if l > 0 {
+	if m.AfterValue != nil {
+		l = m.AfterValue.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	if m.BeforeAvailable {
-		n += 2
+	if m.BeforeAvailable != nil {
+		l = m.BeforeAvailable.Size()
+		n += 1 + l + sovOperationlog(uint64(l))
 	}
 	l = len(m.ValueKind)
 	if l > 0 {
@@ -4350,20 +4871,20 @@ func (m *OperationLogCounts) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Requested)
-	if l > 0 {
+	if m.Requested != nil {
+		l = m.Requested.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.Confirmed)
-	if l > 0 {
+	if m.Confirmed != nil {
+		l = m.Confirmed.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.Failed)
-	if l > 0 {
+	if m.Failed != nil {
+		l = m.Failed.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.Unknown)
-	if l > 0 {
+	if m.Unknown != nil {
+		l = m.Unknown.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -4390,8 +4911,9 @@ func (m *OperationLogProtocolResult) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	if m.ResponseWriteFailed {
-		n += 2
+	if m.ResponseWriteFailed != nil {
+		l = m.ResponseWriteFailed.Size()
+		n += 1 + l + sovOperationlog(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -4409,12 +4931,12 @@ func (m *OperationLogSourceFacts) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.FirstReceivedAt)
-	if l > 0 {
+	if m.FirstReceivedAt != nil {
+		l = m.FirstReceivedAt.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.LastReceivedAt)
-	if l > 0 {
+	if m.LastReceivedAt != nil {
+		l = m.LastReceivedAt.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
 	if len(m.PhasesReceived) > 0 {
@@ -4423,8 +4945,8 @@ func (m *OperationLogSourceFacts) Size() (n int) {
 			n += 1 + l + sovOperationlog(uint64(l))
 		}
 	}
-	l = len(m.SnapshotSequence)
-	if l > 0 {
+	if m.SnapshotSequence != nil {
+		l = m.SnapshotSequence.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -4443,52 +4965,53 @@ func (m *OperationLogProducerStatus) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.StartedAt)
-	if l > 0 {
+	if m.StartedAt != nil {
+		l = m.StartedAt.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.LastSeenAt)
-	if l > 0 {
+	if m.LastSeenAt != nil {
+		l = m.LastSeenAt.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.StoppedAt)
-	if l > 0 {
+	if m.StoppedAt != nil {
+		l = m.StoppedAt.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.AttemptedEvents)
-	if l > 0 {
+	if m.AttemptedEvents != nil {
+		l = m.AttemptedEvents.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.ConfirmedEvents)
-	if l > 0 {
+	if m.ConfirmedEvents != nil {
+		l = m.ConfirmedEvents.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.UnconfirmedEvents)
-	if l > 0 {
+	if m.UnconfirmedEvents != nil {
+		l = m.UnconfirmedEvents.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.InvalidEvents)
-	if l > 0 {
+	if m.InvalidEvents != nil {
+		l = m.InvalidEvents.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.CapacityRejectedEvents)
-	if l > 0 {
+	if m.CapacityRejectedEvents != nil {
+		l = m.CapacityRejectedEvents.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.LastFailureAt)
-	if l > 0 {
+	if m.LastFailureAt != nil {
+		l = m.LastFailureAt.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.LastFailureCode)
-	if l > 0 {
+	if m.LastFailureCode != nil {
+		l = m.LastFailureCode.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.LastRecoveredAt)
-	if l > 0 {
+	if m.LastRecoveredAt != nil {
+		l = m.LastRecoveredAt.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	if m.PersistenceReachable {
-		n += 2
+	if m.PersistenceReachable != nil {
+		l = m.PersistenceReachable.Size()
+		n += 1 + l + sovOperationlog(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -4589,8 +5112,8 @@ func (m *OperationLogSummary) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.StartedAt)
-	if l > 0 {
+	if m.StartedAt != nil {
+		l = m.StartedAt.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
 	l = len(m.ActorAccountId)
@@ -4613,11 +5136,13 @@ func (m *OperationLogSummary) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	if m.IdentityVerified {
-		n += 2
+	if m.IdentityVerified != nil {
+		l = m.IdentityVerified.Size()
+		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	if m.IdentitySnapshotComplete {
-		n += 2
+	if m.IdentitySnapshotComplete != nil {
+		l = m.IdentitySnapshotComplete.Size()
+		n += 1 + l + sovOperationlog(uint64(l))
 	}
 	l = len(m.ModuleCode)
 	if l > 0 {
@@ -4647,23 +5172,25 @@ func (m *OperationLogSummary) Size() (n int) {
 	if l > 0 {
 		n += 2 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.DurationMs)
-	if l > 0 {
+	if m.DurationMs != nil {
+		l = m.DurationMs.Size()
 		n += 2 + l + sovOperationlog(uint64(l))
 	}
 	l = len(m.BusinessState)
 	if l > 0 {
 		n += 2 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.ResourceCount)
-	if l > 0 {
+	if m.ResourceCount != nil {
+		l = m.ResourceCount.Size()
 		n += 2 + l + sovOperationlog(uint64(l))
 	}
-	if m.ResourcesComplete {
-		n += 3
+	if m.ResourcesComplete != nil {
+		l = m.ResourcesComplete.Size()
+		n += 2 + l + sovOperationlog(uint64(l))
 	}
-	if m.ResponseWriteFailed {
-		n += 3
+	if m.ResponseWriteFailed != nil {
+		l = m.ResponseWriteFailed.Size()
+		n += 2 + l + sovOperationlog(uint64(l))
 	}
 	l = len(m.Provider)
 	if l > 0 {
@@ -4802,8 +5329,8 @@ func (m *OperationLogDetail) Size() (n int) {
 		l = m.Summary.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.FinishedAt)
-	if l > 0 {
+	if m.FinishedAt != nil {
+		l = m.FinishedAt.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
 	l = len(m.RequestId)
@@ -4908,31 +5435,32 @@ func (m *RuntimeStatus) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.CheckedAt)
-	if l > 0 {
+	if m.CheckedAt != nil {
+		l = m.CheckedAt.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	if m.QueryReady {
-		n += 2
+	if m.QueryReady != nil {
+		l = m.QueryReady.Size()
+		n += 1 + l + sovOperationlog(uint64(l))
 	}
 	l = len(m.ProjectionState)
 	if l > 0 {
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.LastPublishedAt)
-	if l > 0 {
+	if m.LastPublishedAt != nil {
+		l = m.LastPublishedAt.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
 	l = len(m.PublicationSequence)
 	if l > 0 {
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.PendingEvents)
-	if l > 0 {
+	if m.PendingEvents != nil {
+		l = m.PendingEvents.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.OldestPendingReceivedAt)
-	if l > 0 {
+	if m.OldestPendingReceivedAt != nil {
+		l = m.OldestPendingReceivedAt.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
 	l = len(m.QuarantinedEvents)
@@ -4949,12 +5477,13 @@ func (m *RuntimeStatus) Size() (n int) {
 			n += 1 + l + sovOperationlog(uint64(l))
 		}
 	}
-	l = len(m.TotalObserved)
-	if l > 0 {
+	if m.TotalObserved != nil {
+		l = m.TotalObserved.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	if m.ProducersComplete {
-		n += 2
+	if m.ProducersComplete != nil {
+		l = m.ProducersComplete.Size()
+		n += 1 + l + sovOperationlog(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -5012,47 +5541,48 @@ func (m *CaptureStatus) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.StartedAt)
-	if l > 0 {
+	if m.StartedAt != nil {
+		l = m.StartedAt.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.ObservedAt)
-	if l > 0 {
+	if m.ObservedAt != nil {
+		l = m.ObservedAt.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.AttemptedEvents)
-	if l > 0 {
+	if m.AttemptedEvents != nil {
+		l = m.AttemptedEvents.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.ConfirmedEvents)
-	if l > 0 {
+	if m.ConfirmedEvents != nil {
+		l = m.ConfirmedEvents.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.UnconfirmedEvents)
-	if l > 0 {
+	if m.UnconfirmedEvents != nil {
+		l = m.UnconfirmedEvents.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.InvalidEvents)
-	if l > 0 {
+	if m.InvalidEvents != nil {
+		l = m.InvalidEvents.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.CapacityRejectedEvents)
-	if l > 0 {
+	if m.CapacityRejectedEvents != nil {
+		l = m.CapacityRejectedEvents.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.InFlightEvents)
-	if l > 0 {
+	if m.InFlightEvents != nil {
+		l = m.InFlightEvents.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.LastFailureCode)
-	if l > 0 {
+	if m.LastFailureCode != nil {
+		l = m.LastFailureCode.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	if m.PersistenceReachable {
-		n += 2
+	if m.PersistenceReachable != nil {
+		l = m.PersistenceReachable.Size()
+		n += 1 + l + sovOperationlog(uint64(l))
 	}
-	l = len(m.LastConfirmedAt)
-	if l > 0 {
+	if m.LastConfirmedAt != nil {
+		l = m.LastConfirmedAt.Size()
 		n += 1 + l + sovOperationlog(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -5144,6 +5674,230 @@ func sovOperationlog(x uint64) (n int) {
 }
 func sozOperationlog(x uint64) (n int) {
 	return sovOperationlog(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *NullableString) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowOperationlog
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NullableString: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NullableString: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowOperationlog
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Value = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipOperationlog(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NullableBool) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowOperationlog
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NullableBool: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NullableBool: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowOperationlog
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Value = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipOperationlog(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NullableInt64) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowOperationlog
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NullableInt64: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NullableInt64: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			m.Value = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowOperationlog
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Value |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipOperationlog(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *OperationLogResource) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -5271,10 +6025,10 @@ func (m *OperationLogResource) Unmarshal(dAtA []byte) error {
 			m.Relation = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 4:
-			if wireType != 0 {
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ReferenceVerified", wireType)
 			}
-			var v int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -5284,12 +6038,28 @@ func (m *OperationLogResource) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.ReferenceVerified = bool(v != 0)
+			if msglen < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ReferenceVerified == nil {
+				m.ReferenceVerified = &NullableBool{}
+			}
+			if err := m.ReferenceVerified.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipOperationlog(dAtA[iNdEx:])
@@ -5377,7 +6147,7 @@ func (m *OperationLogChange) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field BeforeValue", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -5387,29 +6157,33 @@ func (m *OperationLogChange) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.BeforeValue = string(dAtA[iNdEx:postIndex])
+			if m.BeforeValue == nil {
+				m.BeforeValue = &NullableString{}
+			}
+			if err := m.BeforeValue.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AfterValue", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -5419,29 +6193,33 @@ func (m *OperationLogChange) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AfterValue = string(dAtA[iNdEx:postIndex])
+			if m.AfterValue == nil {
+				m.AfterValue = &NullableString{}
+			}
+			if err := m.AfterValue.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 4:
-			if wireType != 0 {
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field BeforeAvailable", wireType)
 			}
-			var v int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -5451,12 +6229,28 @@ func (m *OperationLogChange) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.BeforeAvailable = bool(v != 0)
+			if msglen < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.BeforeAvailable == nil {
+				m.BeforeAvailable = &NullableBool{}
+			}
+			if err := m.BeforeAvailable.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ValueKind", wireType)
@@ -5544,7 +6338,7 @@ func (m *OperationLogCounts) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Requested", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -5554,29 +6348,33 @@ func (m *OperationLogCounts) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Requested = string(dAtA[iNdEx:postIndex])
+			if m.Requested == nil {
+				m.Requested = &NullableString{}
+			}
+			if err := m.Requested.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Confirmed", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -5586,29 +6384,33 @@ func (m *OperationLogCounts) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Confirmed = string(dAtA[iNdEx:postIndex])
+			if m.Confirmed == nil {
+				m.Confirmed = &NullableString{}
+			}
+			if err := m.Confirmed.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Failed", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -5618,29 +6420,33 @@ func (m *OperationLogCounts) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Failed = string(dAtA[iNdEx:postIndex])
+			if m.Failed == nil {
+				m.Failed = &NullableString{}
+			}
+			if err := m.Failed.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Unknown", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -5650,23 +6456,27 @@ func (m *OperationLogCounts) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Unknown = string(dAtA[iNdEx:postIndex])
+			if m.Unknown == nil {
+				m.Unknown = &NullableString{}
+			}
+			if err := m.Unknown.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -5816,10 +6626,10 @@ func (m *OperationLogProtocolResult) Unmarshal(dAtA []byte) error {
 			m.ReasonCode = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 4:
-			if wireType != 0 {
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ResponseWriteFailed", wireType)
 			}
-			var v int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -5829,12 +6639,28 @@ func (m *OperationLogProtocolResult) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.ResponseWriteFailed = bool(v != 0)
+			if msglen < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ResponseWriteFailed == nil {
+				m.ResponseWriteFailed = &NullableBool{}
+			}
+			if err := m.ResponseWriteFailed.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipOperationlog(dAtA[iNdEx:])
@@ -5922,7 +6748,7 @@ func (m *OperationLogSourceFacts) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FirstReceivedAt", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -5932,29 +6758,33 @@ func (m *OperationLogSourceFacts) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.FirstReceivedAt = string(dAtA[iNdEx:postIndex])
+			if m.FirstReceivedAt == nil {
+				m.FirstReceivedAt = &NullableString{}
+			}
+			if err := m.FirstReceivedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastReceivedAt", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -5964,23 +6794,27 @@ func (m *OperationLogSourceFacts) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.LastReceivedAt = string(dAtA[iNdEx:postIndex])
+			if m.LastReceivedAt == nil {
+				m.LastReceivedAt = &NullableString{}
+			}
+			if err := m.LastReceivedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
@@ -6018,7 +6852,7 @@ func (m *OperationLogSourceFacts) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field SnapshotSequence", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -6028,23 +6862,27 @@ func (m *OperationLogSourceFacts) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.SnapshotSequence = string(dAtA[iNdEx:postIndex])
+			if m.SnapshotSequence == nil {
+				m.SnapshotSequence = &NullableString{}
+			}
+			if err := m.SnapshotSequence.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -6133,7 +6971,7 @@ func (m *OperationLogProducerStatus) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field StartedAt", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -6143,29 +6981,33 @@ func (m *OperationLogProducerStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.StartedAt = string(dAtA[iNdEx:postIndex])
+			if m.StartedAt == nil {
+				m.StartedAt = &NullableString{}
+			}
+			if err := m.StartedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastSeenAt", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -6175,29 +7017,33 @@ func (m *OperationLogProducerStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.LastSeenAt = string(dAtA[iNdEx:postIndex])
+			if m.LastSeenAt == nil {
+				m.LastSeenAt = &NullableString{}
+			}
+			if err := m.LastSeenAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field StoppedAt", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -6207,29 +7053,33 @@ func (m *OperationLogProducerStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.StoppedAt = string(dAtA[iNdEx:postIndex])
+			if m.StoppedAt == nil {
+				m.StoppedAt = &NullableString{}
+			}
+			if err := m.StoppedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AttemptedEvents", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -6239,29 +7089,33 @@ func (m *OperationLogProducerStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AttemptedEvents = string(dAtA[iNdEx:postIndex])
+			if m.AttemptedEvents == nil {
+				m.AttemptedEvents = &NullableString{}
+			}
+			if err := m.AttemptedEvents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ConfirmedEvents", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -6271,29 +7125,33 @@ func (m *OperationLogProducerStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ConfirmedEvents = string(dAtA[iNdEx:postIndex])
+			if m.ConfirmedEvents == nil {
+				m.ConfirmedEvents = &NullableString{}
+			}
+			if err := m.ConfirmedEvents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field UnconfirmedEvents", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -6303,29 +7161,33 @@ func (m *OperationLogProducerStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.UnconfirmedEvents = string(dAtA[iNdEx:postIndex])
+			if m.UnconfirmedEvents == nil {
+				m.UnconfirmedEvents = &NullableString{}
+			}
+			if err := m.UnconfirmedEvents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field InvalidEvents", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -6335,29 +7197,33 @@ func (m *OperationLogProducerStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.InvalidEvents = string(dAtA[iNdEx:postIndex])
+			if m.InvalidEvents == nil {
+				m.InvalidEvents = &NullableString{}
+			}
+			if err := m.InvalidEvents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 9:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CapacityRejectedEvents", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -6367,29 +7233,33 @@ func (m *OperationLogProducerStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.CapacityRejectedEvents = string(dAtA[iNdEx:postIndex])
+			if m.CapacityRejectedEvents == nil {
+				m.CapacityRejectedEvents = &NullableString{}
+			}
+			if err := m.CapacityRejectedEvents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastFailureAt", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -6399,29 +7269,33 @@ func (m *OperationLogProducerStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.LastFailureAt = string(dAtA[iNdEx:postIndex])
+			if m.LastFailureAt == nil {
+				m.LastFailureAt = &NullableString{}
+			}
+			if err := m.LastFailureAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 11:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastFailureCode", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -6431,29 +7305,33 @@ func (m *OperationLogProducerStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.LastFailureCode = string(dAtA[iNdEx:postIndex])
+			if m.LastFailureCode == nil {
+				m.LastFailureCode = &NullableString{}
+			}
+			if err := m.LastFailureCode.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastRecoveredAt", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -6463,29 +7341,33 @@ func (m *OperationLogProducerStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.LastRecoveredAt = string(dAtA[iNdEx:postIndex])
+			if m.LastRecoveredAt == nil {
+				m.LastRecoveredAt = &NullableString{}
+			}
+			if err := m.LastRecoveredAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 13:
-			if wireType != 0 {
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field PersistenceReachable", wireType)
 			}
-			var v int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -6495,12 +7377,28 @@ func (m *OperationLogProducerStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.PersistenceReachable = bool(v != 0)
+			if msglen < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.PersistenceReachable == nil {
+				m.PersistenceReachable = &NullableBool{}
+			}
+			if err := m.PersistenceReachable.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipOperationlog(dAtA[iNdEx:])
@@ -7157,7 +8055,7 @@ func (m *OperationLogSummary) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field StartedAt", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -7167,23 +8065,27 @@ func (m *OperationLogSummary) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.StartedAt = string(dAtA[iNdEx:postIndex])
+			if m.StartedAt == nil {
+				m.StartedAt = &NullableString{}
+			}
+			if err := m.StartedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -7346,10 +8248,10 @@ func (m *OperationLogSummary) Unmarshal(dAtA []byte) error {
 			m.CredentialKind = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 8:
-			if wireType != 0 {
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field IdentityVerified", wireType)
 			}
-			var v int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -7359,17 +8261,33 @@ func (m *OperationLogSummary) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.IdentityVerified = bool(v != 0)
+			if msglen < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.IdentityVerified == nil {
+				m.IdentityVerified = &NullableBool{}
+			}
+			if err := m.IdentityVerified.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		case 9:
-			if wireType != 0 {
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field IdentitySnapshotComplete", wireType)
 			}
-			var v int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -7379,12 +8297,28 @@ func (m *OperationLogSummary) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.IdentitySnapshotComplete = bool(v != 0)
+			if msglen < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.IdentitySnapshotComplete == nil {
+				m.IdentitySnapshotComplete = &NullableBool{}
+			}
+			if err := m.IdentitySnapshotComplete.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ModuleCode", wireType)
@@ -7613,7 +8547,7 @@ func (m *OperationLogSummary) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DurationMs", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -7623,23 +8557,27 @@ func (m *OperationLogSummary) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.DurationMs = string(dAtA[iNdEx:postIndex])
+			if m.DurationMs == nil {
+				m.DurationMs = &NullableString{}
+			}
+			if err := m.DurationMs.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 18:
 			if wireType != 2 {
@@ -7677,7 +8615,7 @@ func (m *OperationLogSummary) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ResourceCount", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -7687,29 +8625,33 @@ func (m *OperationLogSummary) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ResourceCount = string(dAtA[iNdEx:postIndex])
+			if m.ResourceCount == nil {
+				m.ResourceCount = &NullableString{}
+			}
+			if err := m.ResourceCount.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 20:
-			if wireType != 0 {
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ResourcesComplete", wireType)
 			}
-			var v int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -7719,17 +8661,33 @@ func (m *OperationLogSummary) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.ResourcesComplete = bool(v != 0)
+			if msglen < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ResourcesComplete == nil {
+				m.ResourcesComplete = &NullableBool{}
+			}
+			if err := m.ResourcesComplete.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		case 21:
-			if wireType != 0 {
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ResponseWriteFailed", wireType)
 			}
-			var v int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -7739,12 +8697,28 @@ func (m *OperationLogSummary) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.ResponseWriteFailed = bool(v != 0)
+			if msglen < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ResponseWriteFailed == nil {
+				m.ResponseWriteFailed = &NullableBool{}
+			}
+			if err := m.ResponseWriteFailed.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		case 22:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Provider", wireType)
@@ -8658,7 +9632,7 @@ func (m *OperationLogDetail) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FinishedAt", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -8668,23 +9642,27 @@ func (m *OperationLogDetail) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.FinishedAt = string(dAtA[iNdEx:postIndex])
+			if m.FinishedAt == nil {
+				m.FinishedAt = &NullableString{}
+			}
+			if err := m.FinishedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -9356,7 +10334,7 @@ func (m *RuntimeStatus) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CheckedAt", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -9366,29 +10344,33 @@ func (m *RuntimeStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.CheckedAt = string(dAtA[iNdEx:postIndex])
+			if m.CheckedAt == nil {
+				m.CheckedAt = &NullableString{}
+			}
+			if err := m.CheckedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 3:
-			if wireType != 0 {
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field QueryReady", wireType)
 			}
-			var v int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -9398,12 +10380,28 @@ func (m *RuntimeStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.QueryReady = bool(v != 0)
+			if msglen < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.QueryReady == nil {
+				m.QueryReady = &NullableBool{}
+			}
+			if err := m.QueryReady.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ProjectionState", wireType)
@@ -9440,7 +10438,7 @@ func (m *RuntimeStatus) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastPublishedAt", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -9450,23 +10448,27 @@ func (m *RuntimeStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.LastPublishedAt = string(dAtA[iNdEx:postIndex])
+			if m.LastPublishedAt == nil {
+				m.LastPublishedAt = &NullableString{}
+			}
+			if err := m.LastPublishedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 6:
 			if wireType != 2 {
@@ -9504,7 +10506,7 @@ func (m *RuntimeStatus) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field PendingEvents", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -9514,29 +10516,33 @@ func (m *RuntimeStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.PendingEvents = string(dAtA[iNdEx:postIndex])
+			if m.PendingEvents == nil {
+				m.PendingEvents = &NullableString{}
+			}
+			if err := m.PendingEvents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field OldestPendingReceivedAt", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -9546,23 +10552,27 @@ func (m *RuntimeStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.OldestPendingReceivedAt = string(dAtA[iNdEx:postIndex])
+			if m.OldestPendingReceivedAt == nil {
+				m.OldestPendingReceivedAt = &NullableString{}
+			}
+			if err := m.OldestPendingReceivedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 9:
 			if wireType != 2 {
@@ -9666,7 +10676,7 @@ func (m *RuntimeStatus) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TotalObserved", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -9676,29 +10686,33 @@ func (m *RuntimeStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.TotalObserved = string(dAtA[iNdEx:postIndex])
+			if m.TotalObserved == nil {
+				m.TotalObserved = &NullableString{}
+			}
+			if err := m.TotalObserved.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 13:
-			if wireType != 0 {
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ProducersComplete", wireType)
 			}
-			var v int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -9708,12 +10722,28 @@ func (m *RuntimeStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.ProducersComplete = bool(v != 0)
+			if msglen < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ProducersComplete == nil {
+				m.ProducersComplete = &NullableBool{}
+			}
+			if err := m.ProducersComplete.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipOperationlog(dAtA[iNdEx:])
@@ -9990,7 +11020,7 @@ func (m *CaptureStatus) Unmarshal(dAtA []byte) error {
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field StartedAt", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -10000,29 +11030,33 @@ func (m *CaptureStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.StartedAt = string(dAtA[iNdEx:postIndex])
+			if m.StartedAt == nil {
+				m.StartedAt = &NullableString{}
+			}
+			if err := m.StartedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ObservedAt", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -10032,29 +11066,33 @@ func (m *CaptureStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ObservedAt = string(dAtA[iNdEx:postIndex])
+			if m.ObservedAt == nil {
+				m.ObservedAt = &NullableString{}
+			}
+			if err := m.ObservedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AttemptedEvents", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -10064,29 +11102,33 @@ func (m *CaptureStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AttemptedEvents = string(dAtA[iNdEx:postIndex])
+			if m.AttemptedEvents == nil {
+				m.AttemptedEvents = &NullableString{}
+			}
+			if err := m.AttemptedEvents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ConfirmedEvents", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -10096,29 +11138,33 @@ func (m *CaptureStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ConfirmedEvents = string(dAtA[iNdEx:postIndex])
+			if m.ConfirmedEvents == nil {
+				m.ConfirmedEvents = &NullableString{}
+			}
+			if err := m.ConfirmedEvents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field UnconfirmedEvents", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -10128,29 +11174,33 @@ func (m *CaptureStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.UnconfirmedEvents = string(dAtA[iNdEx:postIndex])
+			if m.UnconfirmedEvents == nil {
+				m.UnconfirmedEvents = &NullableString{}
+			}
+			if err := m.UnconfirmedEvents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field InvalidEvents", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -10160,29 +11210,33 @@ func (m *CaptureStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.InvalidEvents = string(dAtA[iNdEx:postIndex])
+			if m.InvalidEvents == nil {
+				m.InvalidEvents = &NullableString{}
+			}
+			if err := m.InvalidEvents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CapacityRejectedEvents", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -10192,29 +11246,33 @@ func (m *CaptureStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.CapacityRejectedEvents = string(dAtA[iNdEx:postIndex])
+			if m.CapacityRejectedEvents == nil {
+				m.CapacityRejectedEvents = &NullableString{}
+			}
+			if err := m.CapacityRejectedEvents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 9:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field InFlightEvents", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -10224,29 +11282,33 @@ func (m *CaptureStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.InFlightEvents = string(dAtA[iNdEx:postIndex])
+			if m.InFlightEvents == nil {
+				m.InFlightEvents = &NullableString{}
+			}
+			if err := m.InFlightEvents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastFailureCode", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -10256,29 +11318,33 @@ func (m *CaptureStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.LastFailureCode = string(dAtA[iNdEx:postIndex])
+			if m.LastFailureCode == nil {
+				m.LastFailureCode = &NullableString{}
+			}
+			if err := m.LastFailureCode.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 11:
-			if wireType != 0 {
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field PersistenceReachable", wireType)
 			}
-			var v int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -10288,17 +11354,33 @@ func (m *CaptureStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.PersistenceReachable = bool(v != 0)
+			if msglen < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthOperationlog
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.PersistenceReachable == nil {
+				m.PersistenceReachable = &NullableBool{}
+			}
+			if err := m.PersistenceReachable.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastConfirmedAt", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowOperationlog
@@ -10308,23 +11390,27 @@ func (m *CaptureStatus) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthOperationlog
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthOperationlog
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.LastConfirmedAt = string(dAtA[iNdEx:postIndex])
+			if m.LastConfirmedAt == nil {
+				m.LastConfirmedAt = &NullableString{}
+			}
+			if err := m.LastConfirmedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/useryege/athena/internal/operationlog/query"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
@@ -55,6 +56,16 @@ func CheckMessageSize(b []byte) error {
 	}
 	return nil
 }
+func checkProtoMessageSize(v interface{}) error {
+	m, ok := v.(proto.Message)
+	if !ok || m == nil {
+		return nil
+	}
+	if proto.Size(m) > 64<<10 {
+		return ErrMessageTooLarge
+	}
+	return nil
+}
 func rpcError(code codes.Code, reason string) error {
 	s := status.New(code, reason)
 	with, err := s.WithDetails(&errdetails.ErrorInfo{Domain: ErrorDomain, Reason: reason})
@@ -72,6 +83,9 @@ func UnaryServerInterceptor(token string) grpc.UnaryServerInterceptor {
 		if strings.HasPrefix(info.FullMethod, "/grpc.health.v1.Health/") {
 			return handler(ctx, req)
 		}
+		if err := checkProtoMessageSize(req); err != nil {
+			return nil, rpcError(codes.InvalidArgument, ReasonMessageTooLarge)
+		}
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
 			return nil, rpcError(codes.Unauthenticated, ReasonInternalAuthRequired)
@@ -80,6 +94,12 @@ func UnaryServerInterceptor(token string) grpc.UnaryServerInterceptor {
 		if strings.TrimSpace(token) == "" || len(values) == 0 || strings.TrimSpace(values[0]) != "Bearer "+token {
 			return nil, rpcError(codes.Unauthenticated, ReasonInternalAuthRequired)
 		}
-		return handler(ctx, req)
+		resp, err := handler(ctx, req)
+		if err == nil {
+			if sizeErr := checkProtoMessageSize(resp); sizeErr != nil {
+				return nil, rpcError(codes.ResourceExhausted, ReasonMessageTooLarge)
+			}
+		}
+		return resp, err
 	}
 }

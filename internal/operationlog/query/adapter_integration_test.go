@@ -4,6 +4,7 @@ package query_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -52,7 +53,7 @@ func TestAdapterReadsPublishedVersionsWithStableSnapshotAndKeyset(t *testing.T) 
 		_, e := codec.EncodeCursorPreserving(p.AppliedFilters, viewer, q.CursorPosition{StartedAt: p.Items[1].StartedAt, OperationID: p.Items[1].OperationID}, p.SnapshotSequence, p.SnapshotAt, time.Time{}, time.Time{}, now)
 		t.Fatalf("cursor empty direct err=%v page=%+v", e, p)
 	}
-	if len(p.Items) != 2 || p.SnapshotSequence == 0 {
+	if len(p.Items) != 2 || p.SnapshotSequence == 0 || !p.SnapshotAt.Equal(now) {
 		t.Fatalf("page=%+v", p)
 	}
 	p2, err := a.List(context.Background(), q.Filter{PageSize: 2, ModuleCode: "account", From: ptr(now.Add(-time.Hour)), To: ptr(now.Add(time.Minute)), Cursor: p.NextCursor}, viewer)
@@ -64,6 +65,9 @@ func TestAdapterReadsPublishedVersionsWithStableSnapshotAndKeyset(t *testing.T) 
 	}
 	if _, err := a.Get(context.Background(), p.Items[0].OperationID, viewer, p.SnapshotToken); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := a.Get(context.Background(), uuid.NewString(), viewer, ""); !errors.Is(err, q.ErrNotFound) {
+		t.Fatalf("missing detail err=%v", err)
 	}
 }
 func countRows(t *testing.T, p interface {
